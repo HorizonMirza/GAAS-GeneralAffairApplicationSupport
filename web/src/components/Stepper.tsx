@@ -72,7 +72,12 @@ export default function Stepper({
     <div className="stepper">
       {steps.map((step, idx) => {
         const isRejected = rejectAt === idx;
-        const done = !isRejected && idx <= currentIdx;
+        // Steps that were passed through but are now moot because the flow bounced back past
+        // them (strictly between where it landed and where it got rejected) go plain again,
+        // instead of staying highlighted as "done" - only the landing step and the reject
+        // point itself stay colored.
+        const isMootAfterReject = rejectFrom != null && rejectAt != null && idx > rejectFrom && idx < rejectAt;
+        const done = !isRejected && !isMootAfterReject && idx <= currentIdx;
         const dotDelay = idx * FLOW_DURATION;
         const connectorRejected = rejectFrom != null && rejectAt != null && idx >= rejectFrom && idx < rejectAt;
         const connectorDone = idx <= currentIdx && !connectorRejected;
