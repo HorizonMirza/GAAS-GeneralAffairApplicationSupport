@@ -145,7 +145,7 @@ export default function OverviewPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <StatusBadge status={status} rejectTarget={item.rejectTarget} departemen={item.departemen} />
+                  <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} />
                   <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
@@ -153,8 +153,8 @@ export default function OverviewPage() {
               </div>
               <Stepper status={status} departemen={item.departemen} />
               {item.rejectReason && (
-                <div className="item-row-reject-note" style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--badge-rejected-bg)", marginTop: 10 }}>
-                  Catatan Penolakan: {item.rejectReason}
+                <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
                 </div>
               )}
             </div>

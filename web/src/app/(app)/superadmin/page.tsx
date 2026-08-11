@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, effectiveStatus } from "@/lib/constants";
+import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { Invoice, Pengiriman, Status } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -252,7 +252,7 @@ export default function SuperAdminPage() {
                       <td>{item.beratBarangKg ?? "-"}</td>
                       <td>{item.subTotal ? formatCurrency(item.subTotal) : "-"}</td>
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
-                      <td><StatusBadge status={effectiveStatus(item)} rejectTarget={item.rejectTarget} departemen={item.departemen} /></td>
+                      <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDelete(item)}>Delete</button>
                       </td>

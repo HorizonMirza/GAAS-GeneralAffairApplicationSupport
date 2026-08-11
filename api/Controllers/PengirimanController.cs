@@ -141,22 +141,24 @@ public class PengirimanController : ApiControllerBase
         item.Catatan = payload.Catatan;
     }
 
-    // Scoped per Divisi (not per Departemen) so the sequence stays unique together with the
-    // Kode Satuan Kerja, which is shared by every Departemen under the same Divisi.
-    // Backed by a standalone counter row (not derived from existing Pengiriman rows) so a
-    // number is never reused after its row is deleted, even if it was the most recent one.
-    private async Task<int> PeekNextTransmittalSequenceAsync(string divisi)
+    // Scoped per Divisi + bulan + tahun (bukan per Departemen) so the sequence resets every
+    // month and stays unique together with the Kode Satuan Kerja, which is shared by every
+    // Departemen under the same Divisi. Keyed off the shipment's own Tanggal, not wall-clock
+    // "now", so the number always matches the MM.YYYY printed in it. Backed by a standalone
+    // counter row (not derived from existing Pengiriman rows) so a number is never reused
+    // after its row is deleted, even if it was the most recent one that month.
+    private async Task<int> PeekNextTransmittalSequenceAsync(string divisi, int year, int month)
     {
-        var counter = await _db.DivisiCounters.FindAsync(divisi);
+        var counter = await _db.DivisiCounters.FindAsync(divisi, year, month);
         return (counter?.LastSequence ?? 0) + 1;
     }
 
-    private async Task<int> IncrementTransmittalSequenceAsync(string divisi)
+    private async Task<int> IncrementTransmittalSequenceAsync(string divisi, int year, int month)
     {
-        var counter = await _db.DivisiCounters.FindAsync(divisi);
+        var counter = await _db.DivisiCounters.FindAsync(divisi, year, month);
         if (counter == null)
         {
-            counter = new DivisiCounter { Divisi = divisi, LastSequence = 0 };
+            counter = new DivisiCounter { Divisi = divisi, Year = year, Month = month, LastSequence = 0 };
             _db.DivisiCounters.Add(counter);
         }
         counter.LastSequence += 1;
@@ -177,8 +179,9 @@ public class PengirimanController : ApiControllerBase
         if (string.IsNullOrEmpty(user!.Divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
-        var seq = await PeekNextTransmittalSequenceAsync(user.Divisi);
-        var nomor = BuildNomorTransmittal(user, seq, tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow));
+        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var seq = await PeekNextTransmittalSequenceAsync(user.Divisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        var nomor = BuildNomorTransmittal(user, seq, effectiveTanggal);
         return Ok(new { nomorTransmittal = nomor });
     }
 
@@ -193,7 +196,7 @@ public class PengirimanController : ApiControllerBase
 
         var item = new Pengiriman { CreatedBy = user.Id, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
         ApplyCreatePayload(item, payload);
-        var seq = await IncrementTransmittalSequenceAsync(user.Divisi);
+        var seq = await IncrementTransmittalSequenceAsync(user.Divisi, item.Tanggal.Year, item.Tanggal.Month);
         item.NomorTransmittal = BuildNomorTransmittal(user, seq, item.Tanggal);
         _db.Pengiriman.Add(item);
         await _db.SaveChangesAsync();

@@ -130,8 +130,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<DivisiCounter>(e =>
         {
             e.ToTable("divisi_counters");
-            e.HasKey(c => c.Divisi);
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
             e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
             e.Property(c => c.LastSequence).HasColumnName("last_sequence");
         });
 
