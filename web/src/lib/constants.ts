@@ -40,19 +40,21 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
-export function getWaitingLabel(item: Pengiriman): string | undefined {
-  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: Admin ${trackWord(item.departemen)}`;
-  }
-  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
-    return `Waiting: Admin ${trackWord(item.departemen)}`;
-  }
-  return undefined;
+// Label untuk siapa yang harus bertindak selanjutnya di origin - ikut peran pembuat aslinya
+// (Admin atau Approval Departemen/Divisi), bukan selalu "Admin".
+function creatorOriginLabel(item: Pengiriman): string {
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
-export function effectiveStatus(item: Pengiriman): Status {
-  if (item.status === "DRAFT" && item.rejectReason) return "REJECTED_L1";
-  return item.status;
+export function getWaitingLabel(item: Pengiriman): string | undefined {
+  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
+    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${creatorOriginLabel(item)}`;
+  }
+  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
+    return `Waiting: ${creatorOriginLabel(item)}`;
+  }
+  return undefined;
 }
 
 export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
@@ -71,23 +73,13 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
 
 export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
 
-// "Origin" untuk revisi/reject-balik selalu Admin Departemen/Divisi dari unit item ini -
-// bukan pembuat aslinya, karena Approval Departemen/Divisi juga bisa input data langsung
-// tapi tidak pernah menerima data itu balik (reject Admin GA / Approval GA-KPU-ke-origin
-// selalu ke Admin, bukan ke Approval).
-function isUnitAdmin(item: Pengiriman, me: Me): boolean {
-  return item.departemen != null
-    ? me.role === "ADMIN_DEPARTEMEN" && me.departemen === item.departemen
-    : me.role === "ADMIN_DIVISI" && me.divisi === item.divisi;
-}
-
+// "Origin" untuk revisi/reject-balik selalu pembuat aslinya - Admin atau Approval
+// Departemen/Divisi, siapapun yang menginput data ini pertama kali.
 export function isEditableByOrigin(item: Pengiriman, me: Me): boolean {
-  if (item.status === "DRAFT") {
-    return item.createdBy === me.id || (item.rejectReason != null && isUnitAdmin(item, me));
-  }
-  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return isUnitAdmin(item, me);
+  if (item.createdBy !== me.id) return false;
+  if (item.status === "DRAFT" || item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return true;
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "ORIGIN" && isUnitAdmin(item, me);
+    return item.rejectTarget === "ORIGIN";
   }
   return false;
 }

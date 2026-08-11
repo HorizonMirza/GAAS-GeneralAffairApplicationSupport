@@ -31,6 +31,11 @@ public class Pengiriman
     public RejectTargetEnum? RejectTarget { get; set; }
 
     public int CreatedBy { get; set; }
+    // Set once at Create() from the creator's role and never changed afterward, so the UI can
+    // always tell whether an item's origin is an Admin or Approval Departemen/Divisi account -
+    // without needing to join/include the creator's current User row (which could theoretically
+    // change role later) every time it's displayed.
+    public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
     public int? ApprovedByGa { get; set; }
     public int? ApprovedByApprovalGa { get; set; }

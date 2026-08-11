@@ -87,6 +87,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
 
             e.Property(p => p.CreatedBy).HasColumnName("created_by");
+            e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.ApprovedByL1).HasColumnName("approved_by_l1");
             e.Property(p => p.ApprovedByGa).HasColumnName("approved_by_ga");
             e.Property(p => p.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");

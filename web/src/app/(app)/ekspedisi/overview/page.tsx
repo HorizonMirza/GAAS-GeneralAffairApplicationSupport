@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { effectiveStatus, greetingName, isEditableByOrigin } from "@/lib/constants";
+import { greetingName, isEditableByOrigin } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
@@ -134,7 +134,6 @@ export default function OverviewPage() {
         <div className="card table-empty">Tidak ada data.</div>
       ) : (
         items.map((item) => {
-          const status = effectiveStatus(item);
           return (
             <div className="card item-row-card" style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
@@ -151,7 +150,7 @@ export default function OverviewPage() {
                   </button>
                 </div>
               </div>
-              <Stepper status={status} departemen={item.departemen} rejectTarget={item.rejectTarget} />
+              <Stepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}

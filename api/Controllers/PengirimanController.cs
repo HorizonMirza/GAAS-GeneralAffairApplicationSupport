@@ -33,25 +33,15 @@ public class PengirimanController : ApiControllerBase
         _db = db;
     }
 
-    // "Origin" for revision/reject-back purposes is always the Admin Departemen/Divisi of the
-    // item's own unit - never the literal creator, since Approval Departemen/Divisi can also
-    // create data directly but should never receive it back (Admin GA reject dan Approval
-    // GA/KPU reject-ke-origin selalu balik ke Admin, bukan ke Approval).
-    private static bool IsUnitAdmin(Pengiriman item, User user) =>
-        item.Departemen != null
-            ? user.Role == RoleEnum.ADMIN_DEPARTEMEN && user.Departemen == item.Departemen
-            : user.Role == RoleEnum.ADMIN_DIVISI && user.Divisi == item.Divisi;
-
+    // "Origin" for revision/reject-back purposes is always whoever actually created the item -
+    // Admin or Approval Departemen/Divisi, whichever it was. Both can input data barang, and
+    // whichever of the two did it is the one who has to fix and resend it after any reject.
     private static bool IsEditableByOrigin(Pengiriman item, User currentUser)
     {
-        // A virgin draft (never submitted) is creator-only. A draft carrying a RejectReason is
-        // a revision-in-progress after a reject-to-origin - only Admin Departemen/Divisi of the
-        // item's unit can pick that up and finish it, regardless of who originally created it.
-        if (item.Status == StatusEnum.DRAFT)
-            return item.CreatedBy == currentUser.Id || (item.RejectReason != null && IsUnitAdmin(item, currentUser));
-        if (item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA) return IsUnitAdmin(item, currentUser);
+        if (item.CreatedBy != currentUser.Id) return false;
+        if (item.Status is StatusEnum.DRAFT or StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA) return true;
         if (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU)
-            return item.RejectTarget == RejectTargetEnum.ORIGIN && IsUnitAdmin(item, currentUser);
+            return item.RejectTarget == RejectTargetEnum.ORIGIN;
         return false;
     }
 
@@ -194,7 +184,7 @@ public class PengirimanController : ApiControllerBase
         if (string.IsNullOrEmpty(user!.Divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
-        var item = new Pengiriman { CreatedBy = user.Id, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
+        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
         ApplyCreatePayload(item, payload);
         var seq = await IncrementTransmittalSequenceAsync(user.Divisi, item.Tanggal.Year, item.Tanggal.Month);
         item.NomorTransmittal = BuildNomorTransmittal(user, seq, item.Tanggal);
@@ -430,8 +420,8 @@ public class PengirimanController : ApiControllerBase
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        // Admin GA reject selalu balik ke Admin Departemen/Divisi (origin), tidak pernah ke
-        // Approval Departemen/Divisi walaupun data itu tadinya dibuat langsung oleh Approval.
+        // Admin GA reject always goes back to whoever created it (origin) - IsEditableByOrigin
+        // resolves that to the actual creator, Admin or Approval Departemen/Divisi.
         item.Status = StatusEnum.REJECTED_GA;
         item.RejectReason = payload.Reason;
         item.RejectTarget = null;

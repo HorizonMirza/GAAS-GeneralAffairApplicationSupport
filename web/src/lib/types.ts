@@ -69,6 +69,7 @@ export interface Pengiriman {
   rejectReason: string | null;
   rejectTarget: RejectTarget | null;
   createdBy: number;
+  createdByRole: Role;
   approvedByL1: number | null;
   approvedByGa: number | null;
   approvedByApprovalGa: number | null;

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PengirimanApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ddadb26fbecbab1164dd3272477271a0f9b02566")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2f5d8bed086f4f922d99f447e7bd5a5a8aab99f")]
 [assembly: System.Reflection.AssemblyProductAttribute("PengirimanApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PengirimanApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

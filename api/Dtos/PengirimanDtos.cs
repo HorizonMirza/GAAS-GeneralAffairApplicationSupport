@@ -69,6 +69,7 @@ public class PengirimanOut
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
     public int CreatedBy { get; set; }
+    public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
     public int? ApprovedByGa { get; set; }
     public int? ApprovedByApprovalGa { get; set; }
@@ -108,6 +109,7 @@ public class PengirimanOut
         RejectReason = p.RejectReason,
         RejectTarget = p.RejectTarget,
         CreatedBy = p.CreatedBy,
+        CreatedByRole = p.CreatedByRole,
         ApprovedByL1 = p.ApprovedByL1,
         ApprovedByGa = p.ApprovedByGa,
         ApprovedByApprovalGa = p.ApprovedByApprovalGa,
