@@ -139,9 +139,9 @@ export default function OverviewPage() {
             <div className="card item-row-card" style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
                 <div>
-                  <strong>{item.nomorTransmittal} - {item.tujuanPenerimaan}</strong>
+                  <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.kodeProgram} {item.departemen || item.divisi} · {item.jumlahItem} item
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {item.kodeProgram} · {item.jumlahItem} item
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -154,7 +154,7 @@ export default function OverviewPage() {
               <Stepper status={status} departemen={item.departemen} />
               {item.rejectReason && (
                 <div className="item-row-reject-note" style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--badge-rejected-bg)", marginTop: 10 }}>
-                  Alasan ditolak: {item.rejectReason}
+                  Catatan Penolakan: {item.rejectReason}
                 </div>
               )}
             </div>

@@ -82,7 +82,9 @@ function isUnitAdmin(item: Pengiriman, me: Me): boolean {
 }
 
 export function isEditableByOrigin(item: Pengiriman, me: Me): boolean {
-  if (item.status === "DRAFT") return item.createdBy === me.id;
+  if (item.status === "DRAFT") {
+    return item.createdBy === me.id || (item.rejectReason != null && isUnitAdmin(item, me));
+  }
   if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return isUnitAdmin(item, me);
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
     return item.rejectTarget === "ORIGIN" && isUnitAdmin(item, me);

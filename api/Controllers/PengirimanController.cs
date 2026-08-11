@@ -44,7 +44,11 @@ public class PengirimanController : ApiControllerBase
 
     private static bool IsEditableByOrigin(Pengiriman item, User currentUser)
     {
-        if (item.Status == StatusEnum.DRAFT) return item.CreatedBy == currentUser.Id;
+        // A virgin draft (never submitted) is creator-only. A draft carrying a RejectReason is
+        // a revision-in-progress after a reject-to-origin - only Admin Departemen/Divisi of the
+        // item's unit can pick that up and finish it, regardless of who originally created it.
+        if (item.Status == StatusEnum.DRAFT)
+            return item.CreatedBy == currentUser.Id || (item.RejectReason != null && IsUnitAdmin(item, currentUser));
         if (item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA) return IsUnitAdmin(item, currentUser);
         if (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU)
             return item.RejectTarget == RejectTargetEnum.ORIGIN && IsUnitAdmin(item, currentUser);
@@ -96,12 +100,12 @@ public class PengirimanController : ApiControllerBase
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
             query = query.Where(p => p.Departemen == currentUser.Departemen
-                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id || p.RejectReason != null));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null
-                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id || p.RejectReason != null));
         }
         else
         {
@@ -211,20 +215,16 @@ public class PengirimanController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        // A rejected-to-origin item is revised and resubmitted in one step: it always goes back
-        // into SUBMITTED (needs Approval Departemen/Divisi sign-off again), because only Admin
-        // Departemen/Divisi is ever allowed to touch a rejected item (see IsUnitAdmin), and an
-        // Admin's own submissions always go through Approval first.
+        // A rejected-to-origin item goes back to DRAFT after being revised - Admin Departemen/
+        // Divisi still has to open it and submit again explicitly (mirrors the original create
+        // flow). RejectReason is kept so the note stays visible while the revision is pending.
         var wasRejected = item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
             or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
         ApplyCreatePayload(item, payload);
         if (wasRejected)
         {
-            item.Status = StatusEnum.SUBMITTED;
-            item.RejectReason = null;
+            item.Status = StatusEnum.DRAFT;
             item.RejectTarget = null;
-            item.ApprovedByL1 = null;
-            item.ApprovedL1At = null;
             AddLog(item, "REVISED", user!);
         }
         await _db.SaveChangesAsync();
@@ -269,13 +269,13 @@ public class PengirimanController : ApiControllerBase
 
         var item = await _db.Pengiriman.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (item.CreatedBy != user!.Id) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.Status != StatusEnum.DRAFT) return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
+        if (item.Status != StatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
 
         // Admin Departemen/Divisi submit -> needs Approval Departemen/Divisi (L1) sign-off.
         // Approval Departemen/Divisi submit -> mereka sendiri approver-nya, jadi langsung
         // masuk antrian Admin GA tanpa lewat L1.
-        var skipL1 = user.Role is RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI;
+        var skipL1 = user!.Role is RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI;
         item.Status = skipL1 ? StatusEnum.APPROVED_L1 : StatusEnum.SUBMITTED;
         item.RejectReason = null;
         item.RejectTarget = null;
@@ -541,7 +541,9 @@ public class PengirimanController : ApiControllerBase
             var sameUnit = item.Departemen != null
                 ? user.Departemen == item.Departemen
                 : user.Divisi == item.Divisi && user.Departemen == null;
-            var visible = item.Status == StatusEnum.DRAFT ? item.CreatedBy == user.Id : sameUnit;
+            var visible = item.Status == StatusEnum.DRAFT
+                ? item.CreatedBy == user.Id || (item.RejectReason != null && sameUnit)
+                : sameUnit;
             if (!visible) return StatusCode(403, new { detail = "Bukan data milik Anda" });
         }
 
