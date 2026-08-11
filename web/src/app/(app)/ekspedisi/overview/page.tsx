@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { effectiveStatus, greetingName, isEditableByOrigin } from "@/lib/constants";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
@@ -139,9 +139,9 @@ export default function OverviewPage() {
             <div className="card item-row-card" style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
                 <div>
-                  <strong>{item.tujuanPenerimaan}</strong>
+                  <strong>{item.nomorTransmittal} - {item.tujuanPenerimaan}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {item.jumlahItem} item
+                    {formatDate(item.tanggal)} · {item.kodeProgram} {item.departemen || item.divisi} · {item.jumlahItem} item
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -153,16 +153,10 @@ export default function OverviewPage() {
               </div>
               <Stepper status={status} departemen={item.departemen} />
               {item.rejectReason && (
-                <div className="text-secondary item-row-reject-note" style={{ fontSize: "0.8rem", marginTop: 6 }}>
-                  <strong>Alasan ditolak:</strong> {item.rejectReason}
+                <div className="item-row-reject-note" style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--badge-rejected-bg)", marginTop: 10 }}>
+                  Alasan ditolak: {item.rejectReason}
                 </div>
               )}
-              <div className="item-row-footer" style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                  Penerima: {item.namaPenerima} · {item.noTeleponPenerima}
-                  {item.total ? ` · Total: ${formatCurrency(item.total)}` : ""}
-                </div>
-              </div>
             </div>
           );
         })
