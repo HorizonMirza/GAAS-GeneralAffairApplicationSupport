@@ -40,19 +40,20 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
-// Label untuk siapa yang harus bertindak selanjutnya di origin - ikut peran pembuat aslinya
-// (Admin atau Approval Departemen/Divisi), bukan selalu "Admin".
-function creatorOriginLabel(item: Pengiriman): string {
+// Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya (Admin
+// atau Approval Departemen/Divisi), bukan selalu "Admin". Dipakai baik untuk badge "Waiting"
+// maupun untuk label pilihan target reject.
+export function originActorLabel(item: Pengiriman): string {
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
 export function getWaitingLabel(item: Pengiriman): string | undefined {
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${creatorOriginLabel(item)}`;
+    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${originActorLabel(item)}`;
   }
   if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
-    return `Waiting: ${creatorOriginLabel(item)}`;
+    return `Waiting: ${originActorLabel(item)}`;
   }
   return undefined;
 }

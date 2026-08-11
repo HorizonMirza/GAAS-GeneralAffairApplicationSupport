@@ -252,7 +252,7 @@ export default function SuperAdminPage() {
                       <td>{item.beratBarangKg ?? "-"}</td>
                       <td>{item.subTotal ? formatCurrency(item.subTotal) : "-"}</td>
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
-                      <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} /></td>
+                      <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDelete(item)}>Delete</button>
                       </td>

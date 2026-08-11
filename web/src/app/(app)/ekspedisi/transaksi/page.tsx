@@ -54,7 +54,7 @@ export default function TransaksiPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceError, setInvoiceError] = useState("");
@@ -332,7 +332,7 @@ export default function TransaksiPage() {
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
                       <td>
                         <div className="status-cell">
-                          <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} />
+                          <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
                           <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
@@ -489,13 +489,14 @@ export default function TransaksiPage() {
         me={me}
         onClose={() => setDetail(null)}
         onSaved={loadTable}
-        onRequestReject={(id, type) => setRejectTarget({ id, type })}
+        onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
       />
 
       <RejectModal
         open={!!rejectTarget}
         targetId={rejectTarget?.id ?? null}
         targetType={rejectTarget?.type ?? null}
+        originLabel={rejectTarget?.originLabel ?? ""}
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);

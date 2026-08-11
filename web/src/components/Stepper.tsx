@@ -1,5 +1,5 @@
 import { trackWord } from "@/lib/constants";
-import type { Pengiriman, RejectTarget, Status } from "@/lib/types";
+import type { Pengiriman, RejectTarget, Role, Status } from "@/lib/types";
 
 const FLOW_DURATION = 1.8;
 
@@ -34,15 +34,17 @@ const REJECTED_IDX: Partial<Record<Status, number>> = {
   REJECTED_KPU: 4,
 };
 
-// Which step the data actually bounces back to. REJECTED_L1/REJECTED_GA always go back to
-// origin (Admin Departemen/Divisi, idx 0). REJECTED_GA_APPROVAL/REJECTED_KPU depend on the
-// chosen RejectTarget - GA sends it back only to Admin GA (idx 2), ORIGIN sends it all the way
-// back to idx 0. The red connector trail spans this whole range, not just the last hop.
-function rejectStartIdx(status: Status, rejectTarget: RejectTarget | null): number {
-  if (status === "REJECTED_GA_APPROVAL" || status === "REJECTED_KPU") {
-    return rejectTarget === "GA" ? 2 : 0;
-  }
-  return 0;
+function isApprovalRole(role: Role): boolean {
+  return role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI";
+}
+
+// Which step the data actually bounces back to when rejected. GA target always lands on Admin
+// GA (idx 2). Origin always lands on whoever actually created the item - Admin Departemen/Divisi
+// (idx 0), or on Approval Departemen/Divisi (idx 1) if they created it directly, since in that
+// case Admin was never involved in this item's journey at all.
+function rejectStartIdx(status: Status, rejectTarget: RejectTarget | null, originIdx: number): number {
+  const isGaTarget = (status === "REJECTED_GA_APPROVAL" || status === "REJECTED_KPU") && rejectTarget === "GA";
+  return isGaTarget ? 2 : originIdx;
 }
 
 function XIcon() {
@@ -58,29 +60,31 @@ export default function Stepper({
   status,
   departemen = null,
   rejectTarget = null,
+  createdByRole = "ADMIN_DEPARTEMEN",
 }: {
   status: Status;
   departemen?: Pengiriman["departemen"];
   rejectTarget?: Pengiriman["rejectTarget"];
+  createdByRole?: Role;
 }) {
   const currentIdx = PROGRESS[status] ?? 0;
   const rejectAt = REJECTED_IDX[status];
-  const rejectFrom = rejectAt != null ? rejectStartIdx(status, rejectTarget) : null;
+  // Approval Departemen/Divisi creating data directly skips the Admin stage entirely (see
+  // Submit()), so their journey visually starts at idx 1 - the Admin dot/connector never lights
+  // up for them since that step never really happened.
+  const originIdx = isApprovalRole(createdByRole) ? 1 : 0;
+  const rejectFrom = rejectAt != null ? rejectStartIdx(status, rejectTarget, originIdx) : null;
   const steps = buildSteps(departemen);
 
   return (
     <div className="stepper">
       {steps.map((step, idx) => {
         const isRejected = rejectAt === idx;
-        // Steps that were passed through but are now moot because the flow bounced back past
-        // them (strictly between where it landed and where it got rejected) go plain again,
-        // instead of staying highlighted as "done" - only the landing step and the reject
-        // point itself stay colored.
         const isMootAfterReject = rejectFrom != null && rejectAt != null && idx > rejectFrom && idx < rejectAt;
-        const done = !isRejected && !isMootAfterReject && idx <= currentIdx;
+        const done = !isRejected && !isMootAfterReject && idx >= originIdx && idx <= currentIdx;
         const dotDelay = idx * FLOW_DURATION;
         const connectorRejected = rejectFrom != null && rejectAt != null && idx >= rejectFrom && idx < rejectAt;
-        const connectorDone = idx <= currentIdx && !connectorRejected;
+        const connectorDone = idx >= originIdx && idx <= currentIdx && !connectorRejected;
         const connectorDelay = idx * FLOW_DURATION;
         return (
           <div key={step.label} style={{ display: "contents" }}>

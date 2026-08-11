@@ -5,10 +5,11 @@ interface Props {
   status: Status;
   rejectTarget?: Pengiriman["rejectTarget"];
   departemen?: Pengiriman["departemen"];
+  createdByRole?: Pengiriman["createdByRole"];
 }
 
-export default function StatusBadge({ status, rejectTarget = null, departemen = null }: Props) {
-  const pseudoItem = { status, rejectTarget, departemen } as Pengiriman;
+export default function StatusBadge({ status, rejectTarget = null, departemen = null, createdByRole = "ADMIN_DEPARTEMEN" }: Props) {
+  const pseudoItem = { status, rejectTarget, departemen, createdByRole } as Pengiriman;
   const waitingLabel = getWaitingLabel(pseudoItem);
   const label = getStatusLabel(status, departemen);
   const cls = status.toLowerCase();

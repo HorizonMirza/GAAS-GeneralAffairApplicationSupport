@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable } from "@/lib/constants";
+import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
@@ -16,7 +16,7 @@ interface Props {
   me: Me;
   onClose: () => void;
   onSaved: () => void;
-  onRequestReject: (id: number, type: RejectType) => void;
+  onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
 }
 
 function toFormFields(item: Pengiriman): PengirimanCreatePayload {
@@ -317,25 +317,25 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1"); }}>Reject</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1", originActorLabel(item)); }}>Reject</button>
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga"); }}>Reject</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga", originActorLabel(item)); }}>Reject</button>
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval"); }}>Reject</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval", originActorLabel(item)); }}>Reject</button>
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
             {canKpuAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu"); }}>Reject</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item)); }}>Reject</button>
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>Approve &amp; Cetak Resi</button>
               </>
             )}

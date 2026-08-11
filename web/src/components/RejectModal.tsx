@@ -11,20 +11,14 @@ interface Props {
   open: boolean;
   targetId: number | null;
   targetType: RejectType | null;
+  originLabel: string;
   onClose: () => void;
   onDone: () => void;
 }
 
 const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu"];
 
-const SUCCESS_MESSAGE: Record<RejectType, string> = {
-  l1: "Data ditolak, dikembalikan ke Admin Departemen/Divisi",
-  ga: "Data ditolak, dikembalikan ke Admin Departemen/Divisi",
-  "ga-approval": "Data ditolak",
-  kpu: "Data ditolak",
-};
-
-export default function RejectModal({ open, targetId, targetType, onClose, onDone }: Props) {
+export default function RejectModal({ open, targetId, targetType, originLabel, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
   const [target, setTarget] = useState<RejectTarget | "">("");
   const [error, setError] = useState("");
@@ -48,17 +42,17 @@ export default function RejectModal({ open, targetId, targetType, onClose, onDon
       return;
     }
     try {
-      let message = SUCCESS_MESSAGE[targetType];
+      let message = `Data ditolak, dikembalikan ke ${originLabel}`;
       if (targetType === "l1") {
         await api.rejectL1(targetId, reasonValue);
       } else if (targetType === "ga") {
         await api.rejectGa(targetId, reasonValue);
       } else if (targetType === "ga-approval") {
         await api.rejectGaApproval(targetId, reasonValue, target as RejectTarget);
-        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : "Data ditolak, dikembalikan ke Admin Departemen/Divisi";
+        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else {
         await api.rejectKpu(targetId, reasonValue, target as RejectTarget);
-        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : "Data ditolak, dikembalikan ke Admin Departemen/Divisi";
+        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
       }
       showToast(message);
       reset();
@@ -85,7 +79,7 @@ export default function RejectModal({ open, targetId, targetType, onClose, onDon
               </label>
               <label className={`reject-target-option ${target === "ORIGIN" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="ORIGIN" checked={target === "ORIGIN"} onChange={() => setTarget("ORIGIN")} />
-                <span>Admin Departemen/Divisi (pembuat data)</span>
+                <span>{originLabel} (pembuat data)</span>
               </label>
             </div>
           </div>
