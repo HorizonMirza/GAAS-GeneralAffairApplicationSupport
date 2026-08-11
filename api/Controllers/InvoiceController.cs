@@ -1,0 +1,155 @@
+using Microsoft.AspNetCore.Mvc;
+using PengirimanApi.Data;
+using PengirimanApi.Dtos;
+using PengirimanApi.Models;
+using PengirimanApi.Services;
+
+namespace PengirimanApi.Controllers;
+
+[ApiController]
+[Route("api/invoice")]
+public class InvoiceController : ApiControllerBase
+{
+    private readonly AppDbContext _db;
+    private readonly string _uploadDir;
+
+    public InvoiceController(AppDbContext db, CurrentUserService currentUser, IConfiguration config)
+        : base(currentUser)
+    {
+        _db = db;
+        var configured = config.GetValue<string>("UploadDir") ?? "uploads/invoices";
+        _uploadDir = Path.IsPathRooted(configured)
+            ? configured
+            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
+        _uploadDir = Path.GetFullPath(_uploadDir);
+        Directory.CreateDirectory(_uploadDir);
+    }
+
+    [HttpPost("")]
+    public async Task<IActionResult> UploadInvoice([FromForm] string bulan, [FromForm] IFormFile file)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        if (file.ContentType != "application/pdf")
+            return StatusCode(400, new { detail = "File invoice harus berformat PDF" });
+
+        var storedFilename = $"{Guid.NewGuid():N}.pdf";
+        var destPath = Path.Combine(_uploadDir, storedFilename);
+        using (var stream = System.IO.File.Create(destPath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var item = new Invoice
+        {
+            Bulan = bulan,
+            FilePath = storedFilename,
+            OriginalFilename = string.IsNullOrEmpty(file.FileName) ? "invoice.pdf" : file.FileName,
+            Status = InvoiceStatusEnum.PENDING,
+            UploadedBy = user!.Id,
+            UploadedAt = DateTime.UtcNow,
+        };
+        _db.Invoices.Add(item);
+        await _db.SaveChangesAsync();
+
+        return StatusCode(201, InvoiceOut.From(item));
+    }
+
+    [HttpGet("")]
+    public async Task<IActionResult> ListInvoice()
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var query = _db.Invoices.AsQueryable();
+        if (user!.Role == RoleEnum.KPU)
+            query = query.Where(i => i.UploadedBy == user.Id);
+
+        var items = query.OrderByDescending(i => i.UploadedAt).ToList();
+        return Ok(items.Select(InvoiceOut.From));
+    }
+
+    [HttpGet("{invoiceId}/file")]
+    public async Task<IActionResult> DownloadInvoiceFile(int invoiceId, [FromQuery] bool download = false)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var item = await _db.Invoices.FindAsync(invoiceId);
+        if (item == null)
+            return NotFound(new { detail = "Invoice tidak ditemukan" });
+        if (user!.Role == RoleEnum.KPU && item.UploadedBy != user.Id)
+            return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
+
+        var path = Path.Combine(_uploadDir, item.FilePath);
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { detail = "File invoice tidak ditemukan di server" });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var disposition = download ? "attachment" : "inline";
+        Response.Headers["Content-Disposition"] = $"{disposition}; filename=\"{item.OriginalFilename}\"";
+        return File(bytes, "application/pdf");
+    }
+
+    [HttpDelete("{invoiceId}")]
+    public async Task<IActionResult> DeleteInvoice(int invoiceId)
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var item = await _db.Invoices.FindAsync(invoiceId);
+        if (item == null)
+            return NotFound(new { detail = "Invoice tidak ditemukan" });
+
+        var path = Path.Combine(_uploadDir, item.FilePath);
+        if (System.IO.File.Exists(path))
+            System.IO.File.Delete(path);
+
+        _db.Invoices.Remove(item);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPatch("{invoiceId}/approve")]
+    public async Task<IActionResult> ApproveInvoice(int invoiceId, [FromBody] InvoiceReviewRequest payload)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
+        if (error != null) return error;
+
+        var item = await _db.Invoices.FindAsync(invoiceId);
+        if (item == null)
+            return NotFound(new { detail = "Invoice tidak ditemukan" });
+        if (item.Status != InvoiceStatusEnum.PENDING)
+            return StatusCode(403, new { detail = "Invoice sudah diproses sebelumnya" });
+
+        item.Status = InvoiceStatusEnum.APPROVED;
+        item.Catatan = payload.Catatan;
+        item.ReviewedBy = user!.Id;
+        item.ReviewedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        return Ok(InvoiceOut.From(item));
+    }
+
+    [HttpPatch("{invoiceId}/reject")]
+    public async Task<IActionResult> RejectInvoice(int invoiceId, [FromBody] InvoiceReviewRequest payload)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
+        if (error != null) return error;
+
+        var item = await _db.Invoices.FindAsync(invoiceId);
+        if (item == null)
+            return NotFound(new { detail = "Invoice tidak ditemukan" });
+        if (item.Status != InvoiceStatusEnum.PENDING)
+            return StatusCode(403, new { detail = "Invoice sudah diproses sebelumnya" });
+
+        item.Status = InvoiceStatusEnum.REJECTED;
+        item.Catatan = payload.Catatan;
+        item.ReviewedBy = user!.Id;
+        item.ReviewedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        return Ok(InvoiceOut.From(item));
+    }
+}

@@ -1,0 +1,524 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PengirimanApi.Data;
+using PengirimanApi.Dtos;
+using PengirimanApi.Models;
+using PengirimanApi.Services;
+
+namespace PengirimanApi.Controllers;
+
+[Route("api/pengiriman")]
+public class PengirimanController : ApiControllerBase
+{
+    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
+
+    private static readonly RoleEnum[] OriginRoles = { RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.ADMIN_DIVISI };
+
+    private static readonly RoleEnum[] TotalVisibleRoles =
+    {
+        RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
+        RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
+        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU,
+    };
+
+    private readonly AppDbContext _db;
+
+    public PengirimanController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    {
+        _db = db;
+    }
+
+    private static bool IsEditableByOrigin(Pengiriman item) =>
+        item.Status is StatusEnum.DRAFT or StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
+        || (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU && item.RejectTarget == RejectTargetEnum.ORIGIN);
+
+    private static bool IsL1Actionable(Pengiriman item) => item.Status == StatusEnum.SUBMITTED;
+
+    private static bool IsGaActionable(Pengiriman item) =>
+        item.Status == StatusEnum.APPROVED_L1
+        || (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU && item.RejectTarget == RejectTargetEnum.GA);
+
+    private static bool IsGaApprovalActionable(Pengiriman item) => item.Status == StatusEnum.APPROVED_GA;
+
+    private void AddLog(Pengiriman item, string action, User actor, string? reason = null)
+    {
+        _db.PengirimanLogs.Add(new PengirimanLog
+        {
+            PengirimanId = item.Id,
+            Action = action,
+            ActorId = actor.Id,
+            Reason = reason,
+        });
+    }
+
+    private static IQueryable<Pengiriman> ApplyBulanFilter(IQueryable<Pengiriman> query, string? bulan)
+    {
+        if (string.IsNullOrEmpty(bulan)) return query;
+        var parts = bulan.Split('-');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var year) || !int.TryParse(parts[1], out var month))
+            throw new ArgumentException("Format bulan harus YYYY-MM");
+        return query.Where(p => p.Tanggal.Year == year && p.Tanggal.Month == month);
+    }
+
+    public static IQueryable<Pengiriman> ApplyListFilters(
+        AppDbContext db,
+        IQueryable<Pengiriman> query,
+        User currentUser,
+        StatusEnum? statusFilter,
+        string? divisi,
+        string? departemen,
+        string? direktorat,
+        string? noResi,
+        string? bulan)
+    {
+        if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI)
+        {
+            query = query.Where(p => p.CreatedBy == currentUser.Id);
+        }
+        else if (currentUser.Role == RoleEnum.APPROVAL_DEPARTEMEN)
+        {
+            query = query.Where(p => p.Departemen == currentUser.Departemen && (p.Status != StatusEnum.DRAFT || p.RejectReason != null));
+        }
+        else if (currentUser.Role == RoleEnum.APPROVAL_DIVISI)
+        {
+            query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null && (p.Status != StatusEnum.DRAFT || p.RejectReason != null));
+        }
+        else
+        {
+            query = query.Where(p => p.Status != StatusEnum.DRAFT);
+        }
+
+        if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
+        if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
+        if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
+        if (!string.IsNullOrEmpty(direktorat))
+        {
+            query = query.Where(p => db.Users.Any(u => u.Id == p.CreatedBy && u.Direktorat == direktorat));
+        }
+        if (!string.IsNullOrEmpty(noResi)) query = query.Where(p => p.NoResi != null && p.NoResi.Contains(noResi));
+
+        return ApplyBulanFilter(query, bulan);
+    }
+
+    private static void ApplyCreatePayload(Pengiriman item, PengirimanCreate payload)
+    {
+        item.Tanggal = payload.Tanggal;
+        item.TujuanPenerimaan = payload.TujuanPenerimaan;
+        item.JumlahItem = payload.JumlahItem;
+        item.NamaPengirim = payload.NamaPengirim;
+        item.NoTeleponPengirim = payload.NoTeleponPengirim;
+        item.AlamatPengirim = payload.AlamatPengirim;
+        item.KodeProgram = payload.KodeProgram;
+        item.NamaPenerima = payload.NamaPenerima;
+        item.AlamatPenerima = payload.AlamatPenerima;
+        item.NoTeleponPenerima = payload.NoTeleponPenerima;
+        item.AsuransiStatus = payload.AsuransiStatus;
+        item.RequestPacking = payload.RequestPacking;
+        item.Catatan = payload.Catatan;
+    }
+
+    // Scoped per Divisi (not per Departemen) so the sequence stays unique together with the
+    // Kode Satuan Kerja, which is shared by every Departemen under the same Divisi.
+    // Backed by a standalone counter row (not derived from existing Pengiriman rows) so a
+    // number is never reused after its row is deleted, even if it was the most recent one.
+    private async Task<int> PeekNextTransmittalSequenceAsync(string divisi)
+    {
+        var counter = await _db.DivisiCounters.FindAsync(divisi);
+        return (counter?.LastSequence ?? 0) + 1;
+    }
+
+    private async Task<int> IncrementTransmittalSequenceAsync(string divisi)
+    {
+        var counter = await _db.DivisiCounters.FindAsync(divisi);
+        if (counter == null)
+        {
+            counter = new DivisiCounter { Divisi = divisi, LastSequence = 0 };
+            _db.DivisiCounters.Add(counter);
+        }
+        counter.LastSequence += 1;
+        return counter.LastSequence;
+    }
+
+    private string BuildNomorTransmittal(User user, int seq, DateOnly tanggal)
+    {
+        var kode = OrgTree.GetKodeSatuanKerja(user.Divisi!);
+        return $"{seq:D4}.{kode}.{tanggal:MM}.{tanggal:yyyy}";
+    }
+
+    [HttpGet("next-transmittal")]
+    public async Task<IActionResult> NextTransmittal([FromQuery] DateOnly? tanggal)
+    {
+        var (user, error) = await RequireRoleAsync(OriginRoles);
+        if (error != null) return error;
+        if (string.IsNullOrEmpty(user!.Divisi))
+            return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
+
+        var seq = await PeekNextTransmittalSequenceAsync(user.Divisi);
+        var nomor = BuildNomorTransmittal(user, seq, tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow));
+        return Ok(new { nomorTransmittal = nomor });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] PengirimanCreate payload)
+    {
+        var (user, error) = await RequireRoleAsync(OriginRoles);
+        if (error != null) return error;
+
+        if (string.IsNullOrEmpty(user!.Divisi))
+            return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
+
+        var item = new Pengiriman { CreatedBy = user.Id, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
+        ApplyCreatePayload(item, payload);
+        var seq = await IncrementTransmittalSequenceAsync(user.Divisi);
+        item.NomorTransmittal = BuildNomorTransmittal(user, seq, item.Tanggal);
+        _db.Pengiriman.Add(item);
+        await _db.SaveChangesAsync();
+
+        AddLog(item, "CREATED", user);
+        await _db.SaveChangesAsync();
+
+        return StatusCode(201, PengirimanOut.From(item));
+    }
+
+    private async Task<(Pengiriman? item, IActionResult? error)> GetOwnedEditableAsync(int itemId, User currentUser)
+    {
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return (null, NotFound(new { detail = "Data tidak ditemukan" }));
+        if (item.CreatedBy != currentUser.Id) return (null, StatusCode(403, new { detail = "Bukan data milik Anda" }));
+        if (!IsEditableByOrigin(item))
+            return (null, StatusCode(403, new { detail = "Data sudah diproses dan tidak dapat diubah" }));
+        return (item, null);
+    }
+
+    [HttpPut("{itemId:int}")]
+    public async Task<IActionResult> Update(int itemId, [FromBody] PengirimanCreate payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var (item, error) = await GetOwnedEditableAsync(itemId, user!);
+        if (error != null) return error;
+
+        var wasRejected = item!.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
+        ApplyCreatePayload(item, payload);
+        if (wasRejected)
+        {
+            item.Status = StatusEnum.DRAFT;
+            item.RejectTarget = null;
+            AddLog(item, "REVISED", user!);
+        }
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpDelete("{itemId:int}")]
+    public async Task<IActionResult> Delete(int itemId)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var (item, error) = await GetOwnedEditableAsync(itemId, user!);
+        if (error != null) return error;
+
+        _db.Pengiriman.Remove(item!);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{itemId:int}/super-admin")]
+    public async Task<IActionResult> SuperAdminDelete(int itemId)
+    {
+        var (_, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+
+        _db.Pengiriman.Remove(item);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPatch("{itemId:int}/submit")]
+    public async Task<IActionResult> Submit(int itemId)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (item.CreatedBy != user!.Id) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != StatusEnum.DRAFT) return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
+
+        item.Status = StatusEnum.SUBMITTED;
+        item.RejectReason = null;
+        item.RejectTarget = null;
+        AddLog(item, "SUBMITTED", user);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> List(
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 10,
+        [FromQuery] string? bulan = null,
+        [FromQuery(Name = "status")] StatusEnum? statusFilter = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery] string? direktorat = null,
+        [FromQuery] string? noResi = null)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        if (!AllowedLimits.Contains(limit))
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+
+        IQueryable<Pengiriman> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, noResi, bulan);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(p => p.Tanggal)
+            .ThenByDescending(p => p.Id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToListAsync();
+
+        decimal? totalBulanIni = null;
+        if (TotalVisibleRoles.Contains(user!.Role))
+        {
+            var sumQuery = _db.Pengiriman.AsQueryable();
+            if (user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI) sumQuery = sumQuery.Where(p => p.CreatedBy == user.Id);
+            sumQuery = ApplyBulanFilter(sumQuery, bulan);
+            totalBulanIni = await sumQuery.SumAsync(p => p.Total ?? 0);
+        }
+
+        return Ok(new PengirimanListResponse
+        {
+            Items = items.Select(PengirimanOut.From).ToList(),
+            Total = total,
+            Page = page,
+            Limit = limit,
+            TotalBulanIni = totalBulanIni,
+        });
+    }
+
+    private async Task<(User? user, Pengiriman? item, IActionResult? error)> RequireL1ActorAsync(int itemId)
+    {
+        var user = await CurrentUser.GetCurrentUserAsync();
+        if (user == null) return (null, null, StatusCode(401, new { detail = "Belum login" }));
+        if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
+            return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
+
+        var item = await _db.Pengiriman.Include(p => p.Pembuat).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
+
+        var ok = item.Pembuat.Role switch
+        {
+            RoleEnum.ADMIN_DEPARTEMEN => user.Role == RoleEnum.APPROVAL_DEPARTEMEN && user.Departemen == item.Pembuat.Departemen,
+            RoleEnum.ADMIN_DIVISI => user.Role == RoleEnum.APPROVAL_DIVISI && user.Divisi == item.Pembuat.Divisi,
+            _ => false,
+        };
+        if (!ok) return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
+        return (user, item, null);
+    }
+
+    [HttpPatch("{itemId:int}/approve-l1")]
+    public async Task<IActionResult> ApproveL1(int itemId)
+    {
+        var (user, item, error) = await RequireL1ActorAsync(itemId);
+        if (error != null) return error;
+        if (!IsL1Actionable(item!))
+            return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+
+        item!.Status = StatusEnum.APPROVED_L1;
+        item.ApprovedByL1 = user!.Id;
+        item.ApprovedL1At = DateTime.UtcNow;
+        item.RejectReason = null;
+        AddLog(item, "APPROVED_L1", user);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/reject-l1")]
+    public async Task<IActionResult> RejectL1(int itemId, [FromBody] RejectRequest payload)
+    {
+        var (user, item, error) = await RequireL1ActorAsync(itemId);
+        if (error != null) return error;
+        if (!IsL1Actionable(item!))
+            return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
+
+        item!.Status = StatusEnum.REJECTED_L1;
+        item.RejectReason = payload.Reason;
+        item.ApprovedByL1 = null;
+        item.ApprovedL1At = null;
+        AddLog(item, "REJECTED_L1", user!, payload.Reason);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/approve-ga")]
+    public async Task<IActionResult> ApproveGa(int itemId)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+
+        item.Status = StatusEnum.APPROVED_GA;
+        item.ApprovedByGa = user!.Id;
+        item.ApprovedGaAt = DateTime.UtcNow;
+        item.RejectReason = null;
+        item.RejectTarget = null;
+        AddLog(item, "APPROVED_GA", user);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/reject-ga")]
+    public async Task<IActionResult> RejectGa(int itemId, [FromBody] RejectRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
+
+        item.Status = StatusEnum.REJECTED_GA;
+        item.RejectReason = payload.Reason;
+        item.RejectTarget = null;
+        item.ApprovedByGa = null;
+        item.ApprovedGaAt = null;
+        AddLog(item, "REJECTED_GA", user!, payload.Reason);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/approve-ga-approval")]
+    public async Task<IActionResult> ApproveGaApproval(int itemId)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaApprovalActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+
+        item.Status = StatusEnum.APPROVED_GA_APPROVAL;
+        item.ApprovedByApprovalGa = user!.Id;
+        item.ApprovedApprovalGaAt = DateTime.UtcNow;
+        item.RejectReason = null;
+        AddLog(item, "APPROVED_GA_APPROVAL", user);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/reject-ga-approval")]
+    public async Task<IActionResult> RejectGaApproval(int itemId, [FromBody] RejectWithTargetRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaApprovalActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
+
+        item.Status = StatusEnum.REJECTED_GA_APPROVAL;
+        item.RejectReason = payload.Reason;
+        item.RejectTarget = payload.Target;
+        item.ApprovedByApprovalGa = null;
+        item.ApprovedApprovalGaAt = null;
+        AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/approve-kpu")]
+    public async Task<IActionResult> ApproveKpu(int itemId, [FromBody] ApproveKpuRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (item.Status != StatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Data harus disetujui Approval General Affair terlebih dahulu" });
+
+        item.NoResi = payload.NoResi;
+        item.BeratBarangKg = payload.BeratBarangKg;
+        item.AsuransiHarga = payload.AsuransiHarga;
+        item.SubTotal = payload.SubTotal;
+        item.Total = payload.Total;
+        item.Status = StatusEnum.COMPLETED;
+        item.ApprovedByKpu = user!.Id;
+        item.ApprovedKpuAt = DateTime.UtcNow;
+        item.RejectReason = null;
+        item.RejectTarget = null;
+        AddLog(item, "APPROVED_KPU", user);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/reject-kpu")]
+    public async Task<IActionResult> RejectKpu(int itemId, [FromBody] RejectWithTargetRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (item.Status != StatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
+
+        item.Status = StatusEnum.REJECTED_KPU;
+        item.RejectReason = payload.Reason;
+        item.RejectTarget = payload.Target;
+        AddLog(item, "REJECTED_KPU", user!, payload.Reason);
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
+    [HttpGet("{itemId:int}/logs")]
+    public async Task<IActionResult> GetLogs(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.Pengiriman
+            .Include(p => p.Logs).ThenInclude(l => l.Aktor)
+            .FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (user!.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI && item.CreatedBy != user.Id)
+            return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        var result = item.Logs
+            .OrderBy(l => l.CreatedAt)
+            .Select(l => new PengirimanLogOut(
+                l.Id,
+                l.Action,
+                l.Aktor?.Nama,
+                l.Aktor?.Role,
+                l.Reason,
+                l.CreatedAt
+            ))
+            .ToList();
+
+        return Ok(result);
+    }
+}
