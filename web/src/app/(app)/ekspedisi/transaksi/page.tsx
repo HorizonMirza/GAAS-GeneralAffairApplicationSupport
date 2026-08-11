@@ -82,7 +82,7 @@ export default function TransaksiPage() {
         page: filters.page,
         limit: filters.limit,
         bulan: filters.bulan,
-        noResi: filters.search,
+        nomorTransmittal: filters.search,
         status: filters.status,
         divisi: filters.divisi,
         departemen: filters.departemen,
@@ -151,7 +151,7 @@ export default function TransaksiPage() {
       divisi: filters.divisi,
       departemen: filters.departemen,
       direktorat: filters.direktorat,
-      no_resi: filters.search,
+      nomor_transmittal: filters.search,
     };
   }
 
@@ -191,7 +191,15 @@ export default function TransaksiPage() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const showOrgFilters = ["APPROVAL_DEPARTEMEN", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role);
+  const showOrgFilters = [
+    "ADMIN_DEPARTEMEN",
+    "APPROVAL_DEPARTEMEN",
+    "ADMIN_DIVISI",
+    "APPROVAL_DIVISI",
+    "ADMIN_GA",
+    "APPROVAL_GA",
+    "KPU",
+  ].includes(me.role);
 
   return (
     <>
@@ -199,7 +207,7 @@ export default function TransaksiPage() {
         <div className="toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
-            <input type="text" id="filter-search" placeholder="Cari nomor resi..." value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <input type="text" id="filter-search" placeholder="Cari nomor transmittal..." value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
@@ -286,7 +294,7 @@ export default function TransaksiPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>Nomor Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
                 <th>Pengirim</th><th>Telp. Pengirim</th><th>Penerima</th><th>Telp. Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Packing</th><th>Catatan</th>
                 <th>Berat (Kg)</th><th>Ongkos Kirim (Harga)</th><th>Total</th><th>Status</th>

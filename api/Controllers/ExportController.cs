@@ -99,7 +99,7 @@ public class ExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? noResi)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -111,13 +111,13 @@ public class ExportController : ApiControllerBase
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
-        if (!string.IsNullOrEmpty(noResi)) parts.Add($"cari-{Slugify(noResi)}");
+        if (!string.IsNullOrEmpty(nomorTransmittal)) parts.Add($"cari-{Slugify(nomorTransmittal)}");
         return "mutasi-pengiriman-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? noResi)
+    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
     {
-        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, noResi, bulan);
+        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
 
@@ -128,12 +128,12 @@ public class ExportController : ApiControllerBase
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
-        [FromQuery] string? noResi)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, noResi);
+        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, nomorTransmittal);
 
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Mutasi Pengiriman");
@@ -203,7 +203,7 @@ public class ExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, status, divisi, departemen, direktorat, noResi) + ".xlsx";
+        var filename = BuildFilename(bulan, status, divisi, departemen, direktorat, nomorTransmittal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -214,14 +214,14 @@ public class ExportController : ApiControllerBase
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
-        [FromQuery] string? noResi)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, noResi);
+        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, nomorTransmittal);
         decimal grandTotal = rows.Where(r => r.Total.HasValue).Sum(r => r.Total!.Value);
-        var baseFilename = BuildFilename(bulan, status, divisi, departemen, direktorat, noResi);
+        var baseFilename = BuildFilename(bulan, status, divisi, departemen, direktorat, nomorTransmittal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

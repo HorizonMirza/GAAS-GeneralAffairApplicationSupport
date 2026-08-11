@@ -87,7 +87,7 @@ public class PengirimanController : ApiControllerBase
         string? divisi,
         string? departemen,
         string? direktorat,
-        string? noResi,
+        string? nomorTransmittal,
         string? bulan)
     {
         // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
@@ -115,7 +115,7 @@ public class PengirimanController : ApiControllerBase
         {
             query = query.Where(p => db.Users.Any(u => u.Id == p.CreatedBy && u.Direktorat == direktorat));
         }
-        if (!string.IsNullOrEmpty(noResi)) query = query.Where(p => p.NoResi != null && p.NoResi.Contains(noResi));
+        if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => p.NomorTransmittal.Contains(nomorTransmittal));
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -293,7 +293,7 @@ public class PengirimanController : ApiControllerBase
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
-        [FromQuery] string? noResi = null)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -304,7 +304,7 @@ public class PengirimanController : ApiControllerBase
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, noResi, bulan);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
         }
         catch (ArgumentException ex)
         {

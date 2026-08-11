@@ -75,7 +75,7 @@ export interface ListPengirimanParams {
   page?: number;
   limit?: number;
   bulan?: string;
-  noResi?: string;
+  nomorTransmittal?: string;
   status?: Status | "";
   divisi?: string;
   departemen?: string;
@@ -87,7 +87,7 @@ function listParams(p: ListPengirimanParams) {
     page: p.page,
     limit: p.limit,
     bulan: p.bulan,
-    no_resi: p.noResi,
+    nomor_transmittal: p.nomorTransmittal,
     status: p.status,
     divisi: p.divisi,
     departemen: p.departemen,
