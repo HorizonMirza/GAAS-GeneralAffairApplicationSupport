@@ -151,7 +151,7 @@ export default function OverviewPage() {
                   </button>
                 </div>
               </div>
-              <Stepper status={status} departemen={item.departemen} />
+              <Stepper status={status} departemen={item.departemen} rejectTarget={item.rejectTarget} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}

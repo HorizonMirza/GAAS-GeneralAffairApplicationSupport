@@ -78,14 +78,14 @@ export default function RejectModal({ open, targetId, targetType, onClose, onDon
         {needsTarget && (
           <div className="field">
             <label>Kembalikan data ke</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 400 }}>
+            <div className="reject-target-options">
+              <label className={`reject-target-option ${target === "GA" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="GA" checked={target === "GA"} onChange={() => setTarget("GA")} />
-                Admin GA
+                <span>Admin GA</span>
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 400 }}>
+              <label className={`reject-target-option ${target === "ORIGIN" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="ORIGIN" checked={target === "ORIGIN"} onChange={() => setTarget("ORIGIN")} />
-                Admin Departemen/Divisi (pembuat data)
+                <span>Admin Departemen/Divisi (pembuat data)</span>
               </label>
             </div>
           </div>
