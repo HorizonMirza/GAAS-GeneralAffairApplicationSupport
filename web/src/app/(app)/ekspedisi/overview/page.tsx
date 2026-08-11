@@ -43,7 +43,9 @@ export default function OverviewPage() {
 
   const rowMenu = useRowMenu(items);
 
-  const isOrigin = me?.role === "ADMIN_DEPARTEMEN" || me?.role === "ADMIN_DIVISI";
+  const isOrigin = me
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
+    : false;
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -168,7 +170,7 @@ export default function OverviewPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem)}
+        canEditDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

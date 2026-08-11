@@ -62,7 +62,10 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   if (!open || !item || !form) return null;
 
   const isEdit = mode === "edit";
-  const canSubmitDraft = !isEdit && item.status === "DRAFT" && (me.role === "ADMIN_DEPARTEMEN" || me.role === "ADMIN_DIVISI");
+  const canSubmitDraft =
+    !isEdit &&
+    item.status === "DRAFT" &&
+    ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role);
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);

@@ -12,7 +12,12 @@ public class PengirimanController : ApiControllerBase
 {
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
 
-    private static readonly RoleEnum[] OriginRoles = { RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.ADMIN_DIVISI };
+    // The 4 roles that can input data barang: Admin/Approval Departemen and Admin/Approval Divisi.
+    private static readonly RoleEnum[] OriginRoles =
+    {
+        RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
+        RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
+    };
 
     private static readonly RoleEnum[] TotalVisibleRoles =
     {
@@ -28,9 +33,23 @@ public class PengirimanController : ApiControllerBase
         _db = db;
     }
 
-    private static bool IsEditableByOrigin(Pengiriman item) =>
-        item.Status is StatusEnum.DRAFT or StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
-        || (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU && item.RejectTarget == RejectTargetEnum.ORIGIN);
+    // "Origin" for revision/reject-back purposes is always the Admin Departemen/Divisi of the
+    // item's own unit - never the literal creator, since Approval Departemen/Divisi can also
+    // create data directly but should never receive it back (Admin GA reject dan Approval
+    // GA/KPU reject-ke-origin selalu balik ke Admin, bukan ke Approval).
+    private static bool IsUnitAdmin(Pengiriman item, User user) =>
+        item.Departemen != null
+            ? user.Role == RoleEnum.ADMIN_DEPARTEMEN && user.Departemen == item.Departemen
+            : user.Role == RoleEnum.ADMIN_DIVISI && user.Divisi == item.Divisi;
+
+    private static bool IsEditableByOrigin(Pengiriman item, User currentUser)
+    {
+        if (item.Status == StatusEnum.DRAFT) return item.CreatedBy == currentUser.Id;
+        if (item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA) return IsUnitAdmin(item, currentUser);
+        if (item.Status is StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU)
+            return item.RejectTarget == RejectTargetEnum.ORIGIN && IsUnitAdmin(item, currentUser);
+        return false;
+    }
 
     private static bool IsL1Actionable(Pengiriman item) => item.Status == StatusEnum.SUBMITTED;
 
@@ -71,17 +90,18 @@ public class PengirimanController : ApiControllerBase
         string? noResi,
         string? bulan)
     {
-        if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI)
+        // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
+        // barang unit mereka (siapapun yang membuatnya), kecuali draft orang lain yang belum
+        // pernah di-submit (masih privat milik pembuatnya).
+        if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
-            query = query.Where(p => p.CreatedBy == currentUser.Id);
+            query = query.Where(p => p.Departemen == currentUser.Departemen
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
         }
-        else if (currentUser.Role == RoleEnum.APPROVAL_DEPARTEMEN)
+        else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
-            query = query.Where(p => p.Departemen == currentUser.Departemen && (p.Status != StatusEnum.DRAFT || p.RejectReason != null));
-        }
-        else if (currentUser.Role == RoleEnum.APPROVAL_DIVISI)
-        {
-            query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null && (p.Status != StatusEnum.DRAFT || p.RejectReason != null));
+            query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
         }
         else
         {
@@ -180,31 +200,31 @@ public class PengirimanController : ApiControllerBase
         return StatusCode(201, PengirimanOut.From(item));
     }
 
-    private async Task<(Pengiriman? item, IActionResult? error)> GetOwnedEditableAsync(int itemId, User currentUser)
-    {
-        var item = await _db.Pengiriman.FindAsync(itemId);
-        if (item == null) return (null, NotFound(new { detail = "Data tidak ditemukan" }));
-        if (item.CreatedBy != currentUser.Id) return (null, StatusCode(403, new { detail = "Bukan data milik Anda" }));
-        if (!IsEditableByOrigin(item))
-            return (null, StatusCode(403, new { detail = "Data sudah diproses dan tidak dapat diubah" }));
-        return (item, null);
-    }
-
     [HttpPut("{itemId:int}")]
     public async Task<IActionResult> Update(int itemId, [FromBody] PengirimanCreate payload)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var (item, error) = await GetOwnedEditableAsync(itemId, user!);
-        if (error != null) return error;
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsEditableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        var wasRejected = item!.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
+        // A rejected-to-origin item is revised and resubmitted in one step: it always goes back
+        // into SUBMITTED (needs Approval Departemen/Divisi sign-off again), because only Admin
+        // Departemen/Divisi is ever allowed to touch a rejected item (see IsUnitAdmin), and an
+        // Admin's own submissions always go through Approval first.
+        var wasRejected = item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
+            or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
         ApplyCreatePayload(item, payload);
         if (wasRejected)
         {
-            item.Status = StatusEnum.DRAFT;
+            item.Status = StatusEnum.SUBMITTED;
+            item.RejectReason = null;
             item.RejectTarget = null;
+            item.ApprovedByL1 = null;
+            item.ApprovedL1At = null;
             AddLog(item, "REVISED", user!);
         }
         await _db.SaveChangesAsync();
@@ -217,10 +237,12 @@ public class PengirimanController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var (item, error) = await GetOwnedEditableAsync(itemId, user!);
-        if (error != null) return error;
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsEditableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
-        _db.Pengiriman.Remove(item!);
+        _db.Pengiriman.Remove(item);
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -250,7 +272,11 @@ public class PengirimanController : ApiControllerBase
         if (item.CreatedBy != user!.Id) return StatusCode(403, new { detail = "Bukan data milik Anda" });
         if (item.Status != StatusEnum.DRAFT) return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
 
-        item.Status = StatusEnum.SUBMITTED;
+        // Admin Departemen/Divisi submit -> needs Approval Departemen/Divisi (L1) sign-off.
+        // Approval Departemen/Divisi submit -> mereka sendiri approver-nya, jadi langsung
+        // masuk antrian Admin GA tanpa lewat L1.
+        var skipL1 = user.Role is RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI;
+        item.Status = skipL1 ? StatusEnum.APPROVED_L1 : StatusEnum.SUBMITTED;
         item.RejectReason = null;
         item.RejectTarget = null;
         AddLog(item, "SUBMITTED", user);
@@ -297,7 +323,10 @@ public class PengirimanController : ApiControllerBase
         if (TotalVisibleRoles.Contains(user!.Role))
         {
             var sumQuery = _db.Pengiriman.AsQueryable();
-            if (user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI) sumQuery = sumQuery.Where(p => p.CreatedBy == user.Id);
+            if (user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
+                sumQuery = sumQuery.Where(p => p.Departemen == user.Departemen);
+            else if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+                sumQuery = sumQuery.Where(p => p.Divisi == user.Divisi && p.Departemen == null);
             sumQuery = ApplyBulanFilter(sumQuery, bulan);
             totalBulanIni = await sumQuery.SumAsync(p => p.Total ?? 0);
         }
@@ -319,15 +348,15 @@ public class PengirimanController : ApiControllerBase
         if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
             return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
 
-        var item = await _db.Pengiriman.Include(p => p.Pembuat).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.Pengiriman.FindAsync(itemId);
         if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
 
-        var ok = item.Pembuat.Role switch
-        {
-            RoleEnum.ADMIN_DEPARTEMEN => user.Role == RoleEnum.APPROVAL_DEPARTEMEN && user.Departemen == item.Pembuat.Departemen,
-            RoleEnum.ADMIN_DIVISI => user.Role == RoleEnum.APPROVAL_DIVISI && user.Divisi == item.Pembuat.Divisi,
-            _ => false,
-        };
+        // Routed by the item's own unit (not by who created it), so it works the same whether
+        // the item was originally created by Admin (normal path) or is an Admin's revision of
+        // something an Approval account created and later got kicked back.
+        var ok = item.Departemen != null
+            ? user.Role == RoleEnum.APPROVAL_DEPARTEMEN && user.Departemen == item.Departemen
+            : user.Role == RoleEnum.APPROVAL_DIVISI && user.Divisi == item.Divisi;
         if (!ok) return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
         return (user, item, null);
     }
@@ -398,6 +427,8 @@ public class PengirimanController : ApiControllerBase
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
+        // Admin GA reject selalu balik ke Admin Departemen/Divisi (origin), tidak pernah ke
+        // Approval Departemen/Divisi walaupun data itu tadinya dibuat langsung oleh Approval.
         item.Status = StatusEnum.REJECTED_GA;
         item.RejectReason = payload.Reason;
         item.RejectTarget = null;
@@ -504,8 +535,15 @@ public class PengirimanController : ApiControllerBase
             .Include(p => p.Logs).ThenInclude(l => l.Aktor)
             .FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (user!.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.ADMIN_DIVISI && item.CreatedBy != user.Id)
-            return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        if (user!.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            var sameUnit = item.Departemen != null
+                ? user.Departemen == item.Departemen
+                : user.Divisi == item.Divisi && user.Departemen == null;
+            var visible = item.Status == StatusEnum.DRAFT ? item.CreatedBy == user.Id : sameUnit;
+            if (!visible) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        }
 
         var result = item.Logs
             .OrderBy(l => l.CreatedAt)

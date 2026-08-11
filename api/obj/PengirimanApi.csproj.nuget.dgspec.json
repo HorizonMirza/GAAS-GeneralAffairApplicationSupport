@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\purba\\Downloads\\PGSOLApp\\api\\PengirimanApi.csproj": {}
+    "C:\\Users\\purba\\Downloads\\GAAS-Git\\api\\PengirimanApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\purba\\Downloads\\PGSOLApp\\api\\PengirimanApi.csproj": {
+    "C:\\Users\\purba\\Downloads\\GAAS-Git\\api\\PengirimanApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\purba\\Downloads\\PGSOLApp\\api\\PengirimanApi.csproj",
+        "projectUniqueName": "C:\\Users\\purba\\Downloads\\GAAS-Git\\api\\PengirimanApi.csproj",
         "projectName": "PengirimanApi",
-        "projectPath": "C:\\Users\\purba\\Downloads\\PGSOLApp\\api\\PengirimanApi.csproj",
+        "projectPath": "C:\\Users\\purba\\Downloads\\GAAS-Git\\api\\PengirimanApi.csproj",
         "packagesPath": "C:\\Users\\purba\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\purba\\Downloads\\PGSOLApp\\api\\obj\\",
+        "outputPath": "C:\\Users\\purba\\Downloads\\GAAS-Git\\api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\purba\\AppData\\Roaming\\NuGet\\NuGet.Config"

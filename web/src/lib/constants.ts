@@ -71,9 +71,22 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
 
 export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
 
-export function isEditableByOrigin(item: Pengiriman): boolean {
-  if (item.status === "DRAFT" || item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return true;
-  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") return item.rejectTarget === "ORIGIN";
+// "Origin" untuk revisi/reject-balik selalu Admin Departemen/Divisi dari unit item ini -
+// bukan pembuat aslinya, karena Approval Departemen/Divisi juga bisa input data langsung
+// tapi tidak pernah menerima data itu balik (reject Admin GA / Approval GA-KPU-ke-origin
+// selalu ke Admin, bukan ke Approval).
+function isUnitAdmin(item: Pengiriman, me: Me): boolean {
+  return item.departemen != null
+    ? me.role === "ADMIN_DEPARTEMEN" && me.departemen === item.departemen
+    : me.role === "ADMIN_DIVISI" && me.divisi === item.divisi;
+}
+
+export function isEditableByOrigin(item: Pengiriman, me: Me): boolean {
+  if (item.status === "DRAFT") return item.createdBy === me.id;
+  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return isUnitAdmin(item, me);
+  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
+    return item.rejectTarget === "ORIGIN" && isUnitAdmin(item, me);
+  }
   return false;
 }
 

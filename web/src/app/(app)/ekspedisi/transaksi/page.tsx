@@ -102,7 +102,9 @@ export default function TransaksiPage() {
     loadTable();
   }, [loadTable]);
 
-  const isOrigin = me?.role === "ADMIN_DEPARTEMEN" || me?.role === "ADMIN_DIVISI";
+  const isOrigin = me
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
+    : false;
   const canSeeInvoice = me ? ["ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) : false;
 
   const loadInvoices = useCallback(async () => {
@@ -448,7 +450,7 @@ export default function TransaksiPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem)}
+        canEditDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
