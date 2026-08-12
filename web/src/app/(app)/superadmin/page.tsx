@@ -314,17 +314,12 @@ export default function SuperAdminPage() {
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <div className="invoice-filter-control">
-              <input
-                type="month"
-                id="invoice-filter-bulan"
-                value={invoiceFilterBulan}
-                onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
-              />
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}>
-                Semua Invoice
-              </button>
-            </div>
+            <input
+              type="month"
+              id="invoice-filter-bulan"
+              value={invoiceFilterBulan}
+              onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
+            />
           </div>
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-status">Filter Status</label>
@@ -338,6 +333,17 @@ export default function SuperAdminPage() {
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
             </select>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <span className="field-label-spacer">Semua Invoice</span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto" }}
+              onClick={() => { setInvoiceFilterBulan(""); setInvoiceFilterStatus(""); setInvoicePage(1); }}
+            >
+              Semua Invoice
+            </button>
           </div>
         </div>
 

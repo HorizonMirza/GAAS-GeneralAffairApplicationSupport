@@ -1296,10 +1296,7 @@ body.auth-ready .app-shell {
   margin-bottom: 18px;
 }
 
-.invoice-filter-field { flex: 0 0 auto; min-width: 220px; }
-
-.invoice-filter-control { display: flex; align-items: center; gap: 8px; }
-.invoice-filter-control input[type="month"] { width: auto; }
+.invoice-filter-field { flex: 0 0 auto; min-width: 190px; }
 
 .invoice-input-btn { margin-left: auto; }
 
