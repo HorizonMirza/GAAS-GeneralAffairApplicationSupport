@@ -25,7 +25,12 @@ export function useRowMenu<T extends { id: number }>(items: T[]) {
       return;
     }
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setPosition({ top: rect.bottom + 6, left: Math.min(rect.left, window.innerWidth - 180) });
+    const estimatedMenuHeight = 280;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow < estimatedMenuHeight
+      ? Math.max(8, rect.top - estimatedMenuHeight - 6)
+      : rect.bottom + 6;
+    setPosition({ top, left: Math.min(rect.left, window.innerWidth - 180) });
     setMenuItemId(id);
   }
 
