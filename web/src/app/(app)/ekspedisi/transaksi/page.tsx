@@ -60,6 +60,9 @@ export default function TransaksiPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceError, setInvoiceError] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceFilterStatus, setInvoiceFilterStatus] = useState("");
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
   const [invoiceAction, setInvoiceAction] = useState<{ id: number; type: "approve" | "reject" } | null>(null);
 
@@ -170,6 +173,19 @@ export default function TransaksiPage() {
   const pageEnd = Math.min(totalPages, pageStart + 4);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
+
+  const filteredInvoices = (invoices ?? []).filter(
+    (inv) =>
+      (!invoiceFilterBulan || inv.bulan === invoiceFilterBulan) &&
+      (!invoiceFilterStatus || inv.status === invoiceFilterStatus)
+  );
+  const invoiceTotalPages = Math.max(1, Math.ceil(filteredInvoices.length / invoiceLimit));
+  const invoicePageClamped = Math.min(invoicePage, invoiceTotalPages);
+  const invoicePageStart = Math.max(1, invoicePageClamped - 2);
+  const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 4);
+  const invoicePageButtons: number[] = [];
+  for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
+  const pagedInvoices = filteredInvoices.slice((invoicePageClamped - 1) * invoiceLimit, invoicePageClamped * invoiceLimit);
 
   const showOrgFilters = [
     "ADMIN_DEPARTEMEN",
@@ -372,12 +388,25 @@ export default function TransaksiPage() {
                   type="month"
                   id="invoice-filter-bulan"
                   value={invoiceFilterBulan}
-                  onChange={(e) => setInvoiceFilterBulan(e.target.value)}
+                  onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
                 />
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setInvoiceFilterBulan("")}>
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}>
                   Semua Bulan
                 </button>
               </div>
+            </div>
+            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+              <label htmlFor="invoice-filter-status">Filter Status</label>
+              <select
+                id="invoice-filter-status"
+                value={invoiceFilterStatus}
+                onChange={(e) => { setInvoiceFilterStatus(e.target.value); setInvoicePage(1); }}
+              >
+                <option value="">Semua Status</option>
+                <option value="PENDING">On Approval</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
             </div>
             {me.role === "KPU" && (
               <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
@@ -393,12 +422,10 @@ export default function TransaksiPage() {
               <p className="text-secondary">Memuat data invoice...</p>
             ) : invoices.length === 0 ? (
               <p className="text-secondary">Belum ada invoice.</p>
-            ) : invoices.filter((inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan).length === 0 ? (
-              <p className="text-secondary">Tidak ada invoice untuk bulan ini.</p>
+            ) : filteredInvoices.length === 0 ? (
+              <p className="text-secondary">Tidak ada invoice untuk filter ini.</p>
             ) : (
-              invoices
-                .filter((inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan)
-                .map((inv) => {
+              pagedInvoices.map((inv) => {
                 const canReview = me.role === "ADMIN_GA" && inv.status === "PENDING";
                 return (
                   <div className="invoice-row" key={inv.id}>
@@ -429,6 +456,32 @@ export default function TransaksiPage() {
               })
             )}
           </div>
+
+          {filteredInvoices.length > 0 && (
+            <div className="pagination">
+              <div className="pagination-left">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="invoice-limit">Tampilkan</label>
+                  <select id="invoice-limit" value={invoiceLimit} onChange={(e) => { setInvoiceLimit(Number(e.target.value)); setInvoicePage(1); }}>
+                    <option value={5}>5 invoice</option>
+                    <option value={10}>10 invoice</option>
+                    <option value={20}>20 invoice</option>
+                    <option value={50}>50 invoice</option>
+                  </select>
+                </div>
+              </div>
+              <div className="pagination-right">
+                <span className="text-secondary">Total {filteredInvoices.length} invoice · Halaman {invoicePageClamped} dari {invoiceTotalPages}</span>
+                <div className="pages">
+                  <button className="page-btn" disabled={invoicePageClamped <= 1} onClick={() => setInvoicePage(invoicePageClamped - 1)}>‹</button>
+                  {invoicePageButtons.map((p) => (
+                    <button key={p} className={`page-btn ${p === invoicePageClamped ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
+                  ))}
+                  <button className="page-btn" disabled={invoicePageClamped >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePageClamped + 1)}>›</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
