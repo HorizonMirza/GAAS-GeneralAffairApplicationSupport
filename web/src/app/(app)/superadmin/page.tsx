@@ -8,7 +8,11 @@ import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { Invoice, Pengiriman, Status } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
+import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
+import InvoiceDetailModal from "@/components/InvoiceDetailModal";
+import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -44,7 +48,10 @@ export default function SuperAdminPage() {
   const [invoiceFilterStatus, setInvoiceFilterStatus] = useState("");
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
+  const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
+  const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
 
+  const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
@@ -372,9 +379,9 @@ export default function SuperAdminPage() {
                 </div>
                 <div className="invoice-row-actions">
                   <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
-                  <a className="btn btn-secondary btn-sm" style={{ width: "auto" }} href={api.invoiceFileUrl(inv.id)} target="_blank" rel="noopener noreferrer">Lihat PDF</a>
-                  <a className="btn btn-secondary btn-sm" style={{ width: "auto" }} href={api.invoiceDownloadUrl(inv.id)}>Download PDF</a>
-                  <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteInvoice(inv)}>Delete</button>
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                  </button>
                 </div>
               </div>
             ))
@@ -407,6 +414,46 @@ export default function SuperAdminPage() {
           </div>
         )}
       </div>
+
+      <InvoiceRowMenuDropdown
+        position={invoiceRowMenu.position}
+        showUpdates={false}
+        showDelete={!!invoiceRowMenu.menuItem}
+        pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
+        pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
+        onDetail={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceDetail(item);
+        }}
+        onUpdates={() => {}}
+        onRiwayat={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceHistoryId(item.id);
+        }}
+        onDelete={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) handleDeleteInvoice(item);
+        }}
+        onLinkClick={() => invoiceRowMenu.close()}
+      />
+
+      <InvoiceDetailModal
+        open={!!invoiceDetail}
+        item={invoiceDetail}
+        me={me}
+        onClose={() => setInvoiceDetail(null)}
+        onRequestAction={() => {}}
+        onSubmitted={() => {}}
+      />
+
+      <InvoiceHistoryModal
+        open={invoiceHistoryId != null}
+        invoiceId={invoiceHistoryId}
+        onClose={() => setInvoiceHistoryId(null)}
+      />
     </>
   );
 }

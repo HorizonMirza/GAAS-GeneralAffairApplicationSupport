@@ -181,12 +181,20 @@ public class InvoiceController : ApiControllerBase
     [HttpDelete("{invoiceId}")]
     public async Task<IActionResult> DeleteInvoice(int invoiceId)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN, RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.Invoices.FindAsync(invoiceId);
         if (item == null)
             return NotFound(new { detail = "Invoice tidak ditemukan" });
+
+        if (user!.Role == RoleEnum.KPU)
+        {
+            if (item.UploadedBy != user.Id)
+                return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
+            if (item.Status != InvoiceStatusEnum.DRAFT && item.Status != InvoiceStatusEnum.REJECTED)
+                return StatusCode(403, new { detail = "Invoice hanya bisa dihapus saat status Draft atau Rejected" });
+        }
 
         var path = Path.Combine(_uploadDir, item.FilePath);
         if (System.IO.File.Exists(path))

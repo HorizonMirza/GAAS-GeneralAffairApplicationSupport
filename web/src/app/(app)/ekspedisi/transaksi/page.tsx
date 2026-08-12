@@ -176,6 +176,18 @@ export default function TransaksiPage() {
     });
   }
 
+  function handleDeleteInvoice(inv: Invoice) {
+    confirm("Yakin ingin menghapus invoice ini?", async () => {
+      try {
+        await api.deleteInvoice(inv.id);
+        showToast("Invoice berhasil dihapus");
+        loadInvoices();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   const pageStart = Math.max(1, filters.page - 2);
   const pageEnd = Math.min(totalPages, pageStart + 4);
@@ -494,6 +506,7 @@ export default function TransaksiPage() {
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
         showUpdates={!!invoiceRowMenu.menuItem && me.role === "KPU" && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
+        showDelete={!!invoiceRowMenu.menuItem && me.role === "KPU" && (invoiceRowMenu.menuItem.status === "DRAFT" || invoiceRowMenu.menuItem.status === "REJECTED")}
         pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
         pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
         onDetail={() => {
@@ -510,6 +523,11 @@ export default function TransaksiPage() {
           const item = invoiceRowMenu.menuItem;
           invoiceRowMenu.close();
           if (item) setInvoiceHistoryId(item.id);
+        }}
+        onDelete={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) handleDeleteInvoice(item);
         }}
         onLinkClick={() => invoiceRowMenu.close()}
       />
