@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
-import { formatCurrency, formatDate, invoiceBulanLabel, truncateText } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { Invoice, Pengiriman, Status } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import StatusBadge from "@/components/StatusBadge";
@@ -322,7 +322,7 @@ export default function SuperAdminPage() {
                 onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
               />
               <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}>
-                Semua Bulan
+                Semua Invoice
               </button>
             </div>
           </div>
@@ -359,8 +359,8 @@ export default function SuperAdminPage() {
                   </div>
                   <div className="invoice-row-info">
                     <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
-                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDate(inv.uploadedAt)}</div>
-                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDate(inv.reviewedAt)}</div>}
+                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
                     {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
