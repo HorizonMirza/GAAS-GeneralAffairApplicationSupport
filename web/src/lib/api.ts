@@ -180,6 +180,7 @@ export const api = {
     }
     return response.json();
   },
+  submitInvoice: (id: number) => apiRequest(`/invoice/${id}/submit`, { method: "PATCH" }),
   approveInvoice: (id: number, catatan: string | null) =>
     apiRequest(`/invoice/${id}/approve`, { method: "PATCH", body: { catatan } }),
   rejectInvoice: (id: number, catatan: string | null) =>

@@ -21,6 +21,8 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
 
   if (!open || !item) return null;
 
+  const isDraft = item.status === "DRAFT";
+
   function handleClose() {
     setFile(null);
     setError("");
@@ -37,7 +39,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     setBusy(true);
     try {
       await api.updateInvoice(item.id, file);
-      showToast("Invoice berhasil dikirim ulang ke Admin General Affair");
+      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Invoice berhasil dikirim ulang ke Admin General Affair");
       setFile(null);
       onDone();
     } catch (err) {
@@ -55,7 +57,11 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <p className="text-secondary" style={{ marginTop: -8, marginBottom: 16 }}>
-          Kirim ulang file invoice untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> setelah direvisi.
+          {isDraft ? (
+            <>Ubah file invoice draft untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> sebelum dikirim.</>
+          ) : (
+            <>Kirim ulang file invoice untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> setelah direvisi.</>
+          )}
         </p>
         <form onSubmit={handleSubmit}>
           <div className="field">
@@ -82,7 +88,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={handleClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Kirim Ulang</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>{isDraft ? "Simpan" : "Kirim Ulang"}</button>
           </div>
         </form>
       </div>

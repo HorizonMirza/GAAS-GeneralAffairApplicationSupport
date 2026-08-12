@@ -20,6 +20,7 @@ public enum AsuransiEnum
 
 public enum InvoiceStatusEnum
 {
+    DRAFT,
     PENDING,
     APPROVED,
     REJECTED,

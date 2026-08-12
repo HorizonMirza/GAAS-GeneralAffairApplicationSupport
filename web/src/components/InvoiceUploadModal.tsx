@@ -36,7 +36,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
     setBusy(true);
     try {
       await api.uploadInvoice(bulan, file);
-      showToast("Invoice berhasil dikirim ke Admin General Affair");
+      showToast("Invoice berhasil disimpan sebagai draft");
       setBulan("");
       setFile(null);
       onDone();
@@ -89,7 +89,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={handleClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Kirim Invoice</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Simpan</button>
           </div>
         </form>
       </div>

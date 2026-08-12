@@ -95,19 +95,23 @@ export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
 export const INVOICE_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Draft",
   PENDING: "On-Approval: Admin General Affair",
   APPROVED: "Approved",
   REJECTED: "Rejected: Admin General Affair",
 };
 
 export const INVOICE_STATUS_CLASS: Record<string, string> = {
+  DRAFT: "badge-draft",
   PENDING: "badge-pending",
   APPROVED: "badge-approved",
   REJECTED: "badge-rejected",
 };
 
 export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
-  UPLOADED: { label: "Invoice Diunggah", type: "neutral" },
+  UPLOADED: { label: "Invoice Disimpan sebagai Draft", type: "neutral" },
+  SUBMITTED: { label: "Invoice Dikirim untuk Approval", type: "neutral" },
+  DRAFT_UPDATED: { label: "Draft Invoice Diperbarui", type: "neutral" },
   REVISED: { label: "Invoice Direvisi & Dikirim Ulang", type: "neutral" },
   APPROVED: { label: "Disetujui Admin General Affair", type: "approve" },
   REJECTED: { label: "Ditolak Admin General Affair", type: "reject" },

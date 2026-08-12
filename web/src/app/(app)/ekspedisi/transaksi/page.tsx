@@ -493,7 +493,7 @@ export default function TransaksiPage() {
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
-        showUpdates={!!invoiceRowMenu.menuItem && me.role === "KPU" && invoiceRowMenu.menuItem.status === "REJECTED"}
+        showUpdates={!!invoiceRowMenu.menuItem && me.role === "KPU" && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
         pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
         pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
         onDetail={() => {
@@ -580,6 +580,10 @@ export default function TransaksiPage() {
         me={me}
         onClose={() => setInvoiceDetail(null)}
         onRequestAction={(id, type) => setInvoiceAction({ id, type })}
+        onSubmitted={() => {
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
       />
 
       <InvoiceActionModal

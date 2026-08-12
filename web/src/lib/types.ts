@@ -24,7 +24,7 @@ export type RejectTarget = "GA" | "ORIGIN";
 
 export type Asuransi = "Ya" | "Tidak";
 
-export type InvoiceStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type InvoiceStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
 
 export interface Me {
   id: number;
