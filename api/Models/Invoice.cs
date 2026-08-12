@@ -17,4 +17,6 @@ public class Invoice
 
     public User Pengunggah { get; set; } = null!;
     public User? Peninjau { get; set; }
+
+    public ICollection<InvoiceLog> Logs { get; set; } = new List<InvoiceLog>();
 }

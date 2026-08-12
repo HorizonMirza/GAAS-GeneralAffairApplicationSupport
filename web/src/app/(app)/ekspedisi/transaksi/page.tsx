@@ -21,6 +21,10 @@ import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
 import InvoiceActionModal from "@/components/InvoiceActionModal";
 import InvoiceUploadModal from "@/components/InvoiceUploadModal";
+import InvoiceUpdateModal from "@/components/InvoiceUpdateModal";
+import InvoiceDetailModal from "@/components/InvoiceDetailModal";
+import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
+import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -65,8 +69,12 @@ export default function TransaksiPage() {
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
   const [invoiceAction, setInvoiceAction] = useState<{ id: number; type: "approve" | "reject" } | null>(null);
+  const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
+  const [invoiceUpdateTarget, setInvoiceUpdateTarget] = useState<Invoice | null>(null);
+  const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
+  const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
@@ -431,35 +439,27 @@ export default function TransaksiPage() {
             ) : filteredInvoices.length === 0 ? (
               <p className="text-secondary">Tidak ada invoice untuk filter ini.</p>
             ) : (
-              pagedInvoices.map((inv) => {
-                const canReview = me.role === "ADMIN_GA" && inv.status === "PENDING";
-                return (
-                  <div className="invoice-row" key={inv.id}>
-                    <div className="invoice-row-main">
-                      <div className="invoice-file-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                      </div>
-                      <div className="invoice-row-info">
-                        <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
-                        <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
-                        {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
-                        {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
-                      </div>
+              pagedInvoices.map((inv) => (
+                <div className="invoice-row" key={inv.id}>
+                  <div className="invoice-row-main">
+                    <div className="invoice-file-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     </div>
-                    <div className="invoice-row-actions">
-                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
-                      <a className="btn btn-secondary btn-sm" style={{ width: "auto" }} href={api.invoiceFileUrl(inv.id)} target="_blank" rel="noopener noreferrer">Lihat PDF</a>
-                      <a className="btn btn-secondary btn-sm" style={{ width: "auto" }} href={api.invoiceDownloadUrl(inv.id)}>Download PDF</a>
-                      {canReview && (
-                        <>
-                          <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => setInvoiceAction({ id: inv.id, type: "reject" })}>Reject</button>
-                          <button type="button" className="btn btn-approve btn-sm" style={{ width: "auto" }} onClick={() => setInvoiceAction({ id: inv.id, type: "approve" })}>Approve</button>
-                        </>
-                      )}
+                    <div className="invoice-row-info">
+                      <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
+                      <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                      {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                      {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                     </div>
                   </div>
-                );
-              })
+                  <div className="invoice-row-actions">
+                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                    <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
 
@@ -490,6 +490,29 @@ export default function TransaksiPage() {
           )}
         </div>
       )}
+
+      <InvoiceRowMenuDropdown
+        position={invoiceRowMenu.position}
+        showUpdates={!!invoiceRowMenu.menuItem && me.role === "KPU" && invoiceRowMenu.menuItem.status === "REJECTED"}
+        pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
+        pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
+        onDetail={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceDetail(item);
+        }}
+        onUpdates={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceUpdateTarget(item);
+        }}
+        onRiwayat={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceHistoryId(item.id);
+        }}
+        onLinkClick={() => invoiceRowMenu.close()}
+      />
 
       <RowMenuDropdown
         position={rowMenu.position}
@@ -542,17 +565,6 @@ export default function TransaksiPage() {
 
       <StatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
 
-      <InvoiceActionModal
-        open={!!invoiceAction}
-        invoiceId={invoiceAction?.id ?? null}
-        type={invoiceAction?.type ?? null}
-        onClose={() => setInvoiceAction(null)}
-        onDone={() => {
-          setInvoiceAction(null);
-          loadInvoices();
-        }}
-      />
-
       <InvoiceUploadModal
         open={invoiceUploadOpen}
         onClose={() => setInvoiceUploadOpen(false)}
@@ -560,6 +572,42 @@ export default function TransaksiPage() {
           setInvoiceUploadOpen(false);
           loadInvoices();
         }}
+      />
+
+      <InvoiceDetailModal
+        open={!!invoiceDetail}
+        item={invoiceDetail}
+        me={me}
+        onClose={() => setInvoiceDetail(null)}
+        onRequestAction={(id, type) => setInvoiceAction({ id, type })}
+      />
+
+      <InvoiceActionModal
+        open={!!invoiceAction}
+        invoiceId={invoiceAction?.id ?? null}
+        type={invoiceAction?.type ?? null}
+        onClose={() => setInvoiceAction(null)}
+        onDone={() => {
+          setInvoiceAction(null);
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
+      />
+
+      <InvoiceUpdateModal
+        open={!!invoiceUpdateTarget}
+        item={invoiceUpdateTarget}
+        onClose={() => setInvoiceUpdateTarget(null)}
+        onDone={() => {
+          setInvoiceUpdateTarget(null);
+          loadInvoices();
+        }}
+      />
+
+      <InvoiceHistoryModal
+        open={invoiceHistoryId != null}
+        invoiceId={invoiceHistoryId}
+        onClose={() => setInvoiceHistoryId(null)}
       />
     </>
   );

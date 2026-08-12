@@ -105,3 +105,10 @@ export const INVOICE_STATUS_CLASS: Record<string, string> = {
   APPROVED: "badge-approved",
   REJECTED: "badge-rejected",
 };
+
+export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
+  UPLOADED: { label: "Invoice Diunggah", type: "neutral" },
+  REVISED: { label: "Invoice Direvisi & Dikirim Ulang", type: "neutral" },
+  APPROVED: { label: "Disetujui Admin General Affair", type: "approve" },
+  REJECTED: { label: "Ditolak Admin General Affair", type: "reject" },
+};

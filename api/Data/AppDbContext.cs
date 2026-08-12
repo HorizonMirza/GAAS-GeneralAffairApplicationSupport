@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Pengiriman> Pengiriman => Set<Pengiriman>();
     public DbSet<PengirimanLog> PengirimanLogs => Set<PengirimanLog>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLog> InvoiceLogs => Set<InvoiceLog>();
     public DbSet<DivisiCounter> DivisiCounters => Set<DivisiCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -32,6 +33,10 @@ public class AppDbContext : DbContext
         foreach (var entry in ChangeTracker.Entries<Invoice>())
         {
             if (entry.State == EntityState.Added && entry.Entity.UploadedAt == default) entry.Entity.UploadedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<InvoiceLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -163,6 +168,30 @@ public class AppDbContext : DbContext
             e.HasOne(i => i.Peninjau)
                 .WithMany()
                 .HasForeignKey(i => i.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<InvoiceLog>(e =>
+        {
+            e.ToTable("invoice_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.InvoiceId).HasColumnName("invoice_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.FilePath).HasColumnName("file_path").HasMaxLength(500);
+            e.Property(l => l.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255);
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.Invoice)
+                .WithMany(i => i.Logs)
+                .HasForeignKey(l => l.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

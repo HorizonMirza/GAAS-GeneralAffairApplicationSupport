@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Pengiriman } from "./types";
 
-export function useRowMenu(items: Pengiriman[]) {
+export function useRowMenu<T extends { id: number }>(items: T[]) {
   const [menuItemId, setMenuItemId] = useState<number | null>(null);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 

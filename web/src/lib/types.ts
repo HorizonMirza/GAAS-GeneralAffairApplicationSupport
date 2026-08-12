@@ -134,3 +134,13 @@ export interface Invoice {
   uploadedAt: string;
   reviewedAt: string | null;
 }
+
+export interface InvoiceLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  originalFilename: string | null;
+  createdAt: string;
+}

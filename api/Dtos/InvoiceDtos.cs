@@ -4,6 +4,16 @@ namespace PengirimanApi.Dtos;
 
 public record InvoiceReviewRequest(string? Catatan);
 
+public record InvoiceLogOut(
+    int Id,
+    string Action,
+    string? ActorNama,
+    RoleEnum? ActorRole,
+    string? Reason,
+    string? OriginalFilename,
+    DateTime CreatedAt
+);
+
 public class InvoiceOut
 {
     public int Id { get; set; }

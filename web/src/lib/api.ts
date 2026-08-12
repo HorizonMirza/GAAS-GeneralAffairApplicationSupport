@@ -1,6 +1,7 @@
 import type {
   ApproveKpuPayload,
   Invoice,
+  InvoiceLog,
   Me,
   OrgStructure,
   PengirimanCreatePayload,
@@ -159,6 +160,26 @@ export const api = {
     }
     return response.json();
   },
+  updateInvoice: async (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/invoice/${id}`, {
+      method: "PATCH",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengirim ulang invoice";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json();
+  },
   approveInvoice: (id: number, catatan: string | null) =>
     apiRequest(`/invoice/${id}/approve`, { method: "PATCH", body: { catatan } }),
   rejectInvoice: (id: number, catatan: string | null) =>
@@ -166,6 +187,9 @@ export const api = {
   deleteInvoice: (id: number) => apiRequest(`/invoice/${id}`, { method: "DELETE" }),
   invoiceFileUrl: (id: number) => `${API_BASE}/invoice/${id}/file`,
   invoiceDownloadUrl: (id: number) => `${API_BASE}/invoice/${id}/file?download=true`,
+  getInvoiceLogs: (id: number) => apiRequest<InvoiceLog[]>(`/invoice/${id}/logs`),
+  invoiceLogFileUrl: (id: number, logId: number) => `${API_BASE}/invoice/${id}/logs/${logId}/file`,
+  invoiceLogDownloadUrl: (id: number, logId: number) => `${API_BASE}/invoice/${id}/logs/${logId}/file?download=true`,
   exportUrl: (params: Record<string, string | undefined | null>) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
