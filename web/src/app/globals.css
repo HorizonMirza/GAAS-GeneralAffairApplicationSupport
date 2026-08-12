@@ -1296,10 +1296,46 @@ body.auth-ready .app-shell {
   margin-bottom: 18px;
 }
 
-.invoice-filter-field { flex: 0 0 auto; min-width: 220px; margin-left: auto; }
+.invoice-filter-field { flex: 0 0 auto; min-width: 220px; }
 
 .invoice-filter-control { display: flex; align-items: center; gap: 8px; }
 .invoice-filter-control input[type="month"] { width: auto; }
+
+.invoice-input-btn { margin-left: auto; }
+
+.file-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 170px;
+  border: 2px dashed var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 24px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.file-dropzone:hover { border-color: var(--blue-400); }
+
+.file-dropzone svg { opacity: 0.6; }
+
+.file-dropzone-text { font-size: 0.9rem; line-height: 1.5; }
+.file-dropzone-text strong { color: var(--text-primary); font-weight: 600; word-break: break-all; }
+.file-dropzone-link { color: var(--blue-400); font-weight: 600; text-decoration: underline; }
+
+.file-dropzone-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
 
 .invoice-list { display: flex; flex-direction: column; gap: 10px; }
 

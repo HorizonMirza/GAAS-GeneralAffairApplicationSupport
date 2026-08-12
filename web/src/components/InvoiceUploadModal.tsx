@@ -67,13 +67,24 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
           </div>
           <div className="field">
             <label htmlFor="invoice-upload-file">File Invoice (PDF)</label>
-            <input
-              type="file"
-              id="invoice-upload-file"
-              accept="application/pdf"
-              required
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
+            <div className="file-dropzone">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <div className="file-dropzone-text">
+                {file ? (
+                  <strong>{file.name}</strong>
+                ) : (
+                  <>Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span></>
+                )}
+              </div>
+              <input
+                type="file"
+                id="invoice-upload-file"
+                accept="application/pdf"
+                required
+                className="file-dropzone-input"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+            </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">

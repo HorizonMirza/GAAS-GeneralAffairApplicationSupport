@@ -365,11 +365,6 @@ export default function TransaksiPage() {
           </div>
 
           <div className="invoice-toolbar-slim">
-            {me.role === "KPU" && (
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
-                + Input Invoice
-              </button>
-            )}
             <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
               <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
               <div className="invoice-filter-control">
@@ -379,11 +374,16 @@ export default function TransaksiPage() {
                   value={invoiceFilterBulan}
                   onChange={(e) => setInvoiceFilterBulan(e.target.value)}
                 />
-                <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setInvoiceFilterBulan("")}>
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setInvoiceFilterBulan("")}>
                   Semua Bulan
                 </button>
               </div>
             </div>
+            {me.role === "KPU" && (
+              <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
+                + Input Invoice
+              </button>
+            )}
           </div>
 
           <div className="invoice-list">

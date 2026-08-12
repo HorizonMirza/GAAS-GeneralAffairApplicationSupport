@@ -40,6 +40,7 @@ export default function SuperAdminPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceError, setInvoiceError] = useState("");
+  const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
 
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -293,6 +294,24 @@ export default function SuperAdminPage() {
         <div className="card-header">
           <h3>History Invoice Pembiayaan</h3>
         </div>
+
+        <div className="invoice-toolbar-slim">
+          <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
+            <div className="invoice-filter-control">
+              <input
+                type="month"
+                id="invoice-filter-bulan"
+                value={invoiceFilterBulan}
+                onChange={(e) => setInvoiceFilterBulan(e.target.value)}
+              />
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setInvoiceFilterBulan("")}>
+                Semua Bulan
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="invoice-list">
           {invoiceError ? (
             <p className="text-secondary">{invoiceError}</p>
@@ -300,8 +319,12 @@ export default function SuperAdminPage() {
             <p className="text-secondary">Memuat data invoice...</p>
           ) : invoices.length === 0 ? (
             <p className="text-secondary">Belum ada invoice.</p>
+          ) : invoices.filter((inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan).length === 0 ? (
+            <p className="text-secondary">Tidak ada invoice untuk bulan ini.</p>
           ) : (
-            invoices.map((inv) => (
+            invoices
+              .filter((inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan)
+              .map((inv) => (
               <div className="invoice-row" key={inv.id}>
                 <div className="invoice-row-main">
                   <div className="invoice-file-icon">
