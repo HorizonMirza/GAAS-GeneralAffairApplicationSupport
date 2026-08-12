@@ -52,12 +52,12 @@ export default function InvoiceRowMenuDropdown({
       </a>
       <button type="button" className="row-menu-item" onClick={onRiwayat}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-        Riwayat
+        History
       </button>
       {showDelete && (
         <button type="button" className="row-menu-item row-menu-item-danger" onClick={onDelete}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          Hapus
+          Delete
         </button>
       )}
     </div>
