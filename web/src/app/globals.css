@@ -1288,17 +1288,30 @@ body.auth-ready .app-shell {
 .badge-rejected { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 
 /* ---------- Invoice Pembiayaan (Transaksi page) ---------- */
+.invoice-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-surface-alt);
+}
+
 .invoice-upload-row {
   display: flex;
   align-items: flex-end;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border-subtle);
+  flex: 1 1 auto;
 }
 
 .invoice-upload-row .field { margin-bottom: 0; }
+
+.invoice-filter-field { flex: 0 0 auto; min-width: 190px; }
 
 .invoice-list { display: flex; flex-direction: column; gap: 10px; }
 

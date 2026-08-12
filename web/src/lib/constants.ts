@@ -95,9 +95,9 @@ export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
 export const INVOICE_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Menunggu Review",
-  APPROVED: "Disetujui",
-  REJECTED: "Ditolak",
+  PENDING: "On-Approval: Admin General Affair",
+  APPROVED: "Approved",
+  REJECTED: "Rejected: Admin General Affair",
 };
 
 export const INVOICE_STATUS_CLASS: Record<string, string> = {

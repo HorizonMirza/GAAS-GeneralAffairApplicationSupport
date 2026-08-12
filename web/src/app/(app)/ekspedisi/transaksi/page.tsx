@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -118,6 +118,11 @@ export default function TransaksiPage() {
   useEffect(() => {
     if (canSeeInvoice) loadInvoices();
   }, [canSeeInvoice, loadInvoices]);
+
+  const invoiceMonths = useMemo(() => {
+    if (!invoices) return [];
+    return Array.from(new Set(invoices.map((inv) => inv.bulan))).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  }, [invoices]);
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
@@ -381,32 +386,38 @@ export default function TransaksiPage() {
         <div className="card">
           <div className="card-header">
             <h3>History Invoice Pembiayaan</h3>
-            <div className="field" style={{ marginBottom: 0 }}>
+          </div>
+
+          <div className="invoice-toolbar">
+            {me.role === "KPU" && (
+              <form className="invoice-upload-row" onSubmit={handleInvoiceUpload}>
+                <div className="field">
+                  <label htmlFor="invoice-bulan">Bulan Invoice</label>
+                  <input type="month" id="invoice-bulan" required value={invoiceBulan} onChange={(e) => setInvoiceBulan(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="invoice-file">File Invoice (PDF)</label>
+                  <input type="file" id="invoice-file" accept="application/pdf" required onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Kirim Invoice</button>
+                </div>
+              </form>
+            )}
+            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
               <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-              <input
-                type="month"
+              <select
                 id="invoice-filter-bulan"
                 value={invoiceFilterBulan}
                 onChange={(e) => setInvoiceFilterBulan(e.target.value)}
-              />
+              >
+                <option value="">Semua Bulan</option>
+                {invoiceMonths.map((m) => (
+                  <option key={m} value={m}>{invoiceBulanLabel(m)}</option>
+                ))}
+              </select>
             </div>
           </div>
-
-          {me.role === "KPU" && (
-            <form className="invoice-upload-row" onSubmit={handleInvoiceUpload}>
-              <div className="field">
-                <label htmlFor="invoice-bulan">Bulan Invoice</label>
-                <input type="month" id="invoice-bulan" required value={invoiceBulan} onChange={(e) => setInvoiceBulan(e.target.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="invoice-file">File Invoice (PDF)</label>
-                <input type="file" id="invoice-file" accept="application/pdf" required onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Kirim Invoice</button>
-              </div>
-            </form>
-          )}
           <div className="error-text">{invoiceUploadError}</div>
 
           <div className="invoice-list">
