@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -20,6 +20,7 @@ import PengirimanDetailModal from "@/components/PengirimanDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
 import InvoiceActionModal from "@/components/InvoiceActionModal";
+import InvoiceUploadModal from "@/components/InvoiceUploadModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -59,9 +60,7 @@ export default function TransaksiPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceError, setInvoiceError] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
-  const [invoiceBulan, setInvoiceBulan] = useState("");
-  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
-  const [invoiceUploadError, setInvoiceUploadError] = useState("");
+  const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
   const [invoiceAction, setInvoiceAction] = useState<{ id: number; type: "approve" | "reject" } | null>(null);
 
   const rowMenu = useRowMenu(items);
@@ -119,11 +118,6 @@ export default function TransaksiPage() {
     if (canSeeInvoice) loadInvoices();
   }, [canSeeInvoice, loadInvoices]);
 
-  const invoiceMonths = useMemo(() => {
-    if (!invoices) return [];
-    return Array.from(new Set(invoices.map((inv) => inv.bulan))).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-  }, [invoices]);
-
   if (!me || me.role === "SUPER_ADMIN") return null;
 
   function updateFilter(patch: Partial<FilterState>) {
@@ -169,24 +163,6 @@ export default function TransaksiPage() {
         showToast((err as Error).message, "error");
       }
     });
-  }
-
-  async function handleInvoiceUpload(e: React.FormEvent) {
-    e.preventDefault();
-    setInvoiceUploadError("");
-    if (!invoiceBulan || !invoiceFile) {
-      setInvoiceUploadError("Lengkapi bulan dan file invoice.");
-      return;
-    }
-    try {
-      await api.uploadInvoice(invoiceBulan, invoiceFile);
-      showToast("Invoice berhasil dikirim ke Admin General Affair");
-      setInvoiceBulan("");
-      setInvoiceFile(null);
-      loadInvoices();
-    } catch (err) {
-      setInvoiceUploadError((err as Error).message);
-    }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
@@ -388,37 +364,27 @@ export default function TransaksiPage() {
             <h3>History Invoice Pembiayaan</h3>
           </div>
 
-          <div className="invoice-toolbar">
+          <div className="invoice-toolbar-slim">
             {me.role === "KPU" && (
-              <form className="invoice-upload-row" onSubmit={handleInvoiceUpload}>
-                <div className="field">
-                  <label htmlFor="invoice-bulan">Bulan Invoice</label>
-                  <input type="month" id="invoice-bulan" required value={invoiceBulan} onChange={(e) => setInvoiceBulan(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label htmlFor="invoice-file">File Invoice (PDF)</label>
-                  <input type="file" id="invoice-file" accept="application/pdf" required onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
-                </div>
-                <div className="field" style={{ marginBottom: 0 }}>
-                  <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Kirim Invoice</button>
-                </div>
-              </form>
+              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
+                + Input Invoice
+              </button>
             )}
             <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
               <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-              <select
-                id="invoice-filter-bulan"
-                value={invoiceFilterBulan}
-                onChange={(e) => setInvoiceFilterBulan(e.target.value)}
-              >
-                <option value="">Semua Bulan</option>
-                {invoiceMonths.map((m) => (
-                  <option key={m} value={m}>{invoiceBulanLabel(m)}</option>
-                ))}
-              </select>
+              <div className="invoice-filter-control">
+                <input
+                  type="month"
+                  id="invoice-filter-bulan"
+                  value={invoiceFilterBulan}
+                  onChange={(e) => setInvoiceFilterBulan(e.target.value)}
+                />
+                <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setInvoiceFilterBulan("")}>
+                  Semua Bulan
+                </button>
+              </div>
             </div>
           </div>
-          <div className="error-text">{invoiceUploadError}</div>
 
           <div className="invoice-list">
             {invoiceError ? (
@@ -524,6 +490,15 @@ export default function TransaksiPage() {
         onClose={() => setInvoiceAction(null)}
         onDone={() => {
           setInvoiceAction(null);
+          loadInvoices();
+        }}
+      />
+
+      <InvoiceUploadModal
+        open={invoiceUploadOpen}
+        onClose={() => setInvoiceUploadOpen(false)}
+        onDone={() => {
+          setInvoiceUploadOpen(false);
           loadInvoices();
         }}
       />
