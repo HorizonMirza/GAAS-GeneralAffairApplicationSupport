@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { greetingName, isEditableByOrigin } from "@/lib/constants";
+import { cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
@@ -136,13 +136,9 @@ export default function OverviewPage() {
         <div className="card table-empty">Tidak ada data.</div>
       ) : (
         items.map((item) => {
-          const highlightClass = item.hasUnreadChat
-            ? " item-row-card-unread"
-            : item.status === "COMPLETED"
-            ? " item-row-card-approved"
-            : "";
+          const borderClass = cardStatusBorderClass(item.status);
           return (
-            <div className={`card item-row-card${highlightClass}`} style={{ marginBottom: 14 }} key={item.id}>
+            <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
                 <div>
                   <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>

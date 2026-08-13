@@ -28,6 +28,17 @@ export function chatParticipantLabels(departemen: string | null | undefined): st
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA", "KPU"];
 }
 
+const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
+const REJECTED_STATUSES: Status[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"];
+
+// Card border color by status: draft has none, on-approval is orange, rejected is red, completed is green.
+export function cardStatusBorderClass(status: Status): string {
+  if (status === "COMPLETED") return "item-row-card-approved";
+  if (REJECTED_STATUSES.includes(status)) return "item-row-card-rejected";
+  if (ON_APPROVAL_STATUSES.includes(status)) return "item-row-card-onapproval";
+  return "";
+}
+
 export function getStatusLabel(status: Status, departemen: string | null | undefined): string {
   if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
   if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;

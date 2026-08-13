@@ -2003,26 +2003,28 @@ table.data-table {
   .btn-export-glossy, .btn-pdf-glossy { width: 100%; }
 }
 
-/* ---------- Chat unread / approved border beam ---------- */
+/* ---------- Status border beam (draft: none, on-approval: orange, rejected: red, approved: green) ---------- */
 @property --beam-angle {
   syntax: '<angle>';
   inherits: false;
   initial-value: 0deg;
 }
 
-.item-row-card-unread,
+.item-row-card-onapproval,
+.item-row-card-rejected,
 .item-row-card-approved {
   position: relative;
 }
 
-.item-row-card-unread::before,
+.item-row-card-onapproval::before,
+.item-row-card-rejected::before,
 .item-row-card-approved::before {
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(from var(--beam-angle), transparent 0%, transparent 76%, var(--beam-soft) 87%, var(--beam-color) 94%, var(--beam-soft) 100%);
+  padding: 3px;
+  background: conic-gradient(from var(--beam-angle), transparent 0%, transparent 55%, var(--beam-soft) 68%, var(--beam-color) 82%, var(--beam-color) 95%, var(--beam-soft) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -2030,14 +2032,19 @@ table.data-table {
   pointer-events: none;
 }
 
-.item-row-card-unread::before {
-  --beam-color: #ef4444;
-  --beam-soft: rgba(239, 68, 68, 0.18);
+.item-row-card-onapproval::before {
+  --beam-color: var(--badge-submitted-bg);
+  --beam-soft: rgba(245, 158, 11, 0.3);
+}
+
+.item-row-card-rejected::before {
+  --beam-color: var(--badge-rejected-bg);
+  --beam-soft: rgba(220, 38, 38, 0.3);
 }
 
 .item-row-card-approved::before {
-  --beam-color: var(--green-500);
-  --beam-soft: rgba(22, 163, 74, 0.18);
+  --beam-color: var(--badge-completed-bg);
+  --beam-soft: rgba(22, 163, 74, 0.3);
 }
 
 @keyframes card-border-beam {
@@ -2045,7 +2052,8 @@ table.data-table {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .item-row-card-unread::before,
+  .item-row-card-onapproval::before,
+  .item-row-card-rejected::before,
   .item-row-card-approved::before {
     animation: none;
     background: conic-gradient(var(--beam-soft), var(--beam-color), var(--beam-soft));
