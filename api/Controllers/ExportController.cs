@@ -18,25 +18,25 @@ public class ExportController : ApiControllerBase
 
     private static readonly (string Field, string Label)[] Columns =
     {
+        ("nomor_transmittal", "Nomor Transmittal"),
         ("no_resi", "No Resi"),
         ("tanggal", "Tanggal"),
-        ("nomor_transmittal", "Nomor Transmittal"),
         ("tujuan_penerimaan", "Tujuan Penerimaan"),
         ("jumlah_item", "Jumlah Item"),
+        ("divisi", "Divisi"),
+        ("departemen", "Departemen"),
         ("nama_pengirim", "Nama Pengirim"),
         ("no_telepon_pengirim", "No. Telepon Pengirim"),
         ("alamat_pengirim", "Alamat Pengirim"),
-        ("divisi", "Divisi"),
-        ("departemen", "Departemen"),
-        ("kode_program", "Kode Program"),
         ("nama_penerima", "Nama Penerima"),
-        ("alamat_penerima", "Alamat Penerima"),
         ("no_telepon_penerima", "No. Telepon Penerima"),
+        ("alamat_penerima", "Alamat Penerima"),
+        ("kode_program", "Kode Program"),
         ("asuransi_status", "Asuransi"),
+        ("asuransi_harga", "Asuransi (Harga)"),
         ("request_packing", "Request Packing"),
         ("catatan", "Catatan"),
         ("berat_barang_kg", "Berat Barang (Kg)"),
-        ("asuransi_harga", "Asuransi (Harga)"),
         ("sub_total", "Ongkos Kirim (Harga)"),
         ("total", "Total"),
         ("status", "Status"),
@@ -44,7 +44,7 @@ public class ExportController : ApiControllerBase
 
     private static readonly float[] PdfColWidths =
     {
-        36, 30, 55, 55, 18, 42, 38, 70, 40, 40, 40, 42, 70, 38, 22, 26, 50, 26, 32, 32, 32, 46,
+        45, 30, 26, 50, 16, 36, 36, 38, 34, 95, 38, 34, 95, 34, 20, 28, 24, 70, 24, 28, 28, 40,
     };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
@@ -250,9 +250,9 @@ public class ExportController : ApiControllerBase
 
                     table.Header(h =>
                     {
-                        h.Cell().Background(headerBg).Padding(2).Text("No").FontColor(Colors.White).Bold().FontSize(5f).ClampLines(1);
+                        h.Cell().Background(headerBg).Padding(2).Text("No").FontColor(Colors.White).Bold().FontSize(5f);
                         foreach (var (_, label) in Columns)
-                            h.Cell().Background(headerBg).Padding(2).Text(label).FontColor(Colors.White).Bold().FontSize(5f).ClampLines(1);
+                            h.Cell().Background(headerBg).Padding(2).Text(label).FontColor(Colors.White).Bold().FontSize(5f);
                     });
 
                     var idx = 0;
@@ -260,19 +260,19 @@ public class ExportController : ApiControllerBase
                     {
                         idx++;
                         var bg = idx % 2 == 0 ? altBg : "#FFFFFF";
-                        table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(idx.ToString()).ClampLines(1);
+                        table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(idx.ToString());
                         foreach (var (field, _) in Columns)
                         {
                             var value = GetFieldValue(row, field);
-                            table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(value?.ToString() ?? "").ClampLines(1);
+                            table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(value?.ToString() ?? "");
                         }
                     }
 
                     table.Cell().ColumnSpan((uint)(Columns.Length - 1)).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .AlignRight().Text("Total Keseluruhan:").FontSize(6f).Bold().ClampLines(1);
+                        .AlignRight().Text("Total Keseluruhan:").FontSize(6f).Bold();
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold().ClampLines(1);
+                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
                 });
             });
         });
