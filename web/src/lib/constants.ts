@@ -23,6 +23,11 @@ export function trackWord(departemen: string | null | undefined): "Departemen" |
   return departemen ? "Departemen" : "Divisi";
 }
 
+export function chatParticipantLabels(departemen: string | null | undefined): string[] {
+  const track = trackWord(departemen);
+  return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA", "KPU"];
+}
+
 export function getStatusLabel(status: Status, departemen: string | null | undefined): string {
   if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
   if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;

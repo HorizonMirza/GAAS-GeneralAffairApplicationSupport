@@ -575,6 +575,7 @@ export default function TransaksiPage() {
         open={!!chatItem}
         itemId={chatItem?.id ?? null}
         itemLabel={chatItem ? `${chatItem.tujuanPenerimaan} - ${chatItem.nomorTransmittal}` : ""}
+        departemen={chatItem?.departemen ?? null}
         me={me}
         onClose={() => setChatItem(null)}
         onRead={loadTable}

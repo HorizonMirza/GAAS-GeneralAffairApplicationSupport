@@ -158,6 +158,14 @@ export default function OverviewPage() {
                 </div>
               </div>
               <Stepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
+              <button
+                type="button"
+                className={`card-chat-btn${item.hasUnreadChat ? " card-chat-btn-unread" : ""}`}
+                onClick={() => setChatItem(item)}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                Chat
+              </button>
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}
@@ -175,11 +183,6 @@ export default function OverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) setDetail({ item, mode: "view" });
-        }}
-        onChat={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setChatItem(item);
         }}
         onUpdates={() => {
           const item = rowMenu.menuItem;
@@ -233,6 +236,7 @@ export default function OverviewPage() {
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.tujuanPenerimaan} - ${chatItem.nomorTransmittal}` : ""}
+          departemen={chatItem?.departemen ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={load}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL, chatParticipantLabels } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { ChatMessage, Me } from "@/lib/types";
 
@@ -10,20 +10,47 @@ interface Props {
   open: boolean;
   itemId: number | null;
   itemLabel: string;
+  departemen: string | null;
   me: Me;
   onClose: () => void;
   onRead: () => void;
 }
 
 const POLL_INTERVAL_MS = 4000;
+const MENTION_PATTERN_CHARS = /[.*+?^${}()|[\]\\]/g;
 
-export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead }: Props) {
+function renderWithMentions(text: string, labels: string[]) {
+  if (labels.length === 0) return text;
+  const pattern = new RegExp(`@(${labels.map((l) => l.replace(MENTION_PATTERN_CHARS, "\\$&")).join("|")})`, "g");
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    parts.push(<span key={key++} className="chat-mention">{match[0]}</span>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
+
+export default function ChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStart, setMentionStart] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const readNotified = useRef(false);
+
+  const participantLabels = chatParticipantLabels(departemen);
+  const mentionMatches =
+    mentionQuery !== null
+      ? participantLabels.filter((l) => l.toLowerCase().includes(mentionQuery.toLowerCase()))
+      : [];
 
   useEffect(() => {
     if (!open || itemId == null) {
@@ -65,6 +92,37 @@ export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead
 
   if (!open) return null;
 
+  function handleDraftChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setDraft(value);
+    const cursor = e.target.selectionStart ?? value.length;
+    const uptoCursor = value.slice(0, cursor);
+    const atIdx = uptoCursor.lastIndexOf("@");
+    if (atIdx === -1) {
+      setMentionQuery(null);
+      setMentionStart(null);
+      return;
+    }
+    setMentionQuery(uptoCursor.slice(atIdx + 1));
+    setMentionStart(atIdx);
+  }
+
+  function selectMention(label: string) {
+    if (mentionStart == null) return;
+    const cursor = inputRef.current?.selectionStart ?? draft.length;
+    const before = draft.slice(0, mentionStart);
+    const after = draft.slice(cursor);
+    const next = `${before}@${label} ${after}`;
+    setDraft(next);
+    setMentionQuery(null);
+    setMentionStart(null);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      const pos = before.length + label.length + 2;
+      inputRef.current?.setSelectionRange(pos, pos);
+    });
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
@@ -75,6 +133,8 @@ export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead
       const sent = await api.sendChatMessage(itemId, text);
       setMessages((prev) => (prev ? [...prev, sent] : [sent]));
       setDraft("");
+      setMentionQuery(null);
+      setMentionStart(null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -86,10 +146,10 @@ export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead
     <div className="modal-overlay modal-overlay-centered">
       <div className="modal chat-modal">
         <div className="modal-header">
-          <h3>Chat Transaksi</h3>
+          <h3>{itemLabel}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <p className="text-secondary" style={{ marginTop: -8, marginBottom: 4 }}>{itemLabel}</p>
+        <p className="text-secondary" style={{ marginTop: -8, marginBottom: 4 }}>{participantLabels.join(", ")}</p>
 
         <div className="chat-message-list" ref={listRef}>
           {messages === null ? (
@@ -107,7 +167,7 @@ export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead
                         {m.senderNama} <span className="chat-bubble-role">· {ROLE_LABEL[m.senderRole] || m.senderRole}</span>
                       </div>
                     )}
-                    <div className="chat-bubble-text">{m.message}</div>
+                    <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
                     <div className="chat-bubble-time">{formatDateTime(m.createdAt)}</div>
                   </div>
                 </div>
@@ -118,21 +178,29 @@ export default function ChatModal({ open, itemId, itemLabel, me, onClose, onRead
 
         {error && <div className="error-text">{error}</div>}
 
-        <form onSubmit={handleSend} className="chat-input-row">
-          <input
-            type="text"
-            placeholder="Tulis pesan..."
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={sending}
-          />
-          <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={sending || !draft.trim()}>
-            Kirim
-          </button>
-        </form>
-
-        <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Tutup</button>
+        <div className="chat-input-wrap">
+          {mentionMatches.length > 0 && (
+            <div className="chat-mention-menu">
+              {mentionMatches.map((label) => (
+                <button type="button" key={label} className="chat-mention-item" onClick={() => selectMention(label)}>
+                  @{label}
+                </button>
+              ))}
+            </div>
+          )}
+          <form onSubmit={handleSend} className="chat-input-row">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Tulis pesan... (ketik @ untuk tag role)"
+              value={draft}
+              onChange={handleDraftChange}
+              disabled={sending}
+            />
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={sending || !draft.trim()}>
+              Kirim
+            </button>
+          </form>
         </div>
       </div>
     </div>
