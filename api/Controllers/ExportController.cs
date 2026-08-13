@@ -44,7 +44,7 @@ public class ExportController : ApiControllerBase
 
     private static readonly float[] PdfColWidths =
     {
-        40, 36, 60, 50, 24, 44, 44, 55, 44, 44, 44, 44, 55, 44, 26, 30, 44, 30, 36, 36, 36, 50,
+        36, 30, 55, 55, 18, 42, 38, 70, 40, 40, 40, 42, 70, 38, 22, 26, 50, 26, 32, 32, 32, 46,
     };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
@@ -232,11 +232,11 @@ public class ExportController : ApiControllerBase
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
-                page.Margin(8);
-                page.DefaultTextStyle(x => x.FontSize(6));
+                page.Margin(6);
+                page.DefaultTextStyle(x => x.FontSize(4.8f).LineHeight(1));
 
-                const float noColWidth = 16f;
-                const float availableWidth = 800f;
+                const float noColWidth = 14f;
+                const float availableWidth = 828f;
                 var totalWidth = noColWidth + PdfColWidths.Sum();
                 var scale = availableWidth / totalWidth;
 
@@ -250,9 +250,9 @@ public class ExportController : ApiControllerBase
 
                     table.Header(h =>
                     {
-                        h.Cell().Background(headerBg).Padding(2).Text("No").FontColor(Colors.White).Bold();
+                        h.Cell().Background(headerBg).Padding(2).Text("No").FontColor(Colors.White).Bold().FontSize(5f).ClampLines(1);
                         foreach (var (_, label) in Columns)
-                            h.Cell().Background(headerBg).Padding(2).Text(label).FontColor(Colors.White).Bold();
+                            h.Cell().Background(headerBg).Padding(2).Text(label).FontColor(Colors.White).Bold().FontSize(5f).ClampLines(1);
                     });
 
                     var idx = 0;
@@ -260,19 +260,19 @@ public class ExportController : ApiControllerBase
                     {
                         idx++;
                         var bg = idx % 2 == 0 ? altBg : "#FFFFFF";
-                        table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(idx.ToString());
+                        table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(idx.ToString()).ClampLines(1);
                         foreach (var (field, _) in Columns)
                         {
                             var value = GetFieldValue(row, field);
-                            table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(value?.ToString() ?? "");
+                            table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(value?.ToString() ?? "").ClampLines(1);
                         }
                     }
 
                     table.Cell().ColumnSpan((uint)(Columns.Length - 1)).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .AlignRight().Text("Total Keseluruhan:").FontSize(7).Bold();
+                        .AlignRight().Text("Total Keseluruhan:").FontSize(6f).Bold().ClampLines(1);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(7).Bold();
+                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold().ClampLines(1);
                 });
             });
         });
