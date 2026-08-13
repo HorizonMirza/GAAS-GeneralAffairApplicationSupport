@@ -201,12 +201,12 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
                     </div>
                   )}
                   <div className="chat-bubble-stack">
-                    {!isMine && isFirstInGroup && (
-                      <div className="chat-bubble-sender" style={{ background: roleColor }}>
-                        {ROLE_SHORT_LABEL[m.senderRole] || m.senderRole}
-                      </div>
-                    )}
                     <div className={`chat-bubble ${isMine ? "chat-bubble-mine" : ""}`}>
+                      {!isMine && isFirstInGroup && (
+                        <div className="chat-bubble-sender" style={{ color: roleColor }}>
+                          {ROLE_SHORT_LABEL[m.senderRole] || m.senderRole}
+                        </div>
+                      )}
                       <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
                       <div className="chat-bubble-meta">
                         <span className="chat-bubble-time">{formatTime(m.createdAt)}</span>

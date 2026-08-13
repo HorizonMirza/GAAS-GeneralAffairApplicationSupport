@@ -2111,7 +2111,7 @@ table.data-table {
   margin: -26px -26px 16px;
   padding: 18px 26px 14px;
   border-radius: 18px 18px 0 0;
-  background: var(--bg-surface-alt);
+  background: var(--navy-700);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -2119,8 +2119,20 @@ table.data-table {
   margin-bottom: 6px;
 }
 
+.chat-modal-header-bar .modal-header h3 {
+  color: #fff;
+}
+
+.chat-modal-header-bar .modal-close {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.chat-modal-header-bar .modal-close:hover {
+  color: #fff;
+}
+
 .chat-participant-line {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 0.85rem;
   margin: 0;
 }
@@ -2189,13 +2201,9 @@ table.data-table {
 }
 
 .chat-bubble-sender {
-  display: inline-block;
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 6px;
-  margin: 0 0 3px 2px;
+  margin-bottom: 2px;
 }
 
 .chat-bubble-text {
