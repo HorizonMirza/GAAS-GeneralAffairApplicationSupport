@@ -44,7 +44,7 @@ public class ExportController : ApiControllerBase
 
     private static readonly float[] PdfColWidths =
     {
-        45, 30, 26, 50, 16, 36, 36, 38, 34, 95, 38, 34, 95, 34, 20, 28, 24, 70, 24, 28, 28, 40,
+        45, 30, 26, 50, 16, 36, 36, 38, 34, 95, 38, 34, 95, 34, 20, 26, 24, 60, 24, 28, 46, 40,
     };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
@@ -270,7 +270,7 @@ public class ExportController : ApiControllerBase
 
                     table.Cell().ColumnSpan((uint)(Columns.Length - 1)).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .AlignRight().Text("Total Keseluruhan:").FontSize(6f).Bold();
+                        .AlignRight().Text("Total\nKeseluruhan:").FontSize(6f).Bold();
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
                         .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
                 });
