@@ -127,9 +127,9 @@ public class InvoiceController : ApiControllerBase
         var wasRejected = item.Status == InvoiceStatusEnum.REJECTED;
         item.FilePath = storedFilename;
         item.OriginalFilename = originalFilename;
+        item.Status = InvoiceStatusEnum.DRAFT;
         if (wasRejected)
         {
-            item.Status = InvoiceStatusEnum.PENDING;
             item.Catatan = null;
             item.ReviewedBy = null;
             item.ReviewedAt = null;

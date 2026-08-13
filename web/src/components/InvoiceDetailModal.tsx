@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
 import type { Invoice, Me } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
@@ -50,9 +50,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
           </div>
           <div className="detail-row">
             <span className="detail-label">Status</span>
-            <span className="detail-value">
-              <span className={`badge ${INVOICE_STATUS_CLASS[item.status] || ""}`}>{INVOICE_STATUS_LABEL[item.status] || item.status}</span>
-            </span>
+            <span className="detail-value">{INVOICE_STATUS_LABEL[item.status] || item.status}</span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Diunggah</span>

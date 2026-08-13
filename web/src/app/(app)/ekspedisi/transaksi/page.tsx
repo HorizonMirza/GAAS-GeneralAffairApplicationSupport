@@ -64,7 +64,6 @@ export default function TransaksiPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceError, setInvoiceError] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
-  const [invoiceFilterStatus, setInvoiceFilterStatus] = useState("");
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
@@ -195,9 +194,7 @@ export default function TransaksiPage() {
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
   const filteredInvoices = (invoices ?? []).filter(
-    (inv) =>
-      (!invoiceFilterBulan || inv.bulan === invoiceFilterBulan) &&
-      (!invoiceFilterStatus || inv.status === invoiceFilterStatus)
+    (inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan
   );
   const invoiceTotalPages = Math.max(1, Math.ceil(filteredInvoices.length / invoiceLimit));
   const invoicePageClamped = Math.min(invoicePage, invoiceTotalPages);
@@ -410,26 +407,13 @@ export default function TransaksiPage() {
                 onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
               />
             </div>
-            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-              <label htmlFor="invoice-filter-status">Filter Status</label>
-              <select
-                id="invoice-filter-status"
-                value={invoiceFilterStatus}
-                onChange={(e) => { setInvoiceFilterStatus(e.target.value); setInvoicePage(1); }}
-              >
-                <option value="">Semua Status</option>
-                <option value="PENDING">On Approval</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
             <div className="field" style={{ marginBottom: 0 }}>
               <span className="field-label-spacer">Semua Invoice</span>
               <button
                 type="button"
                 className="btn btn-secondary"
                 style={{ width: "auto" }}
-                onClick={() => { setInvoiceFilterBulan(""); setInvoiceFilterStatus(""); setInvoicePage(1); }}
+                onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
               >
                 Semua Invoice
               </button>

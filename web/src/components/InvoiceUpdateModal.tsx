@@ -39,7 +39,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     setBusy(true);
     try {
       await api.updateInvoice(item.id, file);
-      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Invoice berhasil dikirim ulang ke Admin General Affair");
+      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Revisi invoice tersimpan sebagai draft, kirim kembali lewat Detail");
       setFile(null);
       onDone();
     } catch (err) {
@@ -60,7 +60,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           {isDraft ? (
             <>Ubah file invoice draft untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> sebelum dikirim.</>
           ) : (
-            <>Kirim ulang file invoice untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> setelah direvisi.</>
+            <>Perbarui file invoice untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> setelah direvisi. Invoice akan tersimpan sebagai draft, kirim kembali lewat Detail.</>
           )}
         </p>
         <form onSubmit={handleSubmit}>
@@ -88,7 +88,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={handleClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>{isDraft ? "Simpan" : "Kirim Ulang"}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Simpan</button>
           </div>
         </form>
       </div>
