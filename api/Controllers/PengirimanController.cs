@@ -324,9 +324,29 @@ public class PengirimanController : ApiControllerBase
             totalBulanIni = await sumQuery.SumAsync(p => p.Total ?? 0);
         }
 
+        var outItems = items.Select(PengirimanOut.From).ToList();
+        var itemIds = items.Select(i => i.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var lastMessageAt = await _db.ChatMessages
+                .Where(m => itemIds.Contains(m.PengirimanId))
+                .GroupBy(m => m.PengirimanId)
+                .Select(g => new { PengirimanId = g.Key, LastMessageAt = g.Max(m => m.CreatedAt) })
+                .ToDictionaryAsync(g => g.PengirimanId, g => g.LastMessageAt);
+            var lastReadAt = await _db.ChatReads
+                .Where(r => r.UserId == user.Id && itemIds.Contains(r.PengirimanId))
+                .ToDictionaryAsync(r => r.PengirimanId, r => r.LastReadAt);
+            foreach (var outItem in outItems)
+            {
+                if (!lastMessageAt.TryGetValue(outItem.Id, out var lastMsg)) continue;
+                var hasRead = lastReadAt.TryGetValue(outItem.Id, out var readAt);
+                outItem.HasUnreadChat = !hasRead || lastMsg > readAt;
+            }
+        }
+
         return Ok(new PengirimanListResponse
         {
-            Items = items.Select(PengirimanOut.From).ToList(),
+            Items = outItems,
             Total = total,
             Page = page,
             Limit = limit,

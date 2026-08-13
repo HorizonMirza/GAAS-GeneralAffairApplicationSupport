@@ -1,5 +1,6 @@
 import type {
   ApproveKpuPayload,
+  ChatMessage,
   Invoice,
   InvoiceLog,
   Me,
@@ -137,6 +138,9 @@ export const api = {
   rejectKpu: (id: number, reason: string | null, target: RejectTarget) =>
     apiRequest(`/pengiriman/${id}/reject-kpu`, { method: "PATCH", body: { reason, target } }),
   getPengirimanLogs: (id: number) => apiRequest<PengirimanLog[]>(`/pengiriman/${id}/logs`),
+  getChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/pengiriman/${id}/chat`),
+  sendChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
   listInvoice: () => apiRequest<Invoice[]>("/invoice"),
   uploadInvoice: async (bulan: string, file: File) => {

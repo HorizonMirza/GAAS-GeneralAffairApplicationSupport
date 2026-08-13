@@ -19,6 +19,7 @@ import PengirimanFormModal from "@/components/PengirimanFormModal";
 import PengirimanDetailModal from "@/components/PengirimanDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
+import ChatModal from "@/components/ChatModal";
 import InvoiceActionModal from "@/components/InvoiceActionModal";
 import InvoiceUploadModal from "@/components/InvoiceUploadModal";
 import InvoiceUpdateModal from "@/components/InvoiceUpdateModal";
@@ -59,6 +60,7 @@ export default function TransaksiPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
+  const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
@@ -370,7 +372,7 @@ export default function TransaksiPage() {
                       <td>
                         <div className="status-cell">
                           <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
-                          <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                          <button type="button" className={`row-menu-btn${item.hasUnreadChat ? " row-menu-btn-unread" : ""}`} aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
                         </div>
@@ -547,6 +549,11 @@ export default function TransaksiPage() {
           rowMenu.close();
           if (item) setDetail({ item, mode: "view" });
         }}
+        onChat={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setChatItem(item);
+        }}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -562,6 +569,15 @@ export default function TransaksiPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+      />
+
+      <ChatModal
+        open={!!chatItem}
+        itemId={chatItem?.id ?? null}
+        itemLabel={chatItem ? `${chatItem.tujuanPenerimaan} - ${chatItem.nomorTransmittal}` : ""}
+        me={me}
+        onClose={() => setChatItem(null)}
+        onRead={loadTable}
       />
 
       <PengirimanFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />

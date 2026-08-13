@@ -1,0 +1,14 @@
+using PengirimanApi.Models;
+
+namespace PengirimanApi.Dtos;
+
+public record ChatMessageOut(
+    int Id,
+    int SenderId,
+    string SenderNama,
+    RoleEnum SenderRole,
+    string Message,
+    DateTime CreatedAt
+);
+
+public record SendChatMessageRequest(string Message);

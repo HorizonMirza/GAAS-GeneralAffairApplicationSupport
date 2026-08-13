@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLog> InvoiceLogs => Set<InvoiceLog>();
     public DbSet<DivisiCounter> DivisiCounters => Set<DivisiCounter>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ChatRead> ChatReads => Set<ChatRead>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -35,6 +37,10 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added && entry.Entity.UploadedAt == default) entry.Entity.UploadedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<InvoiceLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<ChatMessage>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -130,6 +136,48 @@ public class AppDbContext : DbContext
             e.HasOne(l => l.Aktor)
                 .WithMany()
                 .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChatMessage>(e =>
+        {
+            e.ToTable("chat_messages");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.PengirimanId).HasColumnName("pengiriman_id");
+            e.Property(m => m.SenderId).HasColumnName("sender_id");
+            e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(m => m.Pengiriman)
+                .WithMany()
+                .HasForeignKey(m => m.PengirimanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChatRead>(e =>
+        {
+            e.ToTable("chat_reads");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.PengirimanId).HasColumnName("pengiriman_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.LastReadAt).HasColumnName("last_read_at");
+            e.HasIndex(r => new { r.PengirimanId, r.UserId }).IsUnique();
+
+            e.HasOne(r => r.Pengiriman)
+                .WithMany()
+                .HasForeignKey(r => r.PengirimanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

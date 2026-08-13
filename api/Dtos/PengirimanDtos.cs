@@ -80,6 +80,7 @@ public class PengirimanOut
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
     public DateTime? ApprovedKpuAt { get; set; }
+    public bool HasUnreadChat { get; set; }
 
     public static PengirimanOut From(Pengiriman p) => new()
     {

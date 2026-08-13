@@ -91,6 +91,16 @@ export interface Pengiriman {
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
   approvedKpuAt: string | null;
+  hasUnreadChat: boolean;
+}
+
+export interface ChatMessage {
+  id: number;
+  senderId: number;
+  senderNama: string;
+  senderRole: Role;
+  message: string;
+  createdAt: string;
 }
 
 export interface PengirimanListResponse {

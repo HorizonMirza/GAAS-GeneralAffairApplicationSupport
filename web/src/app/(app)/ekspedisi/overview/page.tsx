@@ -15,6 +15,7 @@ import PengirimanFormModal from "@/components/PengirimanFormModal";
 import PengirimanDetailModal from "@/components/PengirimanDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
+import ChatModal from "@/components/ChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -39,6 +40,7 @@ export default function OverviewPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
+  const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const rowMenu = useRowMenu(items);
@@ -135,7 +137,7 @@ export default function OverviewPage() {
       ) : (
         items.map((item) => {
           return (
-            <div className="card item-row-card" style={{ marginBottom: 14 }} key={item.id}>
+            <div className={`card item-row-card${item.hasUnreadChat ? " item-row-card-unread" : ""}`} style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
                 <div>
                   <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
@@ -168,6 +170,11 @@ export default function OverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) setDetail({ item, mode: "view" });
+        }}
+        onChat={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setChatItem(item);
         }}
         onUpdates={() => {
           const item = rowMenu.menuItem;
@@ -215,6 +222,17 @@ export default function OverviewPage() {
       />
 
       <StatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
+
+      {me && (
+        <ChatModal
+          open={!!chatItem}
+          itemId={chatItem?.id ?? null}
+          itemLabel={chatItem ? `${chatItem.tujuanPenerimaan} - ${chatItem.nomorTransmittal}` : ""}
+          me={me}
+          onClose={() => setChatItem(null)}
+          onRead={load}
+        />
+      )}
     </>
   );
 }
