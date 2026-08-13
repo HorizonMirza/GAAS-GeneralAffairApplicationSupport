@@ -1334,7 +1334,7 @@ body.auth-ready .app-shell {
   cursor: pointer;
 }
 
-.invoice-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 56px; }
+.invoice-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 88px; }
 
 .invoice-row {
   display: flex;

@@ -15,7 +15,7 @@ export function useRowMenu<T extends { id: number }>(items: T[]) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  function toggle(event: React.MouseEvent, id: number) {
+  function toggle(event: React.MouseEvent, id: number, estimatedMenuHeight = 280) {
     event.stopPropagation();
     event.nativeEvent.stopImmediatePropagation();
     const isOpenForSame = menuItemId === id;
@@ -25,7 +25,6 @@ export function useRowMenu<T extends { id: number }>(items: T[]) {
       return;
     }
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const estimatedMenuHeight = 280;
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow < estimatedMenuHeight
       ? Math.max(8, rect.top - estimatedMenuHeight - 6)
