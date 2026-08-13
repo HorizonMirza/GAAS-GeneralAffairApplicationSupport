@@ -270,9 +270,9 @@ public class ExportController : ApiControllerBase
 
                     table.Cell().ColumnSpan((uint)(Columns.Length - 1)).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
-                    table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
                         .Text("Total\nKeseluruhan:").FontSize(6f).Bold();
+                    table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
+                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
                 });
             });
         });
