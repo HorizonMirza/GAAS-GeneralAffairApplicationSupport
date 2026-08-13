@@ -56,6 +56,19 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
+// Per-role accent color for chat sender names/avatars, so a group conversation reads at a
+// glance like WhatsApp's per-contact name coloring.
+export const ROLE_COLOR: Record<Role, string> = {
+  ADMIN_DEPARTEMEN: "#3b82f6",
+  APPROVAL_DEPARTEMEN: "#14b8a6",
+  ADMIN_DIVISI: "#3b82f6",
+  APPROVAL_DIVISI: "#14b8a6",
+  ADMIN_GA: "#8b5cf6",
+  APPROVAL_GA: "#f59e0b",
+  KPU: "#ec4899",
+  SUPER_ADMIN: "#6b7280",
+};
+
 // Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya (Admin
 // atau Approval Departemen/Divisi), bukan selalu "Admin". Dipakai baik untuk badge "Waiting"
 // maupun untuk label pilihan target reject.

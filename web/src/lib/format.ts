@@ -28,6 +28,20 @@ export function formatDateTime(value: string | null | undefined): string {
   return `${datePart}, ${timePart}`;
 }
 
+// Chat-bubble timestamp: just the time on a message from today, otherwise date + time so
+// older messages in the same thread still carry enough context at a glance.
+export function formatTime(value: string | null | undefined): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  const now = new Date();
+  const isToday =
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  const timePart = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return timePart;
+  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  return `${datePart}, ${timePart}`;
+}
+
 export function formatLongDate(date: Date): string {
   return new Intl.DateTimeFormat("id-ID", {
     weekday: "long",

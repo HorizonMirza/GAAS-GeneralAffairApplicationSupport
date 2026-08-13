@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ROLE_LABEL, chatParticipantLabels } from "@/lib/constants";
-import { formatDateTime } from "@/lib/format";
+import { ROLE_COLOR, ROLE_LABEL, chatParticipantLabels } from "@/lib/constants";
+import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me } from "@/lib/types";
 
 interface Props {
@@ -33,6 +33,21 @@ function renderWithMentions(text: string, labels: string[]) {
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  );
 }
 
 export default function ChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
@@ -157,18 +172,37 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
           ) : messages.length === 0 ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Belum ada pesan. Mulai percakapan di bawah.</p>
           ) : (
-            messages.map((m) => {
+            messages.map((m, idx) => {
               const isMine = m.senderId === me.id;
+              const prev = messages[idx - 1];
+              const isFirstInGroup = !prev || prev.senderId !== m.senderId;
+              const roleColor = ROLE_COLOR[m.senderRole] || "var(--blue-500)";
               return (
-                <div key={m.id} className={`chat-bubble-row ${isMine ? "chat-bubble-row-mine" : ""}`}>
-                  <div className={`chat-bubble ${isMine ? "chat-bubble-mine" : ""}`}>
-                    {!isMine && (
-                      <div className="chat-bubble-sender">
+                <div
+                  key={m.id}
+                  className={`chat-bubble-row ${isMine ? "chat-bubble-row-mine" : ""} ${isFirstInGroup ? "chat-bubble-row-first" : "chat-bubble-row-grouped"}`}
+                >
+                  {!isMine && (
+                    <div
+                      className="chat-avatar"
+                      style={{ background: roleColor, visibility: isFirstInGroup ? "visible" : "hidden" }}
+                    >
+                      {initials(m.senderNama)}
+                    </div>
+                  )}
+                  <div className="chat-bubble-stack">
+                    {!isMine && isFirstInGroup && (
+                      <div className="chat-bubble-sender" style={{ color: roleColor }}>
                         {m.senderNama} <span className="chat-bubble-role">· {ROLE_LABEL[m.senderRole] || m.senderRole}</span>
                       </div>
                     )}
-                    <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
-                    <div className="chat-bubble-time">{formatDateTime(m.createdAt)}</div>
+                    <div className={`chat-bubble ${isMine ? "chat-bubble-mine" : ""}`}>
+                      <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
+                      <div className="chat-bubble-meta">
+                        <span className="chat-bubble-time">{formatTime(m.createdAt)}</span>
+                        {isMine && <CheckIcon />}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );

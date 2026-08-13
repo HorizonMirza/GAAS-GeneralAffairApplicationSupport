@@ -372,7 +372,7 @@ export default function TransaksiPage() {
                       <td>
                         <div className="status-cell">
                           <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
-                          <button type="button" className={`row-menu-btn${item.hasUnreadChat ? " row-menu-btn-unread" : ""}`} aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                          <button type="button" className={`row-menu-btn${item.hasUnreadChat ? " row-menu-btn-unread" : ""}${item.hasUnreadMention ? " row-menu-btn-mentioned" : ""}`} aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
                         </div>

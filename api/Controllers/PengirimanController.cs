@@ -45,6 +45,20 @@ public class PengirimanController : ApiControllerBase
         return false;
     }
 
+    // Chat @mentions are tagged by role label (matching ChatModal's participant list on the
+    // frontend), not by individual user, since a role can be held by more than one account.
+    private static string? MentionLabelForRole(RoleEnum role) => role switch
+    {
+        RoleEnum.ADMIN_DEPARTEMEN => "Admin Departemen",
+        RoleEnum.APPROVAL_DEPARTEMEN => "Approval Departemen",
+        RoleEnum.ADMIN_DIVISI => "Admin Divisi",
+        RoleEnum.APPROVAL_DIVISI => "Approval Divisi",
+        RoleEnum.ADMIN_GA => "Admin GA",
+        RoleEnum.APPROVAL_GA => "Approval GA",
+        RoleEnum.KPU => "KPU",
+        _ => null,
+    };
+
     private static bool IsL1Actionable(Pengiriman item) => item.Status == StatusEnum.SUBMITTED;
 
     private static bool IsGaActionable(Pengiriman item) =>
@@ -341,6 +355,25 @@ public class PengirimanController : ApiControllerBase
                 if (!lastMessageAt.TryGetValue(outItem.Id, out var lastMsg)) continue;
                 var hasRead = lastReadAt.TryGetValue(outItem.Id, out var readAt);
                 outItem.HasUnreadChat = !hasRead || lastMsg > readAt;
+            }
+
+            var mentionLabel = MentionLabelForRole(user.Role);
+            var unreadItemIds = outItems.Where(i => i.HasUnreadChat).Select(i => i.Id).ToList();
+            if (mentionLabel != null && unreadItemIds.Count > 0)
+            {
+                var mentionTag = "@" + mentionLabel;
+                var candidateMessages = await _db.ChatMessages
+                    .Where(m => unreadItemIds.Contains(m.PengirimanId))
+                    .Select(m => new { m.PengirimanId, m.Message, m.CreatedAt })
+                    .ToListAsync();
+                var mentionedIds = candidateMessages
+                    .Where(m =>
+                        (!lastReadAt.TryGetValue(m.PengirimanId, out var readAt) || m.CreatedAt > readAt)
+                        && m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                    .Select(m => m.PengirimanId)
+                    .ToHashSet();
+                foreach (var outItem in outItems)
+                    if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
             }
         }
 

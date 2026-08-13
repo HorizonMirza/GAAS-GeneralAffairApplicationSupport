@@ -92,6 +92,7 @@ export interface Pengiriman {
   approvedApprovalGaAt: string | null;
   approvedKpuAt: string | null;
   hasUnreadChat: boolean;
+  hasUnreadMention: boolean;
 }
 
 export interface ChatMessage {
