@@ -136,8 +136,13 @@ export default function OverviewPage() {
         <div className="card table-empty">Tidak ada data.</div>
       ) : (
         items.map((item) => {
+          const highlightClass = item.hasUnreadChat
+            ? " item-row-card-unread"
+            : item.status === "COMPLETED"
+            ? " item-row-card-approved"
+            : "";
           return (
-            <div className={`card item-row-card${item.hasUnreadChat ? " item-row-card-unread" : ""}`} style={{ marginBottom: 14 }} key={item.id}>
+            <div className={`card item-row-card${highlightClass}`} style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
                 <div>
                   <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
