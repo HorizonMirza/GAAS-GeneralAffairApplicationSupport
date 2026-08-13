@@ -36,10 +36,21 @@ export interface Me {
   departemen: string | null;
 }
 
+export interface DivisiNode {
+  nama: string;
+  departemen: string[];
+}
+
+export interface DirektoratNode {
+  nama: string;
+  divisi: DivisiNode[];
+}
+
 export interface OrgStructure {
   direktorat: string[];
   divisi: string[];
   departemen: string[];
+  direktoratTree: DirektoratNode[];
 }
 
 export interface Pengiriman {

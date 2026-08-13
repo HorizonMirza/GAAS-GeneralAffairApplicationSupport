@@ -73,6 +73,11 @@ public class AuthController : ApiControllerBase
         var (_, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        return Ok(new OrgStructureResponse(OrgTree.AllDirektorat, OrgTree.AllDivisi, OrgTree.AllDepartemen));
+        var tree = OrgTree.Tree.Select(d => new DirektoratOut(
+            d.Nama,
+            d.Divisi.Select(v => new DivisiOut(v.Nama, v.Departemen.Select(dep => dep.Nama).ToList())).ToList()
+        )).ToList();
+
+        return Ok(new OrgStructureResponse(OrgTree.AllDirektorat, OrgTree.AllDivisi, OrgTree.AllDepartemen, tree));
     }
 }

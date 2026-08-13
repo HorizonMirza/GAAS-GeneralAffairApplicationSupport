@@ -14,10 +14,15 @@ public record MeResponse(
     string? Departemen
 );
 
+public record DivisiOut(string Nama, List<string> Departemen);
+
+public record DirektoratOut(string Nama, List<DivisiOut> Divisi);
+
 public record OrgStructureResponse(
     List<string> Direktorat,
     List<string> Divisi,
-    List<string> Departemen
+    List<string> Departemen,
+    List<DirektoratOut> DirektoratTree
 );
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

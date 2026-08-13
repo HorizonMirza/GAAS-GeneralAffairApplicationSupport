@@ -162,6 +162,21 @@ export default function SuperAdminPage() {
   for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
   const pagedInvoices = filteredInvoices.slice((invoicePageClamped - 1) * invoiceLimit, invoicePageClamped * invoiceLimit);
 
+  const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
+  const divisiOptions = selectedDirektoratNode
+    ? selectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
+  const selectedDivisiNode = filters.divisi
+    ? (selectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === filters.divisi
+      )
+    : null;
+  const departemenOptions = selectedDivisiNode
+    ? selectedDivisiNode.departemen
+    : selectedDirektoratNode
+      ? selectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
+
   return (
     <>
       <div className="card">
@@ -201,7 +216,11 @@ export default function SuperAdminPage() {
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-direktorat">Direktorat</label>
-                  <select id="filter-direktorat" value={filters.direktorat} onChange={(e) => updateFilter({ direktorat: e.target.value })}>
+                  <select
+                    id="filter-direktorat"
+                    value={filters.direktorat}
+                    onChange={(e) => updateFilter({ direktorat: e.target.value, divisi: "", departemen: "" })}
+                  >
                     <option value="">Semua Direktorat</option>
                     {(orgStructure?.direktorat || []).map((d) => (
                       <option key={d} value={d}>{d}</option>
@@ -210,9 +229,13 @@ export default function SuperAdminPage() {
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-divisi">Divisi</label>
-                  <select id="filter-divisi" value={filters.divisi} onChange={(e) => updateFilter({ divisi: e.target.value })}>
+                  <select
+                    id="filter-divisi"
+                    value={filters.divisi}
+                    onChange={(e) => updateFilter({ divisi: e.target.value, departemen: "" })}
+                  >
                     <option value="">Semua Divisi</option>
-                    {(orgStructure?.divisi || []).map((opt) => (
+                    {divisiOptions.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
@@ -221,7 +244,7 @@ export default function SuperAdminPage() {
                   <label htmlFor="filter-departemen">Departemen</label>
                   <select id="filter-departemen" value={filters.departemen} onChange={(e) => updateFilter({ departemen: e.target.value })}>
                     <option value="">Semua Departemen</option>
-                    {(orgStructure?.departemen || []).map((d) => (
+                    {departemenOptions.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
