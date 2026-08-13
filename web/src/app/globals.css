@@ -2279,27 +2279,32 @@ table.data-table {
   .chat-bubble-stack { max-width: 88%; }
 }
 
-/* ---------- Card-level chat trigger (Overview) ---------- */
-.card-chat-btn {
+/* ---------- Card-level icon buttons (Overview): Chat + "..." menu as a matched boxed pair ---------- */
+.item-row-card {
   position: relative;
-  display: inline-flex;
+}
+
+.card-icon-btn {
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 6px 14px;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface-alt);
-  color: var(--text-primary);
-  font-size: 0.82rem;
-  font-weight: 600;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.card-chat-btn:hover {
+.card-icon-btn:hover {
   background: var(--bg-surface);
   border-color: var(--blue-400);
+  color: var(--blue-500);
 }
 
 .card-chat-btn-unread::after {
