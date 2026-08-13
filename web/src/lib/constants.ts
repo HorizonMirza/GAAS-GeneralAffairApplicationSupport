@@ -56,6 +56,19 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
+// Short form matching the chat participant list wording ("Admin GA" not "Admin General
+// Affair"), used for the sender pill on chat bubbles.
+export const ROLE_SHORT_LABEL: Record<Role, string> = {
+  ADMIN_DEPARTEMEN: "Admin Departemen",
+  APPROVAL_DEPARTEMEN: "Approval Departemen",
+  ADMIN_DIVISI: "Admin Divisi",
+  APPROVAL_DIVISI: "Approval Divisi",
+  ADMIN_GA: "Admin GA",
+  APPROVAL_GA: "Approval GA",
+  KPU: "KPU",
+  SUPER_ADMIN: "Super Admin",
+};
+
 // Per-role accent color for chat sender names/avatars, so a group conversation reads at a
 // glance like WhatsApp's per-contact name coloring.
 export const ROLE_COLOR: Record<Role, string> = {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ROLE_COLOR, ROLE_LABEL, chatParticipantLabels } from "@/lib/constants";
+import { ROLE_COLOR, ROLE_SHORT_LABEL, chatParticipantLabels } from "@/lib/constants";
 import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me } from "@/lib/types";
 
@@ -46,6 +46,14 @@ function CheckIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M3.4 20.6 21 12 3.4 3.4 3 10l13 2-13 2z"></path>
     </svg>
   );
 }
@@ -160,11 +168,13 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
   return (
     <div className="modal-overlay modal-overlay-centered">
       <div className="modal chat-modal">
-        <div className="modal-header">
-          <h3>{itemLabel}</h3>
-          <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+        <div className="chat-modal-header-bar">
+          <div className="modal-header">
+            <h3>{itemLabel}</h3>
+            <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+          </div>
+          <p className="chat-participant-line">{participantLabels.join(", ")}</p>
         </div>
-        <p className="text-secondary" style={{ marginTop: -8, marginBottom: 4 }}>{participantLabels.join(", ")}</p>
 
         <div className="chat-message-list" ref={listRef}>
           {messages === null ? (
@@ -192,8 +202,8 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
                   )}
                   <div className="chat-bubble-stack">
                     {!isMine && isFirstInGroup && (
-                      <div className="chat-bubble-sender" style={{ color: roleColor }}>
-                        {m.senderNama} <span className="chat-bubble-role">· {ROLE_LABEL[m.senderRole] || m.senderRole}</span>
+                      <div className="chat-bubble-sender" style={{ background: roleColor }}>
+                        {ROLE_SHORT_LABEL[m.senderRole] || m.senderRole}
                       </div>
                     )}
                     <div className={`chat-bubble ${isMine ? "chat-bubble-mine" : ""}`}>
@@ -226,13 +236,13 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
             <input
               ref={inputRef}
               type="text"
-              placeholder="Tulis pesan... (ketik @ untuk tag role)"
+              placeholder="Tulis pesan..."
               value={draft}
               onChange={handleDraftChange}
               disabled={sending}
             />
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={sending || !draft.trim()}>
-              Kirim
+            <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || !draft.trim()}>
+              <SendIcon />
             </button>
           </form>
         </div>
