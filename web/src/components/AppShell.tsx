@@ -52,7 +52,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     icon: RUMAH_ICON,
-    label: "Rumah Tangga",
+    label: "Office Supplies",
     items: [
       { label: "Dashboard", href: "/rumah-tangga" },
       { label: "Transactions", href: "/rumah-tangga" },
@@ -61,7 +61,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     icon: KENDARAAN_ICON,
-    label: "Booking Kendaraan",
+    label: "Vehicle Booking",
     items: [
       { label: "Dashboard", href: "/booking-kendaraan" },
       { label: "Transactions", href: "/booking-kendaraan" },
@@ -70,7 +70,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     icon: MEETING_ICON,
-    label: "Booking Ruang Meeting",
+    label: "Room Booking",
     items: [
       { label: "Dashboard", href: "/booking-ruang-meeting" },
       { label: "Transactions", href: "/booking-ruang-meeting" },
@@ -79,7 +79,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     icon: SARANA_ICON,
-    label: "Perbaikan Sarana dan Prasarana",
+    label: "Maintenance",
     items: [
       { label: "Dashboard", href: "/perbaikan-sarana" },
       { label: "Transactions", href: "/perbaikan-sarana" },
@@ -88,7 +88,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
   {
     icon: ARSIP_ICON,
-    label: "Arsip",
+    label: "Archive",
     items: [
       { label: "Dashboard", href: "/arsip" },
       { label: "Transactions", href: "/arsip" },
