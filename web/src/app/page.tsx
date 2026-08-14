@@ -15,7 +15,7 @@ export default function LoginPage() {
   useEffect(() => {
     api
       .me()
-      .then(() => router.replace("/home"))
+      .then(() => router.replace("/dashboard"))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -26,7 +26,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await api.login(username.trim(), password);
-      router.replace("/home");
+      router.replace("/dashboard");
     } catch (err) {
       const status = (err as { status?: number }).status;
       const message = (err as Error).message;

@@ -200,7 +200,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const isSuperAdmin = me.role === "SUPER_ADMIN";
 
-  let topbarTitle = "Home";
+  let topbarTitle = "Dashboard";
   for (const cat of NAV_CATEGORIES) {
     const match = cat.items.find((item) => item.href === pathname);
     if (match) {
@@ -208,14 +208,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
       break;
     }
   }
-  if (pathname === "/home") topbarTitle = "Home";
+  if (pathname === "/dashboard") topbarTitle = "Dashboard";
   if (pathname === "/profile") topbarTitle = "Profile";
   if (pathname === "/superadmin") topbarTitle = "Super Admin";
 
   return (
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
-        <Link className="brand-logo-sidebar" href="/home" aria-label="Ke Home">
+        <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/logo-pgm-solution.png"
@@ -225,9 +225,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <Link className="nav-link" href="/home">
+        <Link className="nav-link" href="/dashboard">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          Home
+          Dashboard
         </Link>
 
         {NAV_CATEGORIES.map((cat) => {

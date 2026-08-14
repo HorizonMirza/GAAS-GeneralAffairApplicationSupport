@@ -56,7 +56,7 @@ export default function SuperAdminPage() {
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   useEffect(() => {
-    if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/home");
+    if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
   }, [loading, me, router]);
 
   const loadTable = useCallback(async () => {
