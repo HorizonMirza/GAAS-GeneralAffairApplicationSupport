@@ -96,7 +96,7 @@ export default function OverviewPage() {
       : "Menunggu Approve Departemen/Divisi";
 
   function handleDelete(item: Pengiriman) {
-    confirm("Yakin ingin menghapus data pengiriman ini?", async () => {
+    confirm("Hapus data pengiriman ini secara permanen?", async () => {
       try {
         await api.deletePengiriman(item.id);
         showToast("Data berhasil dihapus");
