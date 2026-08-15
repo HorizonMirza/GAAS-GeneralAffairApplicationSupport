@@ -34,7 +34,6 @@ export default function StatusHistoryModal({ open, itemId, onClose }: Props) {
           <h3>Riwayat Approval</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <p className="text-secondary" style={{ marginTop: -8 }}>Riwayat approval untuk dokumen ini</p>
         <div style={{ marginTop: 16 }}>
           {error ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "16px 0" }}>Gagal memuat riwayat: {error}</p>
