@@ -184,7 +184,7 @@ public class InvoiceController : ApiControllerBase
         var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN, RoleEnum.KPU);
         if (error != null) return error;
 
-        var item = await _db.Invoices.FindAsync(invoiceId);
+        var item = await _db.Invoices.Include(i => i.Logs).FirstOrDefaultAsync(i => i.Id == invoiceId);
         if (item == null)
             return NotFound(new { detail = "Invoice tidak ditemukan" });
 
@@ -196,9 +196,15 @@ public class InvoiceController : ApiControllerBase
                 return StatusCode(403, new { detail = "Invoice hanya bisa dihapus saat status Draft atau Rejected" });
         }
 
-        var path = Path.Combine(_uploadDir, item.FilePath);
-        if (System.IO.File.Exists(path))
-            System.IO.File.Delete(path);
+        // InvoiceLog rows are cascade-deleted with the invoice, so every revision's file
+        // (not just the current one) needs to be removed here or it's orphaned on disk forever.
+        var filesToDelete = item.Logs.Select(l => l.FilePath).Append(item.FilePath).Where(f => f != null).Distinct();
+        foreach (var f in filesToDelete)
+        {
+            var path = Path.Combine(_uploadDir, f!);
+            if (System.IO.File.Exists(path))
+                System.IO.File.Delete(path);
+        }
 
         _db.Invoices.Remove(item);
         await _db.SaveChangesAsync();

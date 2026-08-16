@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
 using PengirimanApi.Services;
@@ -24,7 +25,7 @@ public class AuthController : ApiControllerBase
     [HttpPost("auth/login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest payload)
     {
-        var user = _db.Users.FirstOrDefault(u => u.Username == payload.Username);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == payload.Username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(payload.Password, user.PasswordHash))
             return StatusCode(401, new { detail = "Username atau password salah" });
 

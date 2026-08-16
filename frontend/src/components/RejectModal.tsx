@@ -34,6 +34,11 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
     setError("");
   }
 
+  function handleClose() {
+    reset();
+    onClose();
+  }
+
   async function handleConfirm() {
     if (targetId == null || !targetType) return;
     const reasonValue = reason.trim() || null;
@@ -67,7 +72,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
           <h3>Reject Data</h3>
-          <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+          <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         {needsTarget && (
           <div className="field">
@@ -95,7 +100,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
         </div>
         <div className="error-text">{error}</div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
+          <button type="button" className="btn btn-secondary" onClick={handleClose}>Batal</button>
           <button
             type="button"
             className="btn btn-danger"
