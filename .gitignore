@@ -1,0 +1,13 @@
+node_modules/
+.env
+
+# .NET backend
+backend/bin/
+backend/obj/
+backend/appsettings.json
+backend/uploads/
+
+# Next.js frontend
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+frontend/.env.local
