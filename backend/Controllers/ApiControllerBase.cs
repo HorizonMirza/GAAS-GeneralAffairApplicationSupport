@@ -22,4 +22,19 @@ public abstract class ApiControllerBase : ControllerBase
             return (null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
         return (user, null);
     }
+
+    // Admin/Approval GA/KPU/Super Admin see every item; Admin/Approval Departemen/Divisi only
+    // see items from their own unit (or their own DRAFT/rejected-back-to-them items).
+    protected static bool CanAccessPengiriman(User user, Pengiriman item)
+    {
+        if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
+            return true;
+
+        var sameUnit = item.Departemen != null
+            ? user.Departemen == item.Departemen
+            : user.Divisi == item.Divisi && user.Departemen == null;
+        return item.Status == StatusEnum.DRAFT
+            ? item.CreatedBy == user.Id || (item.RejectReason != null && sameUnit)
+            : sameUnit;
+    }
 }

@@ -37,8 +37,9 @@ public class ChatController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var exists = await _db.Pengiriman.AnyAsync(p => p.Id == pengirimanId);
-        if (!exists) return NotFound(new { detail = "Transaksi tidak ditemukan" });
+        var item = await _db.Pengiriman.FindAsync(pengirimanId);
+        if (item == null) return NotFound(new { detail = "Transaksi tidak ditemukan" });
+        if (!CanAccessPengiriman(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var messages = await _db.ChatMessages
             .Include(m => m.Sender)
@@ -60,8 +61,9 @@ public class ChatController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var exists = await _db.Pengiriman.AnyAsync(p => p.Id == pengirimanId);
-        if (!exists) return NotFound(new { detail = "Transaksi tidak ditemukan" });
+        var item = await _db.Pengiriman.FindAsync(pengirimanId);
+        if (item == null) return NotFound(new { detail = "Transaksi tidak ditemukan" });
+        if (!CanAccessPengiriman(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var text = payload.Message?.Trim();
         if (string.IsNullOrEmpty(text))

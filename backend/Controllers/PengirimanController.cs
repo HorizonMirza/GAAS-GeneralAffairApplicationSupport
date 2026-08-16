@@ -581,17 +581,7 @@ public class PengirimanController : ApiControllerBase
             .Include(p => p.Logs).ThenInclude(l => l.Aktor)
             .FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-
-        if (user!.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
-        {
-            var sameUnit = item.Departemen != null
-                ? user.Departemen == item.Departemen
-                : user.Divisi == item.Divisi && user.Departemen == null;
-            var visible = item.Status == StatusEnum.DRAFT
-                ? item.CreatedBy == user.Id || (item.RejectReason != null && sameUnit)
-                : sameUnit;
-            if (!visible) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        }
+        if (!CanAccessPengiriman(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var result = item.Logs
             .OrderBy(l => l.CreatedAt)
