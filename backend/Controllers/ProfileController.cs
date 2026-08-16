@@ -42,6 +42,9 @@ public class ProfileController : ApiControllerBase
         if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user!.PasswordHash))
             return StatusCode(400, new { detail = "Password saat ini salah" });
 
+        if (string.IsNullOrEmpty(payload.NewPassword) || payload.NewPassword.Length < 8)
+            return StatusCode(400, new { detail = "Password baru minimal 8 karakter" });
+
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
         await _db.SaveChangesAsync();
         return Ok(new { message = "Password berhasil diubah" });

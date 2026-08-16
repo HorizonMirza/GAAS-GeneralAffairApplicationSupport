@@ -179,7 +179,9 @@ public class ExportController : ApiControllerBase
         }
 
         rowIdx++;
-        var totalCol = header.Count;
+        // Position the total under the "Total" column itself (not the last column, which is
+        // "Status") so the footer label/value line up with the header row above them.
+        var totalCol = Array.FindIndex(Columns, c => c.Field == "total") + 2;
         var labelCell = ws.Cell(rowIdx, totalCol - 1);
         labelCell.Value = "Total Keseluruhan:";
         labelCell.Style.Font.Bold = true;
@@ -268,11 +270,17 @@ public class ExportController : ApiControllerBase
                         }
                     }
 
-                    table.Cell().ColumnSpan((uint)(Columns.Length - 1)).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
+                    // Same reasoning as the Excel export: line the value up under the "Total"
+                    // column instead of the actual last column ("Status"), and pad the
+                    // remaining columns after it so the row still fills the table width.
+                    var totalFieldIndex = Array.FindIndex(Columns, c => c.Field == "total");
+                    table.Cell().ColumnSpan((uint)totalFieldIndex).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
                         .Text("Total\nKeseluruhan:").FontSize(6f).Bold();
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
                         .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
+                    for (var i = totalFieldIndex + 1; i < Columns.Length; i++)
+                        table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                 });
             });
         });
