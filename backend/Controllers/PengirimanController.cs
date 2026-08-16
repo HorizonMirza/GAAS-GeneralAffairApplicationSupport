@@ -157,16 +157,24 @@ public class PengirimanController : ApiControllerBase
         return (counter?.LastSequence ?? 0) + 1;
     }
 
+    // Single atomic upsert instead of read-then-write: two concurrent Create calls for the
+    // same divisi+month would otherwise both read the same LastSequence and either produce
+    // duplicate NomorTransmittal values or collide on the composite PK insert. Postgres
+    // serializes concurrent INSERT ... ON CONFLICT statements on the same row, so each caller
+    // is guaranteed a distinct, gap-free sequence number.
     private async Task<int> IncrementTransmittalSequenceAsync(string divisi, int year, int month)
     {
-        var counter = await _db.DivisiCounters.FindAsync(divisi, year, month);
-        if (counter == null)
-        {
-            counter = new DivisiCounter { Divisi = divisi, Year = year, Month = month, LastSequence = 0 };
-            _db.DivisiCounters.Add(counter);
-        }
-        counter.LastSequence += 1;
-        return counter.LastSequence;
+        var results = await _db.Database.SqlQueryRaw<int>(
+            """
+            INSERT INTO divisi_counters (divisi, year, month, last_sequence)
+            VALUES ({0}, {1}, {2}, 1)
+            ON CONFLICT (divisi, year, month)
+            DO UPDATE SET last_sequence = divisi_counters.last_sequence + 1
+            RETURNING last_sequence AS "Value"
+            """,
+            divisi, year, month
+        ).ToListAsync();
+        return results[0];
     }
 
     private string BuildNomorTransmittal(User user, int seq, DateOnly tanggal)
