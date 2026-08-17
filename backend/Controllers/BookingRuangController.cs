@@ -149,6 +149,23 @@ public class BookingRuangController : ApiControllerBase
         return Ok(MeetingRooms.Rooms);
     }
 
+    // Deliberately global (no unit scoping, unlike List): room availability is a shared
+    // resource, so the grid has to show the same picture to everyone or it lies to whoever
+    // isn't in the booking's own unit. Approve/reject/edit still enforce role+unit as normal
+    // elsewhere - this endpoint is read-only.
+    [HttpGet("schedule")]
+    public async Task<IActionResult> GetSchedule([FromQuery] DateOnly tanggal)
+    {
+        var (_, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var items = await _db.BookingRuangs
+            .Where(b => b.Tanggal == tanggal && ActiveStatuses.Contains(b.Status))
+            .ToListAsync();
+
+        return Ok(items.Select(BookingRuangOut.From).ToList());
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] BookingRuangCreate payload)
     {

@@ -10,9 +10,10 @@ interface Props {
   me: Me;
   onClose: () => void;
   onCreated: () => void;
+  initial?: Partial<BookingRuangCreatePayload>;
 }
 
-function emptyForm(): BookingRuangCreatePayload {
+function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCreatePayload {
   return {
     namaKegiatan: "",
     namaRuang: "",
@@ -22,10 +23,11 @@ function emptyForm(): BookingRuangCreatePayload {
     jamMulai: "09:00",
     jamSelesai: "10:00",
     catatan: "",
+    ...initial,
   };
 }
 
-export default function RoomBookingFormModal({ open, me, onClose, onCreated }: Props) {
+export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -33,10 +35,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated }: P
 
   useEffect(() => {
     if (open) {
-      setForm(emptyForm());
+      setForm(emptyForm(initial));
       setError("");
       api.listRooms().then(setRooms).catch(() => setRooms([]));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;

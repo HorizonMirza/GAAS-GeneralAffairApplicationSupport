@@ -1,5 +1,6 @@
 import type {
   ApproveKpuPayload,
+  BookingRuang,
   BookingRuangCreatePayload,
   BookingRuangListResponse,
   BookingRuangLog,
@@ -214,6 +215,8 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
+  getBookingSchedule: (tanggal: string) =>
+    apiRequest<BookingRuang[]>("/booking-ruang/schedule", { params: { tanggal } }),
   listBooking: (params: ListBookingParams) =>
     apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
   createBooking: (payload: BookingRuangCreatePayload) =>

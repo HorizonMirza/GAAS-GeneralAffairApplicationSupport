@@ -1419,6 +1419,55 @@ table.data-table {
   color: var(--text-secondary);
 }
 
+.schedule-table { min-width: 760px; table-layout: fixed; }
+.schedule-table th, .schedule-table td { vertical-align: top; white-space: normal; }
+
+.schedule-time-col {
+  width: 72px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-surface-alt);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.schedule-cell-empty {
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.schedule-cell-empty:hover {
+  background: var(--bg-surface-alt);
+  color: var(--blue-500);
+}
+
+.schedule-cell-booked {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.schedule-cell-title {
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+}
+.schedule-cell-meta {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.schedule-cell-pending {
+  background: var(--badge-submitted-bg);
+  color: var(--badge-submitted-fg);
+}
+.schedule-cell-confirmed {
+  background: var(--badge-completed-bg);
+  color: var(--badge-completed-fg);
+}
+
 /* ---------- Pagination / filter toolbar ---------- */
 .toolbar {
   display: flex;

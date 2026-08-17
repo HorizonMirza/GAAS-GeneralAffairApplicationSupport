@@ -4,19 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
-import { formatDate, formatTimeRange } from "@/lib/format";
-import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingRuang } from "@/lib/types";
-import BookingStatusBadge from "@/components/BookingStatusBadge";
-import RoomBookingStepper from "@/components/RoomBookingStepper";
-import RowMenuDropdown from "@/components/RowMenuDropdown";
+import { greetingName } from "@/lib/constants";
+import { useToast } from "@/components/ui/ToastProvider";
+import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
+import RoomScheduleGrid from "@/components/RoomScheduleGrid";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
-import { useConfirm } from "@/components/ui/ConfirmProvider";
-import { useToast } from "@/components/ui/ToastProvider";
 
 interface Stats {
   waitingL1: number;
@@ -25,22 +19,32 @@ interface Stats {
   confirmed: number;
 }
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function BookingOverviewPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
-  const confirm = useConfirm();
 
-  const [items, setItems] = useState<BookingRuang[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [busy, setBusy] = useState(true);
+
+  const [scheduleDate, setScheduleDate] = useState<string>(todayIso());
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
+  const [entries, setEntries] = useState<BookingRuang[]>([]);
+  const [scheduleBusy, setScheduleBusy] = useState(true);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
-  const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-
-  const rowMenu = useRowMenu(items);
 
   const isOrigin = me
     ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
@@ -50,13 +54,11 @@ export default function BookingOverviewPage() {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
   }, [loading, me, router]);
 
-  const load = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     if (!me) return;
-    setBusy(true);
     try {
-      const [queue, submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, approvedGaApproval] =
+      const [submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, approvedGaApproval] =
         await Promise.all([
-          api.listBooking({ limit: 10, page: 1 }).then((r) => r.items),
           api.listBooking({ limit: 5, page: 1, status: "SUBMITTED" }),
           api.listBooking({ limit: 5, page: 1, status: "REJECTED_GA" }),
           api.listBooking({ limit: 5, page: 1, status: "APPROVED_L1" }),
@@ -64,21 +66,46 @@ export default function BookingOverviewPage() {
           api.listBooking({ limit: 5, page: 1, status: "APPROVED_GA" }),
           api.listBooking({ limit: 5, page: 1, status: "APPROVED_GA_APPROVAL" }),
         ]);
-      setItems(queue);
       setStats({
         waitingL1: submitted.total + rejectedGa.total,
         waitingGa: approvedL1.total + rejectedGaApproval.total,
         waitingGaApproval: approvedGa.total,
         confirmed: approvedGaApproval.total,
       });
-    } finally {
-      setBusy(false);
+    } catch {
+      setStats(null);
     }
   }, [me]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadStats();
+  }, [loadStats]);
+
+  const loadSchedule = useCallback(async () => {
+    setScheduleBusy(true);
+    try {
+      const [roomList, scheduleEntries] = await Promise.all([
+        api.listRooms(),
+        api.getBookingSchedule(scheduleDate),
+      ]);
+      setRooms(roomList);
+      setEntries(scheduleEntries);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setScheduleBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleDate]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  function refreshAll() {
+    loadStats();
+    loadSchedule();
+  }
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
@@ -89,24 +116,16 @@ export default function BookingOverviewPage() {
       ? "Menunggu Approve Divisi"
       : "Menunggu Approve Departemen/Divisi";
 
-  function handleDelete(item: BookingRuang) {
-    confirm("Hapus booking ini?", async () => {
-      try {
-        await api.deleteBooking(item.id);
-        showToast("Booking berhasil dihapus");
-        load();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    });
-  }
-
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
         {isOrigin && (
-          <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
+          <button
+            className="btn btn-primary btn-header-action"
+            style={{ width: "auto" }}
+            onClick={() => { setFormInitial(undefined); setFormOpen(true); }}
+          >
             + Booking Ruang Meeting
           </button>
         )}
@@ -121,69 +140,44 @@ export default function BookingOverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Booking Terbaru Saya</h3>
+      <div className="card-header" style={{ margin: "24px 0 12px" }}>
+        <h3 style={{ margin: 0 }}>Jadwal Ruang Meeting</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button className="page-btn" onClick={() => setScheduleDate((d) => addDays(d, -1))}>‹</button>
+          <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+          <button className="page-btn" onClick={() => setScheduleDate((d) => addDays(d, 1))}>›</button>
+          <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setScheduleDate(todayIso())}>Hari Ini</button>
+        </div>
+      </div>
 
-      {busy ? (
-        <p className="text-secondary">Memuat data...</p>
-      ) : items.length === 0 ? (
-        <div className="card table-empty">Tidak ada data.</div>
+      {scheduleBusy ? (
+        <p className="text-secondary">Memuat jadwal...</p>
       ) : (
-        items.map((item) => {
-          const borderClass = bookingStatusBorderClass(item.status);
-          return (
-            <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
-              <div className="card-header">
-                <div>
-                  <strong>{item.namaKegiatan} - {item.namaRuang}</strong>
-                  <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {item.departemen || item.divisi} · {item.jumlahPeserta} peserta
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
-                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
-                  </button>
-                </div>
-              </div>
-              <RoomBookingStepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
-              {item.rejectReason && (
-                <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
-                </div>
-              )}
-            </div>
-          );
-        })
+        <RoomScheduleGrid
+          rooms={rooms}
+          entries={entries}
+          onSlotClick={(namaRuang, jam) => {
+            if (!isOrigin) return;
+            setFormInitial({
+              namaRuang,
+              tanggal: scheduleDate,
+              jamMulai: `${String(jam).padStart(2, "0")}:00`,
+              jamSelesai: `${String(jam + 1).padStart(2, "0")}:00`,
+            });
+            setFormOpen(true);
+          }}
+          onEntryClick={(entry) => setDetail({ item: entry, mode: "view" })}
+        />
       )}
 
-      <RowMenuDropdown
-        position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)}
-        onDetail={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setDetail({ item, mode: "view" });
-        }}
-        onUpdates={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setDetail({ item, mode: "edit" });
-        }}
-        onStatus={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setStatusItemId(item.id);
-        }}
-        onDelete={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) handleDelete(item);
-        }}
-      />
-
       {me && (
-        <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
+        <RoomBookingFormModal
+          open={formOpen}
+          me={me}
+          initial={formInitial}
+          onClose={() => setFormOpen(false)}
+          onCreated={refreshAll}
+        />
       )}
 
       {me && (
@@ -193,7 +187,7 @@ export default function BookingOverviewPage() {
           item={detail?.item || null}
           me={me}
           onClose={() => setDetail(null)}
-          onSaved={load}
+          onSaved={refreshAll}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
@@ -206,11 +200,9 @@ export default function BookingOverviewPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          load();
+          refreshAll();
         }}
       />
-
-      <BookingStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
     </>
   );
 }
