@@ -1,4 +1,4 @@
-import type { Me, Pengiriman, Role, Status } from "./types";
+import type { BookingRuang, BookingStatus, Me, Pengiriman, Role, Status } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -158,3 +158,63 @@ export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neu
   APPROVED: { label: "Disetujui Admin General Affair", type: "approve" },
   REJECTED: { label: "Ditolak Admin General Affair", type: "reject" },
 };
+
+// --- Booking Ruang Meeting (sama pola dengan versi Pengiriman di atas, tanpa tahap KPU) ---
+
+export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+  REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+  APPROVED_L1: "On-Approval: Admin GA",
+  REJECTED_GA: "Rejected: Admin GA",
+  APPROVED_GA: "On-Approval: Approval GA",
+  REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+  APPROVED_GA_APPROVAL: "Terkonfirmasi",
+};
+
+const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
+const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"];
+
+export function bookingStatusBorderClass(status: BookingStatus): string {
+  if (status === "APPROVED_GA_APPROVAL") return "item-row-card-approved";
+  if (BOOKING_REJECTED_STATUSES.includes(status)) return "item-row-card-rejected";
+  if (BOOKING_ON_APPROVAL_STATUSES.includes(status)) return "item-row-card-onapproval";
+  return "";
+}
+
+export function getBookingStatusLabel(status: BookingStatus, departemen: string | null | undefined): string {
+  if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
+  if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;
+  return BOOKING_STATUS_LABEL[status];
+}
+
+export function bookingOriginActorLabel(item: BookingRuang): string {
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
+}
+
+export function getBookingWaitingLabel(item: BookingRuang): string | undefined {
+  if (item.status === "REJECTED_GA_APPROVAL") {
+    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${bookingOriginActorLabel(item)}`;
+  }
+  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
+    return `Waiting: ${bookingOriginActorLabel(item)}`;
+  }
+  return undefined;
+}
+
+export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
+  if (item.createdBy !== me.id) return false;
+  if (item.status === "DRAFT" || item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return true;
+  if (item.status === "REJECTED_GA_APPROVAL") return item.rejectTarget === "ORIGIN";
+  return false;
+}
+
+export function isBookingGaActionable(item: BookingRuang): boolean {
+  if (item.status === "APPROVED_L1") return true;
+  if (item.status === "REJECTED_GA_APPROVAL") return item.rejectTarget === "GA";
+  return false;
+}
+
+export const BOOKING_L1_ACTIONABLE_STATUSES: BookingStatus[] = ["SUBMITTED"];
+export const BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES: BookingStatus[] = ["APPROVED_GA"];

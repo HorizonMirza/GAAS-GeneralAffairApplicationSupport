@@ -1,5 +1,9 @@
 import type {
   ApproveKpuPayload,
+  BookingRuangCreatePayload,
+  BookingRuangListResponse,
+  BookingRuangLog,
+  BookingStatus,
   ChatMessage,
   Invoice,
   InvoiceLog,
@@ -9,6 +13,7 @@ import type {
   PengirimanListResponse,
   PengirimanLog,
   RejectTarget,
+  RoomOption,
   Status,
 } from "./types";
 
@@ -207,4 +212,57 @@ export const api = {
     ).toString();
     return `${API_BASE}/pengiriman/export-pdf${query ? `?${query}` : ""}`;
   },
+
+  listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
+  listBooking: (params: ListBookingParams) =>
+    apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
+  createBooking: (payload: BookingRuangCreatePayload) =>
+    apiRequest("/booking-ruang", { method: "POST", body: normalizeBookingPayload(payload) }),
+  updateBooking: (id: number, payload: BookingRuangCreatePayload) =>
+    apiRequest(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
+  deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
+  submitBooking: (id: number) => apiRequest(`/booking-ruang/${id}/submit`, { method: "PATCH" }),
+  approveBookingL1: (id: number) => apiRequest(`/booking-ruang/${id}/approve-l1`, { method: "PATCH" }),
+  rejectBookingL1: (id: number, reason: string | null) =>
+    apiRequest(`/booking-ruang/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveBookingGa: (id: number) => apiRequest(`/booking-ruang/${id}/approve-ga`, { method: "PATCH" }),
+  rejectBookingGa: (id: number, reason: string | null) =>
+    apiRequest(`/booking-ruang/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveBookingGaApproval: (id: number) => apiRequest(`/booking-ruang/${id}/approve-ga-approval`, { method: "PATCH" }),
+  rejectBookingGaApproval: (id: number, reason: string | null, target: RejectTarget) =>
+    apiRequest(`/booking-ruang/${id}/reject-ga-approval`, { method: "PATCH", body: { reason, target } }),
+  getBookingLogs: (id: number) => apiRequest<BookingRuangLog[]>(`/booking-ruang/${id}/logs`),
 };
+
+export interface ListBookingParams {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus | "";
+  divisi?: string;
+  departemen?: string;
+  namaRuang?: string;
+  tanggal?: string;
+}
+
+// <input type="time"> gives "HH:mm" with no seconds, but .NET's TimeOnly JSON converter only
+// accepts the full "HH:mm:ss" form - pad it here so every caller doesn't have to remember to.
+function normalizeTime(t: string | null): string | null {
+  if (!t) return null;
+  return t.length === 5 ? `${t}:00` : t;
+}
+
+function normalizeBookingPayload(payload: BookingRuangCreatePayload): BookingRuangCreatePayload {
+  return { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) };
+}
+
+function bookingListParams(p: ListBookingParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    status: p.status,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    nama_ruang: p.namaRuang,
+    tanggal: p.tanggal,
+  };
+}

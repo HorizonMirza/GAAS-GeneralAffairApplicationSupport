@@ -20,6 +20,16 @@ export type Status =
   | "REJECTED_KPU"
   | "COMPLETED";
 
+export type BookingStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "REJECTED_L1"
+  | "APPROVED_L1"
+  | "REJECTED_GA"
+  | "APPROVED_GA"
+  | "REJECTED_GA_APPROVAL"
+  | "APPROVED_GA_APPROVAL";
+
 export type RejectTarget = "GA" | "ORIGIN";
 
 export type Asuransi = "Ya" | "Tidak";
@@ -165,4 +175,64 @@ export interface InvoiceLog {
   reason: string | null;
   originalFilename: string | null;
   createdAt: string;
+}
+
+export interface RoomOption {
+  nama: string;
+  kapasitas: number;
+}
+
+export interface BookingRuang {
+  id: number;
+  namaKegiatan: string;
+  namaRuang: string;
+  kapasitasRuang: number;
+  jumlahPeserta: number;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+  catatan: string | null;
+  divisi: string;
+  departemen: string | null;
+  status: BookingStatus;
+  rejectReason: string | null;
+  rejectTarget: RejectTarget | null;
+  createdBy: number;
+  createdByRole: Role;
+  approvedByL1: number | null;
+  approvedByGa: number | null;
+  approvedByApprovalGa: number | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedL1At: string | null;
+  approvedGaAt: string | null;
+  approvedApprovalGaAt: string | null;
+}
+
+export interface BookingRuangListResponse {
+  items: BookingRuang[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface BookingRuangLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface BookingRuangCreatePayload {
+  namaKegiatan: string;
+  namaRuang: string;
+  jumlahPeserta: number;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+  catatan: string | null;
 }

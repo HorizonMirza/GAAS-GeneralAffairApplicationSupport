@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<DivisiCounter> DivisiCounters => Set<DivisiCounter>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<ChatRead> ChatReads => Set<ChatRead>();
+    public DbSet<BookingRuang> BookingRuangs => Set<BookingRuang>();
+    public DbSet<BookingRuangLog> BookingRuangLogs => Set<BookingRuangLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -41,6 +43,15 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<ChatMessage>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingRuang>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+            if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingRuangLog>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -178,6 +189,68 @@ public class AppDbContext : DbContext
             e.HasOne(r => r.User)
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookingRuang>(e =>
+        {
+            e.ToTable("booking_ruang");
+            e.HasKey(b => b.Id);
+            e.Property(b => b.Id).HasColumnName("id");
+            e.Property(b => b.NamaKegiatan).HasColumnName("nama_kegiatan").HasMaxLength(255).IsRequired();
+            e.Property(b => b.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
+            e.Property(b => b.KapasitasRuang).HasColumnName("kapasitas_ruang");
+            e.Property(b => b.JumlahPeserta).HasColumnName("jumlah_peserta");
+            e.Property(b => b.Tanggal).HasColumnName("tanggal");
+            e.Property(b => b.IsWholeDay).HasColumnName("is_whole_day");
+            e.Property(b => b.JamMulai).HasColumnName("jam_mulai");
+            e.Property(b => b.JamSelesai).HasColumnName("jam_selesai");
+            e.Property(b => b.Catatan).HasColumnName("catatan");
+
+            e.Property(b => b.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(b => b.Departemen).HasColumnName("departemen").HasMaxLength(255);
+
+            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.RejectReason).HasColumnName("reject_reason");
+            e.Property(b => b.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
+
+            e.Property(b => b.CreatedBy).HasColumnName("created_by");
+            e.Property(b => b.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.ApprovedByL1).HasColumnName("approved_by_l1");
+            e.Property(b => b.ApprovedByGa).HasColumnName("approved_by_ga");
+            e.Property(b => b.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
+
+            e.Property(b => b.CreatedAt).HasColumnName("created_at");
+            e.Property(b => b.UpdatedAt).HasColumnName("updated_at");
+            e.Property(b => b.ApprovedL1At).HasColumnName("approved_l1_at");
+            e.Property(b => b.ApprovedGaAt).HasColumnName("approved_ga_at");
+            e.Property(b => b.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+
+            e.HasOne(b => b.Pembuat)
+                .WithMany()
+                .HasForeignKey(b => b.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookingRuangLog>(e =>
+        {
+            e.ToTable("booking_ruang_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.BookingRuangId).HasColumnName("booking_ruang_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.BookingRuang)
+                .WithMany(b => b.Logs)
+                .HasForeignKey(l => l.BookingRuangId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

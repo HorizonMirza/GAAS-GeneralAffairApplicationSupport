@@ -45,3 +45,15 @@ public enum RejectTargetEnum
     GA,
     ORIGIN,
 }
+
+public enum BookingStatusEnum
+{
+    DRAFT,
+    SUBMITTED,
+    REJECTED_L1,
+    APPROVED_L1,
+    REJECTED_GA,
+    APPROVED_GA,
+    REJECTED_GA_APPROVAL,
+    APPROVED_GA_APPROVAL,
+}

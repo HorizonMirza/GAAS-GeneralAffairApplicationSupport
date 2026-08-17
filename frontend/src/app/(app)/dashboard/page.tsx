@@ -38,7 +38,8 @@ const MODULES: ModuleDef[] = [
   {
     key: "bookingruangmeeting",
     title: "Room Booking",
-    href: "/booking-ruang-meeting",
+    href: "/booking-ruang-meeting/overview",
+    live: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
   },
   {
@@ -59,6 +60,7 @@ export default function DashboardPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
   const [summary, setSummary] = useState<{ total: number; totalBulanIni: number | null } | null | undefined>(undefined);
+  const [bookingSummary, setBookingSummary] = useState<{ total: number } | null | undefined>(undefined);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") {
@@ -73,6 +75,13 @@ export default function DashboardPage() {
       .catch(() => setSummary(null));
   }, []);
 
+  useEffect(() => {
+    api
+      .listBooking({ page: 1, limit: 5 })
+      .then((r) => setBookingSummary({ total: r.total }))
+      .catch(() => setBookingSummary(null));
+  }, []);
+
   if (!me || me.role === "SUPER_ADMIN") return null;
 
   return (
@@ -84,10 +93,16 @@ export default function DashboardPage() {
         {MODULES.map((mod) => {
           if (mod.live) {
             const subtitle =
-              summary === undefined
+              mod.key === "ekspedisi"
+                ? summary === undefined
+                  ? "Memuat..."
+                  : summary
+                  ? `${summary.total} transaksi${summary.totalBulanIni != null ? ` · ${formatCurrency(summary.totalBulanIni)} bulan ini` : ""}`
+                  : "Tidak dapat memuat data"
+                : bookingSummary === undefined
                 ? "Memuat..."
-                : summary
-                ? `${summary.total} transaksi${summary.totalBulanIni != null ? ` · ${formatCurrency(summary.totalBulanIni)} bulan ini` : ""}`
+                : bookingSummary
+                ? `${bookingSummary.total} booking`
                 : "Tidak dapat memuat data";
             return (
               <a key={mod.key} className="module-card" href={mod.href}>

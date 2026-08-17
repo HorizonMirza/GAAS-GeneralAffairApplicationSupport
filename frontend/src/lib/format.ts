@@ -67,3 +67,15 @@ export function invoiceBulanLabel(bulan: string | null | undefined): string {
   const date = new Date(Number(year), Number(month) - 1, 1);
   return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(date);
 }
+
+// Jam disimpan/dikirim sebagai string "HH:mm[:ss]" (bukan datetime penuh), jadi diformat apa
+// adanya (cukup ambil 5 karakter pertama) daripada lewat Date() yang tidak menerima format ini.
+export function formatTimeRange(
+  jamMulai: string | null | undefined,
+  jamSelesai: string | null | undefined,
+  isWholeDay: boolean
+): string {
+  if (isWholeDay) return "Sehari Penuh";
+  if (!jamMulai || !jamSelesai) return "-";
+  return `${jamMulai.slice(0, 5)} - ${jamSelesai.slice(0, 5)}`;
+}

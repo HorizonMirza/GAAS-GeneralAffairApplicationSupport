@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import type { RejectTarget } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
-export type RejectType = "l1" | "ga" | "ga-approval" | "kpu";
+export type RejectType = "l1" | "ga" | "ga-approval" | "kpu" | "booking-l1" | "booking-ga" | "booking-ga-approval";
 
 interface Props {
   open: boolean;
@@ -16,7 +16,7 @@ interface Props {
   onDone: () => void;
 }
 
-const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu"];
+const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu", "booking-ga-approval"];
 
 export default function RejectModal({ open, targetId, targetType, originLabel, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
@@ -55,8 +55,15 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
       } else if (targetType === "ga-approval") {
         await api.rejectGaApproval(targetId, reasonValue, target as RejectTarget);
         message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
-      } else {
+      } else if (targetType === "kpu") {
         await api.rejectKpu(targetId, reasonValue, target as RejectTarget);
+        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+      } else if (targetType === "booking-l1") {
+        await api.rejectBookingL1(targetId, reasonValue);
+      } else if (targetType === "booking-ga") {
+        await api.rejectBookingGa(targetId, reasonValue);
+      } else {
+        await api.rejectBookingGaApproval(targetId, reasonValue, target as RejectTarget);
         message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
       }
       showToast(message);
