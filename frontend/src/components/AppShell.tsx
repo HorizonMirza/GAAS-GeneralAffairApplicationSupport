@@ -73,7 +73,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Room Booking",
     items: [
       { label: "Overview", href: "/booking-ruang-meeting/overview" },
-      { label: "Transactions", href: "/booking-ruang-meeting/transaksi" },
+      { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
