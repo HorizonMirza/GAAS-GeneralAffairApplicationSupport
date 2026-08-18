@@ -51,12 +51,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    icon: RUMAH_ICON,
-    label: "Office Supplies",
+    icon: MEETING_ICON,
+    label: "Room Booking",
     items: [
-      { label: "Dashboard", href: "/rumah-tangga" },
-      { label: "Transactions", href: "/rumah-tangga" },
-      { label: "Super Admin", href: "/rumah-tangga", superAdminOnly: true },
+      { label: "Overview", href: "/booking-ruang-meeting/overview" },
+      { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
+      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -69,12 +69,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    icon: MEETING_ICON,
-    label: "Room Booking",
+    icon: RUMAH_ICON,
+    label: "Office Supplies",
     items: [
-      { label: "Overview", href: "/booking-ruang-meeting/overview" },
-      { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
+      { label: "Dashboard", href: "/rumah-tangga" },
+      { label: "Transactions", href: "/rumah-tangga" },
+      { label: "Super Admin", href: "/rumah-tangga", superAdminOnly: true },
     ],
   },
   {
@@ -96,6 +96,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
 ];
+
+const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Maintenance", "Archive"]);
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<string>("light");
@@ -230,7 +232,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           Dashboard
         </Link>
 
-        {NAV_CATEGORIES.map((cat) => {
+        {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
           const hasActive = cat.items.some((item) => item.href === pathname);
           const isOpen = openCategory === cat.label || hasActive;
           return (

@@ -1475,6 +1475,11 @@ table.data-table {
   font-size: 0.85rem;
 }
 
+.calendar-sidebar .btn-header-action {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
 .calendar-main {
   min-width: 0;
   background: var(--bg-surface);
@@ -1485,8 +1490,8 @@ table.data-table {
 
 .calendar-topbar {
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 14px;
@@ -1496,6 +1501,12 @@ table.data-table {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.calendar-topbar-room {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
 }
 
 .calendar-search-input {
@@ -1538,14 +1549,6 @@ table.data-table {
 .calendar-view-btn-active:hover { color: #fff; }
 
 .calendar-sidebar .calendar-search-input { width: 100%; }
-
-.calendar-view-toggle-sidebar {
-  width: 100%;
-}
-.calendar-view-toggle-sidebar .calendar-view-btn {
-  flex: 1 1 0;
-  text-align: center;
-}
 
 /* Mini month calendar (sidebar) */
 .mini-calendar {

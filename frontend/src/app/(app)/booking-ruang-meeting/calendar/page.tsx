@@ -136,11 +136,6 @@ export default function BookingCalendarPage() {
             </select>
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-date-input">Tanggal</label>
-            <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
-          </div>
-          <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} />
-          <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-search-input">Cari Kegiatan</label>
             <input
               type="text"
@@ -151,18 +146,11 @@ export default function BookingCalendarPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="calendar-view-toggle calendar-view-toggle-sidebar">
-            {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
-                onClick={() => setView(v)}
-              >
-                {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
-              </button>
-            ))}
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="calendar-date-input">Tanggal</label>
+            <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
+          <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} />
         </div>
 
         <div className="calendar-main">
@@ -171,6 +159,19 @@ export default function BookingCalendarPage() {
               <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
               <button className="page-btn" onClick={goPrev} aria-label="Sebelumnya">‹</button>
               <button className="page-btn" onClick={goNext} aria-label="Berikutnya">›</button>
+            </div>
+            <div className="calendar-topbar-room">{selectedRoom}</div>
+            <div className="calendar-view-toggle">
+              {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
+                  onClick={() => setView(v)}
+                >
+                  {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
+                </button>
+              ))}
             </div>
           </div>
 
