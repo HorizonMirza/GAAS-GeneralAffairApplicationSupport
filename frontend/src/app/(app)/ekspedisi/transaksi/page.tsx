@@ -316,10 +316,10 @@ export default function TransaksiPage() {
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
 
           <div className="toolbar-actions">
-            <button className="btn btn-pdf-glossy" style={{ width: "auto" }} onClick={() => window.open(api.pdfUrl(currentExportParams()), "_blank")}>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.pdfUrl(currentExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
-            <button className="btn btn-export-glossy" style={{ width: "auto" }} onClick={() => window.open(api.exportUrl(currentExportParams()), "_blank")}>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.exportUrl(currentExportParams()), "_blank")}>
               ⬇ Download Excel
             </button>
             {isOrigin && (
