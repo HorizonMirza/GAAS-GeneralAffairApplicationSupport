@@ -17,6 +17,16 @@
   --glow-blue: 0 0 0 1px rgba(75, 141, 255, 0.25), 0 8px 28px rgba(20, 80, 201, 0.35), 0 0 40px rgba(75, 141, 255, 0.18);
   --glow-blue-strong: 0 0 0 1px rgba(75, 141, 255, 0.4), 0 12px 36px rgba(20, 80, 201, 0.45), 0 0 56px rgba(75, 141, 255, 0.3);
 
+  --gradient-red: linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%);
+  --gradient-red-hover: linear-gradient(135deg, #991b1b 0%, #ef4444 55%, #fca5a5 100%);
+  --glow-red: 0 0 0 1px rgba(220, 38, 38, 0.25), 0 8px 28px rgba(153, 27, 27, 0.35), 0 0 40px rgba(220, 38, 38, 0.18);
+  --glow-red-strong: 0 0 0 1px rgba(220, 38, 38, 0.4), 0 12px 36px rgba(153, 27, 27, 0.45), 0 0 56px rgba(220, 38, 38, 0.3);
+
+  --gradient-green: linear-gradient(135deg, #0a3d24 0%, #0a8a4a 55%, #34d15e 100%);
+  --gradient-green-hover: linear-gradient(135deg, #0d4f2f 0%, #16a34a 55%, #5ee08a 100%);
+  --glow-green: 0 0 0 1px rgba(22, 163, 74, 0.25), 0 8px 28px rgba(10, 138, 74, 0.35), 0 0 40px rgba(22, 163, 74, 0.18);
+  --glow-green-strong: 0 0 0 1px rgba(22, 163, 74, 0.4), 0 12px 36px rgba(10, 138, 74, 0.45), 0 0 56px rgba(22, 163, 74, 0.3);
+
   --transition-theme: background-color 300ms ease-in-out, color 300ms ease-in-out,
     border-color 300ms ease-in-out, box-shadow 300ms ease-in-out;
 }
@@ -469,45 +479,25 @@ button, input, select, textarea {
 .btn-sm { padding: 7px 14px; font-size: 0.85rem; }
 
 .btn-export-glossy {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, var(--green-600) 0%, var(--green-500) 55%, var(--green-400) 100%);
+  background: var(--gradient-green);
   color: #fff;
-  box-shadow: 0 0 0 1px rgba(10, 138, 74, 0.3), 0 8px 20px rgba(10, 138, 74, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.btn-export-glossy::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0) 55%);
-  pointer-events: none;
+  box-shadow: var(--glow-green);
 }
 
 .btn-export-glossy:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--green-600) 0%, var(--green-500) 45%, var(--green-400) 100%);
-  box-shadow: 0 0 0 1px rgba(10, 138, 74, 0.4), 0 10px 26px rgba(10, 138, 74, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: var(--gradient-green-hover);
+  box-shadow: var(--glow-green-strong);
 }
 
 .btn-pdf-glossy {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 55%, #f87171 100%);
+  background: var(--gradient-red);
   color: #fff;
-  box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.3), 0 8px 20px rgba(185, 28, 28, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.btn-pdf-glossy::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0) 55%);
-  pointer-events: none;
+  box-shadow: var(--glow-red);
 }
 
 .btn-pdf-glossy:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 45%, #f87171 100%);
-  box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.4), 0 10px 26px rgba(185, 28, 28, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: var(--gradient-red-hover);
+  box-shadow: var(--glow-red-strong);
 }
 
 .error-text {
