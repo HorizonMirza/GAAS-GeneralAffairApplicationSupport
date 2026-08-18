@@ -2260,19 +2260,13 @@ table.data-table {
 .chat-bubble-mine .chat-bubble-meta { color: rgba(255, 255, 255, 0.85); }
 
 .chat-mention {
-  color: var(--blue-500);
+  color: var(--blue-600);
   font-weight: 700;
-  background: rgba(75, 141, 255, 0.14);
-  border-radius: 4px;
-  padding: 0 3px;
 }
 
 .chat-bubble-mine .chat-mention {
-  color: #fff;
-  background: none;
-  padding: 0;
-  border-radius: 0;
-  text-shadow: 0 0 8px rgba(183, 211, 255, 0.95), 0 0 3px rgba(255, 255, 255, 0.8);
+  color: var(--blue-200);
+  text-shadow: 0 0 8px rgba(183, 211, 255, 0.95), 0 0 3px rgba(255, 255, 255, 0.6);
 }
 
 .chat-input-wrap {
