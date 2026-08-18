@@ -6,7 +6,6 @@ import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
-import { useConfirm } from "./ui/ConfirmProvider";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -45,7 +44,6 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const [kSubtotal, setKSubtotal] = useState("");
   const [kTotal, setKTotal] = useState("");
   const [error, setError] = useState("");
-  const confirm = useConfirm();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -128,30 +126,26 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     }
   }
 
-  function handleApproveGa() {
+  async function handleApproveGa() {
     onClose();
-    confirm("Approve data ini (barang fisik sudah dicek)?", async () => {
-      try {
-        await api.approveGa(item!.id);
-        showToast("Data berhasil di-approve, diteruskan ke Approval General Affair");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveGa(item!.id);
+      showToast("Data berhasil di-approve, diteruskan ke Approval General Affair");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
-  function handleApproveGaApproval() {
+  async function handleApproveGaApproval() {
     onClose();
-    confirm("Approve data ini dan teruskan ke KPU?", async () => {
-      try {
-        await api.approveGaApproval(item!.id);
-        showToast("Data berhasil di-approve, diteruskan ke KPU");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveGaApproval(item!.id);
+      showToast("Data berhasil di-approve, diteruskan ke KPU");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
   async function handleKpuApprove() {
