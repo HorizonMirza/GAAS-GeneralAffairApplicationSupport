@@ -1475,7 +1475,8 @@ table.data-table {
   gap: 8px;
   border: none;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   background: var(--gradient-primary);
@@ -1486,6 +1487,11 @@ table.data-table {
 .calendar-create-btn:hover {
   background: var(--gradient-primary-hover);
   box-shadow: var(--glow-blue-strong);
+}
+
+.calendar-sidebar .field select {
+  padding: 8px 12px;
+  font-size: 0.85rem;
 }
 
 .calendar-main {
@@ -1499,7 +1505,7 @@ table.data-table {
 .calendar-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 14px;
@@ -1549,7 +1555,7 @@ table.data-table {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  padding: 7px 16px;
+  padding: 8px 12px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -1621,8 +1627,8 @@ table.data-table {
 }
 .mini-calendar-day:hover { background: var(--bg-surface); }
 .mini-calendar-day-muted { color: var(--text-secondary); opacity: 0.5; }
-.mini-calendar-day-today { background: var(--blue-500); color: #fff; font-weight: 700; }
-.mini-calendar-day-selected { background: var(--blue-200); color: var(--navy-900); font-weight: 700; }
+.mini-calendar-day-today { background: var(--blue-500); color: #fff; }
+.mini-calendar-day-selected { background: var(--blue-200); color: var(--navy-900); }
 
 /* Month grid (main view) */
 .month-grid {
