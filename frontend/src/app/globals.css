@@ -19,9 +19,13 @@
 
   --gradient-red: linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%);
   --gradient-red-hover: linear-gradient(135deg, #991b1b 0%, #ef4444 55%, #fca5a5 100%);
+  --glow-red: 0 0 0 1px rgba(220, 38, 38, 0.25), 0 8px 28px rgba(153, 27, 27, 0.35), 0 0 40px rgba(220, 38, 38, 0.18);
+  --glow-red-strong: 0 0 0 1px rgba(220, 38, 38, 0.4), 0 12px 36px rgba(153, 27, 27, 0.45), 0 0 56px rgba(220, 38, 38, 0.3);
 
   --gradient-green: linear-gradient(135deg, #0a3d24 0%, #0a8a4a 55%, #34d15e 100%);
   --gradient-green-hover: linear-gradient(135deg, #0d4f2f 0%, #16a34a 55%, #5ee08a 100%);
+  --glow-green: 0 0 0 1px rgba(22, 163, 74, 0.25), 0 8px 28px rgba(10, 138, 74, 0.35), 0 0 40px rgba(22, 163, 74, 0.18);
+  --glow-green-strong: 0 0 0 1px rgba(22, 163, 74, 0.4), 0 12px 36px rgba(10, 138, 74, 0.45), 0 0 56px rgba(22, 163, 74, 0.3);
 
   --transition-theme: background-color 300ms ease-in-out, color 300ms ease-in-out,
     border-color 300ms ease-in-out, box-shadow 300ms ease-in-out;
@@ -477,19 +481,23 @@ button, input, select, textarea {
 .btn-export-glossy {
   background: var(--gradient-green);
   color: #fff;
+  box-shadow: var(--glow-green);
 }
 
 .btn-export-glossy:hover:not(:disabled) {
   background: var(--gradient-green-hover);
+  box-shadow: var(--glow-green-strong);
 }
 
 .btn-pdf-glossy {
   background: var(--gradient-red);
   color: #fff;
+  box-shadow: var(--glow-red);
 }
 
 .btn-pdf-glossy:hover:not(:disabled) {
   background: var(--gradient-red-hover);
+  box-shadow: var(--glow-red-strong);
 }
 
 .error-text {
@@ -2044,10 +2052,6 @@ table.data-table {
 
   .pagination { justify-content: center; text-align: center; }
   .pagination-right { justify-content: center; width: 100%; }
-}
-
-@media (max-width: 420px) {
-  .btn-export-glossy, .btn-pdf-glossy { width: 100%; }
 }
 
 /* ---------- Status border beam (draft: none, on-approval: orange, rejected: red, approved: green) ---------- */
