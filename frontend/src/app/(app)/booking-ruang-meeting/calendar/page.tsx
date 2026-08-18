@@ -123,17 +123,21 @@ export default function BookingCalendarPage() {
       <div className="calendar-shell">
         <div className="calendar-sidebar">
           {isOrigin && (
-            <button type="button" className="calendar-create-btn" onClick={openCreateForm}>
-              + Input Ruang Meeting
+            <button type="button" className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={openCreateForm}>
+              + Booking Ruang Meeting
             </button>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-room-select">Ruang</label>
+            <label htmlFor="calendar-room-select">Ruangan</label>
             <select id="calendar-room-select" value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
               {rooms.map((r) => (
                 <option key={r.nama} value={r.nama}>{r.nama}</option>
               ))}
             </select>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="calendar-date-input">Tanggal</label>
+            <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
           <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} />
         </div>
@@ -147,13 +151,17 @@ export default function BookingCalendarPage() {
               <span className="calendar-period-label">{formatPeriodLabel(view, refDate)}</span>
             </div>
             <div className="calendar-topbar-right">
-              <input
-                type="text"
-                className="calendar-search-input"
-                placeholder="Cari kegiatan..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <div className="field calendar-search-field" style={{ marginBottom: 0 }}>
+                <label htmlFor="calendar-search-input">Cari Kegiatan</label>
+                <input
+                  type="text"
+                  id="calendar-search-input"
+                  className="calendar-search-input"
+                  placeholder="Cari kegiatan..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
               <div className="calendar-view-toggle">
                 {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
                   <button
@@ -162,7 +170,7 @@ export default function BookingCalendarPage() {
                     className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
                     onClick={() => setView(v)}
                   >
-                    {v === "day" ? "Day" : v === "week" ? "Week" : "Month"}
+                    {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
                   </button>
                 ))}
               </div>

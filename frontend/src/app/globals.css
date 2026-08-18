@@ -1468,28 +1468,8 @@ table.data-table {
   top: 16px;
 }
 
-.calendar-create-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  background: var(--gradient-primary);
-  color: #fff;
-  box-shadow: var(--glow-blue);
-  transition: var(--transition-theme), transform 150ms ease, box-shadow 150ms ease;
-}
-.calendar-create-btn:hover {
-  background: var(--gradient-primary-hover);
-  box-shadow: var(--glow-blue-strong);
-}
-
-.calendar-sidebar .field select {
+.calendar-sidebar .field select,
+.calendar-sidebar .field input {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
@@ -1504,7 +1484,7 @@ table.data-table {
 
 .calendar-topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-start;
   gap: 12px;
   flex-wrap: wrap;
@@ -1519,9 +1499,11 @@ table.data-table {
 
 .calendar-topbar-right {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
 }
+
+.calendar-search-field { margin-bottom: 0; }
 
 .calendar-period-label {
   font-weight: 700;

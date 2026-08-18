@@ -279,7 +279,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
             </button>
             <h2>{topbarTitle}</h2>
           </div>
-          <div className="topbar-date">{dateText}</div>
+          {pathname !== "/booking-ruang-meeting/calendar" && <div className="topbar-date">{dateText}</div>}
           <div className="topbar-right" onClick={(e) => e.stopPropagation()}>
             <AccountMenu />
             <ThemeToggle />
