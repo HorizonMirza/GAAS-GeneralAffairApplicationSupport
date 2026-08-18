@@ -159,8 +159,8 @@ export default function BookingCalendarPage() {
               <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
               <button className="page-btn" onClick={goPrev} aria-label="Sebelumnya">‹</button>
               <button className="page-btn" onClick={goNext} aria-label="Berikutnya">›</button>
+              <div className="calendar-topbar-room">{selectedRoom}</div>
             </div>
-            <div className="calendar-topbar-room">{selectedRoom}</div>
             <div className="calendar-view-toggle">
               {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
                 <button

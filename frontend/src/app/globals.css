@@ -1469,17 +1469,6 @@ table.data-table {
   top: 16px;
 }
 
-.calendar-sidebar .field select,
-.calendar-sidebar .field input {
-  padding: 8px 12px;
-  font-size: 0.85rem;
-}
-
-.calendar-sidebar .btn-header-action {
-  padding: 8px 12px;
-  font-size: 0.85rem;
-}
-
 .calendar-main {
   min-width: 0;
   background: var(--bg-surface);
@@ -1507,6 +1496,7 @@ table.data-table {
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--text-primary);
+  margin-left: 6px;
 }
 
 .calendar-search-input {
@@ -1527,7 +1517,7 @@ table.data-table {
 .calendar-view-toggle {
   display: flex;
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
