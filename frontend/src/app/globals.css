@@ -1457,10 +1457,16 @@ table.data-table {
   max-width: 130px;
 }
 
+.toolbar .field input,
+.toolbar .field select {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
 .toolbar > .btn,
 .filter-dropdown-wrap #filter-toggle {
-  padding: 11px 14px;
-  font-size: 1rem;
+  padding: 8px 12px;
+  font-size: 0.85rem;
 }
 
 .toolbar-actions {
@@ -1470,6 +1476,11 @@ table.data-table {
   flex-wrap: nowrap;
   margin-left: auto;
   align-self: flex-end;
+}
+
+.toolbar-actions .btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
 }
 
 .pagination {
