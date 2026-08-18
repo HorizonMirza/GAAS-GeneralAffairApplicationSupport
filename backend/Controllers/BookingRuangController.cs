@@ -94,16 +94,23 @@ public class BookingRuangController : ApiControllerBase
         return query;
     }
 
+    private static readonly TimeOnly OperatingStart = new(7, 0);
+    private static readonly TimeOnly OperatingEnd = new(18, 0);
+
     private static string? ValidatePayload(BookingRuangCreate payload)
     {
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
+        if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
                 return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
+            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+                return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         return null;
     }
@@ -163,6 +170,28 @@ public class BookingRuangController : ApiControllerBase
             .Where(b => b.Tanggal == tanggal && ActiveStatuses.Contains(b.Status))
             .ToListAsync();
 
+        return Ok(items.Select(BookingRuangOut.From).ToList());
+    }
+
+    // Same visibility rules as GetSchedule (global, read-only), but spans a date range so the
+    // Week/Month calendar views can load everything they need in one call instead of one
+    // request per rendered day.
+    [HttpGet("schedule-range")]
+    public async Task<IActionResult> GetScheduleRange(
+        [FromQuery] DateOnly tanggalMulai,
+        [FromQuery] DateOnly tanggalSelesai,
+        [FromQuery(Name = "nama_ruang")] string? namaRuang = null)
+    {
+        var (_, error) = await RequireRoleAsync();
+        if (error != null) return error;
+        if (tanggalMulai > tanggalSelesai)
+            return BadRequest(new { detail = "Tanggal mulai harus sebelum atau sama dengan tanggal selesai" });
+
+        var query = _db.BookingRuangs.Where(b =>
+            b.Tanggal >= tanggalMulai && b.Tanggal <= tanggalSelesai && ActiveStatuses.Contains(b.Status));
+        if (!string.IsNullOrEmpty(namaRuang)) query = query.Where(b => b.NamaRuang == namaRuang);
+
+        var items = await query.ToListAsync();
         return Ok(items.Select(BookingRuangOut.From).ToList());
     }
 

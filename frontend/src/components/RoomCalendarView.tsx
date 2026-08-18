@@ -1,0 +1,313 @@
+"use client";
+
+import type { BookingRuang } from "@/lib/types";
+
+export type CalendarViewMode = "day" | "week" | "month";
+
+const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17, each row = "HH:00 - (HH+1):00" (07:00-18:00)
+const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const DAY_NAMES_SHORT = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function toIso(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function addDays(iso: string, days: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return toIso(d);
+}
+
+export function addMonths(iso: string, months: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setMonth(d.getMonth() + months);
+  return toIso(d);
+}
+
+export function mondayOf(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  const dow = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - dow);
+  return toIso(d);
+}
+
+export function isWeekend(iso: string): boolean {
+  const dow = new Date(iso + "T00:00:00").getDay();
+  return dow === 0 || dow === 6;
+}
+
+function parseHour(t: string): number {
+  return Number(t.slice(0, 2));
+}
+
+function parseMinute(t: string): number {
+  return Number(t.slice(3, 5));
+}
+
+function entryStatusClass(status: BookingRuang["status"]): string {
+  return status === "APPROVED_GA_APPROVAL" ? "schedule-cell-confirmed" : "schedule-cell-pending";
+}
+
+type CellPlan =
+  | { type: "empty" }
+  | { type: "skip" }
+  | { type: "wholeday"; entry: BookingRuang }
+  | { type: "start"; entry: BookingRuang; rowSpan: number };
+
+function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
+  const hourMap = new Map<number, CellPlan>();
+  const wholeDay = dateEntries.find((e) => e.isWholeDay);
+  if (wholeDay) {
+    hourMap.set(HOURS[0], { type: "wholeday", entry: wholeDay });
+    for (const hour of HOURS.slice(1)) hourMap.set(hour, { type: "skip" });
+    return hourMap;
+  }
+  for (const hour of HOURS) hourMap.set(hour, { type: "empty" });
+  const sorted = dateEntries
+    .filter((e): e is BookingRuang & { jamMulai: string; jamSelesai: string } => !!e.jamMulai && !!e.jamSelesai)
+    .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
+  for (const entry of sorted) {
+    const startHour = Math.max(HOURS[0], parseHour(entry.jamMulai));
+    let endHour = parseHour(entry.jamSelesai);
+    if (parseMinute(entry.jamSelesai) > 0) endHour += 1;
+    endHour = Math.min(HOURS[HOURS.length - 1] + 1, endHour);
+    const rowSpan = Math.max(1, endHour - startHour);
+    hourMap.set(startHour, { type: "start", entry, rowSpan });
+    for (let h = startHour + 1; h < startHour + rowSpan; h++) hourMap.set(h, { type: "skip" });
+  }
+  return hourMap;
+}
+
+export function formatPeriodLabel(view: CalendarViewMode, refDate: string): string {
+  const d = new Date(refDate + "T00:00:00");
+  if (view === "day") {
+    return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  if (view === "week") {
+    const mon = new Date(mondayOf(refDate) + "T00:00:00");
+    const fri = new Date(addDays(mondayOf(refDate), 4) + "T00:00:00");
+    if (mon.getMonth() === fri.getMonth()) {
+      return `${mon.getDate()} - ${fri.getDate()} ${MONTH_NAMES_SHORT[mon.getMonth()]} ${mon.getFullYear()}`;
+    }
+    return `${mon.getDate()} ${MONTH_NAMES_SHORT[mon.getMonth()]} - ${fri.getDate()} ${MONTH_NAMES_SHORT[fri.getMonth()]} ${fri.getFullYear()}`;
+  }
+  return `${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+interface Props {
+  view: CalendarViewMode;
+  refDate: string;
+  entries: BookingRuang[];
+  canCreate: boolean;
+  onSlotClick: (date: string, hour: number) => void;
+  onEntryClick: (entry: BookingRuang) => void;
+  onJumpToDay: (date: string) => void;
+}
+
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotClick, onEntryClick, onJumpToDay }: Props) {
+  if (view === "day") {
+    if (isWeekend(refDate)) return <ClosedNotice />;
+    const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
+    return (
+      <div className="table-wrap">
+        <table className="data-table schedule-table">
+          <thead>
+            <tr>
+              <th className="schedule-time-col">Jam</th>
+              <th>{formatPeriodLabel("day", refDate)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map((hour) => {
+              const cell = plan.get(hour);
+              return (
+                <tr key={hour}>
+                  <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                  <DayCell cell={cell} canCreate={canCreate} onSlotClick={() => onSlotClick(refDate, hour)} onEntryClick={onEntryClick} />
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (view === "week") {
+    const monday = mondayOf(refDate);
+    const weekDates = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
+    const plans = weekDates.map((date) => buildDayPlan(entries.filter((e) => e.tanggal === date)));
+    return (
+      <div className="table-wrap">
+        <table className="data-table schedule-table">
+          <thead>
+            <tr>
+              <th className="schedule-time-col">Jam</th>
+              {weekDates.map((date) => {
+                const d = new Date(date + "T00:00:00");
+                return (
+                  <th key={date} className="schedule-week-head" onClick={() => onJumpToDay(date)}>
+                    {DAY_NAMES_SHORT[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map((hour) => (
+              <tr key={hour}>
+                <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                {weekDates.map((date, idx) => {
+                  const cell = plans[idx].get(hour);
+                  return (
+                    <DayCell
+                      key={date}
+                      cell={cell}
+                      canCreate={canCreate}
+                      onSlotClick={() => onSlotClick(date, hour)}
+                      onEntryClick={onEntryClick}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // month view
+  const d = new Date(refDate + "T00:00:00");
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7;
+  const daysInThisMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  const cells: { iso: string; day: number; muted: boolean }[] = [];
+  for (let i = 0; i < startOffset; i++) {
+    const day = daysInPrevMonth - startOffset + 1 + i;
+    const m = month === 0 ? 11 : month - 1;
+    const y = month === 0 ? year - 1 : year;
+    cells.push({ iso: `${y}-${pad(m + 1)}-${pad(day)}`, day, muted: true });
+  }
+  for (let day = 1; day <= daysInThisMonth; day++) {
+    cells.push({ iso: `${year}-${pad(month + 1)}-${pad(day)}`, day, muted: false });
+  }
+  let nextDay = 1;
+  const nextMonthIdx = month === 11 ? 0 : month + 1;
+  const nextYear = month === 11 ? year + 1 : year;
+  while (cells.length < 42) {
+    cells.push({ iso: `${nextYear}-${pad(nextMonthIdx + 1)}-${pad(nextDay)}`, day: nextDay, muted: true });
+    nextDay += 1;
+  }
+
+  const entriesByDate = new Map<string, BookingRuang[]>();
+  for (const e of entries) {
+    const list = entriesByDate.get(e.tanggal) || [];
+    list.push(e);
+    entriesByDate.set(e.tanggal, list);
+  }
+
+  const today = toIso(new Date());
+
+  return (
+    <div className="month-grid">
+      <div className="month-grid-weekdays">
+        {DAY_NAMES_SHORT.slice(1).concat(DAY_NAMES_SHORT[0]).map((n) => <span key={n}>{n}</span>)}
+      </div>
+      <div className="month-grid-cells">
+        {cells.map((c) => {
+          const dayEntries = (entriesByDate.get(c.iso) || []).slice().sort((a, b) => {
+            if (a.isWholeDay) return -1;
+            if (b.isWholeDay) return 1;
+            return (a.jamMulai || "").localeCompare(b.jamMulai || "");
+          });
+          const isToday = c.iso === today;
+          return (
+            <div key={c.iso} className={`month-cell${c.muted ? " month-cell-muted" : ""}`}>
+              <button type="button" className={`month-cell-daynum${isToday ? " month-cell-daynum-today" : ""}`} onClick={() => onJumpToDay(c.iso)}>
+                {c.day}
+              </button>
+              <div className="month-cell-events">
+                {dayEntries.slice(0, 3).map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={`month-event-chip ${entryStatusClass(entry.status)}`}
+                    onClick={() => onEntryClick(entry)}
+                  >
+                    {entry.isWholeDay ? "Sehari Penuh" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}
+                  </button>
+                ))}
+                {dayEntries.length > 3 && (
+                  <button type="button" className="month-event-more" onClick={() => onJumpToDay(c.iso)}>
+                    +{dayEntries.length - 3} lainnya
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ClosedNotice() {
+  return (
+    <div className="schedule-closed-notice">
+      Ruang meeting tutup pada akhir pekan. Jadwal booking tersedia Senin - Jumat, 07:00 - 18:00.
+    </div>
+  );
+}
+
+function DayCell({
+  cell,
+  canCreate,
+  onSlotClick,
+  onEntryClick,
+}: {
+  cell: CellPlan | undefined;
+  canCreate: boolean;
+  onSlotClick: () => void;
+  onEntryClick: (entry: BookingRuang) => void;
+}) {
+  if (!cell || cell.type === "skip") return null;
+
+  if (cell.type === "empty") {
+    if (!canCreate) return <td className="schedule-cell-empty schedule-cell-readonly" />;
+    return (
+      <td className="schedule-cell-empty" onClick={onSlotClick}>
+        + Tersedia
+      </td>
+    );
+  }
+
+  if (cell.type === "wholeday") {
+    return (
+      <td rowSpan={HOURS.length} className={`schedule-cell-booked ${entryStatusClass(cell.entry.status)}`} onClick={() => onEntryClick(cell.entry)}>
+        <div className="schedule-cell-title">Sehari Penuh</div>
+        <div className="schedule-cell-meta">{cell.entry.namaKegiatan}</div>
+      </td>
+    );
+  }
+
+  return (
+    <td
+      rowSpan={cell.rowSpan}
+      className={`schedule-cell-booked ${entryStatusClass(cell.entry.status)}`}
+      onClick={() => onEntryClick(cell.entry)}
+    >
+      <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
+      <div className="schedule-cell-meta">{cell.entry.departemen || cell.entry.divisi}</div>
+    </td>
+  );
+}

@@ -123,9 +123,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     }
   }
 
-  const selectedRoom = rooms.find((r) => r.nama === form.namaRuang);
-  const overCapacity = !!selectedRoom && form.jumlahPeserta > selectedRoom.kapasitas;
-
   return (
     <div className="modal-overlay">
       <div className="modal">
@@ -144,18 +141,13 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
                 <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
                 {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama} - {r.kapasitas} orang</option>
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
                 ))}
               </select>
             </div>
             <div className="field">
               <label htmlFor="bv-peserta">Jumlah Peserta</label>
               <input type="number" id="bv-peserta" min={1} required disabled={!isEdit} value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
-              {isEdit && overCapacity && (
-                <div className="text-secondary" style={{ fontSize: "0.8rem", marginTop: 4, color: "#d97706" }}>
-                  Jumlah peserta melebihi kapasitas {selectedRoom!.nama} ({selectedRoom!.kapasitas} orang)
-                </div>
-              )}
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>

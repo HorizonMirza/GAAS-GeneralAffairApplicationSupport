@@ -45,8 +45,6 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   if (!open) return null;
 
   const unitName = me.departemen || me.divisi || "";
-  const selectedRoom = rooms.find((r) => r.nama === form.namaRuang);
-  const overCapacity = !!selectedRoom && form.jumlahPeserta > selectedRoom.kapasitas;
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -87,18 +85,13 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <select id="f-ruang" required value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
                 <option value="" disabled>Pilih ruang</option>
                 {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama} - {r.kapasitas} orang</option>
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
                 ))}
               </select>
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>
               <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
-              {overCapacity && (
-                <div className="text-secondary" style={{ fontSize: "0.8rem", marginTop: 4, color: "#d97706" }}>
-                  Jumlah peserta melebihi kapasitas {selectedRoom!.nama} ({selectedRoom!.kapasitas} orang)
-                </div>
-              )}
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>

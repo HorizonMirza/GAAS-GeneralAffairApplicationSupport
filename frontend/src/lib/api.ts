@@ -217,6 +217,10 @@ export const api = {
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
   getBookingSchedule: (tanggal: string) =>
     apiRequest<BookingRuang[]>("/booking-ruang/schedule", { params: { tanggal } }),
+  getBookingScheduleRange: (tanggalMulai: string, tanggalSelesai: string, namaRuang?: string) =>
+    apiRequest<BookingRuang[]>("/booking-ruang/schedule-range", {
+      params: { tanggalMulai, tanggalSelesai, nama_ruang: namaRuang },
+    }),
   listBooking: (params: ListBookingParams) =>
     apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
   createBooking: (payload: BookingRuangCreatePayload) =>

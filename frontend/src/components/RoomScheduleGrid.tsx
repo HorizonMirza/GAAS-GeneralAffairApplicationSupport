@@ -2,7 +2,7 @@
 
 import type { BookingRuang, RoomOption } from "@/lib/types";
 
-const HOURS = Array.from({ length: 13 }, (_, i) => 7 + i); // 07..19, each row = "HH:00 - (HH+1):00"
+const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17, each row = "HH:00 - (HH+1):00" (07:00-18:00)
 
 function parseHour(time: string): number {
   return Number(time.slice(0, 2));
@@ -73,9 +73,7 @@ export default function RoomScheduleGrid({ rooms, entries, onSlotClick, onEntryC
           <tr>
             <th className="schedule-time-col">Jam</th>
             {rooms.map((r) => (
-              <th key={r.nama}>
-                {r.nama} <span className="text-secondary">({r.kapasitas} orang)</span>
-              </th>
+              <th key={r.nama}>{r.nama}</th>
             ))}
           </tr>
         </thead>
