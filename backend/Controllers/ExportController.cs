@@ -147,7 +147,7 @@ public class ExportController : ApiControllerBase
             cell.Style.Font.Bold = true;
             cell.Style.Font.FontColor = XLColor.White;
             cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1450C9");
-            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
             cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             cell.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
@@ -171,6 +171,7 @@ public class ExportController : ApiControllerBase
             for (var i = 1; i <= header.Count; i++)
             {
                 var cell = ws.Cell(rowIdx, i);
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
                 cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                 cell.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                 cell.Style.Border.OutsideBorderColor = XLColor.FromHtml("#B7C6E0");
@@ -183,12 +184,15 @@ public class ExportController : ApiControllerBase
         // "Status") so the footer label/value line up with the header row above them.
         var totalCol = Array.FindIndex(Columns, c => c.Field == "total") + 2;
         var labelCell = ws.Cell(rowIdx, totalCol - 1);
-        labelCell.Value = "Total Keseluruhan:";
+        labelCell.Value = "Total\nKeseluruhan:";
         labelCell.Style.Font.Bold = true;
-        labelCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+        labelCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        labelCell.Style.Alignment.WrapText = true;
         var valueCell = ws.Cell(rowIdx, totalCol);
         valueCell.Value = grandTotal;
         valueCell.Style.Font.Bold = true;
+        valueCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        ws.Row(rowIdx).Height = 30;
         for (var i = 1; i <= totalCol; i++)
         {
             ws.Cell(rowIdx, i).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
@@ -201,6 +205,24 @@ public class ExportController : ApiControllerBase
         {
             if (col.Width < 10) col.Width = 10;
             if (col.Width > 40) col.Width = 40;
+        }
+
+        // AdjustToContents can undersize a column whose header text is wider than its data
+        // (bold header font isn't measured accurately), leaving these headers clipped instead
+        // of sitting on one line - force a floor wide enough for the header itself.
+        var minColWidths = new (string Field, double MinWidth)[]
+        {
+            ("tanggal", 11),
+            ("jumlah_item", 12),
+            ("no_telepon_pengirim", 21),
+            ("no_telepon_penerima", 21),
+            ("asuransi_harga", 16),
+        };
+        foreach (var (field, minWidth) in minColWidths)
+        {
+            var colIdx = Array.FindIndex(Columns, c => c.Field == field) + 2;
+            var col = ws.Column(colIdx);
+            if (col.Width < minWidth) col.Width = minWidth;
         }
 
         using var stream = new MemoryStream();
