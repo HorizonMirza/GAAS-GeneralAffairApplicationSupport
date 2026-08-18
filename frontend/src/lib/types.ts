@@ -101,7 +101,7 @@ export interface Pengiriman {
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
   approvedKpuAt: string | null;
-  hasUnreadChat: boolean;
+  unreadChatCount: number;
   hasUnreadMention: boolean;
 }
 

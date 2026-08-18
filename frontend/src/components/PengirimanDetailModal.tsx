@@ -117,17 +117,15 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     }
   }
 
-  function handleApproveL1() {
+  async function handleApproveL1() {
     onClose();
-    confirm("Approve data ini dan teruskan ke Admin General Affair?", async () => {
-      try {
-        await api.approveL1(item!.id);
-        showToast("Data berhasil di-approve, diteruskan ke Admin General Affair");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveL1(item!.id);
+      showToast("Data berhasil di-approve, diteruskan ke Admin General Affair");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
   function handleApproveGa() {

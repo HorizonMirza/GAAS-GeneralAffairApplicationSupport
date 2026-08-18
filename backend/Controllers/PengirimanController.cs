@@ -350,23 +350,23 @@ public class PengirimanController : ApiControllerBase
         var itemIds = items.Select(i => i.Id).ToList();
         if (itemIds.Count > 0)
         {
-            var lastMessageAt = await _db.ChatMessages
+            var messageTimes = await _db.ChatMessages
                 .Where(m => itemIds.Contains(m.PengirimanId))
-                .GroupBy(m => m.PengirimanId)
-                .Select(g => new { PengirimanId = g.Key, LastMessageAt = g.Max(m => m.CreatedAt) })
-                .ToDictionaryAsync(g => g.PengirimanId, g => g.LastMessageAt);
+                .Select(m => new { m.PengirimanId, m.CreatedAt })
+                .ToListAsync();
             var lastReadAt = await _db.ChatReads
                 .Where(r => r.UserId == user.Id && itemIds.Contains(r.PengirimanId))
                 .ToDictionaryAsync(r => r.PengirimanId, r => r.LastReadAt);
-            foreach (var outItem in outItems)
+            var outById = outItems.ToDictionary(o => o.Id);
+            foreach (var group in messageTimes.GroupBy(m => m.PengirimanId))
             {
-                if (!lastMessageAt.TryGetValue(outItem.Id, out var lastMsg)) continue;
-                var hasRead = lastReadAt.TryGetValue(outItem.Id, out var readAt);
-                outItem.HasUnreadChat = !hasRead || lastMsg > readAt;
+                if (!outById.TryGetValue(group.Key, out var outItem)) continue;
+                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+                outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
             }
 
             var mentionLabel = MentionLabelForRole(user.Role);
-            var unreadItemIds = outItems.Where(i => i.HasUnreadChat).Select(i => i.Id).ToList();
+            var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
             if (mentionLabel != null && unreadItemIds.Count > 0)
             {
                 var mentionTag = "@" + mentionLabel;

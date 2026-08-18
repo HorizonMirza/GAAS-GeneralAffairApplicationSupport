@@ -2109,45 +2109,6 @@ table.data-table {
   }
 }
 
-.row-menu-btn-unread {
-  position: relative;
-}
-
-.row-menu-btn-unread::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #dc2626;
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 6px 1px rgba(220, 38, 38, 0.8);
-  animation: chat-unread-dot-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes chat-unread-dot-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.25); }
-}
-
-/* Being @mentioned on the Transaksi row is a stronger signal than a plain unread dot. */
-.row-menu-btn-mentioned {
-  animation: card-chat-mention-glow 1.6s ease-in-out infinite;
-}
-
-.row-menu-btn-mentioned::after {
-  background: #eab308;
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 8px 2px rgba(234, 179, 8, 0.9);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .row-menu-btn-mentioned {
-    animation: none;
-    box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.4), 0 0 14px 3px rgba(234, 179, 8, 0.55);
-  }
-}
-
 /* ---------- Chat modal ---------- */
 .chat-modal {
   max-width: 760px;
@@ -2166,10 +2127,15 @@ table.data-table {
 
 .chat-modal-header-bar .modal-header {
   margin-bottom: 6px;
+  min-width: 0;
 }
 
 .chat-modal-header-bar .modal-header h3 {
   color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .chat-modal-header-bar .modal-close {
@@ -2243,7 +2209,7 @@ table.data-table {
 }
 
 .chat-bubble-mine {
-  background: var(--blue-500);
+  background: var(--blue-600);
   color: #fff;
   border: none;
   border-radius: 14px 14px 4px 14px;
@@ -2286,8 +2252,8 @@ table.data-table {
 }
 
 .chat-bubble-mine .chat-mention {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.25);
+  color: var(--blue-200);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .chat-input-wrap {
@@ -2412,43 +2378,33 @@ table.data-table {
   color: var(--blue-500);
 }
 
-.card-chat-btn-unread::after {
-  content: "";
+.chat-count-badge {
   position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
   background: #ef4444;
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 6px 1px rgba(239, 68, 68, 0.8);
-  animation: chat-unread-dot-pulse 1.8s ease-in-out infinite;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--bg-surface);
 }
 
-/* Being @mentioned is a stronger signal than a plain unread message: the whole button glows
-   gold in addition to its dot, instead of just showing the small red dot. */
+/* Being @mentioned is a stronger signal than a plain unread message: the button itself turns
+   red in addition to the count badge, instead of just showing the badge. */
 .card-chat-btn-mentioned {
-  border-color: #eab308;
-  animation: card-chat-mention-glow 1.6s ease-in-out infinite;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
 }
 
-.card-chat-btn-mentioned::after {
-  background: #eab308;
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 8px 2px rgba(234, 179, 8, 0.9);
-}
-
-@keyframes card-chat-mention-glow {
-  0%, 78%, 100% {
-    box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.35), 0 0 10px 2px rgba(234, 179, 8, 0.45);
-  }
-  88% {
-    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.35), 0 0 20px 6px rgba(234, 179, 8, 0.75);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card-chat-btn-mentioned {
-    animation: none;
-    box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.4), 0 0 14px 3px rgba(234, 179, 8, 0.55);
-  }
+.card-chat-btn-mentioned:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
