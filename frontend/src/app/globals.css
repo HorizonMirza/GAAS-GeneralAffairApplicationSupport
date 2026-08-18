@@ -1258,6 +1258,18 @@ body.auth-ready .app-shell {
 
 .invoice-input-btn { margin-left: auto; }
 
+.invoice-toolbar-slim .field input,
+.invoice-toolbar-slim .field select {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.invoice-toolbar-slim > .btn,
+.invoice-toolbar-slim .field .btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
 .file-dropzone {
   position: relative;
   display: flex;
