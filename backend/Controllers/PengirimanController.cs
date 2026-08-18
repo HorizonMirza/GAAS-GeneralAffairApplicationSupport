@@ -337,12 +337,9 @@ public class PengirimanController : ApiControllerBase
         decimal? totalBulanIni = null;
         if (TotalVisibleRoles.Contains(user!.Role))
         {
-            var sumQuery = _db.Pengiriman.AsQueryable();
-            if (user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
-                sumQuery = sumQuery.Where(p => p.Departemen == user.Departemen);
-            else if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
-                sumQuery = sumQuery.Where(p => p.Divisi == user.Divisi && p.Departemen == null);
-            sumQuery = ApplyBulanFilter(sumQuery, bulan);
+            // Reuse the exact same filters as the list itself (status/divisi/departemen/
+            // direktorat/bulan), so the total always matches what's actually being shown.
+            var sumQuery = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
             totalBulanIni = await sumQuery.SumAsync(p => p.Total ?? 0);
         }
 
