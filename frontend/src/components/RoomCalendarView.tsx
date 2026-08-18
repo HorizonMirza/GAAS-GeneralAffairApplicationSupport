@@ -102,7 +102,6 @@ export function formatPeriodLabel(view: CalendarViewMode, refDate: string): stri
 interface Props {
   view: CalendarViewMode;
   refDate: string;
-  roomName: string;
   entries: BookingRuang[];
   canCreate: boolean;
   onSlotClick: (date: string, hour: number) => void;
@@ -110,7 +109,7 @@ interface Props {
   onJumpToDay: (date: string) => void;
 }
 
-export default function RoomCalendarView({ view, refDate, roomName, entries, canCreate, onSlotClick, onEntryClick, onJumpToDay }: Props) {
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotClick, onEntryClick, onJumpToDay }: Props) {
   if (view === "day") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
@@ -120,7 +119,7 @@ export default function RoomCalendarView({ view, refDate, roomName, entries, can
           <thead>
             <tr>
               <th className="schedule-time-col schedule-th-center">Jam</th>
-              <th className="schedule-th-center">{roomName}</th>
+              <th className="schedule-th-center">{formatPeriodLabel("day", refDate)}</th>
             </tr>
           </thead>
           <tbody>
