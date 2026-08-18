@@ -251,32 +251,72 @@ public class ExportController : ApiControllerBase
         var altBg = "#F5F9FF";
         var borderColor = "#CCCCCC";
 
+        const float noColWidth = 14f;
+        const float availableWidth = 828f;
+        var totalWidth = noColWidth + PdfColWidths.Sum();
+        var scale = availableWidth / totalWidth;
+        var colWidthsScaled = new[] { noColWidth * scale }.Concat(PdfColWidths.Select(w => w * scale)).ToArray();
+
+        // Base sizes tuned for a page fully packed with data - never grown past this, only
+        // shrunk (matching the Excel export's "everything on one line" look) when the longest
+        // value in some column would otherwise wrap onto a second line at this size.
+        const float baseBodySize = 4.8f;
+        const float baseHeaderSize = 5f;
+        const float baseFooterSize = 6f;
+        const float minBodySize = 3f;
+        // Rough average glyph width for the default sans font - just precise enough to decide
+        // whether a column needs to shrink, not an exact text-measurement replacement.
+        const float avgCharWidthRatio = 0.52f;
+
+        var colTexts = new List<string>[colWidthsScaled.Length];
+        colTexts[0] = new List<string> { "No" };
+        for (var i = 0; i < Columns.Length; i++) colTexts[i + 1] = new List<string> { Columns[i].Label };
+        var rowCount = 0;
+        foreach (var row in rows)
+        {
+            rowCount++;
+            colTexts[0].Add(rowCount.ToString());
+            for (var i = 0; i < Columns.Length; i++)
+                colTexts[i + 1].Add(GetFieldValue(row, Columns[i].Field)?.ToString() ?? "");
+        }
+
+        var fontScale = 1f;
+        for (var i = 0; i < colWidthsScaled.Length; i++)
+        {
+            var usableWidth = colWidthsScaled[i] - 4f; // minus left+right cell padding
+            var longest = colTexts[i].Count > 0 ? colTexts[i].Max(t => t.Length) : 0;
+            if (longest == 0 || usableWidth <= 0) continue;
+            var maxFontForCol = usableWidth / (longest * avgCharWidthRatio);
+            fontScale = Math.Min(fontScale, maxFontForCol / baseBodySize);
+        }
+        fontScale = Math.Clamp(fontScale, minBodySize / baseBodySize, 1f);
+
+        var bodySize = baseBodySize * fontScale;
+        var headerSize = baseHeaderSize * fontScale;
+        var footerSize = baseFooterSize * fontScale;
+
         var document = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
                 page.Margin(6);
-                page.DefaultTextStyle(x => x.FontSize(4.8f).LineHeight(1));
-
-                const float noColWidth = 14f;
-                const float availableWidth = 828f;
-                var totalWidth = noColWidth + PdfColWidths.Sum();
-                var scale = availableWidth / totalWidth;
+                page.DefaultTextStyle(x => x.FontSize(bodySize).LineHeight(1));
 
                 page.Content().Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(noColWidth * scale);
-                        foreach (var w in PdfColWidths) columns.ConstantColumn(w * scale);
+                        foreach (var w in colWidthsScaled) columns.ConstantColumn(w);
                     });
 
                     table.Header(h =>
                     {
-                        h.Cell().Background(headerBg).Padding(2).Text("No").FontColor(Colors.White).Bold().FontSize(5f);
+                        h.Cell().Background(headerBg).BorderColor("#7C9CE0").Border(0.4f).Padding(2)
+                            .Text("No").FontColor(Colors.White).Bold().FontSize(headerSize);
                         foreach (var (_, label) in Columns)
-                            h.Cell().Background(headerBg).Padding(2).Text(label).FontColor(Colors.White).Bold().FontSize(5f);
+                            h.Cell().Background(headerBg).BorderColor("#7C9CE0").Border(0.4f).Padding(2)
+                                .Text(label).FontColor(Colors.White).Bold().FontSize(headerSize);
                     });
 
                     var idx = 0;
@@ -298,9 +338,9 @@ public class ExportController : ApiControllerBase
                     var totalFieldIndex = Array.FindIndex(Columns, c => c.Field == "total");
                     table.Cell().ColumnSpan((uint)totalFieldIndex).Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .Text("Total\nKeseluruhan:").FontSize(6f).Bold();
+                        .Text("Total\nKeseluruhan:").FontSize(footerSize).Bold();
                     table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f).Padding(2)
-                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(6f).Bold();
+                        .Text(grandTotal.ToString("N0").Replace(",", ".")).FontSize(footerSize).Bold();
                     for (var i = totalFieldIndex + 1; i < Columns.Length; i++)
                         table.Cell().Background("#EAF1FF").BorderColor(borderColor).Border(0.4f);
                 });
