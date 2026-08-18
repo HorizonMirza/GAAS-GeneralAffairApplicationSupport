@@ -632,6 +632,7 @@ body.auth-ready .app-shell {
   align-items: center;
   gap: 12px;
   justify-self: end;
+  grid-column: 3;
   min-width: 0;
 }
 
@@ -1497,20 +1498,6 @@ table.data-table {
   gap: 8px;
 }
 
-.calendar-topbar-right {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-.calendar-search-field { margin-bottom: 0; }
-
-.calendar-period-label {
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin-left: 4px;
-}
-
 .calendar-search-input {
   padding: 8px 12px;
   border-radius: 999px;
@@ -1549,6 +1536,16 @@ table.data-table {
   color: #fff;
 }
 .calendar-view-btn-active:hover { color: #fff; }
+
+.calendar-sidebar .calendar-search-input { width: 100%; }
+
+.calendar-view-toggle-sidebar {
+  width: 100%;
+}
+.calendar-view-toggle-sidebar .calendar-view-btn {
+  flex: 1 1 0;
+  text-align: center;
+}
 
 /* Mini month calendar (sidebar) */
 .mini-calendar {
