@@ -8,6 +8,8 @@ import type { RejectType } from "./RejectModal";
 import { useConfirm } from "./ui/ConfirmProvider";
 import { useToast } from "./ui/ToastProvider";
 
+const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
+
 interface Props {
   open: boolean;
   mode: "view" | "edit";
@@ -163,11 +165,21 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field">
               <label htmlFor="bv-jam-mulai">Jam Mulai</label>
-              <input type="time" id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+              <select id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
+                <option value="" disabled>Pilih jam</option>
+                {HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="bv-jam-selesai">Jam Selesai</label>
-              <input type="time" id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
+              <select id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
+                <option value="" disabled>Pilih jam</option>
+                {HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
             <div className="field full">
               <button

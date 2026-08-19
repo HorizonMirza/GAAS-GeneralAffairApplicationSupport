@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 import type { BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
+const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
+
 interface Props {
   open: boolean;
   me: Me;
@@ -105,11 +107,21 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-jam-mulai">Jam Mulai</label>
-              <input type="time" id="f-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+              <select id="f-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
+                <option value="" disabled>Pilih jam</option>
+                {HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="f-jam-selesai">Jam Selesai</label>
-              <input type="time" id="f-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
+              <select id="f-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
+                <option value="" disabled>Pilih jam</option>
+                {HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
             <div className="field full">
               <button
