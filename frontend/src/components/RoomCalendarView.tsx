@@ -192,6 +192,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                 </tr>
               );
             })}
+            <tr className="schedule-closing-row">
+              <td className="schedule-time-col">{String(HOURS[HOURS.length - 1] + 1).padStart(2, "0")}:00</td>
+              <td />
+            </tr>
           </tbody>
         </table>
       </div>
@@ -238,6 +242,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                 })}
               </tr>
             ))}
+            <tr className="schedule-closing-row">
+              <td className="schedule-time-col">{String(HOURS[HOURS.length - 1] + 1).padStart(2, "0")}:00</td>
+              <td colSpan={weekDates.length} />
+            </tr>
           </tbody>
         </table>
       </div>

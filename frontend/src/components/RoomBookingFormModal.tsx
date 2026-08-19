@@ -103,7 +103,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>
-              <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="f-peserta"
+                required
+                value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlahPeserta", digits === "" ? 0 : Number(digits));
+                }}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-jam-mulai">Jam Mulai</label>
