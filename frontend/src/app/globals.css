@@ -1453,6 +1453,16 @@ table.data-table {
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
 }
+.schedule-closed-day {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--badge-rejected-bg);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
 
 /* ---------- Booking Ruang Meeting: Calendar page ---------- */
 .calendar-shell {
@@ -1499,12 +1509,16 @@ table.data-table {
   min-width: 0;
   width: 44px;
   height: 44px;
+  padding: 0;
   border: none;
   background: transparent;
   border-radius: 8px;
   font-size: 2rem;
   line-height: 1;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .calendar-topbar-left .page-btn:hover {
   background: var(--bg-surface-alt);
@@ -1612,7 +1626,12 @@ table.data-table {
   background: transparent;
   color: var(--text-primary);
   font-size: 0.75rem;
-  padding: 6px 0;
+  padding: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -1620,6 +1639,10 @@ table.data-table {
 .mini-calendar-day-muted { color: var(--text-secondary); opacity: 0.5; }
 .mini-calendar-day-today { background: var(--blue-500); color: #fff; }
 .mini-calendar-day-selected { background: var(--blue-200); color: var(--navy-900); }
+.mini-calendar-day-weekend:not(.mini-calendar-day-today):not(.mini-calendar-day-selected) {
+  color: var(--badge-rejected-bg);
+}
+.mini-calendar-weekday-weekend { color: var(--badge-rejected-bg); }
 
 /* Month grid (main view) */
 .month-grid {

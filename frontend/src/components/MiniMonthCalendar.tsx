@@ -89,14 +89,19 @@ export default function MiniMonthCalendar({ selectedDate, onSelect }: Props) {
         </div>
       </div>
       <div className="mini-calendar-weekdays">
-        {DAY_LABELS.map((d) => <span key={d}>{d}</span>)}
+        {DAY_LABELS.map((d, i) => (
+          <span key={d} className={i >= 5 ? "mini-calendar-weekday-weekend" : undefined}>{d}</span>
+        ))}
       </div>
       <div className="mini-calendar-grid">
         {cells.map((c) => {
           const isToday = c.iso === today;
           const isSelected = c.iso === selectedDate;
+          const dow = new Date(c.iso + "T00:00:00").getDay();
+          const isWeekendDay = dow === 0 || dow === 6;
           const cls = ["mini-calendar-day"];
           if (c.muted) cls.push("mini-calendar-day-muted");
+          if (isWeekendDay) cls.push("mini-calendar-day-weekend");
           if (isToday) cls.push("mini-calendar-day-today");
           else if (isSelected) cls.push("mini-calendar-day-selected");
           return (
