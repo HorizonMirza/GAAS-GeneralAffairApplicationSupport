@@ -160,7 +160,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </div>
             </div>
             <div className="field full">
-              <label htmlFor="bv-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label
+                htmlFor="bv-whole-day"
+                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!isEdit ? " field-toggle-disabled" : ""}`}
+              >
                 <input type="checkbox" id="bv-whole-day" disabled={!isEdit} checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
                 Sehari Penuh
               </label>

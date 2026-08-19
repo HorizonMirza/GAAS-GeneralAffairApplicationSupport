@@ -105,7 +105,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </div>
             </div>
             <div className="field full">
-              <label htmlFor="f-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label htmlFor="f-whole-day" className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}>
                 <input type="checkbox" id="f-whole-day" checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
                 Sehari Penuh
               </label>

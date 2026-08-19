@@ -338,33 +338,31 @@ function DayCell({
   if (!cell || cell.type === "skip") return null;
 
   if (cell.type === "empty") {
-    if (!canCreate) return <td className="schedule-cell-empty schedule-cell-readonly" />;
+    if (!canCreate) return <td className="schedule-cell-empty-wrap schedule-cell-readonly" />;
     return (
-      <td
-        className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`}
-        onMouseDown={onMouseDown}
-        onMouseEnter={onMouseEnter}
-      />
+      <td className="schedule-cell-empty-wrap" onMouseDown={onMouseDown} onMouseEnter={onMouseEnter}>
+        <div className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`} />
+      </td>
     );
   }
 
   if (cell.type === "wholeday") {
     return (
-      <td rowSpan={HOURS.length} className="schedule-cell-booked schedule-cell-event" onClick={() => onEntryClick(cell.entry)}>
-        <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-        <div className="schedule-cell-time">Sehari Penuh</div>
+      <td rowSpan={HOURS.length} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
+        <div className="schedule-cell-booked schedule-cell-event">
+          <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
+          <div className="schedule-cell-time">Sehari Penuh</div>
+        </div>
       </td>
     );
   }
 
   return (
-    <td
-      rowSpan={cell.rowSpan}
-      className="schedule-cell-booked schedule-cell-event"
-      onClick={() => onEntryClick(cell.entry)}
-    >
-      <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-      <div className="schedule-cell-time">{cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}</div>
+    <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
+      <div className="schedule-cell-booked schedule-cell-event">
+        <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
+        <div className="schedule-cell-time">{cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}</div>
+      </div>
     </td>
   );
 }
