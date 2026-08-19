@@ -228,6 +228,7 @@ export const api = {
   updateBooking: (id: number, payload: BookingRuangCreatePayload) =>
     apiRequest(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
+  superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),
   submitBooking: (id: number) => apiRequest(`/booking-ruang/${id}/submit`, { method: "PATCH" }),
   approveBookingL1: (id: number) => apiRequest(`/booking-ruang/${id}/approve-l1`, { method: "PATCH" }),
   rejectBookingL1: (id: number, reason: string | null) =>

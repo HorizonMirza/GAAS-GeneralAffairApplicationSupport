@@ -5,16 +5,29 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
-import { formatCurrency, formatDate, formatDateTime, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { Invoice, Pengiriman, Status } from "@/lib/types";
+import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
+import type { BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
+import BookingStatusBadge from "@/components/BookingStatusBadge";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
+
+interface BookingFilterState {
+  page: number;
+  limit: number;
+  tanggal: string;
+  status: BookingStatus | "";
+  divisi: string;
+  departemen: string;
+  namaRuang: string;
+}
+
+const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
 
 interface FilterState {
   page: number;
@@ -49,6 +62,13 @@ export default function SuperAdminPage() {
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
+
+  const [bookingFilters, setBookingFilters] = useState<BookingFilterState>(EMPTY_BOOKING_FILTERS);
+  const [bookingItems, setBookingItems] = useState<BookingRuang[]>([]);
+  const [bookingTotal, setBookingTotal] = useState(0);
+  const [bookingBusy, setBookingBusy] = useState(true);
+  const [bookingError, setBookingError] = useState("");
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
 
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,6 +111,28 @@ export default function SuperAdminPage() {
     }
   }, []);
 
+  const loadBookings = useCallback(async () => {
+    setBookingBusy(true);
+    setBookingError("");
+    try {
+      const result = await api.listBooking({
+        page: bookingFilters.page,
+        limit: bookingFilters.limit,
+        tanggal: bookingFilters.tanggal,
+        status: bookingFilters.status,
+        divisi: bookingFilters.divisi,
+        departemen: bookingFilters.departemen,
+        namaRuang: bookingFilters.namaRuang,
+      });
+      setBookingItems(result.items);
+      setBookingTotal(result.total);
+    } catch (err) {
+      setBookingError((err as Error).message);
+    } finally {
+      setBookingBusy(false);
+    }
+  }, [bookingFilters]);
+
   useEffect(() => {
     loadTable();
   }, [loadTable]);
@@ -98,6 +140,14 @@ export default function SuperAdminPage() {
   useEffect(() => {
     if (me?.role === "SUPER_ADMIN") loadInvoices();
   }, [me, loadInvoices]);
+
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
+
+  useEffect(() => {
+    api.listRooms().then(setRooms).catch(() => setRooms([]));
+  }, []);
 
   if (!me || me.role !== "SUPER_ADMIN") return null;
 
@@ -145,6 +195,31 @@ export default function SuperAdminPage() {
     }, "Delete Permanent");
   }
 
+  function updateBookingFilter(patch: Partial<BookingFilterState>) {
+    setBookingFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function resetBookingFilters() {
+    setBookingFilters(EMPTY_BOOKING_FILTERS);
+  }
+
+  function goToBookingPage(page: number) {
+    if (page < 1) return;
+    setBookingFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDeleteBooking(item: BookingRuang) {
+    confirm("Yakin ingin menghapus booking ruang meeting ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.superAdminDeleteBooking(item.id);
+        showToast("Booking berhasil dihapus permanen");
+        loadBookings();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   const pageStart = Math.max(1, filters.page - 2);
   const pageEnd = Math.min(totalPages, pageStart + 4);
@@ -176,6 +251,18 @@ export default function SuperAdminPage() {
     : selectedDirektoratNode
       ? selectedDirektoratNode.divisi.flatMap((v) => v.departemen)
       : orgStructure?.departemen || [];
+
+  const bookingTotalPages = Math.max(1, Math.ceil(bookingTotal / bookingFilters.limit));
+  const bookingPageStart = Math.max(1, bookingFilters.page - 2);
+  const bookingPageEnd = Math.min(bookingTotalPages, bookingPageStart + 4);
+  const bookingPageButtons: number[] = [];
+  for (let p = bookingPageStart; p <= bookingPageEnd; p++) bookingPageButtons.push(p);
+
+  const bookingDivisiOptions = orgStructure?.divisi || [];
+  const bookingSelectedDivisiNode = bookingFilters.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === bookingFilters.divisi)
+    : null;
+  const bookingDepartemenOptions = bookingSelectedDivisiNode ? bookingSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
   return (
     <>
@@ -328,6 +415,125 @@ export default function SuperAdminPage() {
                 <button key={p} className={`page-btn ${p === filters.page ? "active" : ""}`} onClick={() => goToPage(p)}>{p}</button>
               ))}
               <button className="page-btn" disabled={filters.page >= totalPages} onClick={() => goToPage(filters.page + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Room Booking Meeting</h3>
+        </div>
+        <div className="toolbar">
+          <div className="field">
+            <label htmlFor="filter-booking-tanggal">Filter Tanggal</label>
+            <input type="date" id="filter-booking-tanggal" value={bookingFilters.tanggal} onChange={(e) => updateBookingFilter({ tanggal: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-booking-status">Status</label>
+            <select id="filter-booking-status" value={bookingFilters.status} onChange={(e) => updateBookingFilter({ status: e.target.value as BookingStatus | "" })}>
+              <option value="">Semua Status</option>
+              <option value="DRAFT">Draft</option>
+              <option value="SUBMITTED">On-Approval: Approval Departemen/Divisi</option>
+              <option value="REJECTED_L1">Rejected: Approval Departemen/Divisi</option>
+              <option value="APPROVED_L1">On-Approval: Admin GA</option>
+              <option value="REJECTED_GA">Rejected: Admin GA</option>
+              <option value="APPROVED_GA">On-Approval: Approval GA</option>
+              <option value="REJECTED_GA_APPROVAL">Rejected: Approval GA</option>
+              <option value="APPROVED_GA_APPROVAL">Terkonfirmasi</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="filter-booking-ruang">Ruang</label>
+            <select id="filter-booking-ruang" value={bookingFilters.namaRuang} onChange={(e) => updateBookingFilter({ namaRuang: e.target.value })}>
+              <option value="">Semua Ruang</option>
+              {rooms.map((r) => (
+                <option key={r.nama} value={r.nama}>{r.nama}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="filter-booking-divisi">Divisi</label>
+            <select id="filter-booking-divisi" value={bookingFilters.divisi} onChange={(e) => updateBookingFilter({ divisi: e.target.value, departemen: "" })}>
+              <option value="">Semua Divisi</option>
+              {bookingDivisiOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="filter-booking-departemen">Departemen</label>
+            <select id="filter-booking-departemen" value={bookingFilters.departemen} onChange={(e) => updateBookingFilter({ departemen: e.target.value })}>
+              <option value="">Semua Departemen</option>
+              {bookingDepartemenOptions.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetBookingFilters}>Hapus Filter</button>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>No</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
+                <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookingBusy ? (
+                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+              ) : bookingError ? (
+                <tr><td colSpan={11} className="table-empty">{bookingError}</td></tr>
+              ) : bookingItems.length === 0 ? (
+                <tr><td colSpan={11} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+              ) : (
+                bookingItems.map((item, index) => {
+                  const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
+                  return (
+                    <tr key={item.id}>
+                      <td>{rowNumber}</td>
+                      <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
+                      <td>{item.pic || "-"}</td>
+                      <td>{item.namaRuang}</td>
+                      <td>{item.jumlahPeserta}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
+                      <td>{item.divisi}</td>
+                      <td>{item.departemen || "-"}</td>
+                      <td><BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
+                      <td>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteBooking(item)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-booking-limit">Tampilkan</label>
+              <select id="filter-booking-limit" value={bookingFilters.limit} onChange={(e) => updateBookingFilter({ limit: Number(e.target.value) })}>
+                <option value={5}>5 booking</option>
+                <option value={10}>10 booking</option>
+                <option value={20}>20 booking</option>
+                <option value={50}>50 booking</option>
+              </select>
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {bookingTotal} booking · Halaman {bookingFilters.page} dari {bookingTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={bookingFilters.page <= 1} onClick={() => goToBookingPage(bookingFilters.page - 1)}>‹</button>
+              {bookingPageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === bookingFilters.page ? "active" : ""}`} onClick={() => goToBookingPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={bookingFilters.page >= bookingTotalPages} onClick={() => goToBookingPage(bookingFilters.page + 1)}>›</button>
             </div>
           </div>
         </div>

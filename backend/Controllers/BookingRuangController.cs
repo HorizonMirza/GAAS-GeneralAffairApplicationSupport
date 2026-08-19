@@ -266,6 +266,20 @@ public class BookingRuangController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{itemId:int}/super-admin")]
+    public async Task<IActionResult> SuperAdminDelete(int itemId)
+    {
+        var (_, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (roleError != null) return roleError;
+
+        var item = await _db.BookingRuangs.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+
+        _db.BookingRuangs.Remove(item);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {
