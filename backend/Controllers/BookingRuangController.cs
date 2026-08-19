@@ -315,8 +315,19 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
+        // NomorPemesanan embeds the room's code and MM.YYYY - if either changed, the number
+        // claimed at Create time no longer describes this booking and has to be reassigned, or
+        // it keeps showing the wrong room/month after the edit.
+        var needsNewNomor = item.NamaRuang != payload.NamaRuang
+            || item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month;
+
         var wasRejected = item.Status is BookingStatusEnum.REJECTED_L1 or BookingStatusEnum.REJECTED_GA or BookingStatusEnum.REJECTED_GA_APPROVAL;
         ApplyCreatePayload(item, payload);
+        if (needsNewNomor)
+        {
+            var seq = await IncrementNomorSequenceAsync(item.NamaRuang, item.Tanggal.Year, item.Tanggal.Month);
+            item.NomorPemesanan = BuildNomorPemesanan(item.NamaRuang, seq, item.Tanggal);
+        }
         if (wasRejected)
         {
             item.Status = BookingStatusEnum.DRAFT;
@@ -573,6 +584,13 @@ public class BookingRuangController : ApiControllerBase
     // FindConflictAsync). Now that one of them has won final Approval GA sign-off, every other
     // still-pending request for the same overlapping slot is moot - auto-reject them back to
     // their creator instead of leaving them stuck waiting on an approval that can't happen.
+    //
+    // Each loser is updated via a guarded raw UPDATE (WHERE id + the exact status just read),
+    // not a plain EF SaveChanges, because two Approval GA actions can run this concurrently for
+    // two different winners that both name the same loser as a competitor. A plain EF update
+    // would blindly overwrite whatever the other transaction already committed for that row; the
+    // status guard makes the write a no-op (0 rows affected, log skipped) if the row already
+    // moved on since it was read here.
     private async Task AutoRejectLosingCompetitorsAsync(BookingRuang winner, User actor)
     {
         var candidates = await _db.BookingRuangs.Where(b =>
@@ -585,16 +603,18 @@ public class BookingRuangController : ApiControllerBase
         const string reason = "Ruang sudah dipesan oleh pengajuan lain yang lebih dulu disetujui & dikonfirmasi untuk jam yang sama.";
         foreach (var loser in losers)
         {
-            loser.Status = BookingStatusEnum.REJECTED_GA_APPROVAL;
-            loser.RejectReason = reason;
-            loser.RejectTarget = RejectTargetEnum.ORIGIN;
-            loser.ApprovedByL1 = null;
-            loser.ApprovedL1At = null;
-            loser.ApprovedByGa = null;
-            loser.ApprovedGaAt = null;
-            loser.ApprovedByApprovalGa = null;
-            loser.ApprovedApprovalGaAt = null;
-            AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
+            var affected = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE booking_ruang SET
+                    status = 'REJECTED_GA_APPROVAL',
+                    reject_reason = {reason},
+                    reject_target = 'ORIGIN',
+                    approved_by_l1 = NULL, approved_l1_at = NULL,
+                    approved_by_ga = NULL, approved_ga_at = NULL,
+                    approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
+                    updated_at = {DateTime.UtcNow}
+                WHERE id = {loser.Id} AND status = {loser.Status.ToString()}");
+            if (affected > 0)
+                AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
         }
     }
 
@@ -609,13 +629,27 @@ public class BookingRuangController : ApiControllerBase
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
-        item.Status = BookingStatusEnum.APPROVED_GA_APPROVAL;
-        item.ApprovedByApprovalGa = user!.Id;
-        item.ApprovedApprovalGaAt = DateTime.UtcNow;
-        item.RejectReason = null;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // Atomic claim: the WHERE status guard means only one of two concurrent Approval GA
+        // actions on this same item can actually win it, instead of both reading APPROVED_GA in
+        // memory and blindly overwriting each other's SaveChanges.
+        var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE booking_ruang SET
+                status = 'APPROVED_GA_APPROVAL',
+                approved_by_approval_ga = {user!.Id},
+                approved_approval_ga_at = {DateTime.UtcNow},
+                reject_reason = NULL,
+                updated_at = {DateTime.UtcNow}
+            WHERE id = {itemId} AND status = 'APPROVED_GA'");
+        if (claimed == 0)
+            return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
+
+        await _db.Entry(item).ReloadAsync();
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         await AutoRejectLosingCompetitorsAsync(item, user);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         return Ok(BookingRuangOut.From(item));
     }
 

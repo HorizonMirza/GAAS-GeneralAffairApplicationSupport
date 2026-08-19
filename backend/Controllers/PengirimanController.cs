@@ -230,12 +230,22 @@ public class PengirimanController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
+        // NomorTransmittal embeds MM.YYYY - if the month/year changed, the number claimed at
+        // Create time no longer matches this shipment's date and has to be reassigned, or it
+        // keeps printing the wrong month after the edit.
+        var needsNewNomor = item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month;
+
         // A rejected-to-origin item goes back to DRAFT after being revised - Admin Departemen/
         // Divisi still has to open it and submit again explicitly (mirrors the original create
         // flow). RejectReason is kept so the note stays visible while the revision is pending.
         var wasRejected = item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
             or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
         ApplyCreatePayload(item, payload);
+        if (needsNewNomor)
+        {
+            var seq = await IncrementTransmittalSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
+            item.NomorTransmittal = BuildNomorTransmittal(user!, seq, item.Tanggal);
+        }
         if (wasRejected)
         {
             item.Status = StatusEnum.DRAFT;

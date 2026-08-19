@@ -42,10 +42,13 @@ public class InvoiceController : ApiControllerBase
         user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
 
     [HttpPost("")]
-    public async Task<IActionResult> UploadInvoice([FromForm] string bulan, [FromForm] IFormFile file)
+    public async Task<IActionResult> UploadInvoice([FromForm] string bulan, [FromForm] IFormFile? file)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
         if (error != null) return error;
+
+        if (file == null || file.Length == 0)
+            return StatusCode(400, new { detail = "File invoice wajib diunggah" });
 
         var alreadyExists = await _db.Invoices.AnyAsync(i => i.UploadedBy == user!.Id && i.Bulan == bulan);
         if (alreadyExists)
@@ -100,10 +103,13 @@ public class InvoiceController : ApiControllerBase
     }
 
     [HttpPatch("{invoiceId}")]
-    public async Task<IActionResult> UpdateInvoice(int invoiceId, [FromForm] IFormFile file)
+    public async Task<IActionResult> UpdateInvoice(int invoiceId, [FromForm] IFormFile? file)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
         if (error != null) return error;
+
+        if (file == null || file.Length == 0)
+            return StatusCode(400, new { detail = "File invoice wajib diunggah" });
 
         var item = await _db.Invoices.FindAsync(invoiceId);
         if (item == null)
