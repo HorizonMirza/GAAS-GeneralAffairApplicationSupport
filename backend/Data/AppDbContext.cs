@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<BookingRuangLog> BookingRuangLogs => Set<BookingRuangLog>();
     public DbSet<BookingChatMessage> BookingChatMessages => Set<BookingChatMessage>();
     public DbSet<BookingChatRead> BookingChatReads => Set<BookingChatRead>();
+    public DbSet<RoomBookingCounter> RoomBookingCounters => Set<RoomBookingCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -245,6 +246,7 @@ public class AppDbContext : DbContext
             e.ToTable("booking_ruang");
             e.HasKey(b => b.Id);
             e.Property(b => b.Id).HasColumnName("id");
+            e.Property(b => b.NomorPemesanan).HasColumnName("nomor_pemesanan").HasMaxLength(50);
             e.Property(b => b.NamaKegiatan).HasColumnName("nama_kegiatan").HasMaxLength(255).IsRequired();
             e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
             e.Property(b => b.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
@@ -301,6 +303,16 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<RoomBookingCounter>(e =>
+        {
+            e.ToTable("room_booking_counters");
+            e.HasKey(c => new { c.NamaRuang, c.Year, c.Month });
+            e.Property(c => c.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
+            e.Property(c => c.LastSequence).HasColumnName("last_sequence");
         });
 
         modelBuilder.Entity<DivisiCounter>(e =>

@@ -3,6 +3,7 @@ namespace PengirimanApi.Models;
 public class BookingRuang
 {
     public int Id { get; set; }
+    public string? NomorPemesanan { get; set; }
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;

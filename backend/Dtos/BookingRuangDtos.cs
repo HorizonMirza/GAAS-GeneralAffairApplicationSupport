@@ -27,6 +27,7 @@ public record BookingRuangLogOut(
 public class BookingRuangOut
 {
     public int Id { get; set; }
+    public string? NomorPemesanan { get; set; }
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
@@ -58,6 +59,7 @@ public class BookingRuangOut
     public static BookingRuangOut From(BookingRuang b) => new()
     {
         Id = b.Id,
+        NomorPemesanan = b.NomorPemesanan,
         NamaKegiatan = b.NamaKegiatan,
         Pic = b.Pic,
         NamaRuang = b.NamaRuang,

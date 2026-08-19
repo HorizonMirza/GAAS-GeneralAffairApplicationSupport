@@ -102,7 +102,7 @@ export default function RoomScheduleGrid({ rooms, entries, onSlotClick, onEntryC
                       className={`schedule-cell-booked ${entryStatusClass(cell.entry.status)}`}
                       onClick={() => onEntryClick(cell.entry)}
                     >
-                      <div className="schedule-cell-title">Sehari Penuh</div>
+                      <div className="schedule-cell-title">Sepanjang Hari</div>
                       <div className="schedule-cell-meta">{cell.entry.namaKegiatan}</div>
                     </td>
                   );

@@ -184,6 +184,7 @@ export interface RoomOption {
 
 export interface BookingRuang {
   id: number;
+  nomorPemesanan: string | null;
   namaKegiatan: string;
   pic: string | null;
   namaRuang: string;

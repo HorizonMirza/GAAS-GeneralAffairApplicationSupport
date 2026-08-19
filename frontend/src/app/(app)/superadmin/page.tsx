@@ -477,23 +477,24 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
+                <th>No</th><th>No Pemesanan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
-                <tr><td colSpan={11} className="table-empty">{bookingError}</td></tr>
+                <tr><td colSpan={12} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
                   return (
                     <tr key={item.id}>
                       <td>{rowNumber}</td>
+                      <td>{item.nomorPemesanan || "-"}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
                       <td>{item.pic || "-"}</td>
                       <td>{item.namaRuang}</td>

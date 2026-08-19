@@ -23,4 +23,22 @@ public static class MeetingRooms
 
     public static bool IsValidRoom(string namaRuang) =>
         Rooms.Any(r => r.Nama == namaRuang);
+
+    // Short code used in the auto-generated booking number, e.g. "0001.EksRec.08.2026".
+    private static readonly Dictionary<string, string> KodeRuang = new()
+    {
+        ["Ruang Eksternal Receptionist"] = "EksRec",
+        ["Ruang Eksternal Besar"] = "EksBsr",
+        ["Ruang Eksternal Kecil"] = "EksKcl",
+        ["Ruang Golf"] = "Golf",
+        ["Ruang Open Space"] = "OpSpc",
+        ["Ruang ECC"] = "ECC",
+        ["Ruang Solution 1"] = "SolSatu",
+        ["Ruang Solution 2"] = "SolDua",
+        ["Ruang Solution 3"] = "SolTiga",
+        ["Ruang Solution Utama"] = "SolUtm",
+    };
+
+    public static string GetKodeRuang(string namaRuang) =>
+        KodeRuang.TryGetValue(namaRuang, out var kode) ? kode : "Ruang";
 }

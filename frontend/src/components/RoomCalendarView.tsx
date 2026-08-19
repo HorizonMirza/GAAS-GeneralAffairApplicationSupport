@@ -50,8 +50,12 @@ function parseMinute(t: string): number {
   return Number(t.slice(3, 5));
 }
 
-function entryStatusClass(status: BookingRuang["status"]): string {
-  return status === "APPROVED_GA_APPROVAL" ? "schedule-cell-confirmed" : "schedule-cell-pending";
+// Draft = grey (private, not yet submitted), still-in-approval = orange (not a done deal yet),
+// only the final Terkonfirmasi status gets green.
+function scheduleCellStatusClass(status: BookingRuang["status"]): string {
+  if (status === "DRAFT") return "schedule-cell-draft";
+  if (status === "APPROVED_GA_APPROVAL") return "schedule-cell-confirmed";
+  return "schedule-cell-pending";
 }
 
 interface ClusterItem {
@@ -370,10 +374,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                   <button
                     key={entry.id}
                     type="button"
-                    className={`month-event-chip ${entryStatusClass(entry.status)}`}
+                    className={`month-event-chip ${scheduleCellStatusClass(entry.status)}`}
                     onClick={() => onEntryClick(entry)}
                   >
-                    {entry.isWholeDay ? "Sehari Penuh" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}
+                    {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}
                   </button>
                 ))}
                 {dayEntries.length > 3 && (
@@ -425,12 +429,12 @@ function DayCell({
   }
 
   if (cell.type === "wholeday") {
-    const statusClass = cell.entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
+    const statusClass = scheduleCellStatusClass(cell.entry.status);
     return (
       <td rowSpan={HOURS.length} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
         <div className={`schedule-cell-booked ${statusClass}`}>
           <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-          <div className="schedule-cell-time">Sehari Penuh{cell.entry.status === "DRAFT" ? " · Draft" : ""}</div>
+          <div className="schedule-cell-time">Sepanjang Hari{cell.entry.status === "DRAFT" ? " · Draft" : ""}</div>
         </div>
       </td>
     );
@@ -439,7 +443,7 @@ function DayCell({
   return (
     <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap">
       {cell.items.map(({ entry, startHour, endHour, col, colCount }) => {
-        const statusClass = entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
+        const statusClass = scheduleCellStatusClass(entry.status);
         const topPct = ((startHour - cell.rangeStart) / cell.rowSpan) * 100;
         const heightPct = ((endHour - startHour) / cell.rowSpan) * 100;
         const widthPct = 100 / colCount;

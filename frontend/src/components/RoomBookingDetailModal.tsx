@@ -148,6 +148,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
         <form onSubmit={handleUpdateSubmit}>
           <div className="form-grid">
             <div className="field full">
+              <label htmlFor="bv-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <input type="text" id="bv-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
+            </div>
+            <div className="field full">
               <label htmlFor="bv-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
@@ -201,7 +205,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 disabled={!isEdit}
                 onClick={toggleWholeDay}
               >
-                Sehari Penuh
+                {form.isWholeDay && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><polyline points="20 6 9 17 4 12"></polyline></svg>
+                )}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">

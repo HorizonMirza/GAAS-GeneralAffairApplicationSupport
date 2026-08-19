@@ -214,23 +214,24 @@ export default function BookingTransaksiPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>Nama Kegiatan</th><th>Ruang</th><th>Kapasitas</th><th>Peserta</th>
+                <th>No</th><th>No Pemesanan</th><th>Nama Kegiatan</th><th>Ruang</th><th>Kapasitas</th><th>Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={11} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={12} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
                   return (
                     <tr key={item.id}>
                       <td>{rowNumber}</td>
+                      <td>{item.nomorPemesanan || "-"}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
                       <td>{item.namaRuang}</td>
                       <td>{item.kapasitasRuang}</td>

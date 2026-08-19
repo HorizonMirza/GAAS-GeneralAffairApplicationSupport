@@ -34,6 +34,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -44,6 +45,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !form.namaRuang || !form.tanggal) {
+      setNomorPemesanan("");
+      return;
+    }
+    api
+      .nextBookingNomor(form.namaRuang, form.tanggal)
+      .then((r) => setNomorPemesanan(r.nomorPemesanan))
+      .catch(() => setNomorPemesanan(""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.namaRuang, form.tanggal]);
 
   if (!open) return null;
 
@@ -89,6 +102,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
+            <div className="field full">
+              <label htmlFor="f-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <input type="text" id="f-nomor-pemesanan" disabled placeholder="Pilih ruangan dan tanggal dahulu" value={nomorPemesanan} />
+            </div>
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
@@ -141,7 +158,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 aria-pressed={form.isWholeDay}
                 onClick={toggleWholeDay}
               >
-                Sehari Penuh
+                {form.isWholeDay && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><polyline points="20 6 9 17 4 12"></polyline></svg>
+                )}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">

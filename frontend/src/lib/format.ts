@@ -75,7 +75,7 @@ export function formatTimeRange(
   jamSelesai: string | null | undefined,
   isWholeDay: boolean
 ): string {
-  if (isWholeDay) return "Sehari Penuh";
+  if (isWholeDay) return "Sepanjang Hari";
   if (!jamMulai || !jamSelesai) return "-";
   return `${jamMulai.slice(0, 5)} - ${jamSelesai.slice(0, 5)}`;
 }

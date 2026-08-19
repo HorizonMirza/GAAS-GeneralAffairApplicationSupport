@@ -1511,11 +1511,6 @@ table.data-table {
   opacity: 0.9;
 }
 
-.schedule-cell-event {
-  background: var(--badge-completed-bg);
-  color: var(--badge-completed-fg);
-}
-
 .schedule-cell-draft {
   background: var(--badge-draft-bg);
   color: var(--badge-draft-fg);
@@ -2074,11 +2069,13 @@ table.data-table {
 }
 .field-toggle:hover { border-color: var(--blue-300); }
 .field-toggle-active {
-  font-weight: 600;
-  color: var(--blue-400);
-  border-color: var(--blue-400);
-  background: rgba(75, 141, 255, 0.08);
+  font-weight: 700;
+  color: #fff;
+  border-color: transparent;
+  background: var(--gradient-primary);
+  box-shadow: var(--glow-blue);
 }
+.field-toggle-active:hover { border-color: transparent; }
 .field-toggle-disabled {
   cursor: not-allowed;
 }
