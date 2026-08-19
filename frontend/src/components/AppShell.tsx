@@ -97,7 +97,10 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
 ];
 
-const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Maintenance", "Archive"]);
+// KPU only deals with Expedition (final sign-off + invoices) - Dashboard and Profile are always
+// shown regardless of role, so together that leaves Dashboard/Expedition/Profile as their whole
+// sidebar.
+const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Office Supplies", "Maintenance", "Archive"]);
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<string>("light");
