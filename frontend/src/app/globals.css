@@ -1406,12 +1406,12 @@ table.data-table {
 
 .schedule-cell-empty-wrap {
   cursor: pointer;
-  padding: 0;
+  padding: 2px 0;
   transition: none;
 }
 .schedule-cell-empty {
   height: 100%;
-  min-height: 32px;
+  min-height: 28px;
   border-radius: 6px;
   transition: none;
 }
