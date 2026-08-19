@@ -137,7 +137,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
-            <div className="field">
+            <div className="field full">
               <label htmlFor="bv-pic">PIC</label>
               <input type="text" id="bv-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
@@ -149,25 +149,23 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-peserta">Jumlah Peserta</label>
               <input type="number" id="bv-peserta" min={1} required disabled={!isEdit} value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
-            <div className="field">
+            <div className={`field-time-group${form.isWholeDay ? " field-time-group-collapsed" : ""}`}>
+              <div className="field">
+                <label htmlFor="bv-jam-mulai">Jam Mulai</label>
+                <input type="time" id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="bv-jam-selesai">Jam Selesai</label>
+                <input type="time" id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
+              </div>
+            </div>
+            <div className="field full">
               <label htmlFor="bv-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" id="bv-whole-day" disabled={!isEdit} checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
                 Sehari Penuh
               </label>
             </div>
-            {!form.isWholeDay && (
-              <>
-                <div className="field">
-                  <label htmlFor="bv-jam-mulai">Jam Mulai</label>
-                  <input type="time" id="bv-jam-mulai" required disabled={!isEdit} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
-                </div>
-                <div className="field">
-                  <label htmlFor="bv-jam-selesai">Jam Selesai</label>
-                  <input type="time" id="bv-jam-selesai" required disabled={!isEdit} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
-                </div>
-              </>
-            )}
-            <div className="field">
+            <div className="field full">
               <label htmlFor="bv-ruang">Ruangan</label>
               <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
                 <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>

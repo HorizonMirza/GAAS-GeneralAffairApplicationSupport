@@ -1412,8 +1412,7 @@ table.data-table {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .schedule-cell-empty:hover {
-  background: var(--bg-surface-alt);
-  color: var(--blue-500);
+  background: var(--badge-completed-bg);
 }
 .schedule-cell-drag-preview {
   background: rgba(22, 163, 74, 0.22);
@@ -1940,6 +1939,24 @@ table.data-table {
 }
 
 .form-grid .field.full { grid-column: 1 / -1; }
+
+.field-time-group {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 16px;
+  max-height: 120px;
+  margin-bottom: 18px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-bottom 0.3s ease;
+}
+.field-time-group-collapsed {
+  max-height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 
 .modal-actions {
   display: flex;

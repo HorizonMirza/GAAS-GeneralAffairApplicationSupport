@@ -82,7 +82,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
-            <div className="field">
+            <div className="field full">
               <label htmlFor="f-pic">PIC</label>
               <input type="text" id="f-pic" required placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
@@ -94,25 +94,23 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-peserta">Jumlah Peserta</label>
               <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
-            <div className="field">
+            <div className={`field-time-group${form.isWholeDay ? " field-time-group-collapsed" : ""}`}>
+              <div className="field">
+                <label htmlFor="f-jam-mulai">Jam Mulai</label>
+                <input type="time" id="f-jam-mulai" required={!form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="f-jam-selesai">Jam Selesai</label>
+                <input type="time" id="f-jam-selesai" required={!form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
+              </div>
+            </div>
+            <div className="field full">
               <label htmlFor="f-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" id="f-whole-day" checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
                 Sehari Penuh
               </label>
             </div>
-            {!form.isWholeDay && (
-              <>
-                <div className="field">
-                  <label htmlFor="f-jam-mulai">Jam Mulai</label>
-                  <input type="time" id="f-jam-mulai" required value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
-                </div>
-                <div className="field">
-                  <label htmlFor="f-jam-selesai">Jam Selesai</label>
-                  <input type="time" id="f-jam-selesai" required value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
-                </div>
-              </>
-            )}
-            <div className="field">
+            <div className="field full">
               <label htmlFor="f-ruang">Ruangan</label>
               <select id="f-ruang" required value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
                 <option value="" disabled>Pilih ruang</option>

@@ -344,9 +344,7 @@ function DayCell({
         className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`}
         onMouseDown={onMouseDown}
         onMouseEnter={onMouseEnter}
-      >
-        {isDragPreview ? "" : "+ Tersedia"}
-      </td>
+      />
     );
   }
 
