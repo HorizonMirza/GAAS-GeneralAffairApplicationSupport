@@ -16,6 +16,7 @@ interface Props {
 function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCreatePayload {
   return {
     namaKegiatan: "",
+    pic: "",
     namaRuang: "",
     jumlahPeserta: 1,
     tanggal: new Date().toISOString().slice(0, 10),
@@ -55,6 +56,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     try {
       await api.createBooking({
         ...form,
+        pic: form.pic || null,
         catatan: form.catatan || null,
         jamMulai: form.isWholeDay ? null : form.jamMulai,
         jamSelesai: form.isWholeDay ? null : form.jamSelesai,
@@ -78,24 +80,19 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
-              <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Rapat Koordinasi Bulanan" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
+              <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="f-ruang">Ruang</label>
-              <select id="f-ruang" required value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
-                <option value="" disabled>Pilih ruang</option>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="f-peserta">Jumlah Peserta</label>
-              <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
+              <label htmlFor="f-pic">PIC</label>
+              <input type="text" id="f-pic" required placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
               <input type="date" id="f-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="f-peserta">Jumlah Peserta</label>
+              <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
             <div className="field">
               <label htmlFor="f-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -115,6 +112,15 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 </div>
               </>
             )}
+            <div className="field">
+              <label htmlFor="f-ruang">Ruangan</label>
+              <select id="f-ruang" required value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
+                <option value="" disabled>Pilih ruang</option>
+                {rooms.map((r) => (
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
+                ))}
+              </select>
+            </div>
             <div className="field full">
               <label htmlFor="f-catatan">Catatan</label>
               <input type="text" id="f-catatan" placeholder="Opsional, contoh: butuh proyektor" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

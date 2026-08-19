@@ -185,6 +185,7 @@ export interface RoomOption {
 export interface BookingRuang {
   id: number;
   namaKegiatan: string;
+  pic: string | null;
   namaRuang: string;
   kapasitasRuang: number;
   jumlahPeserta: number;
@@ -228,6 +229,7 @@ export interface BookingRuangLog {
 
 export interface BookingRuangCreatePayload {
   namaKegiatan: string;
+  pic: string | null;
   namaRuang: string;
   jumlahPeserta: number;
   tanggal: string;

@@ -198,6 +198,7 @@ public class AppDbContext : DbContext
             e.HasKey(b => b.Id);
             e.Property(b => b.Id).HasColumnName("id");
             e.Property(b => b.NamaKegiatan).HasColumnName("nama_kegiatan").HasMaxLength(255).IsRequired();
+            e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
             e.Property(b => b.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
             e.Property(b => b.KapasitasRuang).HasColumnName("kapasitas_ruang");
             e.Property(b => b.JumlahPeserta).HasColumnName("jumlah_peserta");

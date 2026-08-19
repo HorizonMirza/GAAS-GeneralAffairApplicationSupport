@@ -21,6 +21,7 @@ interface Props {
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   return {
     namaKegiatan: item.namaKegiatan,
+    pic: item.pic || "",
     namaRuang: item.namaRuang,
     jumlahPeserta: item.jumlahPeserta,
     tanggal: item.tanggal,
@@ -114,7 +115,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api.updateBooking(item!.id, { ...form!, catatan: form!.catatan || null });
+      await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
       showToast("Booking berhasil diperbarui");
       onClose();
       onSaved();
@@ -137,21 +138,16 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="bv-ruang">Ruang</label>
-              <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
-                <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="bv-peserta">Jumlah Peserta</label>
-              <input type="number" id="bv-peserta" min={1} required disabled={!isEdit} value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
+              <label htmlFor="bv-pic">PIC</label>
+              <input type="text" id="bv-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>
               <input type="date" id="bv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="bv-peserta">Jumlah Peserta</label>
+              <input type="number" id="bv-peserta" min={1} required disabled={!isEdit} value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
             <div className="field">
               <label htmlFor="bv-whole-day" style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -171,6 +167,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 </div>
               </>
             )}
+            <div className="field">
+              <label htmlFor="bv-ruang">Ruangan</label>
+              <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
+                <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
+                {rooms.map((r) => (
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
+                ))}
+              </select>
+            </div>
             <div className="field full">
               <label htmlFor="bv-catatan">Catatan</label>
               <input type="text" id="bv-catatan" disabled={!isEdit} placeholder="Opsional" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

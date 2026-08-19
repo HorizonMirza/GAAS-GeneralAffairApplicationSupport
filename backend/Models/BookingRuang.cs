@@ -4,6 +4,7 @@ public class BookingRuang
 {
     public int Id { get; set; }
     public string NamaKegiatan { get; set; } = null!;
+    public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
     public int KapasitasRuang { get; set; }
     public int JumlahPeserta { get; set; }

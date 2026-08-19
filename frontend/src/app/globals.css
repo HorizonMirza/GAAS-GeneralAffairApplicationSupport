@@ -1415,6 +1415,9 @@ table.data-table {
   background: var(--bg-surface-alt);
   color: var(--blue-500);
 }
+.schedule-cell-drag-preview {
+  background: rgba(22, 163, 74, 0.22);
+}
 
 .schedule-cell-booked {
   cursor: pointer;
@@ -1429,6 +1432,15 @@ table.data-table {
 .schedule-cell-meta {
   font-size: 0.72rem;
   opacity: 0.85;
+}
+.schedule-cell-time {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+
+.schedule-cell-event {
+  background: var(--badge-completed-bg);
+  color: var(--badge-completed-fg);
 }
 
 .schedule-cell-pending {

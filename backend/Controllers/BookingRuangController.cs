@@ -118,6 +118,7 @@ public class BookingRuangController : ApiControllerBase
     private static void ApplyCreatePayload(BookingRuang item, BookingRuangCreate payload)
     {
         item.NamaKegiatan = payload.NamaKegiatan;
+        item.Pic = payload.Pic;
         item.NamaRuang = payload.NamaRuang;
         item.KapasitasRuang = MeetingRooms.GetCapacity(payload.NamaRuang) ?? 0;
         item.JumlahPeserta = payload.JumlahPeserta;

@@ -40,6 +40,15 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Non-destructive column backfill: EnsureCreated() (used below) only creates tables that don't
+// exist yet, it never ALTERs an existing one. New optional columns added to a model after the
+// table was first created need this instead, so existing rows/data survive a normal restart.
+using (var scope = app.Services.CreateScope())
+{
+    var migrateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
+}
+
 if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();

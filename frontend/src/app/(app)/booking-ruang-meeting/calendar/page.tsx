@@ -206,13 +206,13 @@ export default function BookingCalendarPage() {
               refDate={refDate}
               entries={filteredEntries}
               canCreate={isOrigin}
-              onSlotClick={(date, jam) => {
+              onSlotSelect={(date, startHour, endHour) => {
                 if (!isOrigin) return;
                 setFormInitial({
                   namaRuang: selectedRoom,
                   tanggal: date,
-                  jamMulai: `${String(jam).padStart(2, "0")}:00`,
-                  jamSelesai: `${String(jam + 1).padStart(2, "0")}:00`,
+                  jamMulai: `${String(startHour).padStart(2, "0")}:00`,
+                  jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
                 });
                 setFormOpen(true);
               }}

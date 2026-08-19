@@ -5,6 +5,7 @@ namespace PengirimanApi.Dtos;
 public class BookingRuangCreate
 {
     public string NamaKegiatan { get; set; } = null!;
+    public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
     public int JumlahPeserta { get; set; }
     public DateOnly Tanggal { get; set; }
@@ -27,6 +28,7 @@ public class BookingRuangOut
 {
     public int Id { get; set; }
     public string NamaKegiatan { get; set; } = null!;
+    public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
     public int KapasitasRuang { get; set; }
     public int JumlahPeserta { get; set; }
@@ -55,6 +57,7 @@ public class BookingRuangOut
     {
         Id = b.Id,
         NamaKegiatan = b.NamaKegiatan,
+        Pic = b.Pic,
         NamaRuang = b.NamaRuang,
         KapasitasRuang = b.KapasitasRuang,
         JumlahPeserta = b.JumlahPeserta,

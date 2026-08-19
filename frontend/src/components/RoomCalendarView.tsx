@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { BookingRuang } from "@/lib/types";
 
 export type CalendarViewMode = "day" | "week" | "month";
@@ -99,22 +100,63 @@ export function formatPeriodLabel(view: CalendarViewMode, refDate: string): stri
   return `${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+interface DragState {
+  date: string;
+  startHour: number;
+  currentHour: number;
+}
+
 interface Props {
   view: CalendarViewMode;
   refDate: string;
   entries: BookingRuang[];
   canCreate: boolean;
-  onSlotClick: (date: string, hour: number) => void;
+  onSlotSelect: (date: string, startHour: number, endHour: number) => void;
   onEntryClick: (entry: BookingRuang) => void;
   onJumpToDay: (date: string) => void;
 }
 
-export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotClick, onEntryClick, onJumpToDay }: Props) {
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryClick, onJumpToDay }: Props) {
+  const [drag, setDrag] = useState<DragState | null>(null);
+
+  useEffect(() => {
+    if (!drag) return;
+    function finishDrag() {
+      setDrag((current) => {
+        if (current) {
+          const start = Math.min(current.startHour, current.currentHour);
+          const end = Math.max(current.startHour, current.currentHour) + 1;
+          onSlotSelect(current.date, start, end);
+        }
+        return null;
+      });
+    }
+    window.addEventListener("mouseup", finishDrag);
+    return () => window.removeEventListener("mouseup", finishDrag);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag]);
+
+  function startDrag(date: string, hour: number, cell: CellPlan | undefined) {
+    if (!canCreate || !cell || cell.type !== "empty") return;
+    setDrag({ date, startHour: hour, currentHour: hour });
+  }
+
+  function continueDrag(date: string, hour: number) {
+    setDrag((current) => (current && current.date === date ? { ...current, currentHour: hour } : current));
+  }
+
+  function isInDragRange(date: string, hour: number): boolean {
+    if (!drag || drag.date !== date) return false;
+    const lo = Math.min(drag.startHour, drag.currentHour);
+    const hi = Math.max(drag.startHour, drag.currentHour);
+    return hour >= lo && hour <= hi;
+  }
+
   if (view === "day") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
     return (
-      <div className="table-wrap">
+      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
           <thead>
             <tr>
@@ -128,7 +170,14 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
               return (
                 <tr key={hour}>
                   <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
-                  <DayCell cell={cell} canCreate={canCreate} onSlotClick={() => onSlotClick(refDate, hour)} onEntryClick={onEntryClick} />
+                  <DayCell
+                    cell={cell}
+                    canCreate={canCreate}
+                    isDragPreview={isInDragRange(refDate, hour)}
+                    onMouseDown={() => startDrag(refDate, hour, cell)}
+                    onMouseEnter={() => continueDrag(refDate, hour)}
+                    onEntryClick={onEntryClick}
+                  />
                 </tr>
               );
             })}
@@ -143,7 +192,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     const weekDates = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
     const plans = weekDates.map((date) => buildDayPlan(entries.filter((e) => e.tanggal === date)));
     return (
-      <div className="table-wrap">
+      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
           <thead>
             <tr>
@@ -169,7 +218,9 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       key={date}
                       cell={cell}
                       canCreate={canCreate}
-                      onSlotClick={() => onSlotClick(date, hour)}
+                      isDragPreview={isInDragRange(date, hour)}
+                      onMouseDown={() => startDrag(date, hour, cell)}
+                      onMouseEnter={() => continueDrag(date, hour)}
                       onEntryClick={onEntryClick}
                     />
                   );
@@ -272,12 +323,16 @@ function ClosedNotice() {
 function DayCell({
   cell,
   canCreate,
-  onSlotClick,
+  isDragPreview,
+  onMouseDown,
+  onMouseEnter,
   onEntryClick,
 }: {
   cell: CellPlan | undefined;
   canCreate: boolean;
-  onSlotClick: () => void;
+  isDragPreview: boolean;
+  onMouseDown: () => void;
+  onMouseEnter: () => void;
   onEntryClick: (entry: BookingRuang) => void;
 }) {
   if (!cell || cell.type === "skip") return null;
@@ -285,17 +340,21 @@ function DayCell({
   if (cell.type === "empty") {
     if (!canCreate) return <td className="schedule-cell-empty schedule-cell-readonly" />;
     return (
-      <td className="schedule-cell-empty" onClick={onSlotClick}>
-        + Tersedia
+      <td
+        className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`}
+        onMouseDown={onMouseDown}
+        onMouseEnter={onMouseEnter}
+      >
+        {isDragPreview ? "" : "+ Tersedia"}
       </td>
     );
   }
 
   if (cell.type === "wholeday") {
     return (
-      <td rowSpan={HOURS.length} className={`schedule-cell-booked ${entryStatusClass(cell.entry.status)}`} onClick={() => onEntryClick(cell.entry)}>
-        <div className="schedule-cell-title">Sehari Penuh</div>
-        <div className="schedule-cell-meta">{cell.entry.namaKegiatan}</div>
+      <td rowSpan={HOURS.length} className="schedule-cell-booked schedule-cell-event" onClick={() => onEntryClick(cell.entry)}>
+        <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
+        <div className="schedule-cell-time">Sehari Penuh</div>
       </td>
     );
   }
@@ -303,11 +362,11 @@ function DayCell({
   return (
     <td
       rowSpan={cell.rowSpan}
-      className={`schedule-cell-booked ${entryStatusClass(cell.entry.status)}`}
+      className="schedule-cell-booked schedule-cell-event"
       onClick={() => onEntryClick(cell.entry)}
     >
       <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-      <div className="schedule-cell-meta">{cell.entry.departemen || cell.entry.divisi}</div>
+      <div className="schedule-cell-time">{cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}</div>
     </td>
   );
 }
