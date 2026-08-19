@@ -1405,13 +1405,15 @@ table.data-table {
 }
 
 .schedule-cell-empty-wrap {
+  position: relative;
   cursor: pointer;
   padding: 0;
+  min-height: 32px;
   transition: none;
 }
 .schedule-cell-empty {
-  height: 100%;
-  min-height: 32px;
+  position: absolute;
+  inset: 0;
   border-radius: 0;
   transition: none;
 }
@@ -1423,13 +1425,24 @@ table.data-table {
   from { background-color: transparent; }
   to { background-color: var(--badge-completed-bg); }
 }
+.data-table td.schedule-cell-empty-wrap:has(.schedule-cell-drag-preview) {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
 
 .schedule-cell-booked-wrap {
+  position: relative;
   cursor: pointer;
   padding: 0;
 }
+.data-table td.schedule-cell-booked-wrap {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
 .schedule-cell-booked {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   border-radius: 0;
   padding: 8px 10px;
 }
