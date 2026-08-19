@@ -1406,17 +1406,14 @@ table.data-table {
 
 .schedule-cell-empty-wrap {
   cursor: pointer;
-  padding: 3px;
+  padding: 6px;
   transition: none;
 }
 .schedule-cell-empty {
   height: 100%;
-  min-height: 32px;
+  min-height: 26px;
   border-radius: 8px;
   transition: none;
-}
-.schedule-cell-empty:hover {
-  background: var(--badge-completed-bg);
 }
 .schedule-cell-drag-preview {
   background: var(--badge-completed-bg);
@@ -1953,28 +1950,9 @@ table.data-table {
 
 .form-grid .field.full { grid-column: 1 / -1; }
 
-.field-time-group {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0 16px;
-  max-height: 120px;
-  margin-bottom: 18px;
-  opacity: 1;
-  overflow: hidden;
-  transition: max-height 0.3s ease, opacity 0.25s ease, margin-bottom 0.3s ease;
-}
-.field-time-group-collapsed {
-  max-height: 0;
-  margin-bottom: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.field label.field-toggle {
+.field-toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
   width: 100%;
   padding: 11px 14px;
   border-radius: 10px;
@@ -1983,27 +1961,21 @@ table.data-table {
   color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 0;
+  font-family: inherit;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.field label.field-toggle:hover { border-color: var(--blue-400); }
-.field label.field-toggle:active { transform: scale(0.98); }
-.field label.field-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #fff;
-  cursor: pointer;
-}
-.field label.field-toggle.field-toggle-active {
+.field-toggle:hover { border-color: var(--blue-400); }
+.field-toggle:active { transform: scale(0.98); }
+.field-toggle-active {
   background: var(--blue-500);
   border-color: var(--blue-500);
   color: #fff;
 }
-.field label.field-toggle.field-toggle-disabled {
+.field-toggle-disabled {
   cursor: not-allowed;
 }
-.field label.field-toggle.field-toggle-disabled:active { transform: none; }
+.field-toggle-disabled:active { transform: none; }
 
 .modal-actions {
   display: flex;

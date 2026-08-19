@@ -62,6 +62,18 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     setForm((f) => (f ? { ...f, [key]: value } : f));
   }
 
+  function toggleWholeDay() {
+    setForm((f) => {
+      if (!f) return f;
+      return {
+        ...f,
+        isWholeDay: !f.isWholeDay,
+        jamMulai: !f.isWholeDay ? "07:00" : f.jamMulai,
+        jamSelesai: !f.isWholeDay ? "18:00" : f.jamSelesai,
+      };
+    });
+  }
+
   async function handleSubmitDraft() {
     try {
       await api.submitBooking(item!.id);
@@ -149,24 +161,24 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-peserta">Jumlah Peserta</label>
               <input type="number" id="bv-peserta" min={1} required disabled={!isEdit} value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
-            <div className={`field-time-group${form.isWholeDay ? " field-time-group-collapsed" : ""}`}>
-              <div className="field">
-                <label htmlFor="bv-jam-mulai">Jam Mulai</label>
-                <input type="time" id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="bv-jam-selesai">Jam Selesai</label>
-                <input type="time" id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
-              </div>
+            <div className="field">
+              <label htmlFor="bv-jam-mulai">Jam Mulai</label>
+              <input type="time" id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="bv-jam-selesai">Jam Selesai</label>
+              <input type="time" id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
             </div>
             <div className="field full">
-              <label
-                htmlFor="bv-whole-day"
+              <button
+                type="button"
                 className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!isEdit ? " field-toggle-disabled" : ""}`}
+                aria-pressed={form.isWholeDay}
+                disabled={!isEdit}
+                onClick={toggleWholeDay}
               >
-                <input type="checkbox" id="bv-whole-day" disabled={!isEdit} checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
                 Sehari Penuh
-              </label>
+              </button>
             </div>
             <div className="field full">
               <label htmlFor="bv-ruang">Ruangan</label>

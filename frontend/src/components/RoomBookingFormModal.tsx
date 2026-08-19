@@ -51,6 +51,15 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function toggleWholeDay() {
+    setForm((f) => ({
+      ...f,
+      isWholeDay: !f.isWholeDay,
+      jamMulai: !f.isWholeDay ? "07:00" : f.jamMulai,
+      jamSelesai: !f.isWholeDay ? "18:00" : f.jamSelesai,
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -94,21 +103,23 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-peserta">Jumlah Peserta</label>
               <input type="number" id="f-peserta" min={1} required value={form.jumlahPeserta} onChange={(e) => set("jumlahPeserta", Number(e.target.value))} />
             </div>
-            <div className={`field-time-group${form.isWholeDay ? " field-time-group-collapsed" : ""}`}>
-              <div className="field">
-                <label htmlFor="f-jam-mulai">Jam Mulai</label>
-                <input type="time" id="f-jam-mulai" required={!form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="f-jam-selesai">Jam Selesai</label>
-                <input type="time" id="f-jam-selesai" required={!form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
-              </div>
+            <div className="field">
+              <label htmlFor="f-jam-mulai">Jam Mulai</label>
+              <input type="time" id="f-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="f-jam-selesai">Jam Selesai</label>
+              <input type="time" id="f-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="f-whole-day" className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}>
-                <input type="checkbox" id="f-whole-day" checked={form.isWholeDay} onChange={(e) => set("isWholeDay", e.target.checked)} />
+              <button
+                type="button"
+                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}
+                aria-pressed={form.isWholeDay}
+                onClick={toggleWholeDay}
+              >
                 Sehari Penuh
-              </label>
+              </button>
             </div>
             <div className="field full">
               <label htmlFor="f-ruang">Ruangan</label>
