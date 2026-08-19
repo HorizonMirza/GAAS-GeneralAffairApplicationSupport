@@ -118,23 +118,34 @@ interface Props {
 
 export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryClick, onJumpToDay }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<{ date: string; start: number; end: number } | null>(null);
+  const isDragging = drag !== null;
 
   useEffect(() => {
-    if (!drag) return;
+    if (!isDragging) return;
     function finishDrag() {
       setDrag((current) => {
         if (current) {
           const start = Math.min(current.startHour, current.currentHour);
           const end = Math.max(current.startHour, current.currentHour) + 1;
-          onSlotSelect(current.date, start, end);
+          setPendingSelection({ date: current.date, start, end });
         }
         return null;
       });
     }
     window.addEventListener("mouseup", finishDrag);
     return () => window.removeEventListener("mouseup", finishDrag);
+  }, [isDragging]);
+
+  // Notifying the parent must happen in its own effect, not synchronously inside the native
+  // "mouseup" handler above - calling it there updates a parent component's state while this
+  // component is still mid-render/commit for its own drag-state update, which React rejects.
+  useEffect(() => {
+    if (!pendingSelection) return;
+    onSlotSelect(pendingSelection.date, pendingSelection.start, pendingSelection.end);
+    setPendingSelection(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag]);
+  }, [pendingSelection]);
 
   function startDrag(date: string, hour: number, cell: CellPlan | undefined) {
     if (!canCreate || !cell || cell.type !== "empty") return;
@@ -150,10 +161,6 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     const lo = Math.min(drag.startHour, drag.currentHour);
     const hi = Math.max(drag.startHour, drag.currentHour);
     return hour >= lo && hour <= hi;
-  }
-
-  function mergesWithNeighbor(date: string, hour: number, offset: -1 | 1): boolean {
-    return isInDragRange(date, hour) && isInDragRange(date, hour + offset);
   }
 
   if (view === "day") {
@@ -178,8 +185,6 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     cell={cell}
                     canCreate={canCreate}
                     isDragPreview={isInDragRange(refDate, hour)}
-                    mergeTop={mergesWithNeighbor(refDate, hour, -1)}
-                    mergeBottom={mergesWithNeighbor(refDate, hour, 1)}
                     onMouseDown={() => startDrag(refDate, hour, cell)}
                     onMouseEnter={() => continueDrag(refDate, hour)}
                     onEntryClick={onEntryClick}
@@ -225,8 +230,6 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       cell={cell}
                       canCreate={canCreate}
                       isDragPreview={isInDragRange(date, hour)}
-                      mergeTop={mergesWithNeighbor(date, hour, -1)}
-                      mergeBottom={mergesWithNeighbor(date, hour, 1)}
                       onMouseDown={() => startDrag(date, hour, cell)}
                       onMouseEnter={() => continueDrag(date, hour)}
                       onEntryClick={onEntryClick}
@@ -332,8 +335,6 @@ function DayCell({
   cell,
   canCreate,
   isDragPreview,
-  mergeTop,
-  mergeBottom,
   onMouseDown,
   onMouseEnter,
   onEntryClick,
@@ -341,8 +342,6 @@ function DayCell({
   cell: CellPlan | undefined;
   canCreate: boolean;
   isDragPreview: boolean;
-  mergeTop: boolean;
-  mergeBottom: boolean;
   onMouseDown: () => void;
   onMouseEnter: () => void;
   onEntryClick: (entry: BookingRuang) => void;
@@ -351,13 +350,8 @@ function DayCell({
 
   if (cell.type === "empty") {
     if (!canCreate) return <td className="schedule-cell-empty-wrap schedule-cell-readonly" />;
-    const wrapClass = [
-      "schedule-cell-empty-wrap",
-      mergeTop ? "schedule-cell-merge-top" : "",
-      mergeBottom ? "schedule-cell-merge-bottom" : "",
-    ].filter(Boolean).join(" ");
     return (
-      <td className={wrapClass} onMouseDown={onMouseDown} onMouseEnter={onMouseEnter}>
+      <td className="schedule-cell-empty-wrap" onMouseDown={onMouseDown} onMouseEnter={onMouseEnter}>
         <div className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`} />
       </td>
     );

@@ -1406,15 +1406,13 @@ table.data-table {
 
 .schedule-cell-empty-wrap {
   cursor: pointer;
-  padding: 0;
+  padding: 6px;
   transition: none;
 }
-.schedule-table td.schedule-cell-merge-top { border-top: none; }
-.schedule-table td.schedule-cell-merge-bottom { border-bottom: none; }
 .schedule-cell-empty {
   height: 100%;
-  min-height: 32px;
-  border-radius: 0;
+  min-height: 24px;
+  border-radius: 6px;
   transition: none;
 }
 .schedule-cell-drag-preview {
@@ -1428,7 +1426,7 @@ table.data-table {
 
 .schedule-cell-booked-wrap {
   cursor: pointer;
-  padding: 0;
+  padding: 6px;
 }
 .schedule-cell-booked {
   height: 100%;
