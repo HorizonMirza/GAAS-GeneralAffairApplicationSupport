@@ -1409,6 +1409,8 @@ table.data-table {
   padding: 0;
   transition: none;
 }
+.schedule-table td.schedule-cell-merge-top { border-top: none; }
+.schedule-table td.schedule-cell-merge-bottom { border-bottom: none; }
 .schedule-cell-empty {
   height: 100%;
   min-height: 32px;
@@ -1418,7 +1420,6 @@ table.data-table {
 .schedule-cell-drag-preview {
   background: var(--badge-completed-bg);
   animation: schedule-cell-press-in 0.18s ease;
-  margin: -1px 0;
 }
 @keyframes schedule-cell-press-in {
   from { background-color: transparent; }

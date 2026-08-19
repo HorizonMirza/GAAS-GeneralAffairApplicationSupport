@@ -152,6 +152,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     return hour >= lo && hour <= hi;
   }
 
+  function mergesWithNeighbor(date: string, hour: number, offset: -1 | 1): boolean {
+    return isInDragRange(date, hour) && isInDragRange(date, hour + offset);
+  }
+
   if (view === "day") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
@@ -174,6 +178,8 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     cell={cell}
                     canCreate={canCreate}
                     isDragPreview={isInDragRange(refDate, hour)}
+                    mergeTop={mergesWithNeighbor(refDate, hour, -1)}
+                    mergeBottom={mergesWithNeighbor(refDate, hour, 1)}
                     onMouseDown={() => startDrag(refDate, hour, cell)}
                     onMouseEnter={() => continueDrag(refDate, hour)}
                     onEntryClick={onEntryClick}
@@ -219,6 +225,8 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       cell={cell}
                       canCreate={canCreate}
                       isDragPreview={isInDragRange(date, hour)}
+                      mergeTop={mergesWithNeighbor(date, hour, -1)}
+                      mergeBottom={mergesWithNeighbor(date, hour, 1)}
                       onMouseDown={() => startDrag(date, hour, cell)}
                       onMouseEnter={() => continueDrag(date, hour)}
                       onEntryClick={onEntryClick}
@@ -324,6 +332,8 @@ function DayCell({
   cell,
   canCreate,
   isDragPreview,
+  mergeTop,
+  mergeBottom,
   onMouseDown,
   onMouseEnter,
   onEntryClick,
@@ -331,6 +341,8 @@ function DayCell({
   cell: CellPlan | undefined;
   canCreate: boolean;
   isDragPreview: boolean;
+  mergeTop: boolean;
+  mergeBottom: boolean;
   onMouseDown: () => void;
   onMouseEnter: () => void;
   onEntryClick: (entry: BookingRuang) => void;
@@ -339,8 +351,13 @@ function DayCell({
 
   if (cell.type === "empty") {
     if (!canCreate) return <td className="schedule-cell-empty-wrap schedule-cell-readonly" />;
+    const wrapClass = [
+      "schedule-cell-empty-wrap",
+      mergeTop ? "schedule-cell-merge-top" : "",
+      mergeBottom ? "schedule-cell-merge-bottom" : "",
+    ].filter(Boolean).join(" ");
     return (
-      <td className="schedule-cell-empty-wrap" onMouseDown={onMouseDown} onMouseEnter={onMouseEnter}>
+      <td className={wrapClass} onMouseDown={onMouseDown} onMouseEnter={onMouseEnter}>
         <div className={`schedule-cell-empty${isDragPreview ? " schedule-cell-drag-preview" : ""}`} />
       </td>
     );
