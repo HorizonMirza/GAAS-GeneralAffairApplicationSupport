@@ -54,11 +54,47 @@ function entryStatusClass(status: BookingRuang["status"]): string {
   return status === "APPROVED_GA_APPROVAL" ? "schedule-cell-confirmed" : "schedule-cell-pending";
 }
 
+interface ClusterItem {
+  entry: BookingRuang;
+  startHour: number;
+  endHour: number;
+  col: number;
+  colCount: number;
+}
+
 type CellPlan =
   | { type: "empty" }
   | { type: "skip" }
   | { type: "wholeday"; entry: BookingRuang }
-  | { type: "start"; entry: BookingRuang; rowSpan: number };
+  | { type: "cluster"; rangeStart: number; rowSpan: number; items: ClusterItem[] };
+
+interface TimedEntry {
+  entry: BookingRuang;
+  startHour: number;
+  endHour: number;
+}
+
+// Active bookings can never overlap (conflict-checked at submit/approve time), but two DRAFTs -
+// still private, not yet checked against each other - can, and so can a draft against something
+// approved after it was created. Rather than let a later entry silently overwrite an earlier
+// one's hours (corrupting the table), group overlapping entries into a cluster and lay them out
+// side by side, like Google Calendar does for double-booked slots.
+function layoutCluster(cluster: TimedEntry[]): ClusterItem[] {
+  const columns: TimedEntry[][] = [];
+  for (const item of cluster) {
+    const col = columns.find((c) => c[c.length - 1].endHour <= item.startHour);
+    if (col) col.push(item);
+    else columns.push([item]);
+  }
+  const colCount = columns.length;
+  return cluster.map((item) => ({
+    entry: item.entry,
+    startHour: item.startHour,
+    endHour: item.endHour,
+    col: columns.findIndex((c) => c.includes(item)),
+    colCount,
+  }));
+}
 
 function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
   const hourMap = new Map<number, CellPlan>();
@@ -69,17 +105,40 @@ function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
     return hourMap;
   }
   for (const hour of HOURS) hourMap.set(hour, { type: "empty" });
-  const sorted = dateEntries
+  const timed: TimedEntry[] = dateEntries
     .filter((e): e is BookingRuang & { jamMulai: string; jamSelesai: string } => !!e.jamMulai && !!e.jamSelesai)
-    .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
-  for (const entry of sorted) {
-    const startHour = Math.max(HOURS[0], parseHour(entry.jamMulai));
-    let endHour = parseHour(entry.jamSelesai);
-    if (parseMinute(entry.jamSelesai) > 0) endHour += 1;
-    endHour = Math.min(HOURS[HOURS.length - 1] + 1, endHour);
-    const rowSpan = Math.max(1, endHour - startHour);
-    hourMap.set(startHour, { type: "start", entry, rowSpan });
-    for (let h = startHour + 1; h < startHour + rowSpan; h++) hourMap.set(h, { type: "skip" });
+    .map((entry) => {
+      const startHour = Math.max(HOURS[0], parseHour(entry.jamMulai));
+      let endHour = parseHour(entry.jamSelesai);
+      if (parseMinute(entry.jamSelesai) > 0) endHour += 1;
+      endHour = Math.min(HOURS[HOURS.length - 1] + 1, Math.max(endHour, startHour + 1));
+      return { entry, startHour, endHour };
+    })
+    .sort((a, b) => a.startHour - b.startHour || a.endHour - b.endHour);
+
+  // Sweep left to right, grouping any entries whose time ranges chain together (A overlaps B,
+  // B overlaps C, ...) into one cluster even if A and C don't directly overlap each other.
+  let cluster: TimedEntry[] = [];
+  let clusterEnd = -1;
+  const clusters: TimedEntry[][] = [];
+  for (const item of timed) {
+    if (cluster.length > 0 && item.startHour < clusterEnd) {
+      cluster.push(item);
+      clusterEnd = Math.max(clusterEnd, item.endHour);
+    } else {
+      if (cluster.length > 0) clusters.push(cluster);
+      cluster = [item];
+      clusterEnd = item.endHour;
+    }
+  }
+  if (cluster.length > 0) clusters.push(cluster);
+
+  for (const group of clusters) {
+    const rangeStart = Math.min(...group.map((g) => g.startHour));
+    const rangeEnd = Math.max(...group.map((g) => g.endHour));
+    const rowSpan = rangeEnd - rangeStart;
+    hourMap.set(rangeStart, { type: "cluster", rangeStart, rowSpan, items: layoutCluster(group) });
+    for (let h = rangeStart + 1; h < rangeStart + rowSpan; h++) hourMap.set(h, { type: "skip" });
   }
   return hourMap;
 }
@@ -377,15 +436,34 @@ function DayCell({
     );
   }
 
-  const statusClass = cell.entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
   return (
-    <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
-      <div className={`schedule-cell-booked ${statusClass}`}>
-        <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-        <div className="schedule-cell-time">
-          {cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}{cell.entry.status === "DRAFT" ? " · Draft" : ""}
-        </div>
-      </div>
+    <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap">
+      {cell.items.map(({ entry, startHour, endHour, col, colCount }) => {
+        const statusClass = entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
+        const topPct = ((startHour - cell.rangeStart) / cell.rowSpan) * 100;
+        const heightPct = ((endHour - startHour) / cell.rowSpan) * 100;
+        const widthPct = 100 / colCount;
+        const leftPct = col * widthPct;
+        const gapPx = colCount > 1 ? 2 : 0;
+        return (
+          <div
+            key={entry.id}
+            className={`schedule-cell-booked ${statusClass}`}
+            style={{
+              top: `calc(${topPct}% + 2px)`,
+              height: `calc(${heightPct}% - 4px)`,
+              left: `calc(${leftPct}% + ${gapPx}px)`,
+              width: `calc(${widthPct}% - ${gapPx * 2}px)`,
+            }}
+            onClick={() => onEntryClick(entry)}
+          >
+            <div className="schedule-cell-title">{entry.namaKegiatan}</div>
+            <div className="schedule-cell-time">
+              {entry.jamMulai?.slice(0, 5)} - {entry.jamSelesai?.slice(0, 5)}{entry.status === "DRAFT" ? " · Draft" : ""}
+            </div>
+          </div>
+        );
+      })}
     </td>
   );
 }
