@@ -1407,11 +1407,13 @@ table.data-table {
 .schedule-cell-empty-wrap {
   cursor: pointer;
   padding: 3px;
+  transition: none;
 }
 .schedule-cell-empty {
   height: 100%;
   min-height: 32px;
   border-radius: 8px;
+  transition: none;
 }
 .schedule-cell-empty:hover {
   background: var(--badge-completed-bg);
