@@ -111,10 +111,7 @@ interface Props {
 
 export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotClick, onEntryClick, onJumpToDay }: Props) {
   if (view === "day") {
-    if (isWeekend(refDate)) {
-      const d = new Date(refDate + "T00:00:00");
-      return <ClosedNotice dayName={DAY_NAMES[d.getDay()]} />;
-    }
+    if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
     return (
       <div className="table-wrap">
@@ -264,11 +261,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   );
 }
 
-function ClosedNotice({ dayName }: { dayName: string }) {
+function ClosedNotice() {
   return (
     <div className="schedule-closed-notice">
-      <div className="schedule-closed-day">Hari {dayName}</div>
-      <div>Ruang meeting tutup pada akhir pekan. Jadwal booking tersedia Senin - Jumat, 07:00 - 18:00.</div>
+      Ruang Meeting tutup pada hari sabtu dan minggu. Ruang Meeting tersedia pada hari Senin - Jumat, 07:00 - 18:00.
     </div>
   );
 }
