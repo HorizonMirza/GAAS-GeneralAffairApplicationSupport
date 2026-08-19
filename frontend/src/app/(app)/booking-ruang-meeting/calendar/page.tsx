@@ -157,9 +157,33 @@ export default function BookingCalendarPage() {
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">
               <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
-              <div className="calendar-nav-arrows">
-                <button className="page-btn" onClick={goPrev} aria-label="Sebelumnya">‹</button>
-                <button className="page-btn" onClick={goNext} aria-label="Berikutnya">›</button>
+              <div
+                className="calendar-nav-arrows"
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  className="page-btn"
+                  onClick={goPrev}
+                  aria-label="Sebelumnya"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 0 }}
+                >
+                  ‹
+                </button>
+                <button
+                  className="page-btn"
+                  onClick={goNext}
+                  aria-label="Berikutnya"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 0, borderLeft: "1px solid var(--border-subtle)" }}
+                >
+                  ›
+                </button>
               </div>
               <div className="calendar-topbar-room">{selectedRoom}</div>
             </div>
