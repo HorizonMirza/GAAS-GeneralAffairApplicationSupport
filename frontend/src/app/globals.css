@@ -898,6 +898,46 @@ body.auth-ready .app-shell {
 .stat-tile .value { font-size: 1.6rem; font-weight: 700; }
 .stat-tile .label { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
 
+/* ---------- Room booking: room picker grid ---------- */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-blue);
+  border-color: var(--blue-400);
+}
+
+.room-card-icon {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.room-card-body { padding: 8px 10px; }
+.room-card-body h4 { margin: 0 0 2px; font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
+.room-card-body p { margin: 0; font-size: 0.7rem; color: var(--text-secondary); }
+
 /* ---------- Home module grid ---------- */
 .module-grid {
   display: grid;
@@ -1403,12 +1443,16 @@ table.data-table {
   left: 0;
   z-index: 1;
 }
+.data-table td.schedule-time-col {
+  height: 36px;
+  padding: 6px 14px;
+}
 
 .schedule-cell-empty-wrap {
   position: relative;
   cursor: pointer;
   padding: 0;
-  min-height: 32px;
+  height: 36px;
   transition: none;
 }
 .schedule-cell-empty {
@@ -1437,6 +1481,7 @@ table.data-table {
   position: relative;
   cursor: pointer;
   padding: 0;
+  height: 36px;
 }
 .data-table td.schedule-cell-booked-wrap {
   border-top-style: hidden;
@@ -1450,12 +1495,12 @@ table.data-table {
   right: 0;
   overflow: hidden;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 4px 10px;
 }
 .schedule-cell-title {
   font-weight: 700;
-  font-size: 0.82rem;
-  margin-bottom: 2px;
+  font-size: 0.78rem;
+  margin-bottom: 1px;
 }
 .schedule-cell-meta {
   font-size: 0.72rem;
@@ -1522,6 +1567,12 @@ table.data-table {
   padding: 16px;
 }
 
+.calendar-sidebar-create-btn {
+  white-space: nowrap;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
 .calendar-main {
   display: flex;
   flex-direction: column;
@@ -1543,11 +1594,10 @@ table.data-table {
   height: 100%;
 }
 
-.schedule-closing-row td {
+.data-table tr.schedule-closing-row td {
+  height: 36px;
   padding: 6px 14px;
-  height: 1px;
   color: var(--text-secondary);
-  background: var(--bg-surface-alt);
 }
 .schedule-closing-row .schedule-time-col { font-weight: 700; }
 
@@ -2373,6 +2423,7 @@ table.data-table {
   .stat-tile { padding: 10px 8px; }
   .stat-tile .value { font-size: 1.1rem; }
   .stat-tile .label { font-size: 0.68rem; line-height: 1.2; margin-top: 3px; }
+  .room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .welcome-heading { font-size: 1.15rem; }
 
   .card.item-row-card { padding: 20px; }

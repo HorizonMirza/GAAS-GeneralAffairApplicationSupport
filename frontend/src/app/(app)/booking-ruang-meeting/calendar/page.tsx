@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -33,9 +33,11 @@ function rangeForView(view: CalendarViewMode, refDate: string): { from: string; 
   return { from: start, to: addDays(start, 41) };
 }
 
-export default function BookingCalendarPage() {
+function BookingCalendarPageInner() {
   const { me, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomFromQuery = searchParams.get("ruang") || "";
   const { showToast } = useToast();
 
   const [view, setView] = useState<CalendarViewMode>("day");
@@ -62,9 +64,10 @@ export default function BookingCalendarPage() {
   useEffect(() => {
     api.listRooms().then((list) => {
       setRooms(list);
-      setSelectedRoom((current) => current || list[0]?.nama || "");
+      setSelectedRoom((current) => current || roomFromQuery || list[0]?.nama || "");
     }).catch(() => setRooms([]));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomFromQuery]);
 
   const loadSchedule = useCallback(async () => {
     if (!selectedRoom) return;
@@ -123,7 +126,7 @@ export default function BookingCalendarPage() {
       <div className="calendar-shell">
         <div className="calendar-sidebar">
           {isOrigin && (
-            <button type="button" className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={openCreateForm}>
+            <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={openCreateForm}>
               + Booking Ruang Meeting
             </button>
           )}
@@ -260,5 +263,13 @@ export default function BookingCalendarPage() {
         }}
       />
     </>
+  );
+}
+
+export default function BookingCalendarPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingCalendarPageInner />
+    </Suspense>
   );
 }

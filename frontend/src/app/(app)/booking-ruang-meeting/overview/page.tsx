@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
 import { formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingRuang } from "@/lib/types";
+import type { BookingRuang, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -18,13 +19,6 @@ import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
-interface Stats {
-  waitingL1: number;
-  waitingGa: number;
-  waitingGaApproval: number;
-  confirmed: number;
-}
-
 export default function BookingOverviewPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
@@ -32,7 +26,7 @@ export default function BookingOverviewPage() {
   const confirm = useConfirm();
 
   const [items, setItems] = useState<BookingRuang[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [busy, setBusy] = useState(true);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -54,23 +48,8 @@ export default function BookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      const [queue, submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, approvedGaApproval] =
-        await Promise.all([
-          api.listBooking({ limit: 10, page: 1 }).then((r) => r.items),
-          api.listBooking({ limit: 5, page: 1, status: "SUBMITTED" }),
-          api.listBooking({ limit: 5, page: 1, status: "REJECTED_GA" }),
-          api.listBooking({ limit: 5, page: 1, status: "APPROVED_L1" }),
-          api.listBooking({ limit: 5, page: 1, status: "REJECTED_GA_APPROVAL" }),
-          api.listBooking({ limit: 5, page: 1, status: "APPROVED_GA" }),
-          api.listBooking({ limit: 5, page: 1, status: "APPROVED_GA_APPROVAL" }),
-        ]);
+      const queue = await api.listBooking({ limit: 10, page: 1 }).then((r) => r.items);
       setItems(queue);
-      setStats({
-        waitingL1: submitted.total + rejectedGa.total,
-        waitingGa: approvedL1.total + rejectedGaApproval.total,
-        waitingGaApproval: approvedGa.total,
-        confirmed: approvedGaApproval.total,
-      });
     } finally {
       setBusy(false);
     }
@@ -80,14 +59,11 @@ export default function BookingOverviewPage() {
     load();
   }, [load]);
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  useEffect(() => {
+    api.listRooms().then(setRooms).catch(() => setRooms([]));
+  }, []);
 
-  const waitingL1Label =
-    me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? "Menunggu Approve Departemen"
-      : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? "Menunggu Approve Divisi"
-      : "Menunggu Approve Departemen/Divisi";
+  if (!me || me.role === "SUPER_ADMIN") return null;
 
   function handleDelete(item: BookingRuang) {
     confirm("Hapus booking ini?", async () => {
@@ -112,13 +88,23 @@ export default function BookingOverviewPage() {
         )}
       </div>
 
-      {stats && (
-        <div className="stat-grid">
-          <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Menunggu Approve Admin GA</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Menunggu Approve Approval GA</div></div>
-          <div className="stat-tile"><div className="value">{stats.confirmed}</div><div className="label">Terkonfirmasi</div></div>
-        </div>
+      {rooms.length > 0 && (
+        <>
+          <h3 style={{ margin: "0 0 12px" }}>Pilih Ruangan</h3>
+          <div className="room-grid">
+            {rooms.map((r) => (
+              <Link key={r.nama} href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`} className="room-card">
+                <div className="room-card-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+                </div>
+                <div className="room-card-body">
+                  <h4>{r.nama}</h4>
+                  <p>{r.kapasitas} orang</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
 
       <h3 style={{ margin: "24px 0 12px" }}>Booking Terbaru Saya</h3>
