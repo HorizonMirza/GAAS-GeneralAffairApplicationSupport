@@ -478,16 +478,16 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Pemesanan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
-                <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
+                <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
-                <tr><td colSpan={12} className="table-empty">{bookingError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -501,6 +501,7 @@ export default function SuperAdminPage() {
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{item.divisi}</td>
                       <td>{item.departemen || "-"}</td>
                       <td><BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>

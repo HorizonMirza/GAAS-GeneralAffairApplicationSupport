@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { isBookingEditableByOrigin } from "@/lib/constants";
-import { formatDate, formatTimeRange, truncateText } from "@/lib/format";
+import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
@@ -215,16 +215,16 @@ export default function BookingTransaksiPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Pemesanan</th><th>Nama Kegiatan</th><th>Ruang</th><th>Kapasitas</th><th>Peserta</th>
-                <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
+                <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={12} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -238,6 +238,7 @@ export default function BookingTransaksiPage() {
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{item.divisi}</td>
                       <td>{item.departemen || "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
