@@ -229,7 +229,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Kirim</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
             )}
             {canL1Act && (
               <>

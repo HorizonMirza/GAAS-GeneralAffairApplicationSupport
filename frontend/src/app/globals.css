@@ -1516,6 +1516,11 @@ table.data-table {
   color: var(--badge-completed-fg);
 }
 
+.schedule-cell-draft {
+  background: var(--badge-draft-bg);
+  color: var(--badge-draft-fg);
+}
+
 .schedule-cell-pending {
   background: var(--badge-submitted-bg);
   color: var(--badge-submitted-fg);
@@ -1573,6 +1578,17 @@ table.data-table {
   font-size: 0.85rem;
 }
 
+.calendar-sidebar .field label {
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+.calendar-sidebar .field input,
+.calendar-sidebar .field select {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
 .calendar-main {
   display: flex;
   flex-direction: column;
@@ -1619,13 +1635,13 @@ table.data-table {
 
 .calendar-topbar-left .page-btn {
   min-width: 0;
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: none;
   background: transparent;
   border-radius: 8px;
-  font-size: 2rem;
+  font-size: 1.4rem;
   line-height: 1;
   color: var(--text-secondary);
   display: flex;

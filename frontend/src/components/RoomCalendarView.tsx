@@ -366,21 +366,25 @@ function DayCell({
   }
 
   if (cell.type === "wholeday") {
+    const statusClass = cell.entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
     return (
       <td rowSpan={HOURS.length} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
-        <div className="schedule-cell-booked schedule-cell-event">
+        <div className={`schedule-cell-booked ${statusClass}`}>
           <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-          <div className="schedule-cell-time">Sehari Penuh</div>
+          <div className="schedule-cell-time">Sehari Penuh{cell.entry.status === "DRAFT" ? " · Draft" : ""}</div>
         </div>
       </td>
     );
   }
 
+  const statusClass = cell.entry.status === "DRAFT" ? "schedule-cell-draft" : "schedule-cell-event";
   return (
     <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
-      <div className="schedule-cell-booked schedule-cell-event">
+      <div className={`schedule-cell-booked ${statusClass}`}>
         <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
-        <div className="schedule-cell-time">{cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}</div>
+        <div className="schedule-cell-time">
+          {cell.entry.jamMulai?.slice(0, 5)} - {cell.entry.jamSelesai?.slice(0, 5)}{cell.entry.status === "DRAFT" ? " · Draft" : ""}
+        </div>
       </div>
     </td>
   );

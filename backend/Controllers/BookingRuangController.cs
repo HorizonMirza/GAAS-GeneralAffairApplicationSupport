@@ -164,11 +164,14 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("schedule")]
     public async Task<IActionResult> GetSchedule([FromQuery] DateOnly tanggal)
     {
-        var (_, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
+        // Draft bookings are private, but a user's own draft should still show up (in grey) on
+        // their calendar as a placeholder for what they haven't submitted yet.
         var items = await _db.BookingRuangs
-            .Where(b => b.Tanggal == tanggal && ActiveStatuses.Contains(b.Status))
+            .Where(b => b.Tanggal == tanggal
+                && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)))
             .ToListAsync();
 
         return Ok(items.Select(BookingRuangOut.From).ToList());
@@ -183,13 +186,16 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] DateOnly tanggalSelesai,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null)
     {
-        var (_, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
         if (tanggalMulai > tanggalSelesai)
             return BadRequest(new { detail = "Tanggal mulai harus sebelum atau sama dengan tanggal selesai" });
 
+        // Draft bookings are private, but a user's own draft should still show up (in grey) on
+        // their calendar as a placeholder for what they haven't submitted yet.
         var query = _db.BookingRuangs.Where(b =>
-            b.Tanggal >= tanggalMulai && b.Tanggal <= tanggalSelesai && ActiveStatuses.Contains(b.Status));
+            b.Tanggal >= tanggalMulai && b.Tanggal <= tanggalSelesai
+            && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)));
         if (!string.IsNullOrEmpty(namaRuang)) query = query.Where(b => b.NamaRuang == namaRuang);
 
         var items = await query.ToListAsync();
@@ -331,14 +337,64 @@ public class BookingRuangController : ApiControllerBase
             .Take(limit)
             .ToListAsync();
 
+        var outItems = items.Select(BookingRuangOut.From).ToList();
+        var itemIds = items.Select(i => i.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var messageTimes = await _db.BookingChatMessages
+                .Where(m => itemIds.Contains(m.BookingRuangId))
+                .Select(m => new { m.BookingRuangId, m.CreatedAt })
+                .ToListAsync();
+            var lastReadAt = await _db.BookingChatReads
+                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.BookingRuangId))
+                .ToDictionaryAsync(r => r.BookingRuangId, r => r.LastReadAt);
+            var outById = outItems.ToDictionary(o => o.Id);
+            foreach (var group in messageTimes.GroupBy(m => m.BookingRuangId))
+            {
+                if (!outById.TryGetValue(group.Key, out var outItem)) continue;
+                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+                outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+            }
+
+            var mentionLabel = MentionLabelForRole(user!.Role);
+            var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
+            if (mentionLabel != null && unreadItemIds.Count > 0)
+            {
+                var mentionTag = "@" + mentionLabel;
+                var candidateMessages = await _db.BookingChatMessages
+                    .Where(m => unreadItemIds.Contains(m.BookingRuangId))
+                    .Select(m => new { m.BookingRuangId, m.Message, m.CreatedAt })
+                    .ToListAsync();
+                var mentionedIds = candidateMessages
+                    .Where(m =>
+                        (!lastReadAt.TryGetValue(m.BookingRuangId, out var readAt) || m.CreatedAt > readAt)
+                        && m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                    .Select(m => m.BookingRuangId)
+                    .ToHashSet();
+                foreach (var outItem in outItems)
+                    if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
+            }
+        }
+
         return Ok(new BookingRuangListResponse
         {
-            Items = items.Select(BookingRuangOut.From).ToList(),
+            Items = outItems,
             Total = total,
             Page = page,
             Limit = limit,
         });
     }
+
+    private static string? MentionLabelForRole(RoleEnum role) => role switch
+    {
+        RoleEnum.ADMIN_DEPARTEMEN => "Admin Departemen",
+        RoleEnum.APPROVAL_DEPARTEMEN => "Approval Departemen",
+        RoleEnum.ADMIN_DIVISI => "Admin Divisi",
+        RoleEnum.APPROVAL_DIVISI => "Approval Divisi",
+        RoleEnum.ADMIN_GA => "Admin GA",
+        RoleEnum.APPROVAL_GA => "Approval GA",
+        _ => null,
+    };
 
     private async Task<(User? user, BookingRuang? item, IActionResult? error)> RequireL1ActorAsync(int itemId)
     {

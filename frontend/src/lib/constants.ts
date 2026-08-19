@@ -28,6 +28,13 @@ export function chatParticipantLabels(departemen: string | null | undefined): st
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA", "KPU"];
 }
 
+// Room booking's approval chain stops at Approval GA (no KPU stage), so it has its own,
+// shorter participant list.
+export function bookingChatParticipantLabels(departemen: string | null | undefined): string[] {
+  const track = trackWord(departemen);
+  return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA"];
+}
+
 const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
 const REJECTED_STATUSES: Status[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"];
 

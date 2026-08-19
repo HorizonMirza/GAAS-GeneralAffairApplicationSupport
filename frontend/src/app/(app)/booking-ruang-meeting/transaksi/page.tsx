@@ -15,6 +15,7 @@ import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
+import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -47,6 +48,7 @@ export default function BookingTransaksiPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
+  const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const rowMenu = useRowMenu(items);
@@ -107,7 +109,7 @@ export default function BookingTransaksiPage() {
   }
 
   function handleDelete(item: BookingRuang) {
-    confirm("Hapus booking ini?", async () => {
+    confirm("Hapus booking ruangan ini secara permanen?", async () => {
       try {
         await api.deleteBooking(item.id);
         showToast("Booking berhasil dihapus");
@@ -241,6 +243,17 @@ export default function BookingTransaksiPage() {
                       <td>
                         <div className="status-cell">
                           <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setChatItem(item)}
+                          >
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
                           <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
@@ -329,6 +342,18 @@ export default function BookingTransaksiPage() {
       />
 
       <BookingStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
+
+      {me && (
+        <RoomBookingChatModal
+          open={!!chatItem}
+          itemId={chatItem?.id ?? null}
+          itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${chatItem.namaRuang}` : ""}
+          departemen={chatItem?.departemen ?? null}
+          me={me}
+          onClose={() => setChatItem(null)}
+          onRead={loadTable}
+        />
+      )}
     </>
   );
 }

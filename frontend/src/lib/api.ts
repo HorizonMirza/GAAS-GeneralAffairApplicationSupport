@@ -240,6 +240,9 @@ export const api = {
   rejectBookingGaApproval: (id: number, reason: string | null, target: RejectTarget) =>
     apiRequest(`/booking-ruang/${id}/reject-ga-approval`, { method: "PATCH", body: { reason, target } }),
   getBookingLogs: (id: number) => apiRequest<BookingRuangLog[]>(`/booking-ruang/${id}/logs`),
+  getBookingChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-ruang/${id}/chat`),
+  sendBookingChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/booking-ruang/${id}/chat`, { method: "POST", body: { message } }),
 };
 
 export interface ListBookingParams {

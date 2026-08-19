@@ -47,13 +47,33 @@ using (var scope = app.Services.CreateScope())
 {
     var migrateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
+
+    // Room booking chat: brand new tables (not a column backfill), so a plain CREATE TABLE IF
+    // NOT EXISTS is enough - EnsureCreated() (used below) won't add tables for an already-
+    // existing database, only for a fresh one.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_chat_messages (
+            id SERIAL PRIMARY KEY,
+            booking_ruang_id INT NOT NULL REFERENCES booking_ruang(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_chat_reads (
+            id SERIAL PRIMARY KEY,
+            booking_ruang_id INT NOT NULL REFERENCES booking_ruang(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (booking_ruang_id, user_id)
+        )");
 }
 
 if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

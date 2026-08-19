@@ -209,6 +209,8 @@ export interface BookingRuang {
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
+  hasUnreadMention: boolean;
 }
 
 export interface BookingRuangListResponse {

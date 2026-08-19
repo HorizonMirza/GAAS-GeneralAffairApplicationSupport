@@ -52,6 +52,8 @@ public class BookingRuangOut
     public DateTime? ApprovedL1At { get; set; }
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
+    public int UnreadChatCount { get; set; }
+    public bool HasUnreadMention { get; set; }
 
     public static BookingRuangOut From(BookingRuang b) => new()
     {
