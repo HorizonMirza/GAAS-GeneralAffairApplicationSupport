@@ -440,7 +440,7 @@ export default function SuperAdminPage() {
               <option value="REJECTED_GA">Rejected: Admin GA</option>
               <option value="APPROVED_GA">On-Approval: Approval GA</option>
               <option value="REJECTED_GA_APPROVAL">Rejected: Approval GA</option>
-              <option value="APPROVED_GA_APPROVAL">Terkonfirmasi</option>
+              <option value="APPROVED_GA_APPROVAL">Approved</option>
             </select>
           </div>
           <div className="field">

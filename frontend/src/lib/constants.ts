@@ -176,7 +176,7 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   REJECTED_GA: "Rejected: Admin GA",
   APPROVED_GA: "On-Approval: Approval GA",
   REJECTED_GA_APPROVAL: "Rejected: Approval GA",
-  APPROVED_GA_APPROVAL: "Terkonfirmasi",
+  APPROVED_GA_APPROVAL: "Approved",
 };
 
 const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES, BOOKING_L1_ACTIONABLE_STATUSES, bookingOriginActorLabel, isBookingGaActionable } from "@/lib/constants";
+import { formatDateTime } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
-import { useConfirm } from "./ui/ConfirmProvider";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -38,7 +38,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
-  const confirm = useConfirm();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -87,43 +86,37 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     }
   }
 
-  function handleApproveL1() {
+  async function handleApproveL1() {
     onClose();
-    confirm("Approve booking ini dan teruskan ke Admin General Affair?", async () => {
-      try {
-        await api.approveBookingL1(item!.id);
-        showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveBookingL1(item!.id);
+      showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
-  function handleApproveGa() {
+  async function handleApproveGa() {
     onClose();
-    confirm("Approve booking ini?", async () => {
-      try {
-        await api.approveBookingGa(item!.id);
-        showToast("Booking berhasil di-approve, diteruskan ke Approval General Affair");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveBookingGa(item!.id);
+      showToast("Booking berhasil di-approve, diteruskan ke Approval General Affair");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
-  function handleApproveGaApproval() {
+  async function handleApproveGaApproval() {
     onClose();
-    confirm("Approve booking ini sebagai konfirmasi final?", async () => {
-      try {
-        await api.approveBookingGaApproval(item!.id);
-        showToast("Booking berhasil dikonfirmasi");
-        onSaved();
-      } catch (err) {
-        showToast((err as Error).message, "error");
-      }
-    }, "Approve");
+    try {
+      await api.approveBookingGaApproval(item!.id);
+      showToast("Booking berhasil dikonfirmasi");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
   async function handleUpdateSubmit(e: React.FormEvent) {
@@ -225,6 +218,12 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <input type="text" id="bv-catatan" disabled={!isEdit} placeholder="Opsional" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
+
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>

@@ -18,12 +18,22 @@ public class BookingRuangController : ApiControllerBase
         RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
     };
 
-    // Bookings in any of these statuses hold their room+time slot; DRAFT (not yet submitted,
-    // private to its creator) and REJECTED_* (no longer a live request) don't block anything.
+    // Bookings in any of these statuses are visible on everyone's calendar/list; DRAFT (not yet
+    // submitted, private to its creator) and REJECTED_* (no longer a live request) are not.
+    // Note this does NOT mean they block a room+slot - see PendingStatuses/ConflictBlocking
+    // below, since several of these are allowed to race for the same slot simultaneously.
     private static readonly BookingStatusEnum[] ActiveStatuses =
     {
         BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1,
         BookingStatusEnum.APPROVED_GA, BookingStatusEnum.APPROVED_GA_APPROVAL,
+    };
+
+    // Still going through approval, not yet won or lost. Multiple bookings in these statuses
+    // are allowed to overlap the same room+slot at once - whichever one reaches the final
+    // Approval GA sign-off first wins, and ApproveGaApproval auto-rejects the rest below.
+    private static readonly BookingStatusEnum[] PendingStatuses =
+    {
+        BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
     };
 
     private readonly AppDbContext _db;
@@ -135,8 +145,11 @@ public class BookingRuangController : ApiControllerBase
     private async Task<BookingRuang?> FindConflictAsync(
         string namaRuang, DateOnly tanggal, bool isWholeDay, TimeOnly? jamMulai, TimeOnly? jamSelesai, int? excludeId = null)
     {
+        // Only a booking that has already won final Approval GA sign-off actually blocks the
+        // slot - two requests still going through approval are allowed to race for it, and
+        // whichever one gets confirmed first auto-rejects the others (see ApproveGaApproval).
         var query = _db.BookingRuangs.Where(b =>
-            b.NamaRuang == namaRuang && b.Tanggal == tanggal && ActiveStatuses.Contains(b.Status));
+            b.NamaRuang == namaRuang && b.Tanggal == tanggal && b.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
         if (excludeId.HasValue) query = query.Where(b => b.Id != excludeId.Value);
 
         var candidates = await query.ToListAsync();
@@ -536,6 +549,35 @@ public class BookingRuangController : ApiControllerBase
         return Ok(BookingRuangOut.From(item));
     }
 
+    // Multiple requests were allowed to race for the same room+slot while still pending (see
+    // FindConflictAsync). Now that one of them has won final Approval GA sign-off, every other
+    // still-pending request for the same overlapping slot is moot - auto-reject them back to
+    // their creator instead of leaving them stuck waiting on an approval that can't happen.
+    private async Task AutoRejectLosingCompetitorsAsync(BookingRuang winner, User actor)
+    {
+        var candidates = await _db.BookingRuangs.Where(b =>
+            b.NamaRuang == winner.NamaRuang && b.Tanggal == winner.Tanggal
+            && b.Id != winner.Id && PendingStatuses.Contains(b.Status)).ToListAsync();
+
+        var losers = candidates.Where(b =>
+            winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
+
+        const string reason = "Ruang sudah dipesan oleh pengajuan lain yang lebih dulu disetujui & dikonfirmasi untuk jam yang sama.";
+        foreach (var loser in losers)
+        {
+            loser.Status = BookingStatusEnum.REJECTED_GA_APPROVAL;
+            loser.RejectReason = reason;
+            loser.RejectTarget = RejectTargetEnum.ORIGIN;
+            loser.ApprovedByL1 = null;
+            loser.ApprovedL1At = null;
+            loser.ApprovedByGa = null;
+            loser.ApprovedGaAt = null;
+            loser.ApprovedByApprovalGa = null;
+            loser.ApprovedApprovalGaAt = null;
+            AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
+        }
+    }
+
     [HttpPatch("{itemId:int}/approve-ga-approval")]
     public async Task<IActionResult> ApproveGaApproval(int itemId)
     {
@@ -552,6 +594,7 @@ public class BookingRuangController : ApiControllerBase
         item.ApprovedApprovalGaAt = DateTime.UtcNow;
         item.RejectReason = null;
         AddLog(item, "APPROVED_GA_APPROVAL", user);
+        await AutoRejectLosingCompetitorsAsync(item, user);
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }

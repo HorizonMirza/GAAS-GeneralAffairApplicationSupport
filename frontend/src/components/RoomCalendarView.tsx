@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/lib/format";
 import type { BookingRuang } from "@/lib/types";
 
 export type CalendarViewMode = "day" | "week" | "month";
@@ -465,6 +466,9 @@ function DayCell({
             <div className="schedule-cell-time">
               {entry.jamMulai?.slice(0, 5)} - {entry.jamSelesai?.slice(0, 5)}{entry.status === "DRAFT" ? " · Draft" : ""}
             </div>
+            {colCount > 1 && entry.status !== "DRAFT" && (
+              <div className="schedule-cell-meta">Diajukan: {formatDateTime(entry.createdAt)}</div>
+            )}
           </div>
         );
       })}

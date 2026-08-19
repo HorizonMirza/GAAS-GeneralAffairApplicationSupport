@@ -1268,7 +1268,7 @@ body.auth-ready .app-shell {
 .badge-waiting { background: var(--badge-waiting-bg); color: var(--badge-waiting-fg); }
 .badge-approved_l1 { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
 .badge-approved_ga { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
-.badge-approved_ga_approval { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
+.badge-approved_ga_approval { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
 .badge-completed { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
 .badge-rejected_l1 { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 .badge-rejected_ga { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
@@ -2069,13 +2069,11 @@ table.data-table {
 }
 .field-toggle:hover { border-color: var(--blue-300); }
 .field-toggle-active {
-  font-weight: 700;
-  color: #fff;
-  border-color: transparent;
-  background: var(--gradient-primary);
-  box-shadow: var(--glow-blue);
+  font-weight: 600;
+  color: var(--blue-400);
+  border-color: var(--blue-400);
+  background: rgba(75, 141, 255, 0.16);
 }
-.field-toggle-active:hover { border-color: transparent; }
 .field-toggle-disabled {
   cursor: not-allowed;
 }
