@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
-import { formatDate, formatTimeRange } from "@/lib/format";
+import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
@@ -50,7 +50,7 @@ export default function BookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      const queue = await api.listBooking({ limit: 10, page: 1 }).then((r) => r.items);
+      const queue = await api.listBooking({ limit: 10, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
     } finally {
       setBusy(false);
@@ -109,7 +109,8 @@ export default function BookingOverviewPage() {
         </>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Booking Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 4px" }}>Booking Terbaru Saya</h3>
+      <p className="text-secondary" style={{ margin: "0 0 12px", fontSize: "0.82rem" }}>Menampilkan booking bulan ini saja</p>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>

@@ -71,6 +71,16 @@ public class BookingRuangController : ApiControllerBase
         });
     }
 
+    // Format "YYYY-MM", same convention as Pengiriman's bulan filter.
+    private static IQueryable<BookingRuang> ApplyBulanFilter(IQueryable<BookingRuang> query, string? bulan)
+    {
+        if (string.IsNullOrEmpty(bulan)) return query;
+        var parts = bulan.Split('-');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var year) || !int.TryParse(parts[1], out var month))
+            throw new ArgumentException("Format bulan harus YYYY-MM");
+        return query.Where(b => b.Tanggal.Year == year && b.Tanggal.Month == month);
+    }
+
     public static IQueryable<BookingRuang> ApplyListFilters(
         IQueryable<BookingRuang> query,
         User currentUser,
@@ -78,7 +88,8 @@ public class BookingRuangController : ApiControllerBase
         string? divisi,
         string? departemen,
         string? namaRuang,
-        DateOnly? tanggal)
+        DateOnly? tanggal,
+        string? bulan = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -101,7 +112,7 @@ public class BookingRuangController : ApiControllerBase
         if (!string.IsNullOrEmpty(namaRuang)) query = query.Where(b => b.NamaRuang == namaRuang);
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
 
-        return query;
+        return ApplyBulanFilter(query, bulan);
     }
 
     private static readonly TimeOnly OperatingStart = new(7, 0);
@@ -379,7 +390,8 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? bulan = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -387,7 +399,15 @@ public class BookingRuangController : ApiControllerBase
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
 
-        var query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal);
+        IQueryable<BookingRuang> query;
+        try
+        {
+            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
 
         var total = await query.CountAsync();
         var items = await query

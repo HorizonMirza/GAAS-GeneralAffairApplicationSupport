@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { isBookingEditableByOrigin } from "@/lib/constants";
-import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
+import { currentYearMonth, formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
@@ -23,13 +23,18 @@ interface FilterState {
   page: number;
   limit: number;
   tanggal: string;
+  bulan: string;
   status: BookingStatus | "";
   divisi: string;
   departemen: string;
   namaRuang: string;
 }
 
-const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
+// Booking Terbaru Saya & Transaksi default ke bulan berjalan saja (bukan seluruh histori) supaya
+// datanya "reset" tiap bulan dan query-nya tidak makin berat seiring bertambahnya data lama.
+function defaultFilters(): FilterState {
+  return { page: 1, limit: 10, tanggal: "", bulan: currentYearMonth(), status: "", divisi: "", departemen: "", namaRuang: "" };
+}
 
 export default function BookingTransaksiPage() {
   const { me, orgStructure, loading } = useAuth();
@@ -37,7 +42,7 @@ export default function BookingTransaksiPage() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [total, setTotal] = useState(0);
   const [tableBusy, setTableBusy] = useState(true);
@@ -71,6 +76,7 @@ export default function BookingTransaksiPage() {
         page: filters.page,
         limit: filters.limit,
         tanggal: filters.tanggal,
+        bulan: filters.bulan,
         status: filters.status,
         divisi: filters.divisi,
         departemen: filters.departemen,
@@ -100,7 +106,7 @@ export default function BookingTransaksiPage() {
   }
 
   function resetFilters() {
-    setFilters(EMPTY_FILTERS);
+    setFilters(defaultFilters());
   }
 
   function goToPage(page: number) {
@@ -139,8 +145,13 @@ export default function BookingTransaksiPage() {
       <div className="card">
         <div className="toolbar">
           <div className="field">
+            <label htmlFor="filter-bulan">Filter Bulan</label>
+            <input type="month" id="filter-bulan" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+          </div>
+
+          <div className="field">
             <label htmlFor="filter-tanggal">Filter Tanggal</label>
-            <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value })} />
+            <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
