@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_SHORT_LABEL, chatParticipantLabels } from "@/lib/constants";
 import { formatTime } from "@/lib/format";
-import type { ChatMessage, Me } from "@/lib/types";
+import type { ChatMessage, Me, Role } from "@/lib/types";
 
 interface Props {
   open: boolean;
   itemId: number | null;
   itemLabel: string;
   departemen: string | null;
+  createdByRole?: Role | null;
   me: Me;
   onClose: () => void;
   onRead: () => void;
@@ -58,7 +59,7 @@ function SendIcon() {
   );
 }
 
-export default function ChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
+export default function ChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");
@@ -69,7 +70,7 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, me, onC
   const inputRef = useRef<HTMLInputElement>(null);
   const readNotified = useRef(false);
 
-  const participantLabels = chatParticipantLabels(departemen);
+  const participantLabels = chatParticipantLabels(departemen, createdByRole);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l.toLowerCase().includes(mentionQuery.toLowerCase()))

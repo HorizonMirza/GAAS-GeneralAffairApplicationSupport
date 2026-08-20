@@ -23,7 +23,11 @@ export function trackWord(departemen: string | null | undefined): "Departemen" |
   return departemen ? "Departemen" : "Divisi";
 }
 
-export function chatParticipantLabels(departemen: string | null | undefined): string[] {
+export function chatParticipantLabels(departemen: string | null | undefined, createdByRole?: Role | null): string[] {
+  // Admin/Approval GA-input items skip the Departemen/Divisi tier entirely (see
+  // originActorLabel), so those roles were never actually part of this item's flow and
+  // shouldn't be listed as chat participants either.
+  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin GA", "Approval GA", "KPU"];
   const track = trackWord(departemen);
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA", "KPU"];
 }
