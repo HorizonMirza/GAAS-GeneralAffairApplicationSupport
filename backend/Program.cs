@@ -110,6 +110,38 @@ using (var scope = app.Services.CreateScope())
             END IF;
         END $$;
     ");
+
+    // One-time backfill: Admin/Approval GA items created before GaDivisiLabel/GaDepartemenLabel
+    // pointed at the real org unit were stamped "General Affair" (no such Divisi actually
+    // exists) with a "...GA..." NomorTransmittal. Move them onto the real Procurement and
+    // General Affair / Asset Management and General Affair unit and re-issue their nomor from
+    // that unit's own counter, so they read the same as anything else created there. Self-
+    // limiting: once a row's divisi is updated it no longer matches the WHERE clause, so this is
+    // a no-op on every restart after the first.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        DO $$
+        DECLARE
+            r RECORD;
+            new_seq INT;
+        BEGIN
+            IF to_regclass('public.pengiriman') IS NOT NULL AND to_regclass('public.divisi_counters') IS NOT NULL THEN
+                FOR r IN SELECT id, tanggal FROM pengiriman WHERE divisi = 'General Affair' ORDER BY tanggal, id LOOP
+                    INSERT INTO divisi_counters (divisi, year, month, last_sequence)
+                    VALUES ('Procurement and General Affair', EXTRACT(YEAR FROM r.tanggal)::int, EXTRACT(MONTH FROM r.tanggal)::int, 1)
+                    ON CONFLICT (divisi, year, month) DO UPDATE SET last_sequence = divisi_counters.last_sequence + 1
+                    RETURNING last_sequence INTO new_seq;
+
+                    UPDATE pengiriman
+                    SET divisi = 'Procurement and General Affair',
+                        departemen = 'Asset Management and General Affair',
+                        nomor_transmittal = LPAD(new_seq::text, 4, '0') || '.PGA.' || TO_CHAR(r.tanggal, 'MM') || '.' || TO_CHAR(r.tanggal, 'YYYY')
+                    WHERE id = r.id;
+                END LOOP;
+
+                DELETE FROM divisi_counters WHERE divisi = 'General Affair';
+            END IF;
+        END $$;
+    ");
 }
 
 if (args.Contains("resetdb"))
