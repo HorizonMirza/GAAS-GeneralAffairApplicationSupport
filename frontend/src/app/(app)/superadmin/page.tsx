@@ -612,31 +612,29 @@ export default function SuperAdminPage() {
           )}
         </div>
 
-        {invoices != null && invoices.length > 0 && (
-          <div className="pagination">
-            <div className="pagination-left">
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="invoice-limit">Tampilkan</label>
-                <select id="invoice-limit" value={invoiceLimit} onChange={(e) => { setInvoiceLimit(Number(e.target.value)); setInvoicePage(1); }}>
-                  <option value={5}>5 invoice</option>
-                  <option value={10}>10 invoice</option>
-                  <option value={20}>20 invoice</option>
-                  <option value={50}>50 invoice</option>
-                </select>
-              </div>
-            </div>
-            <div className="pagination-right">
-              <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
-              <div className="pages">
-                <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
-                {invoicePageButtons.map((p) => (
-                  <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
-                ))}
-                <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
-              </div>
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="invoice-limit">Tampilkan</label>
+              <select id="invoice-limit" value={invoiceLimit} onChange={(e) => { setInvoiceLimit(Number(e.target.value)); setInvoicePage(1); }}>
+                <option value={5}>5 invoice</option>
+                <option value={10}>10 invoice</option>
+                <option value={20}>20 invoice</option>
+                <option value={50}>50 invoice</option>
+              </select>
             </div>
           </div>
-        )}
+          <div className="pagination-right">
+            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
+              {invoicePageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <InvoiceRowMenuDropdown

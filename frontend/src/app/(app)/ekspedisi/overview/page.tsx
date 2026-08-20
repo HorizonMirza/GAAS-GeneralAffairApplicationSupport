@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
-import { formatDate } from "@/lib/format";
+import { currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
@@ -59,7 +59,7 @@ export default function OverviewPage() {
     try {
       const [queue, submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, rejectedKpu, approvedGaApproval, completed] =
         await Promise.all([
-          api.listPengiriman({ limit: 10, page: 1 }).then((r) => r.items),
+          api.listPengiriman({ limit: 10, page: 1, bulan: currentYearMonth() }).then((r) => r.items),
           api.listPengiriman({ limit: 5, page: 1, status: "SUBMITTED" }),
           api.listPengiriman({ limit: 5, page: 1, status: "REJECTED_GA" }),
           api.listPengiriman({ limit: 5, page: 1, status: "APPROVED_L1" }),
@@ -128,7 +128,8 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Dokumen Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 4px" }}>Dokumen Terbaru Saya</h3>
+      <p className="text-secondary" style={{ margin: "0 0 12px", fontSize: "0.82rem" }}>Menampilkan dokumen bulan ini saja</p>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
