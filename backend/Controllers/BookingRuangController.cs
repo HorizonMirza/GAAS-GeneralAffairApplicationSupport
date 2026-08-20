@@ -671,13 +671,27 @@ public class BookingRuangController : ApiControllerBase
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item.Status = BookingStatusEnum.REJECTED_GA_APPROVAL;
-        item.RejectReason = payload.Reason;
-        item.RejectTarget = payload.Target;
-        item.ApprovedByApprovalGa = null;
-        item.ApprovedApprovalGaAt = null;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // Atomic claim, same reasoning as ApproveGaApproval above: a competing booking's
+        // ApproveGaApproval can run AutoRejectLosingCompetitorsAsync against this exact row at
+        // the same instant a human rejects it here - the status guard makes only one of the two
+        // writes actually take effect instead of one blindly overwriting the other.
+        var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE booking_ruang SET
+                status = 'REJECTED_GA_APPROVAL',
+                reject_reason = {payload.Reason},
+                reject_target = {payload.Target.ToString()},
+                approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
+                updated_at = {DateTime.UtcNow}
+            WHERE id = {itemId} AND status = 'APPROVED_GA'");
+        if (claimed == 0)
+            return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
+
+        await _db.Entry(item).ReloadAsync();
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         return Ok(BookingRuangOut.From(item));
     }
 
