@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { todayLocalDate } from "@/lib/format";
 import type { Asuransi, Me, PengirimanCreatePayload } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -14,7 +15,7 @@ interface Props {
 
 function emptyForm(): PengirimanCreatePayload {
   return {
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: todayLocalDate(),
     jumlahItem: 1,
     tujuanPenerimaan: "",
     namaPengirim: "",

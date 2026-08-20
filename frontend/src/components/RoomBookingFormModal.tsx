@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { todayLocalDate } from "@/lib/format";
 import type { BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -21,7 +22,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
     pic: "",
     namaRuang: "",
     jumlahPeserta: 1,
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: todayLocalDate(),
     isWholeDay: false,
     jamMulai: "09:00",
     jamSelesai: "10:00",
