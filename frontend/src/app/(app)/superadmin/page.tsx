@@ -287,7 +287,7 @@ export default function SuperAdminPage() {
         <div className="toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
-            <input type="text" id="filter-search" placeholder="Cari nomor transmittal..." value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <input type="text" id="filter-search" placeholder="Nomor Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>

@@ -340,7 +340,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             {canKpuAct && (
               <>
                 <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>Approve &amp; Cetak Resi</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>Approve</button>
               </>
             )}
             {isEdit && (
