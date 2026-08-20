@@ -267,7 +267,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field full">
               <label htmlFor="pv-catatan">Catatan</label>
-              <input type="text" id="pv-catatan" disabled={!isEdit} placeholder="Contoh: Request JNE Instant" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="pv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
