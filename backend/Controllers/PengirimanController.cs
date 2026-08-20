@@ -14,8 +14,9 @@ public class PengirimanController : ApiControllerBase
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
 
     // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
-    // Admin/Approval GA input for themselves (no Divisi/Departemen of their own, so their items
-    // fall back to GaDivisiLabel below) and skip straight past whichever approval tier is theirs.
+    // Admin/Approval GA input on behalf of Asset Management and General Affair (see
+    // GaDivisiLabel/GaDepartemenLabel below) and skip straight past whichever approval tier is
+    // theirs.
     private static readonly RoleEnum[] OriginRoles =
     {
         RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
@@ -30,10 +31,14 @@ public class PengirimanController : ApiControllerBase
         RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU,
     };
 
-    // Admin/Approval GA accounts aren't tied to any Divisi/Departemen (see DbSeeder), so items
-    // they input use this fixed label instead - it deliberately doesn't match any real Divisi in
-    // OrgTree, which makes GetKodeSatuanKerja fall back to "GA" for the NomorTransmittal.
-    private const string GaDivisiLabel = "General Affair";
+    // Admin/Approval GA accounts have no Divisi/Departemen of their own in the user record (see
+    // DbSeeder), but the people holding those roles actually sit in Asset Management and General
+    // Affair, under the Procurement and General Affair Divisi - so items they input are stamped
+    // with that real unit, same as everyone else there, instead of a separate GA-only bucket.
+    // That means those items are visible to and mixed in with that Divisi/Departemen's own
+    // Admin/Approval accounts, and the NomorTransmittal picks up the real "PGA" kode for free.
+    private const string GaDivisiLabel = "Procurement and General Affair";
+    private const string GaDepartemenLabel = "Asset Management and General Affair";
 
     private readonly AppDbContext _db;
 
@@ -44,6 +49,9 @@ public class PengirimanController : ApiControllerBase
 
     private static string EffectiveDivisi(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDivisiLabel : user.Divisi!;
+
+    private static string? EffectiveDepartemen(User user) =>
+        user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
 
     private static bool IsGaOriginCreator(Pengiriman item) =>
         item.CreatedByRole is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
@@ -265,7 +273,7 @@ public class PengirimanController : ApiControllerBase
         var validationError = ValidatePayload(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = divisi, Departemen = user.Departemen };
+        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = divisi, Departemen = EffectiveDepartemen(user) };
         ApplyCreatePayload(item, payload);
         var seq = await IncrementTransmittalSequenceAsync(divisi, item.Tanggal.Year, item.Tanggal.Month);
         item.NomorTransmittal = BuildNomorTransmittal(divisi, seq, item.Tanggal);
