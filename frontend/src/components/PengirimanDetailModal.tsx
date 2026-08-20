@@ -205,7 +205,19 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-jumlah-item">Jumlah Barang</label>
-              <input type="number" id="pv-jumlah-item" min={1} required disabled={!isEdit} value={form.jumlahItem} onChange={(e) => set("jumlahItem", Number(e.target.value))} />
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="pv-jumlah-item"
+                required
+                disabled={!isEdit}
+                value={form.jumlahItem === 0 ? "" : String(form.jumlahItem)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlahItem", digits === "" ? 0 : Number(digits));
+                }}
+              />
             </div>
             <div className="field">
               <label htmlFor="pv-pengirim">Nama Pengirim</label>

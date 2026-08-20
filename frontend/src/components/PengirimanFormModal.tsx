@@ -91,7 +91,19 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field">
               <label htmlFor="f-jumlah-item">Jumlah Barang</label>
-              <input type="number" id="f-jumlah-item" min={1} required placeholder="Masukkan angka" value={form.jumlahItem} onChange={(e) => set("jumlahItem", Number(e.target.value))} />
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="f-jumlah-item"
+                required
+                placeholder="Masukkan angka"
+                value={form.jumlahItem === 0 ? "" : String(form.jumlahItem)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlahItem", digits === "" ? 0 : Number(digits));
+                }}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-pengirim">Nama Pengirim</label>
