@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
 import type { Invoice } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -28,11 +29,25 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     onClose();
   }
 
+  function handleFileChange(picked: File | null) {
+    if (picked && picked.size > MAX_INVOICE_FILE_SIZE_BYTES) {
+      setError("File terlalu besar, maksimal 10 MB");
+      setFile(null);
+      return;
+    }
+    setError("");
+    setFile(picked);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!file || !item) {
       setError("Pilih file invoice yang baru.");
+      return;
+    }
+    if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
+      setError("File terlalu besar, maksimal 10 MB");
       return;
     }
     setBusy(true);
@@ -73,9 +88,10 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 accept="application/pdf"
                 required
                 className="file-dropzone-input"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
+            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>Maksimal 10 MB</div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
