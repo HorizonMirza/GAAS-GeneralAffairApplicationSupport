@@ -89,10 +89,11 @@ export const ROLE_COLOR: Record<Role, string> = {
   SUPER_ADMIN: "#6b7280",
 };
 
-// Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya (Admin
-// atau Approval Departemen/Divisi), bukan selalu "Admin". Dipakai baik untuk badge "Waiting"
-// maupun untuk label pilihan target reject.
+// Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya, bukan
+// selalu "Admin". Dipakai baik untuk badge "Waiting" maupun untuk label pilihan target reject.
 export function originActorLabel(item: Pengiriman): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
 }

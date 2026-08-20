@@ -13,11 +13,14 @@ public class PengirimanController : ApiControllerBase
 {
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
 
-    // The 4 roles that can input data barang: Admin/Approval Departemen and Admin/Approval Divisi.
+    // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
+    // Admin/Approval GA input for themselves (no Divisi/Departemen of their own, so their items
+    // fall back to GaDivisiLabel below) and skip straight past whichever approval tier is theirs.
     private static readonly RoleEnum[] OriginRoles =
     {
         RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
         RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
+        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA,
     };
 
     private static readonly RoleEnum[] TotalVisibleRoles =
@@ -27,6 +30,11 @@ public class PengirimanController : ApiControllerBase
         RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU,
     };
 
+    // Admin/Approval GA accounts aren't tied to any Divisi/Departemen (see DbSeeder), so items
+    // they input use this fixed label instead - it deliberately doesn't match any real Divisi in
+    // OrgTree, which makes GetKodeSatuanKerja fall back to "GA" for the NomorTransmittal.
+    private const string GaDivisiLabel = "General Affair";
+
     private readonly AppDbContext _db;
 
     public PengirimanController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
@@ -34,9 +42,12 @@ public class PengirimanController : ApiControllerBase
         _db = db;
     }
 
+    private static string EffectiveDivisi(User user) =>
+        user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDivisiLabel : user.Divisi!;
+
     // "Origin" for revision/reject-back purposes is always whoever actually created the item -
-    // Admin or Approval Departemen/Divisi, whichever it was. Both can input data barang, and
-    // whichever of the two did it is the one who has to fix and resend it after any reject.
+    // any of the OriginRoles. Whichever of them did it is the one who has to fix and resend it
+    // after any reject.
     private static bool IsEditableByOrigin(Pengiriman item, User currentUser)
     {
         if (item.CreatedBy != currentUser.Id) return false;
@@ -111,6 +122,12 @@ public class PengirimanController : ApiControllerBase
         {
             query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null
                 && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id || p.RejectReason != null));
+        }
+        else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
+        {
+            // GA already sees every non-draft item org-wide (no unit to scope to) - on top of
+            // that, let them see their own drafts too now that they can input data barang.
+            query = query.Where(p => p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id);
         }
         else
         {
@@ -211,9 +228,9 @@ public class PengirimanController : ApiControllerBase
         return results[0];
     }
 
-    private string BuildNomorTransmittal(User user, int seq, DateOnly tanggal)
+    private static string BuildNomorTransmittal(string divisi, int seq, DateOnly tanggal)
     {
-        var kode = OrgTree.GetKodeSatuanKerja(user.Divisi!);
+        var kode = OrgTree.GetKodeSatuanKerja(divisi);
         return $"{seq:D4}.{kode}.{tanggal:MM}.{tanggal:yyyy}";
     }
 
@@ -222,12 +239,13 @@ public class PengirimanController : ApiControllerBase
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        if (string.IsNullOrEmpty(user!.Divisi))
+        var divisi = EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var seq = await PeekNextTransmittalSequenceAsync(user.Divisi, effectiveTanggal.Year, effectiveTanggal.Month);
-        var nomor = BuildNomorTransmittal(user, seq, effectiveTanggal);
+        var seq = await PeekNextTransmittalSequenceAsync(divisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        var nomor = BuildNomorTransmittal(divisi, seq, effectiveTanggal);
         return Ok(new { nomorTransmittal = nomor });
     }
 
@@ -237,16 +255,17 @@ public class PengirimanController : ApiControllerBase
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
 
-        if (string.IsNullOrEmpty(user!.Divisi))
+        var divisi = EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
         var validationError = ValidatePayload(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
+        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = divisi, Departemen = user.Departemen };
         ApplyCreatePayload(item, payload);
-        var seq = await IncrementTransmittalSequenceAsync(user.Divisi, item.Tanggal.Year, item.Tanggal.Month);
-        item.NomorTransmittal = BuildNomorTransmittal(user, seq, item.Tanggal);
+        var seq = await IncrementTransmittalSequenceAsync(divisi, item.Tanggal.Year, item.Tanggal.Month);
+        item.NomorTransmittal = BuildNomorTransmittal(divisi, seq, item.Tanggal);
         _db.Pengiriman.Add(item);
         await _db.SaveChangesAsync();
 
@@ -334,11 +353,18 @@ public class PengirimanController : ApiControllerBase
         if (item.Status != StatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
 
-        // Admin Departemen/Divisi submit -> needs Approval Departemen/Divisi (L1) sign-off.
-        // Approval Departemen/Divisi submit -> mereka sendiri approver-nya, jadi langsung
-        // masuk antrian Admin GA tanpa lewat L1.
-        var skipL1 = user!.Role is RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI;
-        item.Status = skipL1 ? StatusEnum.APPROVED_L1 : StatusEnum.SUBMITTED;
+        // Whichever approval tier the submitter's own role would normally sit at gets skipped -
+        // approving your own submission doesn't make sense. Admin Departemen/Divisi has no tier
+        // of its own to skip, so it's the only role that still goes through L1. Admin GA and
+        // Approval GA skip L1 too (that tier belongs to Departemen/Divisi, not GA) on top of
+        // their own.
+        item.Status = user!.Role switch
+        {
+            RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI => StatusEnum.APPROVED_L1,
+            RoleEnum.ADMIN_GA => StatusEnum.APPROVED_GA,
+            RoleEnum.APPROVAL_GA => StatusEnum.APPROVED_GA_APPROVAL,
+            _ => StatusEnum.SUBMITTED,
+        };
         item.RejectReason = null;
         item.RejectTarget = null;
         AddLog(item, "SUBMITTED", user);

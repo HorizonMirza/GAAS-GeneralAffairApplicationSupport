@@ -55,7 +55,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
 
   if (!open) return null;
 
-  const unitName = me.departemen || me.divisi || "";
+  const unitName = me.departemen || me.divisi || (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" ? "General Affair" : "");
 
   function set<K extends keyof PengirimanCreatePayload>(key: K, value: PengirimanCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
