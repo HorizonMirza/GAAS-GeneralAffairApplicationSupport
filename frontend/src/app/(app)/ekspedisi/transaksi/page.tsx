@@ -79,7 +79,18 @@ export default function TransaksiPage() {
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
+  const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
+  const filterBulanInputRef = useRef<HTMLInputElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+
+  // Some browsers restore a previously-typed value into these inputs on page reload without
+  // firing onChange, leaving them visually filled while React's state (the actual source of
+  // truth for the API call) stays empty. Force the DOM back in sync with state on mount.
+  useEffect(() => {
+    if (invoiceBulanInputRef.current) invoiceBulanInputRef.current.value = invoiceFilterBulan;
+    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -253,7 +264,7 @@ export default function TransaksiPage() {
 
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
+            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -450,6 +461,8 @@ export default function TransaksiPage() {
               <input
                 type="month"
                 id="invoice-filter-bulan"
+                autoComplete="off"
+                ref={invoiceBulanInputRef}
                 value={invoiceFilterBulan}
                 onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
               />

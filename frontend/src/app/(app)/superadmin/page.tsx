@@ -74,7 +74,18 @@ export default function SuperAdminPage() {
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
+  const filterBulanInputRef = useRef<HTMLInputElement>(null);
+  const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+
+  // Some browsers restore a previously-typed value into these inputs on page reload without
+  // firing onChange, leaving them visually filled while React's state (the actual source of
+  // truth for the API call) stays empty. Force the DOM back in sync with state on mount.
+  useEffect(() => {
+    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
+    if (invoiceBulanInputRef.current) invoiceBulanInputRef.current.value = invoiceFilterBulan;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
@@ -291,7 +302,7 @@ export default function SuperAdminPage() {
           </div>
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
+            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
             <label className="field-label-spacer">Filter</label>
@@ -569,6 +580,8 @@ export default function SuperAdminPage() {
             <input
               type="month"
               id="invoice-filter-bulan"
+              autoComplete="off"
+              ref={invoiceBulanInputRef}
               value={invoiceFilterBulan}
               onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
             />

@@ -58,7 +58,16 @@ export default function BookingTransaksiPage() {
 
   const rowMenu = useRowMenu(items);
   const filterWrapRef = useRef<HTMLDivElement>(null);
+  const filterBulanInputRef = useRef<HTMLInputElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+
+  // Some browsers restore a previously-typed value into this input on page reload without
+  // firing onChange, leaving it visually filled while React's state (the actual source of
+  // truth for the API call) stays out of sync. Force the DOM back in sync with state on mount.
+  useEffect(() => {
+    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -154,7 +163,7 @@ export default function BookingTransaksiPage() {
         <div className="toolbar">
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="field">
