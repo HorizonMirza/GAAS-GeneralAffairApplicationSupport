@@ -76,6 +76,9 @@ export default function SuperAdminPage() {
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const filterBulanInputRef = useRef<HTMLInputElement>(null);
   const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
+  const tableReqIdRef = useRef(0);
+  const invoiceReqIdRef = useRef(0);
+  const bookingReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   // Some browsers restore a previously-typed value into these inputs on page reload without
@@ -92,6 +95,7 @@ export default function SuperAdminPage() {
   }, [loading, me, router]);
 
   const loadTable = useCallback(async () => {
+    const reqId = ++tableReqIdRef.current;
     setTableBusy(true);
     setTableError("");
     try {
@@ -105,6 +109,9 @@ export default function SuperAdminPage() {
         departemen: filters.departemen,
         direktorat: filters.direktorat,
       });
+      // A slower earlier request can resolve after a newer one triggered by changing a filter -
+      // ignore it so it doesn't clobber the results that actually match the current filters.
+      if (reqId !== tableReqIdRef.current) return;
       const pengirimanItems = result?.items ?? [];
       const pengirimanTotal = result?.total ?? 0;
       // The page we were on can end up past the end after a delete (e.g. the last row on the
@@ -116,15 +123,18 @@ export default function SuperAdminPage() {
       setItems(pengirimanItems);
       setTotal(pengirimanTotal);
     } catch (err) {
+      if (reqId !== tableReqIdRef.current) return;
       setTableError((err as Error).message);
     } finally {
-      setTableBusy(false);
+      if (reqId === tableReqIdRef.current) setTableBusy(false);
     }
   }, [filters]);
 
   const loadInvoices = useCallback(async () => {
+    const reqId = ++invoiceReqIdRef.current;
     try {
       const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
+      if (reqId !== invoiceReqIdRef.current) return;
       const invoiceItems = result?.items ?? [];
       const invoiceTotalCount = result?.total ?? 0;
       if (invoiceItems.length === 0 && invoiceTotalCount > 0 && invoicePage > 1) {
@@ -134,11 +144,13 @@ export default function SuperAdminPage() {
       setInvoices(invoiceItems);
       setInvoiceTotal(invoiceTotalCount);
     } catch (err) {
+      if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
   }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
 
   const loadBookings = useCallback(async () => {
+    const reqId = ++bookingReqIdRef.current;
     setBookingBusy(true);
     setBookingError("");
     try {
@@ -151,6 +163,7 @@ export default function SuperAdminPage() {
         departemen: bookingFilters.departemen,
         namaRuang: bookingFilters.namaRuang,
       });
+      if (reqId !== bookingReqIdRef.current) return;
       const bookingItemsResult = result?.items ?? [];
       const bookingTotalResult = result?.total ?? 0;
       if (bookingItemsResult.length === 0 && bookingTotalResult > 0 && bookingFilters.page > 1) {
@@ -160,9 +173,10 @@ export default function SuperAdminPage() {
       setBookingItems(bookingItemsResult);
       setBookingTotal(bookingTotalResult);
     } catch (err) {
+      if (reqId !== bookingReqIdRef.current) return;
       setBookingError((err as Error).message);
     } finally {
-      setBookingBusy(false);
+      if (reqId === bookingReqIdRef.current) setBookingBusy(false);
     }
   }, [bookingFilters]);
 

@@ -81,6 +81,8 @@ export default function TransaksiPage() {
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
   const filterBulanInputRef = useRef<HTMLInputElement>(null);
+  const tableReqIdRef = useRef(0);
+  const invoiceReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   // Some browsers restore a previously-typed value into these inputs on page reload without
@@ -97,6 +99,7 @@ export default function TransaksiPage() {
   }, [loading, me, router]);
 
   const loadTable = useCallback(async () => {
+    const reqId = ++tableReqIdRef.current;
     setTableBusy(true);
     setTableError("");
     try {
@@ -110,6 +113,9 @@ export default function TransaksiPage() {
         departemen: filters.departemen,
         direktorat: filters.direktorat,
       });
+      // A slower earlier request can resolve after a newer one triggered by changing a filter -
+      // ignore it so it doesn't clobber the results that actually match the current filters.
+      if (reqId !== tableReqIdRef.current) return;
       const pengirimanItems = result?.items ?? [];
       const pengirimanTotal = result?.total ?? 0;
       // The page we were on can end up past the end after a delete (e.g. the last row on the
@@ -122,9 +128,10 @@ export default function TransaksiPage() {
       setTotal(pengirimanTotal);
       setTotalBulanIni(result?.totalBulanIni ?? null);
     } catch (err) {
+      if (reqId !== tableReqIdRef.current) return;
       setTableError((err as Error).message);
     } finally {
-      setTableBusy(false);
+      if (reqId === tableReqIdRef.current) setTableBusy(false);
     }
   }, [filters]);
 
@@ -138,8 +145,12 @@ export default function TransaksiPage() {
   const canSeeInvoice = me ? ["ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) : false;
 
   const loadInvoices = useCallback(async () => {
+    const reqId = ++invoiceReqIdRef.current;
     try {
       const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
+      // A slower earlier request (e.g. the initial unfiltered load) can resolve after a newer
+      // one triggered by changing the filter - ignore it so it doesn't clobber fresher results.
+      if (reqId !== invoiceReqIdRef.current) return;
       const invoiceItems = result?.items ?? [];
       const invoiceTotalCount = result?.total ?? 0;
       if (invoiceItems.length === 0 && invoiceTotalCount > 0 && invoicePage > 1) {
@@ -149,6 +160,7 @@ export default function TransaksiPage() {
       setInvoices(invoiceItems);
       setInvoiceTotal(invoiceTotalCount);
     } catch (err) {
+      if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
   }, [invoicePage, invoiceLimit, invoiceFilterBulan]);

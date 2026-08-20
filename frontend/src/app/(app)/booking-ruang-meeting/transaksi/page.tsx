@@ -59,6 +59,7 @@ export default function BookingTransaksiPage() {
   const rowMenu = useRowMenu(items);
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const filterBulanInputRef = useRef<HTMLInputElement>(null);
+  const tableReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   // Some browsers restore a previously-typed value into this input on page reload without
@@ -78,6 +79,7 @@ export default function BookingTransaksiPage() {
   }, []);
 
   const loadTable = useCallback(async () => {
+    const reqId = ++tableReqIdRef.current;
     setTableBusy(true);
     setTableError("");
     try {
@@ -91,6 +93,9 @@ export default function BookingTransaksiPage() {
         departemen: filters.departemen,
         namaRuang: filters.namaRuang,
       });
+      // A slower earlier request can resolve after a newer one triggered by changing a filter -
+      // ignore it so it doesn't clobber the results that actually match the current filters.
+      if (reqId !== tableReqIdRef.current) return;
       const bookingItemsResult = result?.items ?? [];
       const bookingTotalResult = result?.total ?? 0;
       // The page we were on can end up past the end after a delete (e.g. the last row on the
@@ -102,9 +107,10 @@ export default function BookingTransaksiPage() {
       setItems(bookingItemsResult);
       setTotal(bookingTotalResult);
     } catch (err) {
+      if (reqId !== tableReqIdRef.current) return;
       setTableError((err as Error).message);
     } finally {
-      setTableBusy(false);
+      if (reqId === tableReqIdRef.current) setTableBusy(false);
     }
   }, [filters]);
 
