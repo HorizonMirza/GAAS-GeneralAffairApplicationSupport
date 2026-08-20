@@ -64,6 +64,7 @@ export default function TransaksiPage() {
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
+  const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
   const [invoicePage, setInvoicePage] = useState(1);
@@ -98,6 +99,12 @@ export default function TransaksiPage() {
         departemen: filters.departemen,
         direktorat: filters.direktorat,
       });
+      // The page we were on can end up past the end after a delete (e.g. the last row on the
+      // last page got removed) - back off one page instead of showing a blank "no data" table.
+      if (result.items.length === 0 && result.total > 0 && filters.page > 1) {
+        setFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
       setItems(result.items);
       setTotal(result.total);
       setTotalBulanIni(result.totalBulanIni);
@@ -119,12 +126,17 @@ export default function TransaksiPage() {
 
   const loadInvoices = useCallback(async () => {
     try {
-      const result = await api.listInvoice();
-      setInvoices(result);
+      const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
+      if (result.items.length === 0 && result.total > 0 && invoicePage > 1) {
+        setInvoicePage((p) => p - 1);
+        return;
+      }
+      setInvoices(result.items);
+      setInvoiceTotal(result.total);
     } catch (err) {
       setInvoiceError((err as Error).message);
     }
-  }, []);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
 
   useEffect(() => {
     if (canSeeInvoice) loadInvoices();
@@ -195,16 +207,11 @@ export default function TransaksiPage() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const filteredInvoices = (invoices ?? []).filter(
-    (inv) => !invoiceFilterBulan || inv.bulan === invoiceFilterBulan
-  );
-  const invoiceTotalPages = Math.max(1, Math.ceil(filteredInvoices.length / invoiceLimit));
-  const invoicePageClamped = Math.min(invoicePage, invoiceTotalPages);
-  const invoicePageStart = Math.max(1, invoicePageClamped - 2);
+  const invoiceTotalPages = Math.max(1, Math.ceil(invoiceTotal / invoiceLimit));
+  const invoicePageStart = Math.max(1, invoicePage - 2);
   const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 4);
   const invoicePageButtons: number[] = [];
   for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
-  const pagedInvoices = filteredInvoices.slice((invoicePageClamped - 1) * invoiceLimit, invoicePageClamped * invoiceLimit);
 
   const showOrgFilters = [
     "ADMIN_DEPARTEMEN",
@@ -467,11 +474,9 @@ export default function TransaksiPage() {
             ) : invoices == null ? (
               <p className="text-secondary">Memuat data invoice...</p>
             ) : invoices.length === 0 ? (
-              <p className="text-secondary">Belum ada invoice.</p>
-            ) : filteredInvoices.length === 0 ? (
-              <p className="text-secondary">Tidak ada invoice untuk filter ini.</p>
+              <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
             ) : (
-              pagedInvoices.map((inv) => (
+              invoices.map((inv) => (
                 <div className="invoice-row" key={inv.id}>
                   <div className="invoice-row-main">
                     <div className="invoice-file-icon">
@@ -495,7 +500,7 @@ export default function TransaksiPage() {
             )}
           </div>
 
-          {filteredInvoices.length > 0 && (
+          {invoices != null && invoices.length > 0 && (
             <div className="pagination">
               <div className="pagination-left">
                 <div className="field" style={{ marginBottom: 0 }}>
@@ -509,13 +514,13 @@ export default function TransaksiPage() {
                 </div>
               </div>
               <div className="pagination-right">
-                <span className="text-secondary">Total {filteredInvoices.length} invoice · Halaman {invoicePageClamped} dari {invoiceTotalPages}</span>
+                <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
                 <div className="pages">
-                  <button className="page-btn" disabled={invoicePageClamped <= 1} onClick={() => setInvoicePage(invoicePageClamped - 1)}>‹</button>
+                  <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
                   {invoicePageButtons.map((p) => (
-                    <button key={p} className={`page-btn ${p === invoicePageClamped ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
+                    <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
                   ))}
-                  <button className="page-btn" disabled={invoicePageClamped >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePageClamped + 1)}>›</button>
+                  <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
                 </div>
               </div>
             </div>
