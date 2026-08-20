@@ -34,8 +34,16 @@ const REJECTED_IDX: Partial<Record<Status, number>> = {
   REJECTED_KPU: 4,
 };
 
-function isApprovalRole(role: Role): boolean {
-  return role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI";
+// Which step index an item's journey actually starts at, based on who created it - every
+// earlier step never really happened for this item, so it should render as not-done rather
+// than falsely "completed". Admin Departemen/Divisi is the only role with no tier of its own to
+// skip (see Submit()); Approval Departemen/Divisi skips Admin's tier; Admin/Approval GA skip
+// everything up through their own tier too, since GA-input items never touch Departemen/Divisi.
+function originIdxForRole(role: Role): number {
+  if (role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI") return 1;
+  if (role === "ADMIN_GA") return 2;
+  if (role === "APPROVAL_GA") return 3;
+  return 0;
 }
 
 // Which step the data actually bounces back to when rejected. GA target always lands on Admin
@@ -69,10 +77,7 @@ export default function Stepper({
 }) {
   const currentIdx = PROGRESS[status] ?? 0;
   const rejectAt = REJECTED_IDX[status];
-  // Approval Departemen/Divisi creating data directly skips the Admin stage entirely (see
-  // Submit()), so their journey visually starts at idx 1 - the Admin dot/connector never lights
-  // up for them since that step never really happened.
-  const originIdx = isApprovalRole(createdByRole) ? 1 : 0;
+  const originIdx = originIdxForRole(createdByRole);
   const rejectFrom = rejectAt != null ? rejectStartIdx(status, rejectTarget, originIdx) : null;
   const steps = buildSteps(departemen);
 
