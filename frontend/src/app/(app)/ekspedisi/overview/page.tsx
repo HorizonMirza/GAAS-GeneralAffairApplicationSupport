@@ -58,25 +58,20 @@ export default function OverviewPage() {
     setBusy(true);
     try {
       const bulan = currentYearMonth();
-      const [queue, submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, rejectedKpu, approvedGaApproval, completed] =
-        await Promise.all([
-          api.listPengiriman({ limit: 10, page: 1, bulan }).then((r) => r.items),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "SUBMITTED" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_GA" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_L1" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_GA_APPROVAL" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_GA" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_KPU" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_GA_APPROVAL" }),
-          api.listPengiriman({ limit: 5, page: 1, bulan, status: "COMPLETED" }),
-        ]);
+      // One list call for the actual queue rows, one stats call for every status count in a
+      // single grouped query - replaces what used to be 9 separate list requests per load.
+      const [queue, statsResp] = await Promise.all([
+        api.listPengiriman({ limit: 10, page: 1, bulan }).then((r) => r.items),
+        api.getPengirimanStats(bulan),
+      ]);
+      const counts = statsResp.countsByStatus;
       setItems(queue);
       setStats({
-        waitingL1: submitted.total + rejectedGa.total,
-        waitingGa: approvedL1.total + rejectedGaApproval.total,
-        waitingGaApproval: approvedGa.total + rejectedKpu.total,
-        waitingKpu: approvedGaApproval.total,
-        completed: completed.total,
+        waitingL1: (counts.SUBMITTED ?? 0) + (counts.REJECTED_GA ?? 0),
+        waitingGa: (counts.APPROVED_L1 ?? 0) + (counts.REJECTED_GA_APPROVAL ?? 0),
+        waitingGaApproval: (counts.APPROVED_GA ?? 0) + (counts.REJECTED_KPU ?? 0),
+        waitingKpu: counts.APPROVED_GA_APPROVAL ?? 0,
+        completed: counts.COMPLETED ?? 0,
       });
     } finally {
       setBusy(false);

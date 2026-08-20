@@ -122,6 +122,11 @@ export interface PengirimanListResponse {
   totalBulanIni: number | null;
 }
 
+export interface PengirimanStatsResponse {
+  countsByStatus: Partial<Record<Status, number>>;
+  totalBulanIni: number | null;
+}
+
 export interface PengirimanLog {
   id: number;
   action: string;

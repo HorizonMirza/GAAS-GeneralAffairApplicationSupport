@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
 using PengirimanApi.Models;
@@ -11,6 +12,9 @@ namespace PengirimanApi.Controllers;
 [Route("api/invoice")]
 public class InvoiceController : ApiControllerBase
 {
+    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
+    private const long MaxInvoiceFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+
     private readonly AppDbContext _db;
     private readonly string _uploadDir;
 
@@ -49,6 +53,8 @@ public class InvoiceController : ApiControllerBase
 
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
+        if (file.Length > MaxInvoiceFileSizeBytes)
+            return StatusCode(400, new { detail = $"Ukuran file maksimal {MaxInvoiceFileSizeBytes / 1024 / 1024} MB" });
 
         var alreadyExists = await _db.Invoices.AnyAsync(i => i.UploadedBy == user!.Id && i.Bulan == bulan);
         if (alreadyExists)
@@ -76,7 +82,18 @@ public class InvoiceController : ApiControllerBase
         };
         AddLog(item, "UPLOADED", user, filePath: storedFilename, originalFilename: originalFilename);
         _db.Invoices.Add(item);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            // The AnyAsync check above closes the common case, but two uploads for the same
+            // bulan submitted within the same instant can both pass it before either commits -
+            // the unique index on (uploaded_by, bulan) is the real guard against that race.
+            System.IO.File.Delete(destPath);
+            return StatusCode(400, new { detail = "Invoice untuk bulan ini sudah pernah dikirim. Gunakan Updates untuk merevisi." });
+        }
 
         return StatusCode(201, InvoiceOut.From(item));
     }
@@ -110,6 +127,8 @@ public class InvoiceController : ApiControllerBase
 
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
+        if (file.Length > MaxInvoiceFileSizeBytes)
+            return StatusCode(400, new { detail = $"Ukuran file maksimal {MaxInvoiceFileSizeBytes / 1024 / 1024} MB" });
 
         var item = await _db.Invoices.FindAsync(invoiceId);
         if (item == null)
@@ -147,10 +166,16 @@ public class InvoiceController : ApiControllerBase
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> ListInvoice()
+    public async Task<IActionResult> ListInvoice(
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 10,
+        [FromQuery] string? bulan = null)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (!AllowedLimits.Contains(limit))
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
 
         var query = _db.Invoices.AsQueryable();
         if (user!.Role == RoleEnum.KPU)
@@ -158,8 +183,22 @@ public class InvoiceController : ApiControllerBase
         else
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
-        var items = query.OrderByDescending(i => i.UploadedAt).ToList();
-        return Ok(items.Select(InvoiceOut.From));
+        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(i => i.UploadedAt)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToListAsync();
+
+        return Ok(new InvoiceListResponse
+        {
+            Items = items.Select(InvoiceOut.From).ToList(),
+            Total = total,
+            Page = page,
+            Limit = limit,
+        });
     }
 
     [HttpGet("{invoiceId}/file")]

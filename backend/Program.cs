@@ -93,6 +93,23 @@ using (var scope = app.Services.CreateScope())
             last_read_at TIMESTAMP NOT NULL,
             UNIQUE (booking_ruang_id, user_id)
         )");
+
+    // Backstops the app-level "one invoice per bulan per KPU" check against two uploads for the
+    // same bulan racing each other. Wrapped so it's skipped (not a startup crash) on a database
+    // that already has pre-existing duplicate rows from before this constraint existed.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'invoices')
+                AND NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_invoices_uploaded_by_bulan') THEN
+                BEGIN
+                    CREATE UNIQUE INDEX idx_invoices_uploaded_by_bulan ON invoices (uploaded_by, bulan);
+                EXCEPTION WHEN unique_violation THEN
+                    NULL;
+                END;
+            END IF;
+        END $$;
+    ");
 }
 
 if (args.Contains("resetdb"))

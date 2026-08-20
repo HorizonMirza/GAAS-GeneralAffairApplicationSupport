@@ -14,6 +14,7 @@ import type {
   PengirimanCreatePayload,
   PengirimanListResponse,
   PengirimanLog,
+  PengirimanStatsResponse,
   RejectTarget,
   RoomOption,
   Status,
@@ -128,6 +129,8 @@ export const api = {
 
   listPengiriman: (params: ListPengirimanParams) =>
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),
+  getPengirimanStats: (bulan: string) =>
+    apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan } }),
   createPengiriman: (payload: PengirimanCreatePayload) =>
     apiRequest("/pengiriman", { method: "POST", body: payload }),
   updatePengiriman: (id: number, payload: PengirimanCreatePayload) =>

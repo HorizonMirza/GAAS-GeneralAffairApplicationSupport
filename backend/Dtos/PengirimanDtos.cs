@@ -133,3 +133,9 @@ public class PengirimanListResponse
     public int Limit { get; set; }
     public decimal? TotalBulanIni { get; set; }
 }
+
+public class PengirimanStatsResponse
+{
+    public Dictionary<string, int> CountsByStatus { get; set; } = new();
+    public decimal? TotalBulanIni { get; set; }
+}

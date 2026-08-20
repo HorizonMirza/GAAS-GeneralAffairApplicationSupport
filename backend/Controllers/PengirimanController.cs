@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
@@ -128,6 +129,39 @@ public class PengirimanController : ApiControllerBase
         return ApplyBulanFilter(query, bulan);
     }
 
+    // Digit count only (formatting like spaces/dashes/+ is stripped first) - permissive enough
+    // to accept any real phone number without guessing a specific regional format, but still
+    // catches obviously-wrong values (empty, letters, a couple of stray digits) that only ever
+    // get past the client because required/format checks there are trivially bypassable by
+    // calling the API directly.
+    private static bool IsValidPhone(string phone) =>
+        Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
+
+    private static string? ValidatePayload(PengirimanCreate payload)
+    {
+        if (payload.JumlahItem <= 0)
+            return "Jumlah barang harus lebih dari 0";
+        if (string.IsNullOrWhiteSpace(payload.TujuanPenerimaan))
+            return "Tujuan wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NamaPengirim))
+            return "Nama pengirim wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPengirim))
+            return "Nomor telepon pengirim tidak valid";
+        if (string.IsNullOrWhiteSpace(payload.AlamatPengirim))
+            return "Alamat pengirim wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.KodeProgram))
+            return "Kode program wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NamaPenerima))
+            return "Nama penerima wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.AlamatPenerima))
+            return "Alamat penerima wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPenerima))
+            return "Nomor telepon penerima tidak valid";
+        if (string.IsNullOrWhiteSpace(payload.RequestPacking))
+            return "Request packing wajib diisi";
+        return null;
+    }
+
     private static void ApplyCreatePayload(Pengiriman item, PengirimanCreate payload)
     {
         item.Tanggal = payload.Tanggal;
@@ -206,6 +240,9 @@ public class PengirimanController : ApiControllerBase
         if (string.IsNullOrEmpty(user!.Divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
+        var validationError = ValidatePayload(payload);
+        if (validationError != null) return BadRequest(new { detail = validationError });
+
         var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
         ApplyCreatePayload(item, payload);
         var seq = await IncrementTransmittalSequenceAsync(user.Divisi, item.Tanggal.Year, item.Tanggal.Month);
@@ -229,6 +266,9 @@ public class PengirimanController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
+
+        var validationError = ValidatePayload(payload);
+        if (validationError != null) return BadRequest(new { detail = validationError });
 
         // A rejected-to-origin item goes back to DRAFT after being revised - Admin Departemen/
         // Divisi still has to open it and submit again explicitly (mirrors the original create
@@ -333,22 +373,21 @@ public class PengirimanController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        var total = await query.CountAsync();
+        // Count and cost-sum share the same filtered query, so pull both from one grouped
+        // aggregate query instead of two separate round trips.
+        var agg = await query
+            .GroupBy(p => 1)
+            .Select(g => new { Total = g.Count(), Sum = g.Sum(p => (decimal?)(p.Total ?? 0)) })
+            .FirstOrDefaultAsync();
+        var total = agg?.Total ?? 0;
+        decimal? totalBulanIni = TotalVisibleRoles.Contains(user!.Role) ? (agg?.Sum ?? 0) : null;
+
         var items = await query
             .OrderByDescending(p => p.Tanggal)
             .ThenByDescending(p => p.Id)
             .Skip((page - 1) * limit)
             .Take(limit)
             .ToListAsync();
-
-        decimal? totalBulanIni = null;
-        if (TotalVisibleRoles.Contains(user!.Role))
-        {
-            // Reuse the exact same filters as the list itself (status/divisi/departemen/
-            // direktorat/bulan), so the total always matches what's actually being shown.
-            var sumQuery = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
-            totalBulanIni = await sumQuery.SumAsync(p => p.Total ?? 0);
-        }
 
         var outItems = items.Select(PengirimanOut.From).ToList();
         var itemIds = items.Select(i => i.Id).ToList();
@@ -395,6 +434,41 @@ public class PengirimanController : ApiControllerBase
             Total = total,
             Page = page,
             Limit = limit,
+            TotalBulanIni = totalBulanIni,
+        });
+    }
+
+    // Status breakdown for a scope (e.g. Overview's stat cards) in one query instead of one
+    // List() call per status - List() itself still does the extra chat/mention work per item,
+    // which none of these counts need.
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        IQueryable<Pengiriman> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, null, null, null, null, null, bulan);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var counts = await query
+            .GroupBy(p => p.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        decimal? totalBulanIni = null;
+        if (TotalVisibleRoles.Contains(user!.Role))
+            totalBulanIni = await query.SumAsync(p => p.Total ?? 0);
+
+        return Ok(new PengirimanStatsResponse
+        {
+            CountsByStatus = counts.ToDictionary(c => c.Status.ToString(), c => c.Count),
             TotalBulanIni = totalBulanIni,
         });
     }
