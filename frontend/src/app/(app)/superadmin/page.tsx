@@ -94,14 +94,16 @@ export default function SuperAdminPage() {
         departemen: filters.departemen,
         direktorat: filters.direktorat,
       });
+      const pengirimanItems = result?.items ?? [];
+      const pengirimanTotal = result?.total ?? 0;
       // The page we were on can end up past the end after a delete (e.g. the last row on the
       // last page got removed) - back off one page instead of showing a blank "no data" table.
-      if (result.items.length === 0 && result.total > 0 && filters.page > 1) {
+      if (pengirimanItems.length === 0 && pengirimanTotal > 0 && filters.page > 1) {
         setFilters((f) => ({ ...f, page: f.page - 1 }));
         return;
       }
-      setItems(result.items);
-      setTotal(result.total);
+      setItems(pengirimanItems);
+      setTotal(pengirimanTotal);
     } catch (err) {
       setTableError((err as Error).message);
     } finally {
@@ -112,12 +114,14 @@ export default function SuperAdminPage() {
   const loadInvoices = useCallback(async () => {
     try {
       const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
-      if (result.items.length === 0 && result.total > 0 && invoicePage > 1) {
+      const invoiceItems = result?.items ?? [];
+      const invoiceTotalCount = result?.total ?? 0;
+      if (invoiceItems.length === 0 && invoiceTotalCount > 0 && invoicePage > 1) {
         setInvoicePage((p) => p - 1);
         return;
       }
-      setInvoices(result.items);
-      setInvoiceTotal(result.total);
+      setInvoices(invoiceItems);
+      setInvoiceTotal(invoiceTotalCount);
     } catch (err) {
       setInvoiceError((err as Error).message);
     }
@@ -136,12 +140,14 @@ export default function SuperAdminPage() {
         departemen: bookingFilters.departemen,
         namaRuang: bookingFilters.namaRuang,
       });
-      if (result.items.length === 0 && result.total > 0 && bookingFilters.page > 1) {
+      const bookingItemsResult = result?.items ?? [];
+      const bookingTotalResult = result?.total ?? 0;
+      if (bookingItemsResult.length === 0 && bookingTotalResult > 0 && bookingFilters.page > 1) {
         setBookingFilters((f) => ({ ...f, page: f.page - 1 }));
         return;
       }
-      setBookingItems(result.items);
-      setBookingTotal(result.total);
+      setBookingItems(bookingItemsResult);
+      setBookingTotal(bookingTotalResult);
     } catch (err) {
       setBookingError((err as Error).message);
     } finally {

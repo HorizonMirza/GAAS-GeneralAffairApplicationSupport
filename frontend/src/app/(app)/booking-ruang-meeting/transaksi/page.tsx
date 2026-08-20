@@ -82,14 +82,16 @@ export default function BookingTransaksiPage() {
         departemen: filters.departemen,
         namaRuang: filters.namaRuang,
       });
+      const bookingItemsResult = result?.items ?? [];
+      const bookingTotalResult = result?.total ?? 0;
       // The page we were on can end up past the end after a delete (e.g. the last row on the
       // last page got removed) - back off one page instead of showing a blank "no data" table.
-      if (result.items.length === 0 && result.total > 0 && filters.page > 1) {
+      if (bookingItemsResult.length === 0 && bookingTotalResult > 0 && filters.page > 1) {
         setFilters((f) => ({ ...f, page: f.page - 1 }));
         return;
       }
-      setItems(result.items);
-      setTotal(result.total);
+      setItems(bookingItemsResult);
+      setTotal(bookingTotalResult);
     } catch (err) {
       setTableError((err as Error).message);
     } finally {

@@ -1268,7 +1268,13 @@ body.auth-ready .app-shell {
 .badge-waiting { background: var(--badge-waiting-bg); color: var(--badge-waiting-fg); }
 .badge-approved_l1 { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
 .badge-approved_ga { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
-.badge-approved_ga_approval { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
+/* Pengiriman: APPROVED_GA_APPROVAL still has a KPU stage ahead, so it's orange like the other
+   on-approval steps - only COMPLETED is the truly final, green status. Room Booking has no KPU
+   stage, so APPROVED_GA_APPROVAL IS its final status there; since both modules' status enums
+   share this exact name, BookingStatusBadge renders it under badge-booking-approved_ga_approval
+   instead so the two colors don't collide on one shared class. */
+.badge-approved_ga_approval { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
+.badge-booking-approved_ga_approval { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
 .badge-completed { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
 .badge-rejected_l1 { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 .badge-rejected_ga { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
