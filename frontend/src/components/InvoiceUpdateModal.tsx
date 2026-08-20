@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { invoiceBulanLabel } from "@/lib/format";
 import type { Invoice } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -56,13 +55,6 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <h3>Update Invoice</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
-        <p className="text-secondary" style={{ marginTop: -8, marginBottom: 16 }}>
-          {isDraft ? (
-            <>Ubah file invoice draft untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> sebelum dikirim.</>
-          ) : (
-            <>Perbarui file invoice untuk <strong>{invoiceBulanLabel(item.bulan)}</strong> setelah direvisi. Invoice akan tersimpan sebagai draft, kirim kembali lewat Detail.</>
-          )}
-        </p>
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
