@@ -45,6 +45,9 @@ public class PengirimanController : ApiControllerBase
     private static string EffectiveDivisi(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDivisiLabel : user.Divisi!;
 
+    private static bool IsGaOriginCreator(Pengiriman item) =>
+        item.CreatedByRole is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+
     // "Origin" for revision/reject-back purposes is always whoever actually created the item -
     // any of the OriginRoles. Whichever of them did it is the one who has to fix and resend it
     // after any reject.
@@ -630,7 +633,10 @@ public class PengirimanController : ApiControllerBase
 
         item.Status = StatusEnum.REJECTED_GA_APPROVAL;
         item.RejectReason = payload.Reason;
-        item.RejectTarget = payload.Target;
+        // When Admin/Approval GA input their own data, "send to GA" and "send to origin" are
+        // the same destination (they are the origin) - always resolve to ORIGIN instead of
+        // making the rejecter pick between two labels for the same person.
+        item.RejectTarget = IsGaOriginCreator(item) ? RejectTargetEnum.ORIGIN : payload.Target;
         item.ApprovedByApprovalGa = null;
         item.ApprovedApprovalGaAt = null;
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
@@ -677,7 +683,9 @@ public class PengirimanController : ApiControllerBase
 
         item.Status = StatusEnum.REJECTED_KPU;
         item.RejectReason = payload.Reason;
-        item.RejectTarget = payload.Target;
+        // Same collapse as RejectGaApproval: Admin/Approval GA's own items always bounce back
+        // to them specifically, whichever GA role they are, never to a different GA role.
+        item.RejectTarget = IsGaOriginCreator(item) ? RejectTargetEnum.ORIGIN : payload.Target;
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
         await _db.SaveChangesAsync();
         return Ok(PengirimanOut.From(item));

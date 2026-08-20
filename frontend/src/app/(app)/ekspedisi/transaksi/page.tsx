@@ -61,7 +61,7 @@ export default function TransaksiPage() {
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
 
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
@@ -629,7 +629,7 @@ export default function TransaksiPage() {
         me={me}
         onClose={() => setDetail(null)}
         onSaved={loadTable}
-        onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+        onRequestReject={(id, type, originLabel, createdByRole) => setRejectTarget({ id, type, originLabel, createdByRole })}
       />
 
       <RejectModal
@@ -637,6 +637,7 @@ export default function TransaksiPage() {
         targetId={rejectTarget?.id ?? null}
         targetType={rejectTarget?.type ?? null}
         originLabel={rejectTarget?.originLabel ?? ""}
+        createdByRole={rejectTarget?.createdByRole ?? null}
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);

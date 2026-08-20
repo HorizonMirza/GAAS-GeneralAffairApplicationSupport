@@ -12,13 +12,20 @@ interface Props {
   targetId: number | null;
   targetType: RejectType | null;
   originLabel: string;
+  createdByRole?: string | null;
   onClose: () => void;
   onDone: () => void;
 }
 
 const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu", "booking-ga-approval"];
 
-export default function RejectModal({ open, targetId, targetType, originLabel, onClose, onDone }: Props) {
+// For these two reject types, "send to GA" and "send to origin" collapse into the same person
+// whenever the item was input by Admin/Approval GA themselves (they are the origin) - showing
+// a choice between two identically-worded options for the same destination is just confusing,
+// so skip it and always resolve straight to ORIGIN.
+const GA_ORIGIN_COLLAPSIBLE: RejectType[] = ["ga-approval", "kpu"];
+
+export default function RejectModal({ open, targetId, targetType, originLabel, createdByRole, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
   const [target, setTarget] = useState<RejectTarget | "">("");
   const [error, setError] = useState("");
@@ -26,7 +33,9 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
 
   if (!open) return null;
 
-  const needsTarget = targetType ? NEEDS_TARGET_CHOICE.includes(targetType) : false;
+  const isGaOriginCreator = createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA";
+  const skipChoice = !!targetType && GA_ORIGIN_COLLAPSIBLE.includes(targetType) && isGaOriginCreator;
+  const needsTarget = targetType ? NEEDS_TARGET_CHOICE.includes(targetType) && !skipChoice : false;
 
   function reset() {
     setReason("");
@@ -46,6 +55,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
       setError("Pilih tujuan pengembalian data terlebih dahulu.");
       return;
     }
+    const effectiveTarget: RejectTarget | "" = skipChoice ? "ORIGIN" : target;
     try {
       let message = `Data ditolak, dikembalikan ke ${originLabel}`;
       if (targetType === "l1") {
@@ -53,11 +63,11 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
       } else if (targetType === "ga") {
         await api.rejectGa(targetId, reasonValue);
       } else if (targetType === "ga-approval") {
-        await api.rejectGaApproval(targetId, reasonValue, target as RejectTarget);
-        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+        await api.rejectGaApproval(targetId, reasonValue, effectiveTarget as RejectTarget);
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "kpu") {
-        await api.rejectKpu(targetId, reasonValue, target as RejectTarget);
-        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+        await api.rejectKpu(targetId, reasonValue, effectiveTarget as RejectTarget);
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "booking-l1") {
         await api.rejectBookingL1(targetId, reasonValue);
       } else if (targetType === "booking-ga") {
