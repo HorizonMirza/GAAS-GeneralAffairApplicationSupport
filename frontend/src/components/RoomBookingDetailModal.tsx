@@ -154,7 +154,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>
-              <input type="date" id="bv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <input type="date" id="bv-tanggal" required disabled value={form.tanggal} />
             </div>
             <div className="field">
               <label htmlFor="bv-peserta">Jumlah Peserta</label>

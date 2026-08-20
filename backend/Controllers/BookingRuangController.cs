@@ -314,25 +314,21 @@ public class BookingRuangController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
+        // Tanggal is locked once the draft is created, same as Ekspedisi - overwrite whatever
+        // the payload sent with the original value up front so validation, conflict-checking,
+        // and the eventual save are all consistently against the date that will actually apply.
+        // NomorPemesanan's MM.YYYY (and the room+date slot this booking occupies) never goes
+        // stale as a result, so no regeneration is needed here anymore.
+        payload.Tanggal = item.Tanggal;
+
         var validationError = ValidatePayload(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
         var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        // NomorPemesanan embeds MM.YYYY (the code names the requester's divisi, which never
-        // changes on edit) - if the month/year changed, the number claimed at Create time no
-        // longer matches this booking's date and has to be reassigned, same as Ekspedisi's
-        // NomorTransmittal handles a Tanggal edit.
-        var needsNewNomor = item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month;
-
         var wasRejected = item.Status is BookingStatusEnum.REJECTED_L1 or BookingStatusEnum.REJECTED_GA or BookingStatusEnum.REJECTED_GA_APPROVAL;
         ApplyCreatePayload(item, payload);
-        if (needsNewNomor)
-        {
-            var seq = await IncrementNomorSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
-            item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, item.Tanggal);
-        }
         if (wasRejected)
         {
             item.Status = BookingStatusEnum.DRAFT;
