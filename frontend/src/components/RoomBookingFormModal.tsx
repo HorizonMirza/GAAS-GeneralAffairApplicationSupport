@@ -47,16 +47,13 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   }, [open]);
 
   useEffect(() => {
-    if (!open || !form.namaRuang || !form.tanggal) {
-      setNomorPemesanan("");
-      return;
-    }
+    if (!open || !form.tanggal) return;
     api
-      .nextBookingNomor(form.namaRuang, form.tanggal)
+      .nextBookingNomor(form.tanggal)
       .then((r) => setNomorPemesanan(r.nomorPemesanan))
       .catch(() => setNomorPemesanan(""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.namaRuang, form.tanggal]);
+  }, [open, form.tanggal]);
 
   if (!open) return null;
 
@@ -104,7 +101,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
-              <input type="text" id="f-nomor-pemesanan" disabled placeholder="Pilih ruangan dan tanggal dahulu" value={nomorPemesanan} />
+              <input type="text" id="f-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>

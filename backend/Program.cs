@@ -49,13 +49,29 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS nomor_pemesanan VARCHAR(50)");
 
+    // Nomor Pemesanan Ruangan switched from a per-ruangan code to a per-divisi code (matching
+    // Ekspedisi's NomorTransmittal, e.g. "Corsec"), so the counter's key changed from
+    // (nama_ruang, year, month) to (divisi, year, month). One-time reset of this table only if
+    // it still has the old shape - counter values aren't meaningful data, just a running count,
+    // so restarting them at 0 is harmless (no duplicate-number risk, only a fresh sequence).
+    migrateDb.Database.ExecuteSqlRaw(@"
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'room_booking_counters' AND column_name = 'nama_ruang'
+            ) THEN
+                DROP TABLE room_booking_counters;
+            END IF;
+        END $$;
+    ");
     migrateDb.Database.ExecuteSqlRaw(@"
         CREATE TABLE IF NOT EXISTS room_booking_counters (
-            nama_ruang VARCHAR(100) NOT NULL,
+            divisi VARCHAR(255) NOT NULL,
             year INT NOT NULL,
             month INT NOT NULL,
             last_sequence INT NOT NULL,
-            PRIMARY KEY (nama_ruang, year, month)
+            PRIMARY KEY (divisi, year, month)
         )");
 
     // Room booking chat: brand new tables (not a column backfill), so a plain CREATE TABLE IF

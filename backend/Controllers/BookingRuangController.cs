@@ -173,49 +173,54 @@ public class BookingRuangController : ApiControllerBase
             ? $"{conflict.NamaRuang} sudah dipesan sehari penuh pada tanggal tersebut"
             : $"{conflict.NamaRuang} sudah dipesan jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} pada tanggal tersebut";
 
-    // Scoped per ruangan + bulan + tahun so the sequence resets every month and stays unique per
-    // room. Keyed off the booking's own Tanggal, not wall-clock "now", so the number always
-    // matches the MM.YYYY printed in it. Backed by a standalone counter row (not derived from
-    // existing BookingRuang rows) so a number is never reused after its row is deleted.
-    private async Task<int> PeekNextNomorSequenceAsync(string namaRuang, int year, int month)
+    // Scoped per divisi + bulan + tahun, same convention as Ekspedisi's NomorTransmittal (see
+    // PengirimanController.PeekNextTransmittalSequenceAsync) - the sequence resets every month
+    // and stays unique per divisi. Keyed off the booking's own Tanggal, not wall-clock "now", so
+    // the number always matches the MM.YYYY printed in it. Backed by a standalone counter row
+    // (not derived from existing BookingRuang rows) so a number is never reused after its row is
+    // deleted.
+    private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
     {
-        var counter = await _db.RoomBookingCounters.FindAsync(namaRuang, year, month);
+        var counter = await _db.RoomBookingCounters.FindAsync(divisi, year, month);
         return (counter?.LastSequence ?? 0) + 1;
     }
 
     // Single atomic upsert instead of read-then-write: two concurrent Create calls for the same
-    // ruangan+month would otherwise both read the same LastSequence and produce duplicate
+    // divisi+month would otherwise both read the same LastSequence and produce duplicate
     // NomorPemesanan values. Postgres serializes concurrent INSERT ... ON CONFLICT statements on
     // the same row, so each caller is guaranteed a distinct, gap-free sequence number.
-    private async Task<int> IncrementNomorSequenceAsync(string namaRuang, int year, int month)
+    private async Task<int> IncrementNomorSequenceAsync(string divisi, int year, int month)
     {
         var results = await _db.Database.SqlQueryRaw<int>(
             """
-            INSERT INTO room_booking_counters (nama_ruang, year, month, last_sequence)
+            INSERT INTO room_booking_counters (divisi, year, month, last_sequence)
             VALUES ({0}, {1}, {2}, 1)
-            ON CONFLICT (nama_ruang, year, month)
+            ON CONFLICT (divisi, year, month)
             DO UPDATE SET last_sequence = room_booking_counters.last_sequence + 1
             RETURNING last_sequence AS "Value"
             """,
-            namaRuang, year, month
+            divisi, year, month
         ).ToListAsync();
         return results[0];
     }
 
-    private static string BuildNomorPemesanan(string namaRuang, int seq, DateOnly tanggal) =>
-        $"{seq:D4}.{MeetingRooms.GetKodeRuang(namaRuang)}.{tanggal:MM}.{tanggal:yyyy}";
+    // Same format as Ekspedisi's NomorTransmittal, e.g. "0001.Corsec.08.2026" - the code names
+    // the requester's divisi (OrgTree.GetKodeSatuanKerja), not the room, so editing which room a
+    // draft books never invalidates the number.
+    private static string BuildNomorPemesanan(string divisi, int seq, DateOnly tanggal) =>
+        $"{seq:D4}.{OrgTree.GetKodeSatuanKerja(divisi)}.{tanggal:MM}.{tanggal:yyyy}";
 
     [HttpGet("next-nomor")]
-    public async Task<IActionResult> NextNomor([FromQuery(Name = "nama_ruang")] string? namaRuang, [FromQuery] DateOnly? tanggal)
+    public async Task<IActionResult> NextNomor([FromQuery] DateOnly? tanggal)
     {
-        var (_, error) = await RequireRoleAsync(OriginRoles);
+        var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        if (string.IsNullOrEmpty(namaRuang) || !MeetingRooms.IsValidRoom(namaRuang))
+        if (string.IsNullOrEmpty(user!.Divisi))
             return Ok(new { nomorPemesanan = "" });
 
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var seq = await PeekNextNomorSequenceAsync(namaRuang, effectiveTanggal.Year, effectiveTanggal.Month);
-        return Ok(new { nomorPemesanan = BuildNomorPemesanan(namaRuang, seq, effectiveTanggal) });
+        var seq = await PeekNextNomorSequenceAsync(user.Divisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        return Ok(new { nomorPemesanan = BuildNomorPemesanan(user.Divisi, seq, effectiveTanggal) });
     }
 
     [HttpGet("rooms")]
@@ -287,8 +292,8 @@ public class BookingRuangController : ApiControllerBase
 
         var item = new BookingRuang { CreatedBy = user.Id, CreatedByRole = user.Role, Status = BookingStatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
         ApplyCreatePayload(item, payload);
-        var seq = await IncrementNomorSequenceAsync(item.NamaRuang, item.Tanggal.Year, item.Tanggal.Month);
-        item.NomorPemesanan = BuildNomorPemesanan(item.NamaRuang, seq, item.Tanggal);
+        var seq = await IncrementNomorSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
+        item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, item.Tanggal);
         _db.BookingRuangs.Add(item);
         await _db.SaveChangesAsync();
 
@@ -315,18 +320,18 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        // NomorPemesanan embeds the room's code and MM.YYYY - if either changed, the number
-        // claimed at Create time no longer describes this booking and has to be reassigned, or
-        // it keeps showing the wrong room/month after the edit.
-        var needsNewNomor = item.NamaRuang != payload.NamaRuang
-            || item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month;
+        // NomorPemesanan embeds MM.YYYY (the code names the requester's divisi, which never
+        // changes on edit) - if the month/year changed, the number claimed at Create time no
+        // longer matches this booking's date and has to be reassigned, same as Ekspedisi's
+        // NomorTransmittal handles a Tanggal edit.
+        var needsNewNomor = item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month;
 
         var wasRejected = item.Status is BookingStatusEnum.REJECTED_L1 or BookingStatusEnum.REJECTED_GA or BookingStatusEnum.REJECTED_GA_APPROVAL;
         ApplyCreatePayload(item, payload);
         if (needsNewNomor)
         {
-            var seq = await IncrementNomorSequenceAsync(item.NamaRuang, item.Tanggal.Year, item.Tanggal.Month);
-            item.NomorPemesanan = BuildNomorPemesanan(item.NamaRuang, seq, item.Tanggal);
+            var seq = await IncrementNomorSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
+            item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, item.Tanggal);
         }
         if (wasRejected)
         {

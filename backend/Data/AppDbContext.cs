@@ -308,8 +308,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RoomBookingCounter>(e =>
         {
             e.ToTable("room_booking_counters");
-            e.HasKey(c => new { c.NamaRuang, c.Year, c.Month });
-            e.Property(c => c.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100);
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
+            e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
             e.Property(c => c.Year).HasColumnName("year");
             e.Property(c => c.Month).HasColumnName("month");
             e.Property(c => c.LastSequence).HasColumnName("last_sequence");
