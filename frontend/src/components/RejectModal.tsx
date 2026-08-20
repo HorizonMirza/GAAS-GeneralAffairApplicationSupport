@@ -103,6 +103,9 @@ export default function RejectModal({ open, targetId, targetType, originLabel, o
             placeholder="Contoh: Barang fisik tidak ditemukan"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.stopPropagation();
+            }}
           />
         </div>
         <div className="error-text">{error}</div>
