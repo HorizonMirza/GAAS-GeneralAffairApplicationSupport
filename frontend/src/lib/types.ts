@@ -167,6 +167,13 @@ export interface Invoice {
   reviewedAt: string | null;
 }
 
+export interface InvoiceListResponse {
+  items: Invoice[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface InvoiceLog {
   id: number;
   action: string;

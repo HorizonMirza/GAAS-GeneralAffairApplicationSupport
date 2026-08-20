@@ -7,6 +7,7 @@ import type {
   BookingStatus,
   ChatMessage,
   Invoice,
+  InvoiceListResponse,
   InvoiceLog,
   Me,
   OrgStructure,
@@ -79,6 +80,12 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   return null as T;
 }
 
+export interface ListInvoiceParams {
+  page?: number;
+  limit?: number;
+  bulan?: string;
+}
+
 export interface ListPengirimanParams {
   page?: number;
   limit?: number;
@@ -148,7 +155,8 @@ export const api = {
   sendChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
-  listInvoice: () => apiRequest<Invoice[]>("/invoice"),
+  listInvoice: (params: ListInvoiceParams = {}) =>
+    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan } }),
   uploadInvoice: async (bulan: string, file: File) => {
     const formData = new FormData();
     formData.append("bulan", bulan);
