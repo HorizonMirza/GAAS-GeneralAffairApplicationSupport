@@ -109,8 +109,7 @@ export default function BookingOverviewPage() {
         </>
       )}
 
-      <h3 style={{ margin: "24px 0 4px" }}>Booking Terbaru Saya</h3>
-      <p className="text-secondary" style={{ margin: "0 0 12px", fontSize: "0.82rem" }}>Menampilkan booking bulan ini saja</p>
+      <h3 style={{ margin: "24px 0 12px" }}>Booking Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>

@@ -120,6 +120,12 @@ public class BookingRuangController : ApiControllerBase
 
     private static string? ValidatePayload(BookingRuangCreate payload)
     {
+        if (string.IsNullOrWhiteSpace(payload.NamaKegiatan))
+            return "Nama kegiatan wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.Pic))
+            return "PIC wajib diisi";
+        if (payload.JumlahPeserta <= 0)
+            return "Jumlah peserta harus lebih dari 0";
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)

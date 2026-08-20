@@ -57,17 +57,18 @@ export default function OverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
+      const bulan = currentYearMonth();
       const [queue, submitted, rejectedGa, approvedL1, rejectedGaApproval, approvedGa, rejectedKpu, approvedGaApproval, completed] =
         await Promise.all([
-          api.listPengiriman({ limit: 10, page: 1, bulan: currentYearMonth() }).then((r) => r.items),
-          api.listPengiriman({ limit: 5, page: 1, status: "SUBMITTED" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "REJECTED_GA" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "APPROVED_L1" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "REJECTED_GA_APPROVAL" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "APPROVED_GA" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "REJECTED_KPU" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "APPROVED_GA_APPROVAL" }),
-          api.listPengiriman({ limit: 5, page: 1, status: "COMPLETED" }),
+          api.listPengiriman({ limit: 10, page: 1, bulan }).then((r) => r.items),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "SUBMITTED" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_GA" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_L1" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_GA_APPROVAL" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_GA" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "REJECTED_KPU" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "APPROVED_GA_APPROVAL" }),
+          api.listPengiriman({ limit: 5, page: 1, bulan, status: "COMPLETED" }),
         ]);
       setItems(queue);
       setStats({
@@ -128,8 +129,7 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 4px" }}>Dokumen Terbaru Saya</h3>
-      <p className="text-secondary" style={{ margin: "0 0 12px", fontSize: "0.82rem" }}>Menampilkan dokumen bulan ini saja</p>
+      <h3 style={{ margin: "24px 0 12px" }}>Dokumen Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
