@@ -279,6 +279,7 @@ export const api = {
   sendBookingChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-ruang/${id}/chat`, { method: "POST", body: { message } }),
   bookingPdfUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/pdf`,
+  bookingIcsUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/ics`,
 };
 
 export interface ListBookingParams {

@@ -8,9 +8,10 @@ interface Props {
   onUpdates: () => void;
   onStatus: () => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
 }
 
-export default function RowMenuDropdown({ position, canEditDelete, onDetail, onChat, onUpdates, onStatus, onDelete }: Props) {
+export default function RowMenuDropdown({ position, canEditDelete, onDetail, onChat, onUpdates, onStatus, onDelete, onDuplicate }: Props) {
   if (!position) return null;
   return (
     <div
@@ -38,6 +39,12 @@ export default function RowMenuDropdown({ position, canEditDelete, onDetail, onC
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         History
       </button>
+      {onDuplicate && (
+        <button type="button" className="row-menu-item" onClick={onDuplicate}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Duplikat
+        </button>
+      )}
       {canEditDelete && (
         <button type="button" className="row-menu-item row-menu-item-danger" onClick={onDelete}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>

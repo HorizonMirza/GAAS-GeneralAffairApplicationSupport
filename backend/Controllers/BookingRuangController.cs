@@ -12,6 +12,9 @@ public class BookingRuangController : ApiControllerBase
 {
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
     private const int MaxOccurrencesPerSeries = 52;
+    // Flat cap across every room, not per-room capacity - matches how the business actually
+    // wants this enforced (business rule, not a per-room physical limit).
+    private const int MaxJumlahPeserta = 64;
 
     // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
     // Admin/Approval GA input on behalf of Asset Management and General Affair (see
@@ -174,10 +177,12 @@ public class BookingRuangController : ApiControllerBase
             return "PIC wajib diisi";
         if (payload.JumlahPeserta <= 0)
             return "Jumlah peserta harus lebih dari 0";
+        if (payload.JumlahPeserta > MaxJumlahPeserta)
+            return $"Jumlah peserta maksimal {MaxJumlahPeserta} orang";
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
         // Only Admin/Approval GA can book on behalf of another unit - the field is silently
-        // ignored for every other role (see ApplyEffectiveOwner below), so it's only validated
+        // ignored for every other role (see EffectiveOwner below), so it's only validated
         // here when it could actually take effect.
         if (isGaActor && !string.IsNullOrEmpty(payload.Divisi))
         {
@@ -1118,5 +1123,22 @@ public class BookingRuangController : ApiControllerBase
 
         var bytes = BookingPdfService.Generate(item);
         return File(bytes, "application/pdf", $"Bukti-Booking-{item.NomorPemesanan}.pdf");
+    }
+
+    // Personal calendar reminder (.ics), available at any status - unlike the PDF above this is
+    // not proof of anything, just a convenience so the booking (pending or confirmed) shows up in
+    // the viewer's own Outlook/Google Calendar. See IcsService for the generated file itself.
+    [HttpGet("{itemId:int}/ics")]
+    public async Task<IActionResult> DownloadIcs(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        var bytes = IcsService.Generate(item);
+        return File(bytes, "text/calendar", $"Booking-{item.NomorPemesanan ?? item.Id.ToString()}.ics");
     }
 }

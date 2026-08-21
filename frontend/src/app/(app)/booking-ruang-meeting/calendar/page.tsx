@@ -54,7 +54,7 @@ function BookingCalendarPageInner() {
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
     : false;
 
   useEffect(() => {
@@ -116,6 +116,11 @@ function BookingCalendarPageInner() {
 
   function openCreateForm() {
     setFormInitial({ namaRuang: selectedRoom, tanggal: refDate });
+    setFormOpen(true);
+  }
+
+  function handleDuplicate(initial: Partial<BookingRuangCreatePayload>) {
+    setFormInitial(initial);
     setFormOpen(true);
   }
 
@@ -248,6 +253,7 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={loadSchedule}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onDuplicate={handleDuplicate}
         />
       )}
 

@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
-import { RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -197,9 +197,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta)}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlahPeserta", digits === "" ? 0 : Number(digits));
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), MAX_JUMLAH_PESERTA);
+                  set("jumlahPeserta", parsed);
                 }}
               />
+              <span className="text-secondary" style={{ fontSize: "0.78rem" }}>Maksimal {MAX_JUMLAH_PESERTA} orang</span>
             </div>
             <div className="field">
               <label htmlFor="f-jam-mulai">Jam Mulai</label>

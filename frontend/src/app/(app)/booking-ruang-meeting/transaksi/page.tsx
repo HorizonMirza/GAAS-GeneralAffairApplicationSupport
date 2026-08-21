@@ -4,13 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, isBookingEditableByOrigin } from "@/lib/constants";
-import { currentYearMonth, formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
+import { bookingDuplicatePayload, bookingRoomsLabel, isBookingEditableByOrigin } from "@/lib/constants";
+import { currentYearMonth, formatDate, formatDateTime, formatTimeRange, todayLocalDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
+import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
@@ -49,6 +50,8 @@ export default function BookingTransaksiPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
+  const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
@@ -133,6 +136,11 @@ export default function BookingTransaksiPage() {
   function goToPage(page: number) {
     if (page < 1) return;
     setFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDuplicate(initial: Partial<BookingRuangCreatePayload>) {
+    setFormInitial(initial);
+    setFormOpen(true);
   }
 
   function handleDelete(item: BookingRuang) {
@@ -346,7 +354,16 @@ export default function BookingTransaksiPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        onDuplicate={isOrigin ? () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) handleDuplicate(bookingDuplicatePayload(item, todayLocalDate()));
+        } : undefined}
       />
+
+      {me && (
+        <RoomBookingFormModal open={formOpen} me={me} initial={formInitial} onClose={() => setFormOpen(false)} onCreated={loadTable} />
+      )}
 
       <RoomBookingDetailModal
         open={!!detail}
@@ -356,6 +373,7 @@ export default function BookingTransaksiPage() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+        onDuplicate={handleDuplicate}
       />
 
       <RejectModal

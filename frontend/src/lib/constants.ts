@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { BookingRuang, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
+import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -237,6 +237,10 @@ export function isBookingGaActionable(item: BookingRuang): boolean {
   return item.status === "APPROVED_L1";
 }
 
+// Flat cap across every room (not per-room capacity) - mirrors
+// BookingRuangController.MaxJumlahPeserta on the backend.
+export const MAX_JUMLAH_PESERTA = 64;
+
 export const BOOKING_L1_ACTIONABLE_STATUSES: BookingStatus[] = ["SUBMITTED"];
 export const BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES: BookingStatus[] = ["APPROVED_GA"];
 
@@ -253,6 +257,27 @@ export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = 
 
 export function bookingRoomsLabel(item: BookingRuang): string {
   return [item.namaRuang, ...item.additionalRooms].join(", ");
+}
+
+// "Copy Entry": prefill a fresh create-form with an existing booking's setup so the user doesn't
+// retype everything for a similar future booking. Tanggal deliberately resets to today rather
+// than copying the source's (likely past, or already-taken) date - the user picks a new one.
+export function bookingDuplicatePayload(item: BookingRuang, today: string): Partial<BookingRuangCreatePayload> {
+  return {
+    namaKegiatan: item.namaKegiatan,
+    pic: item.pic,
+    divisi: item.divisi,
+    departemen: item.departemen || undefined,
+    namaRuang: item.namaRuang,
+    additionalRooms: item.additionalRooms,
+    jumlahPeserta: item.jumlahPeserta,
+    tanggal: today,
+    isWholeDay: item.isWholeDay,
+    jamMulai: item.jamMulai,
+    jamSelesai: item.jamSelesai,
+    catatan: item.catatan,
+    tipe: item.tipe,
+  };
 }
 
 export function bookingRecurrenceLabel(item: BookingRuang): string | null {

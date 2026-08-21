@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
-import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
+import { bookingDuplicatePayload, bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
+import { currentYearMonth, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingRuang, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -31,6 +31,7 @@ export default function BookingOverviewPage() {
   const [busy, setBusy] = useState(true);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
@@ -67,6 +68,11 @@ export default function BookingOverviewPage() {
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
+  function handleDuplicate(initial: Partial<BookingRuangCreatePayload>) {
+    setFormInitial(initial);
+    setFormOpen(true);
+  }
+
   function handleDelete(item: BookingRuang) {
     confirm("Hapus booking ruangan ini secara permanen?", async () => {
       try {
@@ -84,7 +90,7 @@ export default function BookingOverviewPage() {
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
         {isOrigin && (
-          <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
+          <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => { setFormInitial(undefined); setFormOpen(true); }}>
             + Booking Ruang Meeting
           </button>
         )}
@@ -184,10 +190,15 @@ export default function BookingOverviewPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        onDuplicate={isOrigin ? () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) handleDuplicate(bookingDuplicatePayload(item, todayLocalDate()));
+        } : undefined}
       />
 
       {me && (
-        <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
+        <RoomBookingFormModal open={formOpen} me={me} initial={formInitial} onClose={() => setFormOpen(false)} onCreated={load} />
       )}
 
       {me && (
@@ -199,6 +210,7 @@ export default function BookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onDuplicate={handleDuplicate}
         />
       )}
 

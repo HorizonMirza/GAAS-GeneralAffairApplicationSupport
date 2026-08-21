@@ -5,20 +5,29 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
+  bookingDuplicatePayload,
   bookingOriginActorLabel,
   bookingRecurrenceLabel,
   isBookingEditableByOrigin,
   isBookingGaActionable,
   isBookingGaReschedulable,
+  MAX_JUMLAH_PESERTA,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, todayLocalDate } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
 import RoomBookingRescheduleModal from "./RoomBookingRescheduleModal";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
+
+// Same origin-role set every Room Booking page already checks against for "can this account
+// create a booking" - repeated here (rather than a new shared export) to match the codebase's
+// existing convention of inlining this exact list per file.
+const BOOKING_ORIGIN_ROLES: Me["role"][] = [
+  "ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA",
+];
 
 interface Props {
   open: boolean;
@@ -28,6 +37,7 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
+  onDuplicate?: (initial: Partial<BookingRuangCreatePayload>) => void;
 }
 
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
@@ -46,7 +56,7 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   };
 }
 
-export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onDuplicate }: Props) {
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -69,6 +79,13 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canReschedule = !isEdit && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
   const canDownloadBukti = !isEdit && item.status === "APPROVED_GA_APPROVAL";
+  const canDuplicate = !isEdit && !!onDuplicate && BOOKING_ORIGIN_ROLES.includes(me.role);
+
+  function handleDuplicate() {
+    if (!onDuplicate) return;
+    onDuplicate(bookingDuplicatePayload(item!, todayLocalDate()));
+    onClose();
+  }
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -188,7 +205,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta)}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlahPeserta", digits === "" ? 0 : Number(digits));
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), MAX_JUMLAH_PESERTA);
+                  set("jumlahPeserta", parsed);
                 }}
               />
             </div>
@@ -327,6 +345,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingPdfUrl(item.id)} target="_blank" rel="noopener noreferrer">
                 Download Bukti PDF
               </a>
+            )}
+            {!isEdit && (
+              <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingIcsUrl(item.id)}>
+                Export Kalender (.ics)
+              </a>
+            )}
+            {canDuplicate && (
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={handleDuplicate}>Duplikat</button>
             )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
