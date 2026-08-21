@@ -38,7 +38,11 @@ public static class IcsService
             $"Status: {StatusLabel(item.Status)}",
         };
         if (!string.IsNullOrWhiteSpace(item.Catatan)) descriptionLines.Add($"Catatan: {item.Catatan}");
-        var description = string.Join("\\n", descriptionLines);
+        // Join with a real newline, not the literal "\n" text - Escape() below turns a real
+        // newline into the RFC 5545 "\n" line-break escape; joining with the escape sequence
+        // directly would get its own backslash doubled by Escape()'s backslash-escaping step,
+        // corrupting it into a literal "\n" shown in the text instead of an actual line break.
+        var description = string.Join("\n", descriptionLines);
 
         var lines = new List<string>
         {

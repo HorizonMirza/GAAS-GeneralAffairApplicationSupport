@@ -100,6 +100,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     });
   }
 
+  // Switching the primary room to one already picked as an additional room would otherwise leave
+  // a stale duplicate in additionalRooms - invisible in the UI (its chip disappears once it
+  // matches namaRuang) but still sent to the backend, which rejects the save with a confusing
+  // "Ruang tambahan tidak boleh sama dengan ruang utama" error the user can't see the cause of.
+  function setNamaRuang(nama: string) {
+    setForm((f) => (f ? { ...f, namaRuang: nama, additionalRooms: (f.additionalRooms || []).filter((r) => r !== nama) } : f));
+  }
+
   function toggleWholeDay() {
     setForm((f) => {
       if (!f) return f;
@@ -244,7 +252,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field full">
               <label htmlFor="bv-ruang">Ruangan</label>
-              <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
+              <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
                 <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
                 {rooms.map((r) => (
                   <option key={r.nama} value={r.nama}>{r.nama}</option>

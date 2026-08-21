@@ -246,7 +246,10 @@ export const api = {
   updateBooking: (id: number, payload: BookingRuangCreatePayload) =>
     apiRequest<BookingRuang>(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
   rescheduleBooking: (id: number, payload: BookingRuangReschedulePayload) =>
-    apiRequest<BookingRuang>(`/booking-ruang/${id}/reschedule`, { method: "PATCH", body: payload }),
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/reschedule`, {
+      method: "PATCH",
+      body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
+    }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
   superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),
   // The backend only wraps the response in {item, detail} when finalizing a series (submit's
