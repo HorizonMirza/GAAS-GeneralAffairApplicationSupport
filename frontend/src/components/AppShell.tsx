@@ -48,8 +48,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Expedition",
     items: [
       { label: "Overview", href: "/ekspedisi/overview" },
-      { label: "Transactions", href: "/ekspedisi/transaksi" },
-      { label: "Invoices", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
+      { label: "Transaction", href: "/ekspedisi/transaksi" },
+      { label: "Invoice", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
@@ -59,7 +59,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/booking-ruang-meeting/overview" },
       { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
-      { label: "Bookings", href: "/booking-ruang-meeting/transaksi" },
+      { label: "Booking", href: "/booking-ruang-meeting/transaksi" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

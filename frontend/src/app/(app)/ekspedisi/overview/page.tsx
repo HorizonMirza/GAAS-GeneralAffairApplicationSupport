@@ -86,10 +86,10 @@ export default function OverviewPage() {
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? "Menunggu Approve Departemen"
+      ? "Approval Departemen"
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? "Menunggu Approve Divisi"
-      : "Menunggu Approve Departemen/Divisi";
+      ? "Approval Divisi"
+      : "Approval Departemen/Divisi";
 
   function handleDelete(item: Pengiriman) {
     confirm("Hapus data pengiriman ini secara permanen?", async () => {
@@ -117,14 +117,14 @@ export default function OverviewPage() {
       {stats && (
         <div className="stat-grid">
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Menunggu Approve Admin GA</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Menunggu Approve Approval GA</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">Menunggu Approve KPU</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">KPU</div></div>
           <div className="stat-tile"><div className="value">{stats.completed}</div><div className="label">Approved</div></div>
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Dokumen Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 12px" }}>Transaksi Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
