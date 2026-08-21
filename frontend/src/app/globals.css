@@ -1303,6 +1303,13 @@ body.auth-ready .app-shell {
 
 .invoice-filter-field { flex: 0 0 auto; min-width: 190px; }
 
+/* Invoices page toolbar matches Transactions' sizing (narrower search box + month input),
+   scoped here so it doesn't affect the shared invoice-toolbar-slim/invoice-filter-field
+   classes still used by the Super Admin invoice section. */
+.invoices-page-toolbar { gap: 8px; }
+.invoices-page-toolbar .invoice-search-field { flex: 0 1 110px; min-width: 90px; }
+.invoices-page-toolbar .invoice-filter-field { flex: 0 0 auto; min-width: 0; max-width: 130px; }
+
 .invoice-input-btn { margin-left: auto; }
 
 .invoice-toolbar-slim .field input,

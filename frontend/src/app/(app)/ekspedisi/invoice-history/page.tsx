@@ -115,13 +115,13 @@ export default function InvoiceHistoryPage() {
   return (
     <>
       <div className="card">
-        <div className="invoice-toolbar-slim">
-          <div className="field" style={{ marginBottom: 0 }}>
+        <div className="invoice-toolbar-slim invoices-page-toolbar">
+          <div className="field invoice-search-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-search">Cari Invoice</label>
             <input
               type="text"
               id="invoice-filter-search"
-              placeholder="Nama file"
+              placeholder="Nama File"
               value={invoiceSearchInput}
               onChange={(e) => handleInvoiceSearchChange(e.target.value)}
             />
