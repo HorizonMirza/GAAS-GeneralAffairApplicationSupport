@@ -1,5 +1,5 @@
 import { trackWord } from "@/lib/constants";
-import type { BookingRuang, BookingStatus, RejectTarget, Role } from "@/lib/types";
+import type { BookingRuang, BookingStatus, Role } from "@/lib/types";
 
 const FLOW_DURATION = 1.8;
 
@@ -30,13 +30,14 @@ const REJECTED_IDX: Partial<Record<BookingStatus, number>> = {
   REJECTED_GA_APPROVAL: 3,
 };
 
-function isApprovalRole(role: Role): boolean {
-  return role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI";
-}
-
-function rejectStartIdx(status: BookingStatus, rejectTarget: RejectTarget | null, originIdx: number): number {
-  const isGaTarget = status === "REJECTED_GA_APPROVAL" && rejectTarget === "GA";
-  return isGaTarget ? 2 : originIdx;
+// Maps the creator's role to the step index their journey actually starts at, so an
+// Admin/Approval GA-input booking (which skips straight past the Departemen/Divisi tiers on
+// submit) doesn't falsely render those earlier steps as "done".
+function originIdxForRole(role: Role): number {
+  if (role === "APPROVAL_GA") return 3;
+  if (role === "ADMIN_GA") return 2;
+  if (role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI") return 1;
+  return 0;
 }
 
 function XIcon() {
@@ -48,10 +49,11 @@ function XIcon() {
   );
 }
 
+// rejectTarget is accepted (callers still pass it) but no longer read - it no longer routes a
+// reject anywhere different, see BookingRuangController.RejectGaApproval.
 export default function RoomBookingStepper({
   status,
   departemen = null,
-  rejectTarget = null,
   createdByRole = "ADMIN_DEPARTEMEN",
 }: {
   status: BookingStatus;
@@ -61,8 +63,8 @@ export default function RoomBookingStepper({
 }) {
   const currentIdx = PROGRESS[status] ?? 0;
   const rejectAt = REJECTED_IDX[status];
-  const originIdx = isApprovalRole(createdByRole) ? 1 : 0;
-  const rejectFrom = rejectAt != null ? rejectStartIdx(status, rejectTarget, originIdx) : null;
+  const originIdx = originIdxForRole(createdByRole);
+  const rejectFrom = rejectAt != null ? originIdx : null;
   const steps = buildSteps(departemen);
 
   return (

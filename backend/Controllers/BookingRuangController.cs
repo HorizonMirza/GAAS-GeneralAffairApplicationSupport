@@ -12,11 +12,23 @@ public class BookingRuangController : ApiControllerBase
 {
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
 
+    // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
+    // Admin/Approval GA input on behalf of Asset Management and General Affair (see
+    // GaDivisiLabel/GaDepartemenLabel below) and skip straight past whichever approval tier is
+    // theirs, same convention as Pengiriman.
     private static readonly RoleEnum[] OriginRoles =
     {
         RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
         RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
+        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA,
     };
+
+    // Admin/Approval GA accounts have no Divisi/Departemen of their own in the user record - the
+    // people holding those roles actually sit in Asset Management and General Affair, under the
+    // Procurement and General Affair Divisi, same mixing as Pengiriman - so bookings they input
+    // are stamped with that real unit and pick up the real "PGA" kode for free.
+    private const string GaDivisiLabel = "Procurement and General Affair";
+    private const string GaDepartemenLabel = "Asset Management and General Affair";
 
     // Bookings in any of these statuses are visible on everyone's calendar/list; DRAFT (not yet
     // submitted, private to its creator) and REJECTED_* (no longer a live request) are not.
@@ -43,20 +55,29 @@ public class BookingRuangController : ApiControllerBase
         _db = db;
     }
 
-    private static bool IsEditableByOrigin(BookingRuang item, User currentUser)
-    {
-        if (item.CreatedBy != currentUser.Id) return false;
-        if (item.Status is BookingStatusEnum.DRAFT or BookingStatusEnum.REJECTED_L1 or BookingStatusEnum.REJECTED_GA) return true;
-        if (item.Status == BookingStatusEnum.REJECTED_GA_APPROVAL)
-            return item.RejectTarget == RejectTargetEnum.ORIGIN;
-        return false;
-    }
+    private static string EffectiveDivisi(User user) =>
+        user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDivisiLabel : user.Divisi!;
+
+    private static string? EffectiveDepartemen(User user) =>
+        user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
+
+    // A rejected booking is a dead end for everyone, including Admin/Approval GA - there is no
+    // revision-and-resubmit path in Room Booking at all (unlike Pengiriman). The only thing
+    // editable by its creator is a never-submitted DRAFT.
+    private static bool IsEditableByOrigin(BookingRuang item, User currentUser) =>
+        item.Status == BookingStatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
+
+    // Admin/Approval GA get a separate, narrower editing right instead: while a booking is still
+    // live (not yet finally approved, not rejected), they can move its room/date/time to resolve
+    // a scheduling conflict - see Reschedule() below. This is deliberately independent of
+    // IsEditableByOrigin above (which only ever concerns the original creator's own DRAFT).
+    private static bool IsGaReschedulable(BookingRuang item) =>
+        item.Status is BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED
+            or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
 
     private static bool IsL1Actionable(BookingRuang item) => item.Status == BookingStatusEnum.SUBMITTED;
 
-    private static bool IsGaActionable(BookingRuang item) =>
-        item.Status == BookingStatusEnum.APPROVED_L1
-        || (item.Status == BookingStatusEnum.REJECTED_GA_APPROVAL && item.RejectTarget == RejectTargetEnum.GA);
+    private static bool IsGaActionable(BookingRuang item) => item.Status == BookingStatusEnum.APPROVED_L1;
 
     private static bool IsGaApprovalActionable(BookingRuang item) => item.Status == BookingStatusEnum.APPROVED_GA;
 
@@ -94,12 +115,18 @@ public class BookingRuangController : ApiControllerBase
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
             query = query.Where(b => b.Departemen == currentUser.Departemen
-                && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id || b.RejectReason != null));
+                && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(b => b.Divisi == currentUser.Divisi && b.Departemen == null
-                && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id || b.RejectReason != null));
+                && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id));
+        }
+        else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
+        {
+            // GA already sees every non-draft item org-wide (no unit to scope to) - on top of
+            // that, let them see their own drafts too now that they can input bookings.
+            query = query.Where(b => b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id);
         }
         else
         {
@@ -221,12 +248,13 @@ public class BookingRuangController : ApiControllerBase
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        if (string.IsNullOrEmpty(user!.Divisi))
+        var divisi = EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(divisi))
             return Ok(new { nomorPemesanan = "" });
 
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var seq = await PeekNextNomorSequenceAsync(user.Divisi, effectiveTanggal.Year, effectiveTanggal.Month);
-        return Ok(new { nomorPemesanan = BuildNomorPemesanan(user.Divisi, seq, effectiveTanggal) });
+        var seq = await PeekNextNomorSequenceAsync(divisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        return Ok(new { nomorPemesanan = BuildNomorPemesanan(divisi, seq, effectiveTanggal) });
     }
 
     [HttpGet("rooms")]
@@ -287,7 +315,8 @@ public class BookingRuangController : ApiControllerBase
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        if (string.IsNullOrEmpty(user!.Divisi))
+        var divisi = EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
         var validationError = ValidatePayload(payload);
@@ -296,7 +325,7 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        var item = new BookingRuang { CreatedBy = user.Id, CreatedByRole = user.Role, Status = BookingStatusEnum.DRAFT, Divisi = user.Divisi, Departemen = user.Departemen };
+        var item = new BookingRuang { CreatedBy = user.Id, CreatedByRole = user.Role, Status = BookingStatusEnum.DRAFT, Divisi = divisi, Departemen = EffectiveDepartemen(user) };
         ApplyCreatePayload(item, payload);
         var seq = await IncrementNomorSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
         item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, item.Tanggal);
@@ -333,14 +362,75 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        var wasRejected = item.Status is BookingStatusEnum.REJECTED_L1 or BookingStatusEnum.REJECTED_GA or BookingStatusEnum.REJECTED_GA_APPROVAL;
+        // IsEditableByOrigin above only ever allows this for a still-DRAFT item, so there is no
+        // rejected-status-to-revive branch here (unlike Pengiriman) - a rejected booking is a
+        // dead end for everyone, see IsEditableByOrigin's comment.
         ApplyCreatePayload(item, payload);
-        if (wasRejected)
+        await _db.SaveChangesAsync();
+        return Ok(BookingRuangOut.From(item));
+    }
+
+    private static string? ValidateReschedule(BookingRuangReschedule payload)
+    {
+        if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
+            return "Ruang tidak ditemukan";
+        if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+        if (!payload.IsWholeDay)
         {
-            item.Status = BookingStatusEnum.DRAFT;
-            item.RejectTarget = null;
-            AddLog(item, "REVISED", user!);
+            if (payload.JamMulai == null || payload.JamSelesai == null)
+                return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
+            if (payload.JamMulai >= payload.JamSelesai)
+                return "Jam mulai harus lebih awal dari jam selesai";
+            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+                return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
+        return null;
+    }
+
+    // Admin/Approval GA's dedicated conflict-resolution tool: move an in-flight booking's
+    // room/date/time without touching anything else about it (see IsGaReschedulable and
+    // BookingRuangReschedule) - deliberately separate from Update(), which stays creator-only and
+    // DRAFT-only. Not gated behind IsEditableByOrigin at all.
+    [HttpPatch("{itemId:int}/reschedule")]
+    public async Task<IActionResult> Reschedule(int itemId, [FromBody] BookingRuangReschedule payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.BookingRuangs.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaReschedulable(item))
+            return StatusCode(403, new { detail = "Jadwal tidak dapat dipindahkan pada status ini" });
+
+        var validationError = ValidateReschedule(payload);
+        if (validationError != null) return BadRequest(new { detail = validationError });
+
+        var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
+        if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
+
+        // NomorPemesanan embeds the MM.YYYY it was issued for - if the reschedule moves the
+        // booking into a different month/year, reissue it (new sequence, same divisi) so it
+        // doesn't go stale. Update()/normal edits never hit this because Tanggal is locked there;
+        // this is the one place Tanggal can actually change.
+        if (item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month)
+        {
+            var seq = await IncrementNomorSequenceAsync(item.Divisi, payload.Tanggal.Year, payload.Tanggal.Month);
+            item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, payload.Tanggal);
+        }
+
+        item.NamaRuang = payload.NamaRuang;
+        item.KapasitasRuang = MeetingRooms.GetCapacity(payload.NamaRuang) ?? 0;
+        item.Tanggal = payload.Tanggal;
+        item.IsWholeDay = payload.IsWholeDay;
+        item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
+        item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;
+
+        var jadwalText = item.IsWholeDay
+            ? $"{item.Tanggal:dd/MM/yyyy} (Sepanjang Hari)"
+            : $"{item.Tanggal:dd/MM/yyyy} {item.JamMulai:HH:mm}-{item.JamSelesai:HH:mm}";
+        AddLog(item, "RESCHEDULED", user!, $"Dipindahkan ke {item.NamaRuang}, {jadwalText}");
+
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -391,11 +481,32 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(item.NamaRuang, item.Tanggal, item.IsWholeDay, item.JamMulai, item.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        var skipL1 = user!.Role is RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI;
-        item.Status = skipL1 ? BookingStatusEnum.APPROVED_L1 : BookingStatusEnum.SUBMITTED;
+        // Whichever tier the submitter's own role would normally sit at gets skipped, same
+        // convention as Pengiriman - this applies just the same when an Admin/Approval GA
+        // account is resubmitting someone else's revised (previously rejected) booking, not just
+        // their own new one, which is exactly the extra privilege they were given.
+        item.Status = user!.Role switch
+        {
+            RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI => BookingStatusEnum.APPROVED_L1,
+            RoleEnum.ADMIN_GA => BookingStatusEnum.APPROVED_GA,
+            RoleEnum.APPROVAL_GA => BookingStatusEnum.APPROVED_GA_APPROVAL,
+            _ => BookingStatusEnum.SUBMITTED,
+        };
         item.RejectReason = null;
         item.RejectTarget = null;
         AddLog(item, "SUBMITTED", user);
+
+        // Approval GA's self-skip lands straight on the terminal status, same as reaching it via
+        // ApproveGaApproval - so it needs the same cleanup that endpoint does: stamp who/when,
+        // and auto-reject any other still-pending booking competing for the same room+slot
+        // instead of leaving them stuck waiting on a slot that's already gone.
+        if (item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
+        {
+            item.ApprovedByApprovalGa = user.Id;
+            item.ApprovedApprovalGaAt = DateTime.UtcNow;
+            await AutoRejectLosingCompetitorsAsync(item, user);
+        }
+
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -614,7 +725,6 @@ public class BookingRuangController : ApiControllerBase
                 UPDATE booking_ruang SET
                     status = 'REJECTED_GA_APPROVAL',
                     reject_reason = {reason},
-                    reject_target = 'ORIGIN',
                     approved_by_l1 = NULL, approved_l1_at = NULL,
                     approved_by_ga = NULL, approved_ga_at = NULL,
                     approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
@@ -660,8 +770,11 @@ public class BookingRuangController : ApiControllerBase
         return Ok(BookingRuangOut.From(item));
     }
 
+    // Plain reason-only reject, unlike Pengiriman's reject-ga-approval - there is no GA-vs-origin
+    // target choice here since a rejected booking is never revised or resubmitted by anyone (see
+    // IsEditableByOrigin), so there is nowhere meaningful for the reject to be "routed" to.
     [HttpPatch("{itemId:int}/reject-ga-approval")]
-    public async Task<IActionResult> RejectGaApproval(int itemId, [FromBody] RejectWithTargetRequest payload)
+    public async Task<IActionResult> RejectGaApproval(int itemId, [FromBody] RejectRequest payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
@@ -681,7 +794,6 @@ public class BookingRuangController : ApiControllerBase
             UPDATE booking_ruang SET
                 status = 'REJECTED_GA_APPROVAL',
                 reject_reason = {payload.Reason},
-                reject_target = {payload.Target.ToString()},
                 approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
                 updated_at = {DateTime.UtcNow}
             WHERE id = {itemId} AND status = 'APPROVED_GA'");
@@ -720,5 +832,24 @@ public class BookingRuangController : ApiControllerBase
             .ToList();
 
         return Ok(result);
+    }
+
+    // Proof-of-booking, only ever available once a booking has actually won its room+slot for
+    // real (see IsGaApprovalActionable/ApproveGaApproval) - a still-pending booking could still
+    // lose the room to a competitor, so there is nothing to hand out as "proof" before that.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.BookingRuangs.Include(b => b.Pembuat).FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Bukti booking hanya tersedia untuk booking yang sudah Approved" });
+
+        var bytes = BookingPdfService.Generate(item);
+        return File(bytes, "application/pdf", $"Bukti-Booking-{item.NomorPemesanan}.pdf");
     }
 }

@@ -15,6 +15,19 @@ public class BookingRuangCreate
     public string? Catatan { get; set; }
 }
 
+// Deliberately narrower than BookingRuangCreate - Admin/Approval GA use this to resolve a
+// room/time conflict on someone else's booking, so it only exposes the fields that actually
+// define the slot. Everything else (NamaKegiatan, Pic, JumlahPeserta, Catatan) stays the
+// origin creator's own and is untouched by a reschedule.
+public class BookingRuangReschedule
+{
+    public string NamaRuang { get; set; } = null!;
+    public DateOnly Tanggal { get; set; }
+    public bool IsWholeDay { get; set; }
+    public TimeOnly? JamMulai { get; set; }
+    public TimeOnly? JamSelesai { get; set; }
+}
+
 public record BookingRuangLogOut(
     int Id,
     string Action,

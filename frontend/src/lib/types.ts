@@ -253,3 +253,13 @@ export interface BookingRuangCreatePayload {
   jamSelesai: string | null;
   catatan: string | null;
 }
+
+// Admin/Approval GA's conflict-resolution tool - deliberately narrower than
+// BookingRuangCreatePayload, only the fields that define the room+slot.
+export interface BookingRuangReschedulePayload {
+  namaRuang: string;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+}

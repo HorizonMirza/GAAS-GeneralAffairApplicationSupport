@@ -17,7 +17,7 @@ interface Props {
   onDone: () => void;
 }
 
-const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu", "booking-ga-approval"];
+const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu"];
 
 // For these two reject types, "send to GA" and "send to origin" collapse into the same person
 // whenever the item was input by Admin/Approval GA themselves (they are the origin) - showing
@@ -73,8 +73,8 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
       } else if (targetType === "booking-ga") {
         await api.rejectBookingGa(targetId, reasonValue);
       } else {
-        await api.rejectBookingGaApproval(targetId, reasonValue, target as RejectTarget);
-        message = target === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+        await api.rejectBookingGaApproval(targetId, reasonValue);
+        message = "Booking ditolak";
       }
       showToast(message);
       reset();

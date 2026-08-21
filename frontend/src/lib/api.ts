@@ -4,6 +4,7 @@ import type {
   BookingRuangCreatePayload,
   BookingRuangListResponse,
   BookingRuangLog,
+  BookingRuangReschedulePayload,
   BookingStatus,
   ChatMessage,
   Invoice,
@@ -241,6 +242,8 @@ export const api = {
     apiRequest("/booking-ruang", { method: "POST", body: normalizeBookingPayload(payload) }),
   updateBooking: (id: number, payload: BookingRuangCreatePayload) =>
     apiRequest(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
+  rescheduleBooking: (id: number, payload: BookingRuangReschedulePayload) =>
+    apiRequest(`/booking-ruang/${id}/reschedule`, { method: "PATCH", body: payload }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
   superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),
   submitBooking: (id: number) => apiRequest(`/booking-ruang/${id}/submit`, { method: "PATCH" }),
@@ -251,12 +254,13 @@ export const api = {
   rejectBookingGa: (id: number, reason: string | null) =>
     apiRequest(`/booking-ruang/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
   approveBookingGaApproval: (id: number) => apiRequest(`/booking-ruang/${id}/approve-ga-approval`, { method: "PATCH" }),
-  rejectBookingGaApproval: (id: number, reason: string | null, target: RejectTarget) =>
-    apiRequest(`/booking-ruang/${id}/reject-ga-approval`, { method: "PATCH", body: { reason, target } }),
+  rejectBookingGaApproval: (id: number, reason: string | null) =>
+    apiRequest(`/booking-ruang/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
   getBookingLogs: (id: number) => apiRequest<BookingRuangLog[]>(`/booking-ruang/${id}/logs`),
   getBookingChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-ruang/${id}/chat`),
   sendBookingChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-ruang/${id}/chat`, { method: "POST", body: { message } }),
+  bookingPdfUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/pdf`,
 };
 
 export interface ListBookingParams {

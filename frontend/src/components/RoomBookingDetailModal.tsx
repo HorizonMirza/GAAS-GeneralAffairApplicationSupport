@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES, BOOKING_L1_ACTIONABLE_STATUSES, bookingOriginActorLabel, isBookingGaActionable } from "@/lib/constants";
+import { BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES, BOOKING_L1_ACTIONABLE_STATUSES, bookingOriginActorLabel, isBookingEditableByOrigin, isBookingGaActionable, isBookingGaReschedulable } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
+import RoomBookingRescheduleModal from "./RoomBookingRescheduleModal";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -38,6 +39,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -50,14 +52,12 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   if (!open || !item || !form) return null;
 
   const isEdit = mode === "edit";
-  const canSubmitDraft =
-    !isEdit &&
-    item.status === "DRAFT" &&
-    item.createdBy === me.id &&
-    ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role);
+  const canSubmitDraft = !isEdit && item.status === "DRAFT" && isBookingEditableByOrigin(item, me);
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canReschedule = !isEdit && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+  const canDownloadBukti = !isEdit && item.status === "APPROVED_GA_APPROVAL";
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -255,12 +255,30 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
+            {canReschedule && (
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setRescheduleOpen(true)}>Ubah Ruang/Jadwal</button>
+            )}
+            {canDownloadBukti && (
+              <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingPdfUrl(item.id)} target="_blank" rel="noopener noreferrer">
+                Download Bukti PDF
+              </a>
+            )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
           </div>
         </form>
       </div>
+
+      <RoomBookingRescheduleModal
+        open={rescheduleOpen}
+        item={item}
+        onClose={() => setRescheduleOpen(false)}
+        onSaved={() => {
+          onClose();
+          onSaved();
+        }}
+      />
     </div>
   );
 }

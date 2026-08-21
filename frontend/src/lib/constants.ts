@@ -33,8 +33,11 @@ export function chatParticipantLabels(departemen: string | null | undefined, cre
 }
 
 // Room booking's approval chain stops at Approval GA (no KPU stage), so it has its own,
-// shorter participant list.
-export function bookingChatParticipantLabels(departemen: string | null | undefined): string[] {
+// shorter participant list. GA-input bookings skip the Departemen/Divisi tier entirely on
+// submit (see bookingOriginActorLabel), so those roles were never actually part of this item's
+// flow and shouldn't be listed as chat participants either.
+export function bookingChatParticipantLabels(departemen: string | null | undefined, createdByRole?: Role | null): string[] {
+  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin GA", "Approval GA"];
   const track = trackWord(departemen);
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA"];
 }
@@ -124,6 +127,7 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   REJECTED_GA_APPROVAL: { label: "Ditolak Approval GA", type: "reject" },
   APPROVED_KPU: { label: "Disetujui KPU & Resi Diterbitkan", type: "approve" },
   REJECTED_KPU: { label: "Ditolak KPU", type: "reject" },
+  RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
 };
 
 export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
@@ -207,31 +211,29 @@ export function getBookingStatusLabel(status: BookingStatus, departemen: string 
 }
 
 export function bookingOriginActorLabel(item: BookingRuang): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
-export function getBookingWaitingLabel(item: BookingRuang): string | undefined {
-  if (item.status === "REJECTED_GA_APPROVAL") {
-    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${bookingOriginActorLabel(item)}`;
-  }
-  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
-    return `Waiting: ${bookingOriginActorLabel(item)}`;
-  }
-  return undefined;
+// A rejected booking is a dead end for everyone, including Admin/Approval GA - there is no
+// revision-and-resubmit path in Room Booking at all (unlike Pengiriman). The only thing editable
+// by its creator is a never-submitted DRAFT. Mirrors the backend's
+// BookingRuangController.IsEditableByOrigin exactly.
+export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
+  return item.status === "DRAFT" && item.createdBy === me.id;
 }
 
-export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
-  if (item.createdBy !== me.id) return false;
-  if (item.status === "DRAFT" || item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return true;
-  if (item.status === "REJECTED_GA_APPROVAL") return item.rejectTarget === "ORIGIN";
-  return false;
+// Admin/Approval GA's separate, narrower editing right: while a booking is still live (not yet
+// finally approved, not rejected), they can move its room/date/time to resolve a scheduling
+// conflict - see RoomBookingRescheduleModal. Mirrors BookingRuangController.IsGaReschedulable.
+export function isBookingGaReschedulable(item: BookingRuang): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
 export function isBookingGaActionable(item: BookingRuang): boolean {
-  if (item.status === "APPROVED_L1") return true;
-  if (item.status === "REJECTED_GA_APPROVAL") return item.rejectTarget === "GA";
-  return false;
+  return item.status === "APPROVED_L1";
 }
 
 export const BOOKING_L1_ACTIONABLE_STATUSES: BookingStatus[] = ["SUBMITTED"];
