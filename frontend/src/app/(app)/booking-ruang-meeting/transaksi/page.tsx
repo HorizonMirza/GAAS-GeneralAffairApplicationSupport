@@ -11,7 +11,6 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
-import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
@@ -50,7 +49,6 @@ export default function BookingTransaksiPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
-  const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
@@ -236,12 +234,6 @@ export default function BookingTransaksiPage() {
           </div>
 
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Booking</button>
-
-          <div className="toolbar-actions">
-            {isOrigin && (
-              <button className="btn btn-primary btn-sm" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>+ Booking Ruang Meeting</button>
-            )}
-          </div>
         </div>
 
         <div className="table-wrap">
@@ -352,8 +344,6 @@ export default function BookingTransaksiPage() {
           if (item) handleDelete(item);
         }}
       />
-
-      <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />
 
       <RoomBookingDetailModal
         open={!!detail}
