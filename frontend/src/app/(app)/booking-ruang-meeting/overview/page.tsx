@@ -39,7 +39,7 @@ export default function BookingOverviewPage() {
   const rowMenu = useRowMenu(items);
 
   const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
     : false;
 
   useEffect(() => {
@@ -91,25 +91,21 @@ export default function BookingOverviewPage() {
       </div>
 
       {rooms.length > 0 && (
-        <>
-          <h3 style={{ margin: "0 0 12px" }}>Pilih Ruangan</h3>
-          <div className="room-grid">
-            {rooms.map((r) => (
-              <Link key={r.nama} href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`} className="room-card">
-                <div className="room-card-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
-                </div>
-                <div className="room-card-body">
-                  <h4>{r.nama}</h4>
-                  <p>{r.kapasitas} orang</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </>
+        <div className="room-grid">
+          {rooms.map((r) => (
+            <Link key={r.nama} href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`} className="room-card">
+              <div className="room-card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+              </div>
+              <div className="room-card-body">
+                <h4>{r.nama}</h4>
+              </div>
+            </Link>
+          ))}
+        </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Booking Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 12px" }}>Pesanan Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
@@ -223,6 +219,7 @@ export default function BookingOverviewPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${chatItem.namaRuang}` : ""}
           departemen={chatItem?.departemen ?? null}
+          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={load}

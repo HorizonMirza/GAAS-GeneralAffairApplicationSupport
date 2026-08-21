@@ -925,7 +925,7 @@ body.auth-ready .app-shell {
 }
 
 .room-card-icon {
-  height: 48px;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -935,8 +935,7 @@ body.auth-ready .app-shell {
 }
 
 .room-card-body { padding: 8px 10px; }
-.room-card-body h4 { margin: 0 0 2px; font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
-.room-card-body p { margin: 0; font-size: 0.7rem; color: var(--text-secondary); }
+.room-card-body h4 { margin: 0; font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
 
 /* ---------- Home module grid ---------- */
 .module-grid {
