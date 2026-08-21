@@ -1898,6 +1898,20 @@ table.data-table {
   max-width: 130px;
 }
 
+/* Expedition Transactions page: Cari Transaksi and Filter Bulan sized to match the Semua
+   Transaksi button next to them, scoped here so it doesn't affect the shared toolbar/
+   toolbar-search-field classes still used by Room Booking's Bookings page and Super Admin. */
+.transactions-page-toolbar .toolbar-search-field {
+  flex: 0 0 auto;
+  width: 160px;
+  min-width: 0;
+}
+
+.toolbar.transactions-page-toolbar #filter-bulan {
+  max-width: none;
+  width: 160px;
+}
+
 .toolbar .field input,
 .toolbar .field select {
   padding: 8px 12px;
