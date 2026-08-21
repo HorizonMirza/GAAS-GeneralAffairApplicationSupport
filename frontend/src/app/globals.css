@@ -1932,6 +1932,21 @@ table.data-table {
   box-sizing: border-box;
 }
 
+/* Room Booking's Bookings page toolbar: same treatment as Expedition Transactions - Filter
+   Bulan/Filter Tanggal sized (width + height) to match the Semua Booking button next to them.
+   The child combinator keeps this off the nested fields inside the Semua Filter dropdown panel. */
+.bookings-page-toolbar > .field {
+  flex: 0 0 auto;
+  width: 160px;
+  min-width: 0;
+}
+
+.bookings-page-toolbar > .field input,
+.bookings-page-toolbar > .btn {
+  height: 38px;
+  box-sizing: border-box;
+}
+
 .toolbar .field input,
 .toolbar .field select {
   padding: 8px 12px;

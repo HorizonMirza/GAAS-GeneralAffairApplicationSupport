@@ -119,7 +119,7 @@ export default function BookingTransaksiPage() {
   }, [loadTable]);
 
   const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI"].includes(me.role)
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
     : false;
 
   if (!me || me.role === "SUPER_ADMIN") return null;
@@ -166,7 +166,7 @@ export default function BookingTransaksiPage() {
   return (
     <>
       <div className="card">
-        <div className="toolbar">
+        <div className="toolbar bookings-page-toolbar">
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
             <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
@@ -235,7 +235,7 @@ export default function BookingTransaksiPage() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Booking</button>
 
           <div className="toolbar-actions">
             {isOrigin && (
@@ -385,6 +385,7 @@ export default function BookingTransaksiPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${chatItem.namaRuang}` : ""}
           departemen={chatItem?.departemen ?? null}
+          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={loadTable}
