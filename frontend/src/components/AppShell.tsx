@@ -8,11 +8,13 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
+import type { Role } from "@/lib/types";
 
 interface NavLeaf {
   label: string;
   href: string;
   superAdminOnly?: boolean;
+  roles?: Role[];
 }
 
 interface NavCategory {
@@ -47,6 +49,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/ekspedisi/overview" },
       { label: "Transactions", href: "/ekspedisi/transaksi" },
+      { label: "Invoice History", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
@@ -253,6 +256,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 {cat.items.map((item) => {
                   if (item.superAdminOnly && !isSuperAdmin) return null;
                   if (!item.superAdminOnly && isSuperAdmin) return null;
+                  if (item.roles && !item.roles.includes(me.role)) return null;
                   return (
                     <Link
                       key={item.label}
