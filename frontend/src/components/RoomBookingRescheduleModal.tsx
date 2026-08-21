@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
+import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -45,15 +46,6 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
 
   function set<K extends keyof BookingRuangReschedulePayload>(key: K, value: BookingRuangReschedulePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
-  }
-
-  function toggleAdditionalRoom(nama: string) {
-    setForm((f) => {
-      if (!f) return f;
-      const current = f.additionalRooms || [];
-      const next = current.includes(nama) ? current.filter((r) => r !== nama) : [...current, nama];
-      return { ...f, additionalRooms: next };
-    });
   }
 
   function setNamaRuang(nama: string) {
@@ -110,23 +102,14 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label>Ruangan Tambahan (opsional)</label>
-                <div className="room-chip-row">
-                  {rooms.filter((r) => r.nama !== form.namaRuang).map((r) => {
-                    const active = (form.additionalRooms || []).includes(r.nama);
-                    return (
-                      <button
-                        type="button"
-                        key={r.nama}
-                        className={`room-chip${active ? " room-chip-active" : ""}`}
-                        aria-pressed={active}
-                        onClick={() => toggleAdditionalRoom(r.nama)}
-                      >
-                        {r.nama}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
+                <RoomMultiSelect
+                  id="rs-ruang-tambahan"
+                  rooms={rooms}
+                  excludeRoom={form.namaRuang}
+                  selected={form.additionalRooms || []}
+                  onChange={(next) => set("additionalRooms", next)}
+                />
               </div>
             )}
             <div className="field full">

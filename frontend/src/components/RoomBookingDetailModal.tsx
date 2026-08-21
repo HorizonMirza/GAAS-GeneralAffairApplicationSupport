@@ -18,6 +18,7 @@ import { formatDateTime, todayLocalDate } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
 import RoomBookingRescheduleModal from "./RoomBookingRescheduleModal";
+import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -89,15 +90,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
-  }
-
-  function toggleAdditionalRoom(nama: string) {
-    setForm((f) => {
-      if (!f) return f;
-      const current = f.additionalRooms || [];
-      const next = current.includes(nama) ? current.filter((r) => r !== nama) : [...current, nama];
-      return { ...f, additionalRooms: next };
-    });
   }
 
   // Switching the primary room to one already picked as an additional room would otherwise leave
@@ -261,31 +253,22 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
               <div className="field full">
-                <label>Ruangan Tambahan</label>
+                <label htmlFor="bv-ruang-tambahan">Ruangan Tambahan</label>
                 {isEdit ? (
-                  <div className="room-chip-row">
-                    {rooms.filter((r) => r.nama !== form.namaRuang).map((r) => {
-                      const active = (form.additionalRooms || []).includes(r.nama);
-                      return (
-                        <button
-                          type="button"
-                          key={r.nama}
-                          className={`room-chip${active ? " room-chip-active" : ""}`}
-                          aria-pressed={active}
-                          onClick={() => toggleAdditionalRoom(r.nama)}
-                        >
-                          {r.nama}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <RoomMultiSelect
+                    id="bv-ruang-tambahan"
+                    rooms={rooms}
+                    excludeRoom={form.namaRuang}
+                    selected={form.additionalRooms || []}
+                    onChange={(next) => set("additionalRooms", next)}
+                  />
                 ) : (
                   <input type="text" disabled value={(form.additionalRooms || []).join(", ")} />
                 )}
               </div>
             )}
-            <div className="field">
-              <label htmlFor="bv-tipe">Tipe Booking</label>
+            <div className="field full">
+              <label htmlFor="bv-tipe">Tipe</label>
               <select id="bv-tipe" disabled={!isEdit} value={form.tipe} onChange={(e) => set("tipe", e.target.value as BookingRuangCreatePayload["tipe"])}>
                 {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
                   <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>

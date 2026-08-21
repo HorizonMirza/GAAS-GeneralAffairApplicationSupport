@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -82,14 +83,6 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function toggleAdditionalRoom(nama: string) {
-    setForm((f) => {
-      const current = f.additionalRooms || [];
-      const next = current.includes(nama) ? current.filter((r) => r !== nama) : [...current, nama];
-      return { ...f, additionalRooms: next };
-    });
-  }
-
   // Switching the primary room to one already picked as an additional room would otherwise leave
   // a stale duplicate in additionalRooms - invisible in the UI (its chip disappears once it
   // matches namaRuang) but still sent to the backend, which rejects the save with a confusing
@@ -154,27 +147,29 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             {isGaActor && (
               <>
                 <div className="field">
-                  <label htmlFor="f-divisi">Booking Untuk Divisi</label>
+                  <label htmlFor="f-divisi">Divisi</label>
                   <select
                     id="f-divisi"
+                    required
                     value={form.divisi || ""}
                     onChange={(e) => setForm((f) => ({ ...f, divisi: e.target.value || undefined, departemen: undefined }))}
                   >
-                    <option value="">Divisi Sendiri (General Affair)</option>
+                    <option value="" disabled>Pilih Divisi</option>
                     {(orgStructure?.divisi || []).map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
                 <div className="field">
-                  <label htmlFor="f-departemen">Departemen (opsional)</label>
+                  <label htmlFor="f-departemen">Departemen</label>
                   <select
                     id="f-departemen"
+                    required
                     disabled={!form.divisi}
                     value={form.departemen || ""}
                     onChange={(e) => set("departemen", e.target.value || undefined)}
                   >
-                    <option value="">Semua Departemen</option>
+                    <option value="" disabled>Pilih Departemen</option>
                     {departemenOptions.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
@@ -209,7 +204,6 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                   set("jumlahPeserta", parsed);
                 }}
               />
-              <span className="text-secondary" style={{ fontSize: "0.78rem" }}>Maksimal {MAX_JUMLAH_PESERTA} orang</span>
             </div>
             <div className="field">
               <label htmlFor="f-jam-mulai">Jam Mulai</label>
@@ -253,27 +247,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label>Ruangan Tambahan (opsional)</label>
-                <div className="room-chip-row">
-                  {rooms.filter((r) => r.nama !== form.namaRuang).map((r) => {
-                    const active = (form.additionalRooms || []).includes(r.nama);
-                    return (
-                      <button
-                        type="button"
-                        key={r.nama}
-                        className={`room-chip${active ? " room-chip-active" : ""}`}
-                        aria-pressed={active}
-                        onClick={() => toggleAdditionalRoom(r.nama)}
-                      >
-                        {r.nama}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label htmlFor="f-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
+                <RoomMultiSelect
+                  id="f-ruang-tambahan"
+                  rooms={rooms}
+                  excludeRoom={form.namaRuang}
+                  selected={form.additionalRooms || []}
+                  onChange={(next) => set("additionalRooms", next)}
+                />
               </div>
             )}
-            <div className="field">
-              <label htmlFor="f-tipe">Tipe Booking</label>
+            <div className="field full">
+              <label htmlFor="f-tipe">Tipe</label>
               <select id="f-tipe" value={form.tipe} onChange={(e) => set("tipe", e.target.value as BookingRuangCreatePayload["tipe"])}>
                 {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
                   <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
