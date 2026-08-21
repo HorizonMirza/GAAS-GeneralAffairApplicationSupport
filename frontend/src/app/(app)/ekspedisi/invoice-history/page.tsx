@@ -103,10 +103,6 @@ export default function InvoiceHistoryPage() {
   return (
     <>
       <div className="card">
-        <div className="card-header">
-          <h3>History Invoice Pembiayaan</h3>
-        </div>
-
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
