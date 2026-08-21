@@ -6,6 +6,11 @@ public class BookingRuangCreate
 {
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
+    // Admin/Approval GA only: lets them book on behalf of any divisi/departemen instead of their
+    // own home unit (see BookingRuangController.OriginRoles) - ignored for every other role, and
+    // ignored for GA too when left blank (falls back to their own GA home unit as before).
+    public string? Divisi { get; set; }
+    public string? Departemen { get; set; }
     public string NamaRuang { get; set; } = null!;
     // Extra rooms reserved alongside NamaRuang for the same event - optional, empty/null for the
     // common single-room case.

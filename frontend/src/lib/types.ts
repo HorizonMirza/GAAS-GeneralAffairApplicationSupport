@@ -255,6 +255,10 @@ export interface BookingRuangLog {
 export interface BookingRuangCreatePayload {
   namaKegiatan: string;
   pic: string | null;
+  // Admin/Approval GA only: books on behalf of another divisi/departemen instead of their own GA
+  // home unit - ignored by the backend for every other role, and for GA too when left blank.
+  divisi?: string;
+  departemen?: string;
   namaRuang: string;
   additionalRooms?: string[];
   jumlahPeserta: number;

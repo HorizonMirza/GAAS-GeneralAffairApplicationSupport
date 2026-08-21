@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import { RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
@@ -39,11 +40,14 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
 }
 
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
+  const { orgStructure } = useAuth();
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
   const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
+
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
   useEffect(() => {
     if (open) {
@@ -57,13 +61,17 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextBookingNomor(form.tanggal)
+      .nextBookingNomor(form.tanggal, isGaActor ? form.divisi : undefined)
       .then((r) => setNomorPemesanan(r.nomorPemesanan))
       .catch(() => setNomorPemesanan(""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.tanggal]);
+  }, [open, form.tanggal, form.divisi]);
 
   if (!open) return null;
+
+  const departemenOptions = form.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
+    : [];
 
   const unitName =
     me.departemen ||
@@ -135,6 +143,37 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
               <input type="text" id="f-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
+            {isGaActor && (
+              <>
+                <div className="field">
+                  <label htmlFor="f-divisi">Booking Untuk Divisi</label>
+                  <select
+                    id="f-divisi"
+                    value={form.divisi || ""}
+                    onChange={(e) => setForm((f) => ({ ...f, divisi: e.target.value || undefined, departemen: undefined }))}
+                  >
+                    <option value="">Divisi Sendiri (General Affair)</option>
+                    {(orgStructure?.divisi || []).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="f-departemen">Departemen (opsional)</label>
+                  <select
+                    id="f-departemen"
+                    disabled={!form.divisi}
+                    value={form.departemen || ""}
+                    onChange={(e) => set("departemen", e.target.value || undefined)}
+                  >
+                    <option value="">Semua Departemen</option>
+                    {departemenOptions.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />

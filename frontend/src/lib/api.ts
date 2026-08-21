@@ -229,8 +229,8 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
-  nextBookingNomor: (tanggal: string) =>
-    apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal } }),
+  nextBookingNomor: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi } }),
   getBookingSchedule: (tanggal: string) =>
     apiRequest<BookingRuang[]>("/booking-ruang/schedule", { params: { tanggal } }),
   getBookingScheduleRange: (tanggalMulai: string, tanggalSelesai: string, namaRuang?: string) =>
