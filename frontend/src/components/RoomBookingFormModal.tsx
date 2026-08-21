@@ -29,8 +29,8 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
     jumlahPeserta: 1,
     tanggal: todayLocalDate(),
     isWholeDay: false,
-    jamMulai: "09:00",
-    jamSelesai: "10:00",
+    jamMulai: "07:00",
+    jamSelesai: "09:00",
     catatan: "",
     tipe: "INTERNAL",
     isRecurring: false,
@@ -224,8 +224,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </select>
             </div>
             <div className="field full">
+              <label htmlFor="f-sepanjang-hari">Durasi</label>
               <button
                 type="button"
+                id="f-sepanjang-hari"
                 className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}
                 aria-pressed={form.isWholeDay}
                 onClick={toggleWholeDay}
@@ -266,8 +268,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </select>
             </div>
             <div className="field full">
+              <label htmlFor="f-booking-berulang">Pengulangan (Opsional)</label>
               <button
                 type="button"
+                id="f-booking-berulang"
                 className={`field-toggle${form.isRecurring ? " field-toggle-active" : ""}`}
                 aria-pressed={form.isRecurring}
                 onClick={toggleRecurring}
@@ -308,7 +312,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             )}
             <div className="field full">
               <label htmlFor="f-catatan">Catatan</label>
-              <input type="text" id="f-catatan" placeholder="Opsional, contoh: butuh proyektor" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="f-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

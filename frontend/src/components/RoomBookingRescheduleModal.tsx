@@ -135,8 +135,10 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </select>
             </div>
             <div className="field full">
+              <label htmlFor="rs-sepanjang-hari">Durasi</label>
               <button
                 type="button"
+                id="rs-sepanjang-hari"
                 className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}
                 aria-pressed={form.isWholeDay}
                 onClick={toggleWholeDay}

@@ -229,8 +229,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </select>
             </div>
             <div className="field full">
+              <label htmlFor="bv-sepanjang-hari">Durasi</label>
               <button
                 type="button"
+                id="bv-sepanjang-hari"
                 className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!isEdit ? " field-toggle-disabled" : ""}`}
                 aria-pressed={form.isWholeDay}
                 disabled={!isEdit}
@@ -277,7 +279,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field full">
               <label htmlFor="bv-catatan">Catatan</label>
-              <input type="text" id="bv-catatan" disabled={!isEdit} placeholder="Opsional" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="bv-catatan" disabled={!isEdit} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

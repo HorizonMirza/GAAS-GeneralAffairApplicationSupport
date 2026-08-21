@@ -2193,11 +2193,17 @@ table.data-table {
   z-index: 30;
 }
 
-.room-multiselect-option {
+/* The panel sits inside a .field wrapper, and .field label (display:block, font-weight:600,
+   margin-bottom:6px, muted color) has higher specificity than .room-multiselect-option alone -
+   scoping under .room-multiselect-panel here is what actually wins the cascade and keeps this a
+   real flex row instead of silently collapsing to block, which was cramming the checkbox and
+   room name together with no gap. */
+.room-multiselect-panel .room-multiselect-option {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
+  margin-bottom: 0;
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
@@ -2205,7 +2211,7 @@ table.data-table {
   color: var(--text-primary);
 }
 
-.room-multiselect-option:hover { background: var(--bg-surface-alt); }
+.room-multiselect-panel .room-multiselect-option:hover { background: var(--bg-surface-alt); }
 
 .modal-actions {
   display: flex;
