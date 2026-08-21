@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<ChatRead> ChatReads => Set<ChatRead>();
     public DbSet<BookingRuang> BookingRuangs => Set<BookingRuang>();
     public DbSet<BookingRuangLog> BookingRuangLogs => Set<BookingRuangLog>();
+    public DbSet<BookingRuangRoom> BookingRuangRooms => Set<BookingRuangRoom>();
     public DbSet<BookingChatMessage> BookingChatMessages => Set<BookingChatMessage>();
     public DbSet<BookingChatRead> BookingChatReads => Set<BookingChatRead>();
     public DbSet<RoomBookingCounter> RoomBookingCounters => Set<RoomBookingCounter>();
@@ -261,6 +262,12 @@ public class AppDbContext : DbContext
             e.Property(b => b.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(b => b.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
+            e.Property(b => b.Tipe).HasColumnName("tipe").HasConversion<string>().HasMaxLength(20).IsRequired();
+            e.Property(b => b.SeriesId).HasColumnName("series_id");
+            e.Property(b => b.RecurrenceFrequency).HasColumnName("recurrence_frequency").HasConversion<string>().HasMaxLength(20);
+            e.Property(b => b.RecurrenceEndDate).HasColumnName("recurrence_end_date");
+            e.Property(b => b.HasConflict).HasColumnName("has_conflict");
+
             e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(b => b.RejectReason).HasColumnName("reject_reason");
             e.Property(b => b.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
@@ -281,6 +288,20 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(b => b.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookingRuangRoom>(e =>
+        {
+            e.ToTable("booking_ruang_rooms");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.BookingRuangId).HasColumnName("booking_ruang_id");
+            e.Property(r => r.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
+
+            e.HasOne(r => r.BookingRuang)
+                .WithMany(b => b.AdditionalRooms)
+                .HasForeignKey(r => r.BookingRuangId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<BookingRuangLog>(e =>

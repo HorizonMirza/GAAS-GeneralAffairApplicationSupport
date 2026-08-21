@@ -1,4 +1,5 @@
-import type { BookingRuang, BookingStatus, Me, Pengiriman, Role, Status } from "./types";
+import { formatDate } from "./format";
+import type { BookingRuang, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -238,3 +239,24 @@ export function isBookingGaActionable(item: BookingRuang): boolean {
 
 export const BOOKING_L1_ACTIONABLE_STATUSES: BookingStatus[] = ["SUBMITTED"];
 export const BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES: BookingStatus[] = ["APPROVED_GA"];
+
+export const TIPE_BOOKING_LABELS: Record<TipeBooking, string> = {
+  INTERNAL: "Internal",
+  EXTERNAL: "External",
+};
+
+export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
+  DAILY: "Harian",
+  WEEKLY: "Mingguan",
+  MONTHLY: "Bulanan",
+};
+
+export function bookingRoomsLabel(item: BookingRuang): string {
+  return [item.namaRuang, ...item.additionalRooms].join(", ");
+}
+
+export function bookingRecurrenceLabel(item: BookingRuang): string | null {
+  if (!item.seriesId || !item.recurrenceFrequency) return null;
+  const endText = item.recurrenceEndDate ? ` s/d ${formatDate(item.recurrenceEndDate)}` : "";
+  return `Berulang ${RECURRENCE_FREQUENCY_LABELS[item.recurrenceFrequency]}${endText}`;
+}

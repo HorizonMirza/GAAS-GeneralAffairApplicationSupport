@@ -7,12 +7,22 @@ public class BookingRuangCreate
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
+    // Extra rooms reserved alongside NamaRuang for the same event - optional, empty/null for the
+    // common single-room case.
+    public List<string>? AdditionalRooms { get; set; }
     public int JumlahPeserta { get; set; }
     public DateOnly Tanggal { get; set; }
     public bool IsWholeDay { get; set; }
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }
     public string? Catatan { get; set; }
+    public TipeBookingEnum Tipe { get; set; } = TipeBookingEnum.INTERNAL;
+
+    // When true (with Frequency/EndDate both set), Create() generates one occurrence per computed
+    // date instead of a single booking - see BookingRuangController.BuildOccurrenceDates.
+    public bool IsRecurring { get; set; }
+    public RecurrenceFrequencyEnum? RecurrenceFrequency { get; set; }
+    public DateOnly? RecurrenceEndDate { get; set; }
 }
 
 // Deliberately narrower than BookingRuangCreate - Admin/Approval GA use this to resolve a
@@ -22,6 +32,7 @@ public class BookingRuangCreate
 public class BookingRuangReschedule
 {
     public string NamaRuang { get; set; } = null!;
+    public List<string>? AdditionalRooms { get; set; }
     public DateOnly Tanggal { get; set; }
     public bool IsWholeDay { get; set; }
     public TimeOnly? JamMulai { get; set; }
@@ -44,6 +55,7 @@ public class BookingRuangOut
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
     public string NamaRuang { get; set; } = null!;
+    public List<string> AdditionalRooms { get; set; } = new();
     public int KapasitasRuang { get; set; }
     public int JumlahPeserta { get; set; }
     public DateOnly Tanggal { get; set; }
@@ -53,6 +65,11 @@ public class BookingRuangOut
     public string? Catatan { get; set; }
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
+    public TipeBookingEnum Tipe { get; set; }
+    public Guid? SeriesId { get; set; }
+    public RecurrenceFrequencyEnum? RecurrenceFrequency { get; set; }
+    public DateOnly? RecurrenceEndDate { get; set; }
+    public bool HasConflict { get; set; }
     public BookingStatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
@@ -76,6 +93,7 @@ public class BookingRuangOut
         NamaKegiatan = b.NamaKegiatan,
         Pic = b.Pic,
         NamaRuang = b.NamaRuang,
+        AdditionalRooms = b.AdditionalRooms.Select(r => r.NamaRuang).ToList(),
         KapasitasRuang = b.KapasitasRuang,
         JumlahPeserta = b.JumlahPeserta,
         Tanggal = b.Tanggal,
@@ -85,6 +103,11 @@ public class BookingRuangOut
         Catatan = b.Catatan,
         Divisi = b.Divisi,
         Departemen = b.Departemen,
+        Tipe = b.Tipe,
+        SeriesId = b.SeriesId,
+        RecurrenceFrequency = b.RecurrenceFrequency,
+        RecurrenceEndDate = b.RecurrenceEndDate,
+        HasConflict = b.HasConflict,
         Status = b.Status,
         RejectReason = b.RejectReason,
         RejectTarget = b.RejectTarget,

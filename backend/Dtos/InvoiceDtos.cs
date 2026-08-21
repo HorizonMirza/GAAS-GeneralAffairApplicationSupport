@@ -39,3 +39,11 @@ public class InvoiceOut
         ReviewedAt = i.ReviewedAt,
     };
 }
+
+public class InvoiceListResponse
+{
+    public List<InvoiceOut> Items { get; set; } = new();
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int Limit { get; set; }
+}

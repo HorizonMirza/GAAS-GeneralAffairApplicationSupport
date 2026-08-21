@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES, BOOKING_L1_ACTIONABLE_STATUSES, bookingOriginActorLabel, isBookingEditableByOrigin, isBookingGaActionable, isBookingGaReschedulable } from "@/lib/constants";
+import {
+  BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
+  BOOKING_L1_ACTIONABLE_STATUSES,
+  bookingOriginActorLabel,
+  bookingRecurrenceLabel,
+  isBookingEditableByOrigin,
+  isBookingGaActionable,
+  isBookingGaReschedulable,
+  TIPE_BOOKING_LABELS,
+} from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
@@ -26,12 +35,14 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
     namaKegiatan: item.namaKegiatan,
     pic: item.pic || "",
     namaRuang: item.namaRuang,
+    additionalRooms: item.additionalRooms,
     jumlahPeserta: item.jumlahPeserta,
     tanggal: item.tanggal,
     isWholeDay: item.isWholeDay,
     jamMulai: item.jamMulai,
     jamSelesai: item.jamSelesai,
     catatan: item.catatan || "",
+    tipe: item.tipe,
   };
 }
 
@@ -63,6 +74,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     setForm((f) => (f ? { ...f, [key]: value } : f));
   }
 
+  function toggleAdditionalRoom(nama: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const current = f.additionalRooms || [];
+      const next = current.includes(nama) ? current.filter((r) => r !== nama) : [...current, nama];
+      return { ...f, additionalRooms: next };
+    });
+  }
+
   function toggleWholeDay() {
     setForm((f) => {
       if (!f) return f;
@@ -77,8 +97,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   async function handleSubmitDraft() {
     try {
-      await api.submitBooking(item!.id);
-      showToast("Booking berhasil dikirim untuk approval");
+      const { detail } = await api.submitBooking(item!.id);
+      showToast(detail || "Booking berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -111,8 +131,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   async function handleApproveGaApproval() {
     onClose();
     try {
-      await api.approveBookingGaApproval(item!.id);
-      showToast("Booking berhasil dikonfirmasi");
+      const { detail } = await api.approveBookingGaApproval(item!.id);
+      showToast(detail || "Booking berhasil dikonfirmasi");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -213,11 +233,56 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 ))}
               </select>
             </div>
+            {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
+              <div className="field full">
+                <label>Ruangan Tambahan</label>
+                {isEdit ? (
+                  <div className="room-chip-row">
+                    {rooms.filter((r) => r.nama !== form.namaRuang).map((r) => {
+                      const active = (form.additionalRooms || []).includes(r.nama);
+                      return (
+                        <button
+                          type="button"
+                          key={r.nama}
+                          className={`room-chip${active ? " room-chip-active" : ""}`}
+                          aria-pressed={active}
+                          onClick={() => toggleAdditionalRoom(r.nama)}
+                        >
+                          {r.nama}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <input type="text" disabled value={(form.additionalRooms || []).join(", ")} />
+                )}
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="bv-tipe">Tipe Booking</label>
+              <select id="bv-tipe" disabled={!isEdit} value={form.tipe} onChange={(e) => set("tipe", e.target.value as BookingRuangCreatePayload["tipe"])}>
+                {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
+                  <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
+                ))}
+              </select>
+            </div>
             <div className="field full">
               <label htmlFor="bv-catatan">Catatan</label>
               <input type="text" id="bv-catatan" disabled={!isEdit} placeholder="Opsional" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
+
+          {!isEdit && bookingRecurrenceLabel(item) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Pengulangan:</strong> {bookingRecurrenceLabel(item)} (aksi approve/reject berlaku untuk seluruh jadwal seri ini)
+            </div>
+          )}
+
+          {!isEdit && item.hasConflict && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12, color: "#d64545" }}>
+              <strong>Bentrok:</strong> Jadwal ini bentrok dengan booking lain yang sudah Approved. Gunakan &quot;Ubah Ruang/Jadwal&quot; untuk memindahkan.
+            </div>
+          )}
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>

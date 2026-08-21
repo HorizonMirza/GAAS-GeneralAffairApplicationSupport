@@ -18,6 +18,23 @@ public class BookingRuang
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
 
+    public TipeBookingEnum Tipe { get; set; } = TipeBookingEnum.INTERNAL;
+
+    // Set only when this booking is one occurrence of a recurring series (see
+    // BookingRuangController.BuildOccurrenceDates) - every occurrence shares the same SeriesId,
+    // and only carries its own Tanggal/NomorPemesanan; everything else about the series is
+    // applied identically to every member by the approval endpoints. Null for a normal,
+    // non-recurring booking.
+    public Guid? SeriesId { get; set; }
+    public RecurrenceFrequencyEnum? RecurrenceFrequency { get; set; }
+    public DateOnly? RecurrenceEndDate { get; set; }
+
+    // True when this booking's room+slot currently collides with another already-Approved
+    // booking - set (non-blocking) when a series occurrence is created or submitted, and at
+    // final Approval GA confirmation for both series and non-series bookings. Only Admin/Approval
+    // GA's Reschedule tool can clear it (by moving the booking somewhere free).
+    public bool HasConflict { get; set; }
+
     public BookingStatusEnum Status { get; set; } = BookingStatusEnum.DRAFT;
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
@@ -36,4 +53,5 @@ public class BookingRuang
 
     public User Pembuat { get; set; } = null!;
     public ICollection<BookingRuangLog> Logs { get; set; } = new List<BookingRuangLog>();
+    public ICollection<BookingRuangRoom> AdditionalRooms { get; set; } = new List<BookingRuangRoom>();
 }

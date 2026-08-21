@@ -57,3 +57,16 @@ public enum BookingStatusEnum
     REJECTED_GA_APPROVAL,
     APPROVED_GA_APPROVAL,
 }
+
+public enum TipeBookingEnum
+{
+    INTERNAL,
+    EXTERNAL,
+}
+
+public enum RecurrenceFrequencyEnum
+{
+    DAILY,
+    WEEKLY,
+    MONTHLY,
+}

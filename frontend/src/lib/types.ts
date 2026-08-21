@@ -32,6 +32,10 @@ export type BookingStatus =
 
 export type RejectTarget = "GA" | "ORIGIN";
 
+export type TipeBooking = "INTERNAL" | "EXTERNAL";
+
+export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
+
 export type Asuransi = "Ya" | "Tidak";
 
 export type InvoiceStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
@@ -200,6 +204,7 @@ export interface BookingRuang {
   namaKegiatan: string;
   pic: string | null;
   namaRuang: string;
+  additionalRooms: string[];
   kapasitasRuang: number;
   jumlahPeserta: number;
   tanggal: string;
@@ -209,6 +214,11 @@ export interface BookingRuang {
   catatan: string | null;
   divisi: string;
   departemen: string | null;
+  tipe: TipeBooking;
+  seriesId: string | null;
+  recurrenceFrequency: RecurrenceFrequency | null;
+  recurrenceEndDate: string | null;
+  hasConflict: boolean;
   status: BookingStatus;
   rejectReason: string | null;
   rejectTarget: RejectTarget | null;
@@ -246,20 +256,33 @@ export interface BookingRuangCreatePayload {
   namaKegiatan: string;
   pic: string | null;
   namaRuang: string;
+  additionalRooms?: string[];
   jumlahPeserta: number;
   tanggal: string;
   isWholeDay: boolean;
   jamMulai: string | null;
   jamSelesai: string | null;
   catatan: string | null;
+  tipe?: TipeBooking;
+  isRecurring?: boolean;
+  recurrenceFrequency?: RecurrenceFrequency | null;
+  recurrenceEndDate?: string | null;
 }
 
 // Admin/Approval GA's conflict-resolution tool - deliberately narrower than
 // BookingRuangCreatePayload, only the fields that define the room+slot.
 export interface BookingRuangReschedulePayload {
   namaRuang: string;
+  additionalRooms?: string[];
   tanggal: string;
   isWholeDay: boolean;
   jamMulai: string | null;
   jamSelesai: string | null;
+}
+
+// Returned by endpoints that finalize a series (submit self-skip, approve-ga-approval): detail
+// is a human-readable summary only present when the item belongs to a multi-occurrence series.
+export interface BookingRuangActionResult {
+  item: BookingRuang;
+  detail: string | null;
 }

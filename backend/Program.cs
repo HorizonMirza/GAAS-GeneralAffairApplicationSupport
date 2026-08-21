@@ -49,6 +49,23 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS nomor_pemesanan VARCHAR(50)");
 
+    // Internal/External classification, recurring-series fields, and the per-booking conflict
+    // flag - all new, optional/defaulted columns so existing rows stay valid.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS tipe VARCHAR(20) NOT NULL DEFAULT 'INTERNAL'");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS series_id UUID");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS recurrence_frequency VARCHAR(20)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS recurrence_end_date DATE");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS has_conflict BOOLEAN NOT NULL DEFAULT FALSE");
+
+    // Additional rooms for a multi-room booking - brand new table, same reasoning as
+    // booking_chat_messages below (EnsureCreated() only creates tables for a fresh database).
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_ruang_rooms (
+            id SERIAL PRIMARY KEY,
+            booking_ruang_id INT NOT NULL REFERENCES booking_ruang(id) ON DELETE CASCADE,
+            nama_ruang VARCHAR(100) NOT NULL
+        )");
+
     // Nomor Pemesanan Ruangan switched from a per-ruangan code to a per-divisi code (matching
     // Ekspedisi's NomorTransmittal, e.g. "Corsec"), so the counter's key changed from
     // (nama_ruang, year, month) to (divisi, year, month). One-time reset of this table only if
@@ -148,7 +165,7 @@ if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

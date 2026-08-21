@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { isBookingEditableByOrigin } from "@/lib/constants";
+import { bookingRoomsLabel, isBookingEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -259,7 +259,7 @@ export default function BookingTransaksiPage() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorPemesanan || "-"}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
-                      <td>{item.namaRuang}</td>
+                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{item.kapasitasRuang}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
@@ -270,7 +270,10 @@ export default function BookingTransaksiPage() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">
-                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                            {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
+                          </span>
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}

@@ -378,7 +378,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     className={`month-event-chip ${scheduleCellStatusClass(entry.status)}`}
                     onClick={() => onEntryClick(entry)}
                   >
-                    {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}
+                    {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}
                   </button>
                 ))}
                 {dayEntries.length > 3 && (
@@ -434,7 +434,7 @@ function DayCell({
     return (
       <td rowSpan={HOURS.length} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
         <div className={`schedule-cell-booked ${statusClass}`}>
-          <div className="schedule-cell-title">{cell.entry.namaKegiatan}</div>
+          <div className="schedule-cell-title">{cell.entry.namaKegiatan}{cell.entry.hasConflict ? " ⚠" : ""}</div>
           <div className="schedule-cell-time">Sepanjang Hari{cell.entry.status === "DRAFT" ? " · Draft" : ""}</div>
         </div>
       </td>
@@ -462,7 +462,7 @@ function DayCell({
             }}
             onClick={() => onEntryClick(entry)}
           >
-            <div className="schedule-cell-title">{entry.namaKegiatan}</div>
+            <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
             <div className="schedule-cell-time">
               {entry.jamMulai?.slice(0, 5)} - {entry.jamSelesai?.slice(0, 5)}{entry.status === "DRAFT" ? " · Draft" : ""}
             </div>

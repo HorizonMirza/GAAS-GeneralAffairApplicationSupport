@@ -11,6 +11,7 @@ namespace PengirimanApi.Controllers;
 public class BookingRuangController : ApiControllerBase
 {
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
+    private const int MaxOccurrencesPerSeries = 52;
 
     // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
     // Admin/Approval GA input on behalf of Asset Management and General Affair (see
@@ -92,6 +93,14 @@ public class BookingRuangController : ApiControllerBase
         });
     }
 
+    // Every room a booking occupies - its own primary NamaRuang plus whatever is in
+    // AdditionalRooms - deduplicated. The one place both are combined for conflict-checking.
+    private static List<string> RoomList(BookingRuang item) =>
+        new[] { item.NamaRuang }.Concat(item.AdditionalRooms.Select(r => r.NamaRuang)).Distinct().ToList();
+
+    private static List<string> RoomList(string primary, IEnumerable<string>? additional) =>
+        new[] { primary }.Concat(additional ?? Enumerable.Empty<string>()).Distinct().ToList();
+
     // Format "YYYY-MM", same convention as Pengiriman's bulan filter.
     private static IQueryable<BookingRuang> ApplyBulanFilter(IQueryable<BookingRuang> query, string? bulan)
     {
@@ -136,7 +145,8 @@ public class BookingRuangController : ApiControllerBase
         if (statusFilter.HasValue) query = query.Where(b => b.Status == statusFilter.Value);
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
-        if (!string.IsNullOrEmpty(namaRuang)) query = query.Where(b => b.NamaRuang == namaRuang);
+        if (!string.IsNullOrEmpty(namaRuang))
+            query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
 
         return ApplyBulanFilter(query, bulan);
@@ -155,6 +165,11 @@ public class BookingRuangController : ApiControllerBase
             return "Jumlah peserta harus lebih dari 0";
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
+        foreach (var room in payload.AdditionalRooms ?? new List<string>())
+        {
+            if (!MeetingRooms.IsValidRoom(room)) return "Ruang tambahan tidak ditemukan";
+            if (room == payload.NamaRuang) return "Ruang tambahan tidak boleh sama dengan ruang utama";
+        }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
         if (!payload.IsWholeDay)
@@ -165,6 +180,15 @@ public class BookingRuangController : ApiControllerBase
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
+        }
+        if (payload.IsRecurring)
+        {
+            if (payload.RecurrenceFrequency == null)
+                return "Frekuensi pengulangan wajib dipilih";
+            if (payload.RecurrenceEndDate == null)
+                return "Tanggal akhir pengulangan wajib diisi";
+            if (payload.RecurrenceEndDate.Value < payload.Tanggal)
+                return "Tanggal akhir pengulangan harus setelah tanggal mulai";
         }
         return null;
     }
@@ -181,19 +205,59 @@ public class BookingRuangController : ApiControllerBase
         item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
         item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;
         item.Catatan = payload.Catatan;
+        item.Tipe = payload.Tipe;
+
+        item.AdditionalRooms.Clear();
+        foreach (var room in (payload.AdditionalRooms ?? new List<string>()).Distinct())
+            item.AdditionalRooms.Add(new BookingRuangRoom { NamaRuang = room });
+    }
+
+    // One date per occurrence, Monday-Friday only (a computed later date can land on a weekend
+    // even though the start date itself never does - ValidatePayload already rejects that).
+    // Non-recurring payloads produce exactly the one date they were given. Capped so a badly
+    // chosen end date (e.g. years of daily recurrence) can't create an unbounded series.
+    private static List<DateOnly> BuildOccurrenceDates(BookingRuangCreate payload)
+    {
+        if (!payload.IsRecurring || payload.RecurrenceFrequency == null || payload.RecurrenceEndDate == null)
+            return new List<DateOnly> { payload.Tanggal };
+
+        var dates = new List<DateOnly>();
+        var current = payload.Tanggal;
+        var frequency = payload.RecurrenceFrequency.Value;
+        while (current <= payload.RecurrenceEndDate.Value && dates.Count < MaxOccurrencesPerSeries)
+        {
+            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+                dates.Add(current);
+            current = frequency switch
+            {
+                RecurrenceFrequencyEnum.DAILY => current.AddDays(1),
+                RecurrenceFrequencyEnum.WEEKLY => current.AddDays(7),
+                RecurrenceFrequencyEnum.MONTHLY => current.AddMonths(1),
+                _ => current.AddDays(1),
+            };
+        }
+        return dates;
     }
 
     // Overlap is checked in memory (not pushed into the SQL predicate) since the per-room,
     // per-date candidate set is always small, and nullable TimeOnly comparisons mixed with the
     // whole-day short-circuit are simpler to get right here than in a translated LINQ expression.
     private async Task<BookingRuang?> FindConflictAsync(
-        string namaRuang, DateOnly tanggal, bool isWholeDay, TimeOnly? jamMulai, TimeOnly? jamSelesai, int? excludeId = null)
+        List<string> rooms, DateOnly tanggal, bool isWholeDay, TimeOnly? jamMulai, TimeOnly? jamSelesai, int? excludeId = null)
     {
         // Only a booking that has already won final Approval GA sign-off actually blocks the
         // slot - two requests still going through approval are allowed to race for it, and
         // whichever one gets confirmed first auto-rejects the others (see ApproveGaApproval).
+        // A room can be occupied either as a booking's primary NamaRuang or one of its
+        // AdditionalRooms, so both are checked.
+        var additionalMatchIds = await _db.BookingRuangRooms
+            .Where(r => rooms.Contains(r.NamaRuang))
+            .Select(r => r.BookingRuangId)
+            .ToListAsync();
+
         var query = _db.BookingRuangs.Where(b =>
-            b.NamaRuang == namaRuang && b.Tanggal == tanggal && b.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
+            b.Tanggal == tanggal && b.Status == BookingStatusEnum.APPROVED_GA_APPROVAL
+            && (rooms.Contains(b.NamaRuang) || additionalMatchIds.Contains(b.Id)));
         if (excludeId.HasValue) query = query.Where(b => b.Id != excludeId.Value);
 
         var candidates = await query.ToListAsync();
@@ -278,6 +342,7 @@ public class BookingRuangController : ApiControllerBase
         // Draft bookings are private, but a user's own draft should still show up (in grey) on
         // their calendar as a placeholder for what they haven't submitted yet.
         var items = await _db.BookingRuangs
+            .Include(b => b.AdditionalRooms)
             .Where(b => b.Tanggal == tanggal
                 && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)))
             .ToListAsync();
@@ -301,10 +366,11 @@ public class BookingRuangController : ApiControllerBase
 
         // Draft bookings are private, but a user's own draft should still show up (in grey) on
         // their calendar as a placeholder for what they haven't submitted yet.
-        var query = _db.BookingRuangs.Where(b =>
+        var query = _db.BookingRuangs.Include(b => b.AdditionalRooms).Where(b =>
             b.Tanggal >= tanggalMulai && b.Tanggal <= tanggalSelesai
             && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)));
-        if (!string.IsNullOrEmpty(namaRuang)) query = query.Where(b => b.NamaRuang == namaRuang);
+        if (!string.IsNullOrEmpty(namaRuang))
+            query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
 
         var items = await query.ToListAsync();
         return Ok(items.Select(BookingRuangOut.From).ToList());
@@ -322,20 +388,57 @@ public class BookingRuangController : ApiControllerBase
         var validationError = ValidatePayload(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai);
-        if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
+        var occurrenceDates = BuildOccurrenceDates(payload);
+        var isSeries = occurrenceDates.Count > 1;
 
-        var item = new BookingRuang { CreatedBy = user.Id, CreatedByRole = user.Role, Status = BookingStatusEnum.DRAFT, Divisi = divisi, Departemen = EffectiveDepartemen(user) };
-        ApplyCreatePayload(item, payload);
-        var seq = await IncrementNomorSequenceAsync(item.Divisi, item.Tanggal.Year, item.Tanggal.Month);
-        item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, item.Tanggal);
-        _db.BookingRuangs.Add(item);
+        // A plain (non-recurring) booking keeps the original behaviour exactly: block creation
+        // outright if the slot is already taken. A recurring series is more lenient per design -
+        // it's still created in full, and any occurrence that collides is just flagged
+        // (HasConflict) for Admin/Approval GA to fix later with the Reschedule tool, rather than
+        // failing the whole series over one bad date.
+        if (!isSeries)
+        {
+            var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
+            var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai);
+            if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
+        }
+
+        var seriesId = isSeries ? Guid.NewGuid() : (Guid?)null;
+        var created = new List<BookingRuang>();
+        foreach (var tanggal in occurrenceDates)
+        {
+            var item = new BookingRuang
+            {
+                CreatedBy = user!.Id,
+                CreatedByRole = user.Role,
+                Status = BookingStatusEnum.DRAFT,
+                Divisi = divisi,
+                Departemen = EffectiveDepartemen(user),
+                SeriesId = seriesId,
+                RecurrenceFrequency = isSeries ? payload.RecurrenceFrequency : null,
+                RecurrenceEndDate = isSeries ? payload.RecurrenceEndDate : null,
+            };
+            ApplyCreatePayload(item, payload);
+            item.Tanggal = tanggal;
+
+            if (isSeries)
+            {
+                var roomList = RoomList(item);
+                var conflict = await FindConflictAsync(roomList, tanggal, item.IsWholeDay, item.JamMulai, item.JamSelesai);
+                item.HasConflict = conflict != null;
+            }
+
+            var seq = await IncrementNomorSequenceAsync(divisi, tanggal.Year, tanggal.Month);
+            item.NomorPemesanan = BuildNomorPemesanan(divisi, seq, tanggal);
+            _db.BookingRuangs.Add(item);
+            created.Add(item);
+        }
         await _db.SaveChangesAsync();
 
-        AddLog(item, "CREATED", user);
+        foreach (var item in created) AddLog(item, "CREATED", user!);
         await _db.SaveChangesAsync();
 
-        return StatusCode(201, BookingRuangOut.From(item));
+        return StatusCode(201, created.Select(BookingRuangOut.From).ToList());
     }
 
     [HttpPut("{itemId:int}")]
@@ -344,7 +447,7 @@ public class BookingRuangController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
@@ -355,17 +458,40 @@ public class BookingRuangController : ApiControllerBase
         // NomorPemesanan's MM.YYYY (and the room+date slot this booking occupies) never goes
         // stale as a result, so no regeneration is needed here anymore.
         payload.Tanggal = item.Tanggal;
+        payload.IsRecurring = false;
 
         var validationError = ValidatePayload(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
+        var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
+        var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
         // IsEditableByOrigin above only ever allows this for a still-DRAFT item, so there is no
         // rejected-status-to-revive branch here (unlike Pengiriman) - a rejected booking is a
         // dead end for everyone, see IsEditableByOrigin's comment.
         ApplyCreatePayload(item, payload);
+
+        // A DRAFT series member shares its room/kegiatan/jam definition with every sibling
+        // occurrence (only Tanggal differs between them) - propagate the same edit to keep them
+        // consistent, same "package" convention as the approval endpoints below.
+        if (item.SeriesId != null)
+        {
+            var siblings = await _db.BookingRuangs
+                .Include(b => b.AdditionalRooms)
+                .Where(b => b.SeriesId == item.SeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
+                .ToListAsync();
+            foreach (var sibling in siblings)
+            {
+                var siblingTanggal = sibling.Tanggal;
+                ApplyCreatePayload(sibling, payload);
+                sibling.Tanggal = siblingTanggal;
+                var siblingRooms = RoomList(sibling);
+                var siblingConflict = await FindConflictAsync(siblingRooms, siblingTanggal, sibling.IsWholeDay, sibling.JamMulai, sibling.JamSelesai, sibling.Id);
+                sibling.HasConflict = siblingConflict != null;
+            }
+        }
+
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -374,6 +500,11 @@ public class BookingRuangController : ApiControllerBase
     {
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
+        foreach (var room in payload.AdditionalRooms ?? new List<string>())
+        {
+            if (!MeetingRooms.IsValidRoom(room)) return "Ruang tambahan tidak ditemukan";
+            if (room == payload.NamaRuang) return "Ruang tambahan tidak boleh sama dengan ruang utama";
+        }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
         if (!payload.IsWholeDay)
@@ -391,14 +522,15 @@ public class BookingRuangController : ApiControllerBase
     // Admin/Approval GA's dedicated conflict-resolution tool: move an in-flight booking's
     // room/date/time without touching anything else about it (see IsGaReschedulable and
     // BookingRuangReschedule) - deliberately separate from Update(), which stays creator-only and
-    // DRAFT-only. Not gated behind IsEditableByOrigin at all.
+    // DRAFT-only. Not gated behind IsEditableByOrigin at all. Also the one way to clear
+    // HasConflict on a series occurrence that got flagged at creation/final-approval time.
     [HttpPatch("{itemId:int}/reschedule")]
     public async Task<IActionResult> Reschedule(int itemId, [FromBody] BookingRuangReschedule payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaReschedulable(item))
             return StatusCode(403, new { detail = "Jadwal tidak dapat dipindahkan pada status ini" });
@@ -406,7 +538,8 @@ public class BookingRuangController : ApiControllerBase
         var validationError = ValidateReschedule(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var conflict = await FindConflictAsync(payload.NamaRuang, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
+        var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
+        var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
         // NomorPemesanan embeds the MM.YYYY it was issued for - if the reschedule moves the
@@ -425,6 +558,10 @@ public class BookingRuangController : ApiControllerBase
         item.IsWholeDay = payload.IsWholeDay;
         item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
         item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;
+        item.HasConflict = false;
+        item.AdditionalRooms.Clear();
+        foreach (var room in (payload.AdditionalRooms ?? new List<string>()).Distinct())
+            item.AdditionalRooms.Add(new BookingRuangRoom { NamaRuang = room });
 
         var jadwalText = item.IsWholeDay
             ? $"{item.Tanggal:dd/MM/yyyy} (Sepanjang Hari)"
@@ -446,6 +583,16 @@ public class BookingRuangController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
+        // A partial series (some occurrences deleted, others not) doesn't make sense - deleting
+        // one still-DRAFT occurrence removes the whole series with it.
+        if (item.SeriesId != null)
+        {
+            var siblings = await _db.BookingRuangs
+                .Where(b => b.SeriesId == item.SeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
+                .ToListAsync();
+            _db.BookingRuangs.RemoveRange(siblings);
+        }
+
         _db.BookingRuangs.Remove(item);
         await _db.SaveChangesAsync();
         return NoContent();
@@ -465,48 +612,75 @@ public class BookingRuangController : ApiControllerBase
         return NoContent();
     }
 
+    // Applies the same status transition (plus whatever else `mutate` sets) to every member of
+    // item's recurring series at once - "approve sekaligus 1 paket" - or, for a normal
+    // non-recurring booking (SeriesId null), to just item itself. This is what a plain
+    // Submit/ApproveL1/RejectL1/ApproveGa/RejectGa click resolves to; ApproveGaApproval/its
+    // Submit-self-skip counterpart handle the final stage separately below since a conflict there
+    // must not block the rest of the series (see FinalizeSeriesAsync).
+    private async Task<List<BookingRuang>> SeriesMembersAsync(BookingRuang item) =>
+        item.SeriesId == null
+            ? new List<BookingRuang> { item }
+            : await _db.BookingRuangs.Include(b => b.AdditionalRooms).Where(b => b.SeriesId == item.SeriesId).ToListAsync();
+
+    private async Task ApplyToSeriesAsync(BookingRuang item, User actor, string logAction, string? reason, Action<BookingRuang> mutate)
+    {
+        var members = await SeriesMembersAsync(item);
+        foreach (var member in members)
+        {
+            mutate(member);
+            AddLog(member, logAction, actor, reason);
+        }
+    }
+
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (item.Status != BookingStatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
-
-        // Authoritative conflict check: this is the moment the booking becomes visible/binding
-        // to everyone else, so re-verify even though Create already checked once.
-        var conflict = await FindConflictAsync(item.NamaRuang, item.Tanggal, item.IsWholeDay, item.JamMulai, item.JamSelesai, itemId);
-        if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
         // Whichever tier the submitter's own role would normally sit at gets skipped, same
         // convention as Pengiriman - this applies just the same when an Admin/Approval GA
         // account is resubmitting someone else's revised (previously rejected) booking, not just
         // their own new one, which is exactly the extra privilege they were given.
-        item.Status = user!.Role switch
+        var nextStatus = user!.Role switch
         {
             RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI => BookingStatusEnum.APPROVED_L1,
             RoleEnum.ADMIN_GA => BookingStatusEnum.APPROVED_GA,
             RoleEnum.APPROVAL_GA => BookingStatusEnum.APPROVED_GA_APPROVAL,
             _ => BookingStatusEnum.SUBMITTED,
         };
-        item.RejectReason = null;
-        item.RejectTarget = null;
-        AddLog(item, "SUBMITTED", user);
 
-        // Approval GA's self-skip lands straight on the terminal status, same as reaching it via
-        // ApproveGaApproval - so it needs the same cleanup that endpoint does: stamp who/when,
-        // and auto-reject any other still-pending booking competing for the same room+slot
-        // instead of leaving them stuck waiting on a slot that's already gone.
-        if (item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
+        if (nextStatus == BookingStatusEnum.APPROVED_GA_APPROVAL)
         {
-            item.ApprovedByApprovalGa = user.Id;
-            item.ApprovedApprovalGaAt = DateTime.UtcNow;
-            await AutoRejectLosingCompetitorsAsync(item, user);
+            // Approval GA's self-skip lands straight on the terminal status, same as reaching it
+            // via ApproveGaApproval - so it needs the same per-member conflict handling (see
+            // FinalizeSeriesAsync): a conflicted occurrence doesn't block its siblings, it's just
+            // left behind (still DRAFT here, since it never got the chance to become SUBMITTED)
+            // flagged for a manual Reschedule instead.
+            var members = await SeriesMembersAsync(item);
+            foreach (var member in members) AddLog(member, "SUBMITTED", user);
+            var (confirmed, conflicted) = await FinalizeSeriesAsync(members, user, fromStatus: BookingStatusEnum.DRAFT);
+            await _db.SaveChangesAsync();
+            await _db.Entry(item).ReloadAsync();
+            return Ok(new
+            {
+                item = BookingRuangOut.From(item),
+                detail = members.Count > 1 ? SeriesSummary(confirmed, conflicted, members.Count) : null,
+            });
         }
 
+        await ApplyToSeriesAsync(item, user, "SUBMITTED", null, member =>
+        {
+            member.Status = nextStatus;
+            member.RejectReason = null;
+            member.RejectTarget = null;
+        });
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -540,6 +714,7 @@ public class BookingRuangController : ApiControllerBase
 
         var total = await query.CountAsync();
         var items = await query
+            .Include(b => b.AdditionalRooms)
             .OrderByDescending(b => b.Tanggal)
             .ThenByDescending(b => b.Id)
             .Skip((page - 1) * limit)
@@ -612,7 +787,7 @@ public class BookingRuangController : ApiControllerBase
         if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
             return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
 
         var ok = item.Departemen != null
@@ -630,13 +805,15 @@ public class BookingRuangController : ApiControllerBase
         if (!IsL1Actionable(item!))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
-        item!.Status = BookingStatusEnum.APPROVED_L1;
-        item.ApprovedByL1 = user!.Id;
-        item.ApprovedL1At = DateTime.UtcNow;
-        item.RejectReason = null;
-        AddLog(item, "APPROVED_L1", user);
+        await ApplyToSeriesAsync(item!, user!, "APPROVED_L1", null, member =>
+        {
+            member.Status = BookingStatusEnum.APPROVED_L1;
+            member.ApprovedByL1 = user!.Id;
+            member.ApprovedL1At = DateTime.UtcNow;
+            member.RejectReason = null;
+        });
         await _db.SaveChangesAsync();
-        return Ok(BookingRuangOut.From(item));
+        return Ok(BookingRuangOut.From(item!));
     }
 
     [HttpPatch("{itemId:int}/reject-l1")]
@@ -647,13 +824,15 @@ public class BookingRuangController : ApiControllerBase
         if (!IsL1Actionable(item!))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item!.Status = BookingStatusEnum.REJECTED_L1;
-        item.RejectReason = payload.Reason;
-        item.ApprovedByL1 = null;
-        item.ApprovedL1At = null;
-        AddLog(item, "REJECTED_L1", user!, payload.Reason);
+        await ApplyToSeriesAsync(item!, user!, "REJECTED_L1", payload.Reason, member =>
+        {
+            member.Status = BookingStatusEnum.REJECTED_L1;
+            member.RejectReason = payload.Reason;
+            member.ApprovedByL1 = null;
+            member.ApprovedL1At = null;
+        });
         await _db.SaveChangesAsync();
-        return Ok(BookingRuangOut.From(item));
+        return Ok(BookingRuangOut.From(item!));
     }
 
     [HttpPatch("{itemId:int}/approve-ga")]
@@ -662,17 +841,19 @@ public class BookingRuangController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
-        item.Status = BookingStatusEnum.APPROVED_GA;
-        item.ApprovedByGa = user!.Id;
-        item.ApprovedGaAt = DateTime.UtcNow;
-        item.RejectReason = null;
-        item.RejectTarget = null;
-        AddLog(item, "APPROVED_GA", user);
+        await ApplyToSeriesAsync(item, user!, "APPROVED_GA", null, member =>
+        {
+            member.Status = BookingStatusEnum.APPROVED_GA;
+            member.ApprovedByGa = user!.Id;
+            member.ApprovedGaAt = DateTime.UtcNow;
+            member.RejectReason = null;
+            member.RejectTarget = null;
+        });
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -683,17 +864,19 @@ public class BookingRuangController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item.Status = BookingStatusEnum.REJECTED_GA;
-        item.RejectReason = payload.Reason;
-        item.RejectTarget = null;
-        item.ApprovedByGa = null;
-        item.ApprovedGaAt = null;
-        AddLog(item, "REJECTED_GA", user!, payload.Reason);
+        await ApplyToSeriesAsync(item, user!, "REJECTED_GA", payload.Reason, member =>
+        {
+            member.Status = BookingStatusEnum.REJECTED_GA;
+            member.RejectReason = payload.Reason;
+            member.RejectTarget = null;
+            member.ApprovedByGa = null;
+            member.ApprovedGaAt = null;
+        });
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));
     }
@@ -711,9 +894,15 @@ public class BookingRuangController : ApiControllerBase
     // moved on since it was read here.
     private async Task AutoRejectLosingCompetitorsAsync(BookingRuang winner, User actor)
     {
+        var winnerRooms = RoomList(winner);
+        var additionalMatchIds = await _db.BookingRuangRooms
+            .Where(r => winnerRooms.Contains(r.NamaRuang))
+            .Select(r => r.BookingRuangId)
+            .ToListAsync();
+
         var candidates = await _db.BookingRuangs.Where(b =>
-            b.NamaRuang == winner.NamaRuang && b.Tanggal == winner.Tanggal
-            && b.Id != winner.Id && PendingStatuses.Contains(b.Status)).ToListAsync();
+            b.Tanggal == winner.Tanggal && b.Id != winner.Id && PendingStatuses.Contains(b.Status)
+            && (winnerRooms.Contains(b.NamaRuang) || additionalMatchIds.Contains(b.Id))).ToListAsync();
 
         var losers = candidates.Where(b =>
             winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
@@ -735,39 +924,78 @@ public class BookingRuangController : ApiControllerBase
         }
     }
 
+    private static string SeriesSummary(int confirmed, int conflicted, int total) =>
+        conflicted > 0
+            ? $"{confirmed} dari {total} jadwal berhasil dikonfirmasi, {conflicted} bentrok dan perlu dipindahkan"
+            : $"Seluruh {total} jadwal berhasil dikonfirmasi";
+
+    // The final-approval stage for a whole series: each member is claimed and re-checked for a
+    // room conflict individually - one still-conflicted occurrence never blocks its siblings
+    // from being confirmed (per design), it's just left at `fromStatus` with HasConflict set so
+    // Admin/Approval GA can fix it later via Reschedule. Used by both ApproveGaApproval and
+    // Submit()'s Approval-GA self-skip branch (fromStatus differs: APPROVED_GA vs DRAFT).
+    private async Task<(int confirmed, int conflicted)> FinalizeSeriesAsync(List<BookingRuang> members, User actor, BookingStatusEnum fromStatus)
+    {
+        var confirmed = 0;
+        var conflicted = 0;
+        foreach (var member in members)
+        {
+            var roomList = RoomList(member);
+            var conflict = await FindConflictAsync(roomList, member.Tanggal, member.IsWholeDay, member.JamMulai, member.JamSelesai, member.Id);
+            if (conflict != null)
+            {
+                member.HasConflict = true;
+                conflicted++;
+                continue;
+            }
+
+            var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE booking_ruang SET
+                    status = 'APPROVED_GA_APPROVAL',
+                    approved_by_approval_ga = {actor.Id},
+                    approved_approval_ga_at = {DateTime.UtcNow},
+                    reject_reason = NULL,
+                    has_conflict = FALSE,
+                    updated_at = {DateTime.UtcNow}
+                WHERE id = {member.Id} AND status = {fromStatus.ToString()}");
+            if (claimed == 0) continue;
+
+            await _db.Entry(member).ReloadAsync();
+            await AutoRejectLosingCompetitorsAsync(member, actor);
+            confirmed++;
+        }
+        return (confirmed, conflicted);
+    }
+
     [HttpPatch("{itemId:int}/approve-ga-approval")]
     public async Task<IActionResult> ApproveGaApproval(int itemId)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        // Atomic claim: the WHERE status guard means only one of two concurrent Approval GA
-        // actions on this same item can actually win it, instead of both reading APPROVED_GA in
-        // memory and blindly overwriting each other's SaveChanges.
-        var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
-            UPDATE booking_ruang SET
-                status = 'APPROVED_GA_APPROVAL',
-                approved_by_approval_ga = {user!.Id},
-                approved_approval_ga_at = {DateTime.UtcNow},
-                reject_reason = NULL,
-                updated_at = {DateTime.UtcNow}
-            WHERE id = {itemId} AND status = 'APPROVED_GA'");
-        if (claimed == 0)
+        var members = await SeriesMembersAsync(item);
+        var (confirmedCount, conflictedCount) = await FinalizeSeriesAsync(members, user!, fromStatus: BookingStatusEnum.APPROVED_GA);
+        if (confirmedCount == 0 && conflictedCount == 0)
             return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
 
-        await _db.Entry(item).ReloadAsync();
-        AddLog(item, "APPROVED_GA_APPROVAL", user);
-        await AutoRejectLosingCompetitorsAsync(item, user);
+        foreach (var member in members.Where(m => m.HasConflict)) AddLog(member, "APPROVED_GA_APPROVAL", user!, "Bentrok, perlu dipindahkan manual");
+        foreach (var member in members.Where(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)) AddLog(member, "APPROVED_GA_APPROVAL", user!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
-        return Ok(BookingRuangOut.From(item));
+        await _db.Entry(item).ReloadAsync();
+
+        return Ok(new
+        {
+            item = BookingRuangOut.From(item),
+            detail = members.Count > 1 ? SeriesSummary(confirmedCount, conflictedCount, members.Count) : null,
+        });
     }
 
     // Plain reason-only reject, unlike Pengiriman's reject-ga-approval - there is no GA-vs-origin
@@ -779,31 +1007,43 @@ public class BookingRuangController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        // Atomic claim, same reasoning as ApproveGaApproval above: a competing booking's
-        // ApproveGaApproval can run AutoRejectLosingCompetitorsAsync against this exact row at
-        // the same instant a human rejects it here - the status guard makes only one of the two
-        // writes actually take effect instead of one blindly overwriting the other.
-        var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
-            UPDATE booking_ruang SET
-                status = 'REJECTED_GA_APPROVAL',
-                reject_reason = {payload.Reason},
-                approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
-                updated_at = {DateTime.UtcNow}
-            WHERE id = {itemId} AND status = 'APPROVED_GA'");
-        if (claimed == 0)
+        var members = item.SeriesId == null
+            ? new List<BookingRuang> { item }
+            : await _db.BookingRuangs.Where(b => b.SeriesId == item.SeriesId && b.Status == BookingStatusEnum.APPROVED_GA).ToListAsync();
+
+        var rejectedAny = false;
+        foreach (var member in members)
+        {
+            // Atomic claim, same reasoning as ApproveGaApproval above: a competing booking's
+            // ApproveGaApproval can run AutoRejectLosingCompetitorsAsync against this exact row
+            // at the same instant a human rejects it here - the status guard makes only one of
+            // the two writes actually take effect instead of one blindly overwriting the other.
+            var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE booking_ruang SET
+                    status = 'REJECTED_GA_APPROVAL',
+                    reject_reason = {payload.Reason},
+                    approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
+                    updated_at = {DateTime.UtcNow}
+                WHERE id = {member.Id} AND status = 'APPROVED_GA'");
+            if (claimed == 0) continue;
+
+            await _db.Entry(member).ReloadAsync();
+            AddLog(member, "REJECTED_GA_APPROVAL", user!, payload.Reason);
+            rejectedAny = true;
+        }
+        if (!rejectedAny)
             return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
 
-        await _db.Entry(item).ReloadAsync();
-        AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
+        await _db.Entry(item).ReloadAsync();
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -843,7 +1083,7 @@ public class BookingRuangController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var item = await _db.BookingRuangs.Include(b => b.Pembuat).FirstOrDefaultAsync(b => b.Id == itemId);
+        var item = await _db.BookingRuangs.Include(b => b.Pembuat).Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
         if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)

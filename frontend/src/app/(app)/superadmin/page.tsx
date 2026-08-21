@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -539,14 +539,19 @@ export default function SuperAdminPage() {
                       <td>{item.nomorPemesanan || "-"}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
                       <td>{item.pic || "-"}</td>
-                      <td>{item.namaRuang}</td>
+                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{item.divisi}</td>
                       <td>{item.departemen || "-"}</td>
-                      <td><BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
+                      <td>
+                        <span className="badge-stack">
+                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
+                        </span>
+                      </td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteBooking(item)}>Delete</button>
                       </td>

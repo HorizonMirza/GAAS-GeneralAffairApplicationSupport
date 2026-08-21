@@ -1,6 +1,7 @@
 import type {
   ApproveKpuPayload,
   BookingRuang,
+  BookingRuangActionResult,
   BookingRuangCreatePayload,
   BookingRuangListResponse,
   BookingRuangLog,
@@ -238,24 +239,41 @@ export const api = {
     }),
   listBooking: (params: ListBookingParams) =>
     apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
+  // Create always returns a list of occurrences, even a single non-recurring booking (one-item
+  // list) - a recurring series comes back as one BookingRuang per occurrence date.
   createBooking: (payload: BookingRuangCreatePayload) =>
-    apiRequest("/booking-ruang", { method: "POST", body: normalizeBookingPayload(payload) }),
+    apiRequest<BookingRuang[]>("/booking-ruang", { method: "POST", body: normalizeBookingPayload(payload) }),
   updateBooking: (id: number, payload: BookingRuangCreatePayload) =>
-    apiRequest(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
+    apiRequest<BookingRuang>(`/booking-ruang/${id}`, { method: "PUT", body: normalizeBookingPayload(payload) }),
   rescheduleBooking: (id: number, payload: BookingRuangReschedulePayload) =>
-    apiRequest(`/booking-ruang/${id}/reschedule`, { method: "PATCH", body: payload }),
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/reschedule`, { method: "PATCH", body: payload }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
   superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),
-  submitBooking: (id: number) => apiRequest(`/booking-ruang/${id}/submit`, { method: "PATCH" }),
-  approveBookingL1: (id: number) => apiRequest(`/booking-ruang/${id}/approve-l1`, { method: "PATCH" }),
+  // The backend only wraps the response in {item, detail} when finalizing a series (submit's
+  // Approval-GA self-skip branch, approve-ga-approval); every other branch/endpoint returns a
+  // bare BookingRuang. Normalize all three to BookingRuangActionResult here so callers never have
+  // to know which branch fired.
+  submitBooking: async (id: number) =>
+    normalizeActionResult(
+      await apiRequest<BookingRuang | BookingRuangActionResult>(`/booking-ruang/${id}/submit`, { method: "PATCH" })
+    ),
+  approveBookingL1: (id: number) => apiRequest<BookingRuang>(`/booking-ruang/${id}/approve-l1`, { method: "PATCH" }),
   rejectBookingL1: (id: number, reason: string | null) =>
-    apiRequest(`/booking-ruang/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
-  approveBookingGa: (id: number) => apiRequest(`/booking-ruang/${id}/approve-ga`, { method: "PATCH" }),
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveBookingGa: (id: number) => apiRequest<BookingRuang>(`/booking-ruang/${id}/approve-ga`, { method: "PATCH" }),
   rejectBookingGa: (id: number, reason: string | null) =>
-    apiRequest(`/booking-ruang/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
-  approveBookingGaApproval: (id: number) => apiRequest(`/booking-ruang/${id}/approve-ga-approval`, { method: "PATCH" }),
-  rejectBookingGaApproval: (id: number, reason: string | null) =>
-    apiRequest(`/booking-ruang/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveBookingGaApproval: async (id: number) =>
+    normalizeActionResult(
+      await apiRequest<BookingRuang | BookingRuangActionResult>(`/booking-ruang/${id}/approve-ga-approval`, { method: "PATCH" })
+    ),
+  rejectBookingGaApproval: async (id: number, reason: string | null) =>
+    normalizeActionResult(
+      await apiRequest<BookingRuang | BookingRuangActionResult>(`/booking-ruang/${id}/reject-ga-approval`, {
+        method: "PATCH",
+        body: { reason },
+      })
+    ),
   getBookingLogs: (id: number) => apiRequest<BookingRuangLog[]>(`/booking-ruang/${id}/logs`),
   getBookingChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-ruang/${id}/chat`),
   sendBookingChatMessage: (id: number, message: string) =>
@@ -283,6 +301,10 @@ function normalizeTime(t: string | null): string | null {
 
 function normalizeBookingPayload(payload: BookingRuangCreatePayload): BookingRuangCreatePayload {
   return { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) };
+}
+
+function normalizeActionResult(res: BookingRuang | BookingRuangActionResult): BookingRuangActionResult {
+  return "item" in res ? res : { item: res, detail: null };
 }
 
 function bookingListParams(p: ListBookingParams) {

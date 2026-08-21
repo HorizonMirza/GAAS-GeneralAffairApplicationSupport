@@ -17,6 +17,7 @@ interface Props {
 function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
   return {
     namaRuang: item.namaRuang,
+    additionalRooms: item.additionalRooms,
     tanggal: item.tanggal,
     isWholeDay: item.isWholeDay,
     jamMulai: item.jamMulai,
@@ -44,6 +45,19 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
 
   function set<K extends keyof BookingRuangReschedulePayload>(key: K, value: BookingRuangReschedulePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
+  }
+
+  function toggleAdditionalRoom(nama: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const current = f.additionalRooms || [];
+      const next = current.includes(nama) ? current.filter((r) => r !== nama) : [...current, nama];
+      return { ...f, additionalRooms: next };
+    });
+  }
+
+  function setNamaRuang(nama: string) {
+    setForm((f) => (f ? { ...f, namaRuang: nama, additionalRooms: (f.additionalRooms || []).filter((r) => r !== nama) } : f));
   }
 
   function toggleWholeDay() {
@@ -88,12 +102,33 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rs-ruang">Ruangan</label>
-              <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => set("namaRuang", e.target.value)}>
+              <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
                 {rooms.map((r) => (
                   <option key={r.nama} value={r.nama}>{r.nama}</option>
                 ))}
               </select>
             </div>
+            {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
+              <div className="field full">
+                <label>Ruangan Tambahan (opsional)</label>
+                <div className="room-chip-row">
+                  {rooms.filter((r) => r.nama !== form.namaRuang).map((r) => {
+                    const active = (form.additionalRooms || []).includes(r.nama);
+                    return (
+                      <button
+                        type="button"
+                        key={r.nama}
+                        className={`room-chip${active ? " room-chip-active" : ""}`}
+                        aria-pressed={active}
+                        onClick={() => toggleAdditionalRoom(r.nama)}
+                      >
+                        {r.nama}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="field full">
               <label htmlFor="rs-tanggal">Tanggal</label>
               <input type="date" id="rs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />

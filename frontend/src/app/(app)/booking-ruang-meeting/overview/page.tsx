@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
+import { bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
@@ -124,13 +124,16 @@ export default function BookingOverviewPage() {
             >
               <div className="card-header">
                 <div>
-                  <strong>{item.namaKegiatan} - {item.namaRuang}</strong>
+                  <strong>{item.namaKegiatan} - {bookingRoomsLabel(item)}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
                     {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {item.departemen || item.divisi} · {item.jumlahPeserta} peserta
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                  <span className="badge-stack">
+                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                    {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
+                  </span>
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}

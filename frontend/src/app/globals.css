@@ -2139,6 +2139,35 @@ table.data-table {
   cursor: not-allowed;
 }
 
+.room-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.room-chip:hover {
+  border-color: var(--blue-300);
+}
+
+.room-chip-active {
+  color: var(--blue-400);
+  border-color: var(--blue-400);
+  background: rgba(75, 141, 255, 0.16);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
