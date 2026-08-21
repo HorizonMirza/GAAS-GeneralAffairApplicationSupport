@@ -1934,6 +1934,10 @@ table.data-table {
 /* Room Booking's Bookings page toolbar: same treatment as Expedition Transactions - Filter
    Bulan/Filter Tanggal sized (width + height) to match the Semua Booking button next to them.
    The child combinator keeps this off the nested fields inside the Semua Filter dropdown panel. */
+.bookings-page-toolbar {
+  gap: 4px;
+}
+
 .bookings-page-toolbar > .field {
   flex: 0 0 auto;
   width: 160px;
