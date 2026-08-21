@@ -85,6 +85,7 @@ export interface ListInvoiceParams {
   page?: number;
   limit?: number;
   bulan?: string;
+  search?: string;
 }
 
 export interface ListPengirimanParams {
@@ -159,7 +160,7 @@ export const api = {
     apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
   listInvoice: (params: ListInvoiceParams = {}) =>
-    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan } }),
+    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search } }),
   uploadInvoice: async (bulan: string, file: File) => {
     const formData = new FormData();
     formData.append("bulan", bulan);

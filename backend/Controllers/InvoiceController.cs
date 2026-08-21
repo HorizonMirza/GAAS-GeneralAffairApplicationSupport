@@ -169,7 +169,8 @@ public class InvoiceController : ApiControllerBase
     public async Task<IActionResult> ListInvoice(
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
-        [FromQuery] string? bulan = null)
+        [FromQuery] string? bulan = null,
+        [FromQuery] string? search = null)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
@@ -184,6 +185,7 @@ public class InvoiceController : ApiControllerBase
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(search)) query = query.Where(i => i.OriginalFilename.Contains(search));
 
         var total = await query.CountAsync();
         var items = await query

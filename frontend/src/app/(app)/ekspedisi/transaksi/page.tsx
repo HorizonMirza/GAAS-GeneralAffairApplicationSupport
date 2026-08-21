@@ -277,7 +277,7 @@ export default function TransaksiPage() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Transaksi</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.pdfUrl(currentExportParams()), "_blank")}>

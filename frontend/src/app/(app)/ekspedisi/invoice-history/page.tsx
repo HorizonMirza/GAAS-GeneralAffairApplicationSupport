@@ -30,6 +30,8 @@ export default function InvoiceHistoryPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
+  const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
@@ -42,6 +44,16 @@ export default function InvoiceHistoryPage() {
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
   const invoiceReqIdRef = useRef(0);
+  const invoiceSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleInvoiceSearchChange(value: string) {
+    setInvoiceSearchInput(value);
+    if (invoiceSearchDebounce.current) clearTimeout(invoiceSearchDebounce.current);
+    invoiceSearchDebounce.current = setTimeout(() => {
+      setInvoiceSearch(value.trim());
+      setInvoicePage(1);
+    }, 350);
+  }
 
   // Some browsers restore a previously-typed value into this input on page reload without
   // firing onChange, leaving it visually filled while React's state (the actual source of
@@ -58,7 +70,7 @@ export default function InvoiceHistoryPage() {
   const loadInvoices = useCallback(async () => {
     const reqId = ++invoiceReqIdRef.current;
     try {
-      const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
+      const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan, search: invoiceSearch });
       // A slower earlier request (e.g. the initial unfiltered load) can resolve after a newer
       // one triggered by changing the filter - ignore it so it doesn't clobber fresher results.
       if (reqId !== invoiceReqIdRef.current) return;
@@ -74,7 +86,7 @@ export default function InvoiceHistoryPage() {
       if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
-  }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch]);
 
   useEffect(() => {
     loadInvoices();
@@ -104,6 +116,16 @@ export default function InvoiceHistoryPage() {
     <>
       <div className="card">
         <div className="invoice-toolbar-slim">
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="invoice-filter-search">Cari Invoice</label>
+            <input
+              type="text"
+              id="invoice-filter-search"
+              placeholder="Nama file"
+              value={invoiceSearchInput}
+              onChange={(e) => handleInvoiceSearchChange(e.target.value)}
+            />
+          </div>
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
             <input
@@ -121,7 +143,7 @@ export default function InvoiceHistoryPage() {
               type="button"
               className="btn btn-secondary"
               style={{ width: "auto" }}
-              onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
+              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoicePage(1); }}
             >
               Semua Invoice
             </button>
