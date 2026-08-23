@@ -28,12 +28,13 @@ interface FilterState {
   divisi: string;
   departemen: string;
   namaRuang: string;
+  search: string;
 }
 
 // Booking Terbaru Saya & Transaksi default ke bulan berjalan saja (bukan seluruh histori) supaya
 // datanya "reset" tiap bulan dan query-nya tidak makin berat seiring bertambahnya data lama.
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, tanggal: "", bulan: currentYearMonth(), status: "", divisi: "", departemen: "", namaRuang: "" };
+  return { page: 1, limit: 10, tanggal: "", bulan: currentYearMonth(), status: "", divisi: "", departemen: "", namaRuang: "", search: "" };
 }
 
 export default function BookingTransaksiPage() {
@@ -43,6 +44,7 @@ export default function BookingTransaksiPage() {
   const confirm = useConfirm();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [searchInput, setSearchInput] = useState("");
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [total, setTotal] = useState(0);
   const [tableBusy, setTableBusy] = useState(true);
@@ -58,6 +60,7 @@ export default function BookingTransaksiPage() {
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const rowMenu = useRowMenu(items);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const filterBulanInputRef = useRef<HTMLInputElement>(null);
   const tableReqIdRef = useRef(0);
@@ -93,6 +96,7 @@ export default function BookingTransaksiPage() {
         divisi: filters.divisi,
         departemen: filters.departemen,
         namaRuang: filters.namaRuang,
+        search: filters.search,
       });
       // A slower earlier request can resolve after a newer one triggered by changing a filter -
       // ignore it so it doesn't clobber the results that actually match the current filters.
@@ -129,7 +133,16 @@ export default function BookingTransaksiPage() {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
   }
 
+  function handleSearchChange(value: string) {
+    setSearchInput(value);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => {
+      updateFilter({ search: value.trim() });
+    }, 350);
+  }
+
   function resetFilters() {
+    setSearchInput("");
     setFilters(defaultFilters());
   }
 
@@ -173,14 +186,14 @@ export default function BookingTransaksiPage() {
     <>
       <div className="card">
         <div className="toolbar bookings-page-toolbar">
-          <div className="field">
-            <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+          <div className="field toolbar-search-field">
+            <label htmlFor="filter-search">Cari Pesanan</label>
+            <input type="text" id="filter-search" placeholder="No Pemesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
-            <label htmlFor="filter-tanggal">Filter Tanggal</label>
-            <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+            <label htmlFor="filter-bulan">Filter Bulan</label>
+            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -193,6 +206,10 @@ export default function BookingTransaksiPage() {
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field">
+                  <label htmlFor="filter-tanggal">Filter Tanggal</label>
+                  <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-status">Status</label>
                   <select id="filter-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as BookingStatus | "" })}>
                     <option value="">Semua Status</option>
@@ -241,7 +258,7 @@ export default function BookingTransaksiPage() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Booking</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
         </div>
 
         <div className="table-wrap">

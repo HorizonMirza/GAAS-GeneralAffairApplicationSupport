@@ -133,7 +133,8 @@ public class BookingRuangController : ApiControllerBase
         string? departemen,
         string? namaRuang,
         DateOnly? tanggal,
-        string? bulan = null)
+        string? bulan = null,
+        string? search = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -162,6 +163,8 @@ public class BookingRuangController : ApiControllerBase
         if (!string.IsNullOrEmpty(namaRuang))
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(b => b.NomorPemesanan != null && b.NomorPemesanan.Contains(search));
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -726,7 +729,8 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] string? departemen = null,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
         [FromQuery] DateOnly? tanggal = null,
-        [FromQuery] string? bulan = null)
+        [FromQuery] string? bulan = null,
+        [FromQuery] string? search = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -737,7 +741,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan);
+            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan, search);
         }
         catch (ArgumentException ex)
         {
