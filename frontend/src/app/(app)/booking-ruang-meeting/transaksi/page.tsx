@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingDuplicatePayload, bookingRoomsLabel, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
-import { formatDate, formatDateTime, formatTimeRange, todayLocalDate, truncateText } from "@/lib/format";
+import { bookingRoomsLabel, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
@@ -54,7 +54,6 @@ export default function BookingTransaksiPage() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
@@ -151,11 +150,6 @@ export default function BookingTransaksiPage() {
   function goToPage(page: number) {
     if (page < 1) return;
     setFilters((f) => ({ ...f, page }));
-  }
-
-  function handleDuplicate(initial: Partial<BookingRuangCreatePayload>) {
-    setFormInitial(initial);
-    setFormOpen(true);
   }
 
   function handleDelete(item: BookingRuang) {
@@ -286,7 +280,7 @@ export default function BookingTransaksiPage() {
 
           <div className="toolbar-actions">
             {isOrigin && (
-              <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setFormInitial(undefined); setFormOpen(true); }}>
+              <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
                 + Booking Ruang Meeting
               </button>
             )}
@@ -404,17 +398,12 @@ export default function BookingTransaksiPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
-        onDuplicate={isOrigin ? () => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) handleDuplicate(bookingDuplicatePayload(item, todayLocalDate()));
-        } : undefined}
         icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
         onIcsClick={() => rowMenu.close()}
       />
 
       {me && (
-        <RoomBookingFormModal open={formOpen} me={me} initial={formInitial} onClose={() => setFormOpen(false)} onCreated={loadTable} />
+        <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />
       )}
 
       <RoomBookingDetailModal
