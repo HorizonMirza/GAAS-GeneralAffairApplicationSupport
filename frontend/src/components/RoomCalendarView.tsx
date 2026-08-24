@@ -523,8 +523,10 @@ function DayCell({
             onClick={(e) => onEntryMenuClick(e, entry)}
           >
             {isShort ? (
-              <div className="schedule-cell-title schedule-cell-title-oneline">
-                {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""} · {timeLabel}{entry.status === "DRAFT" ? " · Draft" : ""}
+              <div className="schedule-cell-title-oneline">
+                <span className="schedule-cell-title-inline">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</span>
+                {" · "}
+                {timeLabel}{entry.status === "DRAFT" ? " · Draft" : ""}
               </div>
             ) : (
               <>

@@ -1531,10 +1531,14 @@ table.data-table {
 }
 .schedule-cell-title-oneline {
   font-size: 0.72rem;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 0;
+}
+.schedule-cell-title-inline {
+  font-weight: 700;
 }
 
 .schedule-cell-meta {
