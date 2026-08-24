@@ -2746,19 +2746,6 @@ table.data-table {
   margin: 0;
 }
 
-.chat-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.chat-header-room-code {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
 .chat-message-list {
   display: flex;
   flex-direction: column;

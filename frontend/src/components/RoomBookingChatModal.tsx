@@ -10,8 +10,6 @@ interface Props {
   open: boolean;
   itemId: number | null;
   itemLabel: string;
-  roomLabel?: string;
-  nomorPemesanan?: string | null;
   departemen: string | null;
   createdByRole?: Role | null;
   me: Me;
@@ -61,7 +59,7 @@ function SendIcon() {
   );
 }
 
-export default function RoomBookingChatModal({ open, itemId, itemLabel, roomLabel, nomorPemesanan, departemen, createdByRole, me, onClose, onRead }: Props) {
+export default function RoomBookingChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");
@@ -174,10 +172,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, roomLabe
         <div className="chat-modal-header-bar">
           <div className="modal-header">
             <h3>{itemLabel}</h3>
-            <div className="chat-header-meta">
-              {roomLabel && <span className="chat-header-room-code">{roomLabel} - {nomorPemesanan || "-"}</span>}
-              <button type="button" className="modal-close" onClick={onClose}>&times;</button>
-            </div>
+            <button type="button" className="modal-close" onClick={onClose}>&times;</button>
           </div>
           <p className="chat-participant-line">{participantLabels.join(", ")}</p>
         </div>
