@@ -1622,6 +1622,7 @@ table.data-table {
 }
 
 .calendar-main .table-wrap {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -1630,6 +1631,26 @@ table.data-table {
 .calendar-main .table-wrap .schedule-table {
   flex: 1;
   height: 100%;
+}
+
+/* Live "current time" indicator, Google-Calendar-style - positioned in JS (RoomCalendarView)
+   from measured row/column bounds, since the grid's row heights aren't fixed in CSS. */
+.schedule-now-line {
+  position: absolute;
+  height: 2px;
+  background: var(--badge-rejected-bg);
+  pointer-events: none;
+  z-index: 2;
+}
+.schedule-now-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--badge-rejected-bg);
+  transform: translate(-50%, -50%);
 }
 
 .data-table tr.schedule-closing-row td {

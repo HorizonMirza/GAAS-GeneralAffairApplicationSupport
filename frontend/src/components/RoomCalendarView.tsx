@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@/lib/format";
 import type { BookingRuang } from "@/lib/types";
 
@@ -17,6 +17,10 @@ function pad(n: number): string {
 
 function toIso(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function todayIso(): string {
+  return toIso(new Date());
 }
 
 export function addDays(iso: string, days: number): string {
@@ -226,16 +230,66 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     return hour >= lo && hour <= hi;
   }
 
+  // Live "current time" indicator (like Google Calendar's red line) for the Harian/Mingguan hour
+  // grid - only meaningful when today actually falls within what's on screen right now.
+  const weekDatesForNowLine = view === "week" ? Array.from({ length: 5 }, (_, i) => addDays(mondayOf(refDate), i)) : [];
+  const nowLineActive =
+    (view === "day" && refDate === todayIso()) || (view === "week" && weekDatesForNowLine.includes(todayIso()));
+
+  const nowLineWrapRef = useRef<HTMLDivElement>(null);
+  const nowLineRowRef = useRef<HTMLTableCellElement>(null);
+  const nowLineColRef = useRef<HTMLTableCellElement>(null);
+  const [nowLineRect, setNowLineRect] = useState<{ top: number; height: number; left: number; width: number } | null>(null);
+  const [, forceNowLineTick] = useState(0);
+
+  // The line only needs to actually move once a minute - a cheap re-render is enough to recompute
+  // its position from the current clock time against the already-measured row height below.
+  useEffect(() => {
+    if (!nowLineActive) return;
+    const id = setInterval(() => forceNowLineTick((t) => t + 1), 30000);
+    return () => clearInterval(id);
+  }, [nowLineActive]);
+
+  // Row height/column bounds only change on resize or when the grid's own content changes (e.g.
+  // switching room/date) - re-measured whenever the view is active rather than tied to the clock.
+  useEffect(() => {
+    if (!nowLineActive) {
+      setNowLineRect(null);
+      return;
+    }
+    function measure() {
+      const wrap = nowLineWrapRef.current;
+      const row = nowLineRowRef.current;
+      const col = nowLineColRef.current;
+      if (!wrap || !row || !col) return;
+      const wrapBox = wrap.getBoundingClientRect();
+      const rowBox = row.getBoundingClientRect();
+      const colBox = col.getBoundingClientRect();
+      setNowLineRect({ top: rowBox.top - wrapBox.top, height: rowBox.height, left: colBox.left - wrapBox.left, width: colBox.width });
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [nowLineActive, view, refDate, entries]);
+
+  const nowLineHourFrac = (() => {
+    const now = new Date();
+    return now.getHours() + now.getMinutes() / 60;
+  })();
+  const nowLineWithinHours = nowLineHourFrac >= HOURS[0] && nowLineHourFrac <= HOURS[HOURS.length - 1] + 1;
+  const nowLineTop = nowLineRect ? nowLineRect.top + (nowLineHourFrac - HOURS[0]) * nowLineRect.height : null;
+  const showNowLine = nowLineActive && nowLineWithinHours && nowLineRect != null && nowLineTop != null;
+
   if (view === "day") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
     return (
-      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
+      <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
           <thead>
             <tr>
               <th className="schedule-time-col schedule-th-center">Jam</th>
-              <th className="schedule-th-center">{formatPeriodLabel("day", refDate)}</th>
+              <th className="schedule-th-center" ref={nowLineColRef}>{formatPeriodLabel("day", refDate)}</th>
             </tr>
           </thead>
           <tbody>
@@ -243,7 +297,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
               const cell = plan.get(hour);
               return (
                 <tr key={hour}>
-                  <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                  <td className="schedule-time-col" ref={hour === HOURS[0] ? nowLineRowRef : undefined}>{String(hour).padStart(2, "0")}:00</td>
                   <DayCell
                     cell={cell}
                     canCreate={canCreate}
@@ -261,6 +315,11 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
             </tr>
           </tbody>
         </table>
+        {showNowLine && (
+          <div className="schedule-now-line" style={{ top: nowLineTop!, left: nowLineRect!.left, width: nowLineRect!.width }}>
+            <span className="schedule-now-dot" />
+          </div>
+        )}
       </div>
     );
   }
@@ -270,7 +329,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     const weekDates = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
     const plans = weekDates.map((date) => buildDayPlan(entries.filter((e) => e.tanggal === date)));
     return (
-      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
+      <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
           <thead>
             <tr>
@@ -278,7 +337,12 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
               {weekDates.map((date) => {
                 const d = new Date(date + "T00:00:00");
                 return (
-                  <th key={date} className="schedule-week-head" onClick={() => onJumpToDay(date)}>
+                  <th
+                    key={date}
+                    ref={date === todayIso() ? nowLineColRef : undefined}
+                    className="schedule-week-head"
+                    onClick={() => onJumpToDay(date)}
+                  >
                     {DAY_NAMES_SHORT[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>
                   </th>
                 );
@@ -288,7 +352,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
           <tbody>
             {HOURS.map((hour) => (
               <tr key={hour}>
-                <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                <td className="schedule-time-col" ref={hour === HOURS[0] ? nowLineRowRef : undefined}>{String(hour).padStart(2, "0")}:00</td>
                 {weekDates.map((date, idx) => {
                   const cell = plans[idx].get(hour);
                   return (
@@ -311,6 +375,11 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
             </tr>
           </tbody>
         </table>
+        {showNowLine && (
+          <div className="schedule-now-line" style={{ top: nowLineTop!, left: nowLineRect!.left, width: nowLineRect!.width }}>
+            <span className="schedule-now-dot" />
+          </div>
+        )}
       </div>
     );
   }
