@@ -484,13 +484,11 @@ public class BookingRuangController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        // Tanggal and the on-behalf Divisi/Departemen (see EffectiveOwner) are both locked once
-        // the draft is created, same as Ekspedisi - overwrite whatever the payload sent with the
-        // original value up front so validation, conflict-checking, and the eventual save are
-        // all consistently against what will actually apply. NomorPemesanan's MM.YYYY/kode (and
-        // the room+date slot this booking occupies) never goes stale as a result, so no
-        // regeneration is needed here anymore.
-        payload.Tanggal = item.Tanggal;
+        // The on-behalf Divisi/Departemen (see EffectiveOwner) stay locked once the draft is
+        // created, same as Ekspedisi - the owning unit never changes after creation. Tanggal is
+        // editable here too now, using the same conflict-check + Nomor Pemesanan reissue pattern
+        // as Reschedule below, so the origin creator can move their own still-DRAFT booking
+        // without needing Admin/Approval GA's tool.
         payload.Divisi = item.Divisi;
         payload.Departemen = item.Departemen;
         payload.IsRecurring = false;
@@ -502,10 +500,23 @@ public class BookingRuangController : ApiControllerBase
         var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
+        // NomorPemesanan embeds the MM.YYYY it was issued for - if the edit moves the booking
+        // into a different month/year, reissue it (new sequence, same divisi) so it doesn't go
+        // stale and never collides with a number already issued for that month - same reasoning
+        // as Reschedule's handling further down.
+        if (item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month)
+        {
+            var seq = await IncrementNomorSequenceAsync(item.Divisi, payload.Tanggal.Year, payload.Tanggal.Month);
+            item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, payload.Tanggal);
+        }
+
         // IsEditableByOrigin above only ever allows this for a still-DRAFT item, so there is no
         // rejected-status-to-revive branch here (unlike Pengiriman) - a rejected booking is a
         // dead end for everyone, see IsEditableByOrigin's comment.
         ApplyCreatePayload(item, payload);
+        // Reaching here means the conflict check above just passed for the (possibly new) date -
+        // clear any stale HasConflict left over from series creation, same as Reschedule does.
+        item.HasConflict = false;
 
         // A DRAFT series member shares its room/kegiatan/jam definition with every sibling
         // occurrence (only Tanggal differs between them) - propagate the same edit to keep them
