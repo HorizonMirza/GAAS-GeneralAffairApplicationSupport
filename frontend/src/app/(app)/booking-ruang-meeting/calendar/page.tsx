@@ -254,8 +254,6 @@ function BookingCalendarPageInner() {
                 });
                 setFormOpen(true);
               }}
-              onEntryClick={(entry) => setDetail({ item: entry, mode: "view" })}
-              onEntryChatClick={(entry) => setChatItem(entry)}
               onEntryMenuClick={(event, entry) => rowMenu.toggle(event, entry.id, 220)}
               onJumpToDay={(date) => {
                 setRefDate(date);
