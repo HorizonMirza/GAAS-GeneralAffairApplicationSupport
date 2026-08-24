@@ -197,6 +197,8 @@ export default function BookingOverviewPage() {
           rowMenu.close();
           if (item) handleDuplicate(bookingDuplicatePayload(item, todayLocalDate()));
         } : undefined}
+        icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
+        onIcsClick={() => rowMenu.close()}
       />
 
       {me && (

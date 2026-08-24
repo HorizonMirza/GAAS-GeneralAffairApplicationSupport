@@ -325,11 +325,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 Download Bukti PDF
               </a>
             )}
-            {!isEdit && (
-              <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingIcsUrl(item.id)}>
-                Export Kalender (.ics)
-              </a>
-            )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
