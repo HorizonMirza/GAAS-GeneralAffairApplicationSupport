@@ -1015,7 +1015,7 @@ public class BookingRuangController : ApiControllerBase
         var losers = candidates.Where(b =>
             winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
 
-        const string reason = "Ruang sudah dipesan oleh pengajuan lain yang lebih dulu disetujui & dikonfirmasi untuk jam yang sama.";
+        const string reason = "Ruang sudah dipesan oleh orang yang lebih dulu dikonfirmasi untuk jam yang sama";
         foreach (var loser in losers)
         {
             var affected = await _db.Database.ExecuteSqlInterpolatedAsync($@"
