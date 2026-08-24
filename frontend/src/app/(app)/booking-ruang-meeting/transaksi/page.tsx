@@ -297,7 +297,7 @@ export default function BookingTransaksiPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemesanan</th><th>Diajukan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Tipe</th><th>Peserta</th>
+                <th>No</th><th>No Pemesanan</th><th>Diajukan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruangan</th><th>Tipe</th><th>Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
