@@ -1454,6 +1454,11 @@ table.data-table {
 
 .schedule-table { min-width: 760px; table-layout: fixed; }
 .schedule-table th, .schedule-table td { vertical-align: top; white-space: normal; border: 1px solid var(--border-subtle); }
+/* .data-table tbody tr:last-child td strips the bottom border for plain list tables (the card
+   around them already closes the box) - the schedule grid needs its own closed border on every
+   side instead, so restore it here with a more specific selector rather than relying on source
+   order to win the cascade. */
+.schedule-table.data-table tbody tr:last-child td { border-bottom: 1px solid var(--border-subtle); }
 .data-table th.schedule-th-center { text-align: center; }
 
 .schedule-time-col {
