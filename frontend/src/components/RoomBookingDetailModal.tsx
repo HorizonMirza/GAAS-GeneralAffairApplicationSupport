@@ -238,9 +238,11 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 disabled={!isEdit}
                 onClick={toggleWholeDay}
               >
-                {form.isWholeDay && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><polyline points="20 6 9 17 4 12"></polyline></svg>
-                )}
+                <span className="field-toggle-box">
+                  {form.isWholeDay && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  )}
+                </span>
                 Sepanjang Hari
               </button>
             </div>
