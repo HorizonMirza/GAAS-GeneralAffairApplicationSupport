@@ -671,11 +671,17 @@ public class BookingRuangController : ApiControllerBase
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
         // A partial series (some occurrences deleted, others not) doesn't make sense - deleting
-        // one still-DRAFT occurrence removes the whole series with it.
+        // one occurrence removes the whole series with it, same "1 paket" convention as
+        // Submit/Approve/Reject (see ApplyToSeriesAsync). Scoped to DRAFT/Rejected siblings only
+        // (never SUBMITTED/APPROVED_*) so this can't reach into an unrelated sibling that's still
+        // live or already confirmed - the only way a series ends up with mixed statuses at all is
+        // one occurrence individually losing a room conflict at the final stage (see
+        // AutoRejectLosingCompetitorsAsync), and that confirmed/pending sibling must survive.
         if (item.SeriesId != null)
         {
             var siblings = await _db.BookingRuangs
-                .Where(b => b.SeriesId == item.SeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
+                .Where(b => b.SeriesId == item.SeriesId && b.Id != item.Id
+                    && (b.Status == BookingStatusEnum.DRAFT || RejectedStatuses.Contains(b.Status)))
                 .ToListAsync();
             _db.BookingRuangs.RemoveRange(siblings);
         }
