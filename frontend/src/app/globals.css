@@ -2153,8 +2153,11 @@ table.data-table {
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  border: 1.5px solid var(--border-subtle);
-  background: var(--bg-surface);
+  /* Deliberately not --border-subtle/--bg-surface here - both sit too close in luminance to
+     .field-toggle's own background (--bg-surface-alt) in dark theme, making the box nearly
+     invisible when inactive. --text-secondary keeps real contrast in both themes. */
+  border: 1.5px solid var(--text-secondary);
+  background: transparent;
   margin-right: 10px;
   flex-shrink: 0;
   transition: border-color 0.15s ease, background 0.15s ease;
