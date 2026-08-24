@@ -120,11 +120,6 @@ function BookingCalendarPageInner() {
     setFormOpen(true);
   }
 
-  function handleDuplicate(initial: Partial<BookingRuangCreatePayload>) {
-    setFormInitial(initial);
-    setFormOpen(true);
-  }
-
   if (!me || me.role === "SUPER_ADMIN") return null;
 
   return (
@@ -254,7 +249,6 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={loadSchedule}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onDuplicate={handleDuplicate}
         />
       )}
 

@@ -212,7 +212,6 @@ export default function BookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onDuplicate={handleDuplicate}
         />
       )}
 

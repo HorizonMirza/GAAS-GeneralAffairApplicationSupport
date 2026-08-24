@@ -423,7 +423,6 @@ export default function BookingTransaksiPage() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-        onDuplicate={handleDuplicate}
       />
 
       <RejectModal

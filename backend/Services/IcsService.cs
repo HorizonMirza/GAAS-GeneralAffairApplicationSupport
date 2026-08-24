@@ -15,6 +15,11 @@ public static class IcsService
 
     private static string FormatDateTime(DateTime value) => value.ToString("yyyyMMddTHHmmss");
 
+    // Jakarta (WIB) is a fixed UTC+7 offset year-round - no DST to account for - so converting to
+    // UTC here is exact and lets every event be emitted as a plain "...Z" UTC timestamp instead of
+    // a named TZID.
+    private static readonly TimeSpan JakartaOffset = TimeSpan.FromHours(7);
+
     private static string FormatDateOnly(DateOnly value) => value.ToString("yyyyMMdd");
 
     private static string StatusLabel(BookingStatusEnum status) => status switch
@@ -62,13 +67,15 @@ public static class IcsService
         }
         else
         {
-            // Emitted as local Asia/Jakarta wall-clock time via TZID without an embedded
-            // VTIMEZONE block - accepted as-is by Google Calendar and most modern clients for a
-            // well-known IANA zone name; acceptable simplification for a generated-on-demand file.
-            var start = item.Tanggal.ToDateTime(item.JamMulai ?? TimeOnly.MinValue);
-            var end = item.Tanggal.ToDateTime(item.JamSelesai ?? TimeOnly.MinValue);
-            lines.Add($"DTSTART;TZID=Asia/Jakarta:{FormatDateTime(start)}");
-            lines.Add($"DTEND;TZID=Asia/Jakarta:{FormatDateTime(end)}");
+            // Emitted in UTC (real "Z" timestamps) rather than TZID=Asia/Jakarta - a bare TZID
+            // with no matching VTIMEZONE block in the calendar is silently rejected by Google
+            // Calendar's Import flow and Outlook (both expect either a VTIMEZONE definition or a
+            // UTC time), so the event never showed up after import. Converting to UTC upfront
+            // avoids needing a VTIMEZONE block at all and works everywhere.
+            var start = item.Tanggal.ToDateTime(item.JamMulai ?? TimeOnly.MinValue) - JakartaOffset;
+            var end = item.Tanggal.ToDateTime(item.JamSelesai ?? TimeOnly.MinValue) - JakartaOffset;
+            lines.Add($"DTSTART:{FormatDateTime(start)}Z");
+            lines.Add($"DTEND:{FormatDateTime(end)}Z");
         }
 
         lines.Add($"SUMMARY:{Escape(item.NamaKegiatan)}");
