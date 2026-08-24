@@ -323,7 +323,6 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={loadSchedule}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onReschedule={(item) => { setDetail(null); setRescheduleTarget(item); }}
         />
       )}
 

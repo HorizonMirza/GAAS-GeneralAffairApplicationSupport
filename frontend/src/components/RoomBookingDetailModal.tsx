@@ -7,7 +7,6 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   bookingOriginActorLabel,
   bookingRecurrenceLabel,
-  canGaRescheduleBooking,
   isBookingEditableByOrigin,
   isBookingGaActionable,
   MAX_JUMLAH_PESERTA,
@@ -29,11 +28,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
-  // Pages with their own row-menu "Updates" entry (Overview, Booking) drive Admin/Approval GA's
-  // reschedule flow from there instead - see canGaRescheduleBooking - and leave this unset so no
-  // button shows here. Calendar has no row-menu equivalent, so it passes this to keep offering
-  // the same reschedule access it always has, just still triggered from within this modal.
-  onReschedule?: (item: BookingRuang) => void;
 }
 
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
@@ -52,7 +46,7 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   };
 }
 
-export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onReschedule }: Props) {
+export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -72,7 +66,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canReschedule = !isEdit && !!onReschedule && canGaRescheduleBooking(item, me);
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -318,9 +311,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga-approval", bookingOriginActorLabel(item)); }}>Reject</button>
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
-            )}
-            {canReschedule && (
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => onReschedule!(item)}>Ubah Ruang/Jadwal</button>
             )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
