@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
 import { formatTime } from "@/lib/format";
-import type { ChatMessage, Me } from "@/lib/types";
+import type { ChatMessage, Me, Role } from "@/lib/types";
 
 interface Props {
   open: boolean;
   itemId: number | null;
   itemLabel: string;
+  roomLabel?: string;
+  nomorPemesanan?: string | null;
   departemen: string | null;
+  createdByRole?: Role | null;
   me: Me;
   onClose: () => void;
   onRead: () => void;
@@ -58,7 +61,7 @@ function SendIcon() {
   );
 }
 
-export default function RoomBookingChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
+export default function RoomBookingChatModal({ open, itemId, itemLabel, roomLabel, nomorPemesanan, departemen, createdByRole, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");
@@ -69,7 +72,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   const inputRef = useRef<HTMLInputElement>(null);
   const readNotified = useRef(false);
 
-  const participantLabels = bookingChatParticipantLabels(departemen);
+  const participantLabels = bookingChatParticipantLabels(departemen, createdByRole);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l.toLowerCase().includes(mentionQuery.toLowerCase()))
@@ -171,7 +174,10 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
         <div className="chat-modal-header-bar">
           <div className="modal-header">
             <h3>{itemLabel}</h3>
-            <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+            <div className="chat-header-meta">
+              {roomLabel && <span className="chat-header-room-code">{roomLabel} - {nomorPemesanan || "-"}</span>}
+              <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+            </div>
           </div>
           <p className="chat-participant-line">{participantLabels.join(", ")}</p>
         </div>

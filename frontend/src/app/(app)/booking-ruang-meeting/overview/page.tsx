@@ -130,9 +130,9 @@ export default function BookingOverviewPage() {
             >
               <div className="card-header">
                 <div>
-                  <strong>{item.namaKegiatan} - {bookingRoomsLabel(item)}</strong>
+                  <strong>{item.namaKegiatan} - {item.nomorPemesanan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {item.departemen || item.divisi} · {item.jumlahPeserta} peserta
+                    {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {bookingRoomsLabel(item)}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -233,6 +233,8 @@ export default function BookingOverviewPage() {
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${chatItem.namaRuang}` : ""}
+          roomLabel={chatItem ? bookingRoomsLabel(chatItem) : undefined}
+          nomorPemesanan={chatItem?.nomorPemesanan ?? null}
           departemen={chatItem?.departemen ?? null}
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}

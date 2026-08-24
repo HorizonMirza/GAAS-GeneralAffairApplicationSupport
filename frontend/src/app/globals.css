@@ -2143,6 +2143,29 @@ table.data-table {
   cursor: not-allowed;
 }
 
+/* Persistent checkbox glyph inside a .field-toggle button - unlike the checkmark that only
+   rendered when active, this stays visible (as an empty box) when inactive too, so the button
+   reads as a checkbox-style toggle at a glance instead of looking like a static label. */
+.field-toggle-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-surface);
+  margin-right: 10px;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.field-toggle-active .field-toggle-box {
+  border-color: var(--blue-400);
+  background: var(--blue-400);
+  color: #fff;
+}
+
 .room-multiselect {
   position: relative;
 }
@@ -2721,6 +2744,19 @@ table.data-table {
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.85rem;
   margin: 0;
+}
+
+.chat-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.chat-header-room-code {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .chat-message-list {

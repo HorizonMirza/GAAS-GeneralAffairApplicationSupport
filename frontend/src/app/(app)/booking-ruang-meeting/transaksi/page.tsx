@@ -412,6 +412,8 @@ export default function BookingTransaksiPage() {
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${chatItem.namaRuang}` : ""}
+          roomLabel={chatItem ? bookingRoomsLabel(chatItem) : undefined}
+          nomorPemesanan={chatItem?.nomorPemesanan ?? null}
           departemen={chatItem?.departemen ?? null}
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
