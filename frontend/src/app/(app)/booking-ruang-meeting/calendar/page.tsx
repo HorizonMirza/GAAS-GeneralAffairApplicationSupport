@@ -40,7 +40,7 @@ function BookingCalendarPageInner() {
   const roomFromQuery = searchParams.get("ruang") || "";
   const { showToast } = useToast();
 
-  const [view, setView] = useState<CalendarViewMode>("day");
+  const [view, setView] = useState<CalendarViewMode>("week");
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("");
