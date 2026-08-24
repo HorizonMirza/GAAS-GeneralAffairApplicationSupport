@@ -4,6 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Skips generating the native PengirimanApi.exe launcher - "dotnet run"/"dotnet watch" then
+         start the app by running the .dll directly through dotnet.exe itself instead of spawning
+         that unsigned .exe, which is what some Windows Application Control / Smart App Control
+         policies block on a freshly-built binary. -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

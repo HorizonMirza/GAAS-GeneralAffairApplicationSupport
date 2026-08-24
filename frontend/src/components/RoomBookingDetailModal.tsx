@@ -73,7 +73,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canReschedule = !isEdit && !!onReschedule && canGaRescheduleBooking(item, me);
-  const canDownloadBukti = !isEdit && item.status === "APPROVED_GA_APPROVAL";
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -322,11 +321,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             )}
             {canReschedule && (
               <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => onReschedule!(item)}>Ubah Ruang/Jadwal</button>
-            )}
-            {canDownloadBukti && (
-              <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingPdfUrl(item.id)} target="_blank" rel="noopener noreferrer">
-                Download Bukti PDF
-              </a>
             )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>

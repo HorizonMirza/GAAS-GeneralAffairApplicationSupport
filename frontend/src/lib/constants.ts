@@ -250,6 +250,11 @@ export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
 }
 
+// A confirmation PDF only exists once a booking reached the final Approved state.
+export function isBookingPdfAvailable(item: BookingRuang): boolean {
+  return item.status === "APPROVED_GA_APPROVAL";
+}
+
 export function isBookingGaActionable(item: BookingRuang): boolean {
   return item.status === "APPROVED_L1";
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { formatDateTime } from "@/lib/format";
 import type { BookingRuang } from "@/lib/types";
 
@@ -180,10 +180,12 @@ interface Props {
   canCreate: boolean;
   onSlotSelect: (date: string, startHour: number, endHour: number) => void;
   onEntryClick: (entry: BookingRuang) => void;
+  onEntryChatClick: (entry: BookingRuang) => void;
+  onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
   onJumpToDay: (date: string) => void;
 }
 
-export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryClick, onJumpToDay }: Props) {
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryClick, onEntryChatClick, onEntryMenuClick, onJumpToDay }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{ date: string; start: number; end: number } | null>(null);
   const isDragging = drag !== null;
@@ -299,12 +301,15 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                 <tr key={hour}>
                   <td className="schedule-time-col" ref={hour === HOURS[0] ? nowLineRowRef : undefined}>{String(hour).padStart(2, "0")}:00</td>
                   <DayCell
+                    variant="day"
                     cell={cell}
                     canCreate={canCreate}
                     isDragPreview={isInDragRange(refDate, hour)}
                     onMouseDown={() => startDrag(refDate, hour, cell)}
                     onMouseEnter={() => continueDrag(refDate, hour)}
                     onEntryClick={onEntryClick}
+                    onEntryChatClick={onEntryChatClick}
+                    onEntryMenuClick={onEntryMenuClick}
                   />
                 </tr>
               );
@@ -358,12 +363,15 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                   return (
                     <DayCell
                       key={date}
+                      variant="week"
                       cell={cell}
                       canCreate={canCreate}
                       isDragPreview={isInDragRange(date, hour)}
                       onMouseDown={() => startDrag(date, hour, cell)}
                       onMouseEnter={() => continueDrag(date, hour)}
                       onEntryClick={onEntryClick}
+                      onEntryChatClick={onEntryChatClick}
+                      onEntryMenuClick={onEntryMenuClick}
                     />
                   );
                 })}
@@ -444,7 +452,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     key={entry.id}
                     type="button"
                     className={`month-event-chip ${scheduleCellStatusClass(entry.status)}`}
-                    onClick={() => onEntryClick(entry)}
+                    onClick={(e) => onEntryMenuClick(e, entry)}
                   >
                     {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}
                   </button>
@@ -472,19 +480,25 @@ function ClosedNotice() {
 }
 
 function DayCell({
+  variant,
   cell,
   canCreate,
   isDragPreview,
   onMouseDown,
   onMouseEnter,
   onEntryClick,
+  onEntryChatClick,
+  onEntryMenuClick,
 }: {
+  variant: "day" | "week";
   cell: CellPlan | undefined;
   canCreate: boolean;
   isDragPreview: boolean;
   onMouseDown: () => void;
   onMouseEnter: () => void;
   onEntryClick: (entry: BookingRuang) => void;
+  onEntryChatClick: (entry: BookingRuang) => void;
+  onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
 }) {
   if (!cell || cell.type === "skip") return null;
 
@@ -509,15 +523,35 @@ function DayCell({
         return (
           <div
             key={entry.id}
-            className={`schedule-cell-booked ${statusClass}`}
+            className={`schedule-cell-booked ${statusClass}${variant === "day" ? " schedule-cell-booked-actionable" : ""}`}
             style={{
               top: `calc(${topPct}% + 2px)`,
               height: `calc(${heightPct}% - 4px)`,
               left: `calc(${leftPct}% + ${gapPx}px)`,
               width: `calc(${widthPct}% - ${gapPx * 2}px)`,
             }}
-            onClick={() => onEntryClick(entry)}
+            onClick={variant === "day" ? () => onEntryClick(entry) : (e) => onEntryMenuClick(e, entry)}
           >
+            {variant === "day" && (
+              <div className="schedule-cell-actions">
+                <button
+                  type="button"
+                  className="schedule-cell-icon-btn"
+                  aria-label="Chat"
+                  onClick={(e) => { e.stopPropagation(); onEntryChatClick(entry); }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                </button>
+                <button
+                  type="button"
+                  className="schedule-cell-icon-btn"
+                  aria-label="Aksi"
+                  onClick={(e) => onEntryMenuClick(e, entry)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                </button>
+              </div>
+            )}
             <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
             <div className="schedule-cell-time">
               {entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)} - ${entry.jamSelesai?.slice(0, 5)}`}

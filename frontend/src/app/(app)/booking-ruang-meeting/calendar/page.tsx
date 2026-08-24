@@ -5,12 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
+import {
+  bookingRoomsLabel,
+  canGaRescheduleBooking,
+  isBookingDeletableByOrigin,
+  isBookingEditableByOrigin,
+  isBookingPdfAvailable,
+} from "@/lib/constants";
+import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
+import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
+import RoomBookingChatModal from "@/components/RoomBookingChatModal";
+import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 
 function pad(n: number): string {
@@ -40,6 +52,7 @@ function BookingCalendarPageInner() {
   const searchParams = useSearchParams();
   const roomFromQuery = searchParams.get("ruang") || "";
   const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const [view, setView] = useState<CalendarViewMode>("week");
   const [refDate, setRefDate] = useState<string>(todayIso());
@@ -53,7 +66,11 @@ function BookingCalendarPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [statusItemId, setStatusItemId] = useState<number | null>(null);
+  const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+
+  const rowMenu = useRowMenu(entries);
 
   const isOrigin = me
     ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
@@ -120,6 +137,21 @@ function BookingCalendarPageInner() {
   function openCreateForm() {
     setFormInitial({ namaRuang: selectedRoom, tanggal: refDate });
     setFormOpen(true);
+  }
+
+  function handleDelete(item: BookingRuang) {
+    const message = item.seriesId
+      ? "Booking ini bagian dari jadwal berulang - menghapusnya akan menghapus seluruh jadwal seri ini. Lanjutkan?"
+      : "Hapus booking ruangan ini secara permanen?";
+    confirm(message, async () => {
+      try {
+        await api.deleteBooking(item.id);
+        showToast("Booking berhasil dihapus");
+        loadSchedule();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
   }
 
   if (!me || me.role === "SUPER_ADMIN") return null;
@@ -223,6 +255,8 @@ function BookingCalendarPageInner() {
                 setFormOpen(true);
               }}
               onEntryClick={(entry) => setDetail({ item: entry, mode: "view" })}
+              onEntryChatClick={(entry) => setChatItem(entry)}
+              onEntryMenuClick={(event, entry) => rowMenu.toggle(event, entry.id, 220)}
               onJumpToDay={(date) => {
                 setRefDate(date);
                 setView("day");
@@ -231,6 +265,46 @@ function BookingCalendarPageInner() {
           )}
         </div>
       </div>
+
+      <RowMenuDropdown
+        position={rowMenu.position}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
+        }
+        canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
+        onDetail={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setDetail({ item, mode: "view" });
+        }}
+        onChat={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setChatItem(item);
+        }}
+        onUpdates={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
+        }}
+        onStatus={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setStatusItemId(item.id);
+        }}
+        onDelete={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isBookingPdfAvailable(rowMenu.menuItem) ? api.bookingPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={() => rowMenu.close()}
+        icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
+        onIcsClick={() => rowMenu.close()}
+      />
 
       {me && (
         <RoomBookingFormModal
@@ -273,6 +347,21 @@ function BookingCalendarPageInner() {
           loadSchedule();
         }}
       />
+
+      <BookingStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
+
+      {me && (
+        <RoomBookingChatModal
+          open={!!chatItem}
+          itemId={chatItem?.id ?? null}
+          itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${bookingRoomsLabel(chatItem)} - ${chatItem.nomorPemesanan || "-"}` : ""}
+          departemen={chatItem?.departemen ?? null}
+          createdByRole={chatItem?.createdByRole ?? null}
+          me={me}
+          onClose={() => setChatItem(null)}
+          onRead={loadSchedule}
+        />
+      )}
     </>
   );
 }

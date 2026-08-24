@@ -12,6 +12,7 @@ import {
   greetingName,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
+  isBookingPdfAvailable,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -204,6 +205,8 @@ export default function BookingOverviewPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        pdfUrl={rowMenu.menuItem && isBookingPdfAvailable(rowMenu.menuItem) ? api.bookingPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={() => rowMenu.close()}
         icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
         onIcsClick={() => rowMenu.close()}
       />

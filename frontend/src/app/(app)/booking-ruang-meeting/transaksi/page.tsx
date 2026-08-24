@@ -9,6 +9,7 @@ import {
   canGaRescheduleBooking,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
+  isBookingPdfAvailable,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
@@ -415,6 +416,8 @@ export default function BookingTransaksiPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        pdfUrl={rowMenu.menuItem && isBookingPdfAvailable(rowMenu.menuItem) ? api.bookingPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={() => rowMenu.close()}
         icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
         onIcsClick={() => rowMenu.close()}
       />
