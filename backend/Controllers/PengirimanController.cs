@@ -110,6 +110,21 @@ public class PengirimanController : ApiControllerBase
         return query.Where(p => p.Tanggal.Year == year && p.Tanggal.Month == month);
     }
 
+    // Format "YYYY-MM" - unlike ApplyBulanFilter (exact month match, used by the explicit "Filter
+    // Bulan" dropdown on the Transaksi page), this is an open-ended lower bound: everything from
+    // the 1st of that month onward, including future months. Used by the Overview page's
+    // "Transaksi Terbaru Saya" query so upcoming items stay visible instead of disappearing once
+    // the calendar rolls into next month.
+    private static IQueryable<Pengiriman> ApplySejakBulanFilter(IQueryable<Pengiriman> query, string? sejakBulan)
+    {
+        if (string.IsNullOrEmpty(sejakBulan)) return query;
+        var parts = sejakBulan.Split('-');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var year) || !int.TryParse(parts[1], out var month))
+            throw new ArgumentException("Format sejakBulan harus YYYY-MM");
+        var from = new DateOnly(year, month, 1);
+        return query.Where(p => p.Tanggal >= from);
+    }
+
     public static IQueryable<Pengiriman> ApplyListFilters(
         AppDbContext db,
         IQueryable<Pengiriman> query,
@@ -119,7 +134,8 @@ public class PengirimanController : ApiControllerBase
         string? departemen,
         string? direktorat,
         string? nomorTransmittal,
-        string? bulan)
+        string? bulan,
+        string? sejakBulan = null)
     {
         // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
         // barang unit mereka (siapapun yang membuatnya), kecuali draft orang lain yang belum
@@ -154,7 +170,7 @@ public class PengirimanController : ApiControllerBase
         }
         if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => p.NomorTransmittal.Contains(nomorTransmittal));
 
-        return ApplyBulanFilter(query, bulan);
+        return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
 
     // Digit count only (formatting like spaces/dashes/+ is stripped first) - permissive enough
@@ -395,7 +411,8 @@ public class PengirimanController : ApiControllerBase
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
-        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal = null)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal = null,
+        [FromQuery] string? sejakBulan = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -406,7 +423,7 @@ public class PengirimanController : ApiControllerBase
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan);
         }
         catch (ArgumentException ex)
         {

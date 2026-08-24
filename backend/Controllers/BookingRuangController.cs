@@ -125,6 +125,21 @@ public class BookingRuangController : ApiControllerBase
         return query.Where(b => b.Tanggal.Year == year && b.Tanggal.Month == month);
     }
 
+    // Format "YYYY-MM" - unlike ApplyBulanFilter (exact month match, used by the explicit "Filter
+    // Bulan" dropdown on the list pages), this is an open-ended lower bound: everything from the
+    // 1st of that month onward, including future months. Used by the Overview pages' "Terbaru
+    // Saya" queries so upcoming bookings stay visible instead of disappearing once the calendar
+    // rolls into next month.
+    private static IQueryable<BookingRuang> ApplySejakBulanFilter(IQueryable<BookingRuang> query, string? sejakBulan)
+    {
+        if (string.IsNullOrEmpty(sejakBulan)) return query;
+        var parts = sejakBulan.Split('-');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var year) || !int.TryParse(parts[1], out var month))
+            throw new ArgumentException("Format sejakBulan harus YYYY-MM");
+        var from = new DateOnly(year, month, 1);
+        return query.Where(b => b.Tanggal >= from);
+    }
+
     public static IQueryable<BookingRuang> ApplyListFilters(
         IQueryable<BookingRuang> query,
         User currentUser,
@@ -134,7 +149,8 @@ public class BookingRuangController : ApiControllerBase
         string? namaRuang,
         DateOnly? tanggal,
         string? bulan = null,
-        string? search = null)
+        string? search = null,
+        string? sejakBulan = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -166,7 +182,7 @@ public class BookingRuangController : ApiControllerBase
         if (!string.IsNullOrEmpty(search))
             query = query.Where(b => b.NomorPemesanan != null && b.NomorPemesanan.Contains(search));
 
-        return ApplyBulanFilter(query, bulan);
+        return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
 
     private static readonly TimeOnly OperatingStart = new(7, 0);
@@ -741,7 +757,8 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
         [FromQuery] DateOnly? tanggal = null,
         [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] string? sejakBulan = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -752,7 +769,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan, search);
+            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan, search, sejakBulan);
         }
         catch (ArgumentException ex)
         {

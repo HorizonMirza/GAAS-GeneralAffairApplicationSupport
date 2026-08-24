@@ -51,7 +51,9 @@ export default function BookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      const queue = await api.listBooking({ limit: 10, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
+      // Latest-and-upcoming data, not just this month - sejakBulan is an open lower bound (from
+      // the 1st of this month onward) so next month's bookings stay visible while past months drop off.
+      const queue = await api.listBooking({ limit: 10, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
     } finally {
       setBusy(false);

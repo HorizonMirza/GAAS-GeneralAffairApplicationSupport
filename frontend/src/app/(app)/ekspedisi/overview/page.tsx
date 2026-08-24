@@ -58,10 +58,12 @@ export default function OverviewPage() {
     setBusy(true);
     try {
       const bulan = currentYearMonth();
-      // One list call for the actual queue rows, one stats call for every status count in a
-      // single grouped query - replaces what used to be 9 separate list requests per load.
+      // The queue shows latest-and-upcoming data, not just this month - so it uses sejakBulan
+      // (from the 1st of this month onward, no upper bound) instead of the exact-match bulan
+      // filter, keeping next month's items visible while still hiding past months. Stats stay
+      // scoped to bulan (this month only) since those tiles report the current month's workload.
       const [queue, statsResp] = await Promise.all([
-        api.listPengiriman({ limit: 10, page: 1, bulan }).then((r) => r.items),
+        api.listPengiriman({ limit: 10, page: 1, sejakBulan: bulan }).then((r) => r.items),
         api.getPengirimanStats(bulan),
       ]);
       const counts = statsResp.countsByStatus;

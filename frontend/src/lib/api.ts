@@ -94,6 +94,7 @@ export interface ListPengirimanParams {
   page?: number;
   limit?: number;
   bulan?: string;
+  sejakBulan?: string;
   nomorTransmittal?: string;
   status?: Status | "";
   divisi?: string;
@@ -106,6 +107,7 @@ function listParams(p: ListPengirimanParams) {
     page: p.page,
     limit: p.limit,
     bulan: p.bulan,
+    sejakBulan: p.sejakBulan,
     nomor_transmittal: p.nomorTransmittal,
     status: p.status,
     divisi: p.divisi,
@@ -295,6 +297,7 @@ export interface ListBookingParams {
   tanggal?: string;
   bulan?: string;
   search?: string;
+  sejakBulan?: string;
 }
 
 // <input type="time"> gives "HH:mm" with no seconds, but .NET's TimeOnly JSON converter only
@@ -323,5 +326,6 @@ function bookingListParams(p: ListBookingParams) {
     tanggal: p.tanggal,
     bulan: p.bulan,
     search: p.search,
+    sejakBulan: p.sejakBulan,
   };
 }
