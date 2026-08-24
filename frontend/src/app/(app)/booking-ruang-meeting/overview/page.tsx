@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingDeletableByOrigin, isBookingEditableByOrigin } from "@/lib/constants";
+import {
+  bookingRoomsLabel,
+  bookingStatusBorderClass,
+  canGaRescheduleBooking,
+  greetingName,
+  isBookingDeletableByOrigin,
+  isBookingEditableByOrigin,
+} from "@/lib/constants";
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
@@ -14,6 +21,7 @@ import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
+import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
@@ -32,6 +40,7 @@ export default function BookingOverviewPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -110,7 +119,7 @@ export default function BookingOverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Pesanan Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 12px" }}>Pemesanan Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
@@ -168,7 +177,10 @@ export default function BookingOverviewPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -178,7 +190,9 @@ export default function BookingOverviewPage() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -209,6 +223,13 @@ export default function BookingOverviewPage() {
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
+
+      <RoomBookingRescheduleModal
+        open={!!rescheduleTarget}
+        item={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onSaved={load}
+      />
 
       <RejectModal
         open={!!rejectTarget}

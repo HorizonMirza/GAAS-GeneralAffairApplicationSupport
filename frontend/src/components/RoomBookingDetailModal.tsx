@@ -7,16 +7,15 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   bookingOriginActorLabel,
   bookingRecurrenceLabel,
+  canGaRescheduleBooking,
   isBookingEditableByOrigin,
   isBookingGaActionable,
-  isBookingGaReschedulable,
   MAX_JUMLAH_PESERTA,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
-import RoomBookingRescheduleModal from "./RoomBookingRescheduleModal";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
@@ -30,6 +29,11 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
+  // Pages with their own row-menu "Updates" entry (Overview, Booking) drive Admin/Approval GA's
+  // reschedule flow from there instead - see canGaRescheduleBooking - and leave this unset so no
+  // button shows here. Calendar has no row-menu equivalent, so it passes this to keep offering
+  // the same reschedule access it always has, just still triggered from within this modal.
+  onReschedule?: (item: BookingRuang) => void;
 }
 
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
@@ -48,11 +52,10 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   };
 }
 
-export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onReschedule }: Props) {
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canReschedule = !isEdit && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+  const canReschedule = !isEdit && !!onReschedule && canGaRescheduleBooking(item, me);
   const canDownloadBukti = !isEdit && item.status === "APPROVED_GA_APPROVAL";
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
@@ -277,7 +280,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
           {!isEdit && item.hasConflict && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12, color: "#d64545" }}>
-              <strong>Bentrok:</strong> Jadwal ini bentrok dengan booking lain yang sudah Approved. Gunakan &quot;Ubah Ruang/Jadwal&quot; untuk memindahkan.
+              <strong>Bentrok:</strong> Jadwal ini bentrok dengan booking lain yang sudah Approved. Gunakan &quot;Updates&quot; pada menu aksi untuk memindahkan.
             </div>
           )}
 
@@ -318,7 +321,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </>
             )}
             {canReschedule && (
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setRescheduleOpen(true)}>Ubah Ruang/Jadwal</button>
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => onReschedule!(item)}>Ubah Ruang/Jadwal</button>
             )}
             {canDownloadBukti && (
               <a className="btn btn-secondary" style={{ width: "auto" }} href={api.bookingPdfUrl(item.id)} target="_blank" rel="noopener noreferrer">
@@ -331,16 +334,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           </div>
         </form>
       </div>
-
-      <RoomBookingRescheduleModal
-        open={rescheduleOpen}
-        item={item}
-        onClose={() => setRescheduleOpen(false)}
-        onSaved={() => {
-          onClose();
-          onSaved();
-        }}
-      />
     </div>
   );
 }

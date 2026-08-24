@@ -10,6 +10,7 @@ import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode }
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
+import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 
 function pad(n: number): string {
@@ -51,6 +52,7 @@ function BookingCalendarPageInner() {
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const isOrigin = me
@@ -249,8 +251,16 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={loadSchedule}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onReschedule={(item) => { setDetail(null); setRescheduleTarget(item); }}
         />
       )}
+
+      <RoomBookingRescheduleModal
+        open={!!rescheduleTarget}
+        item={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onSaved={loadSchedule}
+      />
 
       <RejectModal
         open={!!rejectTarget}

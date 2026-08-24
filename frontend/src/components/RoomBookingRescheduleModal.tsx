@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -29,6 +30,8 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
 // Admin/Approval GA's conflict-resolution tool: move an in-flight booking's room/date/time
 // without touching the rest of it (nama kegiatan, PIC, peserta stay the origin creator's own) -
 // separate from RoomBookingDetailModal's own "edit" mode, which is creator-only and DRAFT-only.
+// Laid out identically to the full booking form so it reads as "the same form, most of it locked"
+// rather than a separate mini-form - only Tanggal/Jam/Durasi/Ruangan/Ruangan Tambahan are live.
 export default function RoomBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -81,40 +84,33 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <div className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Ubah Ruang/Jadwal</h3>
+          <h3>Ubah Ruang/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <p className="text-secondary" style={{ marginTop: -8 }}>
-          {item.nomorPemesanan} - {item.namaKegiatan}
-        </p>
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="rs-ruang">Ruangan</label>
-              <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
+              <label htmlFor="rs-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
-            {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
-              <div className="field full">
-                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
-                <RoomMultiSelect
-                  id="rs-ruang-tambahan"
-                  rooms={rooms}
-                  excludeRoom={form.namaRuang}
-                  selected={form.additionalRooms || []}
-                  onChange={(next) => set("additionalRooms", next)}
-                />
-              </div>
-            )}
             <div className="field full">
+              <label htmlFor="rs-nama-kegiatan">Nama Kegiatan</label>
+              <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
+            </div>
+            <div className="field full">
+              <label htmlFor="rs-pic">PIC</label>
+              <input type="text" id="rs-pic" disabled value={item.pic || ""} />
+            </div>
+            <div className="field">
               <label htmlFor="rs-tanggal">Tanggal</label>
               <input type="date" id="rs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="rs-peserta">Jumlah Peserta</label>
+              <input type="text" id="rs-peserta" disabled value={item.jumlahPeserta ? `${Math.min(item.jumlahPeserta, MAX_JUMLAH_PESERTA)}` : ""} />
             </div>
             <div className="field">
               <label htmlFor="rs-jam-mulai">Jam Mulai</label>
@@ -151,11 +147,43 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                 Sepanjang Hari
               </button>
             </div>
+            <div className="field full">
+              <label htmlFor="rs-ruang">Ruangan</label>
+              <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
+                {rooms.map((r) => (
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
+                ))}
+              </select>
+            </div>
+            {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
+              <div className="field full">
+                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan</label>
+                <RoomMultiSelect
+                  id="rs-ruang-tambahan"
+                  rooms={rooms}
+                  excludeRoom={form.namaRuang}
+                  selected={form.additionalRooms || []}
+                  onChange={(next) => set("additionalRooms", next)}
+                />
+              </div>
+            )}
+            <div className="field full">
+              <label htmlFor="rs-tipe">Tipe</label>
+              <select id="rs-tipe" disabled value={item.tipe}>
+                {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
+                  <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field full">
+              <label htmlFor="rs-catatan">Catatan</label>
+              <input type="text" id="rs-catatan" disabled value={item.catatan || ""} />
+            </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Pindahkan</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
           </div>
         </form>
       </div>

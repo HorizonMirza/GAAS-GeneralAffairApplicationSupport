@@ -244,6 +244,12 @@ export function isBookingGaReschedulable(item: BookingRuang): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
+// Role + status together: whether the "Updates" row-menu item should open the reschedule form for
+// this account on this item (Admin/Approval GA only, and only while the item is still reschedulable).
+export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+}
+
 export function isBookingGaActionable(item: BookingRuang): boolean {
   return item.status === "APPROVED_L1";
 }

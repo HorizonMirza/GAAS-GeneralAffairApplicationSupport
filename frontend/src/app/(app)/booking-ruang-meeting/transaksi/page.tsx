@@ -4,7 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, isBookingDeletableByOrigin, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import {
+  bookingRoomsLabel,
+  canGaRescheduleBooking,
+  isBookingDeletableByOrigin,
+  isBookingEditableByOrigin,
+  TIPE_BOOKING_LABELS,
+} from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -13,6 +19,7 @@ import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
+import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
@@ -57,6 +64,7 @@ export default function BookingTransaksiPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -380,7 +388,10 @@ export default function BookingTransaksiPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -390,7 +401,9 @@ export default function BookingTransaksiPage() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -418,6 +431,13 @@ export default function BookingTransaksiPage() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+      />
+
+      <RoomBookingRescheduleModal
+        open={!!rescheduleTarget}
+        item={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onSaved={loadTable}
       />
 
       <RejectModal

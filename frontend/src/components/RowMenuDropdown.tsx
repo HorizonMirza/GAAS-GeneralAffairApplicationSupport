@@ -2,10 +2,13 @@
 
 interface Props {
   position: { top: number; left: number } | null;
+  // Gates the Updates item. The name is a holdover from when one flag covered both Updates and
+  // Delete - Room Booking now computes it more broadly (origin's own DRAFT, OR Admin/Approval GA's
+  // separate reschedule right) and points onUpdates at whichever flow actually applies.
   canEditDelete: boolean;
   // Delete can have a wider allowance than Updates (e.g. Room Booking also lets Admin/Approval GA
-  // delete a rejected item they didn't create, which they still can't edit) - defaults to
-  // canEditDelete when omitted, so every other caller keeps its previous single-flag behavior.
+  // delete a rejected item they didn't create, which they still can't edit/reschedule) - defaults
+  // to canEditDelete when omitted, so every other caller keeps its previous single-flag behavior.
   canDelete?: boolean;
   onDetail: () => void;
   onChat?: () => void;
