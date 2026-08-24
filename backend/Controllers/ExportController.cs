@@ -99,7 +99,7 @@ public class ExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -108,6 +108,7 @@ public class ExportController : ApiControllerBase
             var key = statusFilter.Value.ToString();
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
+        else if (onlyRejected) parts.Add("rejected");
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -115,16 +116,26 @@ public class ExportController : ApiControllerBase
         return "mutasi-pengiriman-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
+    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
     {
-        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan);
+        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected);
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
+    }
+
+    // "REJECTED" is a synthetic value the Status filter dropdown sends for its single "Rejected"
+    // option - it isn't a real StatusEnum member, so it's parsed here instead of via [FromQuery]
+    // enum binding (which would 400 on it). Shared by both export endpoints below.
+    private static (StatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    {
+        if (string.IsNullOrEmpty(status)) return (null, false);
+        if (status == "REJECTED") return (null, true);
+        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false) : null;
     }
 
     [HttpGet("export")]
     public async Task<IActionResult> ExportExcel(
         [FromQuery] string? bulan,
-        [FromQuery] StatusEnum? status,
+        [FromQuery] string? status,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
@@ -133,7 +144,11 @@ public class ExportController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, nomorTransmittal);
+        var parsedStatus = ParseStatusFilter(status);
+        if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
+        var (statusFilter, onlyRejected) = parsedStatus.Value;
+
+        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
 
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Mutasi Pengiriman");
@@ -227,14 +242,14 @@ public class ExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, status, divisi, departemen, direktorat, nomorTransmittal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
     [HttpGet("export-pdf")]
     public async Task<IActionResult> ExportPdf(
         [FromQuery] string? bulan,
-        [FromQuery] StatusEnum? status,
+        [FromQuery] string? status,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
@@ -243,9 +258,13 @@ public class ExportController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        var rows = ExportRows(user!, bulan, status, divisi, departemen, direktorat, nomorTransmittal);
+        var parsedStatus = ParseStatusFilter(status);
+        if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
+        var (statusFilter, onlyRejected) = parsedStatus.Value;
+
+        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
         decimal grandTotal = rows.Where(r => r.Total.HasValue).Sum(r => r.Total!.Value);
-        var baseFilename = BuildFilename(bulan, status, divisi, departemen, direktorat, nomorTransmittal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

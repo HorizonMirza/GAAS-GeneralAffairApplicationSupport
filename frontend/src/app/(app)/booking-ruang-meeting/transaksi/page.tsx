@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { bookingRoomsLabel, isBookingDeletableByOrigin, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -378,6 +378,7 @@ export default function BookingTransaksiPage() {
       <RowMenuDropdown
         position={rowMenu.position}
         canEditDelete={!!rowMenu.menuItem && isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

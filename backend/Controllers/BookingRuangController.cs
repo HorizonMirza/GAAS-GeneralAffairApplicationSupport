@@ -82,6 +82,17 @@ public class BookingRuangController : ApiControllerBase
     private static bool IsEditableByOrigin(BookingRuang item, User currentUser) =>
         item.Status == BookingStatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
 
+    // Deleting is a step further than editing: a still-DRAFT item follows the same rule as
+    // IsEditableByOrigin (only its own creator), but once rejected - a dead end nobody can edit
+    // back to life, see IsEditableByOrigin's comment - it's still fair game to clear out, either
+    // by whoever created it or by Admin/Approval GA, who run the approval process it died in.
+    private static bool IsDeletableByOrigin(BookingRuang item, User currentUser)
+    {
+        if (IsEditableByOrigin(item, currentUser)) return true;
+        if (!RejectedStatuses.Contains(item.Status)) return false;
+        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+    }
+
     // Admin/Approval GA get a separate, narrower editing right instead: while a booking is still
     // live (not yet finally approved, not rejected), they can move its room/date/time to resolve
     // a scheduling conflict - see Reschedule() below. This is deliberately independent of
@@ -656,7 +667,7 @@ public class BookingRuangController : ApiControllerBase
 
         var item = await _db.BookingRuangs.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsEditableByOrigin(item, user!))
+        if (!IsDeletableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
         // A partial series (some occurrences deleted, others not) doesn't make sense - deleting

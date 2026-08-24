@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingEditableByOrigin } from "@/lib/constants";
+import { bookingRoomsLabel, bookingStatusBorderClass, greetingName, isBookingDeletableByOrigin, isBookingEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
@@ -166,6 +166,7 @@ export default function BookingOverviewPage() {
       <RowMenuDropdown
         position={rowMenu.position}
         canEditDelete={!!rowMenu.menuItem && isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

@@ -3,6 +3,10 @@
 interface Props {
   position: { top: number; left: number } | null;
   canEditDelete: boolean;
+  // Delete can have a wider allowance than Updates (e.g. Room Booking also lets Admin/Approval GA
+  // delete a rejected item they didn't create, which they still can't edit) - defaults to
+  // canEditDelete when omitted, so every other caller keeps its previous single-flag behavior.
+  canDelete?: boolean;
   onDetail: () => void;
   onChat?: () => void;
   onUpdates: () => void;
@@ -12,7 +16,7 @@ interface Props {
   onIcsClick?: () => void;
 }
 
-export default function RowMenuDropdown({ position, canEditDelete, onDetail, onChat, onUpdates, onStatus, onDelete, icsUrl, onIcsClick }: Props) {
+export default function RowMenuDropdown({ position, canEditDelete, canDelete, onDetail, onChat, onUpdates, onStatus, onDelete, icsUrl, onIcsClick }: Props) {
   if (!position) return null;
   return (
     <div
@@ -46,7 +50,7 @@ export default function RowMenuDropdown({ position, canEditDelete, onDetail, onC
           Export Calendar
         </a>
       )}
-      {canEditDelete && (
+      {(canDelete ?? canEditDelete) && (
         <button type="button" className="row-menu-item row-menu-item-danger" onClick={onDelete}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           Delete

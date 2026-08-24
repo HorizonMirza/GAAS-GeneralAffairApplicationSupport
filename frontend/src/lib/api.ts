@@ -96,7 +96,9 @@ export interface ListPengirimanParams {
   bulan?: string;
   sejakBulan?: string;
   nomorTransmittal?: string;
-  status?: Status | "";
+  // "REJECTED" is a synthetic value (not a real Status) meaning "any of the 4 reject-stage
+  // statuses" - collapsed into one Status filter dropdown option.
+  status?: Status | "REJECTED" | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;

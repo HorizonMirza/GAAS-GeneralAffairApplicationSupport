@@ -125,6 +125,14 @@ public class PengirimanController : ApiControllerBase
         return query.Where(p => p.Tanggal >= from);
     }
 
+    // The 4 distinct "rejected at some stage" statuses, collapsed into one "Rejected" option in
+    // the Status filter dropdown - the individual reject-stage breakdown wasn't useful there since
+    // rejectTarget/StatusBadge already show which stage rejected an item on each row.
+    private static readonly StatusEnum[] RejectedStatuses =
+    {
+        StatusEnum.REJECTED_L1, StatusEnum.REJECTED_GA, StatusEnum.REJECTED_GA_APPROVAL, StatusEnum.REJECTED_KPU,
+    };
+
     public static IQueryable<Pengiriman> ApplyListFilters(
         AppDbContext db,
         IQueryable<Pengiriman> query,
@@ -135,7 +143,8 @@ public class PengirimanController : ApiControllerBase
         string? direktorat,
         string? nomorTransmittal,
         string? bulan,
-        string? sejakBulan = null)
+        string? sejakBulan = null,
+        bool onlyRejected = false)
     {
         // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
         // barang unit mereka (siapapun yang membuatnya), kecuali draft orang lain yang belum
@@ -162,6 +171,7 @@ public class PengirimanController : ApiControllerBase
         }
 
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
+        else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -407,7 +417,7 @@ public class PengirimanController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
         [FromQuery] string? bulan = null,
-        [FromQuery(Name = "status")] StatusEnum? statusFilter = null,
+        [FromQuery(Name = "status")] string? status = null,
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
@@ -420,10 +430,22 @@ public class PengirimanController : ApiControllerBase
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
 
+        // "REJECTED" is a synthetic value the Status filter dropdown sends for its single
+        // "Rejected" option - it isn't a real StatusEnum member, so it's parsed here instead of
+        // via [FromQuery] enum binding (which would 400 on it).
+        StatusEnum? statusFilter = null;
+        var onlyRejected = false;
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "REJECTED") onlyRejected = true;
+            else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else return BadRequest(new { detail = "Status tidak valid" });
+        }
+
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected);
         }
         catch (ArgumentException ex)
         {

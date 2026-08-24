@@ -24,7 +24,9 @@ interface FilterState {
   limit: number;
   bulan: string;
   search: string;
-  status: Status | "";
+  // "REJECTED" is a synthetic value (not a real Status) meaning "any of the 4 reject-stage
+  // statuses" - collapsed into one Status filter dropdown option.
+  status: Status | "REJECTED" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -220,17 +222,14 @@ export default function TransaksiPage() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-status">Status</label>
-                  <select id="filter-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as Status | "" })}>
+                  <select id="filter-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as Status | "REJECTED" | "" })}>
                     <option value="">Semua Status</option>
                     <option value="DRAFT">Draft</option>
                     <option value="SUBMITTED">On-Approval: Approval Departemen/Divisi</option>
-                    <option value="REJECTED_L1">Rejected: Approval Departemen/Divisi</option>
                     <option value="APPROVED_L1">On-Approval: Admin GA</option>
-                    <option value="REJECTED_GA">Rejected: Admin GA</option>
                     <option value="APPROVED_GA">On-Approval: Approval GA</option>
-                    <option value="REJECTED_GA_APPROVAL">Rejected: Approval GA</option>
                     <option value="APPROVED_GA_APPROVAL">On-Approval: KPU</option>
-                    <option value="REJECTED_KPU">Rejected: KPU</option>
+                    <option value="REJECTED">Rejected</option>
                     <option value="COMPLETED">Approved</option>
                   </select>
                 </div>
