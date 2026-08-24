@@ -306,13 +306,16 @@ public class PengirimanController : ApiControllerBase
         var wasRejected = item.Status is StatusEnum.REJECTED_L1 or StatusEnum.REJECTED_GA
             or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
 
-        // Tanggal is locked once the draft is created, same as Divisi - NomorTransmittal embeds
-        // its MM.YYYY, so keeping it fixed means the number never goes stale on an edit and
-        // never needs to be reassigned. ApplyCreatePayload still sets it from the payload (Create
-        // relies on that); Update pins it back to the original value right after.
+        // Tanggal is editable here (Divisi stays locked, unlike Tanggal) - NomorTransmittal
+        // embeds its MM.YYYY, so reissue it (new sequence, same divisi) when the edit moves the
+        // item into a different month/year, same pattern as Room Booking's equivalent change.
         var originalTanggal = item.Tanggal;
+        if (originalTanggal.Year != payload.Tanggal.Year || originalTanggal.Month != payload.Tanggal.Month)
+        {
+            var seq = await IncrementTransmittalSequenceAsync(item.Divisi, payload.Tanggal.Year, payload.Tanggal.Month);
+            item.NomorTransmittal = BuildNomorTransmittal(item.Divisi, seq, payload.Tanggal);
+        }
         ApplyCreatePayload(item, payload);
-        item.Tanggal = originalTanggal;
         if (wasRejected)
         {
             item.Status = StatusEnum.DRAFT;

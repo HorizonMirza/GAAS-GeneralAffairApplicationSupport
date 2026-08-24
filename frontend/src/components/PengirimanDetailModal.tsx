@@ -201,7 +201,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-tanggal">Tanggal</label>
-              <input type="date" id="pv-tanggal" required disabled value={form.tanggal} />
+              <input type="date" id="pv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="pv-jumlah-item">Jumlah Barang</label>
