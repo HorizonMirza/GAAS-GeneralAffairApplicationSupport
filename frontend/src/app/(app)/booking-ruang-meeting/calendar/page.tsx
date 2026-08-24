@@ -92,7 +92,8 @@ function BookingCalendarPageInner() {
     const q = search.trim().toLowerCase();
     if (!q) return entries;
     return entries.filter((e) =>
-      e.namaKegiatan.toLowerCase().includes(q)
+      (e.nomorPemesanan || "").toLowerCase().includes(q)
+      || e.namaKegiatan.toLowerCase().includes(q)
       || (e.departemen || "").toLowerCase().includes(q)
       || (e.divisi || "").toLowerCase().includes(q)
     );
@@ -148,12 +149,12 @@ function BookingCalendarPageInner() {
             <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-search-input">Cari Kegiatan</label>
+            <label htmlFor="calendar-search-input">Cari Pemesanan</label>
             <input
               type="text"
               id="calendar-search-input"
               className="calendar-search-input"
-              placeholder="Cari kegiatan..."
+              placeholder="No Pemesanan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

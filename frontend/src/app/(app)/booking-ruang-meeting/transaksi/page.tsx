@@ -198,7 +198,7 @@ export default function BookingTransaksiPage() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-search">Cari Pesanan</label>
+            <label htmlFor="filter-search">Cari Pemesanan</label>
             <input type="text" id="filter-search" placeholder="No Pemesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
