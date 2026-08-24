@@ -141,6 +141,7 @@ public class BookingRuangController : ApiControllerBase
     }
 
     public static IQueryable<BookingRuang> ApplyListFilters(
+        AppDbContext db,
         IQueryable<BookingRuang> query,
         User currentUser,
         BookingStatusEnum? statusFilter,
@@ -148,6 +149,7 @@ public class BookingRuangController : ApiControllerBase
         string? departemen,
         string? namaRuang,
         DateOnly? tanggal,
+        string? direktorat = null,
         string? bulan = null,
         string? search = null,
         string? sejakBulan = null)
@@ -176,6 +178,8 @@ public class BookingRuangController : ApiControllerBase
         if (statusFilter.HasValue) query = query.Where(b => b.Status == statusFilter.Value);
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
+        if (!string.IsNullOrEmpty(direktorat))
+            query = query.Where(b => db.Users.Any(u => u.Id == b.CreatedBy && u.Direktorat == direktorat));
         if (!string.IsNullOrEmpty(namaRuang))
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
@@ -756,6 +760,7 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] string? departemen = null,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
         [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? direktorat = null,
         [FromQuery] string? bulan = null,
         [FromQuery] string? search = null,
         [FromQuery] string? sejakBulan = null)
@@ -769,7 +774,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, bulan, search, sejakBulan);
+            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan);
         }
         catch (ArgumentException ex)
         {

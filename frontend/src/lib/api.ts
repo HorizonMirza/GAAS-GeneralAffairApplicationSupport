@@ -295,6 +295,7 @@ export interface ListBookingParams {
   departemen?: string;
   namaRuang?: string;
   tanggal?: string;
+  direktorat?: string;
   bulan?: string;
   search?: string;
   sejakBulan?: string;
@@ -324,6 +325,7 @@ function bookingListParams(p: ListBookingParams) {
     departemen: p.departemen,
     nama_ruang: p.namaRuang,
     tanggal: p.tanggal,
+    direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
     sejakBulan: p.sejakBulan,

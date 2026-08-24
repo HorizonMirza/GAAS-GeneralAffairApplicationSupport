@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingDuplicatePayload, bookingRoomsLabel, isBookingEditableByOrigin } from "@/lib/constants";
-import { currentYearMonth, formatDate, formatDateTime, formatTimeRange, todayLocalDate, truncateText } from "@/lib/format";
+import { bookingDuplicatePayload, bookingRoomsLabel, isBookingEditableByOrigin, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { formatDate, formatDateTime, formatTimeRange, todayLocalDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
@@ -27,14 +27,15 @@ interface FilterState {
   status: BookingStatus | "";
   divisi: string;
   departemen: string;
+  direktorat: string;
   namaRuang: string;
   search: string;
 }
 
-// Booking Terbaru Saya & Transaksi default ke bulan berjalan saja (bukan seluruh histori) supaya
-// datanya "reset" tiap bulan dan query-nya tidak makin berat seiring bertambahnya data lama.
+// Default menampilkan seluruh data (bukan hanya bulan berjalan), sama seperti Ekspedisi's
+// EMPTY_FILTERS - "Semua Pesanan" adalah state awal, bukan cuma hasil tombol reset.
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, tanggal: "", bulan: currentYearMonth(), status: "", divisi: "", departemen: "", namaRuang: "", search: "" };
+  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", namaRuang: "", search: "" };
 }
 
 export default function BookingTransaksiPage() {
@@ -95,6 +96,7 @@ export default function BookingTransaksiPage() {
         status: filters.status,
         divisi: filters.divisi,
         departemen: filters.departemen,
+        direktorat: filters.direktorat,
         namaRuang: filters.namaRuang,
         search: filters.search,
       });
@@ -176,16 +178,25 @@ export default function BookingTransaksiPage() {
 
   const showOrgFilters = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role);
 
-  const divisiOptions = orgStructure?.divisi || [];
+  const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
+  const divisiOptions = selectedDirektoratNode
+    ? selectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
   const selectedDivisiNode = filters.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === filters.divisi)
+    ? (selectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === filters.divisi
+      )
     : null;
-  const departemenOptions = selectedDivisiNode ? selectedDivisiNode.departemen : orgStructure?.departemen || [];
+  const departemenOptions = selectedDivisiNode
+    ? selectedDivisiNode.departemen
+    : selectedDirektoratNode
+      ? selectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
 
   return (
     <>
       <div className="card">
-        <div className="toolbar bookings-page-toolbar">
+        <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Pesanan</label>
             <input type="text" id="filter-search" placeholder="No Pemesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
@@ -235,6 +246,19 @@ export default function BookingTransaksiPage() {
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-direktorat">Direktorat</label>
+                      <select
+                        id="filter-direktorat"
+                        value={filters.direktorat}
+                        onChange={(e) => updateFilter({ direktorat: e.target.value, divisi: "", departemen: "" })}
+                      >
+                        <option value="">Semua Direktorat</option>
+                        {(orgStructure?.direktorat || []).map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-divisi">Divisi</label>
                       <select id="filter-divisi" value={filters.divisi} onChange={(e) => updateFilter({ divisi: e.target.value, departemen: "" })}>
                         <option value="">Semua Divisi</option>
@@ -259,23 +283,31 @@ export default function BookingTransaksiPage() {
           </div>
 
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
+
+          <div className="toolbar-actions">
+            {isOrigin && (
+              <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setFormInitial(undefined); setFormOpen(true); }}>
+                + Booking Ruang Meeting
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemesanan</th><th>Nama Kegiatan</th><th>Ruang</th><th>Kapasitas</th><th>Peserta</th>
-                <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Pemesanan</th><th>Diajukan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Tipe</th><th>Peserta</th>
+                <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={14} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -283,13 +315,14 @@ export default function BookingTransaksiPage() {
                     <tr key={item.id}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorPemesanan || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
-                      <td>{item.kapasitasRuang}</td>
+                      <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
-                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{item.divisi}</td>
                       <td>{item.departemen || "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>

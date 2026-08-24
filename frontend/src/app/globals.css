@@ -1907,9 +1907,9 @@ table.data-table {
   max-width: 130px;
 }
 
-/* Expedition Transactions page: Cari Transaksi and Filter Bulan sized to match the Semua
-   Transaksi button next to them, scoped here so it doesn't affect the shared toolbar/
-   toolbar-search-field classes still used by Room Booking's Bookings page and Super Admin. */
+/* Ekspedisi Transaksi and Room Booking's Booking page share this treatment: Cari
+   Transaksi/Pesanan and Filter Bulan sized to match the Semua Transaksi/Pesanan button next to
+   them, scoped here so it doesn't affect the plain .toolbar-search-field still used by Super Admin. */
 .transactions-page-toolbar .toolbar-search-field {
   flex: 0 0 auto;
   width: 160px;
@@ -1927,25 +1927,6 @@ table.data-table {
 .transactions-page-toolbar .toolbar-search-field input,
 .toolbar.transactions-page-toolbar #filter-bulan,
 .transactions-page-toolbar > .btn {
-  height: 38px;
-  box-sizing: border-box;
-}
-
-/* Room Booking's Bookings page toolbar: same treatment as Expedition Transactions - Filter
-   Bulan/Filter Tanggal sized (width + height) to match the Semua Booking button next to them.
-   The child combinator keeps this off the nested fields inside the Semua Filter dropdown panel. */
-.bookings-page-toolbar {
-  gap: 4px;
-}
-
-.bookings-page-toolbar > .field {
-  flex: 0 0 auto;
-  width: 160px;
-  min-width: 0;
-}
-
-.bookings-page-toolbar > .field input,
-.bookings-page-toolbar > .btn {
   height: 38px;
   box-sizing: border-box;
 }
