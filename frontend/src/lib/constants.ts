@@ -273,5 +273,5 @@ export function bookingRoomsLabel(item: BookingRuang): string {
 export function bookingRecurrenceLabel(item: BookingRuang): string | null {
   if (!item.seriesId || !item.recurrenceFrequency) return null;
   const endText = item.recurrenceEndDate ? ` s/d ${formatDate(item.recurrenceEndDate)}` : "";
-  return `Berulang ${RECURRENCE_FREQUENCY_LABELS[item.recurrenceFrequency]}${endText}`;
+  return `${RECURRENCE_FREQUENCY_LABELS[item.recurrenceFrequency]}${endText}`;
 }
