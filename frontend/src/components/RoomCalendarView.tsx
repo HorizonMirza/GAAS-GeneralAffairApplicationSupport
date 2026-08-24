@@ -70,7 +70,6 @@ interface ClusterItem {
 type CellPlan =
   | { type: "empty" }
   | { type: "skip" }
-  | { type: "wholeday"; entry: BookingRuang }
   | { type: "cluster"; rangeStart: number; rowSpan: number; items: ClusterItem[] };
 
 interface TimedEntry {
@@ -103,22 +102,22 @@ function layoutCluster(cluster: TimedEntry[]): ClusterItem[] {
 
 function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
   const hourMap = new Map<number, CellPlan>();
-  const wholeDay = dateEntries.find((e) => e.isWholeDay);
-  if (wholeDay) {
-    hourMap.set(HOURS[0], { type: "wholeday", entry: wholeDay });
-    for (const hour of HOURS.slice(1)) hourMap.set(hour, { type: "skip" });
-    return hourMap;
-  }
   for (const hour of HOURS) hourMap.set(hour, { type: "empty" });
+
+  // A whole-day entry is just a timed entry spanning the full HOURS range - folding it into the
+  // same timed/cluster pipeline (instead of a separate short-circuit) means it lays out side by
+  // side with any other booking on the same day/room instead of silently hiding them.
   const timed: TimedEntry[] = dateEntries
-    .filter((e): e is BookingRuang & { jamMulai: string; jamSelesai: string } => !!e.jamMulai && !!e.jamSelesai)
     .map((entry) => {
+      if (entry.isWholeDay) return { entry, startHour: HOURS[0], endHour: HOURS[HOURS.length - 1] + 1 };
+      if (!entry.jamMulai || !entry.jamSelesai) return null;
       const startHour = Math.max(HOURS[0], parseHour(entry.jamMulai));
       let endHour = parseHour(entry.jamSelesai);
       if (parseMinute(entry.jamSelesai) > 0) endHour += 1;
       endHour = Math.min(HOURS[HOURS.length - 1] + 1, Math.max(endHour, startHour + 1));
       return { entry, startHour, endHour };
     })
+    .filter((e): e is TimedEntry => e !== null)
     .sort((a, b) => a.startHour - b.startHour || a.endHour - b.endHour);
 
   // Sweep left to right, grouping any entries whose time ranges chain together (A overlaps B,
@@ -429,18 +428,6 @@ function DayCell({
     );
   }
 
-  if (cell.type === "wholeday") {
-    const statusClass = scheduleCellStatusClass(cell.entry.status);
-    return (
-      <td rowSpan={HOURS.length} className="schedule-cell-booked-wrap" onClick={() => onEntryClick(cell.entry)}>
-        <div className={`schedule-cell-booked ${statusClass}`}>
-          <div className="schedule-cell-title">{cell.entry.namaKegiatan}{cell.entry.hasConflict ? " ⚠" : ""}</div>
-          <div className="schedule-cell-time">Sepanjang Hari{cell.entry.status === "DRAFT" ? " · Draft" : ""}</div>
-        </div>
-      </td>
-    );
-  }
-
   return (
     <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap">
       {cell.items.map(({ entry, startHour, endHour, col, colCount }) => {
@@ -464,7 +451,8 @@ function DayCell({
           >
             <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
             <div className="schedule-cell-time">
-              {entry.jamMulai?.slice(0, 5)} - {entry.jamSelesai?.slice(0, 5)}{entry.status === "DRAFT" ? " · Draft" : ""}
+              {entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)} - ${entry.jamSelesai?.slice(0, 5)}`}
+              {entry.status === "DRAFT" ? " · Draft" : ""}
             </div>
             {colCount > 1 && entry.status !== "DRAFT" && (
               <div className="schedule-cell-meta">Diajukan: {formatDateTime(entry.createdAt)}</div>
