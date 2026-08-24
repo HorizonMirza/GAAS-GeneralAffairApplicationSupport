@@ -178,7 +178,9 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
         </div>
 
         <div className="chat-message-list" ref={listRef}>
-          {messages === null ? (
+          {messages === null && error ? (
+            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Gagal memuat chat: {error}</p>
+          ) : messages === null ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Memuat chat...</p>
           ) : messages.length === 0 ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Belum ada pesan. Mulai percakapan di bawah.</p>
@@ -221,7 +223,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
           )}
         </div>
 
-        {error && <div className="error-text">{error}</div>}
+        {error && messages !== null && <div className="error-text">{error}</div>}
 
         <div className="chat-input-wrap">
           {mentionMatches.length > 0 && (

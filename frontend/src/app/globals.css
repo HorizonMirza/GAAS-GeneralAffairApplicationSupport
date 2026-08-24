@@ -1529,6 +1529,13 @@ table.data-table {
   font-size: 0.78rem;
   margin-bottom: 1px;
 }
+.schedule-cell-title-oneline {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+}
 
 .schedule-cell-meta {
   font-size: 0.72rem;

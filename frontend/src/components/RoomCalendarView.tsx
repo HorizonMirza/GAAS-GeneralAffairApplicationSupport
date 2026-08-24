@@ -506,6 +506,10 @@ function DayCell({
         const widthPct = 100 / colCount;
         const leftPct = col * widthPct;
         const gapPx = colCount > 1 ? 2 : 0;
+        // A 1-hour block is too short to fit the title and time as separate stacked lines
+        // without the second line getting clipped by the next row - fold them onto one line.
+        const isShort = endHour - startHour <= 1;
+        const timeLabel = entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)} - ${entry.jamSelesai?.slice(0, 5)}`;
         return (
           <div
             key={entry.id}
@@ -518,11 +522,19 @@ function DayCell({
             }}
             onClick={(e) => onEntryMenuClick(e, entry)}
           >
-            <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
-            <div className="schedule-cell-time">
-              {entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)} - ${entry.jamSelesai?.slice(0, 5)}`}
-              {entry.status === "DRAFT" ? " · Draft" : ""}
-            </div>
+            {isShort ? (
+              <div className="schedule-cell-title schedule-cell-title-oneline">
+                {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""} · {timeLabel}{entry.status === "DRAFT" ? " · Draft" : ""}
+              </div>
+            ) : (
+              <>
+                <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
+                <div className="schedule-cell-time">
+                  {timeLabel}
+                  {entry.status === "DRAFT" ? " · Draft" : ""}
+                </div>
+              </>
+            )}
             {colCount > 1 && entry.status !== "DRAFT" && (
               <div className="schedule-cell-meta">Diajukan: {formatDateTime(entry.createdAt)}</div>
             )}

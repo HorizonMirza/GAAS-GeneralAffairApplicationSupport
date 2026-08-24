@@ -283,7 +283,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
           )}
 
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA"].includes(item.status) && (
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
