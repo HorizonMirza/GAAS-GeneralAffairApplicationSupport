@@ -24,7 +24,9 @@ interface FilterState {
   limit: number;
   tanggal: string;
   bulan: string;
-  status: BookingStatus | "";
+  // "REJECTED" is a synthetic value (not a real BookingStatus) meaning "any of the 3
+  // reject-stage statuses" - collapsed into one Status filter dropdown option.
+  status: BookingStatus | "REJECTED" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -216,15 +218,13 @@ export default function BookingTransaksiPage() {
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-status">Status</label>
-                  <select id="filter-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as BookingStatus | "" })}>
+                  <select id="filter-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as BookingStatus | "REJECTED" | "" })}>
                     <option value="">Semua Status</option>
                     <option value="DRAFT">Draft</option>
                     <option value="SUBMITTED">On-Approval: Approval Departemen/Divisi</option>
-                    <option value="REJECTED_L1">Rejected: Approval Departemen/Divisi</option>
                     <option value="APPROVED_L1">On-Approval: Admin GA</option>
-                    <option value="REJECTED_GA">Rejected: Admin GA</option>
                     <option value="APPROVED_GA">On-Approval: Approval GA</option>
-                    <option value="REJECTED_GA_APPROVAL">Rejected: Approval GA</option>
+                    <option value="REJECTED">Rejected</option>
                     <option value="APPROVED_GA_APPROVAL">Approved</option>
                   </select>
                 </div>

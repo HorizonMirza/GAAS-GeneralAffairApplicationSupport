@@ -290,7 +290,9 @@ export const api = {
 export interface ListBookingParams {
   page?: number;
   limit?: number;
-  status?: BookingStatus | "";
+  // "REJECTED" is a synthetic value (not a real BookingStatus) meaning "any of the 3
+  // reject-stage statuses" - collapsed into one Status filter dropdown option.
+  status?: BookingStatus | "REJECTED" | "";
   divisi?: string;
   departemen?: string;
   namaRuang?: string;

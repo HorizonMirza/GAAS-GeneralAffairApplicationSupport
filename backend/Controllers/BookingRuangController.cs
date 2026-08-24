@@ -140,6 +140,14 @@ public class BookingRuangController : ApiControllerBase
         return query.Where(b => b.Tanggal >= from);
     }
 
+    // The 3 distinct "rejected at some stage" statuses, collapsed into one "Rejected" option in
+    // the Status filter dropdown - the individual reject-stage breakdown wasn't useful there since
+    // rejectTarget/StatusBadge already show which stage rejected an item on each row.
+    private static readonly BookingStatusEnum[] RejectedStatuses =
+    {
+        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
+    };
+
     public static IQueryable<BookingRuang> ApplyListFilters(
         AppDbContext db,
         IQueryable<BookingRuang> query,
@@ -152,7 +160,8 @@ public class BookingRuangController : ApiControllerBase
         string? direktorat = null,
         string? bulan = null,
         string? search = null,
-        string? sejakBulan = null)
+        string? sejakBulan = null,
+        bool onlyRejected = false)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -176,6 +185,7 @@ public class BookingRuangController : ApiControllerBase
         }
 
         if (statusFilter.HasValue) query = query.Where(b => b.Status == statusFilter.Value);
+        else if (onlyRejected) query = query.Where(b => RejectedStatuses.Contains(b.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -755,7 +765,7 @@ public class BookingRuangController : ApiControllerBase
     public async Task<IActionResult> List(
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
-        [FromQuery(Name = "status")] BookingStatusEnum? statusFilter = null,
+        [FromQuery(Name = "status")] string? status = null,
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
@@ -771,10 +781,22 @@ public class BookingRuangController : ApiControllerBase
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
 
+        // "REJECTED" is a synthetic value the Status filter dropdown sends for its single
+        // "Rejected" option - it isn't a real BookingStatusEnum member, so it's parsed here
+        // instead of via [FromQuery] enum binding (which would 400 on it).
+        BookingStatusEnum? statusFilter = null;
+        var onlyRejected = false;
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "REJECTED") onlyRejected = true;
+            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else return BadRequest(new { detail = "Status tidak valid" });
+        }
+
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan);
+            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected);
         }
         catch (ArgumentException ex)
         {
