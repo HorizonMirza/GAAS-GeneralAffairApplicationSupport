@@ -157,7 +157,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
         <form onSubmit={handleUpdateSubmit}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="bv-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <label htmlFor="bv-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="bv-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">

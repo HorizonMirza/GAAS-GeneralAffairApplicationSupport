@@ -93,7 +93,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="rs-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">

@@ -178,12 +178,12 @@ function BookingCalendarPageInner() {
             <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-search-input">Cari Pemesanan</label>
+            <label htmlFor="calendar-search-input">Cari Pesanan</label>
             <input
               type="text"
               id="calendar-search-input"
               className="calendar-search-input"
-              placeholder="No Pemesanan"
+              placeholder="No Pesanan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

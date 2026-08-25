@@ -206,8 +206,8 @@ export default function BookingTransaksiPage() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-search">Cari Pemesanan</label>
-            <input type="text" id="filter-search" placeholder="No Pemesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-search">Cari Pesanan</label>
+            <input type="text" id="filter-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
@@ -303,7 +303,7 @@ export default function BookingTransaksiPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemesanan</th><th>Diajukan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruangan</th><th>Tipe</th><th>Peserta</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruangan</th><th>Tipe</th><th>Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>

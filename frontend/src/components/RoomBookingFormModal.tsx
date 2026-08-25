@@ -141,7 +141,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="f-nomor-pemesanan">Nomor Pemesanan Ruangan</label>
+              <label htmlFor="f-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="f-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
             {isGaActor && (

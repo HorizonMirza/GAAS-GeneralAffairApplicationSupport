@@ -120,7 +120,7 @@ export default function BookingOverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Pemesanan Terbaru Saya</h3>
+      <h3 style={{ margin: "24px 0 12px" }}>Pesanan Terbaru Saya</h3>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>

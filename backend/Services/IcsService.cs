@@ -37,7 +37,7 @@ public static class IcsService
 
         var descriptionLines = new List<string>
         {
-            $"Nomor Pemesanan: {item.NomorPemesanan ?? "-"}",
+            $"Nomor Pesanan: {item.NomorPemesanan ?? "-"}",
             $"PIC: {item.Pic ?? "-"}",
             $"Jumlah Peserta: {item.JumlahPeserta} orang",
             $"Status: {StatusLabel(item.Status)}",
