@@ -243,6 +243,10 @@ export interface BookingRuangListResponse {
   limit: number;
 }
 
+export interface BookingRuangStatsResponse {
+  countsByStatus: Partial<Record<BookingStatus, number>>;
+}
+
 export interface BookingRuangLog {
   id: number;
   action: string;

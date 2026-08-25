@@ -14,6 +14,7 @@ import BookingStatusBadge from "@/components/BookingStatusBadge";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
+import DashboardStats from "@/components/DashboardStats";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -308,6 +309,8 @@ export default function SuperAdminPage() {
 
   return (
     <>
+      <DashboardStats me={me} />
+
       <div className="card">
         <div className="toolbar">
           <div className="field toolbar-search-field">

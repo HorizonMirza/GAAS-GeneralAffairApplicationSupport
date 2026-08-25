@@ -28,7 +28,7 @@ public class PengirimanController : ApiControllerBase
     {
         RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
         RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
-        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU,
+        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN,
     };
 
     // Admin/Approval GA accounts have no Divisi/Departemen of their own in the user record (see

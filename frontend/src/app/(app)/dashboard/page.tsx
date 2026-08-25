@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { greetingName } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
+import DashboardStats from "@/components/DashboardStats";
 
 interface ModuleDef {
   key: string;
@@ -89,6 +90,10 @@ export default function DashboardPage() {
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
       </div>
+
+      <DashboardStats me={me} />
+
+      <h3 style={{ margin: "24px 0 12px" }}>Modul</h3>
       <div className="module-grid">
         {MODULES.map((mod) => {
           if (mod.live) {

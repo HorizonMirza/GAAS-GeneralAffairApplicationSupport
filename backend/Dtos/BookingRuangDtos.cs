@@ -136,3 +136,8 @@ public class BookingRuangListResponse
     public int Page { get; set; }
     public int Limit { get; set; }
 }
+
+public class BookingRuangStatsResponse
+{
+    public Dictionary<string, int> CountsByStatus { get; set; } = new();
+}

@@ -898,6 +898,27 @@ body.auth-ready .app-shell {
 .stat-tile .value { font-size: 1.6rem; font-weight: 700; }
 .stat-tile .label { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
 
+.stat-tile-money .value { font-size: 1.15rem; white-space: nowrap; }
+
+.dashboard-stats-section { margin-bottom: 22px; }
+
+.dashboard-stats-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.dashboard-stats-section-head h4 { margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
+
+.dashboard-stats-link {
+  font-size: 0.82rem;
+  color: var(--blue-500);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dashboard-stats-link:hover { text-decoration: underline; }
+
 /* ---------- Room booking: room picker grid ---------- */
 .room-grid {
   display: grid;

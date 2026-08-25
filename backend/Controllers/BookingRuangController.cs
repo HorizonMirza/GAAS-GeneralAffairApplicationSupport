@@ -877,6 +877,36 @@ public class BookingRuangController : ApiControllerBase
         });
     }
 
+    // Same role-scoped visibility as List (via ApplyListFilters), but rolled up into a per-status
+    // count instead of paginated rows - powers the dashboard's stat tiles without pulling full item
+    // lists just to count them. Mirrors PengirimanController.GetStats.
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        IQueryable<BookingRuang> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, null, null, null, null, null, null, bulan);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var counts = await query
+            .GroupBy(b => b.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        return Ok(new BookingRuangStatsResponse
+        {
+            CountsByStatus = counts.ToDictionary(c => c.Status.ToString(), c => c.Count),
+        });
+    }
+
     private static string? MentionLabelForRole(RoleEnum role) => role switch
     {
         RoleEnum.ADMIN_DEPARTEMEN => "Admin Departemen",

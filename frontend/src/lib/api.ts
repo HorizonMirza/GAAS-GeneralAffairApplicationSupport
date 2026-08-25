@@ -6,6 +6,7 @@ import type {
   BookingRuangListResponse,
   BookingRuangLog,
   BookingRuangReschedulePayload,
+  BookingRuangStatsResponse,
   BookingStatus,
   ChatMessage,
   Invoice,
@@ -243,6 +244,8 @@ export const api = {
     }),
   listBooking: (params: ListBookingParams) =>
     apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
+  getBookingStats: (bulan: string) =>
+    apiRequest<BookingRuangStatsResponse>("/booking-ruang/stats", { params: { bulan } }),
   // Create always returns a list of occurrences, even a single non-recurring booking (one-item
   // list) - a recurring series comes back as one BookingRuang per occurrence date.
   createBooking: (payload: BookingRuangCreatePayload) =>
