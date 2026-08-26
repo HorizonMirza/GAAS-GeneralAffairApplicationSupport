@@ -1591,11 +1591,10 @@ table.data-table {
   opacity: 0.85;
 }
 .schedule-cell-time {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   opacity: 0.9;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .schedule-cell-draft {
