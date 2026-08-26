@@ -1625,10 +1625,9 @@ table.data-table {
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  opacity: 0.85;
 }
 .schedule-cell-overflow:hover {
-  opacity: 1;
+  filter: brightness(0.95);
 }
 
 .schedule-cell-meta {
