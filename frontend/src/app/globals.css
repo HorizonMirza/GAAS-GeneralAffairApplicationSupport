@@ -948,6 +948,7 @@ body.auth-ready .app-shell {
   flex-direction: column;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
@@ -960,6 +961,11 @@ body.auth-ready .app-shell {
   box-shadow: var(--glow-blue);
   border-color: var(--blue-400);
 }
+
+/* Today's availability at a glance - hijau: masih ada slot kosong hari ini, merah: 07:00-18:00
+   sudah tertutup booking aktif (atau ruangan tutup di akhir pekan). */
+.room-card-available { border-left-color: var(--green-500); }
+.room-card-full { border-left-color: var(--badge-rejected-bg); }
 
 .room-card-icon {
   height: 84px;

@@ -17,9 +17,37 @@ import {
   isBookingOriginRole,
   isBookingPdfAvailable,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
+import { currentYearMonth, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
+import { isWeekend } from "@/components/RoomCalendarView";
+
+// Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView) - "penuh" berarti
+// setiap jam dalam rentang itu sudah tertutup booking yang masih aktif (bukan yang ditolak).
+const OPEN_HOUR = 7;
+const CLOSE_HOUR = 18;
+
+function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]): boolean {
+  const covered = new Set<number>();
+  for (const entry of todayEntries) {
+    if (entry.namaRuang !== roomName && !entry.additionalRooms.includes(roomName)) continue;
+    if (BOOKING_REJECTED_STATUSES.includes(entry.status)) continue;
+    if (entry.isWholeDay) {
+      for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) covered.add(h);
+      continue;
+    }
+    if (!entry.jamMulai || !entry.jamSelesai) continue;
+    const start = Math.max(OPEN_HOUR, Number(entry.jamMulai.slice(0, 2)));
+    let end = Number(entry.jamSelesai.slice(0, 2));
+    if (Number(entry.jamSelesai.slice(3, 5)) > 0) end += 1;
+    end = Math.min(CLOSE_HOUR, end);
+    for (let h = start; h < end; h++) covered.add(h);
+  }
+  for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
+    if (!covered.has(h)) return false;
+  }
+  return true;
+}
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
@@ -42,6 +70,7 @@ export default function BookingOverviewPage() {
 
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
+  const [todayEntries, setTodayEntries] = useState<BookingRuang[]>([]);
   const [busy, setBusy] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
@@ -84,6 +113,12 @@ export default function BookingOverviewPage() {
     api.listRooms().then(setRooms).catch(() => setRooms([]));
   }, []);
 
+  useEffect(() => {
+    // Drives the available/penuh strip on each room card below - fetched once on mount, same as
+    // rooms above, since "today" doesn't change without a page reload.
+    api.getBookingSchedule(todayLocalDate()).then(setTodayEntries).catch(() => setTodayEntries([]));
+  }, []);
+
   const filteredItems = useMemo(() => {
     if (statusFilter === "ALL") return items;
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
@@ -93,6 +128,8 @@ export default function BookingOverviewPage() {
   }, [items, statusFilter]);
 
   if (!me || me.role === "SUPER_ADMIN") return null;
+
+  const closedToday = isWeekend(todayLocalDate());
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
@@ -122,16 +159,24 @@ export default function BookingOverviewPage() {
 
       {rooms.length > 0 && (
         <div className="room-grid">
-          {rooms.map((r) => (
-            <Link key={r.nama} href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`} className="room-card">
-              <div className="room-card-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
-              </div>
-              <div className="room-card-body">
-                <h4>{r.nama}</h4>
-              </div>
-            </Link>
-          ))}
+          {rooms.map((r) => {
+            const full = closedToday || isRoomFullyBookedToday(r.nama, todayEntries);
+            return (
+              <Link
+                key={r.nama}
+                href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`}
+                className={`room-card ${full ? "room-card-full" : "room-card-available"}`}
+                title={full ? "Penuh hari ini" : "Tersedia hari ini"}
+              >
+                <div className="room-card-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+                </div>
+                <div className="room-card-body">
+                  <h4>{r.nama}</h4>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
 
