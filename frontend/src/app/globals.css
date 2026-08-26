@@ -944,6 +944,7 @@ body.auth-ready .app-shell {
 }
 
 .room-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
@@ -963,9 +964,26 @@ body.auth-ready .app-shell {
 }
 
 /* Today's availability at a glance - hijau: masih ada slot kosong hari ini, merah: 07:00-18:00
-   sudah tertutup booking aktif (atau ruangan tutup di akhir pekan). */
+   sudah tertutup booking aktif (atau ruangan tutup di akhir pekan). Badge teks di pojok, bukan
+   cuma garis tipis di kiri, supaya statusnya langsung terbaca tanpa harus memperhatikan warna
+   border yang tipis. */
 .room-card-available { border-left-color: var(--green-500); }
 .room-card-full { border-left-color: var(--badge-rejected-bg); }
+
+.room-card-avail-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.room-card-available .room-card-avail-badge { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
+.room-card-full .room-card-avail-badge { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 
 .room-card-icon {
   height: 84px;
