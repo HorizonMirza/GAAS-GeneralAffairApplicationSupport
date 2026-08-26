@@ -1595,6 +1595,7 @@ table.data-table {
   opacity: 0.9;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
 
