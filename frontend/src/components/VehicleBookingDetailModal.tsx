@@ -31,7 +31,6 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
     keperluan: item.keperluan,
     pic: item.pic || "",
     namaKendaraan: item.namaKendaraan,
-    tujuan: item.tujuan || "",
     jumlahPenumpang: item.jumlahPenumpang,
     tanggal: item.tanggal,
     isWholeDay: item.isWholeDay,
@@ -130,7 +129,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, tujuan: form!.tujuan || null, catatan: form!.catatan || null });
+      await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
       showToast("Booking berhasil diperbarui");
       onClose();
       onSaved();
@@ -159,10 +158,6 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             <div className="field full">
               <label htmlFor="bk-pic">PIC</label>
               <input type="text" id="bk-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
-            </div>
-            <div className="field full">
-              <label htmlFor="bk-tujuan">Tujuan</label>
-              <input type="text" id="bk-tujuan" disabled={!isEdit} value={form.tujuan || ""} onChange={(e) => set("tujuan", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bk-tanggal">Tanggal</label>

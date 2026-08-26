@@ -365,7 +365,6 @@ export interface BookingKendaraan {
   platNomor: string | null;
   kapasitasKendaraan: number;
   supir: string | null;
-  tujuan: string | null;
   jumlahPenumpang: number;
   tanggal: string;
   isWholeDay: boolean;
@@ -416,7 +415,6 @@ export interface BookingKendaraanCreatePayload {
   divisi?: string;
   departemen?: string;
   namaKendaraan: string;
-  tujuan: string | null;
   jumlahPenumpang: number;
   tanggal: string;
   isWholeDay: boolean;

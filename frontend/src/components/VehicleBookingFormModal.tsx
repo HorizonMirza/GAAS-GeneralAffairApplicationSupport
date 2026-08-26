@@ -22,7 +22,6 @@ function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKen
     keperluan: "",
     pic: "",
     namaKendaraan: "",
-    tujuan: "",
     jumlahPenumpang: 1,
     tanggal: todayLocalDate(),
     isWholeDay: false,
@@ -93,7 +92,6 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
       await api.createKendaraanBooking({
         ...form,
         pic: form.pic || null,
-        tujuan: form.tujuan || null,
         catatan: form.catatan || null,
         jamMulai: form.isWholeDay ? null : form.jamMulai,
         jamSelesai: form.isWholeDay ? null : form.jamSelesai,
@@ -159,10 +157,6 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             <div className="field full">
               <label htmlFor="fk-pic">PIC</label>
               <input type="text" id="fk-pic" required placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
-            </div>
-            <div className="field full">
-              <label htmlFor="fk-tujuan">Tujuan</label>
-              <input type="text" id="fk-tujuan" placeholder="Contoh: Kantor Site Cikarang" value={form.tujuan || ""} onChange={(e) => set("tujuan", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>

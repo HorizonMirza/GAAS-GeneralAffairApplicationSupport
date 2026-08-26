@@ -10,7 +10,6 @@ public class BookingKendaraan
     public string? PlatNomor { get; set; }
     public int KapasitasKendaraan { get; set; }
     public string? Supir { get; set; }
-    public string? Tujuan { get; set; }
     public int JumlahPenumpang { get; set; }
     public DateOnly Tanggal { get; set; }
     public bool IsWholeDay { get; set; }

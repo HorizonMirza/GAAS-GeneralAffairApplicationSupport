@@ -206,7 +206,6 @@ public class BookingKendaraanController : ApiControllerBase
         item.PlatNomor = Vehicles.GetPlatNomor(payload.NamaKendaraan);
         item.KapasitasKendaraan = Vehicles.GetKapasitas(payload.NamaKendaraan) ?? 0;
         item.Supir = Vehicles.GetSupir(payload.NamaKendaraan);
-        item.Tujuan = payload.Tujuan;
         item.JumlahPenumpang = payload.JumlahPenumpang;
         item.Tanggal = payload.Tanggal;
         item.IsWholeDay = payload.IsWholeDay;

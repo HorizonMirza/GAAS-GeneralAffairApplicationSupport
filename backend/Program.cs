@@ -205,7 +205,6 @@ using (var scope = app.Services.CreateScope())
             plat_nomor VARCHAR(20),
             kapasitas_kendaraan INT NOT NULL,
             supir VARCHAR(255),
-            tujuan VARCHAR(255),
             jumlah_penumpang INT NOT NULL,
             tanggal DATE NOT NULL,
             is_whole_day BOOLEAN NOT NULL,

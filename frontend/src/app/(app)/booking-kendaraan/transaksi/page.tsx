@@ -289,17 +289,17 @@ export default function VehicleBookingTransaksiPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Keperluan</th><th>PIC</th><th>Divisi</th><th>Departemen</th><th>Kendaraan</th><th>Tujuan</th><th>Penumpang</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Keperluan</th><th>PIC</th><th>Divisi</th><th>Departemen</th><th>Kendaraan</th><th>Penumpang</th>
                 <th>Tanggal</th><th>Jam</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -313,7 +313,6 @@ export default function VehicleBookingTransaksiPage() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.namaKendaraan}>{truncateText(item.namaKendaraan, 20)}</td>
-                      <td title={item.tujuan || ""}>{truncateText(item.tujuan, 18)}</td>
                       <td>{item.jumlahPenumpang}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>

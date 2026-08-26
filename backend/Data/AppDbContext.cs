@@ -414,7 +414,6 @@ public class AppDbContext : DbContext
             e.Property(b => b.PlatNomor).HasColumnName("plat_nomor").HasMaxLength(20);
             e.Property(b => b.KapasitasKendaraan).HasColumnName("kapasitas_kendaraan");
             e.Property(b => b.Supir).HasColumnName("supir").HasMaxLength(255);
-            e.Property(b => b.Tujuan).HasColumnName("tujuan").HasMaxLength(255);
             e.Property(b => b.JumlahPenumpang).HasColumnName("jumlah_penumpang");
             e.Property(b => b.Tanggal).HasColumnName("tanggal");
             e.Property(b => b.IsWholeDay).HasColumnName("is_whole_day");
