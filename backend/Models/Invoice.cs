@@ -6,7 +6,7 @@ public class Invoice
     public string Bulan { get; set; } = null!;
     public string FilePath { get; set; } = null!;
     public string OriginalFilename { get; set; } = null!;
-    public InvoiceStatusEnum Status { get; set; } = InvoiceStatusEnum.PENDING;
+    public InvoiceStatusEnum Status { get; set; } = InvoiceStatusEnum.DRAFT;
     public string? Catatan { get; set; }
 
     public int UploadedBy { get; set; }

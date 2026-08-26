@@ -41,7 +41,7 @@ public class AuthController : ApiControllerBase
             Path = "/",
         });
 
-        return Ok(new { message = "Login berhasil", role = user.Role.ToString(), access_token = token });
+        return Ok(new { message = "Login berhasil", role = user.Role.ToString() });
     }
 
     [HttpPost("auth/logout")]

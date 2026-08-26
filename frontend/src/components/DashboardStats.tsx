@@ -26,12 +26,15 @@ interface BookingStatsView {
 export default function DashboardStats({ me }: { me: Me }) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [pengirimanFailed, setPengirimanFailed] = useState(false);
+  const [bookingFailed, setBookingFailed] = useState(false);
 
+  // Fetched (and failure-handled) independently - an outage in one source must not blank out
+  // the other's numbers too, which a shared Promise.all/catch would do.
   useEffect(() => {
     const bulan = currentYearMonth();
-    Promise.all([api.getPengirimanStats(bulan), api.getBookingStats(bulan)])
-      .then(([p, b]) => {
+    api.getPengirimanStats(bulan)
+      .then((p) => {
         const pc = p.countsByStatus;
         setPengiriman({
           waitingL1: (pc.SUBMITTED ?? 0) + (pc.REJECTED_GA ?? 0),
@@ -41,6 +44,10 @@ export default function DashboardStats({ me }: { me: Me }) {
           completed: pc.COMPLETED ?? 0,
           totalBulanIni: p.totalBulanIni,
         });
+      })
+      .catch(() => setPengirimanFailed(true));
+    api.getBookingStats(bulan)
+      .then((b) => {
         const bc = b.countsByStatus;
         setBooking({
           waitingL1: bc.SUBMITTED ?? 0,
@@ -50,10 +57,8 @@ export default function DashboardStats({ me }: { me: Me }) {
           rejected: (bc.REJECTED_L1 ?? 0) + (bc.REJECTED_GA ?? 0) + (bc.REJECTED_GA_APPROVAL ?? 0),
         });
       })
-      .catch(() => setFailed(true));
+      .catch(() => setBookingFailed(true));
   }, []);
-
-  if (failed) return null;
 
   // Same convention as Ekspedisi Overview's own stat-grid label - the tile for the L1 approval
   // stage is named after whichever track (Departemen or Divisi) the viewer actually belongs to,
@@ -75,7 +80,7 @@ export default function DashboardStats({ me }: { me: Me }) {
           <Link href="/ekspedisi/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
         </div>
         {!pengiriman ? (
-          <p className="text-secondary">Memuat ringkasan...</p>
+          <p className="text-secondary">{pengirimanFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
         ) : (
           <div className="stat-grid">
             <div className="stat-tile"><div className="value">{pengiriman.waitingL1}</div><div className="label">{l1Label}</div></div>
@@ -99,7 +104,7 @@ export default function DashboardStats({ me }: { me: Me }) {
           <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
         </div>
         {!booking ? (
-          <p className="text-secondary">Memuat ringkasan...</p>
+          <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
         ) : (
           <div className="stat-grid">
             <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>

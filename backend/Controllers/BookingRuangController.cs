@@ -764,7 +764,7 @@ public class BookingRuangController : ApiControllerBase
             return Ok(new
             {
                 item = BookingRuangOut.From(item),
-                detail = members.Count > 1 ? SeriesSummary(confirmed, conflicted, members.Count) : null,
+                detail = members.Count > 1 ? SeriesSummary(confirmed.Count, conflicted.Count, members.Count) : null,
             });
         }
 
@@ -833,8 +833,12 @@ public class BookingRuangController : ApiControllerBase
         var itemIds = items.Select(i => i.Id).ToList();
         if (itemIds.Count > 0)
         {
+            // Excludes the current user's own messages - own messages should never count as
+            // "unread" for the person who sent them, and doing it here (rather than by advancing
+            // their read cursor past them on send) avoids also hiding a concurrently-arrived
+            // message from someone else that this user hasn't actually seen yet.
             var messageTimes = await _db.BookingChatMessages
-                .Where(m => itemIds.Contains(m.BookingRuangId))
+                .Where(m => itemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id)
                 .Select(m => new { m.BookingRuangId, m.CreatedAt })
                 .ToListAsync();
             var lastReadAt = await _db.BookingChatReads
@@ -854,7 +858,7 @@ public class BookingRuangController : ApiControllerBase
             {
                 var mentionTag = "@" + mentionLabel;
                 var candidateMessages = await _db.BookingChatMessages
-                    .Where(m => unreadItemIds.Contains(m.BookingRuangId))
+                    .Where(m => unreadItemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id)
                     .Select(m => new { m.BookingRuangId, m.Message, m.CreatedAt })
                     .ToListAsync();
                 var mentionedIds = candidateMessages
@@ -1072,10 +1076,14 @@ public class BookingRuangController : ApiControllerBase
     // from being confirmed (per design), it's just left at `fromStatus` with HasConflict set so
     // Admin/Approval GA can fix it later via Reschedule. Used by both ApproveGaApproval and
     // Submit()'s Approval-GA self-skip branch (fromStatus differs: APPROVED_GA vs DRAFT).
-    private async Task<(int confirmed, int conflicted)> FinalizeSeriesAsync(List<BookingRuang> members, User actor, BookingStatusEnum fromStatus)
+    // Returns the members actually acted on by *this* call (newly confirmed / newly flagged
+    // conflicted), not the whole series - a member already finalized by an earlier call is
+    // skipped here (its status won't match fromStatus), so callers can log just the delta
+    // instead of re-logging every already-terminal member on each subsequent call.
+    private async Task<(List<BookingRuang> confirmed, List<BookingRuang> conflicted)> FinalizeSeriesAsync(List<BookingRuang> members, User actor, BookingStatusEnum fromStatus)
     {
-        var confirmed = 0;
-        var conflicted = 0;
+        var confirmed = new List<BookingRuang>();
+        var conflicted = new List<BookingRuang>();
         foreach (var member in members)
         {
             var roomList = RoomList(member);
@@ -1083,7 +1091,7 @@ public class BookingRuangController : ApiControllerBase
             if (conflict != null)
             {
                 member.HasConflict = true;
-                conflicted++;
+                conflicted.Add(member);
                 continue;
             }
 
@@ -1100,7 +1108,7 @@ public class BookingRuangController : ApiControllerBase
 
             await _db.Entry(member).ReloadAsync();
             await AutoRejectLosingCompetitorsAsync(member, actor);
-            confirmed++;
+            confirmed.Add(member);
         }
         return (confirmed, conflicted);
     }
@@ -1119,20 +1127,28 @@ public class BookingRuangController : ApiControllerBase
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
         var members = await SeriesMembersAsync(item);
-        var (confirmedCount, conflictedCount) = await FinalizeSeriesAsync(members, user!, fromStatus: BookingStatusEnum.APPROVED_GA);
-        if (confirmedCount == 0 && conflictedCount == 0)
+        var (confirmedMembers, conflictedMembers) = await FinalizeSeriesAsync(members, user!, fromStatus: BookingStatusEnum.APPROVED_GA);
+        if (confirmedMembers.Count == 0 && conflictedMembers.Count == 0)
             return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
 
-        foreach (var member in members.Where(m => m.HasConflict)) AddLog(member, "APPROVED_GA_APPROVAL", user!, "Bentrok, perlu dipindahkan manual");
-        foreach (var member in members.Where(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)) AddLog(member, "APPROVED_GA_APPROVAL", user!);
+        // Log only the members this call actually changed (see FinalizeSeriesAsync) - a sibling
+        // already finalized by an earlier call on this series must not get a duplicate log row.
+        foreach (var member in conflictedMembers) AddLog(member, "APPROVED_GA_APPROVAL", user!, "Bentrok, perlu dipindahkan manual");
+        foreach (var member in confirmedMembers) AddLog(member, "APPROVED_GA_APPROVAL", user!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         await _db.Entry(item).ReloadAsync();
 
+        // The summary reflects the series' current true state (including members finalized by
+        // an earlier call), not just this call's delta - otherwise a re-approve after fixing one
+        // conflicted sibling would misreport already-confirmed siblings as still pending.
+        var totalConfirmed = members.Count(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
+        var totalConflicted = members.Count(m => m.HasConflict);
+
         return Ok(new
         {
             item = BookingRuangOut.From(item),
-            detail = members.Count > 1 ? SeriesSummary(confirmedCount, conflictedCount, members.Count) : null,
+            detail = members.Count > 1 ? SeriesSummary(totalConfirmed, totalConflicted, members.Count) : null,
         });
     }
 

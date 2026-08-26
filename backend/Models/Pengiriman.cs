@@ -26,7 +26,7 @@ public class Pengiriman
     public decimal? SubTotal { get; set; }
     public decimal? Total { get; set; }
 
-    public StatusEnum Status { get; set; } = StatusEnum.SUBMITTED;
+    public StatusEnum Status { get; set; } = StatusEnum.DRAFT;
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
 

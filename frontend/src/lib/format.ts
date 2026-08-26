@@ -14,15 +14,28 @@ export function formatCurrency(value: number | null | undefined): string {
   );
 }
 
+// A bare "YYYY-MM-DD" string (a DateOnly field like `tanggal`, no time component) is spec'd to
+// parse as UTC midnight, which can render as the previous day in a timezone behind UTC - parse
+// its components as local instead, same reasoning as todayLocalDate()'s own local getters.
+// A full timestamp (with a time component) is left to normal Date parsing, unaffected.
+function parseLocalDate(value: string): Date {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnlyMatch) {
+    const [, y, m, d] = dateOnlyMatch;
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  }
+  return new Date(value);
+}
+
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "-";
-  const d = new Date(value);
+  const d = parseLocalDate(value);
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "-";
-  const d = new Date(value);
+  const d = parseLocalDate(value);
   const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   const timePart = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   return `${datePart}, ${timePart}`;

@@ -5,6 +5,7 @@ using PengirimanApi.Data;
 using PengirimanApi.Dtos;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
+using System.Net.Mime;
 
 namespace PengirimanApi.Controllers;
 
@@ -220,8 +221,11 @@ public class InvoiceController : ApiControllerBase
             return NotFound(new { detail = "File invoice tidak ditemukan di server" });
 
         var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        var disposition = download ? "attachment" : "inline";
-        Response.Headers["Content-Disposition"] = $"{disposition}; filename=\"{item.OriginalFilename}\"";
+        // ContentDisposition properly quotes/escapes an untrusted uploaded filename (a raw
+        // interpolated string breaks on an embedded '"' and throws on CR/LF) instead of raw
+        // string interpolation.
+        var cd = new ContentDisposition { Inline = !download, FileName = item.OriginalFilename };
+        Response.Headers["Content-Disposition"] = cd.ToString();
         return File(bytes, "application/pdf");
     }
 
@@ -353,8 +357,8 @@ public class InvoiceController : ApiControllerBase
             return NotFound(new { detail = "File invoice tidak ditemukan di server" });
 
         var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        var disposition = download ? "attachment" : "inline";
-        Response.Headers["Content-Disposition"] = $"{disposition}; filename=\"{log.OriginalFilename}\"";
+        var cd = new ContentDisposition { Inline = !download, FileName = log.OriginalFilename };
+        Response.Headers["Content-Disposition"] = cd.ToString();
         return File(bytes, "application/pdf");
     }
 }

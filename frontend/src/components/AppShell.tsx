@@ -68,8 +68,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Vehicle Booking",
     items: [
       { label: "Dashboard", href: "/booking-kendaraan" },
-      { label: "Transactions", href: "/booking-kendaraan" },
-      { label: "Super Admin", href: "/booking-kendaraan", superAdminOnly: true },
+      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -77,8 +76,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Office Supplies",
     items: [
       { label: "Dashboard", href: "/rumah-tangga" },
-      { label: "Transactions", href: "/rumah-tangga" },
-      { label: "Super Admin", href: "/rumah-tangga", superAdminOnly: true },
+      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -86,8 +84,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Maintenance",
     items: [
       { label: "Dashboard", href: "/perbaikan-sarana" },
-      { label: "Transactions", href: "/perbaikan-sarana" },
-      { label: "Super Admin", href: "/perbaikan-sarana", superAdminOnly: true },
+      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -95,8 +92,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: "Archive",
     items: [
       { label: "Dashboard", href: "/arsip" },
-      { label: "Transactions", href: "/arsip" },
-      { label: "Super Admin", href: "/arsip", superAdminOnly: true },
+      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
 ];

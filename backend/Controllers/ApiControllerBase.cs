@@ -46,8 +46,11 @@ public abstract class ApiControllerBase : ControllerBase
         var sameUnit = item.Departemen != null
             ? user.Departemen == item.Departemen
             : user.Divisi == item.Divisi && user.Departemen == null;
+        // Unlike Pengiriman, a rejected BookingRuang is a dead end - it's never sent back to
+        // DRAFT for revision (see IsEditableByOrigin), so a DRAFT item here can only be its
+        // creator's own not-yet-submitted draft.
         return item.Status == BookingStatusEnum.DRAFT
-            ? item.CreatedBy == user.Id || (item.RejectReason != null && sameUnit)
+            ? item.CreatedBy == user.Id
             : sameUnit;
     }
 }

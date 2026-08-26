@@ -78,9 +78,11 @@ public class BookingChatController : ApiControllerBase
         _db.BookingChatMessages.Add(message);
         await _db.SaveChangesAsync();
 
-        // Mark read using the message's own CreatedAt (stamped above) so the sender never sees their own message as unread.
-        await MarkRead(bookingRuangId, user.Id, message.CreatedAt);
-        await _db.SaveChangesAsync();
+        // No read-cursor update here - the sender's own messages are excluded from the unread
+        // count by SenderId (see BookingRuangController.List), not by advancing this cursor past
+        // them. Advancing it to "now" on send would also sweep up any other user's message that
+        // happened to arrive moments earlier but hasn't been loaded into this user's view yet,
+        // silently marking it read before they ever saw it.
 
         return StatusCode(201, new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt));
     }

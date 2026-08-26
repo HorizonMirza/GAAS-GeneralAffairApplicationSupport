@@ -24,12 +24,6 @@ public class CurrentUserService
         if (ctx == null) return null;
 
         string? token = ctx.Request.Cookies[CookieName];
-        if (string.IsNullOrEmpty(token))
-        {
-            var authHeader = ctx.Request.Headers.Authorization.ToString();
-            if (authHeader.StartsWith("Bearer "))
-                token = authHeader["Bearer ".Length..];
-        }
         if (string.IsNullOrEmpty(token)) return null;
 
         var principal = _jwt.Validate(token);

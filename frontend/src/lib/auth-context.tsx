@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "./api";
+import { api, ApiError } from "./api";
 import type { Me, OrgStructure } from "./types";
 
 interface AuthContextValue {
@@ -25,9 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await api.me();
       setMe(result);
       api.orgStructure().then(setOrgStructure).catch(() => setOrgStructure(null));
-    } catch {
-      setMe(null);
-      router.replace("/");
+    } catch (err) {
+      // apiRequest already hard-redirects to "/" on a real 401. A network blip or server error
+      // here must not also force a logout - the session cookie may still be perfectly valid.
+      if (err instanceof ApiError && err.status === 401) {
+        setMe(null);
+        router.replace("/");
+      }
     } finally {
       setLoading(false);
     }
