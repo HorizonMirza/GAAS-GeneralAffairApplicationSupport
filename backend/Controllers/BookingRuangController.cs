@@ -393,7 +393,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("rooms")]
     public async Task<IActionResult> ListRooms()
     {
-        var (_, error) = await RequireRoleAsync();
+        var (_, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
         return Ok(MeetingRooms.Rooms);
     }
@@ -405,7 +405,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("schedule")]
     public async Task<IActionResult> GetSchedule([FromQuery] DateOnly tanggal)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         // Draft bookings are private, but a user's own draft should still show up (in grey) on
@@ -428,7 +428,7 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] DateOnly tanggalSelesai,
         [FromQuery(Name = "nama_ruang")] string? namaRuang = null)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
         if (tanggalMulai > tanggalSelesai)
             return BadRequest(new { detail = "Tanggal mulai harus sebelum atau sama dengan tanggal selesai" });
@@ -789,7 +789,7 @@ public class BookingRuangController : ApiControllerBase
         [FromQuery] string? search = null,
         [FromQuery] string? sejakBulan = null)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         if (!AllowedLimits.Contains(limit))
@@ -893,7 +893,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         IQueryable<BookingRuang> query;
@@ -1208,7 +1208,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("{itemId:int}/logs")]
     public async Task<IActionResult> GetLogs(int itemId)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.BookingRuangs
@@ -1238,7 +1238,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("{itemId:int}/pdf")]
     public async Task<IActionResult> DownloadBuktiPdf(int itemId)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.BookingRuangs.Include(b => b.Pembuat).Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
@@ -1257,7 +1257,7 @@ public class BookingRuangController : ApiControllerBase
     [HttpGet("{itemId:int}/ics")]
     public async Task<IActionResult> DownloadIcs(int itemId)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);

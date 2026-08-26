@@ -42,6 +42,19 @@ public abstract class ApiControllerBase : ControllerBase
         return (user, null);
     }
 
+    // Like RequireRoleAsync, but as a denylist instead of an allowlist - for endpoints meant to
+    // stay open to "everyone except role X" (e.g. Room Booking read/chat endpoints excluding KPU,
+    // who only deals with Expedition per AppShell's KPU_HIDDEN_CATEGORIES) without having to spell
+    // out every other role by hand.
+    protected async Task<(User? user, IActionResult? error)> RequireRoleExceptAsync(params RoleEnum[] excludedRoles)
+    {
+        var user = await CurrentUser.GetCurrentUserAsync();
+        if (user == null) return (null, StatusCode(401, new { detail = "Belum login" }));
+        if (excludedRoles.Contains(user.Role))
+            return (null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
+        return (user, null);
+    }
+
     // Admin/Approval GA/KPU/Super Admin see every item; Admin/Approval Departemen/Divisi only
     // see items from their own unit (or their own DRAFT/rejected-back-to-them items).
     protected static bool CanAccessPengiriman(User user, Pengiriman item)

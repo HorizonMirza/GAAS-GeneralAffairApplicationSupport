@@ -34,7 +34,7 @@ public class BookingChatController : ApiControllerBase
     [HttpGet("")]
     public async Task<IActionResult> List(int bookingRuangId)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.BookingRuangs.FindAsync(bookingRuangId);
@@ -58,7 +58,7 @@ public class BookingChatController : ApiControllerBase
     [HttpPost("")]
     public async Task<IActionResult> Send(int bookingRuangId, [FromBody] SendChatMessageRequest payload)
     {
-        var (user, error) = await RequireRoleAsync();
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
         var item = await _db.BookingRuangs.FindAsync(bookingRuangId);
