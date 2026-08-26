@@ -357,7 +357,7 @@ function BookingCalendarPageInner() {
                   </svg>
                 </button>
               </div>
-              {view !== "avail" && <div className="calendar-topbar-room">{selectedRoom}</div>}
+              <div className="calendar-topbar-room">{view === "avail" ? "Semua Ruangan" : selectedRoom}</div>
             </div>
             <div className="calendar-view-toggle">
               {(["day", "week", "month", "avail"] as TabMode[]).map((v) => (
