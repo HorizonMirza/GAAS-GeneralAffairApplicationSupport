@@ -1522,7 +1522,7 @@ table.data-table {
 /* .data-table th's letter-spacing adds trailing space after the last character too, which skews
    centered (as opposed to the table's normal left-aligned) headers visibly left of true center -
    most noticeable on short, two-line-wrapped room names. Centered headers don't get that spacing. */
-.data-table th.schedule-th-center { text-align: center; letter-spacing: normal; vertical-align: middle; }
+.data-table th.schedule-th-center { text-align: center; letter-spacing: normal; }
 
 .schedule-time-col {
   width: 72px;
@@ -1532,13 +1532,10 @@ table.data-table {
   position: sticky;
   left: 0;
   z-index: 1;
-  text-align: center;
 }
 .data-table td.schedule-time-col {
   height: 36px;
   padding: 6px 14px;
-  vertical-align: middle;
-  text-align: center;
 }
 
 .schedule-cell-empty-wrap {
@@ -1610,8 +1607,6 @@ table.data-table {
   font-weight: 700;
 }
 
-/* Background/color come from the schedule-cell-draft/-pending/-confirmed class applied
-   alongside this one, matching the entries folded into the chip (see overflowStatusClass). */
 .schedule-cell-overflow {
   position: absolute;
   display: flex;
@@ -1621,13 +1616,16 @@ table.data-table {
   overflow: hidden;
   border-radius: 8px;
   padding: 4px 6px;
+  background: var(--badge-submitted-bg);
   border: none;
+  color: var(--badge-submitted-fg);
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
+  opacity: 0.85;
 }
 .schedule-cell-overflow:hover {
-  filter: brightness(0.95);
+  opacity: 1;
 }
 
 .schedule-cell-meta {
