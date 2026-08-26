@@ -435,7 +435,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     className="schedule-week-head schedule-th-center"
                     onClick={() => onJumpToDay(date)}
                   >
-                    {DAY_NAMES_SHORT[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>
+                    {DAY_NAMES[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>
                   </th>
                 );
               })}
