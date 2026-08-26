@@ -270,7 +270,10 @@ function BookingCalendarPageInner() {
 
         <div
           className={`calendar-main${view === "month" ? " calendar-main-month" : ""}`}
-          style={view === "month" && sidebarHeight ? { height: sidebarHeight } : undefined}
+          // minHeight (not height) - matches the sidebar's height when there's room to spare, but
+          // never forces the grid shorter than its own content needs, so nothing gets clipped by
+          // .month-grid's overflow:hidden on a short/narrow viewport (phone, tablet in portrait).
+          style={view === "month" && sidebarHeight ? { minHeight: sidebarHeight } : undefined}
         >
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">

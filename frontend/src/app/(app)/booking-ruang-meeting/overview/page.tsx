@@ -22,31 +22,39 @@ import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
 
-// Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView) - "penuh" berarti
-// setiap jam dalam rentang itu sudah tertutup booking yang masih aktif (bukan yang ditolak).
-const OPEN_HOUR = 7;
-const CLOSE_HOUR = 18;
+// Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView). "Penuh" hanya berarti
+// benar-benar penuh sepanjang hari - dihitung dari booking yang statusnya sudah APPROVED_GA_APPROVAL
+// (final, bukan draft/masih-di-approval milik siapa pun) memakai menit asli (bukan dibulatkan ke
+// blok jam), supaya dua meeting pendek yang menyisakan celah kosong di antaranya tidak salah
+// dianggap menutup seluruh jam itu.
+const OPEN_MIN = 7 * 60;
+const CLOSE_MIN = 18 * 60;
+
+function toMinutes(hhmm: string): number {
+  return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+}
 
 function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]): boolean {
-  const covered = new Set<number>();
+  const intervals: [number, number][] = [];
   for (const entry of todayEntries) {
+    if (entry.status !== "APPROVED_GA_APPROVAL") continue;
     if (entry.namaRuang !== roomName && !entry.additionalRooms.includes(roomName)) continue;
-    if (BOOKING_REJECTED_STATUSES.includes(entry.status)) continue;
     if (entry.isWholeDay) {
-      for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) covered.add(h);
+      intervals.push([OPEN_MIN, CLOSE_MIN]);
       continue;
     }
     if (!entry.jamMulai || !entry.jamSelesai) continue;
-    const start = Math.max(OPEN_HOUR, Number(entry.jamMulai.slice(0, 2)));
-    let end = Number(entry.jamSelesai.slice(0, 2));
-    if (Number(entry.jamSelesai.slice(3, 5)) > 0) end += 1;
-    end = Math.min(CLOSE_HOUR, end);
-    for (let h = start; h < end; h++) covered.add(h);
+    const start = Math.max(OPEN_MIN, toMinutes(entry.jamMulai));
+    const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
+    if (end > start) intervals.push([start, end]);
   }
-  for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
-    if (!covered.has(h)) return false;
+  intervals.sort((a, b) => a[0] - b[0]);
+  let coveredUntil = OPEN_MIN;
+  for (const [start, end] of intervals) {
+    if (start > coveredUntil) return false; // ada celah kosong sebelum interval ini
+    coveredUntil = Math.max(coveredUntil, end);
   }
-  return true;
+  return coveredUntil >= CLOSE_MIN;
 }
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
