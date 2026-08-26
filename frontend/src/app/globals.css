@@ -1562,6 +1562,28 @@ table.data-table {
   font-weight: 700;
 }
 
+.schedule-cell-overflow {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  border-radius: 8px;
+  padding: 4px 6px;
+  background: var(--bg-surface-alt);
+  border: 1px dashed var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.schedule-cell-overflow:hover {
+  background: var(--bg-surface);
+  border-color: var(--blue-400);
+  color: var(--blue-500);
+}
+
 .schedule-cell-meta {
   font-size: 0.72rem;
   opacity: 0.85;

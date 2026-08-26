@@ -7,6 +7,10 @@ import type { BookingRuang } from "@/lib/types";
 export type CalendarViewMode = "day" | "week" | "month";
 
 const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17, each row = "HH:00 - (HH+1):00" (07:00-18:00)
+// Mingguan's per-day column is narrow enough that more than a few side-by-side blocks become
+// unreadable slivers - Harian has the whole page width so it's left uncapped (see buildDayPlan
+// call sites below).
+const MAX_VISIBLE_COLS_WEEK = 3;
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const DAY_NAMES_SHORT = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -64,6 +68,7 @@ function scheduleCellStatusClass(status: BookingRuang["status"]): string {
 }
 
 interface ClusterItem {
+  kind: "entry";
   entry: BookingRuang;
   startHour: number;
   endHour: number;
@@ -71,10 +76,21 @@ interface ClusterItem {
   colCount: number;
 }
 
+// Stands in for every entry beyond MAX_VISIBLE_COLS_WEEK's real columns - rendered as a single
+// "+N lainnya" chip instead of shrinking every block into an unreadable sliver.
+interface OverflowClusterItem {
+  kind: "overflow";
+  entries: BookingRuang[];
+  col: number;
+  colCount: number;
+}
+
+type AnyClusterItem = ClusterItem | OverflowClusterItem;
+
 type CellPlan =
   | { type: "empty" }
   | { type: "skip" }
-  | { type: "cluster"; rangeStart: number; rowSpan: number; items: ClusterItem[] };
+  | { type: "cluster"; rangeStart: number; rowSpan: number; items: AnyClusterItem[] };
 
 interface TimedEntry {
   entry: BookingRuang;
@@ -87,7 +103,7 @@ interface TimedEntry {
 // approved after it was created. Rather than let a later entry silently overwrite an earlier
 // one's hours (corrupting the table), group overlapping entries into a cluster and lay them out
 // side by side, like Google Calendar does for double-booked slots.
-function layoutCluster(cluster: TimedEntry[]): ClusterItem[] {
+function layoutCluster(cluster: TimedEntry[], maxCols?: number): AnyClusterItem[] {
   const columns: TimedEntry[][] = [];
   for (const item of cluster) {
     const col = columns.find((c) => c[c.length - 1].endHour <= item.startHour);
@@ -95,16 +111,36 @@ function layoutCluster(cluster: TimedEntry[]): ClusterItem[] {
     else columns.push([item]);
   }
   const colCount = columns.length;
-  return cluster.map((item) => ({
-    entry: item.entry,
-    startHour: item.startHour,
-    endHour: item.endHour,
-    col: columns.findIndex((c) => c.includes(item)),
-    colCount,
-  }));
+
+  if (!maxCols || colCount <= maxCols) {
+    return cluster.map((item) => ({
+      kind: "entry",
+      entry: item.entry,
+      startHour: item.startHour,
+      endHour: item.endHour,
+      col: columns.findIndex((c) => c.includes(item)),
+      colCount,
+    }));
+  }
+
+  // Keep the first maxCols-1 columns as real blocks, fold every column from there on into one
+  // overflow chip in the last slot.
+  const visibleCols = maxCols - 1;
+  const items: AnyClusterItem[] = [];
+  const overflowEntries: BookingRuang[] = [];
+  for (const item of cluster) {
+    const col = columns.findIndex((c) => c.includes(item));
+    if (col < visibleCols) {
+      items.push({ kind: "entry", entry: item.entry, startHour: item.startHour, endHour: item.endHour, col, colCount: maxCols });
+    } else {
+      overflowEntries.push(item.entry);
+    }
+  }
+  items.push({ kind: "overflow", entries: overflowEntries, col: visibleCols, colCount: maxCols });
+  return items;
 }
 
-function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
+function buildDayPlan(dateEntries: BookingRuang[], maxCols?: number): Map<number, CellPlan> {
   const hourMap = new Map<number, CellPlan>();
   for (const hour of HOURS) hourMap.set(hour, { type: "empty" });
 
@@ -145,7 +181,7 @@ function buildDayPlan(dateEntries: BookingRuang[]): Map<number, CellPlan> {
     const rangeStart = Math.min(...group.map((g) => g.startHour));
     const rangeEnd = Math.max(...group.map((g) => g.endHour));
     const rowSpan = rangeEnd - rangeStart;
-    hourMap.set(rangeStart, { type: "cluster", rangeStart, rowSpan, items: layoutCluster(group) });
+    hourMap.set(rangeStart, { type: "cluster", rangeStart, rowSpan, items: layoutCluster(group, maxCols) });
     for (let h = rangeStart + 1; h < rangeStart + rowSpan; h++) hourMap.set(h, { type: "skip" });
   }
   return hourMap;
@@ -300,11 +336,13 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                   <td className="schedule-time-col" ref={hour === HOURS[0] ? nowLineRowRef : undefined}>{String(hour).padStart(2, "0")}:00</td>
                   <DayCell
                     cell={cell}
+                    date={refDate}
                     canCreate={canCreate}
                     isDragPreview={isInDragRange(refDate, hour)}
                     onMouseDown={() => startDrag(refDate, hour, cell)}
                     onMouseEnter={() => continueDrag(refDate, hour)}
                     onEntryMenuClick={onEntryMenuClick}
+                    onJumpToDay={onJumpToDay}
                   />
                 </tr>
               );
@@ -327,7 +365,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   if (view === "week") {
     const monday = mondayOf(refDate);
     const weekDates = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
-    const plans = weekDates.map((date) => buildDayPlan(entries.filter((e) => e.tanggal === date)));
+    const plans = weekDates.map((date) => buildDayPlan(entries.filter((e) => e.tanggal === date), MAX_VISIBLE_COLS_WEEK));
     return (
       <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
@@ -359,11 +397,13 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     <DayCell
                       key={date}
                       cell={cell}
+                      date={date}
                       canCreate={canCreate}
                       isDragPreview={isInDragRange(date, hour)}
                       onMouseDown={() => startDrag(date, hour, cell)}
                       onMouseEnter={() => continueDrag(date, hour)}
                       onEntryMenuClick={onEntryMenuClick}
+                      onJumpToDay={onJumpToDay}
                     />
                   );
                 })}
@@ -473,18 +513,22 @@ function ClosedNotice() {
 
 function DayCell({
   cell,
+  date,
   canCreate,
   isDragPreview,
   onMouseDown,
   onMouseEnter,
   onEntryMenuClick,
+  onJumpToDay,
 }: {
   cell: CellPlan | undefined;
+  date: string;
   canCreate: boolean;
   isDragPreview: boolean;
   onMouseDown: () => void;
   onMouseEnter: () => void;
   onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
+  onJumpToDay: (date: string) => void;
 }) {
   if (!cell || cell.type === "skip") return null;
 
@@ -499,13 +543,34 @@ function DayCell({
 
   return (
     <td rowSpan={cell.rowSpan} className="schedule-cell-booked-wrap">
-      {cell.items.map(({ entry, startHour, endHour, col, colCount }) => {
-        const statusClass = scheduleCellStatusClass(entry.status);
-        const topPct = ((startHour - cell.rangeStart) / cell.rowSpan) * 100;
-        const heightPct = ((endHour - startHour) / cell.rowSpan) * 100;
+      {cell.items.map((item) => {
+        const { col, colCount } = item;
         const widthPct = 100 / colCount;
         const leftPct = col * widthPct;
         const gapPx = colCount > 1 ? 2 : 0;
+
+        if (item.kind === "overflow") {
+          return (
+            <div
+              key={`overflow-${col}`}
+              className="schedule-cell-overflow"
+              style={{
+                top: "2px",
+                height: "calc(100% - 4px)",
+                left: `calc(${leftPct}% + ${gapPx}px)`,
+                width: `calc(${widthPct}% - ${gapPx * 2}px)`,
+              }}
+              onClick={() => onJumpToDay(date)}
+            >
+              +{item.entries.length} lainnya
+            </div>
+          );
+        }
+
+        const { entry, startHour, endHour } = item;
+        const statusClass = scheduleCellStatusClass(entry.status);
+        const topPct = ((startHour - cell.rangeStart) / cell.rowSpan) * 100;
+        const heightPct = ((endHour - startHour) / cell.rowSpan) * 100;
         // A 1-hour block is too short to fit the title and time as separate stacked lines
         // without the second line getting clipped by the next row - fold them onto one line.
         const isShort = endHour - startHour <= 1;
