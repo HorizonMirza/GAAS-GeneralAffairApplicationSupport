@@ -141,3 +141,75 @@ public class BookingRuangStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
 }
+
+// Shift every conflicting occurrence in a recurring series by the same number of days, instead of
+// resolving each one individually through BookingRuangReschedule - see
+// BookingRuangController.BulkReschedule. Room/time/whole-day stay whatever that occurrence already
+// had; only the date moves.
+public class BulkRescheduleRequest
+{
+    public int DayShift { get; set; }
+}
+
+public class BulkRescheduleItemResult
+{
+    public int Id { get; set; }
+    public DateOnly TanggalLama { get; set; }
+    public DateOnly? TanggalBaru { get; set; }
+    public bool Success { get; set; }
+    public string? Detail { get; set; }
+}
+
+// See BookingRuangController.JoinWaitlist - "notify me when this room+date(+time) frees up".
+public class JoinWaitlistRequest
+{
+    public string NamaRuang { get; set; } = null!;
+    public DateOnly Tanggal { get; set; }
+    public bool IsWholeDay { get; set; }
+    public TimeOnly? JamMulai { get; set; }
+    public TimeOnly? JamSelesai { get; set; }
+}
+
+public class WaitlistOut
+{
+    public int Id { get; set; }
+    public string NamaRuang { get; set; } = null!;
+    public DateOnly Tanggal { get; set; }
+    public bool IsWholeDay { get; set; }
+    public TimeOnly? JamMulai { get; set; }
+    public TimeOnly? JamSelesai { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? NotifiedAt { get; set; }
+
+    public static WaitlistOut From(BookingWaitlist w) => new()
+    {
+        Id = w.Id,
+        NamaRuang = w.NamaRuang,
+        Tanggal = w.Tanggal,
+        IsWholeDay = w.IsWholeDay,
+        JamMulai = w.JamMulai,
+        JamSelesai = w.JamSelesai,
+        CreatedAt = w.CreatedAt,
+        NotifiedAt = w.NotifiedAt,
+    };
+}
+
+public class RoomUtilizationItem
+{
+    public string NamaRuang { get; set; } = null!;
+    public double BookedHours { get; set; }
+    public int ApprovedCount { get; set; }
+    public int RejectedCount { get; set; }
+    // Share of resolved requests (approved+rejected) that ended in rejection - null (not 0) when
+    // there were no resolved requests at all in range, so the frontend can render "-" instead of
+    // a misleading 0%.
+    public double? RejectionRate { get; set; }
+}
+
+public class UtilizationResponse
+{
+    public List<RoomUtilizationItem> Rooms { get; set; } = new();
+    // Hour-of-day (7-17, each representing "HH:00-(HH+1):00") -> number of Approved bookings
+    // occupying any part of that hour, across every room combined.
+    public Dictionary<int, int> BusyHours { get; set; } = new();
+}

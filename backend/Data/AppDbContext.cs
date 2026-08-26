@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<BookingChatMessage> BookingChatMessages => Set<BookingChatMessage>();
     public DbSet<BookingChatRead> BookingChatReads => Set<BookingChatRead>();
     public DbSet<RoomBookingCounter> RoomBookingCounters => Set<RoomBookingCounter>();
+    public DbSet<BookingWaitlist> BookingWaitlists => Set<BookingWaitlist>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -60,6 +61,10 @@ public class AppDbContext : DbContext
             if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<BookingRuangLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingWaitlist>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -355,6 +360,28 @@ public class AppDbContext : DbContext
             e.Property(c => c.Year).HasColumnName("year");
             e.Property(c => c.Month).HasColumnName("month");
             e.Property(c => c.LastSequence).HasColumnName("last_sequence");
+        });
+
+        modelBuilder.Entity<BookingWaitlist>(e =>
+        {
+            e.ToTable("booking_waitlist");
+            e.HasKey(w => w.Id);
+            e.Property(w => w.Id).HasColumnName("id");
+            e.Property(w => w.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
+            e.Property(w => w.Tanggal).HasColumnName("tanggal");
+            e.Property(w => w.IsWholeDay).HasColumnName("is_whole_day");
+            e.Property(w => w.JamMulai).HasColumnName("jam_mulai");
+            e.Property(w => w.JamSelesai).HasColumnName("jam_selesai");
+            e.Property(w => w.UserId).HasColumnName("user_id");
+            e.Property(w => w.CreatedAt).HasColumnName("created_at");
+            e.Property(w => w.NotifiedAt).HasColumnName("notified_at");
+
+            e.HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(w => new { w.NamaRuang, w.Tanggal }).HasDatabaseName("ix_booking_waitlist_room_date");
         });
 
         modelBuilder.Entity<DivisiCounter>(e =>

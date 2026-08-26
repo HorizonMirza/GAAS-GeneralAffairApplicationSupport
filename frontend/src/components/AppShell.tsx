@@ -8,7 +8,7 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
-import type { Role } from "@/lib/types";
+import type { Role, WaitlistEntry } from "@/lib/types";
 
 interface NavLeaf {
   label: string;
@@ -60,6 +60,7 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/booking-ruang-meeting/overview" },
       { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
       { label: "Booking", href: "/booking-ruang-meeting/transaksi" },
+      { label: "Laporan", href: "/booking-ruang-meeting/laporan", roles: ["ADMIN_GA", "APPROVAL_GA"] },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
@@ -124,6 +125,74 @@ function ThemeToggle() {
       <svg className="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       <svg className="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>
     </button>
+  );
+}
+
+// "N slot yang kamu tunggu sudah kosong" - polls once per page load (no push/websocket
+// available), same tradeoff as the booking-chat unread counts elsewhere in this app. KPU is
+// excluded because it can't reach Room Booking at all (see KPU_HIDDEN_CATEGORIES) and the backend
+// endpoint rejects it anyway.
+function WaitlistBell() {
+  const { me } = useAuth();
+  const [entries, setEntries] = useState<WaitlistEntry[]>([]);
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside([menuRef], () => setOpen(false), open);
+
+  useEffect(() => {
+    if (!me || me.role === "KPU") return;
+    api.myWaitlist().then(setEntries).catch(() => setEntries([]));
+  }, [me]);
+
+  if (!me || me.role === "KPU") return null;
+
+  const notified = entries.filter((e) => e.notifiedAt != null);
+
+  async function dismiss(id: number) {
+    try {
+      await api.leaveWaitlist(id);
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+    } catch {
+      // Non-critical - leave the entry showing, user can retry the dismiss.
+    }
+  }
+
+  return (
+    <div className="account-menu" ref={menuRef}>
+      <button className="icon-btn" aria-label="Notifikasi waitlist ruangan" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={{ position: "relative" }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        {notified.length > 0 && <span className="waitlist-bell-badge">{notified.length}</span>}
+      </button>
+      {open && (
+        <div className="account-dropdown" style={{ width: 280 }} onClick={(e) => e.stopPropagation()}>
+          <div className="account-dropdown-header">
+            <div className="account-dropdown-name">Waitlist Ruangan</div>
+          </div>
+          <hr className="account-dropdown-divider" />
+          {entries.length === 0 ? (
+            <div style={{ padding: "12px 16px", fontSize: "0.85rem" }} className="text-secondary">Belum ada waitlist</div>
+          ) : (
+            <div style={{ maxHeight: 280, overflowY: "auto" }}>
+              {entries.map((e) => (
+                <div key={e.id} style={{ padding: "10px 16px", fontSize: "0.8rem", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <div style={{ fontWeight: 600 }}>{e.namaRuang}</div>
+                  <div className="text-secondary">{e.tanggal}{e.isWholeDay ? "" : ` ${e.jamMulai?.slice(0, 5)}-${e.jamSelesai?.slice(0, 5)}`}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ color: e.notifiedAt ? "var(--badge-completed-fg)" : undefined }}>
+                      {e.notifiedAt ? "Slot tersedia!" : "Masih menunggu..."}
+                    </span>
+                    <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "2px 8px", fontSize: "0.72rem" }} onClick={() => dismiss(e.id)}>
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -303,6 +372,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="topbar-date">{dateText}</div>
           <div className="topbar-right" onClick={(e) => e.stopPropagation()}>
+            <WaitlistBell />
             <AccountMenu />
             <ThemeToggle />
           </div>

@@ -30,7 +30,7 @@ public static class IcsService
         _ => "On-Approval",
     };
 
-    public static byte[] Generate(BookingRuang item)
+    private static List<string> BuildEventLines(BookingRuang item)
     {
         var rooms = new[] { item.NamaRuang }.Concat(item.AdditionalRooms.Select(r => r.NamaRuang));
         var location = string.Join(", ", rooms);
@@ -51,10 +51,6 @@ public static class IcsService
 
         var lines = new List<string>
         {
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//PGM Solution//Room Booking//ID",
-            "CALSCALE:GREGORIAN",
             "BEGIN:VEVENT",
             $"UID:booking-ruang-{item.Id}@pgmsolution",
             $"DTSTAMP:{FormatDateTime(DateTime.UtcNow)}Z",
@@ -82,9 +78,44 @@ public static class IcsService
         lines.Add($"LOCATION:{Escape(location)}");
         lines.Add($"DESCRIPTION:{Escape(description)}");
         lines.Add("END:VEVENT");
+        return lines;
+    }
+
+    public static byte[] Generate(BookingRuang item)
+    {
+        var lines = new List<string>
+        {
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//PGM Solution//Room Booking//ID",
+            "CALSCALE:GREGORIAN",
+        };
+        lines.AddRange(BuildEventLines(item));
         lines.Add("END:VCALENDAR");
 
         // RFC 5545 mandates CRLF line endings.
+        return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
+    }
+
+    // Multi-event feed for a room's webcal subscription (BookingRuangController.DownloadRoomFeed)
+    // - same VEVENT format as a single booking's Generate() above, just many of them in one
+    // VCALENDAR so a calendar app can poll one URL instead of one download per booking.
+    public static byte[] GenerateFeed(string calendarName, IEnumerable<BookingRuang> items)
+    {
+        var lines = new List<string>
+        {
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//PGM Solution//Room Booking//ID",
+            "CALSCALE:GREGORIAN",
+            $"X-WR-CALNAME:{Escape(calendarName)}",
+            "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+            "X-PUBLISHED-TTL:PT1H",
+        };
+        foreach (var item in items)
+            lines.AddRange(BuildEventLines(item));
+        lines.Add("END:VCALENDAR");
+
         return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
     }
 }

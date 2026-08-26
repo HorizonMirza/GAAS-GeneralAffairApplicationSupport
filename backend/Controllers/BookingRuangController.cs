@@ -53,10 +53,25 @@ public class BookingRuangController : ApiControllerBase
     };
 
     private readonly AppDbContext _db;
+    private readonly IConfiguration _config;
 
-    public BookingRuangController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public BookingRuangController(AppDbContext db, CurrentUserService currentUser, IConfiguration config) : base(currentUser)
     {
         _db = db;
+        _config = config;
+    }
+
+    // Per-room webcal feed token: HMAC-SHA256(roomName) keyed on the same secret already used to
+    // sign login JWTs, so a calendar app can subscribe to /rooms/{room}/feed/{token}.ics without
+    // ever authenticating (webcal readers can't send a login cookie) while the URL itself stays
+    // unguessable - no new secret/table needed, and it's stable across restarts and deploys since
+    // it's derived, not stored.
+    private string ComputeRoomFeedToken(string roomName)
+    {
+        var secret = _config["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey missing");
+        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(secret));
+        var hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(roomName));
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     private static string EffectiveDivisi(User user) =>
@@ -125,6 +140,25 @@ public class BookingRuangController : ApiControllerBase
 
     private static List<string> RoomList(string primary, IEnumerable<string>? additional) =>
         new[] { primary }.Concat(additional ?? Enumerable.Empty<string>()).Distinct().ToList();
+
+    // Marks every still-unnotified BookingWaitlist row that overlaps this freed booking's room(s),
+    // date, and time as notified - called right before a booking that was actually occupying a
+    // slot (APPROVED_GA_APPROVAL) is deleted, so anyone who lost that exact room+time earlier (see
+    // AutoRejectLosingCompetitorsAsync) or joined by hand finds out it's open again. Doesn't
+    // SaveChanges itself - the caller's own save covers this too.
+    private async Task NotifyWaitlistAsync(BookingRuang freed)
+    {
+        var rooms = RoomList(freed);
+        var candidates = await _db.BookingWaitlists
+            .Where(w => w.NotifiedAt == null && w.Tanggal == freed.Tanggal && rooms.Contains(w.NamaRuang))
+            .ToListAsync();
+        var now = DateTime.UtcNow;
+        foreach (var w in candidates)
+        {
+            var overlaps = freed.IsWholeDay || w.IsWholeDay || (w.JamMulai < freed.JamSelesai && w.JamSelesai > freed.JamMulai);
+            if (overlaps) w.NotifiedAt = now;
+        }
+    }
 
     // Format "YYYY-MM", same convention as Pengiriman's bulan filter.
     private static IQueryable<BookingRuang> ApplyBulanFilter(IQueryable<BookingRuang> query, string? bulan)
@@ -242,6 +276,8 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+        if (NationalHolidays.IsHoliday(payload.Tanggal))
+            return $"Ruang meeting tutup pada tanggal ini ({NationalHolidays.NameFor(payload.Tanggal)})";
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -282,10 +318,11 @@ public class BookingRuangController : ApiControllerBase
             item.AdditionalRooms.Add(new BookingRuangRoom { NamaRuang = room });
     }
 
-    // One date per occurrence, Monday-Friday only (a computed later date can land on a weekend
-    // even though the start date itself never does - ValidatePayload already rejects that).
-    // Non-recurring payloads produce exactly the one date they were given. Capped so a badly
-    // chosen end date (e.g. years of daily recurrence) can't create an unbounded series.
+    // One date per occurrence, Monday-Friday and non-holiday only (a computed later date can land
+    // on a weekend/holiday even though the start date itself never does - ValidatePayload already
+    // rejects both for the start date). Non-recurring payloads produce exactly the one date they
+    // were given. Capped so a badly chosen end date (e.g. years of daily recurrence) can't create
+    // an unbounded series.
     private static List<DateOnly> BuildOccurrenceDates(BookingRuangCreate payload)
     {
         if (!payload.IsRecurring || payload.RecurrenceFrequency == null || payload.RecurrenceEndDate == null)
@@ -296,7 +333,7 @@ public class BookingRuangController : ApiControllerBase
         var frequency = payload.RecurrenceFrequency.Value;
         while (current <= payload.RecurrenceEndDate.Value && dates.Count < MaxOccurrencesPerSeries)
         {
-            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) && !NationalHolidays.IsHoliday(current))
                 dates.Add(current);
             current = frequency switch
             {
@@ -388,6 +425,135 @@ public class BookingRuangController : ApiControllerBase
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         return Ok(new { nomorPemesanan = BuildNomorPemesanan(effectiveDivisi, seq, effectiveTanggal) });
+    }
+
+    // Reference data for the calendar to grey out/block, same spirit as ListRooms below - static,
+    // read-only, no per-user scoping needed.
+    [HttpGet("holidays")]
+    public async Task<IActionResult> ListHolidays([FromQuery] int? year = null)
+    {
+        var (_, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var y = year ?? DateTime.UtcNow.Year;
+        var items = NationalHolidays.ForYear(y)
+            .OrderBy(kv => kv.Key)
+            .Select(kv => new { tanggal = kv.Key, nama = kv.Value })
+            .ToList();
+        return Ok(items);
+    }
+
+    // Authenticated lookup of the webcal subscribe URL for a room - the token itself isn't secret
+    // from logged-in staff (they already see this room's schedule in-app), it only needs to be
+    // unguessable to an outsider who never had a session here. See DownloadRoomFeed below for the
+    // actual unauthenticated feed this URL points at.
+    [HttpGet("rooms/{roomName}/feed-url")]
+    public async Task<IActionResult> GetRoomFeedUrl(string roomName)
+    {
+        var (_, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+        if (!MeetingRooms.IsValidRoom(roomName)) return NotFound(new { detail = "Ruang tidak ditemukan" });
+
+        var token = ComputeRoomFeedToken(roomName);
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var path = $"/api/booking-ruang/rooms/{Uri.EscapeDataString(roomName)}/feed/{token}.ics";
+        return Ok(new { url = baseUrl + path, webcalUrl = "webcal://" + Request.Host + path });
+    }
+
+    // Unauthenticated on purpose - webcal-subscribing calendar apps (Google Calendar, Outlook,
+    // Apple Calendar) poll this URL periodically on their own and cannot send a login cookie or
+    // any header at all, so the token in the URL is the only access control available. Anyone with
+    // the exact link can read this room's schedule (event names, PIC, participant count) without
+    // logging in - that's the tradeoff inherent to webcal, not a bug; ComputeRoomFeedToken keeps
+    // it unguessable to anyone who was never handed the link via GetRoomFeedUrl above.
+    [HttpGet("rooms/{roomName}/feed/{token}")]
+    public async Task<IActionResult> DownloadRoomFeed(string roomName, string token)
+    {
+        if (!MeetingRooms.IsValidRoom(roomName)) return NotFound(new { detail = "Ruang tidak ditemukan" });
+
+        var suppliedToken = token.EndsWith(".ics", StringComparison.OrdinalIgnoreCase)
+            ? token[..^4]
+            : token;
+        var expectedToken = ComputeRoomFeedToken(roomName);
+        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(suppliedToken), System.Text.Encoding.UTF8.GetBytes(expectedToken)))
+            return NotFound();
+
+        // Same visibility as GetSchedule/GetScheduleRange - only statuses that actually occupy the
+        // room, no DRAFT (private) or REJECTED_* (dead) entries. Bounded to a rolling window (90
+        // days back, 180 days ahead) so the feed can't grow unbounded as bookings accumulate for
+        // years - a subscribed calendar app re-polls this URL periodically anyway, so old/far-future
+        // events dropping off here is expected, not a data loss.
+        var from = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-90));
+        var to = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(180));
+        var items = await _db.BookingRuangs
+            .Include(b => b.AdditionalRooms)
+            .Where(b => ActiveStatuses.Contains(b.Status) && b.Tanggal >= from && b.Tanggal <= to
+                && (b.NamaRuang == roomName || b.AdditionalRooms.Any(r => r.NamaRuang == roomName)))
+            .OrderBy(b => b.Tanggal)
+            .ToListAsync();
+
+        var bytes = IcsService.GenerateFeed($"Jadwal {roomName}", items);
+        return File(bytes, "text/calendar");
+    }
+
+    // "Notify me when this fills up" - joined by hand from a "Penuh" room, or auto-joined for the
+    // loser of an auto-reject-competitor race (see AutoRejectLosingCompetitorsAsync). No dedupe
+    // against an existing identical entry - re-joining just adds another row, which is harmless
+    // (NotifyWaitlistAsync marks every matching row, and Leave removes them individually).
+    [HttpPost("waitlist")]
+    public async Task<IActionResult> JoinWaitlist([FromBody] JoinWaitlistRequest payload)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+        if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
+            return BadRequest(new { detail = "Ruang tidak ditemukan" });
+        if (!payload.IsWholeDay && (payload.JamMulai == null || payload.JamSelesai == null))
+            return BadRequest(new { detail = "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh" });
+
+        var entry = new BookingWaitlist
+        {
+            NamaRuang = payload.NamaRuang,
+            Tanggal = payload.Tanggal,
+            IsWholeDay = payload.IsWholeDay,
+            JamMulai = payload.IsWholeDay ? null : payload.JamMulai,
+            JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai,
+            UserId = user!.Id,
+        };
+        _db.BookingWaitlists.Add(entry);
+        await _db.SaveChangesAsync();
+        return StatusCode(201, WaitlistOut.From(entry));
+    }
+
+    // Notified entries sort first so a badge/bell UI can show "N slot tersedia" without the user
+    // having to scroll past older still-waiting entries.
+    [HttpGet("waitlist/mine")]
+    public async Task<IActionResult> MyWaitlist()
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var items = await _db.BookingWaitlists
+            .Where(w => w.UserId == user!.Id)
+            .OrderByDescending(w => w.NotifiedAt != null)
+            .ThenByDescending(w => w.CreatedAt)
+            .ToListAsync();
+        return Ok(items.Select(WaitlistOut.From).ToList());
+    }
+
+    [HttpDelete("waitlist/{waitlistId:int}")]
+    public async Task<IActionResult> LeaveWaitlist(int waitlistId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var entry = await _db.BookingWaitlists.FindAsync(waitlistId);
+        if (entry == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (entry.UserId != user!.Id) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        _db.BookingWaitlists.Remove(entry);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     [HttpGet("rooms")]
@@ -591,6 +757,8 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+        if (NationalHolidays.IsHoliday(payload.Tanggal))
+            return $"Ruang meeting tutup pada tanggal ini ({NationalHolidays.NameFor(payload.Tanggal)})";
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -656,16 +824,89 @@ public class BookingRuangController : ApiControllerBase
         return Ok(BookingRuangOut.From(item));
     }
 
+    // Bulk version of Reschedule above, scoped to one recurring series: shift every occurrence
+    // still flagged HasConflict by the same number of days (room/time/whole-day untouched, only
+    // the date moves), instead of making Admin/Approval GA open and fix each one individually.
+    // Each occurrence is validated and conflict-checked independently and applied only if clear -
+    // one occurrence still landing on a weekend/holiday or a fresh conflict doesn't block the
+    // others, it's just reported as still-unresolved in the response.
+    [HttpPatch("series/{seriesId:guid}/bulk-reschedule")]
+    public async Task<IActionResult> BulkReschedule(Guid seriesId, [FromBody] BulkRescheduleRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+        if (payload.DayShift == 0)
+            return BadRequest(new { detail = "Jumlah geser hari tidak boleh 0" });
+
+        var occurrences = await _db.BookingRuangs
+            .Include(b => b.AdditionalRooms)
+            .Where(b => b.SeriesId == seriesId && b.HasConflict)
+            .OrderBy(b => b.Tanggal)
+            .ToListAsync();
+        if (occurrences.Count == 0)
+            return NotFound(new { detail = "Tidak ada jadwal bentrok pada seri ini" });
+
+        var results = new List<BulkRescheduleItemResult>();
+        foreach (var item in occurrences)
+        {
+            var oldDate = item.Tanggal;
+            if (!IsGaReschedulable(item))
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = "Status tidak dapat dipindahkan" });
+                continue;
+            }
+
+            var newDate = oldDate.AddDays(payload.DayShift);
+            if (newDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
+                continue;
+            }
+            if (NationalHolidays.IsHoliday(newDate))
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} adalah hari libur ({NationalHolidays.NameFor(newDate)})" });
+                continue;
+            }
+
+            var roomList = RoomList(item);
+            var conflict = await FindConflictAsync(roomList, newDate, item.IsWholeDay, item.JamMulai, item.JamSelesai, item.Id);
+            if (conflict != null)
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = ConflictMessage(conflict) });
+                continue;
+            }
+
+            if (item.Tanggal.Year != newDate.Year || item.Tanggal.Month != newDate.Month)
+            {
+                var seq = await IncrementNomorSequenceAsync(item.Divisi, newDate.Year, newDate.Month);
+                item.NomorPemesanan = BuildNomorPemesanan(item.Divisi, seq, newDate);
+            }
+            item.Tanggal = newDate;
+            item.HasConflict = false;
+            AddLog(item, "RESCHEDULED", user!, $"Bulk reschedule dari {oldDate:dd/MM/yyyy} ke {newDate:dd/MM/yyyy} (geser {payload.DayShift} hari)");
+            results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, TanggalBaru = newDate, Success = true });
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(results);
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.BookingRuangs.FindAsync(itemId);
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsDeletableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
+
+        // Only a booking that actually held the slot (FindConflictAsync only blocks on
+        // APPROVED_GA_APPROVAL) frees anything real by being deleted - notify whoever is waiting
+        // on this exact room+date+time before it's gone.
+        if (item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
+            await NotifyWaitlistAsync(item);
 
         // A partial series (some occurrences deleted, others not) doesn't make sense - deleting
         // one occurrence removes the whole series with it, same "1 paket" convention as
@@ -917,6 +1158,78 @@ public class BookingRuangController : ApiControllerBase
         });
     }
 
+    // Utilization report: booked hours + rejection rate per room, plus a combined busy-hours
+    // histogram - for Admin/Approval GA and Super Admin to see which rooms are over/under-used and
+    // which hours are contested. Unlike List/GetStats this isn't unit-scoped (ApplyListFilters) -
+    // room management is a GA/Super Admin-wide concern, not something that should be sliced by the
+    // viewer's own Divisi/Departemen.
+    [HttpGet("utilization")]
+    public async Task<IActionResult> GetUtilization([FromQuery] DateOnly dateFrom, [FromQuery] DateOnly dateTo)
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+        if (dateFrom > dateTo)
+            return BadRequest(new { detail = "Tanggal mulai harus sebelum atau sama dengan tanggal selesai" });
+        // A wide-open range (e.g. accidentally passing no bound at all) would force a full-table
+        // scan of every booking ever made just to build a report - capped at 2 years, generous for
+        // any real "this quarter"/"this year" report use case.
+        if (dateTo.DayNumber - dateFrom.DayNumber > 730)
+            return BadRequest(new { detail = "Rentang tanggal maksimal 2 tahun" });
+
+        var approved = await _db.BookingRuangs
+            .Include(b => b.AdditionalRooms)
+            .Where(b => b.Status == BookingStatusEnum.APPROVED_GA_APPROVAL && b.Tanggal >= dateFrom && b.Tanggal <= dateTo)
+            .ToListAsync();
+        var rejectedCounts = await _db.BookingRuangs
+            .Include(b => b.AdditionalRooms)
+            .Where(b => RejectedStatuses.Contains(b.Status) && b.Tanggal >= dateFrom && b.Tanggal <= dateTo)
+            .ToListAsync();
+
+        var bookedHoursByRoom = new Dictionary<string, double>();
+        var approvedCountByRoom = new Dictionary<string, int>();
+        var busyHours = new Dictionary<int, int>();
+        foreach (var b in approved)
+        {
+            var (startHour, endHourExclusive, hours) = b.IsWholeDay
+                ? (OperatingStart.Hour, OperatingEnd.Hour, (double)(OperatingEnd.Hour - OperatingStart.Hour))
+                : (
+                    b.JamMulai!.Value.Hour,
+                    (int)Math.Ceiling(b.JamSelesai!.Value.ToTimeSpan().TotalHours),
+                    (b.JamSelesai!.Value.ToTimeSpan() - b.JamMulai!.Value.ToTimeSpan()).TotalHours
+                );
+
+            foreach (var room in RoomList(b))
+            {
+                bookedHoursByRoom[room] = bookedHoursByRoom.GetValueOrDefault(room) + hours;
+                approvedCountByRoom[room] = approvedCountByRoom.GetValueOrDefault(room) + 1;
+            }
+            for (var h = startHour; h < endHourExclusive; h++)
+                busyHours[h] = busyHours.GetValueOrDefault(h) + 1;
+        }
+
+        var rejectedCountByRoom = new Dictionary<string, int>();
+        foreach (var b in rejectedCounts)
+            foreach (var room in RoomList(b))
+                rejectedCountByRoom[room] = rejectedCountByRoom.GetValueOrDefault(room) + 1;
+
+        var rooms = MeetingRooms.Rooms.Select(r =>
+        {
+            var approvedCount = approvedCountByRoom.GetValueOrDefault(r.Nama);
+            var rejectedCount = rejectedCountByRoom.GetValueOrDefault(r.Nama);
+            var resolved = approvedCount + rejectedCount;
+            return new RoomUtilizationItem
+            {
+                NamaRuang = r.Nama,
+                BookedHours = Math.Round(bookedHoursByRoom.GetValueOrDefault(r.Nama), 1),
+                ApprovedCount = approvedCount,
+                RejectedCount = rejectedCount,
+                RejectionRate = resolved == 0 ? null : Math.Round((double)rejectedCount / resolved, 3),
+            };
+        }).OrderByDescending(r => r.BookedHours).ToList();
+
+        return Ok(new UtilizationResponse { Rooms = rooms, BusyHours = busyHours });
+    }
+
     private static string? MentionLabelForRole(RoleEnum role) => role switch
     {
         RoleEnum.ADMIN_DEPARTEMEN => "Admin Departemen",
@@ -1066,7 +1379,25 @@ public class BookingRuangController : ApiControllerBase
                     updated_at = {DateTime.UtcNow}
                 WHERE id = {loser.Id} AND status = {loser.Status.ToString()}");
             if (affected > 0)
+            {
                 AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
+                // Auto-join the loser's creator to the waitlist for the exact room(s)/slot they
+                // just lost, so they hear about it if the winner ever cancels/reschedules away -
+                // this is the "leverage the existing auto-reject-competitor mechanism" waitlist
+                // entry point; the other is a user manually joining from a "Penuh" room.
+                foreach (var room in RoomList(loser).Where(r => winnerRooms.Contains(r)))
+                {
+                    _db.BookingWaitlists.Add(new BookingWaitlist
+                    {
+                        NamaRuang = room,
+                        Tanggal = loser.Tanggal,
+                        IsWholeDay = loser.IsWholeDay,
+                        JamMulai = loser.JamMulai,
+                        JamSelesai = loser.JamSelesai,
+                        UserId = loser.CreatedBy,
+                    });
+                }
+            }
         }
     }
 

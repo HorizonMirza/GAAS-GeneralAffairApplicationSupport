@@ -987,6 +987,42 @@ body.auth-ready .app-shell {
 .room-card-full .room-card-avail-badge,
 .room-card-closed .room-card-avail-badge { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 
+.room-card-subscribe-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.room-card-subscribe-btn:hover { background: rgba(0, 0, 0, 0.55); }
+
+.waitlist-bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--badge-rejected-bg);
+  color: var(--badge-rejected-fg);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
 .room-card-icon {
   height: 84px;
   display: flex;

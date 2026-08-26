@@ -6,9 +6,11 @@ import type {
   BookingRuangListResponse,
   BookingRuangLog,
   BookingRuangReschedulePayload,
+  BulkRescheduleItemResult,
   BookingRuangStatsResponse,
   BookingStatus,
   ChatMessage,
+  Holiday,
   Invoice,
   InvoiceListResponse,
   InvoiceLog,
@@ -21,6 +23,8 @@ import type {
   RejectTarget,
   RoomOption,
   Status,
+  UtilizationResponse,
+  WaitlistEntry,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
@@ -267,6 +271,15 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
+  getHolidays: (year?: number) => apiRequest<Holiday[]>("/booking-ruang/holidays", { params: { year } }),
+  getRoomFeedUrl: (roomName: string) =>
+    apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
+  getRoomUtilization: (dateFrom: string, dateTo: string) =>
+    apiRequest<UtilizationResponse>("/booking-ruang/utilization", { params: { dateFrom, dateTo } }),
+  joinWaitlist: (payload: { namaRuang: string; tanggal: string; isWholeDay: boolean; jamMulai?: string | null; jamSelesai?: string | null }) =>
+    apiRequest<WaitlistEntry>("/booking-ruang/waitlist", { method: "POST", body: payload }),
+  myWaitlist: () => apiRequest<WaitlistEntry[]>("/booking-ruang/waitlist/mine"),
+  leaveWaitlist: (id: number) => apiRequest(`/booking-ruang/waitlist/${id}`, { method: "DELETE" }),
   nextBookingNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi } }),
   getBookingSchedule: (tanggal: string) =>
@@ -289,6 +302,11 @@ export const api = {
     apiRequest<BookingRuang>(`/booking-ruang/${id}/reschedule`, {
       method: "PATCH",
       body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
+    }),
+  bulkRescheduleSeries: (seriesId: string, dayShift: number) =>
+    apiRequest<BulkRescheduleItemResult[]>(`/booking-ruang/series/${seriesId}/bulk-reschedule`, {
+      method: "PATCH",
+      body: { dayShift },
     }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
   superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),

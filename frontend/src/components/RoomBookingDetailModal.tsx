@@ -53,12 +53,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [bulkShift, setBulkShift] = useState(7);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBulkShift(7);
     api.listRooms().then(setRooms).catch(() => setRooms([]));
   }, [open, item]);
 
@@ -72,6 +75,27 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
+  }
+
+  async function handleBulkReschedule() {
+    if (!item?.seriesId || bulkShift === 0) return;
+    setBulkBusy(true);
+    try {
+      const results = await api.bulkRescheduleSeries(item.seriesId, bulkShift);
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.length - successCount;
+      if (failCount === 0) {
+        showToast(`${successCount} jadwal berhasil digeser ${bulkShift} hari`);
+      } else {
+        showToast(`${successCount} jadwal berhasil digeser, ${failCount} masih bentrok/tidak bisa digeser`, "error");
+      }
+      onClose();
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   // Switching the primary room to one already picked as an additional room would otherwise leave
@@ -276,6 +300,22 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           {!isEdit && item.hasConflict && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12, color: "#d64545" }}>
               <strong>Bentrok:</strong> Jadwal ini bentrok dengan booking lain yang sudah Approved. Gunakan &quot;Updates&quot; pada menu aksi untuk memindahkan.
+              {item.seriesId && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <span>Atau geser semua jadwal bentrok di seri ini</span>
+                  <input
+                    type="number"
+                    value={bulkShift}
+                    onChange={(e) => setBulkShift(Number(e.target.value))}
+                    style={{ width: 56 }}
+                    title="Jumlah hari (boleh negatif untuk mundur)"
+                  />
+                  <span>hari</span>
+                  <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "4px 10px" }} disabled={bulkBusy} onClick={handleBulkReschedule}>
+                    {bulkBusy ? "Memproses..." : "Geser Semua"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

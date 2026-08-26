@@ -111,6 +111,23 @@ using (var scope = app.Services.CreateScope())
             UNIQUE (booking_ruang_id, user_id)
         )");
 
+    // Room availability waitlist - room name + tanggal are plain values (rooms aren't a DB table,
+    // see MeetingRooms), not a foreign key. Notified entries stay until the user dismisses them
+    // (BookingWaitlistController.Leave), so notified_at is a flag, not a delete trigger.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_waitlist (
+            id SERIAL PRIMARY KEY,
+            nama_ruang VARCHAR(100) NOT NULL,
+            tanggal DATE NOT NULL,
+            is_whole_day BOOLEAN NOT NULL,
+            jam_mulai TIME NULL,
+            jam_selesai TIME NULL,
+            user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            created_at TIMESTAMP NOT NULL,
+            notified_at TIMESTAMP NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_waitlist_room_date ON booking_waitlist (nama_ruang, tanggal)");
+
     // Backstops the app-level "one invoice per bulan per KPU" check against two uploads for the
     // same bulan racing each other. Wrapped so it's skipped (not a startup crash) on a database
     // that already has pre-existing duplicate rows from before this constraint existed.

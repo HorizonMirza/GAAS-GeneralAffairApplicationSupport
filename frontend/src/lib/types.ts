@@ -198,6 +198,43 @@ export interface RoomOption {
   kapasitas: number;
 }
 
+export interface Holiday {
+  tanggal: string;
+  nama: string;
+}
+
+export interface WaitlistEntry {
+  id: number;
+  namaRuang: string;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+  createdAt: string;
+  notifiedAt: string | null;
+}
+
+export interface BulkRescheduleItemResult {
+  id: number;
+  tanggalLama: string;
+  tanggalBaru: string | null;
+  success: boolean;
+  detail: string | null;
+}
+
+export interface RoomUtilizationItem {
+  namaRuang: string;
+  bookedHours: number;
+  approvedCount: number;
+  rejectedCount: number;
+  rejectionRate: number | null;
+}
+
+export interface UtilizationResponse {
+  rooms: RoomUtilizationItem[];
+  busyHours: Record<string, number>;
+}
+
 export interface BookingRuang {
   id: number;
   nomorPemesanan: string | null;
