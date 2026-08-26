@@ -235,11 +235,6 @@ function BookingCalendarPageInner() {
 
   const availWeekend = isWeekend(refDate);
 
-  const availEmptyCount = useMemo(
-    () => availPlans.filter((plan) => !Array.from(plan.values()).some((c) => c.type === "busy")).length,
-    [availPlans]
-  );
-
   function goToday() {
     setRefDate(todayIso());
   }
@@ -294,11 +289,9 @@ function BookingCalendarPageInner() {
             </button>
           )}
           {view === "avail" ? (
-            <div className="avail-summary-card">
-              <div className="avail-summary-value">
-                {availBusy || availWeekend ? "-" : `${availEmptyCount} / ${rooms.length}`}
-              </div>
-              <div className="avail-summary-label">Ruangan kosong pada tanggal ini</div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="calendar-room-select">Ruangan</label>
+              <input id="calendar-room-select" type="text" value="Semua Ruangan" readOnly />
             </div>
           ) : (
             <div className="field" style={{ marginBottom: 0 }}>
@@ -357,7 +350,7 @@ function BookingCalendarPageInner() {
                   </svg>
                 </button>
               </div>
-              <div className="calendar-topbar-room">{view === "avail" ? "Semua Ruangan" : selectedRoom}</div>
+              <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruangan" : selectedRoom}</div>
             </div>
             <div className="calendar-view-toggle">
               {(["day", "week", "month", "avail"] as TabMode[]).map((v) => (

@@ -1637,26 +1637,6 @@ table.data-table {
 }
 .avail-legend span { display: flex; align-items: center; gap: 6px; }
 
-.avail-summary-card {
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface-alt);
-  border-radius: 10px;
-  padding: 12px 14px;
-  text-align: center;
-}
-.avail-summary-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--blue-500);
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.avail-summary-label {
-  margin-top: 4px;
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-}
-
 .avail-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .avail-dot-empty { background: transparent; border: 1px dashed var(--border-subtle); }
 
