@@ -212,22 +212,6 @@ export default function BookingOverviewPage() {
                 </div>
                 <div className="room-card-body">
                   <h4>{r.nama}</h4>
-                  {availability === "full" && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ width: "auto", padding: "3px 10px", fontSize: "0.72rem", marginTop: 6 }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        api.joinWaitlist({ namaRuang: r.nama, tanggal: todayLocalDate(), isWholeDay: true })
-                          .then(() => showToast(`Kamu akan diberi tahu kalau ${r.nama} kosong hari ini`))
-                          .catch((err) => showToast((err as Error).message, "error"));
-                      }}
-                    >
-                      Tunggu Slot Kosong
-                    </button>
-                  )}
                 </div>
               </Link>
             );
