@@ -29,9 +29,12 @@ interface Props {
   // them here instead of firing their own separate list-endpoint calls for the same totals.
   onPengirimanStats?: (data: PengirimanStatsResponse | null) => void;
   onBookingStats?: (data: BookingRuangStatsResponse | null) => void;
+  // Some callers only want the stats fetch (for the callbacks above) without the "Ringkasan
+  // Bulan Ini" tile grid itself being shown.
+  hideTiles?: boolean;
 }
 
-export default function DashboardStats({ me, onPengirimanStats, onBookingStats }: Props) {
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats, hideTiles }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
@@ -46,10 +49,12 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         onPengirimanStats?.(p);
         const pc = p.countsByStatus;
         setPengiriman({
-          waitingL1: (pc.SUBMITTED ?? 0) + (pc.REJECTED_GA ?? 0),
-          waitingGa: (pc.APPROVED_L1 ?? 0) + (pc.REJECTED_GA_APPROVAL ?? 0),
-          waitingGaApproval: (pc.APPROVED_GA ?? 0) + (pc.REJECTED_KPU ?? 0),
-          waitingKpu: pc.APPROVED_GA_APPROVAL ?? 0,
+          // Read directly from the backend's own actionability computation (GetStats) instead of
+          // re-deriving "which statuses count for this stage" here - see PengirimanController.
+          waitingL1: p.waitingL1,
+          waitingGa: p.waitingGa,
+          waitingGaApproval: p.waitingGaApproval,
+          waitingKpu: p.waitingKpu,
           completed: pc.COMPLETED ?? 0,
           totalBulanIni: p.totalBulanIni,
         });
@@ -58,6 +63,10 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         setPengirimanFailed(true);
         onPengirimanStats?.(null);
       });
+    // KPU only deals with Expedition (see AppShell's KPU_HIDDEN_CATEGORIES) - it never sees the
+    // Room Booking section below, so skip the fetch entirely instead of loading numbers nobody
+    // will see.
+    if (me.role === "KPU") return;
     api.getBookingStats(bulan)
       .then((b) => {
         onBookingStats?.(b);
@@ -87,6 +96,8 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
       ? "Approval Divisi"
       : "Approval Departemen/Divisi";
 
+  if (hideTiles) return null;
+
   return (
     <>
       <h3 style={{ margin: "0 0 14px" }}>Ringkasan Bulan Ini</h3>
@@ -115,23 +126,25 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         )}
       </div>
 
-      <div className="dashboard-stats-section">
-        <div className="dashboard-stats-section-head">
-          <h4>Room Booking</h4>
-          <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
-        </div>
-        {!booking ? (
-          <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
-        ) : (
-          <div className="stat-grid">
-            <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
-            <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
-            <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-            <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
-            <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Room Booking</h4>
+            <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
           </div>
-        )}
-      </div>
+          {!booking ? (
+            <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

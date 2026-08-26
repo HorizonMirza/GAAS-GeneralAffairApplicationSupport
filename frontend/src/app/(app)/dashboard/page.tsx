@@ -92,7 +92,7 @@ export default function DashboardPage() {
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
       </div>
 
-      <DashboardStats me={me} onPengirimanStats={handlePengirimanStats} onBookingStats={handleBookingStats} />
+      <DashboardStats me={me} onPengirimanStats={handlePengirimanStats} onBookingStats={handleBookingStats} hideTiles />
 
       <h3 style={{ margin: "24px 0 12px" }}>Modul</h3>
       <div className="module-grid">
