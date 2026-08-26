@@ -112,7 +112,11 @@ public class AppDbContext : DbContext
             e.Property(p => p.SubTotal).HasColumnName("sub_total").HasColumnType("decimal(14,2)");
             e.Property(p => p.Total).HasColumnName("total").HasColumnType("decimal(14,2)");
 
-            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            // Concurrency token: guards approve/reject endpoints against two actors racing on the
+            // same status transition (see PengirimanController approve-l1/approve-ga/etc). Every
+            // write path re-reads Status via FindAsync before mutating it, so this only rejects
+            // genuine concurrent writes, never a normal single-request update.
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
             e.Property(p => p.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
 
@@ -371,7 +375,8 @@ public class AppDbContext : DbContext
             e.Property(i => i.Bulan).HasColumnName("bulan").HasMaxLength(7).IsRequired();
             e.Property(i => i.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired();
             e.Property(i => i.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();
-            e.Property(i => i.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
+            // Same race guard as Pengiriman.Status above, for ApproveInvoice/RejectInvoice.
+            e.Property(i => i.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired().IsConcurrencyToken();
             e.Property(i => i.Catatan).HasColumnName("catatan");
 
             e.Property(i => i.UploadedBy).HasColumnName("uploaded_by");

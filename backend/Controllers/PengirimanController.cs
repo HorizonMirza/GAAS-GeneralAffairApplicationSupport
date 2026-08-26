@@ -591,7 +591,8 @@ public class PengirimanController : ApiControllerBase
         item.ApprovedL1At = DateTime.UtcNow;
         item.RejectReason = null;
         AddLog(item, "APPROVED_L1", user);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -608,7 +609,8 @@ public class PengirimanController : ApiControllerBase
         item.ApprovedByL1 = null;
         item.ApprovedL1At = null;
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -629,7 +631,8 @@ public class PengirimanController : ApiControllerBase
         item.RejectReason = null;
         item.RejectTarget = null;
         AddLog(item, "APPROVED_GA", user);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -652,7 +655,8 @@ public class PengirimanController : ApiControllerBase
         item.ApprovedByGa = null;
         item.ApprovedGaAt = null;
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -672,7 +676,8 @@ public class PengirimanController : ApiControllerBase
         item.ApprovedApprovalGaAt = DateTime.UtcNow;
         item.RejectReason = null;
         AddLog(item, "APPROVED_GA_APPROVAL", user);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -696,7 +701,8 @@ public class PengirimanController : ApiControllerBase
         item.ApprovedByApprovalGa = null;
         item.ApprovedApprovalGaAt = null;
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -711,18 +717,31 @@ public class PengirimanController : ApiControllerBase
         if (item.Status != StatusEnum.APPROVED_GA_APPROVAL)
             return StatusCode(403, new { detail = "Data harus disetujui Approval General Affair terlebih dahulu" });
 
+        if (string.IsNullOrWhiteSpace(payload.NoResi))
+            return StatusCode(400, new { detail = "No Resi wajib diisi" });
+        if (payload.BeratBarangKg <= 0)
+            return StatusCode(400, new { detail = "Berat barang harus lebih dari 0" });
+        if (payload.AsuransiHarga < 0)
+            return StatusCode(400, new { detail = "Asuransi tidak boleh negatif" });
+        if (payload.SubTotal <= 0)
+            return StatusCode(400, new { detail = "Ongkos kirim harus lebih dari 0" });
+
         item.NoResi = payload.NoResi;
         item.BeratBarangKg = payload.BeratBarangKg;
         item.AsuransiHarga = payload.AsuransiHarga;
         item.SubTotal = payload.SubTotal;
-        item.Total = payload.Total;
+        // Total is always derived here from SubTotal + AsuransiHarga - never trust the client's
+        // number directly, so a stale/buggy/tampered client can't write an inconsistent Total
+        // into the permanent monthly cost recap.
+        item.Total = payload.SubTotal + payload.AsuransiHarga;
         item.Status = StatusEnum.COMPLETED;
         item.ApprovedByKpu = user!.Id;
         item.ApprovedKpuAt = DateTime.UtcNow;
         item.RejectReason = null;
         item.RejectTarget = null;
         AddLog(item, "APPROVED_KPU", user);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 
@@ -743,7 +762,8 @@ public class PengirimanController : ApiControllerBase
         // to them specifically, whichever GA role they are, never to a different GA role.
         item.RejectTarget = IsGaOriginCreator(item) ? RejectTargetEnum.ORIGIN : payload.Target;
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(PengirimanOut.From(item));
     }
 

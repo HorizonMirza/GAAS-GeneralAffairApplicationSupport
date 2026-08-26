@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -12,6 +13,24 @@ public abstract class ApiControllerBase : ControllerBase
     protected ApiControllerBase(CurrentUserService currentUser)
     {
         CurrentUser = currentUser;
+    }
+
+    // Wraps SaveChangesAsync for approve/reject endpoints guarded by an IsConcurrencyToken
+    // property (Pengiriman.Status, Invoice.Status): if another request already changed that row
+    // between this request's read and its save, EF throws DbUpdateConcurrencyException instead
+    // of silently overwriting - this turns that into a clean 409 the caller can show and retry
+    // from, instead of a duplicate approval log or a lost update.
+    protected async Task<IActionResult?> TrySaveChangesAsync(DbContext db)
+    {
+        try
+        {
+            await db.SaveChangesAsync();
+            return null;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return StatusCode(409, new { detail = "Data sudah diubah oleh pengguna lain. Muat ulang halaman dan coba lagi." });
+        }
     }
 
     protected async Task<(User? user, IActionResult? error)> RequireRoleAsync(params RoleEnum[] roles)

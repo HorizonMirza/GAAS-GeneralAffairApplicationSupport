@@ -52,6 +52,8 @@ public class InvoiceController : ApiControllerBase
         var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
         if (error != null) return error;
 
+        if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
+            return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
         if (file.Length > MaxInvoiceFileSizeBytes)
@@ -280,7 +282,8 @@ public class InvoiceController : ApiControllerBase
         item.ReviewedAt = DateTime.UtcNow;
         AddLog(item, "APPROVED", user, payload.Catatan);
 
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(InvoiceOut.From(item));
     }
 
@@ -302,7 +305,8 @@ public class InvoiceController : ApiControllerBase
         item.ReviewedAt = DateTime.UtcNow;
         AddLog(item, "REJECTED", user, payload.Catatan);
 
-        await _db.SaveChangesAsync();
+        var conflict = await TrySaveChangesAsync(_db);
+        if (conflict != null) return conflict;
         return Ok(InvoiceOut.From(item));
     }
 
