@@ -1663,7 +1663,7 @@ table.data-table {
 /* ---------- Booking Ruang Meeting: Calendar page ---------- */
 .calendar-shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 20px;
   align-items: stretch;
 }
@@ -1880,12 +1880,12 @@ table.data-table {
   border: none;
   background: transparent;
   color: var(--text-primary);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   padding: 0;
   width: 100%;
   /* Fixed height (not aspect-ratio) so the number circle + gap + status dot always fits inside
      the cell itself instead of overflowing into - or past - the row below it. */
-  height: 40px;
+  height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1896,8 +1896,8 @@ table.data-table {
 /* The filled/hover circle lives on this inner span, not the whole button - so it wraps only the
    day number and never reaches down to the status dots sitting below it. */
 .mini-calendar-day-circle {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
