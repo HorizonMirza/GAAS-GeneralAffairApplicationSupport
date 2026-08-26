@@ -72,9 +72,13 @@ export default function OverviewPage() {
       const counts = statsResp.countsByStatus;
       setItems(queue);
       setStats({
-        waitingL1: (counts.SUBMITTED ?? 0) + (counts.REJECTED_GA ?? 0),
+        // REJECTED_GA is never L1-actionable (RejectGa always bounces to origin, see
+        // PengirimanController.IsL1Actionable) and REJECTED_KPU is never GA-Approval-actionable
+        // (IsGaApprovalActionable only allows APPROVED_GA) - counting either here overcounts the
+        // tile with items that role can't actually act on.
+        waitingL1: counts.SUBMITTED ?? 0,
         waitingGa: (counts.APPROVED_L1 ?? 0) + (counts.REJECTED_GA_APPROVAL ?? 0),
-        waitingGaApproval: (counts.APPROVED_GA ?? 0) + (counts.REJECTED_KPU ?? 0),
+        waitingGaApproval: counts.APPROVED_GA ?? 0,
         waitingKpu: counts.APPROVED_GA_APPROVAL ?? 0,
         completed: counts.COMPLETED ?? 0,
       });
