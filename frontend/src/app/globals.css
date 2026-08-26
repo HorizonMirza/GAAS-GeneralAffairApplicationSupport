@@ -1957,9 +1957,12 @@ table.data-table {
   overflow: hidden;
 }
 
+/* 72px leading gutter matches .schedule-time-col's width exactly, so a day-box here is sized by
+   the same (table width - 72px) / column count formula Harian/Mingguan/Ketersediaan already use,
+   instead of splitting the full width across 7 columns with nothing held back. */
 .month-grid-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: 72px repeat(7, 1fr);
   background: var(--bg-surface-alt);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1968,11 +1971,16 @@ table.data-table {
   padding: 8px 0;
 }
 
-.month-grid-cells {
+.month-grid-body { display: flex; flex-direction: column; }
+
+.month-grid-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(96px, auto);
+  grid-template-columns: 72px repeat(7, 1fr);
+  min-height: 96px;
 }
+
+.month-grid-gutter { background: var(--bg-surface-alt); }
+.month-grid-row .month-grid-gutter { border-top: 1px solid var(--border-subtle); }
 
 .month-cell {
   border-top: 1px solid var(--border-subtle);
@@ -1983,7 +1991,7 @@ table.data-table {
   gap: 4px;
   min-width: 0;
 }
-.month-cell:nth-child(7n) { border-right: 1px solid var(--border-subtle); }
+.month-cell:last-child { border-right: 1px solid var(--border-subtle); }
 
 .month-cell-muted { background: var(--bg-surface-alt); opacity: 0.6; }
 
