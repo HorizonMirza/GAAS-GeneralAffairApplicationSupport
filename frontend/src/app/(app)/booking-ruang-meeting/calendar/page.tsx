@@ -235,6 +235,11 @@ function BookingCalendarPageInner() {
 
   const availWeekend = isWeekend(refDate);
 
+  const availEmptyCount = useMemo(
+    () => availPlans.filter((plan) => !Array.from(plan.values()).some((c) => c.type === "busy")).length,
+    [availPlans]
+  );
+
   function goToday() {
     setRefDate(todayIso());
   }
@@ -288,7 +293,14 @@ function BookingCalendarPageInner() {
               + Booking Ruang Meeting
             </button>
           )}
-          {view !== "avail" && (
+          {view === "avail" ? (
+            <div className="avail-summary-card">
+              <div className="avail-summary-value">
+                {availBusy || availWeekend ? "-" : `${availEmptyCount} / ${rooms.length}`}
+              </div>
+              <div className="avail-summary-label">Ruangan kosong pada tanggal ini</div>
+            </div>
+          ) : (
             <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="calendar-room-select">Ruangan</label>
               <select id="calendar-room-select" value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
