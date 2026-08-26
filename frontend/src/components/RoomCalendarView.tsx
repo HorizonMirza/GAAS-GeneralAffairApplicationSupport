@@ -275,15 +275,22 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     return hour >= lo && hour <= hi;
   }
 
-  // Live "current time" indicator (like Google Calendar's red line) for the Harian/Mingguan hour
-  // grid - only meaningful when today actually falls within what's on screen right now.
+  // Live "current time" indicator (like Google Calendar's red line) for the Harian/Mingguan/
+  // Ketersediaan hour grid - only meaningful when today actually falls within what's on screen.
   const weekDatesForNowLine = view === "week" ? Array.from({ length: 5 }, (_, i) => addDays(mondayOf(refDate), i)) : [];
   const nowLineActive =
-    (view === "day" && refDate === todayIso()) || (view === "week" && weekDatesForNowLine.includes(todayIso()));
+    (view === "day" && refDate === todayIso())
+    || (view === "week" && weekDatesForNowLine.includes(todayIso()))
+    || (view === "avail" && refDate === todayIso());
 
   const nowLineWrapRef = useRef<HTMLDivElement>(null);
   const nowLineRowRef = useRef<HTMLTableCellElement>(null);
+  // Harian/Mingguan: the line sits under one column (the day/room being viewed). Ketersediaan
+  // fixes the date and varies the room per column instead, so "now" applies to every room at
+  // once - the line spans from the first room column's left edge to the last one's right edge.
   const nowLineColRef = useRef<HTMLTableCellElement>(null);
+  const nowLineFirstColRef = useRef<HTMLTableCellElement>(null);
+  const nowLineLastColRef = useRef<HTMLTableCellElement>(null);
   const [nowLineRect, setNowLineRect] = useState<{ top: number; height: number; left: number; width: number } | null>(null);
   const [, forceNowLineTick] = useState(0);
 
@@ -305,12 +312,27 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     function measure() {
       const wrap = nowLineWrapRef.current;
       const row = nowLineRowRef.current;
-      const col = nowLineColRef.current;
-      if (!wrap || !row || !col) return;
+      if (!wrap || !row) return;
       const wrapBox = wrap.getBoundingClientRect();
       const rowBox = row.getBoundingClientRect();
-      const colBox = col.getBoundingClientRect();
-      setNowLineRect({ top: rowBox.top - wrapBox.top, height: rowBox.height, left: colBox.left - wrapBox.left, width: colBox.width });
+      let left: number;
+      let width: number;
+      if (view === "avail") {
+        const first = nowLineFirstColRef.current;
+        const last = nowLineLastColRef.current;
+        if (!first || !last) return;
+        const firstBox = first.getBoundingClientRect();
+        const lastBox = last.getBoundingClientRect();
+        left = firstBox.left - wrapBox.left;
+        width = lastBox.left + lastBox.width - firstBox.left;
+      } else {
+        const col = nowLineColRef.current;
+        if (!col) return;
+        const colBox = col.getBoundingClientRect();
+        left = colBox.left - wrapBox.left;
+        width = colBox.width;
+      }
+      setNowLineRect({ top: rowBox.top - wrapBox.top, height: rowBox.height, left, width });
     }
     measure();
     window.addEventListener("resize", measure);
@@ -441,20 +463,30 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     // given day, and this view is meant to look and behave exactly like Harian (uncapped).
     const plans = roomList.map((r) => buildDayPlan(entries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama))));
     return (
-      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
+      <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
           <thead>
             <tr>
               <th className="schedule-time-col schedule-th-center">Jam</th>
-              {roomList.map((r) => (
-                <th key={r.nama} className="schedule-th-center" title={r.nama}>{r.nama}</th>
+              {roomList.map((r, idx) => (
+                <th
+                  key={r.nama}
+                  ref={(el) => {
+                    if (idx === 0) nowLineFirstColRef.current = el;
+                    if (idx === roomList.length - 1) nowLineLastColRef.current = el;
+                  }}
+                  className="schedule-th-center"
+                  title={r.nama}
+                >
+                  {r.nama}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {HOURS.map((hour) => (
               <tr key={hour}>
-                <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                <td className="schedule-time-col" ref={hour === HOURS[0] ? nowLineRowRef : undefined}>{String(hour).padStart(2, "0")}:00</td>
                 {roomList.map((r, idx) => {
                   const cell = plans[idx].get(hour);
                   return (
@@ -479,6 +511,11 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
             </tr>
           </tbody>
         </table>
+        {showNowLine && (
+          <div className="schedule-now-line" style={{ top: nowLineTop!, left: nowLineRect!.left, width: nowLineRect!.width }}>
+            <span className="schedule-now-dot" />
+          </div>
+        )}
       </div>
     );
   }

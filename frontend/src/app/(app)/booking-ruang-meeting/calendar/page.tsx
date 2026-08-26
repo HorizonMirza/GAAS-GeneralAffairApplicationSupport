@@ -25,6 +25,8 @@ import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 
+const ALL_ROOMS_VALUE = "__all__";
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -201,21 +203,27 @@ function BookingCalendarPageInner() {
               + Booking Ruang Meeting
             </button>
           )}
-          {view === "avail" ? (
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="calendar-room-select">Ruangan</label>
-              <input id="calendar-room-select" type="text" value="Semua Ruangan" readOnly />
-            </div>
-          ) : (
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="calendar-room-select">Ruangan</label>
-              <select id="calendar-room-select" value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="calendar-room-select">Ruangan</label>
+            <select
+              id="calendar-room-select"
+              value={view === "avail" ? ALL_ROOMS_VALUE : selectedRoom}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === ALL_ROOMS_VALUE) {
+                  setView("avail");
+                } else {
+                  setSelectedRoom(v);
+                  if (view === "avail") setView("day");
+                }
+              }}
+            >
+              <option value={ALL_ROOMS_VALUE}>Semua Ruangan</option>
+              {rooms.map((r) => (
+                <option key={r.nama} value={r.nama}>{r.nama}</option>
+              ))}
+            </select>
+          </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-date-input">Tanggal</label>
             <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
