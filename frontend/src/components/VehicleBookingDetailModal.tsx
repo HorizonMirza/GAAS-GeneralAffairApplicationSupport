@@ -14,7 +14,7 @@ import type { BookingKendaraan, BookingKendaraanCreatePayload, Me, VehicleOption
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
 
-const HOUR_OPTIONS = Array.from({ length: 16 }, (_, i) => `${String(i + 6).padStart(2, "0")}:00`);
+const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
 
 interface Props {
   open: boolean;
@@ -77,8 +77,8 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
       return {
         ...f,
         isWholeDay: !f.isWholeDay,
-        jamMulai: !f.isWholeDay ? "06:00" : f.jamMulai,
-        jamSelesai: !f.isWholeDay ? "21:00" : f.jamSelesai,
+        jamMulai: !f.isWholeDay ? "07:00" : f.jamMulai,
+        jamSelesai: !f.isWholeDay ? "18:00" : f.jamSelesai,
       };
     });
   }

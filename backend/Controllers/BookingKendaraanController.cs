@@ -161,8 +161,8 @@ public class BookingKendaraanController : ApiControllerBase
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
 
-    private static readonly TimeOnly OperatingStart = new(6, 0);
-    private static readonly TimeOnly OperatingEnd = new(21, 0);
+    private static readonly TimeOnly OperatingStart = new(7, 0);
+    private static readonly TimeOnly OperatingEnd = new(18, 0);
 
     private static string? ValidatePayload(BookingKendaraanCreate payload, bool isGaActor)
     {
@@ -193,7 +193,7 @@ public class BookingKendaraanController : ApiControllerBase
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
-                return "Jam booking hanya tersedia antara 06:00 - 21:00";
+                return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         return null;
     }
@@ -401,7 +401,7 @@ public class BookingKendaraanController : ApiControllerBase
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
-                return "Jam booking hanya tersedia antara 06:00 - 21:00";
+                return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         return null;
     }

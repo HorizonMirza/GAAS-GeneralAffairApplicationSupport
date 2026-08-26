@@ -31,12 +31,12 @@ import { useToast } from "@/components/ui/ToastProvider";
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 
-// Vehicle Booking buka 06:00-21:00 (lihat OperatingStart/OperatingEnd di
+// Vehicle Booking buka 07:00-18:00 (lihat OperatingStart/OperatingEnd di
 // BookingKendaraanController). "Penuh" hanya berarti benar-benar penuh sepanjang jam operasional -
 // dihitung dari booking yang statusnya sudah APPROVED_GA_APPROVAL (final) memakai menit asli
 // (bukan dibulatkan ke blok jam), sama seperti Room Booking's isRoomFullyBookedToday.
-const OPEN_MIN = 6 * 60;
-const CLOSE_MIN = 21 * 60;
+const OPEN_MIN = 7 * 60;
+const CLOSE_MIN = 18 * 60;
 
 function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
