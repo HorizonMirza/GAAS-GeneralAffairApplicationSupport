@@ -1519,7 +1519,10 @@ table.data-table {
    side instead, so restore it here with a more specific selector rather than relying on source
    order to win the cascade. */
 .schedule-table.data-table tbody tr:last-child td { border-bottom: 1px solid var(--border-subtle); }
-.data-table th.schedule-th-center { text-align: center; }
+/* .data-table th's letter-spacing adds trailing space after the last character too, which skews
+   centered (as opposed to the table's normal left-aligned) headers visibly left of true center -
+   most noticeable on short, two-line-wrapped room names. Centered headers don't get that spacing. */
+.data-table th.schedule-th-center { text-align: center; letter-spacing: normal; }
 
 .schedule-time-col {
   width: 72px;
