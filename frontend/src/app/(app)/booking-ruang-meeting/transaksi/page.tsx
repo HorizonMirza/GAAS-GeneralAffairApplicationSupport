@@ -181,8 +181,8 @@ export default function BookingTransaksiPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const pageStart = Math.max(1, filters.page - 2);
-  const pageEnd = Math.min(totalPages, pageStart + 4);
+  const pageStart = Math.max(1, filters.page - 1);
+  const pageEnd = Math.min(totalPages, pageStart + 2);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
