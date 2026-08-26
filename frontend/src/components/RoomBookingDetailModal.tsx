@@ -211,7 +211,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </select>
             </div>
             <div className="field full">
-              <label htmlFor="bv-sepanjang-hari">Durasi</label>
+              <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="bv-sepanjang-hari"

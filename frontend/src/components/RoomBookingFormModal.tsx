@@ -224,7 +224,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </select>
             </div>
             <div className="field full">
-              <label htmlFor="f-sepanjang-hari">Durasi</label>
+              <label htmlFor="f-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="f-sepanjang-hari"

@@ -134,7 +134,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </select>
             </div>
             <div className="field full">
-              <label htmlFor="rs-sepanjang-hari">Durasi</label>
+              <label htmlFor="rs-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="rs-sepanjang-hari"
