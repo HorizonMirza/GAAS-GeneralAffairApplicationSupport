@@ -84,6 +84,39 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   return null as T;
 }
 
+// The row-menu's "Download PDF" / "Export Calendar" links used to be plain <a href> tags - fine
+// when the request succeeds, but a 403 (e.g. someone outside the booking's own divisi/departemen,
+// see CanAccessBookingRuang on the backend) then surfaces as a raw browser error page instead of
+// the same clean in-app message Chat/History already show for that exact restriction. Fetching
+// the file via JS and triggering the save ourselves lets a failed request throw an ApiError the
+// caller can toast instead.
+export async function downloadFile(url: string, filename: string): Promise<void> {
+  const response = await fetch(url, { credentials: "include" });
+  if (response.status === 401) {
+    if (typeof window !== "undefined" && window.location.pathname !== "/") window.location.href = "/";
+    throw new ApiError("Sesi berakhir, silakan login kembali", 401);
+  }
+  if (!response.ok) {
+    let detail = "Gagal mengunduh file";
+    try {
+      const data = await response.json();
+      detail = data.detail || detail;
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(detail, response.status);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export interface ListInvoiceParams {
   page?: number;
   limit?: number;

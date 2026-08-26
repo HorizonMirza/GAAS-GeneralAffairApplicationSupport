@@ -15,6 +15,8 @@ interface Props {
   onUpdates: () => void;
   onStatus: () => void;
   onDelete: () => void;
+  // Presence alone gates whether the item renders; the actual download (and any access-denied
+  // toast) is driven entirely by onPdfClick/onIcsClick - see downloadFile in lib/api.ts.
   pdfUrl?: string;
   onPdfClick?: () => void;
   icsUrl?: string;
@@ -63,16 +65,16 @@ export default function RowMenuDropdown({
         History
       </button>
       {pdfUrl && (
-        <a className="row-menu-item" href={pdfUrl} target="_blank" rel="noopener noreferrer" onClick={onPdfClick}>
+        <button type="button" className="row-menu-item" onClick={onPdfClick}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Download PDF
-        </a>
+        </button>
       )}
       {icsUrl && (
-        <a className="row-menu-item" href={icsUrl} onClick={onIcsClick}>
+        <button type="button" className="row-menu-item" onClick={onIcsClick}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
           Export Calendar
-        </a>
+        </button>
       )}
       {(canDelete ?? canEditDelete) && (
         <button type="button" className="row-menu-item row-menu-item-danger" onClick={onDelete}>

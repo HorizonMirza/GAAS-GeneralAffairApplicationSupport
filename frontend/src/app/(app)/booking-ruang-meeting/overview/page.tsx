@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
@@ -206,9 +206,27 @@ export default function BookingOverviewPage() {
           if (item) handleDelete(item);
         }}
         pdfUrl={rowMenu.menuItem && isBookingPdfAvailable(rowMenu.menuItem) ? api.bookingPdfUrl(rowMenu.menuItem.id) : undefined}
-        onPdfClick={() => rowMenu.close()}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
         icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
-        onIcsClick={() => rowMenu.close()}
+        onIcsClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.bookingIcsUrl(item.id), `Booking-${item.nomorPemesanan || item.id}.ics`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
       />
 
       {me && (
