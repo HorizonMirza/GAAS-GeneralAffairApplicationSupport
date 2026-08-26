@@ -43,8 +43,8 @@ export function bookingChatParticipantLabels(departemen: string | null | undefin
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA"];
 }
 
-const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
-const REJECTED_STATUSES: Status[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"];
+export const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
+export const REJECTED_STATUSES: Status[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"];
 
 // Card border color by status: draft has none, on-approval is orange, rejected is red, completed is green.
 export function cardStatusBorderClass(status: Status): string {

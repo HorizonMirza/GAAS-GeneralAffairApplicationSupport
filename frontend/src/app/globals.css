@@ -1366,6 +1366,7 @@ body.auth-ready .app-shell {
 
 .overview-status-filter-field select {
   background: var(--bg-surface);
+  width: 150px;
 }
 
 .invoice-toolbar-slim > .btn,

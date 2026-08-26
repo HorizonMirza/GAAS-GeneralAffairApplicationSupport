@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
+import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
+
+type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import StatusBadge from "@/components/StatusBadge";
 import Stepper from "@/components/Stepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -36,6 +38,7 @@ export default function OverviewPage() {
   const [items, setItems] = useState<Pengiriman[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [busy, setBusy] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
@@ -84,6 +87,14 @@ export default function OverviewPage() {
     load();
   }, [load]);
 
+  const filteredItems = useMemo(() => {
+    if (statusFilter === "ALL") return items;
+    if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
+    if (statusFilter === "APPROVED") return items.filter((i) => i.status === "COMPLETED");
+    if (statusFilter === "ON_APPROVAL") return items.filter((i) => ON_APPROVAL_STATUSES.includes(i.status));
+    return items.filter((i) => REJECTED_STATUSES.includes(i.status));
+  }, [items, statusFilter]);
+
   if (!me || me.role === "SUPER_ADMIN") return null;
 
   const waitingL1Label =
@@ -126,14 +137,25 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Transaksi Terbaru Saya</h3>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+        <h3 style={{ margin: 0 }}>Transaksi Terbaru Saya</h3>
+        <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+            <option value="ALL">Semua Status</option>
+            <option value="DRAFT">Draft</option>
+            <option value="ON_APPROVAL">On-Approval</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+      </div>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="card table-empty">Tidak ada data.</div>
       ) : (
-        items.map((item) => {
+        filteredItems.map((item) => {
           const borderClass = cardStatusBorderClass(item.status);
           return (
             <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
