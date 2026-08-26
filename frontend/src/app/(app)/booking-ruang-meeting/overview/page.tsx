@@ -133,10 +133,11 @@ export default function BookingOverviewPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
         <div className="field" style={{ marginBottom: 0, width: "auto" }}>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+          <label htmlFor="overview-status-filter">Status</label>
+          <select id="overview-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
             <option value="ALL">Semua Status</option>
             <option value="DRAFT">Draft</option>
             <option value="ON_APPROVAL">On-Approval</option>

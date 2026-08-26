@@ -1503,7 +1503,7 @@ table.data-table {
    side instead, so restore it here with a more specific selector rather than relying on source
    order to win the cascade. */
 .schedule-table.data-table tbody tr:last-child td { border-bottom: 1px solid var(--border-subtle); }
-.data-table th.schedule-th-center { text-align: center; }
+.data-table th.schedule-th-center { text-align: center; overflow-wrap: break-word; }
 
 .schedule-time-col {
   width: 72px;
