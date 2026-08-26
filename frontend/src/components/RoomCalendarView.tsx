@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { formatDateTime } from "@/lib/format";
-import type { BookingRuang } from "@/lib/types";
+import type { BookingRuang, RoomOption } from "@/lib/types";
 
-export type CalendarViewMode = "day" | "week" | "month";
+export type CalendarViewMode = "day" | "week" | "month" | "avail";
 
 const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17, each row = "HH:00 - (HH+1):00" (07:00-18:00)
 // Mingguan's per-day column is narrow enough that more than a few side-by-side blocks become
@@ -204,7 +204,9 @@ export function formatPeriodLabel(view: CalendarViewMode, refDate: string): stri
 }
 
 interface DragState {
-  date: string;
+  // Column identity being dragged across: a date for Harian/Mingguan, a room name for
+  // Ketersediaan (which fixes the date and varies the room per column instead).
+  columnKey: string;
   startHour: number;
   currentHour: number;
 }
@@ -214,14 +216,17 @@ interface Props {
   refDate: string;
   entries: BookingRuang[];
   canCreate: boolean;
-  onSlotSelect: (date: string, startHour: number, endHour: number) => void;
+  // `room` is only passed when view === "avail" (the drag/click happened in that room's column).
+  onSlotSelect: (date: string, startHour: number, endHour: number, room?: string) => void;
   onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
   onJumpToDay: (date: string) => void;
+  // Only needed for view === "avail" - the set of room columns to lay out side by side.
+  rooms?: RoomOption[];
 }
 
-export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay }: Props) {
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay, rooms }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null);
-  const [pendingSelection, setPendingSelection] = useState<{ date: string; start: number; end: number } | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<{ columnKey: string; start: number; end: number } | null>(null);
   const isDragging = drag !== null;
 
   useEffect(() => {
@@ -231,7 +236,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         if (current) {
           const start = Math.min(current.startHour, current.currentHour);
           const end = Math.max(current.startHour, current.currentHour) + 1;
-          setPendingSelection({ date: current.date, start, end });
+          setPendingSelection({ columnKey: current.columnKey, start, end });
         }
         return null;
       });
@@ -245,22 +250,26 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   // component is still mid-render/commit for its own drag-state update, which React rejects.
   useEffect(() => {
     if (!pendingSelection) return;
-    onSlotSelect(pendingSelection.date, pendingSelection.start, pendingSelection.end);
+    if (view === "avail") {
+      onSlotSelect(refDate, pendingSelection.start, pendingSelection.end, pendingSelection.columnKey);
+    } else {
+      onSlotSelect(pendingSelection.columnKey, pendingSelection.start, pendingSelection.end);
+    }
     setPendingSelection(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingSelection]);
 
-  function startDrag(date: string, hour: number, cell: CellPlan | undefined) {
+  function startDrag(columnKey: string, hour: number, cell: CellPlan | undefined) {
     if (!canCreate || !cell || cell.type !== "empty") return;
-    setDrag({ date, startHour: hour, currentHour: hour });
+    setDrag({ columnKey, startHour: hour, currentHour: hour });
   }
 
-  function continueDrag(date: string, hour: number) {
-    setDrag((current) => (current && current.date === date ? { ...current, currentHour: hour } : current));
+  function continueDrag(columnKey: string, hour: number) {
+    setDrag((current) => (current && current.columnKey === columnKey ? { ...current, currentHour: hour } : current));
   }
 
-  function isInDragRange(date: string, hour: number): boolean {
-    if (!drag || drag.date !== date) return false;
+  function isInDragRange(columnKey: string, hour: number): boolean {
+    if (!drag || drag.columnKey !== columnKey) return false;
     const lo = Math.min(drag.startHour, drag.currentHour);
     const hi = Math.max(drag.startHour, drag.currentHour);
     return hour >= lo && hour <= hi;
@@ -421,6 +430,55 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
             <span className="schedule-now-dot" />
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (view === "avail") {
+    if (isWeekend(refDate)) return <ClosedNotice />;
+    const roomList = rooms || [];
+    // No maxCols cap here - a single room rarely has more than one overlapping booking on a
+    // given day, and this view is meant to look and behave exactly like Harian (uncapped).
+    const plans = roomList.map((r) => buildDayPlan(entries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama))));
+    return (
+      <div className="table-wrap" style={{ userSelect: drag ? "none" : undefined }}>
+        <table className="data-table schedule-table">
+          <thead>
+            <tr>
+              <th className="schedule-time-col schedule-th-center">Jam</th>
+              {roomList.map((r) => (
+                <th key={r.nama} className="schedule-th-center" title={r.nama}>{r.nama}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map((hour) => (
+              <tr key={hour}>
+                <td className="schedule-time-col">{String(hour).padStart(2, "0")}:00</td>
+                {roomList.map((r, idx) => {
+                  const cell = plans[idx].get(hour);
+                  return (
+                    <DayCell
+                      key={r.nama}
+                      cell={cell}
+                      date={r.nama}
+                      canCreate={canCreate}
+                      isDragPreview={isInDragRange(r.nama, hour)}
+                      onMouseDown={() => startDrag(r.nama, hour, cell)}
+                      onMouseEnter={() => continueDrag(r.nama, hour)}
+                      onEntryMenuClick={onEntryMenuClick}
+                      onJumpToDay={onJumpToDay}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
+            <tr className="schedule-closing-row">
+              <td className="schedule-time-col">{String(HOURS[HOURS.length - 1] + 1).padStart(2, "0")}:00</td>
+              <td colSpan={roomList.length} />
+            </tr>
+          </tbody>
+        </table>
       </div>
     );
   }

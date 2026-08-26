@@ -25,10 +25,6 @@ import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 
-type TabMode = CalendarViewMode | "avail";
-
-const AVAIL_HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17
-
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -38,91 +34,18 @@ function todayIso(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function isWeekend(iso: string): boolean {
-  const dow = new Date(iso + "T00:00:00").getDay();
-  return dow === 0 || dow === 6;
-}
-
 function rangeForView(view: CalendarViewMode, refDate: string): { from: string; to: string } {
-  if (view === "day") return { from: refDate, to: refDate };
   if (view === "week") {
     const monday = mondayOf(refDate);
     return { from: monday, to: addDays(monday, 4) };
   }
-  const d = new Date(refDate + "T00:00:00");
-  const firstOfMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
-  const start = mondayOf(firstOfMonth);
-  return { from: start, to: addDays(start, 41) };
-}
-
-function parseHour(t: string): number {
-  return Number(t.slice(0, 2));
-}
-
-function parseMinute(t: string): number {
-  return Number(t.slice(3, 5));
-}
-
-function availStatusClass(status: BookingRuang["status"]): string {
-  if (status === "DRAFT") return "avail-cell-draft";
-  if (status === "APPROVED_GA_APPROVAL") return "avail-cell-approved";
-  return "avail-cell-pending";
-}
-
-interface TimedEntry {
-  entry: BookingRuang;
-  startHour: number;
-  endHour: number;
-}
-
-type RoomCellPlan =
-  | { type: "empty" }
-  | { type: "skip" }
-  | { type: "busy"; rangeStart: number; rowSpan: number; entries: BookingRuang[] };
-
-// Same overlap-merging sweep as RoomCalendarView's buildDayPlan, but for one room's own entries -
-// this view only needs to know "busy or not" per room+hour, not lay competing entries side by
-// side, so overlapping entries are folded into one block (see the "+N" label below) instead.
-function buildRoomPlan(roomEntries: BookingRuang[]): Map<number, RoomCellPlan> {
-  const plan = new Map<number, RoomCellPlan>();
-  for (const hour of AVAIL_HOURS) plan.set(hour, { type: "empty" });
-
-  const timed: TimedEntry[] = roomEntries
-    .map((entry) => {
-      if (entry.isWholeDay) return { entry, startHour: AVAIL_HOURS[0], endHour: AVAIL_HOURS[AVAIL_HOURS.length - 1] + 1 };
-      if (!entry.jamMulai || !entry.jamSelesai) return null;
-      const startHour = Math.max(AVAIL_HOURS[0], parseHour(entry.jamMulai));
-      let endHour = parseHour(entry.jamSelesai);
-      if (parseMinute(entry.jamSelesai) > 0) endHour += 1;
-      endHour = Math.min(AVAIL_HOURS[AVAIL_HOURS.length - 1] + 1, Math.max(endHour, startHour + 1));
-      return { entry, startHour, endHour };
-    })
-    .filter((e): e is TimedEntry => e !== null)
-    .sort((a, b) => a.startHour - b.startHour || a.endHour - b.endHour);
-
-  let cluster: TimedEntry[] = [];
-  let clusterEnd = -1;
-  const clusters: TimedEntry[][] = [];
-  for (const item of timed) {
-    if (cluster.length > 0 && item.startHour < clusterEnd) {
-      cluster.push(item);
-      clusterEnd = Math.max(clusterEnd, item.endHour);
-    } else {
-      if (cluster.length > 0) clusters.push(cluster);
-      cluster = [item];
-      clusterEnd = item.endHour;
-    }
+  if (view === "month") {
+    const d = new Date(refDate + "T00:00:00");
+    const firstOfMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+    const start = mondayOf(firstOfMonth);
+    return { from: start, to: addDays(start, 41) };
   }
-  if (cluster.length > 0) clusters.push(cluster);
-
-  for (const group of clusters) {
-    const rangeStart = Math.min(...group.map((g) => g.startHour));
-    const rangeEnd = Math.max(...group.map((g) => g.endHour));
-    const rowSpan = rangeEnd - rangeStart;
-    plan.set(rangeStart, { type: "busy", rangeStart, rowSpan, entries: group.map((g) => g.entry) });
-    for (let h = rangeStart + 1; h < rangeStart + rowSpan; h++) plan.set(h, { type: "skip" });
-  }
-  return plan;
+  return { from: refDate, to: refDate };
 }
 
 function BookingCalendarPageInner() {
@@ -133,7 +56,7 @@ function BookingCalendarPageInner() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [view, setView] = useState<TabMode>("week");
+  const [view, setView] = useState<CalendarViewMode>("week");
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("");
@@ -151,7 +74,7 @@ function BookingCalendarPageInner() {
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
-  const rowMenu = useRowMenu(entries);
+  const rowMenu = useRowMenu(view === "avail" ? availEntries : entries);
 
   const isOrigin = me
     ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
@@ -228,13 +151,6 @@ function BookingCalendarPageInner() {
     );
   }, [availEntries, search]);
 
-  const availPlans = useMemo(
-    () => rooms.map((r) => buildRoomPlan(filteredAvailEntries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama)))),
-    [rooms, filteredAvailEntries]
-  );
-
-  const availWeekend = isWeekend(refDate);
-
   function goToday() {
     setRefDate(todayIso());
   }
@@ -256,12 +172,6 @@ function BookingCalendarPageInner() {
     setFormOpen(true);
   }
 
-  function openCreateFormFor(namaRuang: string, hour: number) {
-    if (!isOrigin) return;
-    setFormInitial({ namaRuang, tanggal: refDate, jamMulai: `${pad(hour)}:00`, jamSelesai: `${pad(hour + 1)}:00` });
-    setFormOpen(true);
-  }
-
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
       ? "Booking ini bagian dari jadwal berulang - menghapusnya akan menghapus seluruh jadwal seri ini. Lanjutkan?"
@@ -270,7 +180,8 @@ function BookingCalendarPageInner() {
       try {
         await api.deleteBooking(item.id);
         showToast("Booking berhasil dihapus");
-        loadSchedule();
+        if (view === "avail") loadAvail();
+        else loadSchedule();
       } catch (err) {
         showToast((err as Error).message, "error");
       }
@@ -278,6 +189,8 @@ function BookingCalendarPageInner() {
   }
 
   if (!me || me.role === "SUPER_ADMIN") return null;
+
+  const reload = view === "avail" ? loadAvail : loadSchedule;
 
   return (
     <>
@@ -352,97 +265,44 @@ function BookingCalendarPageInner() {
               </div>
               <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruangan" : selectedRoom}</div>
             </div>
-            <div className="calendar-view-toggle">
-              {(["day", "week", "month", "avail"] as TabMode[]).map((v) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="calendar-view-toggle">
                 <button
-                  key={v}
                   type="button"
-                  className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
-                  onClick={() => setView(v)}
+                  className={`calendar-view-btn${view === "avail" ? " calendar-view-btn-active" : ""}`}
+                  onClick={() => setView("avail")}
                 >
-                  {v === "day" ? "Harian" : v === "week" ? "Mingguan" : v === "month" ? "Bulanan" : "Ketersediaan"}
+                  Ketersediaan
                 </button>
-              ))}
+              </div>
+              <div className="calendar-view-toggle">
+                {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
+                    onClick={() => setView(v)}
+                  >
+                    {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {view === "avail" ? (
-            <>
-              <div className="avail-legend" style={{ margin: "0 0 12px" }}>
-                <span><span className="avail-dot avail-cell-draft" />Draft</span>
-                <span><span className="avail-dot avail-cell-pending" />On-Approval</span>
-                <span><span className="avail-dot avail-cell-approved" />Approved</span>
-                <span><span className="avail-dot avail-dot-empty" />Kosong</span>
-              </div>
-              {availWeekend ? (
-                <div className="schedule-closed-notice">
-                  Ruang Meeting tutup pada hari sabtu dan minggu. Ruang Meeting tersedia pada hari Senin - Jumat, 07:00 - 18:00.
-                </div>
-              ) : availBusy || rooms.length === 0 ? (
-                <p className="text-secondary">Memuat ketersediaan...</p>
-              ) : (
-                <div className="table-wrap">
-                  <table className="data-table schedule-table avail-table">
-                    <thead>
-                      <tr>
-                        <th className="schedule-time-col schedule-th-center">Jam</th>
-                        {rooms.map((r) => (
-                          <th key={r.nama} className="schedule-th-center" title={r.nama}>{r.nama}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {AVAIL_HOURS.map((hour) => (
-                        <tr key={hour}>
-                          <td className="schedule-time-col">{pad(hour)}:00</td>
-                          {rooms.map((r, idx) => {
-                            const cell = availPlans[idx]?.get(hour);
-                            if (!cell || cell.type === "skip") return null;
-                            if (cell.type === "empty") {
-                              return (
-                                <td
-                                  key={r.nama}
-                                  className={`avail-cell-empty-wrap${isOrigin ? " avail-cell-clickable" : ""}`}
-                                  onClick={() => openCreateFormFor(r.nama, hour)}
-                                />
-                              );
-                            }
-                            const primary = cell.entries[0];
-                            const extra = cell.entries.length - 1;
-                            const timeLabel = primary.isWholeDay
-                              ? "Sepanjang Hari"
-                              : `${primary.jamMulai?.slice(0, 5)}-${primary.jamSelesai?.slice(0, 5)}`;
-                            return (
-                              <td key={r.nama} rowSpan={cell.rowSpan} className="avail-cell-busy-wrap">
-                                <div
-                                  className={`avail-cell-busy ${availStatusClass(primary.status)}`}
-                                  onClick={() => setDetail({ item: primary, mode: "view" })}
-                                >
-                                  <div className="avail-cell-title">{primary.namaKegiatan}{extra > 0 ? ` +${extra}` : ""}</div>
-                                  <div className="avail-cell-time">{timeLabel}</div>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </>
-          ) : scheduleBusy ? (
+          {(view === "avail" ? availBusy : scheduleBusy) ? (
             <p className="text-secondary">Memuat jadwal...</p>
           ) : (
             <RoomCalendarView
               view={view}
               refDate={refDate}
-              entries={filteredEntries}
+              entries={view === "avail" ? filteredAvailEntries : filteredEntries}
+              rooms={rooms}
               canCreate={isOrigin}
-              onSlotSelect={(date, startHour, endHour) => {
+              onSlotSelect={(date, startHour, endHour, room) => {
                 if (!isOrigin) return;
                 setFormInitial({
-                  namaRuang: selectedRoom,
+                  namaRuang: room || selectedRoom,
                   tanggal: date,
                   jamMulai: `${String(startHour).padStart(2, "0")}:00`,
                   jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
@@ -523,7 +383,7 @@ function BookingCalendarPageInner() {
           me={me}
           initial={formInitial}
           onClose={() => setFormOpen(false)}
-          onCreated={loadSchedule}
+          onCreated={reload}
         />
       )}
 
@@ -534,7 +394,7 @@ function BookingCalendarPageInner() {
           item={detail?.item || null}
           me={me}
           onClose={() => setDetail(null)}
-          onSaved={loadSchedule}
+          onSaved={reload}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
@@ -543,7 +403,7 @@ function BookingCalendarPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
-        onSaved={loadSchedule}
+        onSaved={reload}
       />
 
       <RejectModal
@@ -554,7 +414,7 @@ function BookingCalendarPageInner() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          loadSchedule();
+          reload();
         }}
       />
 
@@ -569,7 +429,7 @@ function BookingCalendarPageInner() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={loadSchedule}
+          onRead={reload}
         />
       )}
     </>
