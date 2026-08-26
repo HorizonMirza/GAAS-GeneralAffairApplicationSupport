@@ -317,7 +317,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Ajukan</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
             )}
             {canL1Act && (
               <>
