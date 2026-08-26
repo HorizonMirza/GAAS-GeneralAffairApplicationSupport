@@ -581,7 +581,9 @@ function DayCell({
         // A 1-hour block is too short to fit the title and time as separate stacked lines
         // without the second line getting clipped by the next row - fold them onto one line.
         const isShort = endHour - startHour <= 1;
-        const timeLabel = entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)} - ${entry.jamSelesai?.slice(0, 5)}`;
+        // No spaces around the dash - every character counts to keep the full range on one line
+        // inside Mingguan's narrow, capped-width columns (see MAX_VISIBLE_COLS_WEEK).
+        const timeLabel = entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)}-${entry.jamSelesai?.slice(0, 5)}`;
         return (
           <div
             key={entry.id}

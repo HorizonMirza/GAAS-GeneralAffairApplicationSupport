@@ -1543,7 +1543,7 @@ table.data-table {
   right: 0;
   overflow: hidden;
   border-radius: 8px;
-  padding: 4px 10px;
+  padding: 4px 6px;
 }
 .schedule-cell-title {
   font-weight: 700;
@@ -1591,10 +1591,11 @@ table.data-table {
   opacity: 0.85;
 }
 .schedule-cell-time {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   opacity: 0.9;
   white-space: nowrap;
   overflow: hidden;
+  font-variant-numeric: tabular-nums;
 }
 
 .schedule-cell-draft {
