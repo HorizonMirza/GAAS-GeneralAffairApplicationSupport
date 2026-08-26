@@ -171,7 +171,15 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
     setError("");
     try {
       const sent = await api.sendChatMessage(itemId, text);
-      setMessages((prev) => (prev ? [...prev, sent] : [sent]));
+      // The server broadcasts this message over the hub before the POST response even comes
+      // back (see ChatController.Send), so the SignalR push for this exact message can - and
+      // often does - reach this same connection first. Same dedup-by-id as the hub handler
+      // below, so whichever arrives second is a no-op instead of a duplicate bubble.
+      setMessages((prev) => {
+        if (!prev) return [sent];
+        if (prev.some((m) => m.id === sent.id)) return prev;
+        return [...prev, sent];
+      });
       setDraft("");
       setMentionQuery(null);
       setMentionStart(null);
