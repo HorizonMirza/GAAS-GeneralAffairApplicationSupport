@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -12,10 +14,12 @@ namespace PengirimanApi.Controllers;
 public class ChatController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public ChatController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public ChatController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
+        _hub = hub;
     }
 
     private async Task MarkRead(int pengirimanId, int userId, DateTime at)
@@ -82,6 +86,13 @@ public class ChatController : ApiControllerBase
         await MarkRead(pengirimanId, user.Id, message.CreatedAt);
         await _db.SaveChangesAsync();
 
-        return StatusCode(201, new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt));
+        var outMessage = new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt);
+        // Pushed to everyone with this thread open (see ChatHub.JoinPengirimanChat) instead of
+        // making them wait for their next poll - the sender's own ChatModal also receives this,
+        // but it already appended the message locally on a successful POST, so it's a harmless
+        // duplicate there (same id, same content).
+        await _hub.Clients.Group(ChatHub.PengirimanGroup(pengirimanId)).SendAsync("ReceivePengirimanMessage", outMessage);
+
+        return StatusCode(201, outMessage);
     }
 }

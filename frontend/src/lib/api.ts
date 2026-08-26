@@ -10,7 +10,7 @@ import type {
   BookingRuangStatsResponse,
   BookingStatus,
   ChatMessage,
-  Holiday,
+  CostTrendResponse,
   Invoice,
   InvoiceListResponse,
   InvoiceLog,
@@ -126,6 +126,7 @@ export interface ListInvoiceParams {
   limit?: number;
   bulan?: string;
   search?: string;
+  uploadedBy?: number;
 }
 
 export interface ListPengirimanParams {
@@ -176,6 +177,8 @@ export const api = {
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),
   getPengirimanStats: (bulan: string) =>
     apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan } }),
+  getCostTrend: (monthsBack?: number) =>
+    apiRequest<CostTrendResponse>("/pengiriman/cost-trend", { params: { monthsBack } }),
   createPengiriman: (payload: PengirimanCreatePayload) =>
     apiRequest("/pengiriman", { method: "POST", body: payload }),
   updatePengiriman: (id: number, payload: PengirimanCreatePayload) =>
@@ -204,7 +207,10 @@ export const api = {
     apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
   listInvoice: (params: ListInvoiceParams = {}) =>
-    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search } }),
+    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
+  listInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/invoice/uploaders"),
+  getMissingInvoiceMonths: (monthsBack?: number) =>
+    apiRequest<string[]>("/invoice/missing-months", { params: { monthsBack } }),
   uploadInvoice: async (bulan: string, file: File) => {
     const formData = new FormData();
     formData.append("bulan", bulan);
@@ -271,7 +277,6 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
-  getHolidays: (year?: number) => apiRequest<Holiday[]>("/booking-ruang/holidays", { params: { year } }),
   getRoomFeedUrl: (roomName: string) =>
     apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
   getRoomUtilization: (dateFrom: string, dateTo: string) =>

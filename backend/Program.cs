@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
+using PengirimanApi.Hubs;
 using PengirimanApi.Services;
 using QuestPDF.Infrastructure;
 
@@ -18,6 +19,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -216,6 +218,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("Default");
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 

@@ -33,6 +33,9 @@ export default function InvoiceHistoryPage() {
   const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
+  const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
+  const [missingMonths, setMissingMonths] = useState<string[]>([]);
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
@@ -70,7 +73,13 @@ export default function InvoiceHistoryPage() {
   const loadInvoices = useCallback(async () => {
     const reqId = ++invoiceReqIdRef.current;
     try {
-      const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan, search: invoiceSearch });
+      const result = await api.listInvoice({
+        page: invoicePage,
+        limit: invoiceLimit,
+        bulan: invoiceFilterBulan,
+        search: invoiceSearch,
+        uploadedBy: invoiceFilterUploader === "" ? undefined : invoiceFilterUploader,
+      });
       // A slower earlier request (e.g. the initial unfiltered load) can resolve after a newer
       // one triggered by changing the filter - ignore it so it doesn't clobber fresher results.
       if (reqId !== invoiceReqIdRef.current) return;
@@ -86,11 +95,24 @@ export default function InvoiceHistoryPage() {
       if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
-  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch]);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch, invoiceFilterUploader]);
 
   useEffect(() => {
     loadInvoices();
   }, [loadInvoices]);
+
+  useEffect(() => {
+    // Only Admin/Approval GA/Super Admin review invoices from more than one KPU account - KPU
+    // itself only ever sees its own uploads (see InvoiceController.ListInvoice), so the filter
+    // wouldn't do anything for them.
+    if (!me || me.role === "KPU") return;
+    api.listInvoiceUploaders().then(setInvoiceUploaders).catch(() => setInvoiceUploaders([]));
+  }, [me]);
+
+  useEffect(() => {
+    if (!me || me.role !== "KPU") return;
+    api.getMissingInvoiceMonths(6).then(setMissingMonths).catch(() => setMissingMonths([]));
+  }, [me]);
 
   if (!me || !INVOICE_HISTORY_ROLES.includes(me.role)) return null;
 
@@ -114,6 +136,12 @@ export default function InvoiceHistoryPage() {
 
   return (
     <>
+      {missingMonths.length > 0 && (
+        <div className="card" style={{ marginBottom: 16, borderLeft: "4px solid var(--badge-rejected-bg)" }}>
+          <strong>Pengingat:</strong> kamu belum mengunggah invoice untuk {missingMonths.map((b) => invoiceBulanLabel(b)).join(", ")}.
+        </div>
+      )}
+
       <div className="card">
         <div className="invoice-toolbar-slim invoices-page-toolbar">
           <div className="field invoice-search-field" style={{ marginBottom: 0 }}>
@@ -137,13 +165,28 @@ export default function InvoiceHistoryPage() {
               onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
             />
           </div>
+          {invoiceUploaders.length > 1 && (
+            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+              <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
+              <select
+                id="invoice-filter-uploader"
+                value={invoiceFilterUploader}
+                onChange={(e) => { setInvoiceFilterUploader(e.target.value === "" ? "" : Number(e.target.value)); setInvoicePage(1); }}
+              >
+                <option value="">Semua KPU</option>
+                {invoiceUploaders.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nama}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="field" style={{ marginBottom: 0 }}>
             <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={{ width: "auto" }}
-              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoicePage(1); }}
+              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
             >
               Semua Invoice
             </button>
@@ -171,7 +214,10 @@ export default function InvoiceHistoryPage() {
                   </div>
                   <div className="invoice-row-info">
                     <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
-                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    <div className="invoice-row-meta">
+                      {inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}
+                      {invoiceUploaders.length > 1 && inv.uploaderNama ? ` oleh ${inv.uploaderNama}` : ""}
+                    </div>
                     {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
                     {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>

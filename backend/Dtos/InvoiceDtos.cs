@@ -22,6 +22,10 @@ public class InvoiceOut
     public InvoiceStatusEnum Status { get; set; }
     public string? Catatan { get; set; }
     public int UploadedBy { get; set; }
+    // Null unless the query that produced this Invoice included Pengunggah (see
+    // InvoiceController.ListInvoice) - callers that don't need it (e.g. actions that only touch
+    // one invoice by id) skip that Include rather than pay for a join they won't use.
+    public string? UploaderNama { get; set; }
     public int? ReviewedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
@@ -34,6 +38,7 @@ public class InvoiceOut
         Status = i.Status,
         Catatan = i.Catatan,
         UploadedBy = i.UploadedBy,
+        UploaderNama = i.Pengunggah?.Nama,
         ReviewedBy = i.ReviewedBy,
         UploadedAt = i.UploadedAt,
         ReviewedAt = i.ReviewedAt,

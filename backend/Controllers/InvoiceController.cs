@@ -173,7 +173,8 @@ public class InvoiceController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
         [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] int? uploadedBy = null)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
@@ -189,9 +190,13 @@ public class InvoiceController : ApiControllerBase
 
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
         if (!string.IsNullOrEmpty(search)) query = query.Where(i => i.OriginalFilename.Contains(search));
+        // Relevant when Admin/Approval GA/Super Admin review invoices from more than one KPU
+        // account - a no-op for KPU itself, which is already scoped to its own uploads above.
+        if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
         var total = await query.CountAsync();
         var items = await query
+            .Include(i => i.Pengunggah)
             .OrderByDescending(i => i.UploadedAt)
             .Skip((page - 1) * limit)
             .Take(limit)
@@ -204,6 +209,54 @@ public class InvoiceController : ApiControllerBase
             Page = page,
             Limit = limit,
         });
+    }
+
+    // Powers the "Uploader" filter dropdown on Invoice History - only meaningful for Admin/
+    // Approval GA/Super Admin, who see invoices from every KPU account; distinct-by-uploader
+    // among visible (non-DRAFT) invoices, not every KPU account that exists, so the dropdown
+    // never lists someone who has never actually uploaded anything.
+    [HttpGet("uploaders")]
+    public async Task<IActionResult> ListUploaders()
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var uploaders = await _db.Invoices
+            .Where(i => i.Status != InvoiceStatusEnum.DRAFT)
+            .Select(i => new { id = i.UploadedBy, nama = i.Pengunggah.Nama })
+            .Distinct()
+            .OrderBy(u => u.nama)
+            .ToListAsync();
+        return Ok(uploaders);
+    }
+
+    // Reminder banner on Invoice History: which of the last `monthsBack` months this KPU account
+    // has not started an invoice for at all - any status (including DRAFT) counts as "not
+    // missing", this only flags a month nobody has touched yet. Newest-first would be less useful
+    // than oldest-first here (an old unfilled month is the one more likely to be forgotten).
+    [HttpGet("missing-months")]
+    public async Task<IActionResult> GetMissingMonths([FromQuery] int monthsBack = 6)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
+        if (error != null) return error;
+        monthsBack = Math.Clamp(monthsBack, 1, 24);
+
+        var uploadedBulan = await _db.Invoices
+            .Where(i => i.UploadedBy == user!.Id)
+            .Select(i => i.Bulan)
+            .ToListAsync();
+        var uploadedSet = uploadedBulan.ToHashSet();
+
+        var missing = new List<string>();
+        var cursor = DateTime.UtcNow;
+        for (var i = 0; i < monthsBack; i++)
+        {
+            var bulan = $"{cursor.Year:0000}-{cursor.Month:00}";
+            if (!uploadedSet.Contains(bulan)) missing.Add(bulan);
+            cursor = cursor.AddMonths(-1);
+        }
+        missing.Reverse();
+        return Ok(missing);
     }
 
     [HttpGet("{invoiceId}/file")]

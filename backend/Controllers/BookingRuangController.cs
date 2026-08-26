@@ -276,8 +276,6 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
-        if (NationalHolidays.IsHoliday(payload.Tanggal))
-            return $"Ruang meeting tutup pada tanggal ini ({NationalHolidays.NameFor(payload.Tanggal)})";
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -318,11 +316,10 @@ public class BookingRuangController : ApiControllerBase
             item.AdditionalRooms.Add(new BookingRuangRoom { NamaRuang = room });
     }
 
-    // One date per occurrence, Monday-Friday and non-holiday only (a computed later date can land
-    // on a weekend/holiday even though the start date itself never does - ValidatePayload already
-    // rejects both for the start date). Non-recurring payloads produce exactly the one date they
-    // were given. Capped so a badly chosen end date (e.g. years of daily recurrence) can't create
-    // an unbounded series.
+    // One date per occurrence, Monday-Friday only (a computed later date can land on a weekend
+    // even though the start date itself never does - ValidatePayload already rejects that).
+    // Non-recurring payloads produce exactly the one date they were given. Capped so a badly
+    // chosen end date (e.g. years of daily recurrence) can't create an unbounded series.
     private static List<DateOnly> BuildOccurrenceDates(BookingRuangCreate payload)
     {
         if (!payload.IsRecurring || payload.RecurrenceFrequency == null || payload.RecurrenceEndDate == null)
@@ -333,7 +330,7 @@ public class BookingRuangController : ApiControllerBase
         var frequency = payload.RecurrenceFrequency.Value;
         while (current <= payload.RecurrenceEndDate.Value && dates.Count < MaxOccurrencesPerSeries)
         {
-            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) && !NationalHolidays.IsHoliday(current))
+            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
                 dates.Add(current);
             current = frequency switch
             {
@@ -425,22 +422,6 @@ public class BookingRuangController : ApiControllerBase
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         return Ok(new { nomorPemesanan = BuildNomorPemesanan(effectiveDivisi, seq, effectiveTanggal) });
-    }
-
-    // Reference data for the calendar to grey out/block, same spirit as ListRooms below - static,
-    // read-only, no per-user scoping needed.
-    [HttpGet("holidays")]
-    public async Task<IActionResult> ListHolidays([FromQuery] int? year = null)
-    {
-        var (_, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var y = year ?? DateTime.UtcNow.Year;
-        var items = NationalHolidays.ForYear(y)
-            .OrderBy(kv => kv.Key)
-            .Select(kv => new { tanggal = kv.Key, nama = kv.Value })
-            .ToList();
-        return Ok(items);
     }
 
     // Authenticated lookup of the webcal subscribe URL for a room - the token itself isn't secret
@@ -757,8 +738,6 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
-        if (NationalHolidays.IsHoliday(payload.Tanggal))
-            return $"Ruang meeting tutup pada tanggal ini ({NationalHolidays.NameFor(payload.Tanggal)})";
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -862,12 +841,6 @@ public class BookingRuangController : ApiControllerBase
                 results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
                 continue;
             }
-            if (NationalHolidays.IsHoliday(newDate))
-            {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} adalah hari libur ({NationalHolidays.NameFor(newDate)})" });
-                continue;
-            }
-
             var roomList = RoomList(item);
             var conflict = await FindConflictAsync(roomList, newDate, item.IsWholeDay, item.JamMulai, item.JamSelesai, item.Id);
             if (conflict != null)

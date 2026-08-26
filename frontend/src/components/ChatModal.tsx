@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_SHORT_LABEL, chatParticipantLabels } from "@/lib/constants";
+import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me, Role } from "@/lib/types";
 
@@ -17,7 +18,6 @@ interface Props {
   onRead: () => void;
 }
 
-const POLL_INTERVAL_MS = 4000;
 const MENTION_PATTERN_CHARS = /[.*+?^${}()|[\]\\]/g;
 
 function renderWithMentions(text: string, labels: string[]) {
@@ -84,28 +84,44 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
     }
     let cancelled = false;
     readNotified.current = false;
+    const id = itemId;
 
-    function load() {
-      api
-        .getChatMessages(itemId!)
-        .then((data) => {
-          if (cancelled) return;
-          setMessages(data);
-          if (!readNotified.current) {
-            readNotified.current = true;
-            onRead();
-          }
-        })
-        .catch((err) => {
-          if (!cancelled) setError((err as Error).message);
-        });
-    }
+    api
+      .getChatMessages(id)
+      .then((data) => {
+        if (cancelled) return;
+        setMessages(data);
+        if (!readNotified.current) {
+          readNotified.current = true;
+          onRead();
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message);
+      });
 
-    load();
-    const interval = setInterval(load, POLL_INTERVAL_MS);
+    // Real-time push (see ChatHub.JoinPengirimanChat / ChatController.Send) replaces the old
+    // fixed-interval poll - join this thread's group so new messages arrive as they're sent.
+    joinChat("pengiriman", id).catch((err) => {
+      if (!cancelled) setError((err as Error).message);
+    });
+    const unsubscribe = onChatMessage("pengiriman", (message) => {
+      if (cancelled) return;
+      // The sender's own client already appended this message locally on a successful POST
+      // (see handleSend) - the broadcast reaching this same connection is a harmless duplicate,
+      // deduped here by id.
+      setMessages((prev) => {
+        if (!prev) return [message];
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
+      onRead();
+    });
+
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      unsubscribe();
+      leaveChat("pengiriman", id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, itemId]);

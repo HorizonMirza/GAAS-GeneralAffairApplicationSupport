@@ -55,23 +55,6 @@ export function isWeekend(iso: string): boolean {
   return dow === 0 || dow === 6;
 }
 
-// Populated once (via setHolidays) by whichever page loads first - Calendar and Overview both
-// call it on mount with the same api.getHolidays() response, so this stays in sync without
-// threading a holidays prop through every nested render function below.
-let holidayNames = new Map<string, string>();
-
-export function setHolidays(holidays: { tanggal: string; nama: string }[]) {
-  holidayNames = new Map(holidays.map((h) => [h.tanggal, h.nama]));
-}
-
-export function holidayNameFor(iso: string): string | null {
-  return holidayNames.get(iso) ?? null;
-}
-
-export function isClosedDay(iso: string): boolean {
-  return isWeekend(iso) || holidayNames.has(iso);
-}
-
 // Every room name in this app starts with "Ruang " - redundant once it's already a column
 // header in a table titled "Ketersediaan Ruangan", and dropping it buys back width for names
 // like "Ruang Solution Utama" packed 10-wide across the page. Full name stays in the tooltip.
@@ -388,7 +371,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   const showNowLine = nowLineActive && nowLineWithinHours && nowLineRect != null && nowLineTop != null;
 
   if (view === "day") {
-    if (isClosedDay(refDate)) return <ClosedNotice holidayName={holidayNameFor(refDate)} />;
+    if (isWeekend(refDate)) return <ClosedNotice />;
     const plan = buildDayPlan(entries.filter((e) => e.tanggal === refDate));
     return (
       <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
@@ -497,7 +480,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   }
 
   if (view === "avail") {
-    if (isClosedDay(refDate)) return <ClosedNotice holidayName={holidayNameFor(refDate)} />;
+    if (isWeekend(refDate)) return <ClosedNotice />;
     const roomList = rooms || [];
     // Shows every status (like Harian/Mingguan) rather than Approved-only - competing pending
     // bookings for the same slot are real contention a room-hunter needs to see, not noise.
@@ -650,13 +633,10 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   );
 }
 
-function ClosedNotice({ holidayName }: { holidayName?: string | null }) {
+function ClosedNotice() {
   return (
     <div className="schedule-closed-notice">
-      {holidayName
-        ? `Ruang Meeting tutup - hari libur nasional (${holidayName}).`
-        : "Ruang Meeting tutup pada hari sabtu dan minggu."}{" "}
-      Ruang Meeting tersedia pada hari Senin - Jumat, 07:00 - 18:00.
+      Ruang Meeting tutup pada hari sabtu dan minggu. Ruang Meeting tersedia pada hari Senin - Jumat, 07:00 - 18:00.
     </div>
   );
 }

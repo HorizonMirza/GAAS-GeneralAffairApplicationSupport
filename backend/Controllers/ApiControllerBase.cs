@@ -56,8 +56,11 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Admin/Approval GA/KPU/Super Admin see every item; Admin/Approval Departemen/Divisi only
-    // see items from their own unit (or their own DRAFT/rejected-back-to-them items).
-    protected static bool CanAccessPengiriman(User user, Pengiriman item)
+    // see items from their own unit (or their own DRAFT/rejected-back-to-them items). Public (not
+    // just protected) so ChatHub - which can't inherit this class, Hub already has its own base -
+    // can reuse the exact same rule instead of duplicating it when deciding whether to let a
+    // connection join a chat's SignalR group.
+    public static bool CanAccessPengiriman(User user, Pengiriman item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -70,7 +73,8 @@ public abstract class ApiControllerBase : ControllerBase
             : sameUnit;
     }
 
-    protected static bool CanAccessBookingRuang(User user, BookingRuang item)
+    // Public for the same reason as CanAccessPengiriman above - reused by ChatHub.
+    public static bool CanAccessBookingRuang(User user, BookingRuang item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;

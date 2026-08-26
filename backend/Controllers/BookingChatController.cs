@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -12,10 +14,12 @@ namespace PengirimanApi.Controllers;
 public class BookingChatController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public BookingChatController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public BookingChatController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
+        _hub = hub;
     }
 
     private async Task MarkRead(int bookingRuangId, int userId, DateTime at)
@@ -84,6 +88,11 @@ public class BookingChatController : ApiControllerBase
         // happened to arrive moments earlier but hasn't been loaded into this user's view yet,
         // silently marking it read before they ever saw it.
 
-        return StatusCode(201, new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt));
+        var outMessage = new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt);
+        // Pushed to everyone with this thread open (see ChatHub.JoinBookingChat) instead of
+        // making them wait for their next poll.
+        await _hub.Clients.Group(ChatHub.BookingGroup(bookingRuangId)).SendAsync("ReceiveBookingMessage", outMessage);
+
+        return StatusCode(201, outMessage);
     }
 }

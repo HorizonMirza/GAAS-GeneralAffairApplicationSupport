@@ -20,7 +20,7 @@ import {
 import { currentYearMonth, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
-import { isClosedDay, setHolidays } from "@/components/RoomCalendarView";
+import { isWeekend } from "@/components/RoomCalendarView";
 
 // Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView). "Penuh" hanya berarti
 // benar-benar penuh sepanjang hari - dihitung dari booking yang statusnya sudah APPROVED_GA_APPROVAL
@@ -79,7 +79,6 @@ export default function BookingOverviewPage() {
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [todayEntries, setTodayEntries] = useState<BookingRuang[]>([]);
-  const [, setHolidaysVersion] = useState(0);
   const [busy, setBusy] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
@@ -127,16 +126,6 @@ export default function BookingOverviewPage() {
   }, []);
 
   useEffect(() => {
-    // setHolidays mutates a module-level cache read by isClosedDay - holidaysVersion just forces
-    // this component to re-render once that fetch lands, since React has no way to know a plain
-    // function's underlying data changed otherwise.
-    api.getHolidays().then((h) => {
-      setHolidays(h);
-      setHolidaysVersion((v) => v + 1);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     // Drives the available/penuh strip on each room card below - fetched once on mount, same as
     // rooms above, since "today" doesn't change without a page reload.
     api.getBookingSchedule(todayLocalDate()).then(setTodayEntries).catch(() => setTodayEntries([]));
@@ -152,7 +141,7 @@ export default function BookingOverviewPage() {
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
-  const closedToday = isClosedDay(todayLocalDate());
+  const closedToday = isWeekend(todayLocalDate());
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId

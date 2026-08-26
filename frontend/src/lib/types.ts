@@ -128,7 +128,28 @@ export interface PengirimanListResponse {
 
 export interface PengirimanStatsResponse {
   countsByStatus: Partial<Record<Status, number>>;
+  // Computed server-side (see PengirimanController.GetStats) using the same actionability rules
+  // as the approve/reject endpoints themselves - do not re-derive these from countsByStatus.
+  waitingL1: number;
+  waitingGa: number;
+  waitingGaApproval: number;
+  waitingKpu: number;
   totalBulanIni: number | null;
+}
+
+export interface MonthlyCost {
+  bulan: string;
+  total: number;
+}
+
+export interface DivisiCost {
+  divisi: string;
+  total: number;
+}
+
+export interface CostTrendResponse {
+  monthly: MonthlyCost[];
+  byDivisi: DivisiCost[];
 }
 
 export interface PengirimanLog {
@@ -171,6 +192,7 @@ export interface Invoice {
   status: InvoiceStatus;
   catatan: string | null;
   uploadedBy: number;
+  uploaderNama: string | null;
   reviewedBy: number | null;
   uploadedAt: string;
   reviewedAt: string | null;
@@ -196,11 +218,6 @@ export interface InvoiceLog {
 export interface RoomOption {
   nama: string;
   kapasitas: number;
-}
-
-export interface Holiday {
-  tanggal: string;
-  nama: string;
 }
 
 export interface WaitlistEntry {

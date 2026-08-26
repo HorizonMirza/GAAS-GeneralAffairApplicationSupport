@@ -16,7 +16,7 @@ import {
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
-import RoomCalendarView, { addDays, addMonths, mondayOf, setHolidays, type CalendarViewMode } from "@/components/RoomCalendarView";
+import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
@@ -96,17 +96,6 @@ function BookingCalendarPageInner() {
   const rowMenu = useRowMenu(view === "avail" ? availEntries : entries);
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
-
-  const [, setHolidaysVersion] = useState(0);
-  useEffect(() => {
-    // setHolidays mutates a module-level cache in RoomCalendarView (isClosedDay/holidayNameFor) -
-    // holidaysVersion just forces a re-render once the fetch lands, since RoomCalendarView reads
-    // that cache directly rather than through a prop.
-    api.getHolidays().then((h) => {
-      setHolidays(h);
-      setHolidaysVersion((v) => v + 1);
-    }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");

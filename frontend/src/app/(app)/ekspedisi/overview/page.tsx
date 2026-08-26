@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
-import { currentYearMonth, formatDate } from "@/lib/format";
+import { currentYearMonth, formatCurrency, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { Pengiriman } from "@/lib/types";
+import type { CostTrendResponse, Pengiriman } from "@/lib/types";
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import StatusBadge from "@/components/StatusBadge";
@@ -37,6 +37,7 @@ export default function OverviewPage() {
 
   const [items, setItems] = useState<Pengiriman[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [costTrend, setCostTrend] = useState<CostTrendResponse | null>(null);
   const [busy, setBusy] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
@@ -72,14 +73,14 @@ export default function OverviewPage() {
       const counts = statsResp.countsByStatus;
       setItems(queue);
       setStats({
-        // REJECTED_GA is never L1-actionable (RejectGa always bounces to origin, see
-        // PengirimanController.IsL1Actionable) and REJECTED_KPU is never GA-Approval-actionable
-        // (IsGaApprovalActionable only allows APPROVED_GA) - counting either here overcounts the
-        // tile with items that role can't actually act on.
-        waitingL1: counts.SUBMITTED ?? 0,
-        waitingGa: (counts.APPROVED_L1 ?? 0) + (counts.REJECTED_GA_APPROVAL ?? 0),
-        waitingGaApproval: counts.APPROVED_GA ?? 0,
-        waitingKpu: counts.APPROVED_GA_APPROVAL ?? 0,
+        // Read directly from the backend's own actionability computation (GetStats) instead of
+        // re-deriving "which statuses count for this stage" here - that re-derivation is exactly
+        // what drifted out of sync with RejectTarget-gated statuses before (see
+        // PengirimanController.IsGaActionable).
+        waitingL1: statsResp.waitingL1,
+        waitingGa: statsResp.waitingGa,
+        waitingGaApproval: statsResp.waitingGaApproval,
+        waitingKpu: statsResp.waitingKpu,
         completed: counts.COMPLETED ?? 0,
       });
     } finally {
@@ -90,6 +91,12 @@ export default function OverviewPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    // Some roles can't see cost totals at all (see PengirimanController.TotalVisibleRoles) - the
+    // endpoint 403s for them, so this section just doesn't render rather than showing an error.
+    api.getCostTrend(6).then(setCostTrend).catch(() => setCostTrend(null));
+  }, []);
 
   const filteredItems = useMemo(() => {
     if (statusFilter === "ALL") return items;
@@ -138,6 +145,61 @@ export default function OverviewPage() {
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">KPU</div></div>
           <div className="stat-tile"><div className="value">{stats.completed}</div><div className="label">Approved</div></div>
+        </div>
+      )}
+
+      {costTrend && costTrend.monthly.some((m) => m.total > 0) && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <h4 style={{ margin: "0 0 14px" }}>Tren Biaya 6 Bulan Terakhir</h4>
+          {(() => {
+            const maxMonthly = Math.max(1, ...costTrend.monthly.map((m) => m.total));
+            return (
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 130, marginBottom: 20 }}>
+                {costTrend.monthly.map((m) => (
+                  <div key={m.bulan} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" }}>
+                    <span className="text-secondary" style={{ fontSize: "0.62rem", marginBottom: 3 }}>
+                      {m.total > 0 ? formatCurrency(m.total) : ""}
+                    </span>
+                    <div
+                      title={`${m.bulan}: ${formatCurrency(m.total)}`}
+                      style={{
+                        width: "100%",
+                        minHeight: 2,
+                        height: `${(m.total / maxMonthly) * 90}px`,
+                        background: m.total === 0 ? "var(--border-subtle)" : "var(--gradient-primary)",
+                        borderRadius: "4px 4px 0 0",
+                      }}
+                    />
+                    <span className="text-secondary" style={{ fontSize: "0.68rem", marginTop: 6 }}>
+                      {new Intl.DateTimeFormat("id-ID", { month: "short" }).format(new Date(`${m.bulan}-01T00:00:00`))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {costTrend.byDivisi.length > 0 && (
+            <>
+              <h4 style={{ margin: "0 0 10px" }}>Per Divisi (6 Bulan Terakhir)</h4>
+              {(() => {
+                const maxDivisi = Math.max(1, ...costTrend.byDivisi.map((d) => d.total));
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {costTrend.byDivisi.map((d) => (
+                      <div key={d.divisi} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.8rem" }}>
+                        <span style={{ width: 180, flexShrink: 0 }}>{d.divisi}</span>
+                        <div style={{ flex: 1, background: "var(--border-subtle)", borderRadius: 999, height: 8, overflow: "hidden" }}>
+                          <div style={{ width: `${(d.total / maxDivisi) * 100}%`, height: "100%", background: "var(--gradient-primary)" }} />
+                        </div>
+                        <span className="text-secondary" style={{ width: 120, textAlign: "right", flexShrink: 0 }}>{formatCurrency(d.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </>
+          )}
         </div>
       )}
 

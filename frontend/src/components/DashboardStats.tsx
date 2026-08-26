@@ -46,10 +46,12 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         onPengirimanStats?.(p);
         const pc = p.countsByStatus;
         setPengiriman({
-          waitingL1: (pc.SUBMITTED ?? 0) + (pc.REJECTED_GA ?? 0),
-          waitingGa: (pc.APPROVED_L1 ?? 0) + (pc.REJECTED_GA_APPROVAL ?? 0),
-          waitingGaApproval: (pc.APPROVED_GA ?? 0) + (pc.REJECTED_KPU ?? 0),
-          waitingKpu: pc.APPROVED_GA_APPROVAL ?? 0,
+          // Read directly from the backend's own actionability computation (GetStats) instead of
+          // re-deriving "which statuses count for this stage" here - see PengirimanController.
+          waitingL1: p.waitingL1,
+          waitingGa: p.waitingGa,
+          waitingGaApproval: p.waitingGaApproval,
+          waitingKpu: p.waitingKpu,
           completed: pc.COMPLETED ?? 0,
           totalBulanIni: p.totalBulanIni,
         });

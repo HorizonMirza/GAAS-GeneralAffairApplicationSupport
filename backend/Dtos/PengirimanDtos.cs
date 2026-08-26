@@ -137,5 +137,34 @@ public class PengirimanListResponse
 public class PengirimanStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
+    // Actionable-per-stage counts, computed server-side with the exact same predicates the
+    // approve/reject endpoints themselves use (IsL1Actionable/IsGaActionable/
+    // IsGaApprovalActionable/ApproveKpu's status guard) - not re-derived from CountsByStatus by
+    // the frontend, which is what let the two stat-tile call sites (Ekspedisi Overview and the
+    // shared DashboardStats) drift out of sync with the real rules (a REJECTED_GA_APPROVAL/
+    // REJECTED_KPU item is only GA-actionable when its RejectTarget is GA, a distinction
+    // CountsByStatus alone can't express).
+    public int WaitingL1 { get; set; }
+    public int WaitingGa { get; set; }
+    public int WaitingGaApproval { get; set; }
+    public int WaitingKpu { get; set; }
     public decimal? TotalBulanIni { get; set; }
+}
+
+public class MonthlyCost
+{
+    public string Bulan { get; set; } = null!;
+    public decimal Total { get; set; }
+}
+
+public class DivisiCost
+{
+    public string Divisi { get; set; } = null!;
+    public decimal Total { get; set; }
+}
+
+public class CostTrendResponse
+{
+    public List<MonthlyCost> Monthly { get; set; } = new();
+    public List<DivisiCost> ByDivisi { get; set; } = new();
 }
