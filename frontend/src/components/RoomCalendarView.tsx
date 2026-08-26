@@ -579,24 +579,21 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   }
 
   const today = toIso(new Date());
-  // Chunked into weeks (not one flat 42-cell grid) so every row - including the header - can
-  // carry the same 72px leading gutter as Harian/Mingguan/Ketersediaan's "Jam" column. That's
-  // what keeps a day-box here the same width formula as a day/room column everywhere else:
-  // (table width - 72px) / column count, instead of splitting the full width across 7 columns
-  // with nothing held back for a gutter.
+  // Chunked into weeks (not one flat 42-cell grid) so each row can be a flex item that grows to
+  // fill .month-grid's height (see .month-grid-row in globals.css) - keeps the grid's bottom
+  // edge flush with the sidebar's instead of leaving blank space under it whenever the sidebar
+  // ends up taller than the grid's own content.
   const weeks: { iso: string; day: number; muted: boolean }[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
   return (
     <div className="month-grid">
       <div className="month-grid-weekdays">
-        <span className="month-grid-gutter" />
         {DAY_NAMES_SHORT.slice(1).concat(DAY_NAMES_SHORT[0]).map((n) => <span key={n}>{n}</span>)}
       </div>
       <div className="month-grid-body">
         {weeks.map((week, wi) => (
           <div className="month-grid-row" key={wi}>
-            <div className="month-grid-gutter" />
             {week.map((c) => {
               const dayEntries = (entriesByDate.get(c.iso) || []).slice().sort((a, b) => {
                 if (a.isWholeDay) return -1;

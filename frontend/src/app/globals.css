@@ -1950,19 +1950,22 @@ table.data-table {
 }
 .mini-calendar-weekday-weekend { color: var(--badge-rejected-bg); }
 
-/* Month grid (main view) */
+/* Month grid (main view) - stretches to fill .calendar-main the same way
+   .calendar-main .table-wrap .schedule-table does for Harian/Mingguan/Ketersediaan (see below),
+   so its bottom edge lines up with the sidebar's instead of leaving blank space under a shorter
+   grid whenever the sidebar happens to be the taller of the two panels. */
 .month-grid {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
 }
 
-/* 72px leading gutter matches .schedule-time-col's width exactly, so a day-box here is sized by
-   the same (table width - 72px) / column count formula Harian/Mingguan/Ketersediaan already use,
-   instead of splitting the full width across 7 columns with nothing held back. */
 .month-grid-weekdays {
   display: grid;
-  grid-template-columns: 72px repeat(7, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   background: var(--bg-surface-alt);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1971,19 +1974,14 @@ table.data-table {
   padding: 8px 0;
 }
 
-.month-grid-body { display: flex; flex-direction: column; }
+.month-grid-body { display: flex; flex-direction: column; flex: 1; }
 
 .month-grid-row {
   display: grid;
-  grid-template-columns: 72px repeat(7, 1fr);
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
   min-height: 96px;
 }
-
-/* Unlike Harian/Mingguan's "Jam" column, the gutter here has no content to show (a week has no
-   single label the way an hour row does) - kept plain/borderless on purpose so it reads as
-   blank reserved space rather than a stray empty box, while still holding the same 72px the
-   width formula above depends on. */
-.month-grid-gutter { background: transparent; border: none; }
 
 .month-cell {
   border-top: 1px solid var(--border-subtle);
