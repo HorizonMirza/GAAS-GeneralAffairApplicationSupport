@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -76,6 +76,22 @@ function BookingCalendarPageInner() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+
+  // Bulanan's grid has no row-based content to naturally match the sidebar's height the way
+  // Harian/Mingguan's hour rows do, so its card is matched to the sidebar's real rendered height
+  // directly (measured, not guessed via CSS) instead of relying on layout stretch to line the two
+  // up on its own.
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const [sidebarHeight, setSidebarHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    // getBoundingClientRect (not the observer entry's contentRect, which excludes padding/border)
+    // so this matches the sidebar's actual rendered outer height.
+    const observer = new ResizeObserver(() => setSidebarHeight(el.getBoundingClientRect().height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const rowMenu = useRowMenu(view === "avail" ? availEntries : entries);
 
@@ -202,7 +218,7 @@ function BookingCalendarPageInner() {
   return (
     <>
       <div className="calendar-shell">
-        <div className="calendar-sidebar">
+        <div className="calendar-sidebar" ref={sidebarRef}>
           {isOrigin && (
             <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={openCreateForm}>
               + Booking Ruang Meeting
@@ -252,7 +268,10 @@ function BookingCalendarPageInner() {
           />
         </div>
 
-        <div className={`calendar-main${view === "month" ? " calendar-main-month" : ""}`}>
+        <div
+          className={`calendar-main${view === "month" ? " calendar-main-month" : ""}`}
+          style={view === "month" && sidebarHeight ? { height: sidebarHeight } : undefined}
+        >
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">
               <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
