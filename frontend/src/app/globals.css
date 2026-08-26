@@ -2362,6 +2362,7 @@ table.data-table {
   font-size: 0.86rem;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
 }
 
 .row-menu-item:hover {
