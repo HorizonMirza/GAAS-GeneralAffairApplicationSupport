@@ -11,6 +11,10 @@ const HOURS = Array.from({ length: 11 }, (_, i) => 7 + i); // 07..17, each row =
 // unreadable slivers - Harian has the whole page width so it's left uncapped (see buildDayPlan
 // call sites below).
 const MAX_VISIBLE_COLS_WEEK = 3;
+// Ketersediaan's per-room column is even narrower than Mingguan's per-day column (many more
+// rooms fit side by side), so a slot with several competing bookings gets capped tighter: 1 real
+// block + an overflow chip once there's more than one.
+const MAX_VISIBLE_COLS_AVAIL = 2;
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const DAY_NAMES_SHORT = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -222,9 +226,12 @@ interface Props {
   onJumpToDay: (date: string) => void;
   // Only needed for view === "avail" - the set of room columns to lay out side by side.
   rooms?: RoomOption[];
+  // Only needed for view === "avail" - the overflow chip there names a room, not a date, so it
+  // can't reuse onJumpToDay (which would misinterpret the room name as a date).
+  onJumpToRoom?: (room: string) => void;
 }
 
-export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay, rooms }: Props) {
+export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay, rooms, onJumpToRoom }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{ columnKey: string; start: number; end: number } | null>(null);
   const isDragging = drag !== null;
@@ -459,13 +466,9 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   if (view === "avail") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const roomList = rooms || [];
-    // Ketersediaan is about finding a room that's actually free - a pending/draft booking might
-    // still get rejected, so only fully-approved bookings count as "occupied" here (unlike
-    // Harian/Mingguan, which show every status).
-    const approvedEntries = entries.filter((e) => e.status === "APPROVED_GA_APPROVAL");
-    // No maxCols cap here - a single room rarely has more than one overlapping booking on a
-    // given day, and this view is meant to look and behave exactly like Harian (uncapped).
-    const plans = roomList.map((r) => buildDayPlan(approvedEntries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama))));
+    // Shows every status (like Harian/Mingguan) rather than Approved-only - competing pending
+    // bookings for the same slot are real contention a room-hunter needs to see, not noise.
+    const plans = roomList.map((r) => buildDayPlan(entries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama)), MAX_VISIBLE_COLS_AVAIL));
     return (
       <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
@@ -503,7 +506,8 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       onMouseDown={() => startDrag(r.nama, hour, cell)}
                       onMouseEnter={() => continueDrag(r.nama, hour)}
                       onEntryMenuClick={onEntryMenuClick}
-                      onJumpToDay={onJumpToDay}
+                      onJumpToDay={(room) => onJumpToRoom?.(room)}
+                      hideMeta
                     />
                   );
                 })}

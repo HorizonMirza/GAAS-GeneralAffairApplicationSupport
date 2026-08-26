@@ -322,6 +322,10 @@ function BookingCalendarPageInner() {
                 setRefDate(date);
                 setView("day");
               }}
+              onJumpToRoom={(room) => {
+                setSelectedRoom(room);
+                setView("day");
+              }}
             />
           )}
         </div>
