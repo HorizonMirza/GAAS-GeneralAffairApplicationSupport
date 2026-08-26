@@ -95,6 +95,9 @@ export default function BookingOverviewPage() {
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
+    // KPU only deals with Expedition (see AppShell's KPU_HIDDEN_CATEGORIES) - Room Booking isn't
+    // part of their workflow, so a direct link/URL shouldn't land them here either.
+    if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
   const load = useCallback(async () => {
@@ -136,7 +139,7 @@ export default function BookingOverviewPage() {
     return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
   const closedToday = isWeekend(todayLocalDate());
 

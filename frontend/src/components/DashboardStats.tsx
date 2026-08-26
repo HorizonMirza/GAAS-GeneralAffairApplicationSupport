@@ -58,6 +58,10 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         setPengirimanFailed(true);
         onPengirimanStats?.(null);
       });
+    // KPU only deals with Expedition (see AppShell's KPU_HIDDEN_CATEGORIES) - it never sees the
+    // Room Booking section below, so skip the fetch entirely instead of loading numbers nobody
+    // will see.
+    if (me.role === "KPU") return;
     api.getBookingStats(bulan)
       .then((b) => {
         onBookingStats?.(b);
@@ -115,23 +119,25 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
         )}
       </div>
 
-      <div className="dashboard-stats-section">
-        <div className="dashboard-stats-section-head">
-          <h4>Room Booking</h4>
-          <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
-        </div>
-        {!booking ? (
-          <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
-        ) : (
-          <div className="stat-grid">
-            <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
-            <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
-            <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-            <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
-            <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Room Booking</h4>
+            <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
           </div>
-        )}
-      </div>
+          {!booking ? (
+            <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

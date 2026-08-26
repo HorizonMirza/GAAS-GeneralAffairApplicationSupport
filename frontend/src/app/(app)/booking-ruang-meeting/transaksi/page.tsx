@@ -88,6 +88,9 @@ export default function BookingTransaksiPage() {
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
+    // KPU only deals with Expedition (see AppShell's KPU_HIDDEN_CATEGORIES) - Room Booking isn't
+    // part of their workflow, so a direct link/URL shouldn't land them here either.
+    if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function BookingTransaksiPage() {
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));

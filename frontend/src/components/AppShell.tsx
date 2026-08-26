@@ -199,7 +199,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     // Opens the sidebar category matching the current route - openCategory also has its own
     // independent lifecycle after this (the user can collapse/expand any category by hand), so
     // it can't be replaced with a value computed straight from pathname during render.
-    const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => item.href === pathname));
+    // superAdminOnly items all share the same /superadmin href, so they're excluded from this
+    // match - otherwise every category would "match" on /superadmin and this would always pick
+    // whichever one happens to be first in NAV_CATEGORIES.
+    const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (active) setOpenCategory(active.label);
   }, [pathname]);
@@ -246,7 +249,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
-          const hasActive = cat.items.some((item) => item.href === pathname);
+          // Same exclusion as the pathname-watching effect above - the shared /superadmin href
+          // must not count as "this category is active", or all 6 categories highlight/expand
+          // together on that page.
+          const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
           const isOpen = openCategory === cat.label || hasActive;
           return (
             <div key={cat.label} className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}>
