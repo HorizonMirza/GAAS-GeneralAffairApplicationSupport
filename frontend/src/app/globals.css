@@ -1979,8 +1979,11 @@ table.data-table {
   min-height: 96px;
 }
 
-.month-grid-gutter { background: var(--bg-surface-alt); }
-.month-grid-row .month-grid-gutter { border-top: 1px solid var(--border-subtle); }
+/* Unlike Harian/Mingguan's "Jam" column, the gutter here has no content to show (a week has no
+   single label the way an hour row does) - kept plain/borderless on purpose so it reads as
+   blank reserved space rather than a stray empty box, while still holding the same 72px the
+   width formula above depends on. */
+.month-grid-gutter { background: transparent; border: none; }
 
 .month-cell {
   border-top: 1px solid var(--border-subtle);
