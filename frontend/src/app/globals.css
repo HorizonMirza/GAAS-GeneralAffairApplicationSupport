@@ -1522,7 +1522,7 @@ table.data-table {
 /* .data-table th's letter-spacing adds trailing space after the last character too, which skews
    centered (as opposed to the table's normal left-aligned) headers visibly left of true center -
    most noticeable on short, two-line-wrapped room names. Centered headers don't get that spacing. */
-.data-table th.schedule-th-center { text-align: center; letter-spacing: normal; }
+.data-table th.schedule-th-center { text-align: center; letter-spacing: normal; vertical-align: middle; }
 
 .schedule-time-col {
   width: 72px;
