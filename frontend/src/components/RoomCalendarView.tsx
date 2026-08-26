@@ -404,6 +404,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       onMouseEnter={() => continueDrag(date, hour)}
                       onEntryMenuClick={onEntryMenuClick}
                       onJumpToDay={onJumpToDay}
+                      hideMeta
                     />
                   );
                 })}
@@ -520,6 +521,7 @@ function DayCell({
   onMouseEnter,
   onEntryMenuClick,
   onJumpToDay,
+  hideMeta,
 }: {
   cell: CellPlan | undefined;
   date: string;
@@ -529,6 +531,11 @@ function DayCell({
   onMouseEnter: () => void;
   onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
   onJumpToDay: (date: string) => void;
+  // Mingguan's narrow per-day column already caps competing bookings to a few columns (see
+  // MAX_VISIBLE_COLS_WEEK) - the "Diajukan: ..." submission-order line is one line too many at
+  // that width, so it's dropped there and left only for Harian's much wider blocks. A single,
+  // uncontested booking never shows this line either way (see the colCount > 1 check below).
+  hideMeta?: boolean;
 }) {
   if (!cell || cell.type === "skip") return null;
 
@@ -602,7 +609,7 @@ function DayCell({
                 </div>
               </>
             )}
-            {colCount > 1 && entry.status !== "DRAFT" && (
+            {colCount > 1 && !hideMeta && entry.status !== "DRAFT" && (
               <div className="schedule-cell-meta">Diajukan: {formatDateTime(entry.createdAt)}</div>
             )}
           </div>
