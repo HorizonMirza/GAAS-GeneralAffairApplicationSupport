@@ -138,7 +138,7 @@ export default function BookingOverviewPage() {
               key={item.id}
             >
               <div className="card-header">
-                <div>
+                <div className="card-header-title">
                   <strong>{item.namaKegiatan} - {item.nomorPemesanan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
                     {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {bookingRoomsLabel(item)}

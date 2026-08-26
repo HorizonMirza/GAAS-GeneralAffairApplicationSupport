@@ -415,15 +415,15 @@ export default function SuperAdminPage() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.tujuanPenerimaan}>{truncateText(item.tujuanPenerimaan, 15)}</td>
                       <td>{item.jumlahItem}</td>
-                      <td>{item.divisi}</td>
-                      <td>{item.departemen || "-"}</td>
-                      <td>{item.namaPengirim}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td title={item.namaPengirim}>{truncateText(item.namaPengirim, 18)}</td>
                       <td>{item.noTeleponPengirim}</td>
-                      <td>{item.namaPenerima}</td>
+                      <td title={item.namaPenerima}>{truncateText(item.namaPenerima, 18)}</td>
                       <td>{item.noTeleponPenerima}</td>
                       <td>{item.kodeProgram}</td>
                       <td>{item.asuransiStatus}</td>
-                      <td>{item.requestPacking || "-"}</td>
+                      <td title={item.requestPacking || ""}>{truncateText(item.requestPacking, 15)}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>{item.beratBarangKg ?? "-"}</td>
                       <td>{item.subTotal ? formatCurrency(item.subTotal) : "-"}</td>
@@ -541,14 +541,14 @@ export default function SuperAdminPage() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorPemesanan || "-"}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
-                      <td>{item.pic || "-"}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
-                      <td>{item.divisi}</td>
-                      <td>{item.departemen || "-"}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>
                         <span className="badge-stack">
                           <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />

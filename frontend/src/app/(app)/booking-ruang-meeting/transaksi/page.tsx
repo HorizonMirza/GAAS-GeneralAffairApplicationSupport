@@ -329,8 +329,8 @@ export default function BookingTransaksiPage() {
                       <td>{item.jumlahPeserta}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
-                      <td>{item.divisi}</td>
-                      <td>{item.departemen || "-"}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">

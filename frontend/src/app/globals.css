@@ -858,6 +858,22 @@ body.auth-ready .app-shell {
 
 .card-header h3 { margin: 0; font-size: 1.02rem; }
 
+.card-header-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.card-header-title strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-header-title .text-secondary {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .welcome-heading {
   font-size: 1.4rem;
   font-weight: 700;
@@ -1421,6 +1437,13 @@ body.auth-ready .app-shell {
 }
 
 .invoice-row-info { min-width: 0; }
+.invoice-row-title,
+.invoice-row-meta,
+.invoice-row-note {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .invoice-row-title { font-weight: 600; font-size: 0.9rem; }
 .invoice-row-meta { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
 .invoice-row-note { font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px; }

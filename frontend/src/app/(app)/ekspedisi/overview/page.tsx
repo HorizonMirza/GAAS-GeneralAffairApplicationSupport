@@ -138,7 +138,7 @@ export default function OverviewPage() {
           return (
             <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
               <div className="card-header">
-                <div>
+                <div className="card-header-title">
                   <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
                     {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {item.kodeProgram} · {item.jumlahItem} item
