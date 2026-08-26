@@ -1873,10 +1873,7 @@ table.data-table {
 .mini-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  column-gap: 2px;
-  /* Taller than the column gap on purpose - each day's status dot sits just below its number, and
-     a tight row gap let the next week's numbers crowd right up against it. */
-  row-gap: 14px;
+  gap: 2px;
 }
 
 .mini-calendar-day {
@@ -1886,12 +1883,14 @@ table.data-table {
   font-size: 0.75rem;
   padding: 0;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  /* Fixed height (not aspect-ratio) so the number circle + gap + status dot always fits inside
+     the cell itself instead of overflowing into - or past - the row below it. */
+  height: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
 }
 /* The filled/hover circle lives on this inner span, not the whole button - so it wraps only the
