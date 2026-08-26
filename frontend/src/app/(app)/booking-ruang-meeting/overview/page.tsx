@@ -160,15 +160,22 @@ export default function BookingOverviewPage() {
       {rooms.length > 0 && (
         <div className="room-grid">
           {rooms.map((r) => {
-            const full = closedToday || isRoomFullyBookedToday(r.nama, todayEntries);
+            const availability: "available" | "full" | "closed" = closedToday
+              ? "closed"
+              : isRoomFullyBookedToday(r.nama, todayEntries)
+              ? "full"
+              : "available";
+            const availLabel = availability === "closed" ? "Tutup" : availability === "full" ? "Penuh" : "Tersedia";
+            const availTitle =
+              availability === "closed" ? "Tutup (akhir pekan)" : availability === "full" ? "Penuh hari ini" : "Tersedia hari ini";
             return (
               <Link
                 key={r.nama}
                 href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`}
-                className={`room-card ${full ? "room-card-full" : "room-card-available"}`}
-                title={full ? "Penuh hari ini" : "Tersedia hari ini"}
+                className={`room-card room-card-${availability}`}
+                title={availTitle}
               >
-                <span className="room-card-avail-badge">{full ? "Penuh" : "Tersedia"}</span>
+                <span className="room-card-avail-badge">{availLabel}</span>
                 <div className="room-card-icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
                 </div>
