@@ -1610,6 +1610,8 @@ table.data-table {
   font-weight: 700;
 }
 
+/* Background/color come from the schedule-cell-draft/-pending/-confirmed class applied
+   alongside this one, matching the entries folded into the chip (see overflowStatusClass). */
 .schedule-cell-overflow {
   position: absolute;
   display: flex;
@@ -1619,9 +1621,7 @@ table.data-table {
   overflow: hidden;
   border-radius: 8px;
   padding: 4px 6px;
-  background: var(--badge-submitted-bg);
   border: none;
-  color: var(--badge-submitted-fg);
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;

@@ -78,6 +78,15 @@ function scheduleCellStatusClass(status: BookingRuang["status"]): string {
   return "schedule-cell-pending";
 }
 
+// The "+N lainnya" overflow chip folds several entries into one box, which can mix statuses -
+// same confirmed-beats-pending-beats-draft priority as everywhere else, so the chip's color
+// reflects the most "real" booking hiding inside it rather than defaulting to one status.
+function overflowStatusClass(entries: BookingRuang[]): string {
+  if (entries.some((e) => e.status === "APPROVED_GA_APPROVAL")) return "schedule-cell-confirmed";
+  if (entries.some((e) => e.status !== "DRAFT")) return "schedule-cell-pending";
+  return "schedule-cell-draft";
+}
+
 interface ClusterItem {
   kind: "entry";
   entry: BookingRuang;
@@ -670,7 +679,7 @@ function DayCell({
           return (
             <div
               key={`overflow-${col}`}
-              className="schedule-cell-overflow"
+              className={`schedule-cell-overflow ${overflowStatusClass(item.entries)}`}
               style={{
                 top: "2px",
                 height: "calc(100% - 4px)",
