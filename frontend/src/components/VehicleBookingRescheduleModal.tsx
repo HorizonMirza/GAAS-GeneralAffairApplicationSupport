@@ -142,7 +142,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               <label htmlFor="rk-kendaraan">Kendaraan</label>
               <select id="rk-kendaraan" required value={form.namaKendaraan} onChange={(e) => set("namaKendaraan", e.target.value)}>
                 {vehicles.map((v) => (
-                  <option key={v.nama} value={v.nama}>{v.nama} - {v.platNomor} ({v.kapasitas} orang) - Supir: {v.supir}</option>
+                  <option key={v.nama} value={v.nama}>{v.nama} - {v.platNomor} - Supir: {v.supir}</option>
                 ))}
               </select>
             </div>

@@ -227,7 +227,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               <select id="bk-kendaraan" required disabled={!isEdit} value={form.namaKendaraan} onChange={(e) => set("namaKendaraan", e.target.value)}>
                 <option value={form.namaKendaraan} disabled hidden>{form.namaKendaraan}</option>
                 {vehicles.map((v) => (
-                  <option key={v.nama} value={v.nama}>{v.nama} - {v.platNomor} ({v.kapasitas} orang) - Supir: {v.supir}</option>
+                  <option key={v.nama} value={v.nama}>{v.nama} - {v.platNomor} - Supir: {v.supir}</option>
                 ))}
               </select>
             </div>
