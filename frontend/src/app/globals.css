@@ -1885,15 +1885,33 @@ table.data-table {
   width: 100%;
   aspect-ratio: 1 / 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   border-radius: 999px;
   cursor: pointer;
 }
+.mini-calendar-day-num { line-height: 1; }
+.mini-calendar-day-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 4px;
+}
+.mini-calendar-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+.mini-calendar-dot-draft { background: var(--badge-draft-bg); }
+.mini-calendar-dot-pending { background: var(--badge-submitted-bg); }
+.mini-calendar-dot-approved { background: var(--badge-completed-bg); }
+
 .mini-calendar-day:hover { background: var(--bg-surface); }
 .mini-calendar-day-muted { color: var(--text-secondary); opacity: 0.5; }
-.mini-calendar-day-today { background: var(--blue-500); color: #fff; }
-.mini-calendar-day-selected { background: var(--blue-200); color: var(--navy-900); }
+/* Today (not selected) is a plain text highlight only - the filled circle is reserved for
+   whichever date is actually selected, even when that's today itself (see the component's
+   isSelected-wins-over-isToday class priority). */
+.mini-calendar-day-today { color: var(--blue-500); font-weight: 700; }
+.mini-calendar-day-selected { background: var(--blue-500); color: #fff; }
+.mini-calendar-day-selected .mini-calendar-day-num { font-weight: 700; }
 .mini-calendar-day-weekend:not(.mini-calendar-day-today):not(.mini-calendar-day-selected) {
   color: var(--badge-rejected-bg);
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import type { BookingRuang } from "@/lib/types";
 
 const MONTH_NAMES = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -21,15 +23,26 @@ function todayIso(): string {
   return toIso(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+// Same 3-way grouping as the main calendar's block coloring (draft/pending/approved) - rejected
+// bookings are a dead end nobody needs a dot for here, so they're deliberately left out.
+function statusDotClass(status: BookingRuang["status"]): string | null {
+  if (status === "DRAFT") return "mini-calendar-dot-draft";
+  if (status === "APPROVED_GA_APPROVAL") return "mini-calendar-dot-approved";
+  if (status === "SUBMITTED" || status === "APPROVED_L1" || status === "APPROVED_GA") return "mini-calendar-dot-pending";
+  return null;
+}
+
 interface Props {
   selectedDate: string;
   onSelect: (date: string) => void;
+  namaRuang?: string;
 }
 
-export default function MiniMonthCalendar({ selectedDate, onSelect }: Props) {
+export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang }: Props) {
   const initial = new Date(selectedDate + "T00:00:00");
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const [dotsByDate, setDotsByDate] = useState<Map<string, Set<string>>>(new Map());
 
   useEffect(() => {
     const d = new Date(selectedDate + "T00:00:00");
@@ -60,6 +73,34 @@ export default function MiniMonthCalendar({ selectedDate, onSelect }: Props) {
     cells.push({ iso: toIso(nextYear, nextMonthIdx, nextDay), day: nextDay, muted: true });
     nextDay += 1;
   }
+
+  const rangeStart = cells[0].iso;
+  const rangeEnd = cells[41].iso;
+
+  // Fetches the whole visible 42-day grid (not just the current month) so the leading/trailing
+  // muted days from adjacent months show their dots too, matching what's actually on screen.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getBookingScheduleRange(rangeStart, rangeEnd, namaRuang)
+      .then((data) => {
+        if (cancelled) return;
+        const map = new Map<string, Set<string>>();
+        for (const entry of data) {
+          const dotClass = statusDotClass(entry.status);
+          if (!dotClass) continue;
+          const set = map.get(entry.tanggal) || new Set<string>();
+          set.add(dotClass);
+          map.set(entry.tanggal, set);
+        }
+        setDotsByDate(map);
+      })
+      .catch(() => setDotsByDate(new Map()));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeStart, rangeEnd, namaRuang]);
 
   function prevMonth() {
     if (viewMonth === 0) {
@@ -97,11 +138,19 @@ export default function MiniMonthCalendar({ selectedDate, onSelect }: Props) {
           const isSelected = c.iso === selectedDate;
           const cls = ["mini-calendar-day"];
           if (c.muted) cls.push("mini-calendar-day-muted");
-          if (isToday) cls.push("mini-calendar-day-today");
-          else if (isSelected) cls.push("mini-calendar-day-selected");
+          // Selected always wins the filled-circle treatment, even when it's also today - today
+          // only gets its own (text-only) styling while something else is selected.
+          if (isSelected) cls.push("mini-calendar-day-selected");
+          else if (isToday) cls.push("mini-calendar-day-today");
+          const dots = Array.from(dotsByDate.get(c.iso) || []);
           return (
             <button key={c.iso} type="button" className={cls.join(" ")} onClick={() => onSelect(c.iso)}>
-              {c.day}
+              <span className="mini-calendar-day-num">{c.day}</span>
+              {dots.length > 0 && (
+                <span className="mini-calendar-day-dots">
+                  {dots.map((d) => <span key={d} className={`mini-calendar-dot ${d}`} />)}
+                </span>
+              )}
             </button>
           );
         })}

@@ -188,7 +188,7 @@ function BookingCalendarPageInner() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} />
+          <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} namaRuang={selectedRoom} />
         </div>
 
         <div className="calendar-main">
