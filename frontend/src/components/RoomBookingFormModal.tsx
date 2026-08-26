@@ -245,7 +245,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <select id="f-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
                 <option value="" disabled>Pilih ruang</option>
                 {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama} ({r.kapasitas} orang)</option>
+                  <option key={r.nama} value={r.nama}>{r.nama}</option>
                 ))}
               </select>
             </div>
