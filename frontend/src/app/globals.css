@@ -1984,6 +1984,9 @@ table.data-table {
   text-align: center;
   padding: 8px 0;
 }
+/* Vertical divider between day names, matching the border-left already on every .month-cell
+   below it so the column lines run unbroken from the header straight through the grid. */
+.month-grid-weekdays span:not(:first-child) { border-left: 1px solid var(--border-subtle); }
 
 .month-grid-body { display: grid; grid-template-rows: repeat(6, 1fr); min-height: 0; }
 
