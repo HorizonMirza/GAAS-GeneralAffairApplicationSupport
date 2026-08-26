@@ -14,6 +14,7 @@ import {
   greetingName,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
+  isBookingOriginRole,
   isBookingPdfAvailable,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
@@ -53,9 +54,7 @@ export default function BookingOverviewPage() {
 
   const rowMenu = useRowMenu(items);
 
-  const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
-    : false;
+  const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");

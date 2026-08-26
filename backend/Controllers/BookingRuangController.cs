@@ -319,15 +319,12 @@ public class BookingRuangController : ApiControllerBase
         // slot - two requests still going through approval are allowed to race for it, and
         // whichever one gets confirmed first auto-rejects the others (see ApproveGaApproval).
         // A room can be occupied either as a booking's primary NamaRuang or one of its
-        // AdditionalRooms, so both are checked.
-        var additionalMatchIds = await _db.BookingRuangRooms
-            .Where(r => rooms.Contains(r.NamaRuang))
-            .Select(r => r.BookingRuangId)
-            .ToListAsync();
-
+        // AdditionalRooms, so both are checked - scoped to `tanggal` and the approved status via
+        // the SQL WHERE (translated to an EXISTS subquery for AdditionalRooms) instead of first
+        // prefetching every BookingRuangRoom row ever created for these room names.
         var query = _db.BookingRuangs.Where(b =>
             b.Tanggal == tanggal && b.Status == BookingStatusEnum.APPROVED_GA_APPROVAL
-            && (rooms.Contains(b.NamaRuang) || additionalMatchIds.Contains(b.Id)));
+            && (rooms.Contains(b.NamaRuang) || b.AdditionalRooms.Any(r => rooms.Contains(r.NamaRuang))));
         if (excludeId.HasValue) query = query.Where(b => b.Id != excludeId.Value);
 
         var candidates = await query.ToListAsync();
@@ -857,14 +854,20 @@ public class BookingRuangController : ApiControllerBase
             if (mentionLabel != null && unreadItemIds.Count > 0)
             {
                 var mentionTag = "@" + mentionLabel;
-                var candidateMessages = await _db.BookingChatMessages
-                    .Where(m => unreadItemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id)
-                    .Select(m => new { m.BookingRuangId, m.Message, m.CreatedAt })
-                    .ToListAsync();
+                // Unread bound applied in SQL (left join against this user's read cursor) instead
+                // of fetching every candidate message's full text and filtering by CreatedAt in
+                // C# afterward - only the rows that are actually unread come back from the DB.
+                var reads = _db.BookingChatReads.Where(r => r.UserId == user!.Id && unreadItemIds.Contains(r.BookingRuangId));
+                var candidateMessages = await (
+                    from m in _db.BookingChatMessages
+                    where unreadItemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id
+                    join r in reads on m.BookingRuangId equals r.BookingRuangId into rj
+                    from r in rj.DefaultIfEmpty()
+                    where r == null || m.CreatedAt > r.LastReadAt
+                    select new { m.BookingRuangId, m.Message }
+                ).ToListAsync();
                 var mentionedIds = candidateMessages
-                    .Where(m =>
-                        (!lastReadAt.TryGetValue(m.BookingRuangId, out var readAt) || m.CreatedAt > readAt)
-                        && m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                    .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
                     .Select(m => m.BookingRuangId)
                     .ToHashSet();
                 foreach (var outItem in outItems)
@@ -1036,15 +1039,13 @@ public class BookingRuangController : ApiControllerBase
     // moved on since it was read here.
     private async Task AutoRejectLosingCompetitorsAsync(BookingRuang winner, User actor)
     {
+        // Scoped to winner.Tanggal via the SQL WHERE (AdditionalRooms translated to an EXISTS
+        // subquery), same as FindConflictAsync - not a prefetch of every BookingRuangRoom row
+        // ever created for these room names.
         var winnerRooms = RoomList(winner);
-        var additionalMatchIds = await _db.BookingRuangRooms
-            .Where(r => winnerRooms.Contains(r.NamaRuang))
-            .Select(r => r.BookingRuangId)
-            .ToListAsync();
-
         var candidates = await _db.BookingRuangs.Where(b =>
             b.Tanggal == winner.Tanggal && b.Id != winner.Id && PendingStatuses.Contains(b.Status)
-            && (winnerRooms.Contains(b.NamaRuang) || additionalMatchIds.Contains(b.Id))).ToListAsync();
+            && (winnerRooms.Contains(b.NamaRuang) || b.AdditionalRooms.Any(r => winnerRooms.Contains(r.NamaRuang)))).ToListAsync();
 
         var losers = candidates.Where(b =>
             winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));

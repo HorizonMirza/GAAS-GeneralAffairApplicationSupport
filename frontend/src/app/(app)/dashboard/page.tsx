@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { greetingName } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
+import type { BookingRuangStatsResponse, PengirimanStatsResponse } from "@/lib/types";
 import DashboardStats from "@/components/DashboardStats";
+
+function sumCounts(counts: Partial<Record<string, number>>): number {
+  return Object.values(counts).reduce((total: number, n) => total + (n ?? 0), 0);
+}
 
 interface ModuleDef {
   key: string;
@@ -69,19 +73,16 @@ export default function DashboardPage() {
     }
   }, [loading, me, router]);
 
-  useEffect(() => {
-    api
-      .listPengiriman({ page: 1, limit: 5 })
-      .then((r) => setSummary({ total: r.total, totalBulanIni: r.totalBulanIni }))
-      .catch(() => setSummary(null));
-  }, []);
+  // Module card subtitles reuse the same stats calls DashboardStats below already makes
+  // (via its onPengirimanStats/onBookingStats callbacks) instead of firing their own
+  // list-endpoint calls just to read a total that's already in that response.
+  function handlePengirimanStats(data: PengirimanStatsResponse | null) {
+    setSummary(data ? { total: sumCounts(data.countsByStatus), totalBulanIni: data.totalBulanIni } : null);
+  }
 
-  useEffect(() => {
-    api
-      .listBooking({ page: 1, limit: 5 })
-      .then((r) => setBookingSummary({ total: r.total }))
-      .catch(() => setBookingSummary(null));
-  }, []);
+  function handleBookingStats(data: BookingRuangStatsResponse | null) {
+    setBookingSummary(data ? { total: sumCounts(data.countsByStatus) } : null);
+  }
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
@@ -91,7 +92,7 @@ export default function DashboardPage() {
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
       </div>
 
-      <DashboardStats me={me} />
+      <DashboardStats me={me} onPengirimanStats={handlePengirimanStats} onBookingStats={handleBookingStats} />
 
       <h3 style={{ margin: "24px 0 12px" }}>Modul</h3>
       <div className="module-grid">
@@ -102,12 +103,12 @@ export default function DashboardPage() {
                 ? summary === undefined
                   ? "Memuat..."
                   : summary
-                  ? `${summary.total} transaksi${summary.totalBulanIni != null ? ` · ${formatCurrency(summary.totalBulanIni)} bulan ini` : ""}`
+                  ? `${summary.total} transaksi bulan ini${summary.totalBulanIni != null ? ` · ${formatCurrency(summary.totalBulanIni)}` : ""}`
                   : "Tidak dapat memuat data"
                 : bookingSummary === undefined
                 ? "Memuat..."
                 : bookingSummary
-                ? `${bookingSummary.total} booking`
+                ? `${bookingSummary.total} booking bulan ini`
                 : "Tidak dapat memuat data";
             return (
               <a key={mod.key} className="module-card" href={mod.href}>

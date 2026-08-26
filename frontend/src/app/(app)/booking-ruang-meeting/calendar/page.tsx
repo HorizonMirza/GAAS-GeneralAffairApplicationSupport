@@ -11,6 +11,7 @@ import {
   canGaRescheduleBooking,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
+  isBookingOriginRole,
   isBookingPdfAvailable,
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -78,9 +79,7 @@ function BookingCalendarPageInner() {
 
   const rowMenu = useRowMenu(view === "avail" ? availEntries : entries);
 
-  const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
-    : false;
+  const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -239,7 +238,12 @@ function BookingCalendarPageInner() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <MiniMonthCalendar selectedDate={refDate} onSelect={setRefDate} namaRuang={view === "avail" ? undefined : selectedRoom} />
+          <MiniMonthCalendar
+            selectedDate={refDate}
+            onSelect={setRefDate}
+            namaRuang={view === "avail" ? undefined : selectedRoom}
+            entries={view === "month" ? entries : undefined}
+          />
         </div>
 
         <div className="calendar-main">

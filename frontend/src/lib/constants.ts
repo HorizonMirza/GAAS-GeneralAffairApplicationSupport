@@ -184,6 +184,22 @@ export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neu
 
 // --- Booking Ruang Meeting (sama pola dengan versi Pengiriman di atas, tanpa tahap KPU) ---
 
+// Roles that can create/own a Room Booking (as opposed to just approving one) - mirrors the
+// backend's OriginRoles in BookingRuangController.cs. Kept as one shared list instead of being
+// inlined at every call site so the two never drift apart when a role is added or changed.
+export const BOOKING_ORIGIN_ROLES: Role[] = [
+  "ADMIN_DEPARTEMEN",
+  "APPROVAL_DEPARTEMEN",
+  "ADMIN_DIVISI",
+  "APPROVAL_DIVISI",
+  "ADMIN_GA",
+  "APPROVAL_GA",
+];
+
+export function isBookingOriginRole(role: Role): boolean {
+  return BOOKING_ORIGIN_ROLES.includes(role);
+}
+
 export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   DRAFT: "Draft",
   SUBMITTED: "On-Approval: Approval Departemen/Divisi",

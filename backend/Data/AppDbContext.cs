@@ -134,6 +134,16 @@ public class AppDbContext : DbContext
                 .WithMany(u => u.PengirimanDibuat)
                 .HasForeignKey(p => p.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Status/Divisi/Departemen/Tanggal are the columns every list/stats query filters
+            // on (ApplyListFilters) - indexed so those filters don't degrade to a full table scan
+            // as the table grows. Explicit names match the CREATE INDEX IF NOT EXISTS backfill in
+            // Program.cs, which runs on every startup, so it stays a no-op on a database that got
+            // these same indexes from EnsureCreated() instead.
+            e.HasIndex(p => p.Status).HasDatabaseName("ix_pengiriman_status");
+            e.HasIndex(p => p.Divisi).HasDatabaseName("ix_pengiriman_divisi");
+            e.HasIndex(p => p.Departemen).HasDatabaseName("ix_pengiriman_departemen");
+            e.HasIndex(p => p.Tanggal).HasDatabaseName("ix_pengiriman_tanggal");
         });
 
         modelBuilder.Entity<PengirimanLog>(e =>
@@ -288,6 +298,13 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(b => b.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Same reasoning as Pengiriman above - these are the columns every list/schedule/
+            // conflict-check query filters on.
+            e.HasIndex(b => b.Status).HasDatabaseName("ix_booking_ruang_status");
+            e.HasIndex(b => b.Divisi).HasDatabaseName("ix_booking_ruang_divisi");
+            e.HasIndex(b => b.Departemen).HasDatabaseName("ix_booking_ruang_departemen");
+            e.HasIndex(b => b.Tanggal).HasDatabaseName("ix_booking_ruang_tanggal");
         });
 
         modelBuilder.Entity<BookingRuangRoom>(e =>

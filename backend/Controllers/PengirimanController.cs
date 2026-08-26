@@ -492,14 +492,20 @@ public class PengirimanController : ApiControllerBase
             if (mentionLabel != null && unreadItemIds.Count > 0)
             {
                 var mentionTag = "@" + mentionLabel;
-                var candidateMessages = await _db.ChatMessages
-                    .Where(m => unreadItemIds.Contains(m.PengirimanId))
-                    .Select(m => new { m.PengirimanId, m.Message, m.CreatedAt })
-                    .ToListAsync();
+                // Unread bound applied in SQL (left join against this user's read cursor) instead
+                // of fetching every candidate message's full text and filtering by CreatedAt in
+                // C# afterward - only the rows that are actually unread come back from the DB.
+                var reads = _db.ChatReads.Where(r => r.UserId == user.Id && unreadItemIds.Contains(r.PengirimanId));
+                var candidateMessages = await (
+                    from m in _db.ChatMessages
+                    where unreadItemIds.Contains(m.PengirimanId)
+                    join r in reads on m.PengirimanId equals r.PengirimanId into rj
+                    from r in rj.DefaultIfEmpty()
+                    where r == null || m.CreatedAt > r.LastReadAt
+                    select new { m.PengirimanId, m.Message }
+                ).ToListAsync();
                 var mentionedIds = candidateMessages
-                    .Where(m =>
-                        (!lastReadAt.TryGetValue(m.PengirimanId, out var readAt) || m.CreatedAt > readAt)
-                        && m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                    .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
                     .Select(m => m.PengirimanId)
                     .ToHashSet();
                 foreach (var outItem in outItems)

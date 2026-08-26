@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency } from "@/lib/format";
-import type { Me } from "@/lib/types";
+import type { BookingRuangStatsResponse, Me, PengirimanStatsResponse } from "@/lib/types";
 
 interface PengirimanStatsView {
   waitingL1: number;
@@ -23,7 +23,15 @@ interface BookingStatsView {
   rejected: number;
 }
 
-export default function DashboardStats({ me }: { me: Me }) {
+interface Props {
+  me: Me;
+  // Callers that also need the raw stats (e.g. the dashboard module cards' subtitles) can read
+  // them here instead of firing their own separate list-endpoint calls for the same totals.
+  onPengirimanStats?: (data: PengirimanStatsResponse | null) => void;
+  onBookingStats?: (data: BookingRuangStatsResponse | null) => void;
+}
+
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
@@ -35,6 +43,7 @@ export default function DashboardStats({ me }: { me: Me }) {
     const bulan = currentYearMonth();
     api.getPengirimanStats(bulan)
       .then((p) => {
+        onPengirimanStats?.(p);
         const pc = p.countsByStatus;
         setPengiriman({
           waitingL1: (pc.SUBMITTED ?? 0) + (pc.REJECTED_GA ?? 0),
@@ -45,9 +54,13 @@ export default function DashboardStats({ me }: { me: Me }) {
           totalBulanIni: p.totalBulanIni,
         });
       })
-      .catch(() => setPengirimanFailed(true));
+      .catch(() => {
+        setPengirimanFailed(true);
+        onPengirimanStats?.(null);
+      });
     api.getBookingStats(bulan)
       .then((b) => {
+        onBookingStats?.(b);
         const bc = b.countsByStatus;
         setBooking({
           waitingL1: bc.SUBMITTED ?? 0,
@@ -57,7 +70,11 @@ export default function DashboardStats({ me }: { me: Me }) {
           rejected: (bc.REJECTED_L1 ?? 0) + (bc.REJECTED_GA ?? 0) + (bc.REJECTED_GA_APPROVAL ?? 0),
         });
       })
-      .catch(() => setBookingFailed(true));
+      .catch(() => {
+        setBookingFailed(true);
+        onBookingStats?.(null);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Same convention as Ekspedisi Overview's own stat-grid label - the tile for the L1 approval

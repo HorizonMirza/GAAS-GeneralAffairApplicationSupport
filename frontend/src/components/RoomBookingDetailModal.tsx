@@ -233,7 +233,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
                 <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
                 {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
+                  <option key={r.nama} value={r.nama}>{r.nama} ({r.kapasitas} orang)</option>
                 ))}
               </select>
             </div>

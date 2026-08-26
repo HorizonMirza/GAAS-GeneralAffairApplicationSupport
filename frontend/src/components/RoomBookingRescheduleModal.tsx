@@ -154,7 +154,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <label htmlFor="rs-ruang">Ruangan</label>
               <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
                 {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
+                  <option key={r.nama} value={r.nama}>{r.nama} ({r.kapasitas} orang)</option>
                 ))}
               </select>
             </div>

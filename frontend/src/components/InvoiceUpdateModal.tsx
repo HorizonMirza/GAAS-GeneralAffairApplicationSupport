@@ -17,6 +17,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const { showToast } = useToast();
 
   if (!open || !item) return null;
@@ -37,6 +38,22 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     }
     setError("");
     setFile(picked);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+    handleFileChange(e.dataTransfer.files?.[0] || null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,7 +90,13 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
-            <div className="file-dropzone">
+            <div
+              className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
               <div className="file-dropzone-text">
                 {file ? (

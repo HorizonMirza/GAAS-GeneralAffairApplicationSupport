@@ -159,6 +159,19 @@ using (var scope = app.Services.CreateScope())
             END IF;
         END $$;
     ");
+
+    // Indexes on the columns every list/stats/conflict-check query filters on (status, divisi,
+    // departemen, tanggal) - EnsureCreated() only applies HasIndex() to a brand-new database, so
+    // an already-existing one needs these added directly. Plain CREATE INDEX IF NOT EXISTS is
+    // safe to re-run on every startup.
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_pengiriman_status ON pengiriman (status)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_pengiriman_divisi ON pengiriman (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_pengiriman_departemen ON pengiriman (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_pengiriman_tanggal ON pengiriman (tanggal)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_status ON booking_ruang (status)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_divisi ON booking_ruang (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_departemen ON booking_ruang (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_tanggal ON booking_ruang (tanggal)");
 }
 
 if (args.Contains("resetdb"))

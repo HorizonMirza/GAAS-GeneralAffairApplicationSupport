@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { BookingRuang } from "@/lib/types";
 
@@ -36,9 +36,13 @@ interface Props {
   selectedDate: string;
   onSelect: (date: string) => void;
   namaRuang?: string;
+  // When the caller already has the exact same month's entries loaded (e.g. the Bulanan tab
+  // fetches this identical 42-day range for its own grid), pass them here to skip this
+  // component's own fetch entirely instead of doubling up on the same network request.
+  entries?: BookingRuang[];
 }
 
-export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang }: Props) {
+export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, entries: providedEntries }: Props) {
   const initial = new Date(selectedDate + "T00:00:00");
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -77,30 +81,42 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang }:
   const rangeStart = cells[0].iso;
   const rangeEnd = cells[41].iso;
 
+  function buildDotsMap(data: BookingRuang[]): Map<string, Set<string>> {
+    const map = new Map<string, Set<string>>();
+    for (const entry of data) {
+      const dotClass = statusDotClass(entry.status);
+      if (!dotClass) continue;
+      const set = map.get(entry.tanggal) || new Set<string>();
+      set.add(dotClass);
+      map.set(entry.tanggal, set);
+    }
+    return map;
+  }
+
   // Fetches the whole visible 42-day grid (not just the current month) so the leading/trailing
-  // muted days from adjacent months show their dots too, matching what's actually on screen.
+  // muted days from adjacent months show their dots too, matching what's actually on screen -
+  // skipped entirely when the caller already passed the same range's entries (see Props.entries).
   useEffect(() => {
+    if (providedEntries) return;
     let cancelled = false;
     api
       .getBookingScheduleRange(rangeStart, rangeEnd, namaRuang)
       .then((data) => {
         if (cancelled) return;
-        const map = new Map<string, Set<string>>();
-        for (const entry of data) {
-          const dotClass = statusDotClass(entry.status);
-          if (!dotClass) continue;
-          const set = map.get(entry.tanggal) || new Set<string>();
-          set.add(dotClass);
-          map.set(entry.tanggal, set);
-        }
-        setDotsByDate(map);
+        setDotsByDate(buildDotsMap(data));
       })
       .catch(() => setDotsByDate(new Map()));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rangeStart, rangeEnd, namaRuang]);
+  }, [rangeStart, rangeEnd, namaRuang, providedEntries]);
+
+  const providedDotsByDate = useMemo(
+    () => (providedEntries ? buildDotsMap(providedEntries) : null),
+    [providedEntries]
+  );
+  const effectiveDotsByDate = providedDotsByDate ?? dotsByDate;
 
   function prevMonth() {
     if (viewMonth === 0) {
@@ -142,7 +158,7 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang }:
           // only gets its own (text-only) styling while something else is selected.
           if (isSelected) cls.push("mini-calendar-day-selected");
           else if (isToday) cls.push("mini-calendar-day-today");
-          const dots = Array.from(dotsByDate.get(c.iso) || []);
+          const dots = Array.from(effectiveDotsByDate.get(c.iso) || []);
           return (
             <button key={c.iso} type="button" className={cls.join(" ")} onClick={() => onSelect(c.iso)}>
               <span className="mini-calendar-day-circle">

@@ -9,6 +9,7 @@ import {
   canGaRescheduleBooking,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
+  isBookingOriginRole,
   isBookingPdfAvailable,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
@@ -135,9 +136,7 @@ export default function BookingTransaksiPage() {
     loadTable();
   }, [loadTable]);
 
-  const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
-    : false;
+  const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
@@ -184,7 +183,7 @@ export default function BookingTransaksiPage() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const showOrgFilters = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role);
+  const showOrgFilters = isBookingOriginRole(me.role);
 
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
   const divisiOptions = selectedDirektoratNode
