@@ -459,9 +459,13 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   if (view === "avail") {
     if (isWeekend(refDate)) return <ClosedNotice />;
     const roomList = rooms || [];
+    // Ketersediaan is about finding a room that's actually free - a pending/draft booking might
+    // still get rejected, so only fully-approved bookings count as "occupied" here (unlike
+    // Harian/Mingguan, which show every status).
+    const approvedEntries = entries.filter((e) => e.status === "APPROVED_GA_APPROVAL");
     // No maxCols cap here - a single room rarely has more than one overlapping booking on a
     // given day, and this view is meant to look and behave exactly like Harian (uncapped).
-    const plans = roomList.map((r) => buildDayPlan(entries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama))));
+    const plans = roomList.map((r) => buildDayPlan(approvedEntries.filter((e) => e.namaRuang === r.nama || e.additionalRooms.includes(r.nama))));
     return (
       <div className="table-wrap" ref={nowLineWrapRef} style={{ userSelect: drag ? "none" : undefined }}>
         <table className="data-table schedule-table">
