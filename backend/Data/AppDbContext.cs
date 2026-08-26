@@ -22,6 +22,11 @@ public class AppDbContext : DbContext
     public DbSet<BookingChatRead> BookingChatReads => Set<BookingChatRead>();
     public DbSet<RoomBookingCounter> RoomBookingCounters => Set<RoomBookingCounter>();
     public DbSet<BookingWaitlist> BookingWaitlists => Set<BookingWaitlist>();
+    public DbSet<BookingKendaraan> BookingKendaraans => Set<BookingKendaraan>();
+    public DbSet<BookingKendaraanLog> BookingKendaraanLogs => Set<BookingKendaraanLog>();
+    public DbSet<BookingKendaraanChatMessage> BookingKendaraanChatMessages => Set<BookingKendaraanChatMessage>();
+    public DbSet<BookingKendaraanChatRead> BookingKendaraanChatReads => Set<BookingKendaraanChatRead>();
+    public DbSet<KendaraanBookingCounter> KendaraanBookingCounters => Set<KendaraanBookingCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -65,6 +70,19 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<BookingWaitlist>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingKendaraan>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+            if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingKendaraanLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<BookingKendaraanChatMessage>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -382,6 +400,129 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex(w => new { w.NamaRuang, w.Tanggal }).HasDatabaseName("ix_booking_waitlist_room_date");
+        });
+
+        modelBuilder.Entity<BookingKendaraan>(e =>
+        {
+            e.ToTable("booking_kendaraan");
+            e.HasKey(b => b.Id);
+            e.Property(b => b.Id).HasColumnName("id");
+            e.Property(b => b.NomorPemesanan).HasColumnName("nomor_pemesanan").HasMaxLength(50);
+            e.Property(b => b.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
+            e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
+            e.Property(b => b.NamaKendaraan).HasColumnName("nama_kendaraan").HasMaxLength(100).IsRequired();
+            e.Property(b => b.PlatNomor).HasColumnName("plat_nomor").HasMaxLength(20);
+            e.Property(b => b.KapasitasKendaraan).HasColumnName("kapasitas_kendaraan");
+            e.Property(b => b.Supir).HasColumnName("supir").HasMaxLength(255);
+            e.Property(b => b.Tujuan).HasColumnName("tujuan").HasMaxLength(255);
+            e.Property(b => b.JumlahPenumpang).HasColumnName("jumlah_penumpang");
+            e.Property(b => b.Tanggal).HasColumnName("tanggal");
+            e.Property(b => b.IsWholeDay).HasColumnName("is_whole_day");
+            e.Property(b => b.JamMulai).HasColumnName("jam_mulai");
+            e.Property(b => b.JamSelesai).HasColumnName("jam_selesai");
+            e.Property(b => b.Catatan).HasColumnName("catatan");
+
+            e.Property(b => b.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(b => b.Departemen).HasColumnName("departemen").HasMaxLength(255);
+
+            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.RejectReason).HasColumnName("reject_reason");
+
+            e.Property(b => b.CreatedBy).HasColumnName("created_by");
+            e.Property(b => b.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.ApprovedByL1).HasColumnName("approved_by_l1");
+            e.Property(b => b.ApprovedByGa).HasColumnName("approved_by_ga");
+            e.Property(b => b.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
+
+            e.Property(b => b.CreatedAt).HasColumnName("created_at");
+            e.Property(b => b.UpdatedAt).HasColumnName("updated_at");
+            e.Property(b => b.ApprovedL1At).HasColumnName("approved_l1_at");
+            e.Property(b => b.ApprovedGaAt).HasColumnName("approved_ga_at");
+            e.Property(b => b.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+
+            e.HasOne(b => b.Pembuat)
+                .WithMany()
+                .HasForeignKey(b => b.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(b => b.Status).HasDatabaseName("ix_booking_kendaraan_status");
+            e.HasIndex(b => b.Divisi).HasDatabaseName("ix_booking_kendaraan_divisi");
+            e.HasIndex(b => b.Departemen).HasDatabaseName("ix_booking_kendaraan_departemen");
+            e.HasIndex(b => b.Tanggal).HasDatabaseName("ix_booking_kendaraan_tanggal");
+        });
+
+        modelBuilder.Entity<BookingKendaraanLog>(e =>
+        {
+            e.ToTable("booking_kendaraan_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.BookingKendaraanId).HasColumnName("booking_kendaraan_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.BookingKendaraan)
+                .WithMany(b => b.Logs)
+                .HasForeignKey(l => l.BookingKendaraanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<KendaraanBookingCounter>(e =>
+        {
+            e.ToTable("kendaraan_booking_counters");
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
+            e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
+            e.Property(c => c.LastSequence).HasColumnName("last_sequence");
+        });
+
+        modelBuilder.Entity<BookingKendaraanChatMessage>(e =>
+        {
+            e.ToTable("booking_kendaraan_chat_messages");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.BookingKendaraanId).HasColumnName("booking_kendaraan_id");
+            e.Property(m => m.SenderId).HasColumnName("sender_id");
+            e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(m => m.BookingKendaraan)
+                .WithMany()
+                .HasForeignKey(m => m.BookingKendaraanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookingKendaraanChatRead>(e =>
+        {
+            e.ToTable("booking_kendaraan_chat_reads");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.BookingKendaraanId).HasColumnName("booking_kendaraan_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.LastReadAt).HasColumnName("last_read_at");
+            e.HasIndex(r => new { r.BookingKendaraanId, r.UserId }).IsUnique();
+
+            e.HasOne(r => r.BookingKendaraan)
+                .WithMany()
+                .HasForeignKey(r => r.BookingKendaraanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<DivisiCounter>(e =>

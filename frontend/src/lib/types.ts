@@ -348,3 +348,89 @@ export interface BookingRuangActionResult {
   item: BookingRuang;
   detail: string | null;
 }
+
+export interface VehicleOption {
+  nama: string;
+  platNomor: string;
+  kapasitas: number;
+  supir: string;
+}
+
+export interface BookingKendaraan {
+  id: number;
+  nomorPemesanan: string | null;
+  keperluan: string;
+  pic: string | null;
+  namaKendaraan: string;
+  platNomor: string | null;
+  kapasitasKendaraan: number;
+  supir: string | null;
+  tujuan: string | null;
+  jumlahPenumpang: number;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+  catatan: string | null;
+  divisi: string;
+  departemen: string | null;
+  status: BookingStatus;
+  rejectReason: string | null;
+  createdBy: number;
+  createdByRole: Role;
+  approvedByL1: number | null;
+  approvedByGa: number | null;
+  approvedByApprovalGa: number | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedL1At: string | null;
+  approvedGaAt: string | null;
+  approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
+  hasUnreadMention: boolean;
+}
+
+export interface BookingKendaraanListResponse {
+  items: BookingKendaraan[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface BookingKendaraanStatsResponse {
+  countsByStatus: Partial<Record<BookingStatus, number>>;
+}
+
+export interface BookingKendaraanLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface BookingKendaraanCreatePayload {
+  keperluan: string;
+  pic: string | null;
+  divisi?: string;
+  departemen?: string;
+  namaKendaraan: string;
+  tujuan: string | null;
+  jumlahPenumpang: number;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+  catatan: string | null;
+}
+
+// Admin/Approval GA's conflict-resolution tool - deliberately narrower than
+// BookingKendaraanCreatePayload, only the fields that define the vehicle+slot.
+export interface BookingKendaraanReschedulePayload {
+  namaKendaraan: string;
+  tanggal: string;
+  isWholeDay: boolean;
+  jamMulai: string | null;
+  jamSelesai: string | null;
+}

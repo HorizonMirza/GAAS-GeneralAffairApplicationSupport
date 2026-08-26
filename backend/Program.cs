@@ -191,13 +191,88 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_divisi ON booking_ruang (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_departemen ON booking_ruang (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_tanggal ON booking_ruang (tanggal)");
+
+    // Vehicle Booking: brand new tables (not a column backfill), same reasoning as the Room
+    // Booking chat tables above - EnsureCreated() (used below) won't add tables for an already-
+    // existing database, only for a fresh one.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_kendaraan (
+            id SERIAL PRIMARY KEY,
+            nomor_pemesanan VARCHAR(50),
+            keperluan VARCHAR(255) NOT NULL,
+            pic VARCHAR(255),
+            nama_kendaraan VARCHAR(100) NOT NULL,
+            plat_nomor VARCHAR(20),
+            kapasitas_kendaraan INT NOT NULL,
+            supir VARCHAR(255),
+            tujuan VARCHAR(255),
+            jumlah_penumpang INT NOT NULL,
+            tanggal DATE NOT NULL,
+            is_whole_day BOOLEAN NOT NULL,
+            jam_mulai TIME NULL,
+            jam_selesai TIME NULL,
+            catatan TEXT,
+            divisi VARCHAR(255) NOT NULL,
+            departemen VARCHAR(255),
+            status VARCHAR(50) NOT NULL,
+            reject_reason TEXT,
+            created_by INT NOT NULL REFERENCES users(id),
+            created_by_role VARCHAR(50) NOT NULL,
+            approved_by_l1 INT NULL REFERENCES users(id),
+            approved_by_ga INT NULL REFERENCES users(id),
+            approved_by_approval_ga INT NULL REFERENCES users(id),
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL,
+            approved_l1_at TIMESTAMP NULL,
+            approved_ga_at TIMESTAMP NULL,
+            approved_approval_ga_at TIMESTAMP NULL
+        )");
+    // Backfill for a database that already ran the CREATE TABLE above before Supir existed.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS supir VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_kendaraan_logs (
+            id SERIAL PRIMARY KEY,
+            booking_kendaraan_id INT NOT NULL REFERENCES booking_kendaraan(id) ON DELETE CASCADE,
+            action VARCHAR(50) NOT NULL,
+            actor_id INT NULL REFERENCES users(id),
+            reason TEXT,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS kendaraan_booking_counters (
+            divisi VARCHAR(255) NOT NULL,
+            year INT NOT NULL,
+            month INT NOT NULL,
+            last_sequence INT NOT NULL,
+            PRIMARY KEY (divisi, year, month)
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_kendaraan_chat_messages (
+            id SERIAL PRIMARY KEY,
+            booking_kendaraan_id INT NOT NULL REFERENCES booking_kendaraan(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS booking_kendaraan_chat_reads (
+            id SERIAL PRIMARY KEY,
+            booking_kendaraan_id INT NOT NULL REFERENCES booking_kendaraan(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (booking_kendaraan_id, user_id)
+        )");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_status ON booking_kendaraan (status)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_divisi ON booking_kendaraan (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_departemen ON booking_kendaraan (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_tanggal ON booking_kendaraan (tanggal)");
 }
 
 if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }
