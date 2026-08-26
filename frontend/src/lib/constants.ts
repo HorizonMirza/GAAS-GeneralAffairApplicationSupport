@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { BookingRuang, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -301,4 +301,39 @@ export function bookingRecurrenceLabel(item: BookingRuang): string | null {
   if (!item.seriesId || !item.recurrenceFrequency) return null;
   const endText = item.recurrenceEndDate ? ` s/d ${formatDate(item.recurrenceEndDate)}` : "";
   return `${RECURRENCE_FREQUENCY_LABELS[item.recurrenceFrequency]}${endText}`;
+}
+
+export function kendaraanOriginActorLabel(item: BookingKendaraan): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
+}
+
+// Same rule as isBookingEditableByOrigin - mirrors the backend's
+// BookingKendaraanController.IsEditableByOrigin exactly.
+export function isKendaraanEditableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  return item.status === "DRAFT" && item.createdBy === me.id;
+}
+
+// Same rule as isBookingDeletableByOrigin - mirrors the backend's
+// BookingKendaraanController.IsDeletableByOrigin exactly.
+export function isKendaraanDeletableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  if (isKendaraanEditableByOrigin(item, me)) return true;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+// Same rule as isBookingGaReschedulable - mirrors
+// BookingKendaraanController.IsGaReschedulable.
+export function isKendaraanGaReschedulable(item: BookingKendaraan): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+}
+
+export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isKendaraanGaReschedulable(item);
+}
+
+export function isKendaraanGaActionable(item: BookingKendaraan): boolean {
+  return item.status === "APPROVED_L1";
 }

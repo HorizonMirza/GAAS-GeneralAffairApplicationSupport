@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency } from "@/lib/format";
-import type { BookingRuangStatsResponse, Me, PengirimanStatsResponse } from "@/lib/types";
+import type { BookingKendaraanStatsResponse, BookingRuangStatsResponse, Me, PengirimanStatsResponse } from "@/lib/types";
 
 interface PengirimanStatsView {
   waitingL1: number;
@@ -29,16 +29,16 @@ interface Props {
   // them here instead of firing their own separate list-endpoint calls for the same totals.
   onPengirimanStats?: (data: PengirimanStatsResponse | null) => void;
   onBookingStats?: (data: BookingRuangStatsResponse | null) => void;
-  // Some callers only want the stats fetch (for the callbacks above) without the "Ringkasan
-  // Bulan Ini" tile grid itself being shown.
-  hideTiles?: boolean;
+  onKendaraanStats?: (data: BookingKendaraanStatsResponse | null) => void;
 }
 
-export default function DashboardStats({ me, onPengirimanStats, onBookingStats, hideTiles }: Props) {
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
+  const [kendaraan, setKendaraan] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
   const [bookingFailed, setBookingFailed] = useState(false);
+  const [kendaraanFailed, setKendaraanFailed] = useState(false);
 
   // Fetched (and failure-handled) independently - an outage in one source must not blank out
   // the other's numbers too, which a shared Promise.all/catch would do.
@@ -83,6 +83,22 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
         setBookingFailed(true);
         onBookingStats?.(null);
       });
+    api.getKendaraanStats(bulan)
+      .then((k) => {
+        onKendaraanStats?.(k);
+        const kc = k.countsByStatus;
+        setKendaraan({
+          waitingL1: kc.SUBMITTED ?? 0,
+          waitingGa: kc.APPROVED_L1 ?? 0,
+          waitingGaApproval: kc.APPROVED_GA ?? 0,
+          completed: kc.APPROVED_GA_APPROVAL ?? 0,
+          rejected: (kc.REJECTED_L1 ?? 0) + (kc.REJECTED_GA ?? 0) + (kc.REJECTED_GA_APPROVAL ?? 0),
+        });
+      })
+      .catch(() => {
+        setKendaraanFailed(true);
+        onKendaraanStats?.(null);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -95,8 +111,6 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
       ? "Approval Divisi"
       : "Approval Departemen/Divisi";
-
-  if (hideTiles) return null;
 
   return (
     <>
@@ -141,6 +155,26 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
               <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Vehicle Booking</h4>
+            <Link href="/booking-kendaraan/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+          </div>
+          {!kendaraan ? (
+            <p className="text-secondary">{kendaraanFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{kendaraan.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.rejected}</div><div className="label">Rejected</div></div>
             </div>
           )}
         </div>

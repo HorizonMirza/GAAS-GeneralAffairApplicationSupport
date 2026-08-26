@@ -1,8 +1,8 @@
 import { LOG_ACTION_META, LOG_ROLE_LABEL } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
-import type { BookingRuangLog, PengirimanLog } from "@/lib/types";
+import type { BookingKendaraanLog, BookingRuangLog, PengirimanLog } from "@/lib/types";
 
-export default function ApprovalLog({ logs }: { logs: (PengirimanLog | BookingRuangLog)[] | null }) {
+export default function ApprovalLog({ logs }: { logs: (PengirimanLog | BookingRuangLog | BookingKendaraanLog)[] | null }) {
   if (!logs || logs.length === 0) {
     return <p className="text-secondary" style={{ textAlign: "center", padding: "16px 0" }}>Belum ada riwayat approval.</p>;
   }

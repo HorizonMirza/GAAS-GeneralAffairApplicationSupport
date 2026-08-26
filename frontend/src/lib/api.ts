@@ -1,5 +1,11 @@
 import type {
   ApproveKpuPayload,
+  BookingKendaraan,
+  BookingKendaraanCreatePayload,
+  BookingKendaraanListResponse,
+  BookingKendaraanLog,
+  BookingKendaraanReschedulePayload,
+  BookingKendaraanStatsResponse,
   BookingRuang,
   BookingRuangActionResult,
   BookingRuangCreatePayload,
@@ -24,6 +30,7 @@ import type {
   RoomOption,
   Status,
   UtilizationResponse,
+  VehicleOption,
   WaitlistEntry,
 } from "./types";
 
@@ -346,6 +353,46 @@ export const api = {
     apiRequest<ChatMessage>(`/booking-ruang/${id}/chat`, { method: "POST", body: { message } }),
   bookingPdfUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/pdf`,
   bookingIcsUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/ics`,
+
+  listVehicles: () => apiRequest<VehicleOption[]>("/booking-kendaraan/vehicles"),
+  nextKendaraanNomor: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorPemesanan: string }>("/booking-kendaraan/next-nomor", { params: { tanggal, divisi } }),
+  getKendaraanSchedule: (tanggal: string) =>
+    apiRequest<BookingKendaraan[]>("/booking-kendaraan/schedule", { params: { tanggal } }),
+  getKendaraanScheduleRange: (tanggalMulai: string, tanggalSelesai: string, namaKendaraan?: string) =>
+    apiRequest<BookingKendaraan[]>("/booking-kendaraan/schedule-range", {
+      params: { tanggalMulai, tanggalSelesai, nama_kendaraan: namaKendaraan },
+    }),
+  listKendaraanBooking: (params: ListKendaraanBookingParams) =>
+    apiRequest<BookingKendaraanListResponse>("/booking-kendaraan", { params: kendaraanListParams(params) }),
+  getKendaraanStats: (bulan: string) =>
+    apiRequest<BookingKendaraanStatsResponse>("/booking-kendaraan/stats", { params: { bulan } }),
+  createKendaraanBooking: (payload: BookingKendaraanCreatePayload) =>
+    apiRequest<BookingKendaraan>("/booking-kendaraan", { method: "POST", body: normalizeKendaraanPayload(payload) }),
+  updateKendaraanBooking: (id: number, payload: BookingKendaraanCreatePayload) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}`, { method: "PUT", body: normalizeKendaraanPayload(payload) }),
+  rescheduleKendaraanBooking: (id: number, payload: BookingKendaraanReschedulePayload) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/reschedule`, {
+      method: "PATCH",
+      body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
+    }),
+  deleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}`, { method: "DELETE" }),
+  superAdminDeleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}/super-admin`, { method: "DELETE" }),
+  submitKendaraanBooking: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/submit`, { method: "PATCH" }),
+  approveKendaraanL1: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/approve-l1`, { method: "PATCH" }),
+  rejectKendaraanL1: (id: number, reason: string | null) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveKendaraanGa: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/approve-ga`, { method: "PATCH" }),
+  rejectKendaraanGa: (id: number, reason: string | null) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveKendaraanGaApproval: (id: number) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/approve-ga-approval`, { method: "PATCH" }),
+  rejectKendaraanGaApproval: (id: number, reason: string | null) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  getKendaraanLogs: (id: number) => apiRequest<BookingKendaraanLog[]>(`/booking-kendaraan/${id}/logs`),
+  getKendaraanChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-kendaraan/${id}/chat`),
+  sendKendaraanChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
 };
 
 export interface ListBookingParams {
@@ -387,6 +434,40 @@ function bookingListParams(p: ListBookingParams) {
     divisi: p.divisi,
     departemen: p.departemen,
     nama_ruang: p.namaRuang,
+    tanggal: p.tanggal,
+    direktorat: p.direktorat,
+    bulan: p.bulan,
+    search: p.search,
+    sejakBulan: p.sejakBulan,
+  };
+}
+
+export interface ListKendaraanBookingParams {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus | "REJECTED" | "";
+  divisi?: string;
+  departemen?: string;
+  namaKendaraan?: string;
+  tanggal?: string;
+  direktorat?: string;
+  bulan?: string;
+  search?: string;
+  sejakBulan?: string;
+}
+
+function normalizeKendaraanPayload(payload: BookingKendaraanCreatePayload): BookingKendaraanCreatePayload {
+  return { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) };
+}
+
+function kendaraanListParams(p: ListKendaraanBookingParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    status: p.status,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    nama_kendaraan: p.namaKendaraan,
     tanggal: p.tanggal,
     direktorat: p.direktorat,
     bulan: p.bulan,

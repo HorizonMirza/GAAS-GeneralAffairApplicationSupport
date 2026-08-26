@@ -68,7 +68,9 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: KENDARAAN_ICON,
     label: "Vehicle Booking",
     items: [
-      { label: "Dashboard", href: "/booking-kendaraan" },
+      { label: "Overview", href: "/booking-kendaraan/overview" },
+      { label: "Calendar", href: "/booking-kendaraan/calendar" },
+      { label: "Booking", href: "/booking-kendaraan/transaksi" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

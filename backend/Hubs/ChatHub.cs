@@ -70,6 +70,23 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, BookingGroup(bookingRuangId));
     }
 
+    // Same as JoinBookingChat, but for Vehicle Booking - also excludes KPU, matching
+    // BookingKendaraanChatController.List/Send.
+    public async Task JoinKendaraanChat(int bookingKendaraanId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null || user.Role == RoleEnum.KPU) return;
+        var item = await _db.BookingKendaraans.FindAsync(bookingKendaraanId);
+        if (item == null || !ApiControllerBase.CanAccessBookingKendaraan(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, KendaraanGroup(bookingKendaraanId));
+    }
+
+    public async Task LeaveKendaraanChat(int bookingKendaraanId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, KendaraanGroup(bookingKendaraanId));
+    }
+
     public static string PengirimanGroup(int pengirimanId) => $"pengiriman-chat-{pengirimanId}";
     public static string BookingGroup(int bookingRuangId) => $"booking-chat-{bookingRuangId}";
+    public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
 }

@@ -5,7 +5,17 @@ import { api } from "@/lib/api";
 import type { RejectTarget } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
-export type RejectType = "l1" | "ga" | "ga-approval" | "kpu" | "booking-l1" | "booking-ga" | "booking-ga-approval";
+export type RejectType =
+  | "l1"
+  | "ga"
+  | "ga-approval"
+  | "kpu"
+  | "booking-l1"
+  | "booking-ga"
+  | "booking-ga-approval"
+  | "kendaraan-l1"
+  | "kendaraan-ga"
+  | "kendaraan-ga-approval";
 
 interface Props {
   open: boolean;
@@ -72,8 +82,15 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectBookingL1(targetId, reasonValue);
       } else if (targetType === "booking-ga") {
         await api.rejectBookingGa(targetId, reasonValue);
-      } else {
+      } else if (targetType === "booking-ga-approval") {
         await api.rejectBookingGaApproval(targetId, reasonValue);
+        message = "Booking ditolak";
+      } else if (targetType === "kendaraan-l1") {
+        await api.rejectKendaraanL1(targetId, reasonValue);
+      } else if (targetType === "kendaraan-ga") {
+        await api.rejectKendaraanGa(targetId, reasonValue);
+      } else {
+        await api.rejectKendaraanGaApproval(targetId, reasonValue);
         message = "Booking ditolak";
       }
       showToast(message);

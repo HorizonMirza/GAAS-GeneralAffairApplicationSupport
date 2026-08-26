@@ -89,4 +89,18 @@ public abstract class ApiControllerBase : ControllerBase
             ? item.CreatedBy == user.Id
             : sameUnit;
     }
+
+    // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
+    public static bool CanAccessBookingKendaraan(User user, BookingKendaraan item)
+    {
+        if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
+            return true;
+
+        var sameUnit = item.Departemen != null
+            ? user.Departemen == item.Departemen
+            : user.Divisi == item.Divisi && user.Departemen == null;
+        return item.Status == BookingStatusEnum.DRAFT
+            ? item.CreatedBy == user.Id
+            : sameUnit;
+    }
 }

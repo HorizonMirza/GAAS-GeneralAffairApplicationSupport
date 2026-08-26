@@ -7,7 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/
 // off instead of hardcoding a second base URL.
 const HUB_URL = `${API_BASE.replace(/\/api\/?$/, "")}/hubs/chat`;
 
-export type ChatKind = "pengiriman" | "booking";
+export type ChatKind = "pengiriman" | "booking" | "kendaraan";
 
 let connection: signalR.HubConnection | null = null;
 let startPromise: Promise<void> | null = null;
@@ -21,11 +21,15 @@ function groupKey(kind: ChatKind, id: number): string {
 }
 
 function joinMethod(kind: ChatKind): string {
-  return kind === "pengiriman" ? "JoinPengirimanChat" : "JoinBookingChat";
+  if (kind === "pengiriman") return "JoinPengirimanChat";
+  if (kind === "kendaraan") return "JoinKendaraanChat";
+  return "JoinBookingChat";
 }
 
 function leaveMethod(kind: ChatKind): string {
-  return kind === "pengiriman" ? "LeavePengirimanChat" : "LeaveBookingChat";
+  if (kind === "pengiriman") return "LeavePengirimanChat";
+  if (kind === "kendaraan") return "LeaveKendaraanChat";
+  return "LeaveBookingChat";
 }
 
 function getConnection(): signalR.HubConnection {
@@ -86,7 +90,7 @@ export async function leaveChat(kind: ChatKind, id: number): Promise<void> {
 // to call even before the connection has started (SignalR queues the "on" registration).
 export function onChatMessage(kind: ChatKind, handler: (message: ChatMessage) => void): () => void {
   const conn = getConnection();
-  const event = kind === "pengiriman" ? "ReceivePengirimanMessage" : "ReceiveBookingMessage";
+  const event = kind === "pengiriman" ? "ReceivePengirimanMessage" : kind === "kendaraan" ? "ReceiveKendaraanMessage" : "ReceiveBookingMessage";
   conn.on(event, handler);
   return () => conn.off(event, handler);
 }

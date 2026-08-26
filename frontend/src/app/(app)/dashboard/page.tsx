@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { greetingName } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
-import type { BookingRuangStatsResponse, PengirimanStatsResponse } from "@/lib/types";
+import type { BookingKendaraanStatsResponse, BookingRuangStatsResponse, PengirimanStatsResponse } from "@/lib/types";
 import DashboardStats from "@/components/DashboardStats";
 
 function sumCounts(counts: Partial<Record<string, number>>): number {
@@ -37,7 +37,8 @@ const MODULES: ModuleDef[] = [
   {
     key: "bookingkendaraan",
     title: "Vehicle Booking",
-    href: "/booking-kendaraan",
+    href: "/booking-kendaraan/overview",
+    live: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm14 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM5 17V9l2-5h10l2 5v8"></path><path d="M3 11h18"></path></svg>,
   },
   {
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<{ total: number; totalBulanIni: number | null } | null | undefined>(undefined);
   const [bookingSummary, setBookingSummary] = useState<{ total: number } | null | undefined>(undefined);
+  const [kendaraanSummary, setKendaraanSummary] = useState<{ total: number } | null | undefined>(undefined);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") {
@@ -74,8 +76,8 @@ export default function DashboardPage() {
   }, [loading, me, router]);
 
   // Module card subtitles reuse the same stats calls DashboardStats below already makes
-  // (via its onPengirimanStats/onBookingStats callbacks) instead of firing their own
-  // list-endpoint calls just to read a total that's already in that response.
+  // (via its onPengirimanStats/onBookingStats/onKendaraanStats callbacks) instead of firing
+  // their own list-endpoint calls just to read a total that's already in that response.
   function handlePengirimanStats(data: PengirimanStatsResponse | null) {
     setSummary(data ? { total: sumCounts(data.countsByStatus), totalBulanIni: data.totalBulanIni } : null);
   }
@@ -84,7 +86,17 @@ export default function DashboardPage() {
     setBookingSummary(data ? { total: sumCounts(data.countsByStatus) } : null);
   }
 
+  function handleKendaraanStats(data: BookingKendaraanStatsResponse | null) {
+    setKendaraanSummary(data ? { total: sumCounts(data.countsByStatus) } : null);
+  }
+
   if (!me || me.role === "SUPER_ADMIN") return null;
+
+  const MODULE_SUBTITLE: Record<string, { total: number; totalBulanIni: number | null } | { total: number } | null | undefined> = {
+    ekspedisi: summary,
+    bookingruangmeeting: bookingSummary,
+    bookingkendaraan: kendaraanSummary,
+  };
 
   return (
     <>
@@ -92,23 +104,25 @@ export default function DashboardPage() {
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
       </div>
 
-      <DashboardStats me={me} onPengirimanStats={handlePengirimanStats} onBookingStats={handleBookingStats} hideTiles />
+      <DashboardStats
+        me={me}
+        onPengirimanStats={handlePengirimanStats}
+        onBookingStats={handleBookingStats}
+        onKendaraanStats={handleKendaraanStats}
+      />
 
       <h3 style={{ margin: "24px 0 12px" }}>Modul</h3>
       <div className="module-grid">
         {MODULES.map((mod) => {
           if (mod.live) {
+            const data = MODULE_SUBTITLE[mod.key];
+            const noun = mod.key === "ekspedisi" ? "transaksi" : "booking";
+            const totalBulanIni = mod.key === "ekspedisi" && data && "totalBulanIni" in data ? data.totalBulanIni : null;
             const subtitle =
-              mod.key === "ekspedisi"
-                ? summary === undefined
-                  ? "Memuat..."
-                  : summary
-                  ? `${summary.total} transaksi bulan ini${summary.totalBulanIni != null ? ` · ${formatCurrency(summary.totalBulanIni)}` : ""}`
-                  : "Tidak dapat memuat data"
-                : bookingSummary === undefined
+              data === undefined
                 ? "Memuat..."
-                : bookingSummary
-                ? `${bookingSummary.total} booking bulan ini`
+                : data
+                ? `${data.total} ${noun} bulan ini${totalBulanIni != null ? ` · ${formatCurrency(totalBulanIni)}` : ""}`
                 : "Tidak dapat memuat data";
             return (
               <a key={mod.key} className="module-card" href={mod.href}>
