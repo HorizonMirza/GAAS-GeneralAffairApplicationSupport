@@ -1537,6 +1537,7 @@ table.data-table {
 .data-table td.schedule-time-col {
   height: 36px;
   padding: 6px 14px;
+  vertical-align: middle;
 }
 
 .schedule-cell-empty-wrap {
