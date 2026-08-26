@@ -218,7 +218,7 @@ function BookingCalendarPageInner() {
                 }
               }}
             >
-              <option value={ALL_ROOMS_VALUE}>Semua Ruangan</option>
+              <option value={ALL_ROOMS_VALUE}>Ketersediaan Ruangan</option>
               {rooms.map((r) => (
                 <option key={r.nama} value={r.nama}>{r.nama}</option>
               ))}
