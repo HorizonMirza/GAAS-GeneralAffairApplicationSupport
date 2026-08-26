@@ -1538,6 +1538,7 @@ table.data-table {
   height: 36px;
   padding: 6px 14px;
   vertical-align: middle;
+  text-align: center;
 }
 
 .schedule-cell-empty-wrap {
