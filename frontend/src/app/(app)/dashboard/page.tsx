@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { greetingName } from "@/lib/constants";
-import { formatCurrency } from "@/lib/format";
-import type { BookingKendaraanStatsResponse, BookingRuangStatsResponse, PengirimanStatsResponse } from "@/lib/types";
-import DashboardStats from "@/components/DashboardStats";
-
-function sumCounts(counts: Partial<Record<string, number>>): number {
-  return Object.values(counts).reduce((total: number, n) => total + (n ?? 0), 0);
-}
 
 interface ModuleDef {
   key: string;
   title: string;
   href: string;
   icon: React.ReactNode;
-  live?: boolean;
 }
 
 const MODULES: ModuleDef[] = [
@@ -25,7 +17,6 @@ const MODULES: ModuleDef[] = [
     key: "ekspedisi",
     title: "Expedition",
     href: "/ekspedisi/overview",
-    live: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg>,
   },
   {
@@ -38,14 +29,12 @@ const MODULES: ModuleDef[] = [
     key: "bookingkendaraan",
     title: "Vehicle Booking",
     href: "/booking-kendaraan/overview",
-    live: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm14 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM5 17V9l2-5h10l2 5v8"></path><path d="M3 11h18"></path></svg>,
   },
   {
     key: "bookingruangmeeting",
     title: "Room Booking",
     href: "/booking-ruang-meeting/overview",
-    live: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
   },
   {
@@ -65,9 +54,6 @@ const MODULES: ModuleDef[] = [
 export default function DashboardPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
-  const [summary, setSummary] = useState<{ total: number; totalBulanIni: number | null } | null | undefined>(undefined);
-  const [bookingSummary, setBookingSummary] = useState<{ total: number } | null | undefined>(undefined);
-  const [kendaraanSummary, setKendaraanSummary] = useState<{ total: number } | null | undefined>(undefined);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") {
@@ -75,28 +61,7 @@ export default function DashboardPage() {
     }
   }, [loading, me, router]);
 
-  // Module card subtitles reuse the same stats calls DashboardStats below already makes
-  // (via its onPengirimanStats/onBookingStats/onKendaraanStats callbacks) instead of firing
-  // their own list-endpoint calls just to read a total that's already in that response.
-  function handlePengirimanStats(data: PengirimanStatsResponse | null) {
-    setSummary(data ? { total: sumCounts(data.countsByStatus), totalBulanIni: data.totalBulanIni } : null);
-  }
-
-  function handleBookingStats(data: BookingRuangStatsResponse | null) {
-    setBookingSummary(data ? { total: sumCounts(data.countsByStatus) } : null);
-  }
-
-  function handleKendaraanStats(data: BookingKendaraanStatsResponse | null) {
-    setKendaraanSummary(data ? { total: sumCounts(data.countsByStatus) } : null);
-  }
-
   if (!me || me.role === "SUPER_ADMIN") return null;
-
-  const MODULE_SUBTITLE: Record<string, { total: number; totalBulanIni: number | null } | { total: number } | null | undefined> = {
-    ekspedisi: summary,
-    bookingruangmeeting: bookingSummary,
-    bookingkendaraan: kendaraanSummary,
-  };
 
   return (
     <>
@@ -104,48 +69,18 @@ export default function DashboardPage() {
         <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
       </div>
 
-      <DashboardStats
-        me={me}
-        onPengirimanStats={handlePengirimanStats}
-        onBookingStats={handleBookingStats}
-        onKendaraanStats={handleKendaraanStats}
-      />
-
-      <h3 style={{ margin: "24px 0 12px" }}>Modul</h3>
+      <h3 style={{ margin: "0 0 12px" }}>Modul</h3>
       <div className="module-grid">
-        {MODULES.map((mod) => {
-          if (mod.live) {
-            const data = MODULE_SUBTITLE[mod.key];
-            const noun = mod.key === "ekspedisi" ? "transaksi" : "booking";
-            const totalBulanIni = mod.key === "ekspedisi" && data && "totalBulanIni" in data ? data.totalBulanIni : null;
-            const subtitle =
-              data === undefined
-                ? "Memuat..."
-                : data
-                ? `${data.total} ${noun} bulan ini${totalBulanIni != null ? ` · ${formatCurrency(totalBulanIni)}` : ""}`
-                : "Tidak dapat memuat data";
-            return (
-              <a key={mod.key} className="module-card" href={mod.href}>
-                <div className="module-card-icon">{mod.icon}</div>
-                <div className="module-card-body">
-                  <h4>{mod.title}</h4>
-                  <p className="text-secondary">{subtitle}</p>
-                </div>
-                <span className="module-card-arrow">&rarr;</span>
-              </a>
-            );
-          }
-          return (
-            <a key={mod.key} className="module-card module-card-soon" href={mod.href}>
-              <div className="module-card-icon">{mod.icon}</div>
-              <div className="module-card-body">
-                <h4>{mod.title}</h4>
-                <p className="text-secondary">Segera Hadir</p>
-              </div>
-              <span className="module-card-arrow">&rarr;</span>
-            </a>
-          );
-        })}
+        {MODULES.map((mod) => (
+          <a key={mod.key} className="module-card module-card-soon" href={mod.href}>
+            <div className="module-card-icon">{mod.icon}</div>
+            <div className="module-card-body">
+              <h4>{mod.title}</h4>
+              <p className="text-secondary">Segera Hadir</p>
+            </div>
+            <span className="module-card-arrow">&rarr;</span>
+          </a>
+        ))}
       </div>
     </>
   );
