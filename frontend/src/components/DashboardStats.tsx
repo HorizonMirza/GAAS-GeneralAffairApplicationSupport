@@ -29,9 +29,12 @@ interface Props {
   // them here instead of firing their own separate list-endpoint calls for the same totals.
   onPengirimanStats?: (data: PengirimanStatsResponse | null) => void;
   onBookingStats?: (data: BookingRuangStatsResponse | null) => void;
+  // Some callers only want the stats fetch (for the callbacks above) without the "Ringkasan
+  // Bulan Ini" tile grid itself being shown.
+  hideTiles?: boolean;
 }
 
-export default function DashboardStats({ me, onPengirimanStats, onBookingStats }: Props) {
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats, hideTiles }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
@@ -92,6 +95,8 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats }
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
       ? "Approval Divisi"
       : "Approval Departemen/Divisi";
+
+  if (hideTiles) return null;
 
   return (
     <>
