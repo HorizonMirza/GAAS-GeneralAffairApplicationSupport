@@ -17,7 +17,6 @@ const MAX_VISIBLE_COLS_WEEK = 3;
 const MAX_VISIBLE_COLS_AVAIL = 2;
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const DAY_NAMES_SHORT = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -589,7 +588,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   return (
     <div className="month-grid">
       <div className="month-grid-weekdays">
-        {DAY_NAMES_SHORT.slice(1).concat(DAY_NAMES_SHORT[0]).map((n) => <span key={n}>{n}</span>)}
+        {DAY_NAMES.slice(1).concat(DAY_NAMES[0]).map((n) => <span key={n}>{n}</span>)}
       </div>
       <div className="month-grid-body">
         {weeks.map((week, wi) => (
