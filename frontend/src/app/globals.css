@@ -1876,7 +1876,7 @@ table.data-table {
   column-gap: 2px;
   /* Taller than the column gap on purpose - each day's status dot sits just below its number, and
      a tight row gap let the next week's numbers crowd right up against it. */
-  row-gap: 10px;
+  row-gap: 14px;
 }
 
 .mini-calendar-day {
@@ -1899,10 +1899,10 @@ table.data-table {
 .mini-calendar-day-dots {
   display: flex;
   align-items: center;
-  gap: 2px;
-  height: 4px;
+  gap: 3px;
+  height: 6px;
 }
-.mini-calendar-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+.mini-calendar-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .mini-calendar-dot-draft { background: var(--badge-draft-bg); }
 .mini-calendar-dot-pending { background: var(--badge-submitted-bg); }
 .mini-calendar-dot-approved { background: var(--badge-completed-bg); }
