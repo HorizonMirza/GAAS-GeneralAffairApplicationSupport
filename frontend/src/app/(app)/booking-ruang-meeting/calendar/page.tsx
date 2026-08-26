@@ -275,15 +275,6 @@ function BookingCalendarPageInner() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="calendar-view-toggle">
-                <button
-                  type="button"
-                  className={`calendar-view-btn${view === "avail" ? " calendar-view-btn-active" : ""}`}
-                  onClick={() => setView("avail")}
-                >
-                  Ketersediaan
-                </button>
-              </div>
-              <div className="calendar-view-toggle">
                 {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
                   <button
                     key={v}
@@ -294,6 +285,15 @@ function BookingCalendarPageInner() {
                     {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
                   </button>
                 ))}
+              </div>
+              <div className="calendar-view-toggle">
+                <button
+                  type="button"
+                  className={`calendar-view-btn${view === "avail" ? " calendar-view-btn-active" : ""}`}
+                  onClick={() => setView("avail")}
+                >
+                  Ketersediaan
+                </button>
               </div>
             </div>
           </div>

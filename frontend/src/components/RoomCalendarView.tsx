@@ -55,6 +55,13 @@ export function isWeekend(iso: string): boolean {
   return dow === 0 || dow === 6;
 }
 
+// Every room name in this app starts with "Ruang " - redundant once it's already a column
+// header in a table titled "Ketersediaan Ruangan", and dropping it buys back width for names
+// like "Ruang Solution Utama" packed 10-wide across the page. Full name stays in the tooltip.
+function shortRoomName(nama: string): string {
+  return nama.replace(/^Ruang\s+/i, "");
+}
+
 function parseHour(t: string): number {
   return Number(t.slice(0, 2));
 }
@@ -485,7 +492,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                   className="schedule-th-center"
                   title={r.nama}
                 >
-                  {r.nama}
+                  {shortRoomName(r.nama)}
                 </th>
               ))}
             </tr>

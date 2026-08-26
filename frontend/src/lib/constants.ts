@@ -195,8 +195,8 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   APPROVED_GA_APPROVAL: "Approved",
 };
 
-const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
-const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"];
+export const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
+export const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"];
 
 export function bookingStatusBorderClass(status: BookingStatus): string {
   if (status === "APPROVED_GA_APPROVAL") return "item-row-card-approved";

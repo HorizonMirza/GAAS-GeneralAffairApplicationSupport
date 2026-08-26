@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  BOOKING_ON_APPROVAL_STATUSES,
+  BOOKING_REJECTED_STATUSES,
   bookingRoomsLabel,
   bookingStatusBorderClass,
   canGaRescheduleBooking,
@@ -17,6 +19,8 @@ import {
 import { currentYearMonth, formatDate, formatTimeRange } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
+
+type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -38,6 +42,7 @@ export default function BookingOverviewPage() {
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [busy, setBusy] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
@@ -76,6 +81,14 @@ export default function BookingOverviewPage() {
   useEffect(() => {
     api.listRooms().then(setRooms).catch(() => setRooms([]));
   }, []);
+
+  const filteredItems = useMemo(() => {
+    if (statusFilter === "ALL") return items;
+    if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
+    if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
+    if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+  }, [items, statusFilter]);
 
   if (!me || me.role === "SUPER_ADMIN") return null;
 
@@ -120,14 +133,25 @@ export default function BookingOverviewPage() {
         </div>
       )}
 
-      <h3 style={{ margin: "24px 0 12px" }}>Pesanan Terbaru Saya</h3>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+        <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
+        <div className="field" style={{ marginBottom: 0, width: "auto" }}>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+            <option value="ALL">Semua Status</option>
+            <option value="DRAFT">Draft</option>
+            <option value="ON_APPROVAL">On-Approval</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+      </div>
 
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="card table-empty">Tidak ada data.</div>
       ) : (
-        items.map((item) => {
+        filteredItems.map((item) => {
           const borderClass = bookingStatusBorderClass(item.status);
           const isDraft = item.status === "DRAFT";
           return (
