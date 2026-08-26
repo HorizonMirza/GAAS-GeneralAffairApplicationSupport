@@ -74,6 +74,9 @@ export default function BookingOverviewPage() {
   }, [me]);
 
   useEffect(() => {
+    // Fetches from the API on mount/whenever `me` changes - genuinely synchronizing with an
+    // external system, not state derived from a prop.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

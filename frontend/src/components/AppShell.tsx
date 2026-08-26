@@ -106,6 +106,9 @@ function ThemeToggle() {
   const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
+    // Reads the theme a pre-hydration inline script already stamped onto <html> - genuinely
+    // synchronizing local state with that external DOM attribute, not state derived from props.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(document.documentElement.getAttribute("data-theme") || "light");
   }, []);
 
@@ -186,11 +189,18 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [dateText, setDateText] = useState("");
 
   useEffect(() => {
+    // Deferred to the client on purpose - the server and the browser can format "now" into a
+    // different string (timezone), so this runs after hydration to avoid a mismatch warning.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDateText(formatLongDate(new Date()));
   }, []);
 
   useEffect(() => {
+    // Opens the sidebar category matching the current route - openCategory also has its own
+    // independent lifecycle after this (the user can collapse/expand any category by hand), so
+    // it can't be replaced with a value computed straight from pathname during render.
     const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => item.href === pathname));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (active) setOpenCategory(active.label);
   }, [pathname]);
 

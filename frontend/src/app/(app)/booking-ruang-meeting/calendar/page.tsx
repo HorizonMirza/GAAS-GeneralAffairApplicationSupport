@@ -109,6 +109,9 @@ function BookingCalendarPageInner() {
   }, [view, refDate, selectedRoom]);
 
   useEffect(() => {
+    // Fetches from the API on mount/whenever view/date/room changes - genuinely synchronizing
+    // with an external system, not state derived from a prop.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSchedule();
   }, [loadSchedule]);
 
@@ -127,6 +130,9 @@ function BookingCalendarPageInner() {
   }, [view, refDate]);
 
   useEffect(() => {
+    // Fetches from the API on mount/whenever view/date changes - genuinely synchronizing with
+    // an external system, not state derived from a prop.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAvail();
   }, [loadAvail]);
 

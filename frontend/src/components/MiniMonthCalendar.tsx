@@ -48,11 +48,18 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
   const [dotsByDate, setDotsByDate] = useState<Map<string, Set<string>>>(new Map());
 
-  useEffect(() => {
+  // Jumps the visible month to match selectedDate whenever it changes from outside (e.g. the
+  // parent's day picker), while Prev/Next still move viewYear/viewMonth independently in
+  // between - the "adjust state when a prop changes" pattern computed during render instead of
+  // an Effect (https://react.dev/learn/you-might-not-need-an-effect), so it doesn't cost an
+  // extra render pass just to pick up a new selectedDate.
+  const [prevSelectedDate, setPrevSelectedDate] = useState(selectedDate);
+  if (selectedDate !== prevSelectedDate) {
+    setPrevSelectedDate(selectedDate);
     const d = new Date(selectedDate + "T00:00:00");
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
-  }, [selectedDate]);
+  }
 
   const today = todayIso();
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
