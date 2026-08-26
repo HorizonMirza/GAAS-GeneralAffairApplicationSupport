@@ -22,8 +22,11 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
     additionalRooms: item.additionalRooms,
     tanggal: item.tanggal,
     isWholeDay: item.isWholeDay,
-    jamMulai: item.jamMulai,
-    jamSelesai: item.jamSelesai,
+    // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
+    // are "HH:mm" - without slicing, the value never matches any option and the browser silently
+    // falls back to displaying the first option (07:00) instead of the item's real time.
+    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
+    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
   };
 }
 
