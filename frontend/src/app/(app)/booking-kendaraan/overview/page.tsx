@@ -171,7 +171,6 @@ export default function VehicleBookingOverviewPage() {
                 </div>
                 <div className="room-card-body">
                   <h4>{v.nama}</h4>
-                  <div className="text-secondary" style={{ fontSize: "0.72rem", marginTop: 2 }}>{v.platNomor}</div>
                 </div>
               </Link>
             );
