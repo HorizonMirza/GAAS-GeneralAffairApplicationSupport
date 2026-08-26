@@ -607,7 +607,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     {c.day}
                   </button>
                   <div className="month-cell-events">
-                    {dayEntries.slice(0, 3).map((entry) => (
+                    {dayEntries.slice(0, 2).map((entry) => (
                       <button
                         key={entry.id}
                         type="button"
@@ -617,9 +617,9 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                         {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}
                       </button>
                     ))}
-                    {dayEntries.length > 3 && (
+                    {dayEntries.length > 2 && (
                       <button type="button" className="month-event-more" onClick={() => onJumpToDay(c.iso)}>
-                        +{dayEntries.length - 3} lainnya
+                        +{dayEntries.length - 2} lainnya
                       </button>
                     )}
                   </div>
