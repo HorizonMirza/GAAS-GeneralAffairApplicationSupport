@@ -818,9 +818,12 @@ public class BookingRuangController : ApiControllerBase
         }
 
         var total = await query.CountAsync();
+        // Newest-submitted-first (not soonest/furthest event date) - a booking submitted just now
+        // for next week shouldn't get buried under one submitted a month ago for an event two
+        // months out. Ties (rare - CreatedAt has second-level precision) fall back to Id.
         var items = await query
             .Include(b => b.AdditionalRooms)
-            .OrderByDescending(b => b.Tanggal)
+            .OrderByDescending(b => b.CreatedAt)
             .ThenByDescending(b => b.Id)
             .Skip((page - 1) * limit)
             .Take(limit)
