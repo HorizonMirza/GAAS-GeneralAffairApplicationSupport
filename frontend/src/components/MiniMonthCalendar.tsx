@@ -145,7 +145,9 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang }:
           const dots = Array.from(dotsByDate.get(c.iso) || []);
           return (
             <button key={c.iso} type="button" className={cls.join(" ")} onClick={() => onSelect(c.iso)}>
-              <span className="mini-calendar-day-num">{c.day}</span>
+              <span className="mini-calendar-day-circle">
+                <span className="mini-calendar-day-num">{c.day}</span>
+              </span>
               {dots.length > 0 && (
                 <span className="mini-calendar-day-dots">
                   {dots.map((d) => <span key={d} className={`mini-calendar-dot ${d}`} />)}

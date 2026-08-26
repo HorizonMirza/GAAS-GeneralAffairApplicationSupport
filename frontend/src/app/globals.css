@@ -1892,8 +1892,18 @@ table.data-table {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 999px;
   cursor: pointer;
+}
+/* The filled/hover circle lives on this inner span, not the whole button - so it wraps only the
+   day number and never reaches down to the status dots sitting below it. */
+.mini-calendar-day-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
 }
 .mini-calendar-day-num { line-height: 1; }
 .mini-calendar-day-dots {
@@ -1907,14 +1917,13 @@ table.data-table {
 .mini-calendar-dot-pending { background: var(--badge-submitted-bg); }
 .mini-calendar-dot-approved { background: var(--badge-completed-bg); }
 
-.mini-calendar-day:hover { background: var(--bg-surface); }
+.mini-calendar-day:hover .mini-calendar-day-circle { background: var(--bg-surface); }
 .mini-calendar-day-muted { color: var(--text-secondary); opacity: 0.5; }
 /* Today (not selected) is a plain text highlight only - the filled circle is reserved for
    whichever date is actually selected, even when that's today itself (see the component's
    isSelected-wins-over-isToday class priority). */
-.mini-calendar-day-today { color: var(--blue-500); font-weight: 700; }
-.mini-calendar-day-selected { background: var(--blue-500); color: #fff; }
-.mini-calendar-day-selected .mini-calendar-day-num { font-weight: 700; }
+.mini-calendar-day-today .mini-calendar-day-circle { color: var(--blue-500); font-weight: 700; }
+.mini-calendar-day-selected .mini-calendar-day-circle { background: var(--blue-500); color: #fff; font-weight: 700; }
 .mini-calendar-day-weekend:not(.mini-calendar-day-today):not(.mini-calendar-day-selected) {
   color: var(--badge-rejected-bg);
 }
