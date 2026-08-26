@@ -2132,7 +2132,8 @@ table.data-table {
   min-width: 90px;
 }
 
-.toolbar #filter-bulan {
+.toolbar #filter-bulan,
+.toolbar #filter-kendaraan-bulan {
   max-width: 130px;
 }
 
@@ -2145,7 +2146,8 @@ table.data-table {
   min-width: 0;
 }
 
-.toolbar.transactions-page-toolbar #filter-bulan {
+.toolbar.transactions-page-toolbar #filter-bulan,
+.toolbar.transactions-page-toolbar #filter-kendaraan-bulan {
   max-width: none;
   width: 160px;
 }
@@ -2155,6 +2157,7 @@ table.data-table {
    explicit height + border-box keeps it visually level with Cari Transaksi and Semua Transaksi. */
 .transactions-page-toolbar .toolbar-search-field input,
 .toolbar.transactions-page-toolbar #filter-bulan,
+.toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
 .transactions-page-toolbar > .btn {
   height: 38px;
   box-sizing: border-box;
@@ -2167,7 +2170,8 @@ table.data-table {
 }
 
 .toolbar > .btn,
-.filter-dropdown-wrap #filter-toggle {
+.filter-dropdown-wrap #filter-toggle,
+.filter-dropdown-wrap #filter-kendaraan-toggle {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
@@ -2771,7 +2775,8 @@ table.data-table {
     align-self: stretch !important;
     justify-content: center;
   }
-  .filter-dropdown-wrap #filter-toggle {
+  .filter-dropdown-wrap #filter-toggle,
+  .filter-dropdown-wrap #filter-kendaraan-toggle {
     width: 100% !important;
     height: 100%;
   }
