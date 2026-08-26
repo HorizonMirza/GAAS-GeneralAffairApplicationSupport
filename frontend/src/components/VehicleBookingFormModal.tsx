@@ -154,7 +154,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             )}
             <div className="field full">
               <label htmlFor="fk-keperluan">Keperluan</label>
-              <input type="text" id="fk-keperluan" required placeholder="Contoh: Kunjungan ke Site" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fk-keperluan" required placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fk-pic">PIC</label>
