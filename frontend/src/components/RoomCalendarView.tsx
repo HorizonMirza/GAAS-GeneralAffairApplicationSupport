@@ -416,14 +416,14 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         <table className="data-table schedule-table">
           <thead>
             <tr>
-              <th className="schedule-time-col">Jam</th>
+              <th className="schedule-time-col schedule-th-center">Jam</th>
               {weekDates.map((date) => {
                 const d = new Date(date + "T00:00:00");
                 return (
                   <th
                     key={date}
                     ref={date === todayIso() ? nowLineColRef : undefined}
-                    className="schedule-week-head"
+                    className="schedule-week-head schedule-th-center"
                     onClick={() => onJumpToDay(date)}
                   >
                     {DAY_NAMES_SHORT[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>

@@ -1532,6 +1532,7 @@ table.data-table {
   position: sticky;
   left: 0;
   z-index: 1;
+  text-align: center;
 }
 .data-table td.schedule-time-col {
   height: 36px;
