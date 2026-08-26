@@ -252,7 +252,7 @@ function BookingCalendarPageInner() {
           />
         </div>
 
-        <div className="calendar-main">
+        <div className={`calendar-main${view === "month" ? " calendar-main-month" : ""}`}>
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">
               <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>

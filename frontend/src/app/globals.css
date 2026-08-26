@@ -1721,12 +1721,18 @@ table.data-table {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 16px;
 }
+
+/* Harian/Mingguan/Ketersediaan's schedule-table fills any leftover height from .calendar-shell's
+   align-items:stretch by growing its own rows (table height:100% redistributes into row height),
+   so its card border ends up flush with the last row either way. Bulanan's grid doesn't have that
+   same row-growing table mechanic, so opting the whole card out of the stretch here instead keeps
+   it sized to its own 6 rows - the card border sits right at the last row, no blank fill below it. */
+.calendar-main-month { align-self: start; }
 
 .calendar-main .table-wrap {
   position: relative;
@@ -1951,17 +1957,10 @@ table.data-table {
 }
 .mini-calendar-weekday-weekend { color: var(--badge-rejected-bg); }
 
-/* Month grid (main view) - stretches to fill .calendar-main the same way
-   .calendar-main .table-wrap .schedule-table does for Harian/Mingguan/Ketersediaan (see below),
-   so its bottom edge lines up with the sidebar's instead of leaving blank space under a shorter
-   grid whenever the sidebar happens to be the taller of the two panels. Explicit grid rows (not
-   a flex-grow chain) so the 6 week-rows split the leftover height evenly and predictably instead
-   of depending on flex-basis/min-height resolving correctly through several nested levels. */
+/* Month grid (main view) - sized to its own natural content (6 rows of at least 96px each),
+   not stretched to fill leftover height from the sidebar. The card's border sits right at the
+   last row's own edge on purpose - no blank filler space between the two. */
 .month-grid {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  flex: 1;
-  min-height: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
@@ -1978,7 +1977,7 @@ table.data-table {
   padding: 8px 0;
 }
 
-.month-grid-body { display: grid; grid-template-rows: repeat(6, 1fr); min-height: 0; }
+.month-grid-body { display: flex; flex-direction: column; }
 
 .month-grid-row {
   display: grid;
