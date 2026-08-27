@@ -391,17 +391,17 @@ button, input, select, textarea {
   color: #ff8f8f;
 }
 
-/* Login's error banner always keeps this dark styling, regardless of the app theme - the
-   rest of the login page is forced light (see .login-page overrides above), but this alert
-   keeps the higher-contrast dark palette on purpose. */
+/* Login's error banner always keeps this translucent-red styling, regardless of the app theme -
+   the rest of the login page is forced light (see .login-page overrides above), and this alert
+   deliberately stays a transparent red rather than following either theme's solid alert style. */
 :root .login-page .alert-error {
-  background: #3a1414;
+  background: rgba(220, 38, 38, 0.12);
   border-color: transparent;
-  color: #ff8f8f;
+  color: #dc2626;
 }
 
 :root .login-page .alert-error.alert-error-visible {
-  border-color: #6b2626;
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 .alert-error-icon {
