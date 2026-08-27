@@ -162,19 +162,19 @@ button, input, select, textarea {
   align-items: center;
 }
 
-.login-theme-toggle {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: var(--text-inverse);
-}
-
-.login-theme-toggle:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  color: var(--text-inverse);
+/* Login always renders light, regardless of the app's saved/system theme - it overrides the
+   theme tokens on itself so :root[data-theme="dark"] never reaches these descendants. */
+.login-page {
+  --bg-app: var(--ice-100);
+  --bg-surface: var(--white);
+  --bg-surface-alt: #f5f9ff;
+  --bg-header: var(--gradient-primary);
+  --text-primary: #0b1a33;
+  --text-secondary: #4a5b7a;
+  --text-inverse: #ffffff;
+  --border-subtle: #dbe6fb;
+  --border-strong: #b7d3ff;
+  --shadow-card: 0 6px 20px rgba(15, 40, 90, 0.08);
 }
 
 .login-card {
