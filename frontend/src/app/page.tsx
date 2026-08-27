@@ -31,6 +31,7 @@ export default function LoginPage() {
       const status = (err as { status?: number }).status;
       const message = (err as Error).message;
       setError(status === 401 ? "Invalid username or password" : message || "Login failed");
+      setPassword("");
     } finally {
       setSubmitting(false);
     }
@@ -74,10 +75,14 @@ export default function LoginPage() {
                 type="text"
                 id="username"
                 required
+                autoFocus
                 autoComplete="username"
                 placeholder="Enter Username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setError("");
+                }}
               />
             </div>
             <div className="field">
@@ -90,7 +95,10 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                  }}
                 />
                 <button
                   type="button"
