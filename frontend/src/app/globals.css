@@ -2738,7 +2738,7 @@ table.data-table {
 .nav-category-submenu {
   display: none;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   margin-top: 6px;
 }
 
