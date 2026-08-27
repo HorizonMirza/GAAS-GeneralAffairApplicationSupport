@@ -30,7 +30,7 @@ export default function LoginPage() {
     } catch (err) {
       const status = (err as { status?: number }).status;
       const message = (err as Error).message;
-      setError(status === 401 ? "Invalid username or password" : message || "Login gagal");
+      setError(status === 401 ? "Invalid username or password" : message || "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +75,7 @@ export default function LoginPage() {
                 id="username"
                 required
                 autoComplete="username"
-                placeholder="Masukkan Username"
+                placeholder="Enter Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   className="password-toggle"
-                  aria-label="Tampilkan password"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? (
@@ -107,7 +107,7 @@ export default function LoginPage() {
               </div>
             </div>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? "Login in...." : "Login"}
+              {submitting ? "Logging in..." : "Login"}
             </button>
           </form>
         </div>

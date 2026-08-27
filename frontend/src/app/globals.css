@@ -391,6 +391,19 @@ button, input, select, textarea {
   color: #ff8f8f;
 }
 
+/* Login's error banner always keeps this dark styling, regardless of the app theme - the
+   rest of the login page is forced light (see .login-page overrides above), but this alert
+   keeps the higher-contrast dark palette on purpose. */
+:root .login-page .alert-error {
+  background: #3a1414;
+  border-color: transparent;
+  color: #ff8f8f;
+}
+
+:root .login-page .alert-error.alert-error-visible {
+  border-color: #6b2626;
+}
+
 .alert-error-icon {
   flex-shrink: 0;
   margin-top: 1px;
