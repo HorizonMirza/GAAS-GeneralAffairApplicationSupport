@@ -18,16 +18,12 @@ export function greetingName(me: Me): string {
   return me.departemen || me.divisi || ROLE_LABEL[me.role] || me.role;
 }
 
-export function greetingRole(me: Me): string {
-  return ROLE_LABEL[me.role] || me.role;
-}
-
 export function greetingTimeWord(): string {
   const hour = new Date().getHours();
-  if (hour >= 4 && hour < 11) return "Selamat Pagi";
-  if (hour >= 11 && hour < 15) return "Selamat Siang";
-  if (hour >= 15 && hour < 18) return "Selamat Sore";
-  return "Selamat Malam";
+  if (hour >= 4 && hour < 11) return "Good Morning";
+  if (hour >= 11 && hour < 15) return "Good Afternoon";
+  if (hour >= 15 && hour < 18) return "Good Evening";
+  return "Good Night";
 }
 
 export function trackWord(departemen: string | null | undefined): "Departemen" | "Divisi" {

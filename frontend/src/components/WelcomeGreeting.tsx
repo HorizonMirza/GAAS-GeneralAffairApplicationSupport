@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { greetingName, greetingRole, greetingTimeWord } from "@/lib/constants";
+import { greetingName, greetingTimeWord } from "@/lib/constants";
 import type { Me } from "@/lib/types";
 
 export function WelcomeGreeting({ me }: { me: Me }) {
-  const [timeWord, setTimeWord] = useState("Halo");
+  const [timeWord, setTimeWord] = useState("Hello");
 
   useEffect(() => {
     // Deferred to the client on purpose - the server and the browser can disagree on local
@@ -15,15 +15,9 @@ export function WelcomeGreeting({ me }: { me: Me }) {
     setTimeWord(greetingTimeWord());
   }, []);
 
-  const name = greetingName(me);
-  const role = greetingRole(me);
-
   return (
-    <>
-      <h3 className="welcome-heading">
-        {timeWord}, <span className="welcome-name">{name}</span>
-      </h3>
-      {name !== role && <p className="welcome-role">{role}</p>}
-    </>
+    <h3 className="welcome-heading">
+      {timeWord}, <span className="welcome-name">{greetingName(me)}</span>
+    </h3>
   );
 }

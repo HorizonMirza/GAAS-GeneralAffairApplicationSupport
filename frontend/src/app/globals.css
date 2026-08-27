@@ -930,12 +930,6 @@ body.auth-ready .app-shell {
   color: transparent;
 }
 
-.welcome-role {
-  margin: 4px 0 0;
-  font-size: 0.86rem;
-  color: var(--text-secondary);
-}
-
 :root[data-theme="dark"] .welcome-heading .welcome-name {
   background: linear-gradient(135deg, var(--blue-400) 0%, var(--blue-200) 100%);
   -webkit-background-clip: text;
