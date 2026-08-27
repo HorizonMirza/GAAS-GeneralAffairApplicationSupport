@@ -694,6 +694,12 @@ body.auth-ready .app-shell {
   color: var(--blue-500);
 }
 
+.icon-btn:focus-visible,
+.account-trigger:focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
 .theme-toggle-square .moon-icon {
   display: none;
 }
