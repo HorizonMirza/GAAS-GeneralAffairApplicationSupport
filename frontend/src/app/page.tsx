@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      <ThemeToggle className="login-theme-toggle" />
       <div className="login-outer">
         <div className="brand-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}

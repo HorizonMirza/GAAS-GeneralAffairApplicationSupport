@@ -162,6 +162,21 @@ button, input, select, textarea {
   align-items: center;
 }
 
+.login-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-inverse);
+}
+
+.login-theme-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: var(--text-inverse);
+}
+
 .login-card {
   width: 100%;
   background: var(--bg-surface);
