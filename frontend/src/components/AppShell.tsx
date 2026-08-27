@@ -175,15 +175,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Opens the sidebar category matching the current route - openCategory also has its own
-    // independent lifecycle after this (the user can collapse/expand any category by hand), so
-    // it can't be replaced with a value computed straight from pathname during render.
+    // Syncs the expanded sidebar category to the current route on every navigation - moving to a
+    // page outside any category (Dashboard, Profile) or into a different one closes whatever was
+    // previously expanded, instead of leaving it open. The user can still expand/collapse by hand
+    // in between navigations, since this effect only re-runs when pathname changes.
     // superAdminOnly items all share the same /superadmin href, so they're excluded from this
     // match - otherwise every category would "match" on /superadmin and this would always pick
     // whichever one happens to be first in NAV_CATEGORIES.
     const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (active) setOpenCategory(active.label);
+    setOpenCategory(active ? active.label : null);
   }, [pathname]);
 
   useEffect(() => {
