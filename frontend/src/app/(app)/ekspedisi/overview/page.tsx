@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, greetingName, isEditableByOrigin } from "@/lib/constants";
+import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, isEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatCurrency, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { CostTrendResponse, Pengiriman } from "@/lib/types";
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import StatusBadge from "@/components/StatusBadge";
 import Stepper from "@/components/Stepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -130,7 +131,7 @@ export default function OverviewPage() {
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-        <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
+        <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
             + Input Data Barang

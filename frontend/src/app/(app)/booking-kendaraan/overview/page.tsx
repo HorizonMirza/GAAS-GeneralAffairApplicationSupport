@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
-  greetingName,
   isBookingOriginRole,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
@@ -17,6 +16,7 @@ import {
 import { currentYearMonth, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingKendaraan, VehicleOption } from "@/lib/types";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -144,7 +144,7 @@ export default function VehicleBookingOverviewPage() {
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-        <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
+        <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
             + Booking Kendaraan

@@ -11,7 +11,6 @@ import {
   bookingRoomsLabel,
   bookingStatusBorderClass,
   canGaRescheduleBooking,
-  greetingName,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -58,6 +57,7 @@ function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]):
 }
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -161,7 +161,7 @@ export default function BookingOverviewPage() {
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-        <h3 className="welcome-heading">Halo, <span className="welcome-name">{greetingName(me)}</span></h3>
+        <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
             + Booking Ruang Meeting

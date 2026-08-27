@@ -15,9 +15,19 @@ export const STATUS_LABEL: Record<Status, string> = {
 };
 
 export function greetingName(me: Me): string {
-  const unit = me.departemen || me.divisi;
-  const role = ROLE_LABEL[me.role] || me.role;
-  return unit ? `${role} ${unit}` : role;
+  return me.departemen || me.divisi || ROLE_LABEL[me.role] || me.role;
+}
+
+export function greetingRole(me: Me): string {
+  return ROLE_LABEL[me.role] || me.role;
+}
+
+export function greetingTimeWord(): string {
+  const hour = new Date().getHours();
+  if (hour >= 4 && hour < 11) return "Selamat Pagi";
+  if (hour >= 11 && hour < 15) return "Selamat Siang";
+  if (hour >= 15 && hour < 18) return "Selamat Sore";
+  return "Selamat Malam";
 }
 
 export function trackWord(departemen: string | null | undefined): "Departemen" | "Divisi" {
