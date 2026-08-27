@@ -222,7 +222,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <Link className="nav-link" href="/dashboard">
+        <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
           Dashboard
         </Link>
@@ -265,7 +265,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         })}
 
         <div className="sidebar-divider"></div>
-        <Link className="nav-link" href="/profile">
+        <Link className={`nav-link ${pathname === "/profile" ? "active" : ""}`} href="/profile">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
           Profile
         </Link>

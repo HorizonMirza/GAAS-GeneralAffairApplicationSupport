@@ -2723,7 +2723,11 @@ table.data-table {
   color: #fff;
 }
 
-.nav-category.open .nav-category-trigger,
+.nav-category.open .nav-category-trigger {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 .nav-category.has-active .nav-category-trigger {
   background: linear-gradient(135deg, rgba(96, 165, 250, 0.38) 0%, rgba(96, 165, 250, 0.14) 100%);
   color: #fff;
