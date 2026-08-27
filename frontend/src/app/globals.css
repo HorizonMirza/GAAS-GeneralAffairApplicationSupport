@@ -2739,12 +2739,6 @@ table.data-table {
 .nav-category.open .nav-category-submenu { display: flex; }
 .nav-category.open .nav-category-chevron { transform: rotate(90deg); }
 
-.nav-link-profile {
-  margin-top: 10px;
-  padding-top: 17px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
     width: 0;
