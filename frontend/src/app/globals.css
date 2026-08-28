@@ -2253,6 +2253,37 @@ table.data-table {
   flex-wrap: wrap;
 }
 
+.total-akumulasi-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.total-akumulasi-footer .total-akumulasi-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.total-akumulasi-footer .total-akumulasi-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  text-align: right;
+}
+
+.total-akumulasi-footer .total-akumulasi-value.is-empty {
+  color: var(--text-secondary);
+}
+
 /* ---------- Filter dropdown (Transaksi toolbar) ---------- */
 .filter-dropdown-wrap {
   position: relative;

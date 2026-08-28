@@ -360,8 +360,13 @@ export default function TransaksiPage() {
         </div>
 
         {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) && totalBulanIni != null && (
-          <div style={{ marginTop: 16, textAlign: "right", fontWeight: 700, fontSize: "1.05rem" }}>
-            Total Akumulasi Biaya: <span>{formatCurrency(totalBulanIni)}</span>
+          <div className="total-akumulasi-footer">
+            <div>
+              <div className="total-akumulasi-label">Total Akumulasi Biaya</div>
+              <div className={`total-akumulasi-value${totalBulanIni === 0 ? " is-empty" : ""}`}>
+                {totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}
+              </div>
+            </div>
           </div>
         )}
 
