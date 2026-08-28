@@ -265,16 +265,6 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_divisi ON booking_kendaraan (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_departemen ON booking_kendaraan (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_kendaraan_tanggal ON booking_kendaraan (tanggal)");
-
-    // Chat image attachments ("bukti gambar") - new optional columns on all three chat-message
-    // tables, so an existing database (where these tables were already created above) gets them
-    // via backfill instead of CREATE TABLE (which is a no-op once the table already exists).
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS chat_messages ADD COLUMN IF NOT EXISTS image_path VARCHAR(255)");
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS chat_messages ADD COLUMN IF NOT EXISTS image_original_filename VARCHAR(255)");
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_chat_messages ADD COLUMN IF NOT EXISTS image_path VARCHAR(255)");
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_chat_messages ADD COLUMN IF NOT EXISTS image_original_filename VARCHAR(255)");
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan_chat_messages ADD COLUMN IF NOT EXISTS image_path VARCHAR(255)");
-    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan_chat_messages ADD COLUMN IF NOT EXISTS image_original_filename VARCHAR(255)");
 }
 
 if (args.Contains("resetdb"))

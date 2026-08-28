@@ -6,8 +6,6 @@ public class BookingChatMessage
     public int BookingRuangId { get; set; }
     public int SenderId { get; set; }
     public string Message { get; set; } = null!;
-    public string? ImagePath { get; set; }
-    public string? ImageOriginalFilename { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public BookingRuang BookingRuang { get; set; } = null!;

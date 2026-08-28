@@ -128,35 +128,6 @@ export async function downloadFile(url: string, filename: string): Promise<void>
   URL.revokeObjectURL(objectUrl);
 }
 
-// Shared multipart POST for the chat "send" endpoints, which always take multipart/form-data
-// (an optional text field plus an optional image file) rather than JSON - same response handling
-// as apiRequest, minus the JSON body/Content-Type header that would conflict with FormData's own.
-async function postMultipart<T>(path: string, formData: FormData): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  });
-  if (response.status === 401) {
-    if (typeof window !== "undefined" && window.location.pathname !== "/") window.location.href = "/";
-    throw new ApiError("Sesi berakhir, silakan login kembali", 401);
-  }
-  if (!response.ok) {
-    let detail = "Terjadi kesalahan";
-    try {
-      const data = await response.json();
-      detail = data.detail || detail;
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(detail, response.status);
-  }
-  if (response.status === 204) return null as T;
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  return null as T;
-}
-
 export interface ListInvoiceParams {
   page?: number;
   limit?: number;
@@ -239,13 +210,8 @@ export const api = {
     apiRequest(`/pengiriman/${id}/reject-kpu`, { method: "PATCH", body: { reason, target } }),
   getPengirimanLogs: (id: number) => apiRequest<PengirimanLog[]>(`/pengiriman/${id}/logs`),
   getChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/pengiriman/${id}/chat`),
-  sendChatMessage: (id: number, message: string, image?: File | null) => {
-    const formData = new FormData();
-    if (message) formData.append("message", message);
-    if (image) formData.append("image", image);
-    return postMultipart<ChatMessage>(`/pengiriman/${id}/chat`, formData);
-  },
-  chatImageUrl: (pengirimanId: number, messageId: number) => `${API_BASE}/pengiriman/${pengirimanId}/chat/messages/${messageId}/image`,
+  sendChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
   listInvoice: (params: ListInvoiceParams = {}) =>
     apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
@@ -383,13 +349,8 @@ export const api = {
     ),
   getBookingLogs: (id: number) => apiRequest<BookingRuangLog[]>(`/booking-ruang/${id}/logs`),
   getBookingChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-ruang/${id}/chat`),
-  sendBookingChatMessage: (id: number, message: string, image?: File | null) => {
-    const formData = new FormData();
-    if (message) formData.append("message", message);
-    if (image) formData.append("image", image);
-    return postMultipart<ChatMessage>(`/booking-ruang/${id}/chat`, formData);
-  },
-  bookingChatImageUrl: (bookingRuangId: number, messageId: number) => `${API_BASE}/booking-ruang/${bookingRuangId}/chat/messages/${messageId}/image`,
+  sendBookingChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/booking-ruang/${id}/chat`, { method: "POST", body: { message } }),
   bookingPdfUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/pdf`,
   bookingIcsUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/ics`,
 
@@ -430,13 +391,8 @@ export const api = {
     apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
   getKendaraanLogs: (id: number) => apiRequest<BookingKendaraanLog[]>(`/booking-kendaraan/${id}/logs`),
   getKendaraanChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-kendaraan/${id}/chat`),
-  sendKendaraanChatMessage: (id: number, message: string, image?: File | null) => {
-    const formData = new FormData();
-    if (message) formData.append("message", message);
-    if (image) formData.append("image", image);
-    return postMultipart<ChatMessage>(`/booking-kendaraan/${id}/chat`, formData);
-  },
-  kendaraanChatImageUrl: (bookingKendaraanId: number, messageId: number) => `${API_BASE}/booking-kendaraan/${bookingKendaraanId}/chat/messages/${messageId}/image`,
+  sendKendaraanChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
 };
 
 export interface ListBookingParams {

@@ -115,7 +115,6 @@ export interface ChatMessage {
   senderNama: string;
   senderRole: Role;
   message: string;
-  hasImage: boolean;
   createdAt: string;
 }
 

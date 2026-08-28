@@ -15,13 +15,11 @@ public class BookingChatController : ApiControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
-    private readonly string _uploadDir;
 
-    public BookingChatController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub, IConfiguration config) : base(currentUser)
+    public BookingChatController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
         _hub = hub;
-        _uploadDir = ChatImageStorage.ResolveUploadDir(config);
     }
 
     private async Task MarkRead(int bookingRuangId, int userId, DateTime at)
@@ -51,7 +49,7 @@ public class BookingChatController : ApiControllerBase
             .Include(m => m.Sender)
             .Where(m => m.BookingRuangId == bookingRuangId)
             .OrderBy(m => m.CreatedAt)
-            .Select(m => new ChatMessageOut(m.Id, m.SenderId, m.Sender.Nama, m.Sender.Role, m.Message, m.ImagePath != null, m.CreatedAt))
+            .Select(m => new ChatMessageOut(m.Id, m.SenderId, m.Sender.Nama, m.Sender.Role, m.Message, m.CreatedAt))
             .ToListAsync();
 
         // Reading happens strictly after every message already stored was created, so "now" is a safe read cursor here.
@@ -62,7 +60,7 @@ public class BookingChatController : ApiControllerBase
     }
 
     [HttpPost("")]
-    public async Task<IActionResult> Send(int bookingRuangId, [FromForm] string? message, [FromForm] IFormFile? image)
+    public async Task<IActionResult> Send(int bookingRuangId, [FromBody] SendChatMessageRequest payload)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -71,30 +69,17 @@ public class BookingChatController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Booking tidak ditemukan" });
         if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
-        var text = message?.Trim() ?? "";
-        var hasImage = image != null && image.Length > 0;
-        if (string.IsNullOrEmpty(text) && !hasImage)
-            return BadRequest(new { detail = "Pesan atau gambar wajib diisi" });
+        var text = payload.Message?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return BadRequest(new { detail = "Pesan tidak boleh kosong" });
 
-        string? storedImage = null;
-        if (hasImage)
-        {
-            if (image!.Length > ChatImageStorage.MaxSizeBytes)
-                return StatusCode(400, new { detail = $"Ukuran gambar maksimal {ChatImageStorage.MaxSizeBytes / 1024 / 1024} MB" });
-            if (!ChatImageStorage.IsAllowedContentType(image.ContentType))
-                return StatusCode(400, new { detail = "Format gambar harus JPG, PNG, WEBP, atau GIF" });
-            storedImage = await ChatImageStorage.SaveAsync(image, _uploadDir);
-        }
-
-        var entity = new BookingChatMessage
+        var message = new BookingChatMessage
         {
             BookingRuangId = bookingRuangId,
             SenderId = user!.Id,
             Message = text,
-            ImagePath = storedImage,
-            ImageOriginalFilename = hasImage ? image!.FileName : null,
         };
-        _db.BookingChatMessages.Add(entity);
+        _db.BookingChatMessages.Add(message);
         await _db.SaveChangesAsync();
 
         // No read-cursor update here - the sender's own messages are excluded from the unread
@@ -103,31 +88,11 @@ public class BookingChatController : ApiControllerBase
         // happened to arrive moments earlier but hasn't been loaded into this user's view yet,
         // silently marking it read before they ever saw it.
 
-        var outMessage = new ChatMessageOut(entity.Id, user.Id, user.Nama, user.Role, entity.Message, entity.ImagePath != null, entity.CreatedAt);
+        var outMessage = new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt);
         // Pushed to everyone with this thread open (see ChatHub.JoinBookingChat) instead of
         // making them wait for their next poll.
         await _hub.Clients.Group(ChatHub.BookingGroup(bookingRuangId)).SendAsync("ReceiveBookingMessage", outMessage);
 
         return StatusCode(201, outMessage);
-    }
-
-    [HttpGet("messages/{messageId:int}/image")]
-    public async Task<IActionResult> GetImage(int bookingRuangId, int messageId)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var item = await _db.BookingRuangs.FindAsync(bookingRuangId);
-        if (item == null) return NotFound(new { detail = "Booking tidak ditemukan" });
-        if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-
-        var msg = await _db.BookingChatMessages.FirstOrDefaultAsync(m => m.Id == messageId && m.BookingRuangId == bookingRuangId);
-        if (msg?.ImagePath == null) return NotFound(new { detail = "Gambar tidak ditemukan" });
-
-        var path = Path.Combine(_uploadDir, msg.ImagePath);
-        if (!System.IO.File.Exists(path)) return NotFound(new { detail = "File gambar tidak ditemukan di server" });
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        return File(bytes, ChatImageStorage.ContentTypeFor(msg.ImagePath));
     }
 }

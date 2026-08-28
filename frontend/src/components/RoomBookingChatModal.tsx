@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { CHAT_IMAGE_ACCEPT, MAX_CHAT_IMAGE_SIZE_BYTES, ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
+import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
 import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me, Role } from "@/lib/types";
@@ -60,14 +60,6 @@ function SendIcon() {
   );
 }
 
-function AttachIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"></path>
-    </svg>
-  );
-}
-
 export default function RoomBookingChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
@@ -75,12 +67,8 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   const [sending, setSending] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionStart, setMentionStart] = useState<number | null>(null);
-  const [pendingImage, setPendingImage] = useState<File | null>(null);
-  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const readNotified = useRef(false);
 
   const myLabel = ROLE_SHORT_LABEL[me.role];
@@ -144,18 +132,6 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages]);
 
-  // Local preview thumbnail for a picked-but-not-yet-sent image - the object URL is only valid
-  // client-side, so it must be revoked whenever the file changes or the modal unmounts.
-  useEffect(() => {
-    if (!pendingImage) {
-      setPendingImagePreview(null);
-      return;
-    }
-    const url = URL.createObjectURL(pendingImage);
-    setPendingImagePreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [pendingImage]);
-
   if (!open) return null;
 
   function handleDraftChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -189,28 +165,14 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
     });
   }
 
-  function handlePickImage(file: File | null) {
-    if (!file) return;
-    if (!CHAT_IMAGE_ACCEPT.split(",").includes(file.type)) {
-      setError("Format gambar harus JPG, PNG, WEBP, atau GIF");
-      return;
-    }
-    if (file.size > MAX_CHAT_IMAGE_SIZE_BYTES) {
-      setError("Ukuran gambar maksimal 10 MB");
-      return;
-    }
-    setError("");
-    setPendingImage(file);
-  }
-
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
-    if ((!text && !pendingImage) || itemId == null) return;
+    if (!text || itemId == null) return;
     setSending(true);
     setError("");
     try {
-      const sent = await api.sendBookingChatMessage(itemId, text, pendingImage);
+      const sent = await api.sendBookingChatMessage(itemId, text);
       // The server broadcasts this message over the hub before the POST response even comes
       // back (see BookingChatController.Send), so the SignalR push for this exact message can -
       // and often does - reach this same connection first. Same dedup-by-id as the hub handler
@@ -221,8 +183,6 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
         return [...prev, sent];
       });
       setDraft("");
-      setPendingImage(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
       setMentionQuery(null);
       setMentionStart(null);
     } catch (err) {
@@ -256,7 +216,6 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
               const prev = messages[idx - 1];
               const isFirstInGroup = !prev || prev.senderId !== m.senderId;
               const roleColor = ROLE_COLOR[m.senderRole] || "var(--blue-500)";
-              const imageUrl = m.hasImage ? api.bookingChatImageUrl(itemId!, m.id) : null;
               return (
                 <div
                   key={m.id}
@@ -277,15 +236,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
                           {ROLE_SHORT_LABEL[m.senderRole] || m.senderRole}
                         </div>
                       )}
-                      {imageUrl && (
-                        <img
-                          className="chat-bubble-image"
-                          src={imageUrl}
-                          alt="Lampiran gambar"
-                          onClick={() => setLightboxImage(imageUrl)}
-                        />
-                      )}
-                      {m.message && <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>}
+                      <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
                       <div className="chat-bubble-meta">
                         <span className="chat-bubble-time">{formatTime(m.createdAt)}</span>
                         {isMine && <CheckIcon />}
@@ -310,40 +261,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
               ))}
             </div>
           )}
-          {pendingImage && pendingImagePreview && (
-            <div className="chat-image-preview">
-              <img src={pendingImagePreview} alt="Pratinjau gambar" />
-              <span className="chat-image-preview-name">{pendingImage.name}</span>
-              <button
-                type="button"
-                className="chat-image-preview-remove"
-                aria-label="Hapus gambar"
-                onClick={() => {
-                  setPendingImage(null);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-              >
-                &times;
-              </button>
-            </div>
-          )}
           <form onSubmit={handleSend} className="chat-input-row">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={CHAT_IMAGE_ACCEPT}
-              style={{ display: "none" }}
-              onChange={(e) => handlePickImage(e.target.files?.[0] || null)}
-            />
-            <button
-              type="button"
-              className="chat-attach-btn"
-              aria-label="Lampirkan gambar"
-              disabled={sending}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <AttachIcon />
-            </button>
             <input
               ref={inputRef}
               type="text"
@@ -352,19 +270,12 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
               onChange={handleDraftChange}
               disabled={sending}
             />
-            <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || (!draft.trim() && !pendingImage)}>
+            <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || !draft.trim()}>
               <SendIcon />
             </button>
           </form>
         </div>
       </div>
-
-      {lightboxImage && (
-        <div className="chat-lightbox" onClick={() => setLightboxImage(null)}>
-          <button type="button" className="chat-lightbox-close" aria-label="Tutup" onClick={() => setLightboxImage(null)}>&times;</button>
-          <img src={lightboxImage} alt="Lampiran gambar diperbesar" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
     </ModalOverlay>
   );
 }
