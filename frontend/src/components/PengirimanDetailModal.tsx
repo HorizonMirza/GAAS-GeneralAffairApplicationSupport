@@ -159,7 +159,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     const subTotalStr = parseThousandSeparator(kSubtotal.trim());
     const totalStr = parseThousandSeparator(kTotal.trim());
     if (!noResi || !beratStr || subTotalStr === "" || (asuransiApplicable && asuransiStr === "")) {
-      setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Asuransi, dan Ongkos Kirim (Harga)." : "Lengkapi No Resi, Berat, dan Ongkos Kirim (Harga).");
+      setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Harga Asuransi, dan Harga Ongkos Kirim." : "Lengkapi No Resi, Berat, dan Harga Ongkos Kirim.");
       return;
     }
     try {
@@ -288,7 +288,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                   <input type="text" inputMode="decimal" id="pv-k-berat" placeholder="Contoh: 2,5" disabled={!canKpuAct} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
                 </div>
                 <div className={`field ${asuransiApplicable ? "" : "field-strike"}`}>
-                  <label htmlFor="pv-k-asuransi-harga">Asuransi (Harga)</label>
+                  <label htmlFor="pv-k-asuransi-harga">Harga Asuransi</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -300,7 +300,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="pv-k-subtotal">Ongkos Kirim (Harga)</label>
+                  <label htmlFor="pv-k-subtotal">Harga Ongkos Kirim</label>
                   <input type="text" inputMode="numeric" id="pv-k-subtotal" disabled={!canKpuAct} value={kSubtotal} onChange={(e) => handleSubtotalChange(e.target.value)} />
                 </div>
                 <div className="field full">

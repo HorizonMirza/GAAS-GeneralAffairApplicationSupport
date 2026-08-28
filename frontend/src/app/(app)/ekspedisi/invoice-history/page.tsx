@@ -35,7 +35,6 @@ export default function InvoiceHistoryPage() {
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
   const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
   const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
-  const [missingMonths, setMissingMonths] = useState<string[]>([]);
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
@@ -109,11 +108,6 @@ export default function InvoiceHistoryPage() {
     api.listInvoiceUploaders().then(setInvoiceUploaders).catch(() => setInvoiceUploaders([]));
   }, [me]);
 
-  useEffect(() => {
-    if (!me || me.role !== "KPU") return;
-    api.getMissingInvoiceMonths(6).then(setMissingMonths).catch(() => setMissingMonths([]));
-  }, [me]);
-
   if (!me || !INVOICE_HISTORY_ROLES.includes(me.role)) return null;
 
   function handleDeleteInvoice(inv: Invoice) {
@@ -136,12 +130,6 @@ export default function InvoiceHistoryPage() {
 
   return (
     <>
-      {missingMonths.length > 0 && (
-        <div className="card" style={{ marginBottom: 16, borderLeft: "4px solid var(--badge-rejected-bg)" }}>
-          <strong>Pengingat:</strong> kamu belum mengunggah invoice untuk {missingMonths.map((b) => invoiceBulanLabel(b)).join(", ")}.
-        </div>
-      )}
-
       <div className="card">
         <div className="invoice-toolbar-slim invoices-page-toolbar">
           <div className="field invoice-search-field" style={{ marginBottom: 0 }}>

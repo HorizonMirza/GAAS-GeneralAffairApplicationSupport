@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status } from "@/lib/types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
@@ -29,6 +29,18 @@ interface BookingFilterState {
 }
 
 const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
+
+interface KendaraanFilterState {
+  page: number;
+  limit: number;
+  tanggal: string;
+  status: BookingStatus | "";
+  divisi: string;
+  departemen: string;
+  namaKendaraan: string;
+}
+
+const EMPTY_KENDARAAN_FILTERS: KendaraanFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaKendaraan: "" };
 
 interface FilterState {
   page: number;
@@ -72,6 +84,13 @@ export default function SuperAdminPage() {
   const [bookingError, setBookingError] = useState("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
+  const [kendaraanFilters, setKendaraanFilters] = useState<KendaraanFilterState>(EMPTY_KENDARAAN_FILTERS);
+  const [kendaraanItems, setKendaraanItems] = useState<BookingKendaraan[]>([]);
+  const [kendaraanTotal, setKendaraanTotal] = useState(0);
+  const [kendaraanBusy, setKendaraanBusy] = useState(true);
+  const [kendaraanError, setKendaraanError] = useState("");
+  const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
+
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -80,6 +99,7 @@ export default function SuperAdminPage() {
   const tableReqIdRef = useRef(0);
   const invoiceReqIdRef = useRef(0);
   const bookingReqIdRef = useRef(0);
+  const kendaraanReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   // Some browsers restore a previously-typed value into these inputs on page reload without
@@ -181,6 +201,37 @@ export default function SuperAdminPage() {
     }
   }, [bookingFilters]);
 
+  const loadKendaraanBookings = useCallback(async () => {
+    const reqId = ++kendaraanReqIdRef.current;
+    setKendaraanBusy(true);
+    setKendaraanError("");
+    try {
+      const result = await api.listKendaraanBooking({
+        page: kendaraanFilters.page,
+        limit: kendaraanFilters.limit,
+        tanggal: kendaraanFilters.tanggal,
+        status: kendaraanFilters.status,
+        divisi: kendaraanFilters.divisi,
+        departemen: kendaraanFilters.departemen,
+        namaKendaraan: kendaraanFilters.namaKendaraan,
+      });
+      if (reqId !== kendaraanReqIdRef.current) return;
+      const kendaraanItemsResult = result?.items ?? [];
+      const kendaraanTotalResult = result?.total ?? 0;
+      if (kendaraanItemsResult.length === 0 && kendaraanTotalResult > 0 && kendaraanFilters.page > 1) {
+        setKendaraanFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setKendaraanItems(kendaraanItemsResult);
+      setKendaraanTotal(kendaraanTotalResult);
+    } catch (err) {
+      if (reqId !== kendaraanReqIdRef.current) return;
+      setKendaraanError((err as Error).message);
+    } finally {
+      if (reqId === kendaraanReqIdRef.current) setKendaraanBusy(false);
+    }
+  }, [kendaraanFilters]);
+
   useEffect(() => {
     loadTable();
   }, [loadTable]);
@@ -194,7 +245,15 @@ export default function SuperAdminPage() {
   }, [loadBookings]);
 
   useEffect(() => {
+    loadKendaraanBookings();
+  }, [loadKendaraanBookings]);
+
+  useEffect(() => {
     api.listRooms().then(setRooms).catch(() => setRooms([]));
+  }, []);
+
+  useEffect(() => {
+    api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
   }, []);
 
   if (!me || me.role !== "SUPER_ADMIN") return null;
@@ -268,6 +327,31 @@ export default function SuperAdminPage() {
     }, "Delete Permanent");
   }
 
+  function updateKendaraanFilter(patch: Partial<KendaraanFilterState>) {
+    setKendaraanFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function resetKendaraanFilters() {
+    setKendaraanFilters(EMPTY_KENDARAAN_FILTERS);
+  }
+
+  function goToKendaraanPage(page: number) {
+    if (page < 1) return;
+    setKendaraanFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDeleteKendaraanBooking(item: BookingKendaraan) {
+    confirm("Yakin ingin menghapus booking kendaraan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.superAdminDeleteKendaraanBooking(item.id);
+        showToast("Booking berhasil dihapus permanen");
+        loadKendaraanBookings();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   const pageStart = Math.max(1, filters.page - 2);
   const pageEnd = Math.min(totalPages, pageStart + 4);
@@ -307,9 +391,23 @@ export default function SuperAdminPage() {
     : null;
   const bookingDepartemenOptions = bookingSelectedDivisiNode ? bookingSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
+  const kendaraanTotalPages = Math.max(1, Math.ceil(kendaraanTotal / kendaraanFilters.limit));
+  const kendaraanPageStart = Math.max(1, kendaraanFilters.page - 2);
+  const kendaraanPageEnd = Math.min(kendaraanTotalPages, kendaraanPageStart + 4);
+  const kendaraanPageButtons: number[] = [];
+  for (let p = kendaraanPageStart; p <= kendaraanPageEnd; p++) kendaraanPageButtons.push(p);
+
+  const kendaraanDivisiOptions = orgStructure?.divisi || [];
+  const kendaraanSelectedDivisiNode = kendaraanFilters.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === kendaraanFilters.divisi)
+    : null;
+  const kendaraanDepartemenOptions = kendaraanSelectedDivisiNode ? kendaraanSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+
   return (
     <>
       <DashboardStats me={me} />
+
+      <h2 style={{ margin: "24px 0 12px" }}>Expedition</h2>
 
       <div className="card">
         <div className="toolbar">
@@ -394,7 +492,7 @@ export default function SuperAdminPage() {
                 <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
                 <th>Pengirim</th><th>Telp. Pengirim</th><th>Penerima</th><th>Telp. Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Packing</th><th>Catatan</th>
-                <th>Berat (Kg)</th><th>Ongkos Kirim (Harga)</th><th>Total</th><th>Status</th><th>Aksi</th>
+                <th>Berat (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -464,6 +562,95 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>History Invoice Pembiayaan</h3>
+        </div>
+
+        <div className="invoice-toolbar-slim">
+          <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
+            <input
+              type="month"
+              id="invoice-filter-bulan"
+              autoComplete="off"
+              ref={invoiceBulanInputRef}
+              value={invoiceFilterBulan}
+              onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
+            />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <span className="field-label-spacer">Semua Invoice</span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto" }}
+              onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
+            >
+              Semua Invoice
+            </button>
+          </div>
+        </div>
+
+        <div className="invoice-list">
+          {invoiceError ? (
+            <p className="text-secondary">{invoiceError}</p>
+          ) : invoices == null ? (
+            <p className="text-secondary">Memuat data invoice...</p>
+          ) : invoices.length === 0 ? (
+            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
+          ) : (
+            invoices.map((inv) => (
+              <div className="invoice-row" key={inv.id}>
+                <div className="invoice-row-main">
+                  <div className="invoice-file-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  </div>
+                  <div className="invoice-row-info">
+                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
+                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
+                  </div>
+                </div>
+                <div className="invoice-row-actions">
+                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="invoice-limit">Tampilkan</label>
+              <select id="invoice-limit" value={invoiceLimit} onChange={(e) => { setInvoiceLimit(Number(e.target.value)); setInvoicePage(1); }}>
+                <option value={5}>5 invoice</option>
+                <option value={10}>10 invoice</option>
+                <option value={20}>20 invoice</option>
+                <option value={50}>50 invoice</option>
+              </select>
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
+              {invoicePageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>Room Booking</h2>
 
       <div className="card">
         <div className="card-header">
