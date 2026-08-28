@@ -17,6 +17,8 @@ import type {
   BookingStatus,
   ChatMessage,
   Invoice,
+  KategoriKerusakan,
+  Urgensi,
   InvoiceListResponse,
   InvoiceLog,
   Me,
@@ -25,6 +27,11 @@ import type {
   PengirimanListResponse,
   PengirimanLog,
   PengirimanStatsResponse,
+  PerbaikanSarana,
+  PerbaikanSaranaCreatePayload,
+  PerbaikanSaranaListResponse,
+  PerbaikanSaranaLog,
+  PerbaikanSaranaStatsResponse,
   PermintaanAtk,
   PermintaanAtkCreatePayload,
   PermintaanAtkListResponse,
@@ -423,7 +430,63 @@ export const api = {
   getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),
   sendAtkChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/permintaan-atk/${id}/chat`, { method: "POST", body: { message } }),
+
+  nextSaranaNomor: (tanggal: string) =>
+    apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal } }),
+  listSarana: (params: ListSaranaParams) =>
+    apiRequest<PerbaikanSaranaListResponse>("/perbaikan-sarana", { params: saranaListParams(params) }),
+  getSaranaStats: (bulan: string) =>
+    apiRequest<PerbaikanSaranaStatsResponse>("/perbaikan-sarana/stats", { params: { bulan } }),
+  createSarana: (payload: PerbaikanSaranaCreatePayload) =>
+    apiRequest<PerbaikanSarana>("/perbaikan-sarana", { method: "POST", body: payload }),
+  updateSarana: (id: number, payload: PerbaikanSaranaCreatePayload) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`, { method: "PUT", body: payload }),
+  deleteSarana: (id: number) => apiRequest(`/perbaikan-sarana/${id}`, { method: "DELETE" }),
+  superAdminDeleteSarana: (id: number) => apiRequest(`/perbaikan-sarana/${id}/super-admin`, { method: "DELETE" }),
+  submitSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/submit`, { method: "PATCH" }),
+  approveSaranaL1: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/approve-l1`, { method: "PATCH" }),
+  rejectSaranaL1: (id: number, reason: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveSaranaGa: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/approve-ga`, { method: "PATCH" }),
+  rejectSaranaGa: (id: number, reason: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveSaranaGaApproval: (id: number) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/approve-ga-approval`, { method: "PATCH" }),
+  rejectSaranaGaApproval: (id: number, reason: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  getSaranaLogs: (id: number) => apiRequest<PerbaikanSaranaLog[]>(`/perbaikan-sarana/${id}/logs`),
+  getSaranaChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/perbaikan-sarana/${id}/chat`),
+  sendSaranaChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/perbaikan-sarana/${id}/chat`, { method: "POST", body: { message } }),
 };
+
+export interface ListSaranaParams {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus | "REJECTED" | "";
+  kategori?: KategoriKerusakan | "";
+  urgensi?: Urgensi | "";
+  divisi?: string;
+  departemen?: string;
+  direktorat?: string;
+  bulan?: string;
+  search?: string;
+}
+
+function saranaListParams(p: ListSaranaParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    status: p.status,
+    kategori: p.kategori,
+    urgensi: p.urgensi,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    direktorat: p.direktorat,
+    bulan: p.bulan,
+    search: p.search,
+  };
+}
 
 export interface ListAtkParams {
   page?: number;

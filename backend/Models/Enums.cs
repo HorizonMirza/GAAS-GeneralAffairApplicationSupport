@@ -70,3 +70,22 @@ public enum RecurrenceFrequencyEnum
     WEEKLY,
     MONTHLY,
 }
+
+// Maintenance: jenis kerusakan yang dilaporkan, dipakai untuk filter di halaman Transaction.
+public enum KategoriKerusakanEnum
+{
+    AC,
+    LISTRIK,
+    AIR,
+    FURNITUR,
+    GEDUNG,
+    IT,
+    LAINNYA,
+}
+
+public enum UrgensiEnum
+{
+    RENDAH,
+    SEDANG,
+    TINGGI,
+}

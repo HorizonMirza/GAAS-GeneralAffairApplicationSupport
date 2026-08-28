@@ -88,7 +88,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: SARANA_ICON,
     label: "Maintenance",
     items: [
-      { label: "Dashboard", href: "/perbaikan-sarana" },
+      { label: "Overview", href: "/maintenance/overview" },
+      { label: "Transaction", href: "/maintenance/transaksi" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

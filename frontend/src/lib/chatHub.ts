@@ -7,7 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/
 // off instead of hardcoding a second base URL.
 const HUB_URL = `${API_BASE.replace(/\/api\/?$/, "")}/hubs/chat`;
 
-export type ChatKind = "pengiriman" | "booking" | "kendaraan" | "atk";
+export type ChatKind = "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana";
 
 let connection: signalR.HubConnection | null = null;
 let startPromise: Promise<void> | null = null;
@@ -24,6 +24,7 @@ function joinMethod(kind: ChatKind): string {
   if (kind === "pengiriman") return "JoinPengirimanChat";
   if (kind === "kendaraan") return "JoinKendaraanChat";
   if (kind === "atk") return "JoinAtkChat";
+  if (kind === "sarana") return "JoinSaranaChat";
   return "JoinBookingChat";
 }
 
@@ -31,6 +32,7 @@ function leaveMethod(kind: ChatKind): string {
   if (kind === "pengiriman") return "LeavePengirimanChat";
   if (kind === "kendaraan") return "LeaveKendaraanChat";
   if (kind === "atk") return "LeaveAtkChat";
+  if (kind === "sarana") return "LeaveSaranaChat";
   return "LeaveBookingChat";
 }
 
@@ -96,6 +98,7 @@ export function onChatMessage(kind: ChatKind, handler: (message: ChatMessage) =>
     kind === "pengiriman" ? "ReceivePengirimanMessage"
     : kind === "kendaraan" ? "ReceiveKendaraanMessage"
     : kind === "atk" ? "ReceiveAtkMessage"
+    : kind === "sarana" ? "ReceiveSaranaMessage"
     : "ReceiveBookingMessage";
   conn.on(event, handler);
   return () => conn.off(event, handler);

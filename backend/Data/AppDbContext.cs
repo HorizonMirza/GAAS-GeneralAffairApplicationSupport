@@ -33,6 +33,11 @@ public class AppDbContext : DbContext
     public DbSet<PermintaanAtkChatMessage> PermintaanAtkChatMessages => Set<PermintaanAtkChatMessage>();
     public DbSet<PermintaanAtkChatRead> PermintaanAtkChatReads => Set<PermintaanAtkChatRead>();
     public DbSet<AtkCounter> AtkCounters => Set<AtkCounter>();
+    public DbSet<PerbaikanSarana> PerbaikanSaranas => Set<PerbaikanSarana>();
+    public DbSet<PerbaikanSaranaLog> PerbaikanSaranaLogs => Set<PerbaikanSaranaLog>();
+    public DbSet<PerbaikanSaranaChatMessage> PerbaikanSaranaChatMessages => Set<PerbaikanSaranaChatMessage>();
+    public DbSet<PerbaikanSaranaChatRead> PerbaikanSaranaChatReads => Set<PerbaikanSaranaChatRead>();
+    public DbSet<SaranaCounter> SaranaCounters => Set<SaranaCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -102,6 +107,19 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<PermintaanAtkChatMessage>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PerbaikanSarana>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+            if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PerbaikanSaranaLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PerbaikanSaranaChatMessage>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -664,6 +682,122 @@ public class AppDbContext : DbContext
             e.HasOne(r => r.PermintaanAtk)
                 .WithMany()
                 .HasForeignKey(r => r.PermintaanAtkId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PerbaikanSarana>(e =>
+        {
+            e.ToTable("perbaikan_sarana");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.NomorPerbaikan).HasColumnName("nomor_perbaikan").HasMaxLength(50);
+            e.Property(p => p.Tanggal).HasColumnName("tanggal");
+            e.Property(p => p.Lokasi).HasColumnName("lokasi").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.Urgensi).HasColumnName("urgensi").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.DeskripsiKerusakan).HasColumnName("deskripsi_kerusakan").IsRequired();
+            e.Property(p => p.Catatan).HasColumnName("catatan");
+
+            e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
+
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.RejectReason).HasColumnName("reject_reason");
+
+            e.Property(p => p.CreatedBy).HasColumnName("created_by");
+            e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.ApprovedByL1).HasColumnName("approved_by_l1");
+            e.Property(p => p.ApprovedByGa).HasColumnName("approved_by_ga");
+            e.Property(p => p.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
+
+            e.Property(p => p.CreatedAt).HasColumnName("created_at");
+            e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+            e.Property(p => p.ApprovedL1At).HasColumnName("approved_l1_at");
+            e.Property(p => p.ApprovedGaAt).HasColumnName("approved_ga_at");
+            e.Property(p => p.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+
+            e.HasOne(p => p.Pembuat)
+                .WithMany()
+                .HasForeignKey(p => p.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(p => p.Status).HasDatabaseName("ix_perbaikan_sarana_status");
+            e.HasIndex(p => p.Divisi).HasDatabaseName("ix_perbaikan_sarana_divisi");
+            e.HasIndex(p => p.Departemen).HasDatabaseName("ix_perbaikan_sarana_departemen");
+            e.HasIndex(p => p.Tanggal).HasDatabaseName("ix_perbaikan_sarana_tanggal");
+        });
+
+        modelBuilder.Entity<PerbaikanSaranaLog>(e =>
+        {
+            e.ToTable("perbaikan_sarana_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.PerbaikanSaranaId).HasColumnName("perbaikan_sarana_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.PerbaikanSarana)
+                .WithMany(p => p.Logs)
+                .HasForeignKey(l => l.PerbaikanSaranaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SaranaCounter>(e =>
+        {
+            e.ToTable("sarana_counters");
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
+            e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
+            e.Property(c => c.LastSequence).HasColumnName("last_sequence");
+        });
+
+        modelBuilder.Entity<PerbaikanSaranaChatMessage>(e =>
+        {
+            e.ToTable("perbaikan_sarana_chat_messages");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.PerbaikanSaranaId).HasColumnName("perbaikan_sarana_id");
+            e.Property(m => m.SenderId).HasColumnName("sender_id");
+            e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(m => m.PerbaikanSarana)
+                .WithMany()
+                .HasForeignKey(m => m.PerbaikanSaranaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PerbaikanSaranaChatRead>(e =>
+        {
+            e.ToTable("perbaikan_sarana_chat_reads");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.PerbaikanSaranaId).HasColumnName("perbaikan_sarana_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.LastReadAt).HasColumnName("last_read_at");
+            e.HasIndex(r => new { r.PerbaikanSaranaId, r.UserId }).IsUnique();
+
+            e.HasOne(r => r.PerbaikanSarana)
+                .WithMany()
+                .HasForeignKey(r => r.PerbaikanSaranaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasOne(r => r.User)

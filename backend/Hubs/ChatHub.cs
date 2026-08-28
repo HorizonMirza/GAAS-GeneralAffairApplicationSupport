@@ -102,8 +102,25 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, AtkGroup(permintaanAtkId));
     }
 
+    // Same as JoinAtkChat, but for Maintenance (Perbaikan Sarana) - also excludes KPU, matching
+    // PerbaikanSaranaChatController.List/Send.
+    public async Task JoinSaranaChat(int perbaikanSaranaId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null || user.Role == RoleEnum.KPU) return;
+        var item = await _db.PerbaikanSaranas.FindAsync(perbaikanSaranaId);
+        if (item == null || !ApiControllerBase.CanAccessPerbaikanSarana(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, SaranaGroup(perbaikanSaranaId));
+    }
+
+    public async Task LeaveSaranaChat(int perbaikanSaranaId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, SaranaGroup(perbaikanSaranaId));
+    }
+
     public static string PengirimanGroup(int pengirimanId) => $"pengiriman-chat-{pengirimanId}";
     public static string BookingGroup(int bookingRuangId) => $"booking-chat-{bookingRuangId}";
     public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
     public static string AtkGroup(int permintaanAtkId) => $"atk-chat-{permintaanAtkId}";
+    public static string SaranaGroup(int perbaikanSaranaId) => $"sarana-chat-{perbaikanSaranaId}";
 }

@@ -19,7 +19,10 @@ export type RejectType =
   | "kendaraan-ga-approval"
   | "atk-l1"
   | "atk-ga"
-  | "atk-ga-approval";
+  | "atk-ga-approval"
+  | "sarana-l1"
+  | "sarana-ga"
+  | "sarana-ga-approval";
 
 interface Props {
   open: boolean;
@@ -100,9 +103,16 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectAtkL1(targetId, reasonValue);
       } else if (targetType === "atk-ga") {
         await api.rejectAtkGa(targetId, reasonValue);
-      } else {
+      } else if (targetType === "atk-ga-approval") {
         await api.rejectAtkGaApproval(targetId, reasonValue);
         message = "Permintaan ditolak";
+      } else if (targetType === "sarana-l1") {
+        await api.rejectSaranaL1(targetId, reasonValue);
+      } else if (targetType === "sarana-ga") {
+        await api.rejectSaranaGa(targetId, reasonValue);
+      } else {
+        await api.rejectSaranaGaApproval(targetId, reasonValue);
+        message = "Laporan ditolak";
       }
       showToast(message);
       reset();

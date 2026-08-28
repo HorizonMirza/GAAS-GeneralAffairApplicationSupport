@@ -334,6 +334,71 @@ export interface BookingRuangActionResult {
   detail: string | null;
 }
 
+// --- Maintenance (Perbaikan Sarana) ---
+// Alur approval-nya sama dengan Booking/ATK (BookingStatus, berakhir di APPROVED_GA_APPROVAL).
+
+export type KategoriKerusakan = "AC" | "LISTRIK" | "AIR" | "FURNITUR" | "GEDUNG" | "IT" | "LAINNYA";
+
+export type Urgensi = "RENDAH" | "SEDANG" | "TINGGI";
+
+export interface PerbaikanSarana {
+  id: number;
+  nomorPerbaikan: string | null;
+  tanggal: string;
+  lokasi: string;
+  kategori: KategoriKerusakan;
+  urgensi: Urgensi;
+  deskripsiKerusakan: string;
+  catatan: string | null;
+  divisi: string;
+  departemen: string | null;
+  status: BookingStatus;
+  rejectReason: string | null;
+  createdBy: number;
+  createdByRole: Role;
+  approvedByL1: number | null;
+  approvedByGa: number | null;
+  approvedByApprovalGa: number | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedL1At: string | null;
+  approvedGaAt: string | null;
+  approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
+  hasUnreadMention: boolean;
+}
+
+export interface PerbaikanSaranaListResponse {
+  items: PerbaikanSarana[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface PerbaikanSaranaStatsResponse {
+  countsByStatus: Partial<Record<BookingStatus, number>>;
+  // Jumlah laporan urgensi TINGGI yang masih berjalan (sudah dikirim, belum selesai/ditolak).
+  urgensiTinggiAktif: number;
+}
+
+export interface PerbaikanSaranaLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface PerbaikanSaranaCreatePayload {
+  tanggal: string;
+  lokasi: string;
+  kategori: KategoriKerusakan;
+  urgensi: Urgensi;
+  deskripsiKerusakan: string;
+  catatan: string | null;
+}
+
 // --- Office Supplies (Permintaan ATK) ---
 // Alur approval-nya memakai BookingStatus (berakhir di APPROVED_GA_APPROVAL, tanpa tahap KPU).
 

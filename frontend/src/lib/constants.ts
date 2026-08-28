@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, Me, Pengiriman, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking, Urgensi } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -373,4 +373,56 @@ export function isAtkGaActionable(item: PermintaanAtk): boolean {
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".
 export function atkItemsSummary(item: PermintaanAtk): string {
   return item.items.map((i) => `${i.namaBarang} (${i.jumlah} ${i.satuan})`).join(", ");
+}
+
+// --- Maintenance / Perbaikan Sarana (pola yang sama dengan Booking & ATK di atas) ---
+
+export const KATEGORI_KERUSAKAN_LABEL: Record<KategoriKerusakan, string> = {
+  AC: "AC / Pendingin",
+  LISTRIK: "Listrik",
+  AIR: "Air / Saluran",
+  FURNITUR: "Furnitur",
+  GEDUNG: "Gedung / Bangunan",
+  IT: "IT / Jaringan",
+  LAINNYA: "Lainnya",
+};
+
+export const URGENSI_LABEL: Record<Urgensi, string> = {
+  RENDAH: "Rendah",
+  SEDANG: "Sedang",
+  TINGGI: "Tinggi",
+};
+
+// Kelas badge untuk tingkat urgensi - dipetakan ke badge status yang sudah ada di globals.css
+// supaya tidak perlu palet warna baru: tinggi = merah (rejected), sedang = oranye (on-approval),
+// rendah = abu-abu (draft).
+export const URGENSI_BADGE_CLASS: Record<Urgensi, string> = {
+  RENDAH: "badge-draft",
+  SEDANG: "badge-pending",
+  TINGGI: "badge-rejected",
+};
+
+export function saranaOriginActorLabel(item: PerbaikanSarana): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
+}
+
+// Same rule as isBookingEditableByOrigin - mirrors the backend's
+// PerbaikanSaranaController.IsEditableByOrigin exactly.
+export function isSaranaEditableByOrigin(item: PerbaikanSarana, me: Me): boolean {
+  return item.status === "DRAFT" && item.createdBy === me.id;
+}
+
+// Same rule as isBookingDeletableByOrigin - mirrors the backend's
+// PerbaikanSaranaController.IsDeletableByOrigin exactly.
+export function isSaranaDeletableByOrigin(item: PerbaikanSarana, me: Me): boolean {
+  if (isSaranaEditableByOrigin(item, me)) return true;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
+  return item.status === "APPROVED_L1";
 }

@@ -335,13 +335,78 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_divisi ON permintaan_atk (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_departemen ON permintaan_atk (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_tanggal ON permintaan_atk (tanggal)");
+
+    // Maintenance (Perbaikan Sarana): brand new tables, same reasoning as the blocks above -
+    // EnsureCreated() won't add tables to an already-existing database.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS perbaikan_sarana (
+            id SERIAL PRIMARY KEY,
+            nomor_perbaikan VARCHAR(50),
+            tanggal DATE NOT NULL,
+            lokasi VARCHAR(255) NOT NULL,
+            kategori VARCHAR(50) NOT NULL,
+            urgensi VARCHAR(50) NOT NULL,
+            deskripsi_kerusakan TEXT NOT NULL,
+            catatan TEXT,
+            divisi VARCHAR(255) NOT NULL,
+            departemen VARCHAR(255),
+            status VARCHAR(50) NOT NULL,
+            reject_reason TEXT,
+            created_by INT NOT NULL REFERENCES users(id),
+            created_by_role VARCHAR(50) NOT NULL,
+            approved_by_l1 INT NULL REFERENCES users(id),
+            approved_by_ga INT NULL REFERENCES users(id),
+            approved_by_approval_ga INT NULL REFERENCES users(id),
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL,
+            approved_l1_at TIMESTAMP NULL,
+            approved_ga_at TIMESTAMP NULL,
+            approved_approval_ga_at TIMESTAMP NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS perbaikan_sarana_logs (
+            id SERIAL PRIMARY KEY,
+            perbaikan_sarana_id INT NOT NULL REFERENCES perbaikan_sarana(id) ON DELETE CASCADE,
+            action VARCHAR(50) NOT NULL,
+            actor_id INT NULL REFERENCES users(id),
+            reason TEXT,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS sarana_counters (
+            divisi VARCHAR(255) NOT NULL,
+            year INT NOT NULL,
+            month INT NOT NULL,
+            last_sequence INT NOT NULL,
+            PRIMARY KEY (divisi, year, month)
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS perbaikan_sarana_chat_messages (
+            id SERIAL PRIMARY KEY,
+            perbaikan_sarana_id INT NOT NULL REFERENCES perbaikan_sarana(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS perbaikan_sarana_chat_reads (
+            id SERIAL PRIMARY KEY,
+            perbaikan_sarana_id INT NOT NULL REFERENCES perbaikan_sarana(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (perbaikan_sarana_id, user_id)
+        )");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_status ON perbaikan_sarana (status)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_divisi ON perbaikan_sarana (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_tanggal ON perbaikan_sarana (tanggal)");
 }
 
 if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }
