@@ -361,12 +361,8 @@ export default function TransaksiPage() {
 
         {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) && totalBulanIni != null && (
           <div className="total-akumulasi-footer">
-            <div>
-              <div className="total-akumulasi-label">Total Akumulasi Biaya</div>
-              <div className={`total-akumulasi-value${totalBulanIni === 0 ? " is-empty" : ""}`}>
-                {totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}
-              </div>
-            </div>
+            <span className="total-akumulasi-label">Total Akumulasi Biaya</span>
+            <span className="total-akumulasi-value">{totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}</span>
           </div>
         )}
 
