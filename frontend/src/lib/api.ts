@@ -1,5 +1,8 @@
 import type {
   ApproveKpuPayload,
+  ArchiveDocument,
+  ArchiveDocumentListResponse,
+  ArchiveKategori,
   BookingKendaraan,
   BookingKendaraanCreatePayload,
   BookingKendaraanListResponse,
@@ -458,7 +461,86 @@ export const api = {
   getSaranaChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/perbaikan-sarana/${id}/chat`),
   sendSaranaChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/perbaikan-sarana/${id}/chat`, { method: "POST", body: { message } }),
+
+  listArchive: (params: ListArchiveParams) =>
+    apiRequest<ArchiveDocumentListResponse>("/archive", { params: archiveListParams(params) }),
+  uploadArchive: async (payload: { namaDokumen: string; kategori: ArchiveKategori; catatan: string | null; file: File }) => {
+    const formData = new FormData();
+    formData.append("namaDokumen", payload.namaDokumen);
+    formData.append("kategori", payload.kategori);
+    if (payload.catatan) formData.append("catatan", payload.catatan);
+    formData.append("file", payload.file);
+    const response = await fetch(`${API_BASE}/archive`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah dokumen";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json() as Promise<ArchiveDocument>;
+  },
+  updateArchive: async (
+    id: number,
+    payload: { namaDokumen?: string; kategori?: ArchiveKategori; catatan?: string | null; file?: File | null }
+  ) => {
+    const formData = new FormData();
+    if (payload.namaDokumen !== undefined) formData.append("namaDokumen", payload.namaDokumen);
+    if (payload.kategori !== undefined) formData.append("kategori", payload.kategori);
+    if (payload.catatan !== undefined) formData.append("catatan", payload.catatan || "");
+    if (payload.file) formData.append("file", payload.file);
+    const response = await fetch(`${API_BASE}/archive/${id}`, {
+      method: "PUT",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal memperbarui dokumen";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json() as Promise<ArchiveDocument>;
+  },
+  deleteArchive: (id: number) => apiRequest(`/archive/${id}`, { method: "DELETE" }),
+  archiveFileUrl: (id: number) => `${API_BASE}/archive/${id}/file`,
+  archiveDownloadUrl: (id: number) => `${API_BASE}/archive/${id}/file?download=true`,
 };
+
+export interface ListArchiveParams {
+  page?: number;
+  limit?: number;
+  kategori?: ArchiveKategori | "";
+  divisi?: string;
+  departemen?: string;
+  direktorat?: string;
+  bulan?: string;
+  search?: string;
+}
+
+function archiveListParams(p: ListArchiveParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    kategori: p.kategori,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    direktorat: p.direktorat,
+    bulan: p.bulan,
+    search: p.search,
+  };
+}
 
 export interface ListSaranaParams {
   page?: number;

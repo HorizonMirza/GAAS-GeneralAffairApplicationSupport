@@ -334,6 +334,34 @@ export interface BookingRuangActionResult {
   detail: string | null;
 }
 
+// --- Archive: penyimpanan dokumen umum, tanpa alur approval ---
+
+export type ArchiveKategori = "SOP" | "SURAT" | "KONTRAK" | "LAPORAN" | "PANDUAN" | "LAINNYA";
+
+export interface ArchiveDocument {
+  id: number;
+  namaDokumen: string;
+  kategori: ArchiveKategori;
+  originalFilename: string;
+  contentType: string;
+  fileSizeBytes: number;
+  catatan: string | null;
+  divisi: string;
+  departemen: string | null;
+  uploadedBy: number;
+  uploaderNama: string | null;
+  uploadedByRole: Role;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArchiveDocumentListResponse {
+  items: ArchiveDocument[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // --- Maintenance (Perbaikan Sarana) ---
 // Alur approval-nya sama dengan Booking/ATK (BookingStatus, berakhir di APPROVED_GA_APPROVAL).
 

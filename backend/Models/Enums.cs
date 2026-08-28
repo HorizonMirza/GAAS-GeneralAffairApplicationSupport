@@ -89,3 +89,14 @@ public enum UrgensiEnum
     SEDANG,
     TINGGI,
 }
+
+// Archive: kategori bebas untuk dokumen umum perusahaan, dipakai sebagai "folder" saat filter.
+public enum ArchiveKategoriEnum
+{
+    SOP,
+    SURAT,
+    KONTRAK,
+    LAPORAN,
+    PANDUAN,
+    LAINNYA,
+}

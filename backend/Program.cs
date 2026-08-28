@@ -400,13 +400,38 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_divisi ON perbaikan_sarana (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_tanggal ON perbaikan_sarana (tanggal)");
+
+    // Archive: brand new table, same reasoning as the blocks above - EnsureCreated() won't add
+    // tables to an already-existing database. No approval workflow here (see ArchiveDocument.cs),
+    // so unlike the other modules there is no logs/counter/chat table to go with it.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS archive_documents (
+            id SERIAL PRIMARY KEY,
+            nama_dokumen VARCHAR(255) NOT NULL,
+            kategori VARCHAR(50) NOT NULL,
+            file_path VARCHAR(255) NOT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            content_type VARCHAR(150) NOT NULL,
+            file_size_bytes BIGINT NOT NULL,
+            catatan TEXT,
+            divisi VARCHAR(255) NOT NULL,
+            departemen VARCHAR(255),
+            uploaded_by INT NOT NULL REFERENCES users(id),
+            uploaded_by_role VARCHAR(50) NOT NULL,
+            created_at TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_kategori ON archive_documents (kategori)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_divisi ON archive_documents (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_departemen ON archive_documents (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_created_at ON archive_documents (created_at)");
 }
 
 if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

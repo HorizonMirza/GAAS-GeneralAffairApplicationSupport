@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking, Urgensi } from "./types";
+import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking, Urgensi } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -425,4 +425,25 @@ export function isSaranaDeletableByOrigin(item: PerbaikanSarana, me: Me): boolea
 
 export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
   return item.status === "APPROVED_L1";
+}
+
+// --- Archive ---
+
+export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {
+  SOP: "SOP",
+  SURAT: "Surat",
+  KONTRAK: "Kontrak",
+  LAPORAN: "Laporan",
+  PANDUAN: "Panduan",
+  LAINNYA: "Lainnya",
+};
+
+// Matches ArchiveController's MaxArchiveFileSizeBytes - checked here too so an oversized file is
+// rejected the instant it's picked, before an upload attempt can fail with a raw connection error.
+export const MAX_ARCHIVE_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
+// Mirrors ArchiveController.CanManage exactly - the uploader manages their own document,
+// Admin/Approval GA and Super Admin manage every document.
+export function canManageArchiveDocument(item: ArchiveDocument, me: Me): boolean {
+  return item.uploadedBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
 }

@@ -38,6 +38,7 @@ public class AppDbContext : DbContext
     public DbSet<PerbaikanSaranaChatMessage> PerbaikanSaranaChatMessages => Set<PerbaikanSaranaChatMessage>();
     public DbSet<PerbaikanSaranaChatRead> PerbaikanSaranaChatReads => Set<PerbaikanSaranaChatRead>();
     public DbSet<SaranaCounter> SaranaCounters => Set<SaranaCounter>();
+    public DbSet<ArchiveDocument> ArchiveDocuments => Set<ArchiveDocument>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -122,6 +123,11 @@ public class AppDbContext : DbContext
         foreach (var entry in ChangeTracker.Entries<PerbaikanSaranaChatMessage>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<ArchiveDocument>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+            if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
         }
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -804,6 +810,39 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ArchiveDocument>(e =>
+        {
+            e.ToTable("archive_documents");
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Id).HasColumnName("id");
+            e.Property(a => a.NamaDokumen).HasColumnName("nama_dokumen").HasMaxLength(255).IsRequired();
+            e.Property(a => a.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(a => a.FilePath).HasColumnName("file_path").HasMaxLength(255).IsRequired();
+            e.Property(a => a.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();
+            e.Property(a => a.ContentType).HasColumnName("content_type").HasMaxLength(150).IsRequired();
+            e.Property(a => a.FileSizeBytes).HasColumnName("file_size_bytes");
+            e.Property(a => a.Catatan).HasColumnName("catatan");
+
+            e.Property(a => a.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(a => a.Departemen).HasColumnName("departemen").HasMaxLength(255);
+
+            e.Property(a => a.UploadedBy).HasColumnName("uploaded_by");
+            e.Property(a => a.UploadedByRole).HasColumnName("uploaded_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+
+            e.Property(a => a.CreatedAt).HasColumnName("created_at");
+            e.Property(a => a.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(a => a.Pengunggah)
+                .WithMany()
+                .HasForeignKey(a => a.UploadedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(a => a.Kategori).HasDatabaseName("ix_archive_documents_kategori");
+            e.HasIndex(a => a.Divisi).HasDatabaseName("ix_archive_documents_divisi");
+            e.HasIndex(a => a.Departemen).HasDatabaseName("ix_archive_documents_departemen");
+            e.HasIndex(a => a.CreatedAt).HasDatabaseName("ix_archive_documents_created_at");
         });
 
         modelBuilder.Entity<DivisiCounter>(e =>

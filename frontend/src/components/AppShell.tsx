@@ -97,7 +97,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: ARSIP_ICON,
     label: "Archive",
     items: [
-      { label: "Dashboard", href: "/arsip" },
+      { label: "Dokumen", href: "/arsip" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

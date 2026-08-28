@@ -84,6 +84,12 @@ export function truncateText(str: string | null | undefined, maxLen: number): st
   return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str;
 }
 
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function invoiceBulanLabel(bulan: string | null | undefined): string {
   if (!bulan) return "-";
   const [year, month] = bulan.split("-");
