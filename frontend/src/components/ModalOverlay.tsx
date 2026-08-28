@@ -11,11 +11,16 @@ interface Props {
 
 /**
  * Drop-in replacement for the plain `<div className="modal-overlay ...">` every modal used to
- * render directly - adds the three ways users expect a modal to close, on top of whatever "X" or
+ * render directly - adds two ways users expect a modal to close, on top of whatever "X" or
  * "Batal" button the modal already has:
  *  - Escape key
  *  - clicking the backdrop itself (not a click that started inside the modal box and bubbled up)
- *  - the phone/browser back button, via a pushed history entry consumed by popstate
+ *
+ * Deliberately does NOT touch the History API (no pushState/popstate) - Next.js's App Router
+ * patches history.pushState/replaceState for its own client-side routing, and calling the native
+ * pushState directly here caused the router to swallow the very state update that opens the
+ * modal, breaking every modal-opening button on the page. A back-button-closes-modal feature
+ * would need to go through next/navigation's router instead, not raw history.pushState.
  */
 export default function ModalOverlay({ open, onClose, className, children }: Props) {
   const closeRef = useRef(onClose);
@@ -29,20 +34,8 @@ export default function ModalOverlay({ open, onClose, className, children }: Pro
     }
     document.addEventListener("keydown", handleKey);
 
-    // Pushing a history entry means the phone/browser back button fires popstate instead of
-    // navigating the page underneath away. If the modal closes some other way (X, Escape,
-    // backdrop) instead, cleanup consumes that same entry with one history.back() so it doesn't
-    // leave a dangling "forward" step behind.
-    history.pushState({ modalOverlay: true }, "");
-    function handlePopState() {
-      closeRef.current();
-    }
-    window.addEventListener("popstate", handlePopState);
-
     return () => {
       document.removeEventListener("keydown", handleKey);
-      window.removeEventListener("popstate", handlePopState);
-      if (history.state?.modalOverlay) history.back();
     };
   }, [open]);
 
