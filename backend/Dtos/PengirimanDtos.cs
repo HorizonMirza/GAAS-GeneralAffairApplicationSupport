@@ -150,21 +150,3 @@ public class PengirimanStatsResponse
     public int WaitingKpu { get; set; }
     public decimal? TotalBulanIni { get; set; }
 }
-
-public class MonthlyCost
-{
-    public string Bulan { get; set; } = null!;
-    public decimal Total { get; set; }
-}
-
-public class DivisiCost
-{
-    public string Divisi { get; set; } = null!;
-    public decimal Total { get; set; }
-}
-
-public class CostTrendResponse
-{
-    public List<MonthlyCost> Monthly { get; set; } = new();
-    public List<DivisiCost> ByDivisi { get; set; } = new();
-}

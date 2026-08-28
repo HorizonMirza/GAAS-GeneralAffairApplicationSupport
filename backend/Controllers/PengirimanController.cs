@@ -575,57 +575,6 @@ public class PengirimanController : ApiControllerBase
         });
     }
 
-    // Cost trend for Overview's chart: monthly totals over a rolling window, plus a per-divisi
-    // breakdown for the most recent of those months - both restricted to COMPLETED (Total is only
-    // ever set at ApproveKpu) and to the same unit-scoping ApplyListFilters already applies for
-    // every other list/stats endpoint (an Admin Departemen sees their own unit's trend, not the
-    // whole company's). Gated the same as TotalBulanIni above - a role that can't see cost totals
-    // there shouldn't see them charted here either.
-    [HttpGet("cost-trend")]
-    public async Task<IActionResult> GetCostTrend([FromQuery] int monthsBack = 6)
-    {
-        var (user, error) = await RequireRoleAsync(TotalVisibleRoles);
-        if (error != null) return error;
-        monthsBack = Math.Clamp(monthsBack, 1, 24);
-
-        IQueryable<Pengiriman> baseQuery;
-        try
-        {
-            baseQuery = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, StatusEnum.COMPLETED, null, null, null, null, null);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { detail = ex.Message });
-        }
-
-        var earliestMonth = new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(-(monthsBack - 1));
-        var windowed = baseQuery.Where(p => p.Tanggal >= earliestMonth);
-
-        var rows = await windowed
-            .Select(p => new { p.Tanggal.Year, p.Tanggal.Month, p.Divisi, Total = p.Total ?? 0 })
-            .ToListAsync();
-
-        var monthly = new List<MonthlyCost>();
-        var cursor = earliestMonth;
-        for (var i = 0; i < monthsBack; i++)
-        {
-            var bulan = $"{cursor.Year:0000}-{cursor.Month:00}";
-            var total = rows.Where(r => r.Year == cursor.Year && r.Month == cursor.Month).Sum(r => r.Total);
-            monthly.Add(new MonthlyCost { Bulan = bulan, Total = total });
-            cursor = cursor.AddMonths(1);
-        }
-
-        // Per-divisi breakdown for the whole window (not just the latest month) - a single month
-        // is too thin a slice to compare divisi against each other meaningfully.
-        var byDivisi = rows
-            .GroupBy(r => r.Divisi)
-            .Select(g => new DivisiCost { Divisi = g.Key, Total = g.Sum(r => r.Total) })
-            .OrderByDescending(d => d.Total)
-            .ToList();
-
-        return Ok(new CostTrendResponse { Monthly = monthly, ByDivisi = byDivisi });
-    }
-
     private async Task<(User? user, Pengiriman? item, IActionResult? error)> RequireL1ActorAsync(int itemId)
     {
         var user = await CurrentUser.GetCurrentUserAsync();

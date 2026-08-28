@@ -16,7 +16,6 @@ import type {
   BookingRuangStatsResponse,
   BookingStatus,
   ChatMessage,
-  CostTrendResponse,
   Invoice,
   InvoiceListResponse,
   InvoiceLog,
@@ -184,8 +183,6 @@ export const api = {
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),
   getPengirimanStats: (bulan: string) =>
     apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan } }),
-  getCostTrend: (monthsBack?: number) =>
-    apiRequest<CostTrendResponse>("/pengiriman/cost-trend", { params: { monthsBack } }),
   createPengiriman: (payload: PengirimanCreatePayload) =>
     apiRequest("/pengiriman", { method: "POST", body: payload }),
   updatePengiriman: (id: number, payload: PengirimanCreatePayload) =>

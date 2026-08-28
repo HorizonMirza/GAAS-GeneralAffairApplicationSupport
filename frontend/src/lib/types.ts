@@ -137,21 +137,6 @@ export interface PengirimanStatsResponse {
   totalBulanIni: number | null;
 }
 
-export interface MonthlyCost {
-  bulan: string;
-  total: number;
-}
-
-export interface DivisiCost {
-  divisi: string;
-  total: number;
-}
-
-export interface CostTrendResponse {
-  monthly: MonthlyCost[];
-  byDivisi: DivisiCost[];
-}
-
 export interface PengirimanLog {
   id: number;
   action: string;
