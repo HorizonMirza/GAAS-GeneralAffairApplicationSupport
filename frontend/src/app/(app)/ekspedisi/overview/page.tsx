@@ -230,7 +230,7 @@ export default function OverviewPage() {
                 <div className="card-header-title">
                   <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {item.kodeProgram} · {item.jumlahItem} item
+                    {formatDate(item.tanggal)}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

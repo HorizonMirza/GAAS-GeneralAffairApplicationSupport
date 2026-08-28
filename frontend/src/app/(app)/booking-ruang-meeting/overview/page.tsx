@@ -16,7 +16,7 @@ import {
   isBookingOriginRole,
   isBookingPdfAvailable,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
+import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
@@ -232,7 +232,7 @@ export default function BookingOverviewPage() {
                 <div className="card-header-title">
                   <strong>{item.namaKegiatan} - {item.nomorPemesanan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)} · {bookingRoomsLabel(item)}
+                    {formatDate(item.tanggal)}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

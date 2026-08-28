@@ -127,6 +127,12 @@ export default function VehicleBookingChatModal({ open, itemId, itemLabel, depar
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages]);
 
+  // Autofocus the message field on open so typing can start immediately, without needing to
+  // click into the input first.
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
   if (!open) return null;
 
   function handleDraftChange(e: React.ChangeEvent<HTMLInputElement>) {
