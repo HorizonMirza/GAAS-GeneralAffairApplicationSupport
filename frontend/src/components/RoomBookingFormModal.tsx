@@ -7,6 +7,7 @@ import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
@@ -135,7 +136,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>Form Booking Ruang Meeting {unitName ? `(${unitName})` : ""}</h3>
@@ -329,6 +330,6 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

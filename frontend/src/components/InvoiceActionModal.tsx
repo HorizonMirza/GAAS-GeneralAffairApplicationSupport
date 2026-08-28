@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -48,7 +49,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
           <h3>{type === "approve" ? "Approve Invoice" : "Reject Invoice"}</h3>
@@ -76,6 +77,6 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

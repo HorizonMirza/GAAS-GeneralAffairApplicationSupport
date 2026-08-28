@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -108,7 +109,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>Form Booking Kendaraan {unitName ? `(${unitName})` : ""}</h3>
@@ -244,6 +245,6 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

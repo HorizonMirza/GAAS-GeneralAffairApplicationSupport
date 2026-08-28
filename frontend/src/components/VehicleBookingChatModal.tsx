@@ -6,6 +6,7 @@ import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/li
 import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me, Role } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 
 interface Props {
   open: boolean;
@@ -182,7 +183,7 @@ export default function VehicleBookingChatModal({ open, itemId, itemLabel, depar
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal chat-modal">
         <div className="chat-modal-header-bar">
           <div className="modal-header">
@@ -265,6 +266,6 @@ export default function VehicleBookingChatModal({ open, itemId, itemLabel, depar
           </form>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

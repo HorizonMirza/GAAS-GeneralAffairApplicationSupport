@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -78,7 +79,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>Ubah Kendaraan/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
@@ -165,6 +166,6 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

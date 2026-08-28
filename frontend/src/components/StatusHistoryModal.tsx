@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { PengirimanLog } from "@/lib/types";
 import ApprovalLog from "./ApprovalLog";
+import ModalOverlay from "./ModalOverlay";
 
 interface Props {
   open: boolean;
@@ -28,7 +29,7 @@ export default function StatusHistoryModal({ open, itemId, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal">
         <div className="modal-header">
           <h3>Riwayat Approval</h3>
@@ -45,6 +46,6 @@ export default function StatusHistoryModal({ open, itemId, onClose }: Props) {
           <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose}>Tutup</button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

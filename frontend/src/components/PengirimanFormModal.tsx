@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, PengirimanCreatePayload } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -80,7 +81,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>Form Data Barang {unitName ? `(${unitName})` : ""}</h3>
@@ -170,6 +171,6 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

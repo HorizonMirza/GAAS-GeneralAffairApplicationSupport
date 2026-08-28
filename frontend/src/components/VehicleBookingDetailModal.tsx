@@ -12,6 +12,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
 
@@ -142,7 +143,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>{isEdit ? "Form Booking Kendaraan" : "Detail Booking Kendaraan"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
@@ -281,6 +282,6 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

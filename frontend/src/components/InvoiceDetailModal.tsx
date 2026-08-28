@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
 import type { Invoice, Me } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -37,7 +38,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 460 }}>
         <div className="modal-header">
           <h3>Detail Invoice</h3>
@@ -83,6 +84,6 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

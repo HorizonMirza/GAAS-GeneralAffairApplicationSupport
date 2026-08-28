@@ -6,6 +6,7 @@ import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
 
@@ -190,7 +191,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
@@ -352,6 +353,6 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

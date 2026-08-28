@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import ModalOverlay from "../ModalOverlay";
 
 interface ConfirmState {
   message: string;
@@ -27,7 +28,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      <div className={`modal-overlay modal-overlay-centered ${state ? "" : "hidden"}`}>
+      <ModalOverlay open={!!state} onClose={close} className={`modal-overlay modal-overlay-centered ${state ? "" : "hidden"}`}>
         <div className="modal" style={{ maxWidth: 380 }}>
           <div className="modal-header">
             <h3>Konfirmasi</h3>
@@ -50,7 +51,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             </button>
           </div>
         </div>
-      </div>
+      </ModalOverlay>
     </ConfirmContext.Provider>
   );
 }

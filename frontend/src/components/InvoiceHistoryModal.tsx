@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { INVOICE_LOG_ACTION_META, LOG_ROLE_LABEL } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { InvoiceLog } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 
 interface Props {
   open: boolean;
@@ -29,7 +30,7 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
   if (!open) return null;
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal">
         <div className="modal-header">
           <h3>Riwayat Invoice</h3>
@@ -81,6 +82,6 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
           <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose}>Tutup</button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

@@ -15,6 +15,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -178,7 +179,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>{isEdit ? "Form Booking Ruang Meeting" : "Detail Booking Ruang Meeting"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
@@ -364,6 +365,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { RejectTarget } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 export type RejectType =
@@ -102,7 +103,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
           <h3>Reject Data</h3>
@@ -148,6 +149,6 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

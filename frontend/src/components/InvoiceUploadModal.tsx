@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
+import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -80,7 +81,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
   }
 
   return (
-    <div className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
           <h3>Input Invoice</h3>
@@ -132,6 +133,6 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

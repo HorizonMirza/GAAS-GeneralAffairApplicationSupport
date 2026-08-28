@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
@@ -90,7 +91,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
   }
 
   return (
-    <div className="modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
           <h3>Ubah Ruang/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
@@ -193,6 +194,6 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }
