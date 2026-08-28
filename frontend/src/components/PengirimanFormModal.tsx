@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { todayLocalDate } from "@/lib/format";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, PengirimanCreatePayload } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -36,6 +37,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
   const [error, setError] = useState("");
   const [nomorTransmittal, setNomorTransmittal] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, open);
 
   useEffect(() => {
     if (open) {
@@ -83,7 +86,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
           <h3>Form Data Barang {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nomor-transmittal">Nomor Transmittal</label>

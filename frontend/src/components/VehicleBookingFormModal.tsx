@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -39,6 +40,8 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const [error, setError] = useState("");
   const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, open);
 
   const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
@@ -111,7 +114,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
           <h3>Form Booking Kendaraan {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="fk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>

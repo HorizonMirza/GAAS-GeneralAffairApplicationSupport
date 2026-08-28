@@ -20,10 +20,9 @@ export function greetingName(me: Me): string {
 
 export function greetingTimeWord(): string {
   const hour = new Date().getHours();
-  if (hour >= 4 && hour < 11) return "Good Morning";
-  if (hour >= 11 && hour < 15) return "Good Afternoon";
-  if (hour >= 15 && hour < 18) return "Good Evening";
-  return "Good Night";
+  if (hour < 12) return "Good Morning";
+  if (hour < 18) return "Good Afternoon";
+  return "Good Evening";
 }
 
 export function trackWord(departemen: string | null | undefined): "Departemen" | "Divisi" {

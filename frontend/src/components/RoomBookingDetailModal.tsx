@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
@@ -13,6 +13,7 @@ import {
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -56,6 +57,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const [bulkShift, setBulkShift] = useState(7);
   const [bulkBusy, setBulkBusy] = useState(false);
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
   useEffect(() => {
     if (!open || !item) return;
@@ -181,7 +184,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           <h3>{isEdit ? "Form Booking Ruang Meeting" : "Detail Booking Ruang Meeting"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleUpdateSubmit}>
+        <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="bv-nomor-pemesanan">Nomor Pesanan Ruangan</label>

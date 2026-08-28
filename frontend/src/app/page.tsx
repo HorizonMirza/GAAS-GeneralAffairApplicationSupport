@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { focusNextFieldOnEnter } from "@/lib/formNav";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">
               <label htmlFor="username">Username</label>
               <input

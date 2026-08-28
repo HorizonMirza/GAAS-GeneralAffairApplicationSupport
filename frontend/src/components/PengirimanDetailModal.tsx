@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
@@ -45,6 +46,8 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const [kTotal, setKTotal] = useState("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
   useEffect(() => {
     if (!open || !item) return;
@@ -193,7 +196,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleUpdateSubmit}>
+        <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>

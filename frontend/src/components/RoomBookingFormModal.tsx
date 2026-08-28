@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -47,6 +48,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const [error, setError] = useState("");
   const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, open);
 
   const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
@@ -138,7 +141,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           <h3>Form Booking Ruang Meeting {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nomor-pemesanan">Nomor Pesanan Ruangan</label>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ROLE_LABEL } from "@/lib/constants";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 
 function PasswordField({
@@ -54,6 +55,8 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, me?.username);
 
   if (!me) return null;
 
@@ -95,7 +98,7 @@ export default function ProfilePage() {
 
       <div className="card">
         <div className="card-header"><h3>Ubah Password</h3></div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <PasswordField id="current-password" label="Password Saat Ini" placeholder="Min. 8 Karakter" value={currentPassword} onChange={setCurrentPassword} />
           <PasswordField id="new-password" label="Password Baru" placeholder="Min. 8 Karakter" minLength={8} value={newPassword} onChange={setNewPassword} />
           <PasswordField id="confirm-password" label="Konfirmasi Password Baru" placeholder="Ulangi Password Baru" minLength={8} value={confirmPassword} onChange={setConfirmPassword} />

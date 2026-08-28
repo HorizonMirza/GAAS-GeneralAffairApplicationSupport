@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -40,6 +41,8 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}`);
 
   useEffect(() => {
     if (!open || !item) return;
@@ -93,7 +96,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
           <h3>Ubah Ruang/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan</label>

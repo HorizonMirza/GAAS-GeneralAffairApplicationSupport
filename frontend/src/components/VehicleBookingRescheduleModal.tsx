@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
 import { useToast } from "./ui/ToastProvider";
 
@@ -32,6 +33,8 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}`);
 
   useEffect(() => {
     if (!open || !item) return;
@@ -81,7 +84,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
           <h3>Ubah Kendaraan/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>
