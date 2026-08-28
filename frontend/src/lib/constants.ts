@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, Me, Pengiriman, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, Me, Pengiriman, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -341,4 +341,36 @@ export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolea
 
 export function isKendaraanGaActionable(item: BookingKendaraan): boolean {
   return item.status === "APPROVED_L1";
+}
+
+// --- Office Supplies / Permintaan ATK (pola yang sama dengan Booking di atas) ---
+
+export function atkOriginActorLabel(item: PermintaanAtk): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
+}
+
+// Same rule as isBookingEditableByOrigin - mirrors the backend's
+// PermintaanAtkController.IsEditableByOrigin exactly.
+export function isAtkEditableByOrigin(item: PermintaanAtk, me: Me): boolean {
+  return item.status === "DRAFT" && item.createdBy === me.id;
+}
+
+// Same rule as isBookingDeletableByOrigin - mirrors the backend's
+// PermintaanAtkController.IsDeletableByOrigin exactly.
+export function isAtkDeletableByOrigin(item: PermintaanAtk, me: Me): boolean {
+  if (isAtkEditableByOrigin(item, me)) return true;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+export function isAtkGaActionable(item: PermintaanAtk): boolean {
+  return item.status === "APPROVED_L1";
+}
+
+// Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".
+export function atkItemsSummary(item: PermintaanAtk): string {
+  return item.items.map((i) => `${i.namaBarang} (${i.jumlah} ${i.satuan})`).join(", ");
 }

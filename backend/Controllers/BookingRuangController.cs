@@ -10,7 +10,10 @@ namespace PengirimanApi.Controllers;
 [Route("api/booking-ruang")]
 public class BookingRuangController : ApiControllerBase
 {
-    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
+    // 1000 is the sentinel "unbounded" value for Overview's recent-bookings list (see
+    // PengirimanController for the full rationale) - 5/10/20/50 stay for the paginated
+    // Transaksi table's page-size dropdown.
+    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50, 1000 };
     private const int MaxOccurrencesPerSeries = 52;
     // Flat cap across every room, not per-room capacity - matches how the business actually
     // wants this enforced (business rule, not a per-room physical limit).

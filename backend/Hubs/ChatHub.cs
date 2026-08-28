@@ -86,7 +86,24 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, KendaraanGroup(bookingKendaraanId));
     }
 
+    // Same as JoinKendaraanChat, but for Office Supplies (Permintaan ATK) - also excludes KPU,
+    // matching PermintaanAtkChatController.List/Send.
+    public async Task JoinAtkChat(int permintaanAtkId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null || user.Role == RoleEnum.KPU) return;
+        var item = await _db.PermintaanAtks.FindAsync(permintaanAtkId);
+        if (item == null || !ApiControllerBase.CanAccessPermintaanAtk(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, AtkGroup(permintaanAtkId));
+    }
+
+    public async Task LeaveAtkChat(int permintaanAtkId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, AtkGroup(permintaanAtkId));
+    }
+
     public static string PengirimanGroup(int pengirimanId) => $"pengiriman-chat-{pengirimanId}";
     public static string BookingGroup(int bookingRuangId) => $"booking-chat-{bookingRuangId}";
     public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
+    public static string AtkGroup(int permintaanAtkId) => $"atk-chat-{permintaanAtkId}";
 }

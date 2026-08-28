@@ -62,12 +62,12 @@ export default function OverviewPage() {
     setBusy(true);
     try {
       const bulan = currentYearMonth();
-      // The queue shows latest-and-upcoming data, not just this month - so it uses sejakBulan
-      // (from the 1st of this month onward, no upper bound) instead of the exact-match bulan
-      // filter, keeping next month's items visible while still hiding past months. Stats stay
-      // scoped to bulan (this month only) since those tiles report the current month's workload.
+      // Not capped to a small page size - shows every transaction for the current bulan, so the
+      // list can grow as large as the month's actual volume. bulan (not sejakBulan) scopes it
+      // strictly to the current calendar month, so it resets on its own once the month rolls
+      // over, matching the stats tiles below.
       const [queue, statsResp] = await Promise.all([
-        api.listPengiriman({ limit: 10, page: 1, sejakBulan: bulan }).then((r) => r.items),
+        api.listPengiriman({ limit: 1000, page: 1, bulan }).then((r) => r.items),
         api.getPengirimanStats(bulan),
       ]);
       const counts = statsResp.countsByStatus;

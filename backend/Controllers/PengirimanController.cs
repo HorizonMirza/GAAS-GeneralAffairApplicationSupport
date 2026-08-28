@@ -11,7 +11,12 @@ namespace PengirimanApi.Controllers;
 [Route("api/pengiriman")]
 public class PengirimanController : ApiControllerBase
 {
-    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50 };
+    // 1000 is the sentinel "unbounded" value: Overview pages' recent-transactions list is no
+    // longer capped at a small page size - it fetches everything for the current bulan (which
+    // naturally resets the list every month), so it needs a limit far past what anyone would
+    // realistically submit in a single month. 5/10/20/50 stay for the real paginated Transaksi
+    // table's page-size dropdown.
+    private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50, 1000 };
 
     // Admin/Approval Departemen and Admin/Approval Divisi input on behalf of their own unit;
     // Admin/Approval GA input on behalf of Asset Management and General Affair (see

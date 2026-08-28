@@ -1,87 +1,56 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
+  atkItemsSummary,
+  isAtkDeletableByOrigin,
+  isAtkEditableByOrigin,
   isBookingOriginRole,
-  isKendaraanDeletableByOrigin,
-  isKendaraanEditableByOrigin,
-  canGaRescheduleKendaraan,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
+import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingKendaraan, VehicleOption } from "@/lib/types";
+import type { BookingStatus, PermintaanAtk } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
-import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
-import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
-import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
+import AtkFormModal from "@/components/AtkFormModal";
+import AtkDetailModal from "@/components/AtkDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
-import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
+import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
+import AtkChatModal from "@/components/AtkChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 
-// Vehicle Booking buka 07:00-18:00 (lihat OperatingStart/OperatingEnd di
-// BookingKendaraanController). "Penuh" hanya berarti benar-benar penuh sepanjang jam operasional -
-// dihitung dari booking yang statusnya sudah APPROVED_GA_APPROVAL (final) memakai menit asli
-// (bukan dibulatkan ke blok jam), sama seperti Room Booking's isRoomFullyBookedToday.
-const OPEN_MIN = 7 * 60;
-const CLOSE_MIN = 18 * 60;
-
-function toMinutes(hhmm: string): number {
-  return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+interface Stats {
+  waitingL1: number;
+  waitingGa: number;
+  waitingGaApproval: number;
+  approved: number;
 }
 
-function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKendaraan[]): boolean {
-  const intervals: [number, number][] = [];
-  for (const entry of todayEntries) {
-    if (entry.status !== "APPROVED_GA_APPROVAL") continue;
-    if (entry.namaKendaraan !== vehicleName) continue;
-    if (entry.isWholeDay) {
-      intervals.push([OPEN_MIN, CLOSE_MIN]);
-      continue;
-    }
-    if (!entry.jamMulai || !entry.jamSelesai) continue;
-    const start = Math.max(OPEN_MIN, toMinutes(entry.jamMulai));
-    const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
-    if (end > start) intervals.push([start, end]);
-  }
-  intervals.sort((a, b) => a[0] - b[0]);
-  let coveredUntil = OPEN_MIN;
-  for (const [start, end] of intervals) {
-    if (start > coveredUntil) return false; // ada celah kosong sebelum interval ini
-    coveredUntil = Math.max(coveredUntil, end);
-  }
-  return coveredUntil >= CLOSE_MIN;
-}
-
-export default function VehicleBookingOverviewPage() {
+export default function OfficeSuppliesOverviewPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [items, setItems] = useState<BookingKendaraan[]>([]);
-  const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
-  const [todayEntries, setTodayEntries] = useState<BookingKendaraan[]>([]);
+  const [items, setItems] = useState<PermintaanAtk[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [busy, setBusy] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
-  const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
-  const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
-  const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
+  const [chatItem, setChatItem] = useState<PermintaanAtk | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
 
   const rowMenu = useRowMenu(items);
@@ -97,10 +66,22 @@ export default function VehicleBookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      // Not capped to a small page size - shows every booking for the current bulan, which
+      const bulan = currentYearMonth();
+      // Not capped to a small page size - shows every request for the current bulan, which
       // resets the list on its own once the month rolls over.
-      const queue = await api.listKendaraanBooking({ limit: 1000, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
+      const [queue, statsResp] = await Promise.all([
+        api.listAtk({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.getAtkStats(bulan),
+      ]);
+      const counts = statsResp.countsByStatus;
+      const count = (status: BookingStatus) => counts[status] ?? 0;
       setItems(queue);
+      setStats({
+        waitingL1: count("SUBMITTED"),
+        waitingGa: count("APPROVED_L1"),
+        waitingGaApproval: count("APPROVED_GA"),
+        approved: count("APPROVED_GA_APPROVAL"),
+      });
     } finally {
       setBusy(false);
     }
@@ -110,16 +91,6 @@ export default function VehicleBookingOverviewPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
-
-  useEffect(() => {
-    api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
-  }, []);
-
-  useEffect(() => {
-    // Drives the available/penuh strip on each vehicle card below - fetched once on mount, same
-    // as vehicles above, since "today" doesn't change without a page reload.
-    api.getKendaraanSchedule(todayLocalDate()).then(setTodayEntries).catch(() => setTodayEntries([]));
-  }, []);
 
   const filteredItems = useMemo(() => {
     if (statusFilter === "ALL") return items;
@@ -131,11 +102,18 @@ export default function VehicleBookingOverviewPage() {
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
-  function handleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+  const waitingL1Label =
+    me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
+      ? "Approval Departemen"
+      : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
+      ? "Approval Divisi"
+      : "Approval Departemen/Divisi";
+
+  function handleDelete(item: PermintaanAtk) {
+    confirm("Hapus permintaan ATK ini secara permanen?", async () => {
       try {
-        await api.deleteKendaraanBooking(item.id);
-        showToast("Booking berhasil dihapus");
+        await api.deleteAtk(item.id);
+        showToast("Permintaan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -149,41 +127,24 @@ export default function VehicleBookingOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Booking Kendaraan
+            + Permintaan ATK
           </button>
         )}
       </div>
 
-      {vehicles.length > 0 && (
-        <div className="room-grid">
-          {vehicles.map((v) => {
-            const availability: "available" | "full" = isVehicleFullyBookedToday(v.nama, todayEntries) ? "full" : "available";
-            const availLabel = availability === "full" ? "Penuh" : "Tersedia";
-            const availTitle = availability === "full" ? "Penuh hari ini" : "Tersedia hari ini";
-            return (
-              <Link
-                key={v.nama}
-                href={`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(v.nama)}`}
-                className={`room-card room-card-${availability}`}
-                title={availTitle}
-              >
-                <span className="room-card-avail-badge">{availLabel}</span>
-                <div className="room-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2"></path><path d="M9 17h6"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>
-                </div>
-                <div className="room-card-body">
-                  <h4>{v.nama}</h4>
-                </div>
-              </Link>
-            );
-          })}
+      {stats && (
+        <div className="stat-grid">
+          <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
-          <select id="overview-kendaraan-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+          <select id="overview-atk-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
             <option value="ALL">Semua Status</option>
             <option value="DRAFT">Draft</option>
             <option value="ON_APPROVAL">On-Approval</option>
@@ -209,9 +170,9 @@ export default function VehicleBookingOverviewPage() {
             >
               <div className="card-header">
                 <div className="card-header-title">
-                  <strong>{item.keperluan} - {item.nomorPemesanan || "-"}</strong>
+                  <strong>{item.keperluan} - {item.nomorPermintaan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi}
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {truncateText(atkItemsSummary(item), 60)}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -245,11 +206,8 @@ export default function VehicleBookingOverviewPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={
-          !!rowMenu.menuItem &&
-          ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
-        }
-        canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isAtkDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -258,9 +216,7 @@ export default function VehicleBookingOverviewPage() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (!item) return;
-          if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
-          else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
+          if (item && isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -275,11 +231,11 @@ export default function VehicleBookingOverviewPage() {
       />
 
       {me && (
-        <VehicleBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
+        <AtkFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
       )}
 
       {me && (
-        <VehicleBookingDetailModal
+        <AtkDetailModal
           open={!!detail}
           mode={detail?.mode || "view"}
           item={detail?.item || null}
@@ -289,13 +245,6 @@ export default function VehicleBookingOverviewPage() {
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
-
-      <VehicleBookingRescheduleModal
-        open={!!rescheduleTarget}
-        item={rescheduleTarget}
-        onClose={() => setRescheduleTarget(null)}
-        onSaved={load}
-      />
 
       <RejectModal
         open={!!rejectTarget}
@@ -309,13 +258,13 @@ export default function VehicleBookingOverviewPage() {
         }}
       />
 
-      <VehicleBookingStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
+      <AtkStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
 
       {me && (
-        <VehicleBookingChatModal
+        <AtkChatModal
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
-          itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.namaKendaraan} - ${chatItem.nomorPemesanan || "-"}` : ""}
+          itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.nomorPermintaan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}

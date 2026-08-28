@@ -25,6 +25,11 @@ import type {
   PengirimanListResponse,
   PengirimanLog,
   PengirimanStatsResponse,
+  PermintaanAtk,
+  PermintaanAtkCreatePayload,
+  PermintaanAtkListResponse,
+  PermintaanAtkLog,
+  PermintaanAtkStatsResponse,
   RejectTarget,
   RoomOption,
   Status,
@@ -390,7 +395,59 @@ export const api = {
   getKendaraanChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-kendaraan/${id}/chat`),
   sendKendaraanChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
+
+  nextAtkNomor: (tanggal: string) =>
+    apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal } }),
+  listAtk: (params: ListAtkParams) =>
+    apiRequest<PermintaanAtkListResponse>("/permintaan-atk", { params: atkListParams(params) }),
+  getAtkStats: (bulan: string) =>
+    apiRequest<PermintaanAtkStatsResponse>("/permintaan-atk/stats", { params: { bulan } }),
+  createAtk: (payload: PermintaanAtkCreatePayload) =>
+    apiRequest<PermintaanAtk>("/permintaan-atk", { method: "POST", body: payload }),
+  updateAtk: (id: number, payload: PermintaanAtkCreatePayload) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`, { method: "PUT", body: payload }),
+  deleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}`, { method: "DELETE" }),
+  superAdminDeleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}/super-admin`, { method: "DELETE" }),
+  submitAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/submit`, { method: "PATCH" }),
+  approveAtkL1: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-l1`, { method: "PATCH" }),
+  rejectAtkL1: (id: number, reason: string | null) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveAtkGa: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga`, { method: "PATCH" }),
+  rejectAtkGa: (id: number, reason: string | null) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveAtkGaApproval: (id: number) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga-approval`, { method: "PATCH" }),
+  rejectAtkGaApproval: (id: number, reason: string | null) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  getAtkLogs: (id: number) => apiRequest<PermintaanAtkLog[]>(`/permintaan-atk/${id}/logs`),
+  getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),
+  sendAtkChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/permintaan-atk/${id}/chat`, { method: "POST", body: { message } }),
 };
+
+export interface ListAtkParams {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus | "REJECTED" | "";
+  divisi?: string;
+  departemen?: string;
+  direktorat?: string;
+  bulan?: string;
+  search?: string;
+}
+
+function atkListParams(p: ListAtkParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    status: p.status,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    direktorat: p.direktorat,
+    bulan: p.bulan,
+    search: p.search,
+  };
+}
 
 export interface ListBookingParams {
   page?: number;

@@ -334,6 +334,74 @@ export interface BookingRuangActionResult {
   detail: string | null;
 }
 
+// --- Office Supplies (Permintaan ATK) ---
+// Alur approval-nya memakai BookingStatus (berakhir di APPROVED_GA_APPROVAL, tanpa tahap KPU).
+
+export interface PermintaanAtkItem {
+  id: number;
+  namaBarang: string;
+  jumlah: number;
+  satuan: string;
+}
+
+export interface PermintaanAtk {
+  id: number;
+  nomorPermintaan: string | null;
+  tanggal: string;
+  keperluan: string;
+  catatan: string | null;
+  items: PermintaanAtkItem[];
+  divisi: string;
+  departemen: string | null;
+  status: BookingStatus;
+  rejectReason: string | null;
+  createdBy: number;
+  createdByRole: Role;
+  approvedByL1: number | null;
+  approvedByGa: number | null;
+  approvedByApprovalGa: number | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedL1At: string | null;
+  approvedGaAt: string | null;
+  approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
+  hasUnreadMention: boolean;
+}
+
+export interface PermintaanAtkListResponse {
+  items: PermintaanAtk[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface PermintaanAtkStatsResponse {
+  countsByStatus: Partial<Record<BookingStatus, number>>;
+}
+
+export interface PermintaanAtkLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface PermintaanAtkItemPayload {
+  namaBarang: string;
+  jumlah: number;
+  satuan: string;
+}
+
+export interface PermintaanAtkCreatePayload {
+  tanggal: string;
+  keperluan: string;
+  catatan: string | null;
+  items: PermintaanAtkItemPayload[];
+}
+
 export interface VehicleOption {
   nama: string;
   platNomor: string;

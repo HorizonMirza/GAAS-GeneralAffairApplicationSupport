@@ -106,8 +106,9 @@ export default function BookingOverviewPage() {
     try {
       // Resets every month - bulan (not sejakBulan) scopes strictly to the current calendar
       // month, so this list naturally clears out as soon as a new month starts instead of
-      // accumulating forever. 50 is the highest limit the API accepts (AllowedLimits).
-      const queue = await api.listBooking({ limit: 50, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
+      // accumulating forever. Not capped to a small page size otherwise - shows every booking
+      // for the month.
+      const queue = await api.listBooking({ limit: 1000, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
     } finally {
       setBusy(false);

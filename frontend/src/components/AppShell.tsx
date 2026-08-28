@@ -79,7 +79,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: RUMAH_ICON,
     label: "Office Supplies",
     items: [
-      { label: "Dashboard", href: "/rumah-tangga" },
+      { label: "Overview", href: "/office-supplies/overview" },
+      { label: "Transaction", href: "/office-supplies/transaksi" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

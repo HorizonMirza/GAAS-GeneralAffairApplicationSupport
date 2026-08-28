@@ -27,6 +27,12 @@ public class AppDbContext : DbContext
     public DbSet<BookingKendaraanChatMessage> BookingKendaraanChatMessages => Set<BookingKendaraanChatMessage>();
     public DbSet<BookingKendaraanChatRead> BookingKendaraanChatReads => Set<BookingKendaraanChatRead>();
     public DbSet<KendaraanBookingCounter> KendaraanBookingCounters => Set<KendaraanBookingCounter>();
+    public DbSet<PermintaanAtk> PermintaanAtks => Set<PermintaanAtk>();
+    public DbSet<PermintaanAtkItem> PermintaanAtkItems => Set<PermintaanAtkItem>();
+    public DbSet<PermintaanAtkLog> PermintaanAtkLogs => Set<PermintaanAtkLog>();
+    public DbSet<PermintaanAtkChatMessage> PermintaanAtkChatMessages => Set<PermintaanAtkChatMessage>();
+    public DbSet<PermintaanAtkChatRead> PermintaanAtkChatReads => Set<PermintaanAtkChatRead>();
+    public DbSet<AtkCounter> AtkCounters => Set<AtkCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -83,6 +89,19 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<BookingKendaraanChatMessage>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PermintaanAtk>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+            if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PermintaanAtkLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PermintaanAtkChatMessage>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -516,6 +535,135 @@ public class AppDbContext : DbContext
             e.HasOne(r => r.BookingKendaraan)
                 .WithMany()
                 .HasForeignKey(r => r.BookingKendaraanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PermintaanAtk>(e =>
+        {
+            e.ToTable("permintaan_atk");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.NomorPermintaan).HasColumnName("nomor_permintaan").HasMaxLength(50);
+            e.Property(p => p.Tanggal).HasColumnName("tanggal");
+            e.Property(p => p.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Catatan).HasColumnName("catatan");
+
+            e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
+
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.RejectReason).HasColumnName("reject_reason");
+
+            e.Property(p => p.CreatedBy).HasColumnName("created_by");
+            e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.ApprovedByL1).HasColumnName("approved_by_l1");
+            e.Property(p => p.ApprovedByGa).HasColumnName("approved_by_ga");
+            e.Property(p => p.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
+
+            e.Property(p => p.CreatedAt).HasColumnName("created_at");
+            e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+            e.Property(p => p.ApprovedL1At).HasColumnName("approved_l1_at");
+            e.Property(p => p.ApprovedGaAt).HasColumnName("approved_ga_at");
+            e.Property(p => p.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+
+            e.HasOne(p => p.Pembuat)
+                .WithMany()
+                .HasForeignKey(p => p.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(p => p.Status).HasDatabaseName("ix_permintaan_atk_status");
+            e.HasIndex(p => p.Divisi).HasDatabaseName("ix_permintaan_atk_divisi");
+            e.HasIndex(p => p.Departemen).HasDatabaseName("ix_permintaan_atk_departemen");
+            e.HasIndex(p => p.Tanggal).HasDatabaseName("ix_permintaan_atk_tanggal");
+        });
+
+        modelBuilder.Entity<PermintaanAtkItem>(e =>
+        {
+            e.ToTable("permintaan_atk_items");
+            e.HasKey(i => i.Id);
+            e.Property(i => i.Id).HasColumnName("id");
+            e.Property(i => i.PermintaanAtkId).HasColumnName("permintaan_atk_id");
+            e.Property(i => i.NamaBarang).HasColumnName("nama_barang").HasMaxLength(255).IsRequired();
+            e.Property(i => i.Jumlah).HasColumnName("jumlah");
+            e.Property(i => i.Satuan).HasColumnName("satuan").HasMaxLength(50).IsRequired();
+
+            e.HasOne(i => i.PermintaanAtk)
+                .WithMany(p => p.Items)
+                .HasForeignKey(i => i.PermintaanAtkId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PermintaanAtkLog>(e =>
+        {
+            e.ToTable("permintaan_atk_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.PermintaanAtkId).HasColumnName("permintaan_atk_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.PermintaanAtk)
+                .WithMany(p => p.Logs)
+                .HasForeignKey(l => l.PermintaanAtkId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AtkCounter>(e =>
+        {
+            e.ToTable("atk_counters");
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
+            e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
+            e.Property(c => c.LastSequence).HasColumnName("last_sequence");
+        });
+
+        modelBuilder.Entity<PermintaanAtkChatMessage>(e =>
+        {
+            e.ToTable("permintaan_atk_chat_messages");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.PermintaanAtkId).HasColumnName("permintaan_atk_id");
+            e.Property(m => m.SenderId).HasColumnName("sender_id");
+            e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(m => m.PermintaanAtk)
+                .WithMany()
+                .HasForeignKey(m => m.PermintaanAtkId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PermintaanAtkChatRead>(e =>
+        {
+            e.ToTable("permintaan_atk_chat_reads");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.PermintaanAtkId).HasColumnName("permintaan_atk_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.LastReadAt).HasColumnName("last_read_at");
+            e.HasIndex(r => new { r.PermintaanAtkId, r.UserId }).IsUnique();
+
+            e.HasOne(r => r.PermintaanAtk)
+                .WithMany()
+                .HasForeignKey(r => r.PermintaanAtkId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasOne(r => r.User)
