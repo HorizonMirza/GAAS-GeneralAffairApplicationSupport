@@ -4,7 +4,7 @@ Ringkasan pengetahuan/stack yang perlu dipahami untuk berkontribusi ke proyek in
 
 ## Stack yang Dipakai
 
-- **Backend**: C# / ASP.NET Core 8 Web API, Entity Framework Core (provider Npgsql/PostgreSQL), JWT (`System.IdentityModel.Tokens.Jwt`), BCrypt untuk hash password, ClosedXML (Excel) & QuestPDF (PDF) untuk export.
+- **Backend**: C# / ASP.NET Core 8 Web API, Entity Framework Core (provider Npgsql/PostgreSQL), JWT (`System.IdentityModel.Tokens.Jwt`), BCrypt untuk hash password, ClosedXML (Excel) & QuestPDF (PDF) untuk export, SignalR untuk chat real-time (`ChatHub`, lihat `ARCHITECTURE.md`).
 - **Frontend**: TypeScript, Next.js (App Router, bukan Pages Router — lihat catatan breaking-changes di `frontend/AGENTS.md`), React 19, tanpa CSS framework (CSS global + class utility custom).
 - **Database**: PostgreSQL, tanpa ORM migration tool — skema dikelola manual lewat `AppDbContext` + `DbSeeder`, direset via `dotnet run -- resetdb`.
 - **Verifikasi**: Playwright (headless Chromium) untuk smoke-test UI setelah perubahan, `dotnet build`/`tsc --noEmit` untuk cek kompilasi sebelum dianggap selesai.
@@ -19,6 +19,8 @@ Ringkasan pengetahuan/stack yang perlu dipahami untuk berkontribusi ke proyek in
 - **Reject reason opsional**: alasan penolakan tidak wajib diisi di seluruh alur — jangan tambahkan validasi wajib tanpa diminta.
 - **Bahasa UI**: label & pesan yang tampil ke pengguna pakai Bahasa Indonesia, kecuali nama modul yang sudah sengaja diganti ke Bahasa Inggris ringkas (lihat `Prd.md`).
 - **Tidak ada 2-baris di label sidebar/menu** — pilih istilah singkat, karena `.nav-category-trigger` sengaja tidak dipotong dengan ellipsis.
+- **Modul transaksional baru (approval berjenjang)**: jangan desain dari nol — Room Booking, Vehicle Booking, Office Supplies, dan Maintenance semuanya memakai pola & `BookingStatusEnum` yang sama (lihat "Pola Modul Transaksional" di `ARCHITECTURE.md`). Contek controller/model/DTO/frontend modul yang paling mirip kebutuhan modul barunya, lalu sesuaikan field-nya saja.
+- **Modul tanpa approval** (seperti Archive): jangan paksakan pola `BookingStatusEnum`/chat/log kalau memang tidak ada alur approval-nya — lihat Archive sebagai contoh modul "penyimpanan langsung" tanpa status sama sekali.
 
 ## Alur Kerja Kontribusi
 

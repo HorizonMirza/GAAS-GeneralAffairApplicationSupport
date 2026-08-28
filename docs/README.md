@@ -1,6 +1,6 @@
-# PGM Solution — Sistem Pendataan Pengiriman Barang Kantor
+# PGM Solution
 
-Aplikasi internal untuk mencatat, memverifikasi, dan menyetujui pengiriman barang kantor (ekspedisi), dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → KPU).
+Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (penyimpanan dokumen) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah KPU khusus di Expedition). Detail per modul di [`Prd.md`](./Prd.md).
 
 ## Arsitektur
 
@@ -16,9 +16,9 @@ Detail lebih dalam ada di [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 ## Struktur Proyek
 
 ```
-backend/    ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services)
+backend/    ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
 frontend/   Next.js app (src/app, src/components, src/lib)
-database/   schema.sql referensi struktur tabel PostgreSQL
+database/   dump referensi struktur tabel PostgreSQL (lihat catatan di ARCHITECTURE.md - sudah usang, bukan sumber kebenaran)
 docs/       dokumentasi proyek (file ini dan lainnya)
 ```
 
@@ -60,6 +60,8 @@ DRAFT -> SUBMITTED
 ```
 
 Reject di tiap tahap mengembalikan dokumen ke pihak sebelumnya untuk direvisi lalu resubmit.
+
+Modul lain (Room Booking, Vehicle Booking, Office Supplies, Maintenance) pakai alur serupa tapi berhenti di Approval GA (tanpa tahap KPU), dan reject di modul-modul itu adalah jalan buntu (tidak ada revisi-resubmit). Archive tidak punya alur approval sama sekali. Detail lengkap di [`Prd.md`](./Prd.md).
 
 ## Peran (Role)
 
