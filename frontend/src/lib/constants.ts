@@ -15,7 +15,7 @@ export const STATUS_LABEL: Record<Status, string> = {
 };
 
 export function greetingName(me: Me): string {
-  return me.departemen || me.divisi || ROLE_LABEL[me.role] || me.role;
+  return ROLE_LABEL[me.role] || me.role;
 }
 
 export function greetingTimeWord(): string {
