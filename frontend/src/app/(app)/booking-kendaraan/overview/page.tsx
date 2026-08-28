@@ -209,7 +209,7 @@ export default function VehicleBookingOverviewPage() {
                 <div className="card-header-title">
                   <strong>{item.keperluan} - {item.nomorPemesanan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)}
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

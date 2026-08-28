@@ -5,8 +5,8 @@ export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
   SUBMITTED: "On-Approval: Approval Departemen/Divisi",
   REJECTED_L1: "Rejected: Approval Departemen/Divisi",
-  APPROVED_L1: "On-Approval: Admin GA",
-  REJECTED_GA: "Rejected: Admin GA",
+  APPROVED_L1: "On-Approval: Admin General Affair",
+  REJECTED_GA: "Rejected: Admin General Affair",
   APPROVED_GA: "On-Approval: Approval GA",
   REJECTED_GA_APPROVAL: "Rejected: Approval GA",
   APPROVED_GA_APPROVAL: "On-Approval: KPU",
@@ -33,9 +33,9 @@ export function chatParticipantLabels(departemen: string | null | undefined, cre
   // Admin/Approval GA-input items skip the Departemen/Divisi tier entirely (see
   // originActorLabel), so those roles were never actually part of this item's flow and
   // shouldn't be listed as chat participants either.
-  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin GA", "Approval GA", "KPU"];
+  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin General Affair", "Approval GA", "KPU"];
   const track = trackWord(departemen);
-  return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA", "KPU"];
+  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA", "KPU"];
 }
 
 // Room booking's approval chain stops at Approval GA (no KPU stage), so it has its own,
@@ -43,9 +43,9 @@ export function chatParticipantLabels(departemen: string | null | undefined, cre
 // submit (see bookingOriginActorLabel), so those roles were never actually part of this item's
 // flow and shouldn't be listed as chat participants either.
 export function bookingChatParticipantLabels(departemen: string | null | undefined, createdByRole?: Role | null): string[] {
-  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin GA", "Approval GA"];
+  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin General Affair", "Approval GA"];
   const track = trackWord(departemen);
-  return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA"];
+  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA"];
 }
 
 export const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
@@ -76,14 +76,14 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
-// Short form matching the chat participant list wording ("Admin GA" not "Admin General
+// Short form matching the chat participant list wording ("Approval GA" not "Approval General
 // Affair"), used for the sender pill on chat bubbles.
 export const ROLE_SHORT_LABEL: Record<Role, string> = {
   ADMIN_DEPARTEMEN: "Admin Departemen",
   APPROVAL_DEPARTEMEN: "Approval Departemen",
   ADMIN_DIVISI: "Admin Divisi",
   APPROVAL_DIVISI: "Approval Divisi",
-  ADMIN_GA: "Admin GA",
+  ADMIN_GA: "Admin General Affair",
   APPROVAL_GA: "Approval GA",
   KPU: "KPU",
   SUPER_ADMIN: "Super Admin",
@@ -105,7 +105,7 @@ export const ROLE_COLOR: Record<Role, string> = {
 // Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya, bukan
 // selalu "Admin". Dipakai baik untuk badge "Waiting" maupun untuk label pilihan target reject.
 export function originActorLabel(item: Pengiriman): string {
-  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
   if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
@@ -113,7 +113,7 @@ export function originActorLabel(item: Pengiriman): string {
 
 export function getWaitingLabel(item: Pengiriman): string | undefined {
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${originActorLabel(item)}`;
+    return item.rejectTarget === "GA" ? "Waiting: Admin General Affair" : `Waiting: ${originActorLabel(item)}`;
   }
   if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
     return `Waiting: ${originActorLabel(item)}`;
@@ -127,8 +127,8 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   SUBMITTED: { label: "Dikirim untuk Approval", type: "neutral" },
   APPROVED_L1: { label: "Disetujui Approval Departemen/Divisi", type: "approve" },
   REJECTED_L1: { label: "Ditolak Approval Departemen/Divisi", type: "reject" },
-  APPROVED_GA: { label: "Disetujui Admin GA", type: "approve" },
-  REJECTED_GA: { label: "Ditolak Admin GA", type: "reject" },
+  APPROVED_GA: { label: "Disetujui Admin General Affair", type: "approve" },
+  REJECTED_GA: { label: "Ditolak Admin General Affair", type: "reject" },
   APPROVED_GA_APPROVAL: { label: "Disetujui Approval GA", type: "approve" },
   REJECTED_GA_APPROVAL: { label: "Ditolak Approval GA", type: "reject" },
   APPROVED_KPU: { label: "Disetujui KPU & Resi Diterbitkan", type: "approve" },
@@ -209,8 +209,8 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   DRAFT: "Draft",
   SUBMITTED: "On-Approval: Approval Departemen/Divisi",
   REJECTED_L1: "Rejected: Approval Departemen/Divisi",
-  APPROVED_L1: "On-Approval: Admin GA",
-  REJECTED_GA: "Rejected: Admin GA",
+  APPROVED_L1: "On-Approval: Admin General Affair",
+  REJECTED_GA: "Rejected: Admin General Affair",
   APPROVED_GA: "On-Approval: Approval GA",
   REJECTED_GA_APPROVAL: "Rejected: Approval GA",
   APPROVED_GA_APPROVAL: "Approved",
@@ -233,7 +233,7 @@ export function getBookingStatusLabel(status: BookingStatus, departemen: string 
 }
 
 export function bookingOriginActorLabel(item: BookingRuang): string {
-  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
   if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
@@ -309,7 +309,7 @@ export function bookingRecurrenceLabel(item: BookingRuang): string | null {
 }
 
 export function kendaraanOriginActorLabel(item: BookingKendaraan): string {
-  if (item.createdByRole === "ADMIN_GA") return "Admin GA";
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
   if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;

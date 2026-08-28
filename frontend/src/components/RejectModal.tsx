@@ -75,10 +75,10 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectGa(targetId, reasonValue);
       } else if (targetType === "ga-approval") {
         await api.rejectGaApproval(targetId, reasonValue, effectiveTarget as RejectTarget);
-        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin General Affair" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "kpu") {
         await api.rejectKpu(targetId, reasonValue, effectiveTarget as RejectTarget);
-        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin GA" : `Data ditolak, dikembalikan ke ${originLabel}`;
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin General Affair" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "booking-l1") {
         await api.rejectBookingL1(targetId, reasonValue);
       } else if (targetType === "booking-ga") {
@@ -115,7 +115,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             <div className="reject-target-options">
               <label className={`reject-target-option ${target === "GA" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="GA" checked={target === "GA"} onChange={() => setTarget("GA")} />
-                <span>Admin GA</span>
+                <span>Admin General Affair</span>
               </label>
               <label className={`reject-target-option ${target === "ORIGIN" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="ORIGIN" checked={target === "ORIGIN"} onChange={() => setTarget("ORIGIN")} />

@@ -8,7 +8,7 @@ function buildSteps(departemen: Pengiriman["departemen"]) {
   return [
     { label: `Admin ${track}` },
     { label: `Approval ${track}` },
-    { label: "Admin GA" },
+    { label: "Admin General Affair" },
     { label: "Approval GA" },
     { label: "KPU" },
   ];
