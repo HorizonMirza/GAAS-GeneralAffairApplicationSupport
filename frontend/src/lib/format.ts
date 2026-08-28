@@ -30,13 +30,13 @@ function parseLocalDate(value: string): Date {
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "-";
   const d = parseLocalDate(value);
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "-";
   const d = parseLocalDate(value);
-  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
   const timePart = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   return `${datePart}, ${timePart}`;
 }
@@ -51,7 +51,7 @@ export function formatTime(value: string | null | undefined): string {
     d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
   const timePart = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   if (isToday) return timePart;
-  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  const datePart = d.toLocaleDateString("id-ID", { day: "2-digit", month: "long" });
   return `${datePart}, ${timePart}`;
 }
 
@@ -59,7 +59,7 @@ export function formatLongDate(date: Date): string {
   return new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   }).format(date);
 }

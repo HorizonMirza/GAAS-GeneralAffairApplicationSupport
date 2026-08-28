@@ -2260,7 +2260,6 @@ table.data-table {
   gap: 8px;
   margin-top: 16px;
   padding-top: 15px;
-  border-top: 2px solid var(--blue-500);
 }
 
 .total-akumulasi-footer .total-akumulasi-label {

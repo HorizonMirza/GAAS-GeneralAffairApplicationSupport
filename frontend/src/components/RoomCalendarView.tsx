@@ -15,7 +15,10 @@ const MAX_VISIBLE_COLS_WEEK = 3;
 // rooms fit side by side), so a slot with several competing bookings gets capped tighter: 1 real
 // block + an overflow chip once there's more than one.
 const MAX_VISIBLE_COLS_AVAIL = 2;
-const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const MONTH_NAMES_SHORT = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 function pad(n: number): string {
