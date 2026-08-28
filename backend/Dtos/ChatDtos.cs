@@ -8,7 +8,6 @@ public record ChatMessageOut(
     string SenderNama,
     RoleEnum SenderRole,
     string Message,
+    bool HasImage,
     DateTime CreatedAt
 );
-
-public record SendChatMessageRequest(string Message);

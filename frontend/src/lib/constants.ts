@@ -178,6 +178,12 @@ export const INVOICE_STATUS_CLASS: Record<string, string> = {
 // cap, which produces an unhelpful "Failed to fetch" instead of a real server error message).
 export const MAX_INVOICE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
+// Matches ChatImageStorage.MaxSizeBytes on the backend - same reasoning as
+// MAX_INVOICE_FILE_SIZE_BYTES above, checked client-side before an oversized chat image attempts
+// to upload.
+export const MAX_CHAT_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+export const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+
 export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
   UPLOADED: { label: "Invoice Disimpan sebagai Draft", type: "neutral" },
   SUBMITTED: { label: "Invoice Dikirim untuk Approval", type: "neutral" },

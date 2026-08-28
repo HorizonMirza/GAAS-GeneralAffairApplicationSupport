@@ -203,6 +203,8 @@ public class AppDbContext : DbContext
             e.Property(m => m.PengirimanId).HasColumnName("pengiriman_id");
             e.Property(m => m.SenderId).HasColumnName("sender_id");
             e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.ImagePath).HasColumnName("image_path");
+            e.Property(m => m.ImageOriginalFilename).HasColumnName("image_original_filename");
             e.Property(m => m.CreatedAt).HasColumnName("created_at");
 
             e.HasOne(m => m.Pengiriman)
@@ -245,6 +247,8 @@ public class AppDbContext : DbContext
             e.Property(m => m.BookingRuangId).HasColumnName("booking_ruang_id");
             e.Property(m => m.SenderId).HasColumnName("sender_id");
             e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.ImagePath).HasColumnName("image_path");
+            e.Property(m => m.ImageOriginalFilename).HasColumnName("image_original_filename");
             e.Property(m => m.CreatedAt).HasColumnName("created_at");
 
             e.HasOne(m => m.BookingRuang)
@@ -490,6 +494,8 @@ public class AppDbContext : DbContext
             e.Property(m => m.BookingKendaraanId).HasColumnName("booking_kendaraan_id");
             e.Property(m => m.SenderId).HasColumnName("sender_id");
             e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.ImagePath).HasColumnName("image_path");
+            e.Property(m => m.ImageOriginalFilename).HasColumnName("image_original_filename");
             e.Property(m => m.CreatedAt).HasColumnName("created_at");
 
             e.HasOne(m => m.BookingKendaraan)
