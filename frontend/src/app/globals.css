@@ -2258,8 +2258,7 @@ table.data-table {
   justify-content: flex-end;
   align-items: baseline;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 15px;
+  margin-top: 6px;
 }
 
 .total-akumulasi-footer .total-akumulasi-label {
