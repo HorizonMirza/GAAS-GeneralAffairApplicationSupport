@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, isL1Actor, originActorLabel } from "@/lib/constants";
+import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
@@ -69,7 +69,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     item.status === "DRAFT" &&
     item.createdBy === me.id &&
     ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role);
-  const canL1Act = !isEdit && isL1Actor(item, me) && L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canKpuAct = !isEdit && me.role === "KPU" && item.status === "APPROVED_GA_APPROVAL";

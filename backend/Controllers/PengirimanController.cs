@@ -174,15 +174,8 @@ public class PengirimanController : ApiControllerBase
         }
         else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
-            // Own Divisi-level items keep exactly the same visibility as before (including own
-            // drafts and rejected-back-for-revision drafts, team-wide). Every child Departemen's
-            // items under this Divisi are visible too now, read-only, for oversight - once
-            // they're out of DRAFT (that Departemen's own team still owns its drafts-in-progress,
-            // and only that Departemen's own Approval account can actually approve/reject it, see
-            // RequireL1ActorAsync - this only widens visibility, not approval authority).
-            query = query.Where(p => p.Divisi == currentUser.Divisi && (
-                (p.Departemen == null && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id || p.RejectReason != null))
-                || (p.Departemen != null && p.Status != StatusEnum.DRAFT)));
+            query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id || p.RejectReason != null));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
         {

@@ -8,7 +8,6 @@ import {
   atkOriginActorLabel,
   isAtkEditableByOrigin,
   isAtkGaActionable,
-  isL1Actor,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
@@ -55,7 +54,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isAtkEditableByOrigin(item, me);
-  const canL1Act = !isEdit && isL1Actor(item, me) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isAtkGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 
