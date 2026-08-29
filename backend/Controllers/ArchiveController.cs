@@ -228,7 +228,15 @@ public class ArchiveController : ApiControllerBase
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(a => a.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(a => a.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
-            query = query.Where(a => _db.Users.Any(u => u.Id == a.UploadedBy && u.Direktorat == direktorat));
+        {
+            // Derived from the document's own recorded Divisi (via the static org tree), not from a
+            // live join to the uploader's current User.Direktorat - Admin/Approval GA accounts
+            // have no Direktorat of their own (see DbSeeder), so a live-join filter silently
+            // dropped every GA-uploaded document from every specific Direktorat filter while still
+            // counting it in the unfiltered total, making the two disagree.
+            var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+            query = query.Where(a => divisiInDirektorat.Contains(a.Divisi));
+        }
         if (!string.IsNullOrEmpty(search))
             query = query.Where(a => a.NamaDokumen.Contains(search) || a.OriginalFilename.Contains(search));
 
