@@ -1,7 +1,11 @@
 import { useEffect, type KeyboardEvent, type RefObject } from "react";
 
+// The SearchableSelect trigger is scoped in by class (not a bare "button") so this stays narrow -
+// widening it to every button would also catch unrelated in-form buttons (e.g. RoomMultiSelect's
+// trigger, whole-day/recurring toggles) that happen to sit earlier in the DOM in some modal and
+// silently steal the autofocus/Enter-to-next target from the field that should get it.
 const FOCUSABLE_SELECTOR =
-  'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])';
+  'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button.searchable-select-trigger:not([disabled])';
 
 /**
  * Pressing Enter inside a text input or select would otherwise submit the form immediately

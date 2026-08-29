@@ -2516,6 +2516,88 @@ table.data-table {
 
 .room-multiselect-panel .room-multiselect-option:hover { background: var(--bg-surface-alt); }
 
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.searchable-select-trigger:hover { border-color: var(--blue-300); }
+.searchable-select-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
+.searchable-select-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
+.searchable-select-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.searchable-select-trigger > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchable-select-placeholder { color: var(--text-secondary); opacity: 0.75; }
+
+.searchable-select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card), 0 12px 28px rgba(15, 40, 90, 0.18);
+  padding: 8px;
+  z-index: 30;
+}
+
+.searchable-select-search {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.searchable-select-search:focus { outline: none; border-color: var(--blue-400); }
+
+.searchable-select-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.searchable-select-panel .searchable-select-option {
+  padding: 8px 10px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.searchable-select-panel .searchable-select-option:hover { background: var(--bg-surface-alt); }
+.searchable-select-panel .searchable-select-option-active { background: rgba(75, 141, 255, 0.12); font-weight: 600; }
+.searchable-select-panel .searchable-select-clear { color: var(--text-secondary); font-style: italic; }
+.searchable-select-panel .searchable-select-clear:hover { background: var(--bg-surface-alt); }
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

@@ -9,6 +9,7 @@ import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } f
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -115,6 +116,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isGaActor && !form.divisi) {
+      setError("Divisi wajib dipilih");
+      return;
+    }
     try {
       const created = await api.createBooking({
         ...form,
@@ -152,31 +157,25 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <>
                 <div className="field">
                   <label htmlFor="f-divisi">Divisi</label>
-                  <select
+                  <SearchableSelect
                     id="f-divisi"
-                    required
                     value={form.divisi || ""}
-                    onChange={(e) => setForm((f) => ({ ...f, divisi: e.target.value || undefined, departemen: undefined }))}
-                  >
-                    <option value="" disabled>Pilih Divisi</option>
-                    {(orgStructure?.divisi || []).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                    onChange={(next) => setForm((f) => ({ ...f, divisi: next || undefined, departemen: undefined }))}
+                    options={orgStructure?.divisi || []}
+                    placeholder="Pilih Divisi"
+                  />
                 </div>
                 <div className="field">
-                  <label htmlFor="f-departemen">Departemen (opsional)</label>
-                  <select
+                  <label htmlFor="f-departemen">Departemen</label>
+                  <SearchableSelect
                     id="f-departemen"
-                    disabled={!form.divisi}
                     value={form.departemen || ""}
-                    onChange={(e) => set("departemen", e.target.value || undefined)}
-                  >
-                    <option value="">Tanpa Departemen spesifik</option>
-                    {departemenOptions.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                    onChange={(next) => set("departemen", next || undefined)}
+                    options={departemenOptions}
+                    placeholder="Pilih Departemen"
+                    clearLabel="Tanpa Departemen spesifik"
+                    disabled={!form.divisi}
+                  />
                 </div>
               </>
             )}
