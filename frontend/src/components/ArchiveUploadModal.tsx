@@ -137,7 +137,6 @@ export default function ArchiveUploadModal({ open, onClose, onDone }: Props) {
                 type="file"
                 id="archive-upload-file"
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
-                required
                 className="file-dropzone-input"
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />

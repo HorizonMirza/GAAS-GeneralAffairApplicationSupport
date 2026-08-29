@@ -122,7 +122,6 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
                 type="file"
                 id="invoice-upload-file"
                 accept="application/pdf"
-                required
                 className="file-dropzone-input"
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
