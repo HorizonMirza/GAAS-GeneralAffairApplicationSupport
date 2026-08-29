@@ -155,6 +155,18 @@ export function isGaActionable(item: Pengiriman): boolean {
   return false;
 }
 
+// Whether `me` is the exact Approval account authorized to act on this item's L1 stage -
+// Approval Departemen for a Departemen-level item, Approval Divisi only for a Divisi's own
+// direct item (never for a child Departemen's item, even though Divisi accounts can now see
+// those too, read-only, for oversight - see the backend's ApplyListFilters). Mirrors the
+// backend's RequireL1ActorAsync-equivalent exactly, shared by every module using this pattern
+// (Pengiriman, Room/Vehicle Booking, ATK, Maintenance) so a Divisi viewer never sees Approve/
+// Reject controls for a child Departemen's item that isn't actually theirs to act on.
+export function isL1Actor(item: { divisi: string; departemen: string | null }, me: Me): boolean {
+  if (item.departemen != null) return me.role === "APPROVAL_DEPARTEMEN" && me.departemen === item.departemen;
+  return me.role === "APPROVAL_DIVISI" && me.divisi === item.divisi;
+}
+
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 

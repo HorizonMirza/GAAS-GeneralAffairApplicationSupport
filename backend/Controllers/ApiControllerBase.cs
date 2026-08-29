@@ -55,39 +55,53 @@ public abstract class ApiControllerBase : ControllerBase
         return (user, null);
     }
 
-    // Admin/Approval GA/KPU/Super Admin see every item; Admin/Approval Departemen/Divisi only
-    // see items from their own unit (or their own DRAFT/rejected-back-to-them items). Public (not
-    // just protected) so ChatHub - which can't inherit this class, Hub already has its own base -
-    // can reuse the exact same rule instead of duplicating it when deciding whether to let a
+    // Admin/Approval GA/KPU/Super Admin see every item; Admin/Approval Departemen only see items
+    // from their own Departemen (or their own DRAFT/rejected-back-to-them items). Admin/Approval
+    // Divisi see their own Divisi-level items the same way, PLUS every child Departemen's items
+    // under their Divisi read-only for oversight - once those are out of DRAFT (a child
+    // Departemen's own team still owns its drafts-in-progress, and only that Departemen's own
+    // Approval account can actually approve/reject it, see RequireL1ActorAsync). Public (not just
+    // protected) so ChatHub - which can't inherit this class, Hub already has its own base - can
+    // reuse the exact same rule instead of duplicating it when deciding whether to let a
     // connection join a chat's SignalR group.
     public static bool CanAccessPengiriman(User user, Pengiriman item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
 
-        var sameUnit = item.Departemen != null
-            ? user.Departemen == item.Departemen
-            : user.Divisi == item.Divisi && user.Departemen == null;
+        if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            if (item.Divisi != user.Divisi) return false;
+            if (item.Departemen != null) return item.Status != StatusEnum.DRAFT;
+            return item.Status == StatusEnum.DRAFT
+                ? item.CreatedBy == user.Id || item.RejectReason != null
+                : true;
+        }
+
+        var sameDepartemen = user.Departemen == item.Departemen;
         return item.Status == StatusEnum.DRAFT
-            ? item.CreatedBy == user.Id || (item.RejectReason != null && sameUnit)
-            : sameUnit;
+            ? item.CreatedBy == user.Id || (item.RejectReason != null && sameDepartemen)
+            : sameDepartemen;
     }
 
-    // Public for the same reason as CanAccessPengiriman above - reused by ChatHub.
+    // Public for the same reason as CanAccessPengiriman above - reused by ChatHub. Unlike
+    // Pengiriman, a rejected BookingRuang is a dead end - it's never sent back to DRAFT for
+    // revision (see IsEditableByOrigin), so a DRAFT item here can only be its creator's own
+    // not-yet-submitted draft (no RejectReason exception needed).
     public static bool CanAccessBookingRuang(User user, BookingRuang item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
 
-        var sameUnit = item.Departemen != null
-            ? user.Departemen == item.Departemen
-            : user.Divisi == item.Divisi && user.Departemen == null;
-        // Unlike Pengiriman, a rejected BookingRuang is a dead end - it's never sent back to
-        // DRAFT for revision (see IsEditableByOrigin), so a DRAFT item here can only be its
-        // creator's own not-yet-submitted draft.
-        return item.Status == BookingStatusEnum.DRAFT
-            ? item.CreatedBy == user.Id
-            : sameUnit;
+        if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            if (item.Divisi != user.Divisi) return false;
+            if (item.Departemen != null) return item.Status != BookingStatusEnum.DRAFT;
+            return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : true;
+        }
+
+        var sameDepartemen = user.Departemen == item.Departemen;
+        return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : sameDepartemen;
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
@@ -96,12 +110,15 @@ public abstract class ApiControllerBase : ControllerBase
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
 
-        var sameUnit = item.Departemen != null
-            ? user.Departemen == item.Departemen
-            : user.Divisi == item.Divisi && user.Departemen == null;
-        return item.Status == BookingStatusEnum.DRAFT
-            ? item.CreatedBy == user.Id
-            : sameUnit;
+        if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            if (item.Divisi != user.Divisi) return false;
+            if (item.Departemen != null) return item.Status != BookingStatusEnum.DRAFT;
+            return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : true;
+        }
+
+        var sameDepartemen = user.Departemen == item.Departemen;
+        return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : sameDepartemen;
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
@@ -110,12 +127,15 @@ public abstract class ApiControllerBase : ControllerBase
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
 
-        var sameUnit = item.Departemen != null
-            ? user.Departemen == item.Departemen
-            : user.Divisi == item.Divisi && user.Departemen == null;
-        return item.Status == BookingStatusEnum.DRAFT
-            ? item.CreatedBy == user.Id
-            : sameUnit;
+        if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            if (item.Divisi != user.Divisi) return false;
+            if (item.Departemen != null) return item.Status != BookingStatusEnum.DRAFT;
+            return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : true;
+        }
+
+        var sameDepartemen = user.Departemen == item.Departemen;
+        return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : sameDepartemen;
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
@@ -124,11 +144,14 @@ public abstract class ApiControllerBase : ControllerBase
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
 
-        var sameUnit = item.Departemen != null
-            ? user.Departemen == item.Departemen
-            : user.Divisi == item.Divisi && user.Departemen == null;
-        return item.Status == BookingStatusEnum.DRAFT
-            ? item.CreatedBy == user.Id
-            : sameUnit;
+        if (user.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            if (item.Divisi != user.Divisi) return false;
+            if (item.Departemen != null) return item.Status != BookingStatusEnum.DRAFT;
+            return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : true;
+        }
+
+        var sameDepartemen = user.Departemen == item.Departemen;
+        return item.Status == BookingStatusEnum.DRAFT ? item.CreatedBy == user.Id : sameDepartemen;
     }
 }

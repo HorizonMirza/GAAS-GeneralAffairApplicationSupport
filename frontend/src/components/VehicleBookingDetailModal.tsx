@@ -7,6 +7,7 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   isKendaraanEditableByOrigin,
   isKendaraanGaActionable,
+  isL1Actor,
   kendaraanOriginActorLabel,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
@@ -64,7 +65,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isKendaraanEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && isL1Actor(item, me) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isKendaraanGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 

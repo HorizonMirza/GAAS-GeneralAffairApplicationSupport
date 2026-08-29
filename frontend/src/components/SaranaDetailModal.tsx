@@ -7,6 +7,7 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   KATEGORI_KERUSAKAN_LABEL,
   URGENSI_LABEL,
+  isL1Actor,
   isSaranaEditableByOrigin,
   isSaranaGaActionable,
   saranaOriginActorLabel,
@@ -59,7 +60,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isSaranaEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && isL1Actor(item, me) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isSaranaGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 

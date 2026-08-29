@@ -138,8 +138,15 @@ public class BookingKendaraanController : ApiControllerBase
         }
         else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
-            query = query.Where(b => b.Divisi == currentUser.Divisi && b.Departemen == null
-                && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id));
+            // Own Divisi-level items keep exactly the same visibility as before (own drafts
+            // included). Every child Departemen's items under this Divisi are visible too now,
+            // read-only, for oversight - once they're out of DRAFT (that Departemen's own team
+            // still owns its drafts-in-progress, and only that Departemen's own Approval account
+            // can actually approve/reject it - this only widens visibility, not approval
+            // authority).
+            query = query.Where(b => b.Divisi == currentUser.Divisi && (
+                (b.Departemen == null && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == currentUser.Id))
+                || (b.Departemen != null && b.Status != BookingStatusEnum.DRAFT)));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
         {

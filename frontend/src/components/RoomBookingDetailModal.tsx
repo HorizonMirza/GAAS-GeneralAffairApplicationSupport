@@ -9,6 +9,7 @@ import {
   bookingRecurrenceLabel,
   isBookingEditableByOrigin,
   isBookingGaActionable,
+  isL1Actor,
   MAX_JUMLAH_PESERTA,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
@@ -73,7 +74,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isBookingEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && isL1Actor(item, me) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 
