@@ -29,21 +29,21 @@ export function trackWord(departemen: string | null | undefined): "Departemen" |
   return departemen ? "Departemen" : "Divisi";
 }
 
-export function chatParticipantLabels(departemen: string | null | undefined, createdByRole?: Role | null): string[] {
-  // Admin/Approval GA-input items skip the Departemen/Divisi tier entirely (see
-  // originActorLabel), so those roles were never actually part of this item's flow and
-  // shouldn't be listed as chat participants either.
-  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin General Affair", "Approval GA", "KPU"];
+// Always derived from the item's own Departemen (never from who created it) - this matches
+// exactly who the backend's CanAccessPengiriman actually lets into the chat. Admin/Approval GA
+// can now input on behalf of any real Divisi/Departemen (see PengirimanController.EffectiveOwner),
+// so a GA-created item's Departemen is no longer necessarily GA's own home unit - keying this off
+// createdByRole instead of the item's real Departemen used to silently omit the real
+// Departemen/Divisi's own Admin/Approval accounts from the participant list even though they
+// could already open and post in the chat.
+export function chatParticipantLabels(departemen: string | null | undefined): string[] {
   const track = trackWord(departemen);
   return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA", "KPU"];
 }
 
-// Room booking's approval chain stops at Approval GA (no KPU stage), so it has its own,
-// shorter participant list. GA-input bookings skip the Departemen/Divisi tier entirely on
-// submit (see bookingOriginActorLabel), so those roles were never actually part of this item's
-// flow and shouldn't be listed as chat participants either.
-export function bookingChatParticipantLabels(departemen: string | null | undefined, createdByRole?: Role | null): string[] {
-  if (createdByRole === "ADMIN_GA" || createdByRole === "APPROVAL_GA") return ["Admin General Affair", "Approval GA"];
+// Same reasoning as chatParticipantLabels above. Room booking's approval chain stops at Approval
+// GA (no KPU stage), so it has its own, shorter participant list.
+export function bookingChatParticipantLabels(departemen: string | null | undefined): string[] {
   const track = trackWord(departemen);
   return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA"];
 }

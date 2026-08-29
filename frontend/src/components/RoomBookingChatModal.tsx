@@ -72,7 +72,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   const readNotified = useRef(false);
 
   const myLabel = ROLE_SHORT_LABEL[me.role];
-  const participantLabels = bookingChatParticipantLabels(departemen, createdByRole);
+  const participantLabels = bookingChatParticipantLabels(departemen);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l !== myLabel && l.toLowerCase().includes(mentionQuery.toLowerCase()))

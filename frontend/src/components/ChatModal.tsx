@@ -72,7 +72,7 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
   const readNotified = useRef(false);
 
   const myLabel = ROLE_SHORT_LABEL[me.role];
-  const participantLabels = chatParticipantLabels(departemen, createdByRole);
+  const participantLabels = chatParticipantLabels(departemen);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l !== myLabel && l.toLowerCase().includes(mentionQuery.toLowerCase()))

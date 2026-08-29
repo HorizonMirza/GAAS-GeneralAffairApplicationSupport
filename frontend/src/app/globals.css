@@ -245,6 +245,10 @@ button, input, select, textarea {
 
 .field {
   margin-bottom: 18px;
+  /* Grid items default to min-width: auto, which lets nowrap-truncated content inside (e.g.
+     SearchableSelect's trigger text) refuse to shrink and instead widen the whole .form-grid
+     track - min-width: 0 here is what actually lets the ellipsis kick in instead. */
+  min-width: 0;
 }
 
 .field label {
@@ -2518,10 +2522,12 @@ table.data-table {
 
 .searchable-select {
   position: relative;
+  min-width: 0;
 }
 
 .searchable-select-trigger {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2557,6 +2563,11 @@ table.data-table {
 .searchable-select-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .searchable-select-trigger > span:first-child {
+  /* min-width: 0 overrides the flex item's default min-width: auto, which otherwise sizes to the
+     full nowrap text (e.g. "Information and Communication Technology") and drags the trigger,
+     its .field grid cell, and the whole modal wider instead of actually truncating. */
+  min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

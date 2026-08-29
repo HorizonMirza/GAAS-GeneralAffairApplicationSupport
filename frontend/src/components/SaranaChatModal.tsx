@@ -74,7 +74,7 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
   const myLabel = ROLE_SHORT_LABEL[me.role];
   // Maintenance memakai rantai approval yang sama dengan Booking (tanpa KPU), jadi daftar peserta
   // chat Booking bisa dipakai ulang apa adanya.
-  const participantLabels = bookingChatParticipantLabels(departemen, createdByRole);
+  const participantLabels = bookingChatParticipantLabels(departemen);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l !== myLabel && l.toLowerCase().includes(mentionQuery.toLowerCase()))
