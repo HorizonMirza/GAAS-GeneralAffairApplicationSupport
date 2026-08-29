@@ -184,9 +184,9 @@ export default function BookingTransaksiPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  // Window of up to 3 page numbers, re-anchored after clamping to totalPages so the last page
-  // still shows a full 3-button window (e.g. totalPages=5, page=5 -> [3,4,5], not just [4,5]).
-  const PAGE_WINDOW = 3;
+  // Window of up to 2 page numbers, re-anchored after clamping to totalPages so the last page
+  // still shows a full 2-button window (e.g. totalPages=5, page=5 -> [4,5], not just [5]).
+  const PAGE_WINDOW = 2;
   let pageStart = Math.max(1, filters.page - 1);
   const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
   pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);

@@ -155,7 +155,7 @@ export default function MaintenanceTransaksiPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const PAGE_WINDOW = 3;
+  const PAGE_WINDOW = 2;
   let pageStart = Math.max(1, filters.page - 1);
   const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
   pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);
