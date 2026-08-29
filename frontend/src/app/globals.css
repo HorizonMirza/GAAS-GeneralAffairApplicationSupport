@@ -2541,6 +2541,19 @@ table.data-table {
 .searchable-select-trigger:hover { border-color: var(--blue-300); }
 .searchable-select-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .searchable-select-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
+
+/* A plain <button> keeps only the browser's default outline unless given its own :focus style -
+   unlike .field input/select/textarea, which already get a visible border+glow on focus (see
+   above). Plain :focus (not :focus-visible) on purpose: the autofocus-on-open call here follows
+   right after a mouse click (the button that opened the modal), and :focus-visible's input-
+   modality heuristic often suppresses its own styling in that case even though focus really did
+   move - :focus always shows regardless, so the field the cursor landed on is never silently
+   invisible. */
+.searchable-select-trigger:focus {
+  outline: none;
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
+}
 .searchable-select-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .searchable-select-trigger > span:first-child {
