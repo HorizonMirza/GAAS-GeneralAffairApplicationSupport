@@ -5,12 +5,18 @@ import { useClickOutside } from "@/lib/useClickOutside";
 
 interface Props {
   id: string;
-  value: string;
+  // undefined = nothing chosen yet (shows `placeholder`, greyed out - callers should treat this
+  // as invalid/incomplete for a required field). "" is a real, deliberate selection distinct from
+  // "unset" - only reachable via `clearLabel`'s pinned row - and any other string is a normal
+  // option. This three-state split lets a field stay required (must click *something*) while
+  // still letting one of the choices explicitly mean "none of the below" (e.g. Departemen's
+  // "Kebutuhan Divisi ini" pinned row, which the caller maps to a null Departemen on submit).
+  value: string | undefined;
   onChange: (value: string) => void;
   options: string[];
   placeholder: string;
-  // When set, shows a clearable first row with this label that selects "" - used for optional
-  // fields (e.g. Departemen) where the user can explicitly pick "no specific value".
+  // When set, shows a pinned first row with this label, always visible regardless of the search
+  // query, that selects "" - e.g. Departemen's "Kebutuhan Divisi ini (tanpa Departemen spesifik)".
   clearLabel?: string;
   disabled?: boolean;
   emptyOptionsText?: string;
@@ -67,7 +73,9 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={value ? "" : "searchable-select-placeholder"}>{value || placeholder}</span>
+        <span className={value === undefined ? "searchable-select-placeholder" : ""}>
+          {value === undefined ? placeholder : value === "" ? clearLabel || placeholder : value}
+        </span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       {open && !disabled && (
@@ -83,7 +91,10 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
           />
           <div className="searchable-select-options">
             {clearLabel && (
-              <div className="searchable-select-option searchable-select-clear" onClick={() => select("")}>
+              <div
+                className={`searchable-select-option searchable-select-clear${value === "" ? " searchable-select-option-active" : ""}`}
+                onClick={() => select("")}
+              >
                 {clearLabel}
               </div>
             )}

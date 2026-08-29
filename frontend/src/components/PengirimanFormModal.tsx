@@ -79,12 +79,21 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isGaActor && !form.divisi) {
-      setError("Divisi wajib dipilih");
-      return;
+    if (isGaActor) {
+      if (!form.divisi) {
+        setError("Divisi wajib dipilih");
+        return;
+      }
+      if (form.departemen === undefined) {
+        setError("Departemen wajib dipilih");
+        return;
+      }
     }
     try {
-      await api.createPengiriman({ ...form, catatan: form.catatan || null });
+      // "" (the explicit "Kebutuhan Divisi ini" choice) means no specific Departemen - translated
+      // to undefined here (not sent at all) so the backend still records a null Departemen, same
+      // as before this field became a required pick instead of an optional one left blank.
+      await api.createPengiriman({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
       showToast("Data berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -112,8 +121,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                   <label htmlFor="f-divisi">Divisi</label>
                   <SearchableSelect
                     id="f-divisi"
-                    value={form.divisi || ""}
-                    onChange={(next) => setForm((f) => ({ ...f, divisi: next || undefined, departemen: undefined }))}
+                    value={form.divisi}
+                    onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
                     options={orgStructure?.divisi || []}
                     placeholder="Pilih Divisi"
                   />
@@ -122,11 +131,11 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                   <label htmlFor="f-departemen">Departemen</label>
                   <SearchableSelect
                     id="f-departemen"
-                    value={form.departemen || ""}
-                    onChange={(next) => set("departemen", next || undefined)}
+                    value={form.departemen}
+                    onChange={(next) => set("departemen", next)}
                     options={departemenOptions}
                     placeholder="Pilih Departemen"
-                    clearLabel="Tanpa Departemen spesifik"
+                    clearLabel="Kebutuhan Divisi ini (tanpa Departemen spesifik)"
                     disabled={!form.divisi}
                   />
                 </div>
