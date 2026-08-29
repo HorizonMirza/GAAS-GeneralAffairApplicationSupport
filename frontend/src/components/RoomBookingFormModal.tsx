@@ -165,15 +165,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                   </select>
                 </div>
                 <div className="field">
-                  <label htmlFor="f-departemen">Departemen</label>
+                  <label htmlFor="f-departemen">Departemen (opsional)</label>
                   <select
                     id="f-departemen"
-                    required
                     disabled={!form.divisi}
                     value={form.departemen || ""}
                     onChange={(e) => set("departemen", e.target.value || undefined)}
                   >
-                    <option value="" disabled>Pilih Departemen</option>
+                    <option value="">Tanpa Departemen spesifik</option>
                     {departemenOptions.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}

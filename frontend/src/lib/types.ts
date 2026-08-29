@@ -147,6 +147,10 @@ export interface PengirimanLog {
 }
 
 export interface PengirimanCreatePayload {
+  // Admin/Approval GA only: inputs on behalf of another divisi/departemen instead of their own GA
+  // home unit - ignored by the backend for every other role, and for GA too when left blank.
+  divisi?: string;
+  departemen?: string;
   tanggal: string;
   jumlahItem: number;
   tujuanPenerimaan: string;

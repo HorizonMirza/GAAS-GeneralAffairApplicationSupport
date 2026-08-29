@@ -37,11 +37,11 @@ public class PengirimanController : ApiControllerBase
     };
 
     // Admin/Approval GA accounts have no Divisi/Departemen of their own in the user record (see
-    // DbSeeder), but the people holding those roles actually sit in Asset Management and General
-    // Affair, under the Procurement and General Affair Divisi - so items they input are stamped
-    // with that real unit, same as everyone else there, instead of a separate GA-only bucket.
-    // That means those items are visible to and mixed in with that Divisi/Departemen's own
-    // Admin/Approval accounts, and the NomorTransmittal picks up the real "PGA" kode for free.
+    // DbSeeder) - when they input on their own behalf (no on-behalf Divisi chosen, see
+    // EffectiveOwner below), items are stamped with the Asset Management and General Affair unit,
+    // same as everyone else there, instead of a separate GA-only bucket. That means those items
+    // are visible to and mixed in with that Divisi/Departemen's own Admin/Approval accounts, and
+    // the NomorTransmittal picks up the real "PGA" kode for free.
     private const string GaDivisiLabel = "Procurement and General Affair";
     private const string GaDepartemenLabel = "Asset Management and General Affair";
 
@@ -57,6 +57,19 @@ public class PengirimanController : ApiControllerBase
 
     private static string? EffectiveDepartemen(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
+
+    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+
+    // Admin/Approval GA act like a superadmin for this module - they can input a shipment on
+    // behalf of any divisi/departemen (payload.Divisi/Departemen), not just their own GA home
+    // unit, to help other divisions move faster. Every other role always inputs as itself; GA
+    // inputting with no Divisi chosen falls back to their own GA home unit, same as before this
+    // feature existed. Departemen is optional even when Divisi is chosen - a Divisi head can ask
+    // GA to send something on the Divisi's own behalf without naming a specific Departemen.
+    private static (string divisi, string? departemen) EffectiveOwner(User user, PengirimanCreate payload) =>
+        IsGaActor(user) && !string.IsNullOrEmpty(payload.Divisi)
+            ? (payload.Divisi, payload.Departemen)
+            : (EffectiveDivisi(user), EffectiveDepartemen(user));
 
     private static bool IsGaOriginCreator(Pengiriman item) =>
         item.CreatedByRole is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
@@ -209,8 +222,18 @@ public class PengirimanController : ApiControllerBase
     private static bool IsValidPhone(string phone) =>
         Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
 
-    private static string? ValidatePayload(PengirimanCreate payload)
+    private static string? ValidatePayload(PengirimanCreate payload, bool isGaActor)
     {
+        // Only Admin/Approval GA can input on behalf of another unit - the field is silently
+        // ignored for every other role (see EffectiveOwner above), so it's only validated here
+        // when it could actually take effect.
+        if (isGaActor && !string.IsNullOrEmpty(payload.Divisi))
+        {
+            if (!OrgTree.AllDivisi.Contains(payload.Divisi))
+                return "Divisi tidak ditemukan";
+            if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
+                return "Departemen tidak ditemukan pada divisi tersebut";
+        }
         if (payload.JumlahItem <= 0)
             return "Jumlah barang harus lebih dari 0";
         if (string.IsNullOrWhiteSpace(payload.TujuanPenerimaan))
@@ -290,17 +313,19 @@ public class PengirimanController : ApiControllerBase
     }
 
     [HttpGet("next-transmittal")]
-    public async Task<IActionResult> NextTransmittal([FromQuery] DateOnly? tanggal)
+    public async Task<IActionResult> NextTransmittal([FromQuery] DateOnly? tanggal, [FromQuery] string? divisi)
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        var divisi = EffectiveDivisi(user!);
-        if (string.IsNullOrEmpty(divisi))
+        var effectiveDivisi = IsGaActor(user!) && !string.IsNullOrEmpty(divisi) && OrgTree.AllDivisi.Contains(divisi)
+            ? divisi
+            : EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(effectiveDivisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var seq = await PeekNextTransmittalSequenceAsync(divisi, effectiveTanggal.Year, effectiveTanggal.Month);
-        var nomor = BuildNomorTransmittal(divisi, seq, effectiveTanggal);
+        var seq = await PeekNextTransmittalSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        var nomor = BuildNomorTransmittal(effectiveDivisi, seq, effectiveTanggal);
         return Ok(new { nomorTransmittal = nomor });
     }
 
@@ -310,14 +335,14 @@ public class PengirimanController : ApiControllerBase
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
 
-        var divisi = EffectiveDivisi(user!);
+        var validationError = ValidatePayload(payload, IsGaActor(user!));
+        if (validationError != null) return BadRequest(new { detail = validationError });
+
+        var (divisi, departemen) = EffectiveOwner(user!, payload);
         if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
-        var validationError = ValidatePayload(payload);
-        if (validationError != null) return BadRequest(new { detail = validationError });
-
-        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = divisi, Departemen = EffectiveDepartemen(user) };
+        var item = new Pengiriman { CreatedBy = user.Id, CreatedByRole = user.Role, Status = StatusEnum.DRAFT, Divisi = divisi, Departemen = departemen };
         ApplyCreatePayload(item, payload);
         var seq = await IncrementTransmittalSequenceAsync(divisi, item.Tanggal.Year, item.Tanggal.Month);
         item.NomorTransmittal = BuildNomorTransmittal(divisi, seq, item.Tanggal);
@@ -341,7 +366,7 @@ public class PengirimanController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        var validationError = ValidatePayload(payload);
+        var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
         // A rejected-to-origin item goes back to DRAFT after being revised - Admin Departemen/

@@ -205,8 +205,8 @@ export const api = {
   deletePengiriman: (id: number) => apiRequest(`/pengiriman/${id}`, { method: "DELETE" }),
   deleteCompleted: (id: number) => apiRequest(`/pengiriman/${id}/super-admin`, { method: "DELETE" }),
   submitPengiriman: (id: number) => apiRequest(`/pengiriman/${id}/submit`, { method: "PATCH" }),
-  nextTransmittal: (tanggal: string) =>
-    apiRequest<{ nomorTransmittal: string }>("/pengiriman/next-transmittal", { params: { tanggal } }),
+  nextTransmittal: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorTransmittal: string }>("/pengiriman/next-transmittal", { params: { tanggal, divisi } }),
   approveL1: (id: number) => apiRequest(`/pengiriman/${id}/approve-l1`, { method: "PATCH" }),
   rejectL1: (id: number, reason: string | null) =>
     apiRequest(`/pengiriman/${id}/reject-l1`, { method: "PATCH", body: { reason } }),

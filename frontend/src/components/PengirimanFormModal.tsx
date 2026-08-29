@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, PengirimanCreatePayload } from "@/lib/types";
@@ -34,12 +35,15 @@ function emptyForm(): PengirimanCreatePayload {
 }
 
 export default function PengirimanFormModal({ open, me, onClose, onCreated }: Props) {
+  const { orgStructure } = useAuth();
   const [form, setForm] = useState<PengirimanCreatePayload>(emptyForm());
   const [error, setError] = useState("");
   const [nomorTransmittal, setNomorTransmittal] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
+
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
   useEffect(() => {
     if (open) {
@@ -51,13 +55,17 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextTransmittal(form.tanggal)
+      .nextTransmittal(form.tanggal, isGaActor ? form.divisi : undefined)
       .then((r) => setNomorTransmittal(r.nomorTransmittal))
       .catch(() => setNomorTransmittal(""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.tanggal]);
+  }, [open, form.tanggal, form.divisi]);
 
   if (!open) return null;
+
+  const departemenOptions = form.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
+    : [];
 
   const unitName =
     me.departemen ||
@@ -93,6 +101,38 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
               <label htmlFor="f-nomor-transmittal">Nomor Transmittal</label>
               <input type="text" id="f-nomor-transmittal" disabled value={nomorTransmittal} />
             </div>
+            {isGaActor && (
+              <>
+                <div className="field">
+                  <label htmlFor="f-divisi">Divisi</label>
+                  <select
+                    id="f-divisi"
+                    required
+                    value={form.divisi || ""}
+                    onChange={(e) => setForm((f) => ({ ...f, divisi: e.target.value || undefined, departemen: undefined }))}
+                  >
+                    <option value="" disabled>Pilih Divisi</option>
+                    {(orgStructure?.divisi || []).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="f-departemen">Departemen (opsional)</label>
+                  <select
+                    id="f-departemen"
+                    disabled={!form.divisi}
+                    value={form.departemen || ""}
+                    onChange={(e) => set("departemen", e.target.value || undefined)}
+                  >
+                    <option value="">Tanpa Departemen spesifik</option>
+                    {departemenOptions.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
               <input type="date" id="f-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />

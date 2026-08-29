@@ -4,6 +4,13 @@ namespace PengirimanApi.Dtos;
 
 public class PengirimanCreate
 {
+    // Admin/Approval GA only: lets them input on behalf of any divisi/departemen instead of their
+    // own home unit (see PengirimanController.OriginRoles/EffectiveOwner) - ignored for every
+    // other role, and ignored for GA too when left blank (falls back to their own GA home unit as
+    // before). Departemen is optional even when Divisi is chosen - a Divisi head can ask GA to
+    // send something on the Divisi's own behalf without naming a specific Departemen.
+    public string? Divisi { get; set; }
+    public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public string TujuanPenerimaan { get; set; } = null!;
     public int JumlahItem { get; set; }
