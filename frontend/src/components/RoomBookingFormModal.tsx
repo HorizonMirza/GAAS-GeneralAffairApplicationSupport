@@ -184,7 +184,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                     onChange={(next) => set("departemen", next)}
                     options={departemenOptions}
                     placeholder="Pilih Departemen"
-                    clearLabel="Kebutuhan Divisi ini (tanpa Departemen spesifik)"
+                    clearLabel="Kebutuhan Divisi"
                     disabled={!form.divisi}
                   />
                 </div>

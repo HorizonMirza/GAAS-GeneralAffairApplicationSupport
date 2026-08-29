@@ -2595,8 +2595,6 @@ table.data-table {
 
 .searchable-select-panel .searchable-select-option:hover { background: var(--bg-surface-alt); }
 .searchable-select-panel .searchable-select-option-active { background: rgba(75, 141, 255, 0.12); font-weight: 600; }
-.searchable-select-panel .searchable-select-clear { color: var(--text-secondary); font-style: italic; }
-.searchable-select-panel .searchable-select-clear:hover { background: var(--bg-surface-alt); }
 
 .modal-actions {
   display: flex;
