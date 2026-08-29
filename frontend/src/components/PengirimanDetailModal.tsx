@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
@@ -50,7 +50,15 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) - form starts as null and is only hydrated here, so on the
+  // very first time this modal is ever opened in a session, the component renders nothing this
+  // pass (see the `!form` check below) and formRef never attaches to a real <form>. A plain
+  // useEffect runs after paint with the same open/item/mode trigger as useAutofocusFirstField
+  // already used on that empty pass, so it never gets a second chance to focus anything once the
+  // form actually appears. useLayoutEffect's setForm call instead forces a synchronous re-render
+  // before paint, so by the time useAutofocusFirstField's (deferred) effect runs, formRef already
+  // points at the real, populated form.
+  useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");

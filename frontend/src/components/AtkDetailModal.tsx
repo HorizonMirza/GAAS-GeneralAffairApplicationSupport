@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
@@ -44,7 +44,14 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) - form starts as null and is only hydrated here, so the very
+  // first time this modal is ever opened in a session it renders nothing this pass (see the
+  // `!form` check below) and formRef never attaches to a real <form>. A plain useEffect runs
+  // after paint with the same open/item/mode trigger useAutofocusFirstField already used on that
+  // empty pass, so it never gets a second chance once the form actually appears. useLayoutEffect's
+  // setForm call instead forces a synchronous re-render before paint, so by the time
+  // useAutofocusFirstField's (deferred) effect runs, formRef already points at the real form.
+  useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
