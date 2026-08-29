@@ -181,7 +181,13 @@ public class PengirimanController : ApiControllerBase
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
         {
-            query = query.Where(p => db.Users.Any(u => u.Id == p.CreatedBy && u.Direktorat == direktorat));
+            // Derived from the item's own recorded Divisi (via the static org tree), not from a
+            // live join to the creator's current User.Direktorat - Admin/Approval GA accounts
+            // have no Direktorat of their own (see DbSeeder), so a live-join filter silently
+            // dropped every GA-created item from every specific Direktorat filter while still
+            // counting it in the unfiltered total, making the two disagree.
+            var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+            query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
         if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => p.NomorTransmittal.Contains(nomorTransmittal));
 

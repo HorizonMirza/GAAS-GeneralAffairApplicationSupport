@@ -237,7 +237,15 @@ public class BookingRuangController : ApiControllerBase
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
-            query = query.Where(b => db.Users.Any(u => u.Id == b.CreatedBy && u.Direktorat == direktorat));
+        {
+            // Derived from the item's own recorded Divisi (via the static org tree), not from a
+            // live join to the creator's current User.Direktorat - Admin/Approval GA accounts
+            // have no Direktorat of their own (see DbSeeder), so a live-join filter silently
+            // dropped every GA-created item from every specific Direktorat filter while still
+            // counting it in the unfiltered total, making the two disagree.
+            var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+            query = query.Where(b => divisiInDirektorat.Contains(b.Divisi));
+        }
         if (!string.IsNullOrEmpty(namaRuang))
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);

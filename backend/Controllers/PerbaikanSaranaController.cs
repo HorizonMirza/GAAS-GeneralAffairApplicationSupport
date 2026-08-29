@@ -132,7 +132,15 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
-            query = query.Where(p => db.Users.Any(u => u.Id == p.CreatedBy && u.Direktorat == direktorat));
+        {
+            // Derived from the item's own recorded Divisi (via the static org tree), not from a
+            // live join to the creator's current User.Direktorat - Admin/Approval GA accounts
+            // have no Direktorat of their own (see DbSeeder), so a live-join filter silently
+            // dropped every GA-created item from every specific Direktorat filter while still
+            // counting it in the unfiltered total, making the two disagree.
+            var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+            query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
+        }
         // Pencarian menjangkau nomor DAN lokasi - saat melaporkan kerusakan, orang lebih sering
         // ingat tempatnya ("Ruang Bromo") daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
