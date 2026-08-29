@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
+import { useAutofocusFirstField } from "@/lib/formNav";
 import type { Invoice } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -20,6 +21,8 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}`);
 
   if (!open || !item) return null;
 
@@ -88,7 +91,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <h3>Update Invoice</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
             <div

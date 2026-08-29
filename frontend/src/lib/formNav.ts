@@ -26,10 +26,15 @@ export function focusNextFieldOnEnter(e: KeyboardEvent<HTMLFormElement>) {
   if (next instanceof HTMLInputElement) next.select();
 }
 
-/** Focuses the first enabled field in the form whenever `trigger` changes (typically the modal's `open` flag). */
-export function useAutofocusFirstField(formRef: RefObject<HTMLFormElement | null>, trigger: unknown) {
+/**
+ * Focuses the first enabled field inside `containerRef` whenever `trigger` changes (typically the
+ * modal's `open` flag, or `open` combined with the item/mode it was opened for). Works for a
+ * `<form>` ref as well as a plain wrapping `<div>` ref, for the few modals (RejectModal,
+ * InvoiceActionModal) that don't wrap their fields in a `<form>` element.
+ */
+export function useAutofocusFirstField(containerRef: RefObject<HTMLElement | null>, trigger: unknown) {
   useEffect(() => {
-    const first = formRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    const first = containerRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
     first?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);

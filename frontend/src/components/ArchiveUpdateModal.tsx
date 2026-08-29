@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ARCHIVE_KATEGORI_LABEL, MAX_ARCHIVE_FILE_SIZE_BYTES } from "@/lib/constants";
+import { useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveDocument, ArchiveKategori } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -25,6 +26,8 @@ export default function ArchiveUpdateModal({ open, item, onClose, onDone }: Prop
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}`);
 
   useEffect(() => {
     if (!open || !item) return;
@@ -101,7 +104,7 @@ export default function ArchiveUpdateModal({ open, item, onClose, onDone }: Prop
           <h3>Edit Dokumen</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="archive-update-nama">Nama Dokumen</label>
             <input type="text" id="archive-update-nama" required value={namaDokumen} onChange={(e) => setNamaDokumen(e.target.value)} />

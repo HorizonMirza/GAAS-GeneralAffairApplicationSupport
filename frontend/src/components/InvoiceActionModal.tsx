@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAutofocusFirstField } from "@/lib/formNav";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
@@ -17,6 +18,8 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
   const [catatan, setCatatan] = useState("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
+  useAutofocusFirstField(containerRef, `${open}-${invoiceId}-${type}`);
 
   if (!open || !type) return null;
 
@@ -50,7 +53,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
 
   return (
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
-      <div className="modal" style={{ maxWidth: 420 }}>
+      <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
           <h3>{type === "approve" ? "Approve Invoice" : "Reject Invoice"}</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>

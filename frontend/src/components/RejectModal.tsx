@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAutofocusFirstField } from "@/lib/formNav";
 import type { RejectTarget } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -47,6 +48,8 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
   const [target, setTarget] = useState<RejectTarget | "">("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
+  useAutofocusFirstField(containerRef, `${open}-${targetId}-${targetType}`);
 
   if (!open) return null;
 
@@ -124,7 +127,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
 
   return (
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
-      <div className="modal" style={{ maxWidth: 420 }}>
+      <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
           <h3>Reject Data</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>

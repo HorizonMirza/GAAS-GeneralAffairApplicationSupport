@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ARCHIVE_KATEGORI_LABEL, MAX_ARCHIVE_FILE_SIZE_BYTES } from "@/lib/constants";
+import { useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveKategori } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -24,6 +25,8 @@ export default function ArchiveUploadModal({ open, onClose, onDone }: Props) {
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, open);
 
   if (!open) return null;
 
@@ -93,7 +96,7 @@ export default function ArchiveUploadModal({ open, onClose, onDone }: Props) {
           <h3>Unggah Dokumen</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="archive-upload-nama">Nama Dokumen</label>
             <input
