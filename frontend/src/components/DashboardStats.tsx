@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { currentYearMonth, formatCurrency } from "@/lib/format";
+import { currentYearMonth } from "@/lib/format";
 import type {
   BookingKendaraanStatsResponse,
   BookingRuangStatsResponse,
@@ -19,7 +19,6 @@ interface PengirimanStatsView {
   waitingGaApproval: number;
   waitingKpu: number;
   completed: number;
-  totalBulanIni: number | null;
 }
 
 interface BookingStatsView {
@@ -69,7 +68,6 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
           waitingGaApproval: p.waitingGaApproval,
           waitingKpu: p.waitingKpu,
           completed: pc.COMPLETED ?? 0,
-          totalBulanIni: p.totalBulanIni,
         });
       })
       .catch(() => {
@@ -175,12 +173,6 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
             <div className="stat-tile"><div className="value">{pengiriman.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">KPU</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.completed}</div><div className="label">Approved</div></div>
-            {pengiriman.totalBulanIni != null && (
-              <div className="stat-tile stat-tile-money">
-                <div className="value">{formatCurrency(pengiriman.totalBulanIni)}</div>
-                <div className="label">Total Nilai Bulan Ini</div>
-              </div>
-            )}
           </div>
         )}
       </div>
