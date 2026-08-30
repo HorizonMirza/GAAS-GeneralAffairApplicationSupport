@@ -50,7 +50,7 @@ public static class OrgTree
             }),
             new("EPC Project", "EPCProjectADMINDIV", "EPCProjectAPPROVALDIV", new()
             {
-                new("Engineering Project – EPC", "EngineeringProjectEPCADMIN", "EngineeringProjectEPCAPPROVAL"),
+                new("Engineering Project - EPC", "EngineeringProjectEPCADMIN", "EngineeringProjectEPCAPPROVAL"),
                 new("QHSSE Project -EPC", "QHSSEProjectEPCADMIN", "QHSSEProjectEPCAPPROVAL"),
                 new("Regional EPC Project I/II/III", "RegionalEPCProjectADMIN", "RegionalEPCProjectAPPROVAL"),
                 new("EPC Project Support and Contract Management", "EPCProjectSupportAndContractManagementADMIN", "EPCProjectSupportAndContractManagementAPPROVAL"),

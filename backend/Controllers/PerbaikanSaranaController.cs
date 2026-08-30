@@ -352,7 +352,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (error != null) return error;
 
         if (!AllowedLimits.Contains(limit))
-            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50,1000" });
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 

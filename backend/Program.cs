@@ -58,6 +58,19 @@ using (var scope = app.Services.CreateScope())
     // CurrentUserService: a token minted before the most recent password change no longer matches
     // this column and is rejected, instead of staying valid for the rest of its lifetime.
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP");
+    // One-time backfill: "Engineering Project – EPC" (en-dash) was the departemen name actually seeded/stored
+    // before OrgTree.cs was corrected to the hyphen form below - any row already stamped with the
+    // old en-dash string no longer matches OrgTree's canonical list (used for access-control
+    // comparisons and dropdown options), so it's rewritten here to the corrected value. Self-
+    // limiting: once a row is updated it no longer matches the WHERE clause, so this is a no-op on
+    // every restart after the first.
+    foreach (var tableCol in new[] { "users", "pengiriman", "booking_ruang", "booking_kendaraan", "permintaan_atk", "perbaikan_sarana", "archive_documents" })
+    {
+        migrateDb.Database.ExecuteSqlRaw(
+            $"UPDATE {tableCol} SET departemen = {{0}} WHERE departemen = {{1}}",
+            "Engineering Project - EPC", "Engineering Project – EPC");
+    }
+
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS nomor_pemesanan VARCHAR(50)");
 

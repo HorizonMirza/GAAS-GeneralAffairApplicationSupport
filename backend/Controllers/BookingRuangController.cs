@@ -290,7 +290,7 @@ public class BookingRuangController : ApiControllerBase
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
-                return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
+                return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
@@ -379,7 +379,7 @@ public class BookingRuangController : ApiControllerBase
 
     private static string ConflictMessage(BookingRuang conflict) =>
         conflict.IsWholeDay
-            ? $"{conflict.NamaRuang} sudah dipesan sehari penuh pada tanggal tersebut"
+            ? $"{conflict.NamaRuang} sudah dipesan Sepanjang Hari pada tanggal tersebut"
             : $"{conflict.NamaRuang} sudah dipesan jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} pada tanggal tersebut";
 
     // Scoped per divisi + bulan + tahun, same convention as Ekspedisi's NomorTransmittal (see
@@ -501,7 +501,7 @@ public class BookingRuangController : ApiControllerBase
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return BadRequest(new { detail = "Ruang tidak ditemukan" });
         if (!payload.IsWholeDay && (payload.JamMulai == null || payload.JamSelesai == null))
-            return BadRequest(new { detail = "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh" });
+            return BadRequest(new { detail = "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari" });
 
         var entry = new BookingWaitlist
         {
@@ -752,7 +752,7 @@ public class BookingRuangController : ApiControllerBase
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
-                return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
+                return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
@@ -1018,7 +1018,7 @@ public class BookingRuangController : ApiControllerBase
         if (error != null) return error;
 
         if (!AllowedLimits.Contains(limit))
-            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50,1000" });
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 

@@ -200,7 +200,7 @@ public class BookingKendaraanController : ApiControllerBase
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
-                return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
+                return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
@@ -242,7 +242,7 @@ public class BookingKendaraanController : ApiControllerBase
 
     private static string ConflictMessage(BookingKendaraan conflict) =>
         conflict.IsWholeDay
-            ? $"{conflict.NamaKendaraan} sudah dipesan sehari penuh pada tanggal tersebut"
+            ? $"{conflict.NamaKendaraan} sudah dipesan Sepanjang Hari pada tanggal tersebut"
             : $"{conflict.NamaKendaraan} sudah dipesan jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} pada tanggal tersebut";
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
@@ -407,7 +407,7 @@ public class BookingKendaraanController : ApiControllerBase
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
-                return "Jam mulai dan jam selesai wajib diisi kalau bukan sehari penuh";
+                return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
@@ -544,7 +544,7 @@ public class BookingKendaraanController : ApiControllerBase
         if (error != null) return error;
 
         if (!AllowedLimits.Contains(limit))
-            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50,1000" });
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
