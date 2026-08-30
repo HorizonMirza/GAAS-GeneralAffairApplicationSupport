@@ -1067,18 +1067,21 @@ body.auth-ready .app-shell {
 /* ---------- Home module grid ---------- */
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  /* min 0 (not a fixed px floor) keeps every module card on one row regardless of count - a
+     minmax(260px, 1fr) floor is what wrapped a 6th card onto its own row below. */
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 16px;
 }
 
 .module-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 14px;
   box-shadow: var(--shadow-card);
   text-decoration: none;
   color: inherit;
@@ -1092,9 +1095,9 @@ body.auth-ready .app-shell {
 }
 
 .module-card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1103,8 +1106,10 @@ body.auth-ready .app-shell {
   color: #fff;
 }
 
+.module-card-icon svg { width: 18px; height: 18px; }
+
 .module-card-body { flex: 1; min-width: 0; }
-.module-card-body h4 { margin: 0 0 4px; font-size: 1rem; }
+.module-card-body h4 { margin: 0; font-size: 0.86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .module-card-body p { margin: 0; font-size: 0.85rem; }
 
 .module-card-arrow {
