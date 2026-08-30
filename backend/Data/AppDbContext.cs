@@ -148,6 +148,7 @@ public class AppDbContext : DbContext
             e.Property(u => u.Divisi).HasColumnName("divisi").HasMaxLength(255);
             e.Property(u => u.Departemen).HasColumnName("departemen").HasMaxLength(255);
             e.Property(u => u.CreatedAt).HasColumnName("created_at");
+            e.Property(u => u.PasswordChangedAt).HasColumnName("password_changed_at");
         });
 
         modelBuilder.Entity<Pengiriman>(e =>

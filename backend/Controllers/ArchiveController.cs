@@ -174,6 +174,7 @@ public class ArchiveController : ApiControllerBase
         var (fileOk, contentType, fileError) = ValidateFile(file, required: false);
         if (!fileOk) return BadRequest(new { detail = fileError });
 
+        string? oldPathToDelete = null;
         if (file != null && file.Length > 0)
         {
             var storedFilename = $"{Guid.NewGuid():N}{Path.GetExtension(file.FileName)}";
@@ -182,8 +183,7 @@ public class ArchiveController : ApiControllerBase
             {
                 await file.CopyToAsync(stream);
             }
-            var oldPath = Path.Combine(_uploadDir, item.FilePath);
-            if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+            oldPathToDelete = Path.Combine(_uploadDir, item.FilePath);
 
             item.FilePath = storedFilename;
             item.OriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
@@ -192,6 +192,11 @@ public class ArchiveController : ApiControllerBase
         }
 
         await _db.SaveChangesAsync();
+        // Only remove the old file once the DB row has committed pointing at the new one - if
+        // SaveChangesAsync above throws, the old file (and the row still referencing it) are left
+        // untouched instead of the row surviving while its file is already gone.
+        if (oldPathToDelete != null && System.IO.File.Exists(oldPathToDelete))
+            System.IO.File.Delete(oldPathToDelete);
         return Ok(ArchiveDocumentOut.From(item));
     }
 
@@ -211,6 +216,8 @@ public class ArchiveController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         ArchiveKategoriEnum? kategoriFilter = null;
         if (!string.IsNullOrEmpty(kategori))
@@ -238,7 +245,7 @@ public class ArchiveController : ApiControllerBase
             query = query.Where(a => divisiInDirektorat.Contains(a.Divisi));
         }
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(a => a.NamaDokumen.Contains(search) || a.OriginalFilename.Contains(search));
+            query = query.Where(a => EF.Functions.ILike(a.NamaDokumen, $"%{search}%") || EF.Functions.ILike(a.OriginalFilename, $"%{search}%"));
 
         try
         {

@@ -133,7 +133,7 @@ public class PermintaanAtkController : ApiControllerBase
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(p => p.NomorPermintaan != null && p.NomorPermintaan.Contains(search));
+            query = query.Where(p => p.NomorPermintaan != null && EF.Functions.ILike(p.NomorPermintaan, $"%{search}%"));
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -356,6 +356,8 @@ public class PermintaanAtkController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;

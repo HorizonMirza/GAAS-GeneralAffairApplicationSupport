@@ -167,7 +167,7 @@ public class BookingKendaraanController : ApiControllerBase
         if (!string.IsNullOrEmpty(namaKendaraan)) query = query.Where(b => b.NamaKendaraan == namaKendaraan);
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(b => b.NomorPemesanan != null && b.NomorPemesanan.Contains(search));
+            query = query.Where(b => b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%"));
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
@@ -545,6 +545,8 @@ public class BookingKendaraanController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;

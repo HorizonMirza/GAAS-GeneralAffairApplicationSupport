@@ -250,7 +250,7 @@ public class BookingRuangController : ApiControllerBase
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(b => b.NomorPemesanan != null && b.NomorPemesanan.Contains(search));
+            query = query.Where(b => b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%"));
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
@@ -1019,6 +1019,8 @@ public class BookingRuangController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         // "REJECTED" is a synthetic value the Status filter dropdown sends for its single
         // "Rejected" option - it isn't a real BookingStatusEnum member, so it's parsed here

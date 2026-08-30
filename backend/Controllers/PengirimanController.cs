@@ -202,7 +202,7 @@ public class PengirimanController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
-        if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => p.NomorTransmittal.Contains(nomorTransmittal));
+        if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => EF.Functions.ILike(p.NomorTransmittal, $"%{nomorTransmittal}%"));
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
@@ -465,6 +465,8 @@ public class PengirimanController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         // "REJECTED" is a synthetic value the Status filter dropdown sends for its single
         // "Rejected" option - it isn't a real StatusEnum member, so it's parsed here instead of

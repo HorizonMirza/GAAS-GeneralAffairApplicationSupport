@@ -10,10 +10,14 @@ namespace PengirimanApi.Controllers;
 public class ProfileController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly JwtService _jwt;
+    private readonly IConfiguration _config;
 
-    public ProfileController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public ProfileController(AppDbContext db, CurrentUserService currentUser, JwtService jwt, IConfiguration config) : base(currentUser)
     {
         _db = db;
+        _jwt = jwt;
+        _config = config;
     }
 
     [HttpGet("")]
@@ -46,7 +50,26 @@ public class ProfileController : ApiControllerBase
             return StatusCode(400, new { detail = "Password baru minimal 8 karakter" });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
+        user.PasswordChangedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+
+        // Every OTHER session's token was minted before PasswordChangedAt above and stops
+        // matching it on their next request (see CurrentUserService), signing them out - but that
+        // check would also sign out this very request's own session the moment it's over, since
+        // its token predates the change too. Re-issuing the cookie here with a freshly minted
+        // token (carrying the new PasswordChangedAt) keeps the session that just changed the
+        // password logged in, exactly like AuthController.Login does after a fresh login.
+        var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
+        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        Response.Cookies.Append(CurrentUserService.CookieName, token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = cookieSecure,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromMinutes(_jwt.ExpireMinutes),
+            Path = "/",
+        });
+
         return Ok(new { message = "Password berhasil diubah" });
     }
 }

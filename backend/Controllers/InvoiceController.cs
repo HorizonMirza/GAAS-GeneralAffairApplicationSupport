@@ -181,6 +181,8 @@ public class InvoiceController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         var query = _db.Invoices.AsQueryable();
         if (user!.Role == RoleEnum.KPU)
@@ -189,7 +191,7 @@ public class InvoiceController : ApiControllerBase
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
-        if (!string.IsNullOrEmpty(search)) query = query.Where(i => i.OriginalFilename.Contains(search));
+        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
         // Relevant when Admin/Approval GA/Super Admin review invoices from more than one KPU
         // account - a no-op for KPU itself, which is already scoped to its own uploads above.
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
@@ -304,16 +306,19 @@ public class InvoiceController : ApiControllerBase
 
         // InvoiceLog rows are cascade-deleted with the invoice, so every revision's file
         // (not just the current one) needs to be removed here or it's orphaned on disk forever.
-        var filesToDelete = item.Logs.Select(l => l.FilePath).Append(item.FilePath).Where(f => f != null).Distinct();
+        var filesToDelete = item.Logs.Select(l => l.FilePath).Append(item.FilePath).Where(f => f != null).Distinct().ToList();
+
+        _db.Invoices.Remove(item);
+        await _db.SaveChangesAsync();
+        // Files are only removed once the DB row is actually gone - if SaveChangesAsync above
+        // throws, the invoice (and every file it still points to) is left intact instead of the
+        // files vanishing while the row remains.
         foreach (var f in filesToDelete)
         {
             var path = Path.Combine(_uploadDir, f!);
             if (System.IO.File.Exists(path))
                 System.IO.File.Delete(path);
         }
-
-        _db.Invoices.Remove(item);
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 

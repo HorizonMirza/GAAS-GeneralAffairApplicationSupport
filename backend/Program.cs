@@ -48,6 +48,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var migrateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // Must run before the raw-SQL blocks below: on a brand-new database none of the model-backed
+    // tables (booking_ruang, pengiriman, users, ...) exist yet, and several of those blocks
+    // ALTER/reference them (e.g. booking_ruang_rooms' FK into booking_ruang) - without this they
+    // fail outright on first boot against an empty database. Idempotent/no-op once the schema
+    // already exists, so this is safe on every subsequent restart too.
+    migrateDb.Database.EnsureCreated();
+    // Backs the password-change session revocation in ProfileController/JwtService/
+    // CurrentUserService: a token minted before the most recent password change no longer matches
+    // this column and is rejected, instead of staying valid for the rest of its lifetime.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS nomor_pemesanan VARCHAR(50)");
 

@@ -24,16 +24,22 @@ public class JwtService
 
     public int ExpireMinutes => _expireMinutes;
 
-    public string CreateAccessToken(int userId, RoleEnum role)
+    // passwordChangedAt is stamped in as a claim so CurrentUserService can reject a token minted
+    // before the account's most recent password change (see User.PasswordChangedAt) - null (the
+    // account has never had its password changed since this column existed) omits the claim, and
+    // CurrentUserService treats "no claim" the same as "matches" for that same reason.
+    public string CreateAccessToken(int userId, RoleEnum role, DateTime? passwordChangedAt = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim("sub", userId.ToString()),
             new Claim("role", role.ToString()),
         };
+        if (passwordChangedAt.HasValue)
+            claims.Add(new Claim("pwd_at", passwordChangedAt.Value.Ticks.ToString()));
 
         var token = new JwtSecurityToken(
             claims: claims,

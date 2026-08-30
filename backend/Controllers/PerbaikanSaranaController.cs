@@ -144,7 +144,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         // Pencarian menjangkau nomor DAN lokasi - saat melaporkan kerusakan, orang lebih sering
         // ingat tempatnya ("Ruang Bromo") daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(p => (p.NomorPerbaikan != null && p.NomorPerbaikan.Contains(search)) || p.Lokasi.Contains(search));
+            query = query.Where(p => (p.NomorPerbaikan != null && EF.Functions.ILike(p.NomorPerbaikan, $"%{search}%")) || EF.Functions.ILike(p.Lokasi, $"%{search}%"));
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -353,6 +353,8 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;

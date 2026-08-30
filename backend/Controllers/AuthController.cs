@@ -29,7 +29,7 @@ public class AuthController : ApiControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(payload.Password, user.PasswordHash))
             return StatusCode(401, new { detail = "Username atau password salah" });
 
-        var token = _jwt.CreateAccessToken(user.Id, user.Role);
+        var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
         var cookieSecure = _config.GetValue<bool>("CookieSecure");
 
         Response.Cookies.Append(CurrentUserService.CookieName, token, new CookieOptions
