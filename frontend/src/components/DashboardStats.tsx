@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency } from "@/lib/format";
-import type { BookingKendaraanStatsResponse, BookingRuangStatsResponse, Me, PengirimanStatsResponse } from "@/lib/types";
+import type {
+  BookingKendaraanStatsResponse,
+  BookingRuangStatsResponse,
+  Me,
+  PengirimanStatsResponse,
+  PerbaikanSaranaStatsResponse,
+  PermintaanAtkStatsResponse,
+} from "@/lib/types";
 
 interface PengirimanStatsView {
   waitingL1: number;
@@ -30,15 +37,21 @@ interface Props {
   onPengirimanStats?: (data: PengirimanStatsResponse | null) => void;
   onBookingStats?: (data: BookingRuangStatsResponse | null) => void;
   onKendaraanStats?: (data: BookingKendaraanStatsResponse | null) => void;
+  onAtkStats?: (data: PermintaanAtkStatsResponse | null) => void;
+  onSaranaStats?: (data: PerbaikanSaranaStatsResponse | null) => void;
 }
 
-export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats }: Props) {
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats, onAtkStats, onSaranaStats }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [kendaraan, setKendaraan] = useState<BookingStatsView | null>(null);
+  const [atk, setAtk] = useState<BookingStatsView | null>(null);
+  const [sarana, setSarana] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
   const [bookingFailed, setBookingFailed] = useState(false);
   const [kendaraanFailed, setKendaraanFailed] = useState(false);
+  const [atkFailed, setAtkFailed] = useState(false);
+  const [saranaFailed, setSaranaFailed] = useState(false);
 
   // Fetched (and failure-handled) independently - an outage in one source must not blank out
   // the other's numbers too, which a shared Promise.all/catch would do.
@@ -98,6 +111,38 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       .catch(() => {
         setKendaraanFailed(true);
         onKendaraanStats?.(null);
+      });
+    api.getAtkStats(bulan)
+      .then((a) => {
+        onAtkStats?.(a);
+        const ac = a.countsByStatus;
+        setAtk({
+          waitingL1: ac.SUBMITTED ?? 0,
+          waitingGa: ac.APPROVED_L1 ?? 0,
+          waitingGaApproval: ac.APPROVED_GA ?? 0,
+          completed: ac.APPROVED_GA_APPROVAL ?? 0,
+          rejected: (ac.REJECTED_L1 ?? 0) + (ac.REJECTED_GA ?? 0) + (ac.REJECTED_GA_APPROVAL ?? 0),
+        });
+      })
+      .catch(() => {
+        setAtkFailed(true);
+        onAtkStats?.(null);
+      });
+    api.getSaranaStats(bulan)
+      .then((s) => {
+        onSaranaStats?.(s);
+        const sc = s.countsByStatus;
+        setSarana({
+          waitingL1: sc.SUBMITTED ?? 0,
+          waitingGa: sc.APPROVED_L1 ?? 0,
+          waitingGaApproval: sc.APPROVED_GA ?? 0,
+          completed: sc.APPROVED_GA_APPROVAL ?? 0,
+          rejected: (sc.REJECTED_L1 ?? 0) + (sc.REJECTED_GA ?? 0) + (sc.REJECTED_GA_APPROVAL ?? 0),
+        });
+      })
+      .catch(() => {
+        setSaranaFailed(true);
+        onSaranaStats?.(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -175,6 +220,46 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
               <div className="stat-tile"><div className="value">{kendaraan.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{kendaraan.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{kendaraan.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Office Supplies</h4>
+            <Link href="/office-supplies/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+          </div>
+          {!atk ? (
+            <p className="text-secondary">{atkFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{atk.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{atk.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{atk.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{atk.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{atk.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Maintenance</h4>
+            <Link href="/maintenance/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+          </div>
+          {!sarana ? (
+            <p className="text-secondary">{saranaFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{sarana.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{sarana.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{sarana.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{sarana.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{sarana.rejected}</div><div className="label">Rejected</div></div>
             </div>
           )}
         </div>

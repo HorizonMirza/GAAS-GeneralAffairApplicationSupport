@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import DashboardStats from "@/components/DashboardStats";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 
 interface ModuleDef {
@@ -10,6 +11,9 @@ interface ModuleDef {
   title: string;
   href: string;
   icon: React.ReactNode;
+  // KPU only deals with Expedition (final sign-off + invoices) - same convention as AppShell's
+  // KPU_HIDDEN_CATEGORIES, so their module list here matches what they actually see in the sidebar.
+  kpuHidden?: boolean;
 }
 
 const MODULES: ModuleDef[] = [
@@ -22,31 +26,36 @@ const MODULES: ModuleDef[] = [
   {
     key: "rumahtangga",
     title: "Office Supplies",
-    href: "/rumah-tangga",
+    href: "/office-supplies/overview",
+    kpuHidden: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.986L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>,
   },
   {
     key: "bookingkendaraan",
     title: "Vehicle Booking",
     href: "/booking-kendaraan/overview",
+    kpuHidden: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2"></path><path d="M9 17h6"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>,
   },
   {
     key: "bookingruangmeeting",
     title: "Room Booking",
     href: "/booking-ruang-meeting/overview",
+    kpuHidden: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
   },
   {
     key: "perbaikansarana",
     title: "Maintenance",
-    href: "/perbaikan-sarana",
+    href: "/maintenance/overview",
+    kpuHidden: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"></path></svg>,
   },
   {
     key: "arsip",
     title: "Archive",
     href: "/arsip",
+    kpuHidden: true,
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>,
   },
 ];
@@ -71,17 +80,18 @@ export default function DashboardPage() {
 
       <h3 style={{ margin: "0 0 12px" }}>Modul</h3>
       <div className="module-grid">
-        {MODULES.map((mod) => (
-          <a key={mod.key} className="module-card module-card-soon" href={mod.href}>
+        {MODULES.filter((mod) => me.role !== "KPU" || !mod.kpuHidden).map((mod) => (
+          <a key={mod.key} className="module-card" href={mod.href}>
             <div className="module-card-icon">{mod.icon}</div>
             <div className="module-card-body">
               <h4>{mod.title}</h4>
-              <p className="text-secondary">Segera Hadir</p>
             </div>
             <span className="module-card-arrow">&rarr;</span>
           </a>
         ))}
       </div>
+
+      <DashboardStats me={me} />
     </>
   );
 }
