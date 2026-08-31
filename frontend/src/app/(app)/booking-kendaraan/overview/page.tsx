@@ -42,6 +42,18 @@ function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 }
 
+// Placeholder vehicle photos - filenames are the vehicle name slugified, so replacing the look of
+// a vehicle later is just overwriting /public/assets/vehicles/<slug>.png with a real photo (same
+// name, no code change needed). Same convention as roomPhotoUrl in the Room Booking overview.
+function vehiclePhotoUrl(vehicleName: string): string {
+  const slug = vehicleName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `/assets/vehicles/${slug}.png`;
+}
+
 function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKendaraan[]): boolean {
   const intervals: [number, number][] = [];
   for (const entry of todayEntries) {
@@ -170,9 +182,7 @@ export default function VehicleBookingOverviewPage() {
                 title={availTitle}
               >
                 <span className="room-card-avail-badge">{availLabel}</span>
-                <div className="room-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2"></path><path d="M9 17h6"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>
-                </div>
+                <div className="room-card-icon" style={{ backgroundImage: `url(${vehiclePhotoUrl(v.nama)})` }} />
                 <div className="room-card-body">
                   <h4>{v.nama}</h4>
                 </div>
