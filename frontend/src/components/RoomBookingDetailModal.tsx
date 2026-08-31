@@ -284,20 +284,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
               <div className="field full">
                 <label htmlFor="bv-ruang-tambahan">Ruangan Tambahan</label>
-                {isEdit ? (
-                  <RoomMultiSelect
-                    id="bv-ruang-tambahan"
-                    rooms={rooms}
-                    excludeRoom={form.namaRuang}
-                    selected={form.additionalRooms || []}
-                    onChange={(next) => set("additionalRooms", next)}
-                  />
-                ) : (
-                  // A textarea (not a single-line input) so a long list of rooms wraps and stays
-                  // fully visible instead of being clipped past the field's edge with no way to
-                  // read the rest of it.
-                  <textarea disabled rows={2} style={{ resize: "none" }} value={(form.additionalRooms || []).join(", ")} readOnly />
-                )}
+                <RoomMultiSelect
+                  id="bv-ruang-tambahan"
+                  rooms={rooms}
+                  excludeRoom={form.namaRuang}
+                  selected={form.additionalRooms || []}
+                  onChange={(next) => set("additionalRooms", next)}
+                  readOnly={!isEdit}
+                />
               </div>
             )}
             <div className="field full">
