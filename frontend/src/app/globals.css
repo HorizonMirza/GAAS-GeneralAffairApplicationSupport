@@ -1064,42 +1064,6 @@ body.auth-ready .app-shell {
 .room-card-body { padding: 8px 10px; }
 .room-card-body h4 { margin: 0; font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
 
-/* ---------- Data section: per-module report cards ---------- */
-.data-module-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
-}
-
-.data-module-card {
-  display: block;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 16px 18px;
-  text-decoration: none;
-  color: inherit;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-}
-
-.data-module-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow-blue);
-  border-color: var(--blue-400);
-}
-
-.data-module-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.data-module-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.data-module-card-head h4 { margin: 0; font-size: 0.92rem; flex: 1; }
-.data-module-total { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
-
-.data-bar-list { display: flex; flex-direction: column; gap: 7px; }
-.data-bar-row { display: flex; align-items: center; gap: 8px; }
-.data-bar-label { width: 78px; flex-shrink: 0; font-size: 0.68rem; color: var(--text-secondary); }
-.data-bar-track { flex: 1; height: 7px; border-radius: 999px; background: var(--border-subtle); overflow: hidden; }
-.data-bar-fill { height: 100%; border-radius: 999px; transition: width 300ms ease; }
-.data-bar-count { width: 26px; flex-shrink: 0; text-align: right; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-
 /* ---------- Home module grid ---------- */
 .module-grid {
   display: grid;

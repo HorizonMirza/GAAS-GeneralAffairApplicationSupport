@@ -109,8 +109,6 @@ const NAV_CATEGORIES: NavCategory[] = [
 // sidebar.
 const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Office Supplies", "Maintenance", "Archive"]);
 
-const DATA_SECTION_ROLES = new Set<Role>(["ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"]);
-
 function AccountMenu() {
   const { me } = useAuth();
   const router = useRouter();
@@ -212,7 +210,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }
   if (pathname === "/dashboard") topbarTitle = "Dashboard";
-  if (pathname === "/data") topbarTitle = "Data";
   if (pathname === "/profile") topbarTitle = "Profile";
   if (pathname === "/superadmin") topbarTitle = "Super Admin";
 
@@ -233,15 +230,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
           Dashboard
         </Link>
-
-        {/* Cross-module aggregate report (all-time counts per section) - see (app)/data/page.tsx.
-            Scoped to the same roles as the Room Booking Laporan page it borrows its pattern from. */}
-        {DATA_SECTION_ROLES.has(me.role) && (
-          <Link className={`nav-link ${pathname === "/data" ? "active" : ""}`} href="/data">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            Data
-          </Link>
-        )}
 
         {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
           // Same exclusion as the pathname-watching effect above - the shared /superadmin href
