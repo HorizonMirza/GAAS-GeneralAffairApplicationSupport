@@ -61,7 +61,8 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/booking-ruang-meeting/overview" },
       { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
       { label: "Booking", href: "/booking-ruang-meeting/transaksi" },
-      { label: "Laporan", href: "/booking-ruang-meeting/laporan", roles: ["ADMIN_GA", "APPROVAL_GA"] },
+      // "Laporan" temporarily hidden from the nav while its design gets revisited - the page
+      // itself and its API are left untouched so this is a one-line revert, not a rebuild.
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
