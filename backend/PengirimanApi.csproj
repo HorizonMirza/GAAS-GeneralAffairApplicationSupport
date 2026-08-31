@@ -24,4 +24,11 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Company logo embedded in the Bukti Booking Ruang Meeting PDF - see BookingPdfService. -->
+    <None Include="Assets\logo-pgm-solution.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
