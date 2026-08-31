@@ -36,7 +36,7 @@ public static class BookingPdfService
         }),
         ("Jadwal & Ruangan", new (string, Func<BookingRuang, string?>)[]
         {
-            ("Ruangan", b => $"{b.NamaRuang} (kapasitas {b.KapasitasRuang} orang)"),
+            ("Ruangan", b => b.NamaRuang),
             ("Ruangan Tambahan", b => b.AdditionalRooms.Count == 0 ? null : string.Join(", ", b.AdditionalRooms.Select(r => r.NamaRuang))),
             ("Tanggal", b => b.Tanggal.ToString("dddd, dd MMMM yyyy")),
             ("Jam", b => b.IsWholeDay ? "Sepanjang Hari" : $"{b.JamMulai:HH:mm} - {b.JamSelesai:HH:mm}"),
@@ -70,7 +70,11 @@ public static class BookingPdfService
             {
                 page.Size(PageSizes.A4);
                 page.Margin(36);
-                page.DefaultTextStyle(x => x.FontSize(10));
+                // Explicit Arial (not QuestPDF's own default font) - the default was silently
+                // dropping every "ti" letter pair in small-size text (e.g. "bukti" -> "buk",
+                // "meeting" -> "meeng") when the PDF's text layer got copied out, a broken
+                // ligature/ToUnicode mapping in that font. Arial has no such ligature table.
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
 
                 page.Header().Background(HeaderBg).Padding(16).Column(header =>
                 {
@@ -108,7 +112,7 @@ public static class BookingPdfService
                     }
 
                     col.Item().PaddingTop(12).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGM Solution sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum."
+                        "Dokumen ini diterbitkan otomatis oleh sistem PGM Solution (GAAS) sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 
