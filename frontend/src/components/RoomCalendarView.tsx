@@ -462,14 +462,16 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
               <th className="schedule-time-col schedule-th-center">Jam</th>
               {weekDates.map((date) => {
                 const d = new Date(date + "T00:00:00");
+                const isToday = date === todayIso();
                 return (
                   <th
                     key={date}
-                    ref={date === todayIso() ? nowLineColRef : undefined}
-                    className="schedule-week-head schedule-th-center"
+                    ref={isToday ? nowLineColRef : undefined}
+                    className={`schedule-week-head schedule-th-center${isToday ? " schedule-week-head-today" : ""}`}
                     onClick={() => onJumpToDay(date)}
                   >
-                    {DAY_NAMES[d.getDay()]} <span className="text-secondary">{d.getDate()}</span>
+                    {DAY_NAMES[d.getDay()]}{" "}
+                    <span className={isToday ? "schedule-week-head-today-badge" : "text-secondary"}>{d.getDate()}</span>
                   </th>
                 );
               })}
