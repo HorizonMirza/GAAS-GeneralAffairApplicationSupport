@@ -158,8 +158,8 @@ export default function VehicleBookingOverviewPage() {
         <div className="room-grid">
           {vehicles.map((v) => {
             const availability: "available" | "full" = isVehicleFullyBookedToday(v.nama, todayEntries) ? "full" : "available";
-            const availLabel = availability === "full" ? "Penuh" : "Tersedia";
-            const availTitle = availability === "full" ? "Penuh hari ini" : "Tersedia hari ini";
+            const availLabel = availability === "full" ? "Full" : "Available";
+            const availTitle = availability === "full" ? "Full hari ini" : "Available hari ini";
             return (
               <Link
                 key={v.nama}

@@ -178,9 +178,9 @@ export default function BookingOverviewPage() {
               : isRoomFullyBookedToday(r.nama, todayEntries)
               ? "full"
               : "available";
-            const availLabel = availability === "closed" ? "Tutup" : availability === "full" ? "Penuh" : "Tersedia";
+            const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
             const availTitle =
-              availability === "closed" ? "Tutup (akhir pekan)" : availability === "full" ? "Penuh hari ini" : "Tersedia hari ini";
+              availability === "closed" ? "Close (akhir pekan)" : availability === "full" ? "Full hari ini" : "Available hari ini";
             return (
               <Link
                 key={r.nama}
