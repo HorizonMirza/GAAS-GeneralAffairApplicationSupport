@@ -231,6 +231,11 @@ interface DragState {
   columnKey: string;
   startHour: number;
   currentHour: number;
+  // Only meaningful for Ketersediaan (view === "avail"), where a drag can span several room
+  // columns as well as hours - Harian/Mingguan drags stay pinned to a single column (see
+  // continueDrag) so these two just track the drag's own starting column.
+  startColIndex: number;
+  currentColIndex: number;
 }
 
 interface Props {
@@ -239,7 +244,9 @@ interface Props {
   entries: BookingRuang[];
   canCreate: boolean;
   // `room` is only passed when view === "avail" (the drag/click happened in that room's column).
-  onSlotSelect: (date: string, startHour: number, endHour: number, room?: string) => void;
+  // `additionalRooms` is only meaningful there too - populated when the drag spanned more than
+  // one room column.
+  onSlotSelect: (date: string, startHour: number, endHour: number, room?: string, additionalRooms?: string[]) => void;
   onEntryMenuClick: (event: ReactMouseEvent, entry: BookingRuang) => void;
   onJumpToDay: (date: string) => void;
   // Only needed for view === "avail" - the set of room columns to lay out side by side.
@@ -251,7 +258,7 @@ interface Props {
 
 export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay, rooms, onJumpToRoom }: Props) {
   const [drag, setDrag] = useState<DragState | null>(null);
-  const [pendingSelection, setPendingSelection] = useState<{ columnKey: string; start: number; end: number } | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<{ columnKey: string; start: number; end: number; additionalRooms?: string[] } | null>(null);
   const isDragging = drag !== null;
 
   useEffect(() => {
@@ -261,14 +268,21 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         if (current) {
           const start = Math.min(current.startHour, current.currentHour);
           const end = Math.max(current.startHour, current.currentHour) + 1;
-          setPendingSelection({ columnKey: current.columnKey, start, end });
+          if (view === "avail" && rooms) {
+            const loCol = Math.min(current.startColIndex, current.currentColIndex);
+            const hiCol = Math.max(current.startColIndex, current.currentColIndex);
+            const selectedRooms = rooms.slice(loCol, hiCol + 1).map((r) => r.nama);
+            setPendingSelection({ columnKey: selectedRooms[0] ?? current.columnKey, start, end, additionalRooms: selectedRooms.slice(1) });
+          } else {
+            setPendingSelection({ columnKey: current.columnKey, start, end });
+          }
         }
         return null;
       });
     }
     window.addEventListener("mouseup", finishDrag);
     return () => window.removeEventListener("mouseup", finishDrag);
-  }, [isDragging]);
+  }, [isDragging, view, rooms]);
 
   // Notifying the parent must happen in its own effect, not synchronously inside the native
   // "mouseup" handler above - calling it there updates a parent component's state while this
@@ -276,7 +290,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   useEffect(() => {
     if (!pendingSelection) return;
     if (view === "avail") {
-      onSlotSelect(refDate, pendingSelection.start, pendingSelection.end, pendingSelection.columnKey);
+      onSlotSelect(refDate, pendingSelection.start, pendingSelection.end, pendingSelection.columnKey, pendingSelection.additionalRooms);
     } else {
       onSlotSelect(pendingSelection.columnKey, pendingSelection.start, pendingSelection.end);
     }
@@ -284,13 +298,21 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingSelection]);
 
-  function startDrag(columnKey: string, hour: number, cell: CellPlan | undefined) {
+  function startDrag(columnKey: string, hour: number, cell: CellPlan | undefined, colIndex = 0) {
     if (!canCreate || !cell || cell.type !== "empty") return;
-    setDrag({ columnKey, startHour: hour, currentHour: hour });
+    setDrag({ columnKey, startHour: hour, currentHour: hour, startColIndex: colIndex, currentColIndex: colIndex });
   }
 
-  function continueDrag(columnKey: string, hour: number) {
-    setDrag((current) => (current && current.columnKey === columnKey ? { ...current, currentHour: hour } : current));
+  // Harian/Mingguan pass no colIndex - a drag there stays pinned to the column it started in.
+  // Ketersediaan passes colIndex on every cell, letting the drag range over room columns too.
+  function continueDrag(columnKey: string, hour: number, colIndex?: number) {
+    setDrag((current) => {
+      if (!current) return current;
+      if (colIndex === undefined) {
+        return current.columnKey === columnKey ? { ...current, currentHour: hour } : current;
+      }
+      return { ...current, currentHour: hour, currentColIndex: colIndex };
+    });
   }
 
   function isInDragRange(columnKey: string, hour: number): boolean {
@@ -298,6 +320,16 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     const lo = Math.min(drag.startHour, drag.currentHour);
     const hi = Math.max(drag.startHour, drag.currentHour);
     return hour >= lo && hour <= hi;
+  }
+
+  function isInAvailDragRange(colIndex: number, hour: number): boolean {
+    if (!drag) return false;
+    const loCol = Math.min(drag.startColIndex, drag.currentColIndex);
+    const hiCol = Math.max(drag.startColIndex, drag.currentColIndex);
+    if (colIndex < loCol || colIndex > hiCol) return false;
+    const loHour = Math.min(drag.startHour, drag.currentHour);
+    const hiHour = Math.max(drag.startHour, drag.currentHour);
+    return hour >= loHour && hour <= hiHour;
   }
 
   // Live "current time" indicator (like Google Calendar's red line) for the Harian/Mingguan/
@@ -520,9 +552,9 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       cell={cell}
                       date={r.nama}
                       canCreate={canCreate}
-                      isDragPreview={isInDragRange(r.nama, hour)}
-                      onMouseDown={() => startDrag(r.nama, hour, cell)}
-                      onMouseEnter={() => continueDrag(r.nama, hour)}
+                      isDragPreview={isInAvailDragRange(idx, hour)}
+                      onMouseDown={() => startDrag(r.nama, hour, cell, idx)}
+                      onMouseEnter={() => continueDrag(r.nama, hour, idx)}
                       onEntryMenuClick={onEntryMenuClick}
                       onJumpToDay={(room) => onJumpToRoom?.(room)}
                       hideMeta

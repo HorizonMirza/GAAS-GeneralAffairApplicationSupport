@@ -342,10 +342,11 @@ function BookingCalendarPageInner() {
               entries={view === "avail" ? filteredAvailEntries : filteredEntries}
               rooms={rooms}
               canCreate={isOrigin}
-              onSlotSelect={(date, startHour, endHour, room) => {
+              onSlotSelect={(date, startHour, endHour, room, additionalRooms) => {
                 if (!isOrigin) return;
                 setFormInitial({
                   namaRuang: room || selectedRoom,
+                  additionalRooms: additionalRooms && additionalRooms.length > 0 ? additionalRooms : undefined,
                   tanggal: date,
                   jamMulai: `${String(startHour).padStart(2, "0")}:00`,
                   jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
