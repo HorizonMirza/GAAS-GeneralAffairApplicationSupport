@@ -163,6 +163,19 @@ export default function BookingTransaksiPage() {
     setFilters(defaultFilters());
   }
 
+  function currentExportParams() {
+    return {
+      bulan: filters.bulan,
+      status: filters.status,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+      nama_ruang: filters.namaRuang,
+      tanggal: filters.tanggal,
+      search: filters.search,
+    };
+  }
+
   function goToPage(page: number) {
     if (page < 1) return;
     setFilters((f) => ({ ...f, page }));
@@ -300,6 +313,12 @@ export default function BookingTransaksiPage() {
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
 
           <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.bookingExportPdfUrl(currentExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.bookingExportUrl(currentExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
                 + Booking Ruang Meeting

@@ -295,6 +295,19 @@ export const api = {
     return `${API_BASE}/pengiriman/export-pdf${query ? `?${query}` : ""}`;
   },
 
+  bookingExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/booking-ruang/export${query ? `?${query}` : ""}`;
+  },
+  bookingExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/booking-ruang/export-pdf${query ? `?${query}` : ""}`;
+  },
+
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
   getRoomFeedUrl: (roomName: string) =>
     apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
