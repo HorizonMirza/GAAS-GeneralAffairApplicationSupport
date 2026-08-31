@@ -551,7 +551,7 @@ export default function SuperAdminPage() {
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} transaksi · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">Total {total} Transaksi · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (
