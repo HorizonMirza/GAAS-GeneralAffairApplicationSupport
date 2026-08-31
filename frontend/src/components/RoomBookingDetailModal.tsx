@@ -293,7 +293,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                     onChange={(next) => set("additionalRooms", next)}
                   />
                 ) : (
-                  <input type="text" disabled value={(form.additionalRooms || []).join(", ")} />
+                  // A textarea (not a single-line input) so a long list of rooms wraps and stays
+                  // fully visible instead of being clipped past the field's edge with no way to
+                  // read the rest of it.
+                  <textarea disabled rows={2} style={{ resize: "none" }} value={(form.additionalRooms || []).join(", ")} readOnly />
                 )}
               </div>
             )}
