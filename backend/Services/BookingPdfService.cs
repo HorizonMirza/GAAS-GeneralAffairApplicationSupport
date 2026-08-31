@@ -76,8 +76,6 @@ public static class BookingPdfService
 
                     col.Item().PaddingTop(8).Element(PerihalRow);
 
-                    col.Item().PaddingTop(6).Text(BuildKeterangan(item)).FontSize(10);
-
                     col.Item().PaddingTop(8).Element(AnggaranRow);
                     col.Item().Element(c => InfoRow(c, "Tanggal Perkiraan Kebutuhan", item.Tanggal.ToString("dd MMMM yyyy")));
                     col.Item().Element(c => InfoRow(c, "Lampiran", "-"));
@@ -93,7 +91,7 @@ public static class BookingPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGM Solution (GAAS) sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
+                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 
@@ -165,11 +163,11 @@ public static class BookingPdfService
             table.ColumnsDefinition(c =>
             {
                 c.ConstantColumn(26);
-                c.RelativeColumn(2.3f);
-                c.ConstantColumn(46);
-                c.ConstantColumn(52);
-                c.RelativeColumn(2.3f);
-                c.RelativeColumn(1.7f);
+                c.RelativeColumn(2.1f);
+                c.ConstantColumn(58);
+                c.ConstantColumn(58);
+                c.RelativeColumn(2.2f);
+                c.RelativeColumn(1.6f);
             });
 
             table.Cell().RowSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("NO").Bold().FontSize(9);
@@ -193,7 +191,7 @@ public static class BookingPdfService
     {
         container.Border(1).BorderColor(BorderColor).Background(ExtraBoxBg).Padding(10).Column(col =>
         {
-            col.Item().Text("INFORMASI TAMBAHAN — STATUS & APPROVAL").Bold().FontSize(9.5f).FontColor(AccentBlue);
+            col.Item().Text("INFORMASI TAMBAHAN").Bold().FontSize(9.5f).FontColor(AccentBlue);
             col.Item().PaddingTop(6).Element(c => ExtraGrid(c, item));
         });
     }
@@ -215,16 +213,12 @@ public static class BookingPdfService
         container.Column(col =>
         {
             col.Spacing(4);
-            for (var i = 0; i < pairs.Length; i += 2)
+            foreach (var (label, value) in pairs)
             {
-                var left = pairs[i];
-                var right = pairs[i + 1];
                 col.Item().Row(row =>
                 {
-                    row.ConstantItem(150).Text(left.Label).FontSize(9.5f);
-                    row.RelativeItem().Text(left.Value).FontSize(9.5f).Bold();
-                    row.ConstantItem(150).Text(right.Label).FontSize(9.5f);
-                    row.RelativeItem().Text(right.Value).FontSize(9.5f).Bold();
+                    row.ConstantItem(150).Text(label).FontSize(9.5f);
+                    row.RelativeItem().Text(value).FontSize(9.5f).Bold();
                 });
             }
         });
@@ -250,7 +244,4 @@ public static class BookingPdfService
 
     private static string JamLabel(BookingRuang item)
         => item.IsWholeDay ? "Sepanjang Hari" : $"Pukul {item.JamMulai:HH:mm} s.d {item.JamSelesai:HH:mm} WIB";
-
-    private static string BuildKeterangan(BookingRuang item)
-        => string.IsNullOrWhiteSpace(item.Catatan) ? item.NamaKegiatan : $"{item.NamaKegiatan}. {item.Catatan}";
 }
