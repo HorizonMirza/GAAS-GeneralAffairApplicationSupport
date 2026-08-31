@@ -10,22 +10,56 @@ namespace PengirimanApi.Services;
 public static class BookingPdfService
 {
     private const string HeaderBg = "#1450C9";
+    private const string SectionBg = "#E8EFFC";
+    private const string LabelBg = "#F5F9FF";
     private const string BorderColor = "#CCCCCC";
 
-    private static readonly (string Label, Func<BookingRuang, string> Value)[] Rows =
+    private static readonly Dictionary<string, string> RecurrenceFrequencyLabel = new()
     {
-        ("Nama Kegiatan", b => b.NamaKegiatan),
-        ("PIC", b => b.Pic ?? "-"),
-        ("Ruangan", b => $"{b.NamaRuang} (kapasitas {b.KapasitasRuang} orang)"),
-        ("Jumlah Peserta", b => b.JumlahPeserta.ToString()),
-        ("Tanggal", b => b.Tanggal.ToString("dddd, dd MMMM yyyy")),
-        ("Jam", b => b.IsWholeDay ? "Sepanjang Hari" : $"{b.JamMulai:HH:mm} - {b.JamSelesai:HH:mm}"),
-        ("Divisi", b => b.Divisi),
-        ("Departemen", b => b.Departemen ?? "-"),
-        ("Diajukan Oleh", b => b.Pembuat?.Nama ?? "-"),
-        ("Catatan", b => b.Catatan ?? "-"),
-        ("Status", _ => "Approved"),
-        ("Disetujui Pada", b => b.ApprovedApprovalGaAt.HasValue ? b.ApprovedApprovalGaAt.Value.ToString("dd MMMM yyyy HH:mm") + " WIB" : "-"),
+        ["DAILY"] = "Harian",
+        ["WEEKLY"] = "Mingguan",
+        ["MONTHLY"] = "Bulanan",
+    };
+
+    // Value returning null skips that row entirely - used for fields that only apply to some
+    // bookings (a second room, a recurring series) so a plain one-off booking's proof doesn't
+    // show a run of empty "-" rows for things that were never relevant to it.
+    private static readonly (string Section, (string Label, Func<BookingRuang, string?> Value)[] Rows)[] Groups =
+    {
+        ("Informasi Kegiatan", new (string, Func<BookingRuang, string?>)[]
+        {
+            ("Nama Kegiatan", b => b.NamaKegiatan),
+            ("PIC", b => b.Pic ?? "-"),
+            ("Tipe", b => b.Tipe == TipeBookingEnum.EXTERNAL ? "External" : "Internal"),
+            ("Divisi", b => b.Divisi),
+            ("Departemen", b => b.Departemen ?? "-"),
+        }),
+        ("Jadwal & Ruangan", new (string, Func<BookingRuang, string?>)[]
+        {
+            ("Ruangan", b => $"{b.NamaRuang} (kapasitas {b.KapasitasRuang} orang)"),
+            ("Ruangan Tambahan", b => b.AdditionalRooms.Count == 0 ? null : string.Join(", ", b.AdditionalRooms.Select(r => r.NamaRuang))),
+            ("Tanggal", b => b.Tanggal.ToString("dddd, dd MMMM yyyy")),
+            ("Jam", b => b.IsWholeDay ? "Sepanjang Hari" : $"{b.JamMulai:HH:mm} - {b.JamSelesai:HH:mm}"),
+            ("Pengulangan", b =>
+            {
+                if (b.SeriesId == null || b.RecurrenceFrequency == null) return null;
+                var freq = RecurrenceFrequencyLabel.GetValueOrDefault(b.RecurrenceFrequency.Value.ToString(), b.RecurrenceFrequency.Value.ToString());
+                var until = b.RecurrenceEndDate.HasValue ? $" s/d {b.RecurrenceEndDate.Value:dd MMMM yyyy}" : "";
+                return $"{freq}{until}";
+            }),
+            ("Jumlah Peserta", b => $"{b.JumlahPeserta} orang"),
+        }),
+        ("Approval", new (string, Func<BookingRuang, string?>)[]
+        {
+            ("Diajukan Oleh", b => b.Pembuat?.Nama ?? "-"),
+            ("Diajukan Pada", b => b.CreatedAt.ToString("dd MMMM yyyy HH:mm") + " WIB"),
+            ("Status", _ => "Approved"),
+            ("Disetujui Pada", b => b.ApprovedApprovalGaAt.HasValue ? b.ApprovedApprovalGaAt.Value.ToString("dd MMMM yyyy HH:mm") + " WIB" : "-"),
+        }),
+        ("Catatan", new (string, Func<BookingRuang, string?>)[]
+        {
+            ("Catatan", b => b.Catatan ?? "-"),
+        }),
     };
 
     public static byte[] Generate(BookingRuang item)
@@ -46,22 +80,34 @@ public static class BookingPdfService
 
                 page.Content().PaddingTop(20).Column(col =>
                 {
-                    col.Item().Table(table =>
+                    col.Spacing(12);
+
+                    foreach (var (section, rows) in Groups)
                     {
-                        table.ColumnsDefinition(c =>
+                        var visibleRows = rows.Where(r => r.Value(item) != null).ToArray();
+                        if (visibleRows.Length == 0) continue;
+
+                        col.Item().Column(group =>
                         {
-                            c.ConstantColumn(150);
-                            c.RelativeColumn();
+                            group.Item().Background(SectionBg).Padding(6).Text(section).Bold().FontSize(10.5f).FontColor(HeaderBg);
+                            group.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.ConstantColumn(150);
+                                    c.RelativeColumn();
+                                });
+
+                                foreach (var (label, value) in visibleRows)
+                                {
+                                    table.Cell().Border(0.5f).BorderColor(BorderColor).Padding(6).Background(LabelBg).Text(label).Bold();
+                                    table.Cell().Border(0.5f).BorderColor(BorderColor).Padding(6).Text(value(item)!);
+                                }
+                            });
                         });
+                    }
 
-                        foreach (var (label, value) in Rows)
-                        {
-                            table.Cell().Border(0.5f).BorderColor(BorderColor).Padding(6).Background("#F5F9FF").Text(label).Bold();
-                            table.Cell().Border(0.5f).BorderColor(BorderColor).Padding(6).Text(value(item));
-                        }
-                    });
-
-                    col.Item().PaddingTop(24).Text(
+                    col.Item().PaddingTop(12).Text(
                         "Dokumen ini diterbitkan otomatis oleh sistem PGM Solution sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
