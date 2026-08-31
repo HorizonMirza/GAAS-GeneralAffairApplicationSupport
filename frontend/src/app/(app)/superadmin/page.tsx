@@ -738,7 +738,7 @@ export default function SuperAdminPage() {
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>
                         <span className="badge-stack">
-                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
                           {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                         </span>
                       </td>

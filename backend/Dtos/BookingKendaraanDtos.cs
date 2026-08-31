@@ -62,6 +62,7 @@ public class BookingKendaraanOut
     public string? Departemen { get; set; }
     public BookingStatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
+    public string? CancelledByName { get; set; }
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
@@ -95,6 +96,7 @@ public class BookingKendaraanOut
         Departemen = b.Departemen,
         Status = b.Status,
         RejectReason = b.RejectReason,
+        CancelledByName = b.CancelledByName,
         CreatedBy = b.CreatedBy,
         CreatedByRole = b.CreatedByRole,
         ApprovedByL1 = b.ApprovedByL1,

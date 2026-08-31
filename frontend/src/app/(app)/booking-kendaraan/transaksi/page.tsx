@@ -324,7 +324,7 @@ export default function VehicleBookingTransaksiPage() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
                           </span>
                           <button
                             type="button"
@@ -449,7 +449,6 @@ export default function VehicleBookingTransaksiPage() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="kendaraan"
-        cancelledByName={me.nama}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

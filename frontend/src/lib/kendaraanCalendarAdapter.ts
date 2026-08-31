@@ -31,6 +31,7 @@ export function kendaraanAsBookingRuangShape(k: BookingKendaraan): BookingRuang 
     status: k.status,
     rejectReason: k.rejectReason,
     rejectTarget: null,
+    cancelledByName: k.cancelledByName,
     createdBy: k.createdBy,
     createdByRole: k.createdByRole,
     approvedByL1: k.approvedByL1,

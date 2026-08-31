@@ -39,6 +39,11 @@ public class BookingRuang
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
 
+    // Plain name snapshot, not a User FK - set once when Status becomes CANCELLED (see
+    // BookingRuangController.Cancel) so the status badge can show who called it off without
+    // an extra join. Null for every other status.
+    public string? CancelledByName { get; set; }
+
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }

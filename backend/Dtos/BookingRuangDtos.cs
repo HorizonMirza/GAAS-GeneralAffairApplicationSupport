@@ -78,6 +78,7 @@ public class BookingRuangOut
     public BookingStatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
     public RejectTargetEnum? RejectTarget { get; set; }
+    public string? CancelledByName { get; set; }
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
@@ -116,6 +117,7 @@ public class BookingRuangOut
         Status = b.Status,
         RejectReason = b.RejectReason,
         RejectTarget = b.RejectTarget,
+        CancelledByName = b.CancelledByName,
         CreatedBy = b.CreatedBy,
         CreatedByRole = b.CreatedByRole,
         ApprovedByL1 = b.ApprovedByL1,

@@ -253,7 +253,7 @@ export default function BookingOverviewPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="badge-stack">
-                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
                     {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                   </span>
                   <button
@@ -381,7 +381,6 @@ export default function BookingOverviewPage() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
-        cancelledByName={me.nama}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

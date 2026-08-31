@@ -469,7 +469,6 @@ function VehicleCalendarPageInner() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="kendaraan"
-        cancelledByName={me.nama}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

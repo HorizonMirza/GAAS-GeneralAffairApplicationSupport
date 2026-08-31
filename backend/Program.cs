@@ -448,6 +448,11 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_divisi ON archive_documents (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_departemen ON archive_documents (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_created_at ON archive_documents (created_at)");
+
+    // Cancel Booking feature - plain name snapshot of who cancelled it (see
+    // BookingRuangController.Cancel/BookingKendaraanController.Cancel), not a User FK.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
 }
 
 if (args.Contains("resetdb"))

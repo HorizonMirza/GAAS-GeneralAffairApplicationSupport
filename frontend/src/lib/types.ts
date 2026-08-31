@@ -266,6 +266,7 @@ export interface BookingRuang {
   status: BookingStatus;
   rejectReason: string | null;
   rejectTarget: RejectTarget | null;
+  cancelledByName: string | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;
@@ -526,6 +527,7 @@ export interface BookingKendaraan {
   departemen: string | null;
   status: BookingStatus;
   rejectReason: string | null;
+  cancelledByName: string | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;

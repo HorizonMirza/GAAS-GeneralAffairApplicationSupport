@@ -513,6 +513,7 @@ public class BookingKendaraanController : ApiControllerBase
             return StatusCode(403, new { detail = "Booking sudah melewati jam mulai, tidak dapat dibatalkan" });
 
         item.Status = BookingStatusEnum.CANCELLED;
+        item.CancelledByName = user!.Nama;
         AddLog(item, "CANCELLED", user!, payload.Reason);
         await _db.SaveChangesAsync();
         return Ok(BookingKendaraanOut.From(item));

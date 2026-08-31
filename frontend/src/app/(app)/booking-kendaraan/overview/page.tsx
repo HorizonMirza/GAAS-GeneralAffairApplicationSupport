@@ -232,7 +232,7 @@ export default function VehicleBookingOverviewPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} departemen={item.departemen} />
+                  <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -336,7 +336,6 @@ export default function VehicleBookingOverviewPage() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="kendaraan"
-        cancelledByName={me.nama}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

@@ -1049,6 +1049,7 @@ public class BookingRuangController : ApiControllerBase
             if (member.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
                 await NotifyWaitlistAsync(member);
             member.Status = BookingStatusEnum.CANCELLED;
+            member.CancelledByName = user!.Nama;
             AddLog(member, "CANCELLED", user!, payload.Reason);
             cancelledAny = true;
         }
