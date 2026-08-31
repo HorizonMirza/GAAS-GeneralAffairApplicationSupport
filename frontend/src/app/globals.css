@@ -1600,6 +1600,11 @@ table.data-table {
 }
 
 .data-table tbody tr:hover { background: var(--bg-surface-alt); }
+
+/* The calendar/Ketersediaan grid (Harian/Mingguan/Bulanan/Ketersediaan) reuses .data-table for its
+   header row, but its headers are day names and room names, not table-column labels - all caps
+   reads harsher there than the letter-spacing already achieves, so keep this table's own case. */
+.schedule-table th { text-transform: none; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 
 .table-empty {
