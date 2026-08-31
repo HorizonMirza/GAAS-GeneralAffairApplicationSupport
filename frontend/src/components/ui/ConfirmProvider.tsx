@@ -29,7 +29,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
       <ModalOverlay open={!!state} onClose={close} className={`modal-overlay modal-overlay-centered ${state ? "" : "hidden"}`}>
-        <div className="modal" style={{ maxWidth: 380 }}>
+        <div className="modal" style={{ maxWidth: state?.message.includes("\n") ? 560 : 380 }}>
           <div className="modal-header">
             <h3>Konfirmasi</h3>
             <button type="button" className="modal-close" onClick={close}>&times;</button>
