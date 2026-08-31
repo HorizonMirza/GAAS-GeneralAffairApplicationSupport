@@ -206,18 +206,24 @@ public class BookingRuangExportController : ApiControllerBase
             }
         }
 
+        var ruanganColIdx = Array.FindIndex(Columns, c => c.Field == "ruangan") + 2;
+
         ws.Columns(1, header.Count).AdjustToContents();
         foreach (var col in ws.Columns(1, header.Count))
         {
+            // Ruangan is left out of the general cap below - a booking with several rooms should
+            // read as one line ("short for 1 room, long for many"), not wrap, so it keeps
+            // whatever width AdjustToContents already gave it for the widest room list in this
+            // export instead of being squeezed down like the other columns.
+            if (col.ColumnNumber() == ruanganColIdx) continue;
             if (col.Width < 10) col.Width = 10;
             if (col.Width > 40) col.Width = 40;
         }
 
-        // Free-text columns (a multi-room list, a note, an activity name) routinely run past the
-        // 40-wide cap above - instead of letting that clip the rest of the value behind whatever
-        // sits in the next cell, give just these a fixed width and let them wrap onto more lines,
-        // then auto-fit every row's height so the wrapped text is never cut off.
-        string[] wrapFields = { "nama_kegiatan", "ruangan", "catatan" };
+        // The other free-text columns (a note, an activity name) still get capped above, so wrap
+        // them onto more lines instead of clipping - then auto-fit every row's height so neither
+        // this wrapped text nor Ruangan's single long line ever gets cut off.
+        string[] wrapFields = { "nama_kegiatan", "catatan" };
         foreach (var field in wrapFields)
         {
             var colIdx = Array.FindIndex(Columns, c => c.Field == field) + 2;
