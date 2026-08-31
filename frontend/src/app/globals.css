@@ -2102,7 +2102,8 @@ table.data-table {
 }
 .month-cell:last-child { border-right: 1px solid var(--border-subtle); }
 
-.month-cell-muted { background: var(--bg-surface-alt); opacity: 0.6; }
+.month-cell-muted { background: var(--bg-surface-alt); }
+.month-cell-muted .month-cell-daynum { opacity: 0.5; }
 
 .month-cell-daynum {
   align-self: flex-start;
