@@ -97,9 +97,11 @@ export default function VehicleBookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      // Not capped to a small page size - shows every booking for the current bulan, which
-      // resets the list on its own once the month rolls over.
-      const queue = await api.listKendaraanBooking({ limit: 1000, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
+      // sejakBulan (not bulan) so this list covers the current month AND every future month -
+      // an upcoming booking shouldn't vanish the moment the calendar rolls past it. Still drops
+      // off past months on its own once they're behind "today". Not capped to a small page size
+      // otherwise - shows every booking from this point on.
+      const queue = await api.listKendaraanBooking({ limit: 1000, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
     } finally {
       setBusy(false);

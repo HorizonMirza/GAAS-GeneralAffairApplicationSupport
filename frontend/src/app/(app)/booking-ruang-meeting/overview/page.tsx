@@ -104,11 +104,11 @@ export default function BookingOverviewPage() {
     if (!me) return;
     setBusy(true);
     try {
-      // Resets every month - bulan (not sejakBulan) scopes strictly to the current calendar
-      // month, so this list naturally clears out as soon as a new month starts instead of
-      // accumulating forever. Not capped to a small page size otherwise - shows every booking
-      // for the month.
-      const queue = await api.listBooking({ limit: 1000, page: 1, bulan: currentYearMonth() }).then((r) => r.items);
+      // sejakBulan (not bulan) so this list covers the current month AND every future month -
+      // an upcoming booking shouldn't vanish the moment the calendar rolls past it. Still drops
+      // off past months on its own once they're behind "today". Not capped to a small page size
+      // otherwise - shows every booking from this point on.
+      const queue = await api.listBooking({ limit: 1000, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
     } finally {
       setBusy(false);
