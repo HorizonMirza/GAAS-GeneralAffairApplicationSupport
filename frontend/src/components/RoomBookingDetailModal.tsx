@@ -390,7 +390,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
           {bookingRecurrenceLabel(item) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              Approve / Reject berlaku untuk seluruh pemesanan pada seri ini.
+              <strong>Pengulangan:</strong> Approve / Reject berlaku untuk seluruh pemesanan pada seri ini.
             </div>
           )}
 
