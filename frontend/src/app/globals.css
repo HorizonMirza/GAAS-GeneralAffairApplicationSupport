@@ -1056,7 +1056,7 @@ body.auth-ready .app-shell {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gradient-primary);
+  background: var(--gradient-primary) center / cover no-repeat;
   color: #fff;
   flex-shrink: 0;
 }
