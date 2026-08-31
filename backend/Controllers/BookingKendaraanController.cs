@@ -242,8 +242,8 @@ public class BookingKendaraanController : ApiControllerBase
 
     private static string ConflictMessage(BookingKendaraan conflict) =>
         conflict.IsWholeDay
-            ? $"{conflict.NamaKendaraan} sudah dipesan Sepanjang Hari pada tanggal tersebut"
-            : $"{conflict.NamaKendaraan} sudah dipesan jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} pada tanggal tersebut";
+            ? $"{conflict.NamaKendaraan} sudah dipesan Sepanjang Hari pada tanggal {conflict.Tanggal:dd/MM/yyyy}"
+            : $"{conflict.NamaKendaraan} sudah dipesan pada jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} dan tanggal {conflict.Tanggal:dd/MM/yyyy}";
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
     {

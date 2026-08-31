@@ -379,8 +379,8 @@ public class BookingRuangController : ApiControllerBase
 
     private static string ConflictMessage(BookingRuang conflict) =>
         conflict.IsWholeDay
-            ? $"{conflict.NamaRuang} sudah dipesan Sepanjang Hari pada tanggal tersebut"
-            : $"{conflict.NamaRuang} sudah dipesan jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} pada tanggal tersebut";
+            ? $"{conflict.NamaRuang} sudah dipesan Sepanjang Hari pada tanggal {conflict.Tanggal:dd/MM/yyyy}"
+            : $"{conflict.NamaRuang} sudah dipesan pada jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} dan tanggal {conflict.Tanggal:dd/MM/yyyy}";
 
     // Scoped per divisi + bulan + tahun, same convention as Ekspedisi's NomorTransmittal (see
     // PengirimanController.PeekNextTransmittalSequenceAsync) - the sequence resets every month
