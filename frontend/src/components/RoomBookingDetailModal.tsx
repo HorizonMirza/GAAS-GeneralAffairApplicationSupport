@@ -50,6 +50,9 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
     jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
     catatan: item.catatan || "",
     tipe: item.tipe,
+    isRecurring: !!item.seriesId,
+    recurrenceFrequency: item.recurrenceFrequency,
+    recurrenceEndDate: item.recurrenceEndDate,
   };
 }
 
@@ -181,10 +184,9 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const becomingSeries = !item!.seriesId && !!form!.isRecurring;
     try {
       await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
-      showToast(becomingSeries ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
+      showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -303,35 +305,11 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 ))}
               </select>
             </div>
-            {/* Once a booking already belongs to a series its recurrence is fixed - shown here as
-                the same Frekuensi/Berulang Sampai Tanggal fields as the input form, just disabled,
-                instead of an editable toggle. Only a still-standalone DRAFT (no seriesId yet) gets
-                the live toggle, letting its creator turn it into a brand-new series on save. */}
-            {item.seriesId ? (
-              <>
-                <div className="field full">
-                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
-                  <button type="button" id="bv-booking-berulang" className="field-toggle field-toggle-active field-toggle-disabled" aria-pressed disabled>
-                    <span className="field-toggle-box">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </span>
-                    Booking Berulang
-                  </button>
-                </div>
-                <div className="field">
-                  <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
-                  <select id="bv-recurrence-frequency" disabled value={item.recurrenceFrequency || ""}>
-                    {RECURRENCE_OPTIONS.map((freq) => (
-                      <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
-                  <input type="date" id="bv-recurrence-end" disabled value={item.recurrenceEndDate || ""} />
-                </div>
-              </>
-            ) : isEdit && (
+            {/* Editing lets the origin creator redefine an existing series' recurrence too (not
+                just add one to a still-standalone booking) - Update() below regenerates the
+                series' DRAFT occurrences to match. In view mode, a booking that already belongs
+                to a series just shows its current Frekuensi/Berulang Sampai Tanggal, disabled. */}
+            {isEdit ? (
               <>
                 <div className="field full">
                   <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
@@ -378,6 +356,30 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                     </div>
                   </>
                 )}
+              </>
+            ) : item.seriesId && (
+              <>
+                <div className="field full">
+                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
+                  <button type="button" id="bv-booking-berulang" className="field-toggle field-toggle-active field-toggle-disabled" aria-pressed disabled>
+                    <span className="field-toggle-box">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </span>
+                    Booking Berulang
+                  </button>
+                </div>
+                <div className="field">
+                  <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
+                  <select id="bv-recurrence-frequency" disabled value={item.recurrenceFrequency || ""}>
+                    {RECURRENCE_OPTIONS.map((freq) => (
+                      <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
+                  <input type="date" id="bv-recurrence-end" disabled value={item.recurrenceEndDate || ""} />
+                </div>
               </>
             )}
             <div className="field full">

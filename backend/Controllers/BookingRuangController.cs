@@ -687,24 +687,30 @@ public class BookingRuangController : ApiControllerBase
         // without needing Admin/Approval GA's tool.
         payload.Divisi = item.Divisi;
         payload.Departemen = item.Departemen;
-        // A booking that's already part of a series keeps its recurrence definition fixed - only
-        // a still-standalone DRAFT (never part of any series) can turn into a brand-new series
-        // here, generated the same way Create() builds one.
-        var canBecomeSeries = item.SeriesId == null;
-        if (!canBecomeSeries) payload.IsRecurring = false;
 
         var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var occurrenceDates = canBecomeSeries ? BuildOccurrenceDates(payload) : new List<DateOnly> { payload.Tanggal };
-        var becomingSeries = occurrenceDates.Count > 1;
+        // IsEditableByOrigin above only ever allows this for a still-DRAFT item, and the whole
+        // series moves through Submit/Approve/Reject together as one package (see
+        // ApplyToSeriesAsync) - so every sibling that still exists while this item is DRAFT is
+        // guaranteed DRAFT too. That makes it safe to redefine the series' recurrence here (not
+        // just add one to a still-standalone booking): the existing DRAFT siblings are diffed
+        // against the freshly computed occurrence dates below and only rebuilt (reissuing Nomor
+        // Pemesanan) when the actual date list changes - a plain field edit that leaves the
+        // schedule untouched still just propagates in place, keeping each sibling's own Tanggal
+        // and Nomor Pemesanan.
+        var oldSeriesId = item.SeriesId;
+        var oldTanggal = item.Tanggal;
+        var occurrenceDates = BuildOccurrenceDates(payload);
+        var willBeSeries = occurrenceDates.Count > 1;
 
         var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
-        // Same rule Create() uses: a plain (still non-recurring) edit blocks outright on a
-        // collision, but turning into a series is lenient - the series is still saved in full,
-        // and any colliding occurrence (this one included) is just flagged for Admin/Approval GA
-        // to fix later with the Reschedule tool.
-        if (!becomingSeries)
+        // Same rule Create() uses: a plain single-occurrence result blocks outright on a
+        // collision, but a series is lenient - it's still saved in full, and any colliding
+        // occurrence (this one included) is just flagged for Admin/Approval GA to fix later with
+        // the Reschedule tool.
+        if (!willBeSeries)
         {
             var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
             if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
@@ -727,57 +733,75 @@ public class BookingRuangController : ApiControllerBase
         // Reaching here means the conflict check above just passed for the (possibly new) date -
         // clear any stale HasConflict left over from series creation, same as Reschedule does.
         item.HasConflict = false;
-
-        if (becomingSeries)
+        item.SeriesId = willBeSeries ? (oldSeriesId ?? Guid.NewGuid()) : null;
+        item.RecurrenceFrequency = willBeSeries ? payload.RecurrenceFrequency : null;
+        item.RecurrenceEndDate = willBeSeries ? payload.RecurrenceEndDate : null;
+        if (willBeSeries)
         {
             var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
             item.HasConflict = conflict != null;
-            item.SeriesId = Guid.NewGuid();
-            item.RecurrenceFrequency = payload.RecurrenceFrequency;
-            item.RecurrenceEndDate = payload.RecurrenceEndDate;
-
-            foreach (var tanggal in occurrenceDates.Skip(1))
-            {
-                var sibling = new BookingRuang
-                {
-                    CreatedBy = item.CreatedBy,
-                    CreatedByRole = item.CreatedByRole,
-                    Status = BookingStatusEnum.DRAFT,
-                    Divisi = item.Divisi,
-                    Departemen = item.Departemen,
-                    SeriesId = item.SeriesId,
-                    RecurrenceFrequency = payload.RecurrenceFrequency,
-                    RecurrenceEndDate = payload.RecurrenceEndDate,
-                };
-                ApplyCreatePayload(sibling, payload);
-                sibling.Tanggal = tanggal;
-
-                var siblingRoomList = RoomList(sibling);
-                var siblingConflict = await FindConflictAsync(siblingRoomList, tanggal, sibling.IsWholeDay, sibling.JamMulai, sibling.JamSelesai);
-                sibling.HasConflict = siblingConflict != null;
-
-                var siblingSeq = await IncrementNomorSequenceAsync(item.Divisi, tanggal.Year, tanggal.Month);
-                sibling.NomorPemesanan = BuildNomorPemesanan(item.Divisi, siblingSeq, tanggal);
-                _db.BookingRuangs.Add(sibling);
-            }
         }
-        // A DRAFT series member shares its room/kegiatan/jam definition with every sibling
-        // occurrence (only Tanggal differs between them) - propagate the same edit to keep them
-        // consistent, same "package" convention as the approval endpoints below.
-        else if (item.SeriesId != null)
-        {
-            var siblings = await _db.BookingRuangs
+
+        var existingSiblings = oldSeriesId != null
+            ? await _db.BookingRuangs
                 .Include(b => b.AdditionalRooms)
-                .Where(b => b.SeriesId == item.SeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
-                .ToListAsync();
-            foreach (var sibling in siblings)
+                .Where(b => b.SeriesId == oldSeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
+                .ToListAsync()
+            : new List<BookingRuang>();
+        var oldDates = new HashSet<DateOnly>(existingSiblings.Select(s => s.Tanggal)) { oldTanggal };
+        var newDates = new HashSet<DateOnly>(occurrenceDates);
+        var scheduleUnchanged = oldSeriesId != null && oldDates.SetEquals(newDates);
+
+        if (scheduleUnchanged)
+        {
+            // Same "package" convention as the approval endpoints below: a DRAFT series member
+            // shares its room/kegiatan/jam definition with every sibling occurrence (only Tanggal
+            // differs between them), so propagate this edit to keep them consistent.
+            foreach (var sibling in existingSiblings)
             {
                 var siblingTanggal = sibling.Tanggal;
                 ApplyCreatePayload(sibling, payload);
                 sibling.Tanggal = siblingTanggal;
+                sibling.RecurrenceFrequency = item.RecurrenceFrequency;
+                sibling.RecurrenceEndDate = item.RecurrenceEndDate;
                 var siblingRooms = RoomList(sibling);
                 var siblingConflict = await FindConflictAsync(siblingRooms, siblingTanggal, sibling.IsWholeDay, sibling.JamMulai, sibling.JamSelesai, sibling.Id);
                 sibling.HasConflict = siblingConflict != null;
+            }
+        }
+        else
+        {
+            // The schedule itself changed (recurrence redefined, or turned off/on entirely) - the
+            // old occurrence set no longer applies, so replace it outright rather than patching
+            // individual dates in place.
+            if (existingSiblings.Count > 0) _db.BookingRuangs.RemoveRange(existingSiblings);
+
+            if (willBeSeries)
+            {
+                foreach (var tanggal in occurrenceDates.Skip(1))
+                {
+                    var sibling = new BookingRuang
+                    {
+                        CreatedBy = item.CreatedBy,
+                        CreatedByRole = item.CreatedByRole,
+                        Status = BookingStatusEnum.DRAFT,
+                        Divisi = item.Divisi,
+                        Departemen = item.Departemen,
+                        SeriesId = item.SeriesId,
+                        RecurrenceFrequency = item.RecurrenceFrequency,
+                        RecurrenceEndDate = item.RecurrenceEndDate,
+                    };
+                    ApplyCreatePayload(sibling, payload);
+                    sibling.Tanggal = tanggal;
+
+                    var siblingRoomList = RoomList(sibling);
+                    var siblingConflict = await FindConflictAsync(siblingRoomList, tanggal, sibling.IsWholeDay, sibling.JamMulai, sibling.JamSelesai);
+                    sibling.HasConflict = siblingConflict != null;
+
+                    var siblingSeq = await IncrementNomorSequenceAsync(item.Divisi, tanggal.Year, tanggal.Month);
+                    sibling.NomorPemesanan = BuildNomorPemesanan(item.Divisi, siblingSeq, tanggal);
+                    _db.BookingRuangs.Add(sibling);
+                }
             }
         }
 
