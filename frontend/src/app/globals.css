@@ -2114,13 +2114,18 @@ table.data-table {
 
 .month-cell-daynum {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   border: none;
   background: transparent;
   color: var(--text-primary);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 0;
   border-radius: 999px;
 }
 .month-cell-daynum:hover { background: var(--bg-surface-alt); }
