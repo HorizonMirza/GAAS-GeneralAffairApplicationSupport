@@ -213,6 +213,21 @@ public class BookingRuangExportController : ApiControllerBase
             if (col.Width > 40) col.Width = 40;
         }
 
+        // Free-text columns (a multi-room list, a note, an activity name) routinely run past the
+        // 40-wide cap above - instead of letting that clip the rest of the value behind whatever
+        // sits in the next cell, give just these a fixed width and let them wrap onto more lines,
+        // then auto-fit every row's height so the wrapped text is never cut off.
+        string[] wrapFields = { "nama_kegiatan", "ruangan", "catatan" };
+        foreach (var field in wrapFields)
+        {
+            var colIdx = Array.FindIndex(Columns, c => c.Field == field) + 2;
+            ws.Column(colIdx).Width = 32;
+            var colRange = ws.Range(2, colIdx, rowIdx, colIdx);
+            colRange.Style.Alignment.WrapText = true;
+            colRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+        }
+        ws.Rows(1, rowIdx).AdjustToContents();
+
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
         var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, namaRuang, search) + ".xlsx";
