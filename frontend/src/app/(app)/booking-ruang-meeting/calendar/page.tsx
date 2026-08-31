@@ -479,6 +479,7 @@ function BookingCalendarPageInner() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
+        cancelledByName={me.nama}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

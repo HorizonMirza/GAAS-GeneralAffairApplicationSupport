@@ -12,6 +12,7 @@ interface Props {
   open: boolean;
   targetId: number | null;
   targetType: CancelBookingType | null;
+  cancelledByName: string;
   onClose: () => void;
   onDone: () => void;
 }
@@ -20,7 +21,7 @@ interface Props {
 // reusing RejectModal, since "Reject" is a different action from a different actor (the approval
 // chain refusing a request) with its own fixed wording; Cancel is the origin/GA calling off a
 // request that was never refused by anyone.
-export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone }: Props) {
+export default function CancelBookingModal({ open, targetId, targetType, cancelledByName, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
@@ -57,11 +58,11 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>Batalkan Booking</h3>
+          <h3 style={{ color: "#d64545" }}>Cancel Booking</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <p className="text-secondary" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-          Booking yang dibatalkan tidak bisa dikembalikan, tapi datanya tetap tersimpan sebagai riwayat.
+          Dibatalkan oleh: <strong>{cancelledByName}</strong>
         </p>
         <div className="field">
           <label htmlFor="cancel-reason-input">Alasan (opsional)</label>
@@ -84,7 +85,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
             onClick={handleConfirm}
           >
-            Batalkan Booking
+            Cancel Booking
           </button>
         </div>
       </div>
