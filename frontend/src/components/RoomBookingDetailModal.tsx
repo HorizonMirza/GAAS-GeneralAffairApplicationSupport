@@ -303,9 +303,35 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 ))}
               </select>
             </div>
-            {/* Editable only for a booking that isn't already part of a series - once it has a
-                seriesId its recurrence is fixed and shown as the read-only line below instead. */}
-            {isEdit && !item.seriesId && (
+            {/* Once a booking already belongs to a series its recurrence is fixed - shown here as
+                the same Frekuensi/Berulang Sampai Tanggal fields as the input form, just disabled,
+                instead of an editable toggle. Only a still-standalone DRAFT (no seriesId yet) gets
+                the live toggle, letting its creator turn it into a brand-new series on save. */}
+            {item.seriesId ? (
+              <>
+                <div className="field full">
+                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
+                  <button type="button" id="bv-booking-berulang" className="field-toggle field-toggle-active field-toggle-disabled" aria-pressed disabled>
+                    <span className="field-toggle-box">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </span>
+                    Booking Berulang
+                  </button>
+                </div>
+                <div className="field">
+                  <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
+                  <select id="bv-recurrence-frequency" disabled value={item.recurrenceFrequency || ""}>
+                    {RECURRENCE_OPTIONS.map((freq) => (
+                      <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
+                  <input type="date" id="bv-recurrence-end" disabled value={item.recurrenceEndDate || ""} />
+                </div>
+              </>
+            ) : isEdit && (
               <>
                 <div className="field full">
                   <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
@@ -362,7 +388,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
           {bookingRecurrenceLabel(item) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Pengulangan:</strong> {bookingRecurrenceLabel(item)} (Approve / Reject berlaku untuk seluruh pemesanan)
+              Approve / Reject berlaku untuk seluruh pemesanan pada seri ini.
             </div>
           )}
 
