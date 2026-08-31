@@ -34,7 +34,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <h3>Konfirmasi</h3>
             <button type="button" className="modal-close" onClick={close}>&times;</button>
           </div>
-          <p style={{ margin: 0, color: "var(--text-secondary)" }}>{state?.message}</p>
+          <p style={{ margin: 0, color: "var(--text-secondary)", whiteSpace: "pre-line" }}>{state?.message}</p>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={close}>Batal</button>
             <button

@@ -170,7 +170,7 @@ export default function BookingTransaksiPage() {
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
-      ? "Booking ini bagian dari jadwal berulang - menghapusnya akan menghapus seluruh jadwal seri ini. Lanjutkan?"
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal seri ini. Lanjutkan?"
       : "Hapus booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
