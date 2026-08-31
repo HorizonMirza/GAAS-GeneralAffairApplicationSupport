@@ -347,6 +347,8 @@ export const api = {
     }),
   deleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}`, { method: "DELETE" }),
   superAdminDeleteBooking: (id: number) => apiRequest(`/booking-ruang/${id}/super-admin`, { method: "DELETE" }),
+  cancelBooking: (id: number, reason: string | null) =>
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/cancel`, { method: "PATCH", body: { reason } }),
   // The backend only wraps the response in {item, detail} when finalizing a series (submit's
   // Approval-GA self-skip branch, approve-ga-approval); every other branch/endpoint returns a
   // bare BookingRuang. Normalize all three to BookingRuangActionResult here so callers never have
@@ -403,6 +405,8 @@ export const api = {
     }),
   deleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}`, { method: "DELETE" }),
   superAdminDeleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}/super-admin`, { method: "DELETE" }),
+  cancelKendaraanBooking: (id: number, reason: string | null) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/cancel`, { method: "PATCH", body: { reason } }),
   submitKendaraanBooking: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/submit`, { method: "PATCH" }),
   approveKendaraanL1: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/approve-l1`, { method: "PATCH" }),
   rejectKendaraanL1: (id: number, reason: string | null) =>

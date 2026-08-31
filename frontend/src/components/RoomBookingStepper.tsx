@@ -22,6 +22,11 @@ const PROGRESS: Record<BookingStatus, number> = {
   APPROVED_GA: 2,
   REJECTED_GA_APPROVAL: 2,
   APPROVED_GA_APPROVAL: 3,
+  // No good single step to blame a cancellation on - it can happen from any on-approval or
+  // already-Approved stage (see BookingRuangController.Cancel), and unlike a reject the status
+  // name itself doesn't encode which one. Rendered neutral (nothing done, no X) same as DRAFT;
+  // BookingStatusBadge is what actually tells the viewer "Cancelled".
+  CANCELLED: -1,
 };
 
 const REJECTED_IDX: Partial<Record<BookingStatus, number>> = {

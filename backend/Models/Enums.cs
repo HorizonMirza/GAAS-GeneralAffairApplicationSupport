@@ -56,6 +56,11 @@ public enum BookingStatusEnum
     APPROVED_GA,
     REJECTED_GA_APPROVAL,
     APPROVED_GA_APPROVAL,
+    // Room/Vehicle Booking only (see BookingRuangController.Cancel/BookingKendaraanController.Cancel) -
+    // the creator, Admin GA, or Approval GA can cancel an on-approval or already-approved booking up
+    // until its own start time. A dead end like REJECTED_*, but distinct from it: the item was never
+    // refused by anyone in the approval chain, its own origin/GA called it off.
+    CANCELLED,
 }
 
 public enum TipeBookingEnum

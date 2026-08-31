@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
   canGaRescheduleBooking,
+  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -23,6 +24,7 @@ import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -70,6 +72,7 @@ export default function BookingTransaksiPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -260,6 +263,7 @@ export default function BookingTransaksiPage() {
                     <option value="APPROVED_GA">On-Approval: Approval GA</option>
                     <option value="REJECTED">Rejected</option>
                     <option value="APPROVED_GA_APPROVAL">Approved</option>
+                    <option value="CANCELLED">Cancelled</option>
                   </select>
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -422,6 +426,12 @@ export default function BookingTransaksiPage() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -497,6 +507,17 @@ export default function BookingTransaksiPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
+          loadTable();
+        }}
+      />
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="room"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
           loadTable();
         }}
       />

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   canGaRescheduleKendaraan,
   isBookingOriginRole,
+  isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
 } from "@/lib/constants";
@@ -20,6 +21,7 @@ import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -63,6 +65,7 @@ export default function VehicleBookingTransaksiPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -224,6 +227,7 @@ export default function VehicleBookingTransaksiPage() {
                     <option value="APPROVED_GA">On-Approval: Approval GA</option>
                     <option value="REJECTED">Rejected</option>
                     <option value="APPROVED_GA_APPROVAL">Approved</option>
+                    <option value="CANCELLED">Cancelled</option>
                   </select>
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -378,6 +382,12 @@ export default function VehicleBookingTransaksiPage() {
           ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -431,6 +441,17 @@ export default function VehicleBookingTransaksiPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
+          loadTable();
+        }}
+      />
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="kendaraan"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
           loadTable();
         }}
       />

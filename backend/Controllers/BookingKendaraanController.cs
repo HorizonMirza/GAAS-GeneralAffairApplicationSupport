@@ -86,6 +86,29 @@ public class BookingKendaraanController : ApiControllerBase
     private static bool IsGaActionable(BookingKendaraan item) => item.Status == BookingStatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(BookingKendaraan item) => item.Status == BookingStatusEnum.APPROVED_GA;
 
+    // Cancellable from anywhere still on-approval through already-Approved - not DRAFT (that's
+    // Delete's job) and not already a dead end (REJECTED_*/CANCELLED itself).
+    private static bool IsCancellableStatus(BookingStatusEnum status) =>
+        status is BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1
+            or BookingStatusEnum.APPROVED_GA or BookingStatusEnum.APPROVED_GA_APPROVAL;
+
+    private static bool IsCancellableByOrigin(BookingKendaraan item, User currentUser)
+    {
+        if (!IsCancellableStatus(item.Status)) return false;
+        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+    }
+
+    // See Room Booking's BookingRuangController.IsPastCancelDeadline for the same +7h WIB
+    // reasoning - Tanggal/JamMulai here are plain WIB wall-clock values too.
+    private static bool IsPastCancelDeadline(BookingKendaraan item)
+    {
+        var nowWib = DateTime.UtcNow.AddHours(7);
+        var startWib = item.IsWholeDay || item.JamMulai == null
+            ? item.Tanggal.ToDateTime(TimeOnly.MinValue)
+            : item.Tanggal.ToDateTime(item.JamMulai.Value);
+        return nowWib >= startWib;
+    }
+
     private void AddLog(BookingKendaraan item, string action, User actor, string? reason = null)
     {
         _db.BookingKendaraanLogs.Add(new BookingKendaraanLog
@@ -474,6 +497,25 @@ public class BookingKendaraanController : ApiControllerBase
         _db.BookingKendaraans.Remove(item);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPatch("{itemId:int}/cancel")]
+    public async Task<IActionResult> Cancel(int itemId, [FromBody] RejectRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.BookingKendaraans.FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsCancellableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat dibatalkan pada tahap ini" });
+        if (IsPastCancelDeadline(item))
+            return StatusCode(403, new { detail = "Booking sudah melewati jam mulai, tidak dapat dibatalkan" });
+
+        item.Status = BookingStatusEnum.CANCELLED;
+        AddLog(item, "CANCELLED", user!, payload.Reason);
+        await _db.SaveChangesAsync();
+        return Ok(BookingKendaraanOut.From(item));
     }
 
     [HttpDelete("{itemId:int}/super-admin")]

@@ -28,7 +28,8 @@ export type BookingStatus =
   | "REJECTED_GA"
   | "APPROVED_GA"
   | "REJECTED_GA_APPROVAL"
-  | "APPROVED_GA_APPROVAL";
+  | "APPROVED_GA_APPROVAL"
+  | "CANCELLED";
 
 export type RejectTarget = "GA" | "ORIGIN";
 

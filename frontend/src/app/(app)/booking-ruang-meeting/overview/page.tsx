@@ -11,6 +11,7 @@ import {
   bookingRoomsLabel,
   bookingStatusBorderClass,
   canGaRescheduleBooking,
+  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -68,7 +69,7 @@ function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]):
   return coveredUntil >= CLOSE_MIN;
 }
 
-type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
+type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED" | "CANCELLED";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
@@ -77,6 +78,7 @@ import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -100,6 +102,7 @@ export default function BookingOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -149,6 +152,7 @@ export default function BookingOverviewPage() {
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
     if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
     if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    if (statusFilter === "CANCELLED") return items.filter((i) => i.status === "CANCELLED");
     return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
@@ -220,6 +224,7 @@ export default function BookingOverviewPage() {
             <option value="ON_APPROVAL">On-Approval</option>
             <option value="APPROVED">Approved</option>
             <option value="REJECTED">Rejected</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
       </div>
@@ -285,6 +290,12 @@ export default function BookingOverviewPage() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -362,6 +373,17 @@ export default function BookingOverviewPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
+          load();
+        }}
+      />
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="room"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
           load();
         }}
       />

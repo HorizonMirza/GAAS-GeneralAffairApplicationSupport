@@ -9,6 +9,7 @@ import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
   canGaRescheduleKendaraan,
   isBookingOriginRole,
+  isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
 } from "@/lib/constants";
@@ -24,6 +25,7 @@ import VehicleBookingRescheduleModal from "@/components/VehicleBookingReschedule
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
 
 const ALL_VEHICLES_VALUE = "__all__";
 
@@ -85,6 +87,7 @@ function VehicleCalendarPageInner() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarHeight, setSidebarHeight] = useState<number | undefined>(undefined);
@@ -386,6 +389,12 @@ function VehicleCalendarPageInner() {
           ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -452,6 +461,17 @@ function VehicleCalendarPageInner() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
+          reloadAll();
+        }}
+      />
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="kendaraan"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
           reloadAll();
         }}
       />

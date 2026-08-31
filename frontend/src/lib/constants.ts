@@ -214,10 +214,24 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   APPROVED_GA: "On-Approval: Approval GA",
   REJECTED_GA_APPROVAL: "Rejected: Approval GA",
   APPROVED_GA_APPROVAL: "Approved",
+  CANCELLED: "Cancelled",
 };
 
 export const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
 export const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"];
+
+// Statuses a booking can be cancelled from - anywhere still on-approval through already-Approved,
+// but not DRAFT (that's Delete's job) and not already a dead end. Mirrors the backend's
+// BookingRuangController/BookingKendaraanController.IsCancellableStatus exactly.
+export const BOOKING_CANCELLABLE_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
+
+// Room/Vehicle Booking's Tanggal/JamMulai come back as plain WIB wall-clock values (never UTC,
+// see BookingPdfService's own note on this) - so "now" here is just the browser's local clock,
+// same assumption every other date/time display in this app already makes (see format.ts).
+function isPastBookingStart(tanggal: string, jamMulai: string | null, isWholeDay: boolean): boolean {
+  const start = isWholeDay || !jamMulai ? new Date(`${tanggal}T00:00:00`) : new Date(`${tanggal}T${jamMulai}`);
+  return new Date() >= start;
+}
 
 export function bookingStatusBorderClass(status: BookingStatus): string {
   if (status === "APPROVED_GA_APPROVAL") return "item-row-card-approved";
@@ -274,6 +288,16 @@ export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
 // A confirmation PDF only exists once a booking reached the final Approved state.
 export function isBookingPdfAvailable(item: BookingRuang): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
+}
+
+// Whoever created it, or Admin/Approval GA regardless of who created it, can cancel a booking
+// that's still on-approval or already Approved - but only up until its own start time. Mirrors
+// the backend's BookingRuangController.IsCancellableByOrigin/IsPastCancelDeadline exactly.
+export function isBookingCancellableByOrigin(item: BookingRuang, me: Me): boolean {
+  if (!BOOKING_CANCELLABLE_STATUSES.includes(item.status)) return false;
+  const allowed = item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+  if (!allowed) return false;
+  return !isPastBookingStart(item.tanggal, item.jamMulai, item.isWholeDay);
 }
 
 export function isBookingGaActionable(item: BookingRuang): boolean {
@@ -341,6 +365,15 @@ export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolea
 
 export function isKendaraanGaActionable(item: BookingKendaraan): boolean {
   return item.status === "APPROVED_L1";
+}
+
+// Same rule as isBookingCancellableByOrigin - mirrors
+// BookingKendaraanController.IsCancellableByOrigin/IsPastCancelDeadline.
+export function isKendaraanCancellableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  if (!BOOKING_CANCELLABLE_STATUSES.includes(item.status)) return false;
+  const allowed = item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+  if (!allowed) return false;
+  return !isPastBookingStart(item.tanggal, item.jamMulai, item.isWholeDay);
 }
 
 // --- Office Supplies / Permintaan ATK (pola yang sama dengan Booking di atas) ---

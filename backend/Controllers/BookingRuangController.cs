@@ -125,6 +125,30 @@ public class BookingRuangController : ApiControllerBase
 
     private static bool IsGaApprovalActionable(BookingRuang item) => item.Status == BookingStatusEnum.APPROVED_GA;
 
+    // Cancellable from anywhere still on-approval through already-Approved - not DRAFT (that's
+    // Delete's job) and not already a dead end (REJECTED_*/CANCELLED itself).
+    private static bool IsCancellableStatus(BookingStatusEnum status) =>
+        status is BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1
+            or BookingStatusEnum.APPROVED_GA or BookingStatusEnum.APPROVED_GA_APPROVAL;
+
+    private static bool IsCancellableByOrigin(BookingRuang item, User currentUser)
+    {
+        if (!IsCancellableStatus(item.Status)) return false;
+        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+    }
+
+    // Indonesia has no DST, so a fixed +7h offset from UTC is exact year-round for WIB (same fact
+    // IcsService's JakartaOffset relies on) - Tanggal/JamMulai are stored as plain WIB wall-clock
+    // values (never UTC), so "now" needs the same +7h shift before the two are compared.
+    private static bool IsPastCancelDeadline(BookingRuang item)
+    {
+        var nowWib = DateTime.UtcNow.AddHours(7);
+        var startWib = item.IsWholeDay || item.JamMulai == null
+            ? item.Tanggal.ToDateTime(TimeOnly.MinValue)
+            : item.Tanggal.ToDateTime(item.JamMulai.Value);
+        return nowWib >= startWib;
+    }
+
     private void AddLog(BookingRuang item, string action, User actor, string? reason = null)
     {
         _db.BookingRuangLogs.Add(new BookingRuangLog
@@ -996,6 +1020,43 @@ public class BookingRuangController : ApiControllerBase
         _db.BookingRuangs.Remove(item);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPatch("{itemId:int}/cancel")]
+    public async Task<IActionResult> Cancel(int itemId, [FromBody] RejectRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsCancellableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat dibatalkan pada tahap ini" });
+        if (IsPastCancelDeadline(item))
+            return StatusCode(403, new { detail = "Booking sudah melewati jam mulai, tidak dapat dibatalkan" });
+
+        // "1 paket ke depan" - same series-wide convention as Submit/Approve/Reject (see
+        // ApplyToSeriesAsync), except a recurring series here is a genuine mix of past and future
+        // occurrences, and one that already happened must never be touched. So this doesn't use
+        // ApplyToSeriesAsync (which mutates every member unconditionally) - only whichever series
+        // members are themselves still cancellable and not yet past their own deadline get
+        // cancelled; anything already past its own start time is left exactly as it was.
+        var members = await SeriesMembersAsync(item);
+        var cancelledAny = false;
+        foreach (var member in members)
+        {
+            if (!IsCancellableStatus(member.Status) || IsPastCancelDeadline(member)) continue;
+            if (member.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
+                await NotifyWaitlistAsync(member);
+            member.Status = BookingStatusEnum.CANCELLED;
+            AddLog(member, "CANCELLED", user!, payload.Reason);
+            cancelledAny = true;
+        }
+        if (!cancelledAny)
+            return StatusCode(403, new { detail = "Booking sudah melewati jam mulai, tidak dapat dibatalkan" });
+
+        await _db.SaveChangesAsync();
+        return Ok(BookingRuangOut.From(item));
     }
 
     // Applies the same status transition (plus whatever else `mutate` sets) to every member of

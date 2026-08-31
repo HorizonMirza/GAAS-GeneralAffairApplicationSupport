@@ -1395,6 +1395,7 @@ body.auth-ready .app-shell {
 }
 
 .badge-draft { background: var(--badge-draft-bg); color: var(--badge-draft-fg); }
+.badge-cancelled { background: var(--badge-draft-bg); color: var(--badge-draft-fg); }
 .badge-submitted { background: var(--badge-submitted-bg); color: var(--badge-submitted-fg); }
 .badge-waiting { background: var(--badge-waiting-bg); color: var(--badge-waiting-fg); }
 .badge-approved_l1 { background: var(--badge-ga-bg); color: var(--badge-ga-fg); }
