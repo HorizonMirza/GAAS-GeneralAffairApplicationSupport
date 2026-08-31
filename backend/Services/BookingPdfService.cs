@@ -71,14 +71,12 @@ public static class BookingPdfService
                     });
 
                     col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Permintaan", item.CreatedAt.ToString("dd MMMM yyyy")));
-                    col.Item().Element(c => InfoRow(c, "Kepada", "Approval General Affair (GA)"));
-                    col.Item().Element(c => InfoRow(c, "Dari", $"{item.Pembuat?.Nama ?? "-"} — {DivisiLabel(item)}"));
+                    col.Item().Element(c => InfoRow(c, "Kepada", "Approval General Affair"));
+                    col.Item().Element(c => InfoRow(c, "Dari", $"{item.Pembuat?.Nama ?? "-"} - {DivisiLabel(item)}"));
 
                     col.Item().PaddingTop(8).Element(PerihalRow);
 
-                    col.Item().PaddingTop(2).Text("Keterangan:").FontSize(9).Italic().FontColor("#444444");
-                    col.Item().Text("*Penjelasan perihal kebutuhan").FontSize(8.5f).Italic().FontColor("#444444");
-                    col.Item().PaddingTop(2).Text(BuildKeterangan(item)).FontSize(10);
+                    col.Item().PaddingTop(6).Text(BuildKeterangan(item)).FontSize(10);
 
                     col.Item().PaddingTop(8).Element(AnggaranRow);
                     col.Item().Element(c => InfoRow(c, "Tanggal Perkiraan Kebutuhan", item.Tanggal.ToString("dd MMMM yyyy")));
@@ -89,7 +87,7 @@ public static class BookingPdfService
                     col.Item().PaddingTop(10).Element(c => ExtraInfoBox(c, item));
 
                     col.Item().PaddingTop(20).Text("Menyetujui,").Bold();
-                    col.Item().Text("Approval General Affair (GA)").Bold();
+                    col.Item().Text("Approval General Affair").Bold();
                     col.Item().PaddingTop(30).Text(item.ApprovedApprovalGaAt.HasValue
                         ? $"Disetujui secara digital pada {item.ApprovedApprovalGaAt.Value:dd MMMM yyyy HH:mm} WIB"
                         : "-").FontSize(9).FontColor("#555555");
@@ -174,10 +172,13 @@ public static class BookingPdfService
                 c.RelativeColumn(1.7f);
             });
 
-            foreach (var text in new[] { "NO", "URAIAN", "VOLUME", "SATUAN", "LOKASI / TUJUAN KEBUTUHAN", "KETERANGAN" })
-            {
-                table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().Padding(5).Text(text).Bold().FontSize(9);
-            }
+            table.Cell().RowSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("NO").Bold().FontSize(9);
+            table.Cell().RowSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("URAIAN").Bold().FontSize(9);
+            table.Cell().ColumnSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().Padding(5).Text("JUMLAH YANG DIMINTA").Bold().FontSize(9);
+            table.Cell().RowSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("LOKASI / TUJUAN KEBUTUHAN").Bold().FontSize(9);
+            table.Cell().RowSpan(2).Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("KETERANGAN").Bold().FontSize(9);
+            table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().Padding(5).Text("VOLUME").Bold().FontSize(8.5f);
+            table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().Padding(5).Text("SATUAN").Bold().FontSize(8.5f);
 
             table.Cell().Border(1).BorderColor(BorderColor).AlignCenter().Padding(5).Text("1").FontSize(9.5f);
             table.Cell().Border(1).BorderColor(BorderColor).Padding(5).Text(item.NamaKegiatan).FontSize(9.5f);
