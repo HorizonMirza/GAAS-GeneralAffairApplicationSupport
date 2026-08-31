@@ -352,6 +352,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(b => b.RejectReason).HasColumnName("reject_reason");
             e.Property(b => b.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
+            e.Property(b => b.CancelledByName).HasColumnName("cancelled_by_name").HasMaxLength(255);
 
             e.Property(b => b.CreatedBy).HasColumnName("created_by");
             e.Property(b => b.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -470,6 +471,7 @@ public class AppDbContext : DbContext
 
             e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(b => b.RejectReason).HasColumnName("reject_reason");
+            e.Property(b => b.CancelledByName).HasColumnName("cancelled_by_name").HasMaxLength(255);
 
             e.Property(b => b.CreatedBy).HasColumnName("created_by");
             e.Property(b => b.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
