@@ -308,7 +308,7 @@ export default function BookingOverviewPage() {
             showToast((err as Error).message, "error");
           }
         }}
-        icsUrl={rowMenu.menuItem ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
+        icsUrl={rowMenu.menuItem && isBookingPdfAvailable(rowMenu.menuItem) ? api.bookingIcsUrl(rowMenu.menuItem.id) : undefined}
         onIcsClick={async () => {
           const item = rowMenu.menuItem;
           rowMenu.close();
