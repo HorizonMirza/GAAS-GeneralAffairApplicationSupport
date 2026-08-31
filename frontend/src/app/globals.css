@@ -2404,6 +2404,16 @@ table.data-table {
 
 .form-grid .field.full { grid-column: 1 / -1; }
 
+/* Trims the vertical rhythm of an already-long form (e.g. the Room Booking edit form, which can
+   carry a dozen fields including the recurring-booking section) without touching every other
+   form-grid in the app - scope this to a form-grid that opts in. */
+.form-grid.form-grid-compact { gap: 0 14px; }
+.form-grid-compact .field { margin-bottom: 12px; }
+.form-grid-compact .field label { margin-bottom: 4px; }
+.form-grid-compact .field input,
+.form-grid-compact .field select,
+.form-grid-compact .field textarea { padding: 8px 12px; }
+
 .field-toggle {
   display: flex;
   align-items: center;

@@ -687,14 +687,28 @@ public class BookingRuangController : ApiControllerBase
         // without needing Admin/Approval GA's tool.
         payload.Divisi = item.Divisi;
         payload.Departemen = item.Departemen;
-        payload.IsRecurring = false;
+        // A booking that's already part of a series keeps its recurrence definition fixed - only
+        // a still-standalone DRAFT (never part of any series) can turn into a brand-new series
+        // here, generated the same way Create() builds one.
+        var canBecomeSeries = item.SeriesId == null;
+        if (!canBecomeSeries) payload.IsRecurring = false;
 
         var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
+        var occurrenceDates = canBecomeSeries ? BuildOccurrenceDates(payload) : new List<DateOnly> { payload.Tanggal };
+        var becomingSeries = occurrenceDates.Count > 1;
+
         var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
-        var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
-        if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
+        // Same rule Create() uses: a plain (still non-recurring) edit blocks outright on a
+        // collision, but turning into a series is lenient - the series is still saved in full,
+        // and any colliding occurrence (this one included) is just flagged for Admin/Approval GA
+        // to fix later with the Reschedule tool.
+        if (!becomingSeries)
+        {
+            var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
+            if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
+        }
 
         // NomorPemesanan embeds the MM.YYYY it was issued for - if the edit moves the booking
         // into a different month/year, reissue it (new sequence, same divisi) so it doesn't go
@@ -714,10 +728,43 @@ public class BookingRuangController : ApiControllerBase
         // clear any stale HasConflict left over from series creation, same as Reschedule does.
         item.HasConflict = false;
 
+        if (becomingSeries)
+        {
+            var conflict = await FindConflictAsync(roomList, payload.Tanggal, payload.IsWholeDay, payload.JamMulai, payload.JamSelesai, itemId);
+            item.HasConflict = conflict != null;
+            item.SeriesId = Guid.NewGuid();
+            item.RecurrenceFrequency = payload.RecurrenceFrequency;
+            item.RecurrenceEndDate = payload.RecurrenceEndDate;
+
+            foreach (var tanggal in occurrenceDates.Skip(1))
+            {
+                var sibling = new BookingRuang
+                {
+                    CreatedBy = item.CreatedBy,
+                    CreatedByRole = item.CreatedByRole,
+                    Status = BookingStatusEnum.DRAFT,
+                    Divisi = item.Divisi,
+                    Departemen = item.Departemen,
+                    SeriesId = item.SeriesId,
+                    RecurrenceFrequency = payload.RecurrenceFrequency,
+                    RecurrenceEndDate = payload.RecurrenceEndDate,
+                };
+                ApplyCreatePayload(sibling, payload);
+                sibling.Tanggal = tanggal;
+
+                var siblingRoomList = RoomList(sibling);
+                var siblingConflict = await FindConflictAsync(siblingRoomList, tanggal, sibling.IsWholeDay, sibling.JamMulai, sibling.JamSelesai);
+                sibling.HasConflict = siblingConflict != null;
+
+                var siblingSeq = await IncrementNomorSequenceAsync(item.Divisi, tanggal.Year, tanggal.Month);
+                sibling.NomorPemesanan = BuildNomorPemesanan(item.Divisi, siblingSeq, tanggal);
+                _db.BookingRuangs.Add(sibling);
+            }
+        }
         // A DRAFT series member shares its room/kegiatan/jam definition with every sibling
         // occurrence (only Tanggal differs between them) - propagate the same edit to keep them
         // consistent, same "package" convention as the approval endpoints below.
-        if (item.SeriesId != null)
+        else if (item.SeriesId != null)
         {
             var siblings = await _db.BookingRuangs
                 .Include(b => b.AdditionalRooms)

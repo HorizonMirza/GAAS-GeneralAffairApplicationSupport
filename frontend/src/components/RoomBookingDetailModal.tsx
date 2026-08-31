@@ -10,17 +10,19 @@ import {
   isBookingEditableByOrigin,
   isBookingGaActionable,
   MAX_JUMLAH_PESERTA,
+  RECURRENCE_FREQUENCY_LABELS,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { BookingRuang, BookingRuangCreatePayload, Me, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import RoomMultiSelect from "./RoomMultiSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
+const RECURRENCE_OPTIONS: RecurrenceFrequency[] = ["DAILY", "WEEKLY", "MONTHLY"];
 
 interface Props {
   open: boolean;
@@ -129,6 +131,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     });
   }
 
+  function toggleRecurring() {
+    setForm((f) => (f ? { ...f, isRecurring: !f.isRecurring } : f));
+  }
+
   async function handleSubmitDraft() {
     try {
       const { detail } = await api.submitBooking(item!.id);
@@ -175,9 +181,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const becomingSeries = !item!.seriesId && !!form!.isRecurring;
     try {
       await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
-      showToast("Booking berhasil diperbarui");
+      showToast(becomingSeries ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -193,7 +200,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
-          <div className="form-grid">
+          <div className="form-grid form-grid-compact">
             <div className="field full">
               <label htmlFor="bv-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="bv-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
@@ -296,6 +303,57 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 ))}
               </select>
             </div>
+            {/* Editable only for a booking that isn't already part of a series - once it has a
+                seriesId its recurrence is fixed and shown as the read-only line below instead. */}
+            {isEdit && !item.seriesId && (
+              <>
+                <div className="field full">
+                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
+                  <button
+                    type="button"
+                    id="bv-booking-berulang"
+                    className={`field-toggle${form.isRecurring ? " field-toggle-active" : ""}`}
+                    aria-pressed={form.isRecurring}
+                    onClick={toggleRecurring}
+                  >
+                    <span className="field-toggle-box">
+                      {form.isRecurring && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      )}
+                    </span>
+                    Booking Berulang
+                  </button>
+                </div>
+                {form.isRecurring && (
+                  <>
+                    <div className="field">
+                      <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
+                      <select
+                        id="bv-recurrence-frequency"
+                        required
+                        value={form.recurrenceFrequency || ""}
+                        onChange={(e) => set("recurrenceFrequency", e.target.value as RecurrenceFrequency)}
+                      >
+                        {RECURRENCE_OPTIONS.map((freq) => (
+                          <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
+                      <input
+                        type="date"
+                        id="bv-recurrence-end"
+                        required
+                        min={form.tanggal}
+                        value={form.recurrenceEndDate || ""}
+                        onChange={(e) => set("recurrenceEndDate", e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
             <div className="field full">
               <label htmlFor="bv-catatan">Catatan</label>
               <input type="text" id="bv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
