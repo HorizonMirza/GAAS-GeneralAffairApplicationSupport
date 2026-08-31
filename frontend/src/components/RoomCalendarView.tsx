@@ -470,8 +470,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     className={`schedule-week-head schedule-th-center${isToday ? " schedule-week-head-today" : ""}`}
                     onClick={() => onJumpToDay(date)}
                   >
-                    {DAY_NAMES[d.getDay()]}{" "}
-                    <span className={isToday ? "schedule-week-head-today-badge" : "text-secondary"}>{String(d.getDate()).padStart(2, "0")}</span>
+                    {DAY_NAMES[d.getDay()]} <span className="text-secondary">{String(d.getDate()).padStart(2, "0")}</span>
                   </th>
                 );
               })}
