@@ -104,6 +104,17 @@ public enum UrgensiEnum
     TINGGI,
 }
 
+// Maintenance: tahap eksekusi fisik setelah laporan disetujui final (APPROVED_GA_APPROVAL) -
+// Admin GA/Approval GA menandai progresnya berurutan (lihat PerbaikanSaranaController.CekLokasi/
+// UploadGambar/Eksekusi), dicatat di PerbaikanSaranaLogs supaya riwayatnya terlihat jelas.
+public enum ExecutionStageEnum
+{
+    MENUNGGU,
+    LOKASI_DICEK,
+    GAMBAR_DIBUAT,
+    SELESAI,
+}
+
 // Archive: kategori bebas untuk dokumen umum perusahaan, dipakai sebagai "folder" saat filter.
 public enum ArchiveKategoriEnum
 {

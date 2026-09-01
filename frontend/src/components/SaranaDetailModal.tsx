@@ -5,9 +5,11 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
+  EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
   URGENSI_LABEL,
   isSaranaEditableByOrigin,
+  isSaranaExecutionActor,
   isSaranaGaActionable,
   saranaOriginActorLabel,
 } from "@/lib/constants";
@@ -46,6 +48,8 @@ function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
 export default function SaranaDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload | null>(null);
   const [error, setError] = useState("");
+  const [execNote, setExecNote] = useState("");
+  const [gambarFile, setGambarFile] = useState<File | null>(null);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -61,6 +65,8 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setExecNote("");
+    setGambarFile(null);
   }, [open, item]);
 
   if (!open || !item || !form) return null;
@@ -70,6 +76,9 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isSaranaGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  // Eksekusi fisik hanya tersedia setelah disetujui final, dan hanya untuk Admin GA/Approval GA -
+  // lihat isSaranaExecutionActor.
+  const canExecute = !isEdit && item.status === "APPROVED_GA_APPROVAL" && isSaranaExecutionActor(me);
 
   function set<K extends keyof PerbaikanSaranaCreatePayload>(key: K, value: PerbaikanSaranaCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -113,6 +122,50 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     try {
       await api.approveSaranaGaApproval(item!.id);
       showToast("Laporan perbaikan berhasil disetujui");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
+
+  // Closes first, same convention as the approve/reject handlers above - the item snapshot this
+  // modal holds isn't refetched in place, so leaving it open after a stage change would keep
+  // showing the now-stale stage/buttons until the next open.
+  async function handleCekLokasi() {
+    const note = execNote.trim() || null;
+    onClose();
+    try {
+      await api.cekLokasiSarana(item!.id, note);
+      showToast("Lokasi ditandai sudah dicek");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
+
+  async function handleUploadGambar() {
+    if (!gambarFile) {
+      setError("Pilih file gambar terlebih dahulu");
+      return;
+    }
+    const file = gambarFile;
+    const note = execNote.trim() || null;
+    onClose();
+    try {
+      await api.uploadGambarSarana(item!.id, file, note);
+      showToast("Gambar rencana perbaikan berhasil diunggah");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
+
+  async function handleEksekusi() {
+    const note = execNote.trim() || null;
+    onClose();
+    try {
+      await api.eksekusiSarana(item!.id, note);
+      showToast("Eksekusi perbaikan ditandai selesai");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -204,6 +257,75 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Catatan Penolakan:</strong> {item.rejectReason}
+            </div>
+          )}
+
+          {item.status === "APPROVED_GA_APPROVAL" && (
+            <div className="card" style={{ padding: 14, marginBottom: 12 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                Eksekusi Perbaikan: {EXECUTION_STAGE_LABEL[item.executionStage]}
+              </div>
+              {item.gambarOriginalFilename && (
+                <div style={{ marginBottom: 8 }}>
+                  <a href={api.saranaGambarUrl(item.id)} target="_blank" rel="noopener noreferrer">
+                    Lihat Gambar Rencana Perbaikan
+                  </a>
+                </div>
+              )}
+              {canExecute && item.executionStage === "MENUNGGU" && (
+                <>
+                  <textarea
+                    placeholder="Catatan hasil cek lokasi (opsional)"
+                    value={execNote}
+                    onChange={(e) => setExecNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.stopPropagation();
+                    }}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleCekLokasi}>
+                    Tandai Lokasi Sudah Dicek
+                  </button>
+                </>
+              )}
+              {canExecute && item.executionStage === "LOKASI_DICEK" && (
+                <>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={(e) => setGambarFile(e.target.files?.[0] || null)}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <textarea
+                    placeholder="Catatan gambar rencana perbaikan (opsional)"
+                    value={execNote}
+                    onChange={(e) => setExecNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.stopPropagation();
+                    }}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleUploadGambar}>
+                    Unggah Gambar
+                  </button>
+                </>
+              )}
+              {canExecute && item.executionStage === "GAMBAR_DIBUAT" && (
+                <>
+                  <textarea
+                    placeholder="Catatan hasil eksekusi (opsional)"
+                    value={execNote}
+                    onChange={(e) => setExecNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.stopPropagation();
+                    }}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleEksekusi}>
+                    Tandai Selesai Dieksekusi
+                  </button>
+                </>
+              )}
             </div>
           )}
 

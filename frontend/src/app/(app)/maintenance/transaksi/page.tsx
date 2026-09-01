@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
   URGENSI_BADGE_CLASS,
   URGENSI_LABEL,
@@ -348,6 +349,9 @@ function MaintenanceTransaksiPageInner() {
                         <div className="status-cell">
                           <span className="badge-stack">
                             <BookingStatusBadge status={item.status} departemen={item.departemen} />
+                            {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
+                              <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
+                            )}
                           </span>
                           <button
                             type="button"

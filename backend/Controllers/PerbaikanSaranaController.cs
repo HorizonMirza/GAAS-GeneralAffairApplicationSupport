@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -45,13 +46,32 @@ public class PerbaikanSaranaController : ApiControllerBase
         BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
     };
 
+    // Only real image formats - this is specifically a photo of the repair plan/site, not a
+    // general-purpose document upload like Archive's.
+    private static readonly Dictionary<string, string> AllowedGambarExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+    };
+    private const long MaxGambarFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+
+    private static readonly RoleEnum[] ExecutionRoles = { RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA };
+
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
+    private readonly string _uploadDir;
 
-    public PerbaikanSaranaController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
+    public PerbaikanSaranaController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub, IConfiguration config) : base(currentUser)
     {
         _db = db;
         _hub = hub;
+        var configured = config.GetValue<string>("SaranaUploadDir") ?? "uploads/sarana";
+        _uploadDir = Path.IsPathRooted(configured)
+            ? configured
+            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
+        _uploadDir = Path.GetFullPath(_uploadDir);
+        Directory.CreateDirectory(_uploadDir);
     }
 
     // Label shown in the "transaksi baru"/"proses approval" notification banner - same
@@ -87,6 +107,10 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static bool IsL1Actionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.SUBMITTED;
     private static bool IsGaActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_GA;
+
+    // Eksekusi fisik hanya berjalan setelah laporan disetujui final - Status sendiri tetap
+    // APPROVED_GA_APPROVAL sepanjang ExecutionStage berjalan (lihat PerbaikanSarana.cs).
+    private static bool IsApprovedFinal(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL;
 
     private void AddLog(PerbaikanSarana item, string action, User actor, string? reason = null)
     {
@@ -655,6 +679,126 @@ public class PerbaikanSaranaController : ApiControllerBase
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "menolak (Approval GA)");
+        return Ok(PerbaikanSaranaOut.From(item));
+    }
+
+    // --- Eksekusi fisik (Cek Lokasi -> Buat Gambar -> Eksekusi), hanya setelah disetujui final -
+    // Admin GA dan Approval GA sama-sama bisa menjalankan tahap manapun, tidak dibatasi harus
+    // orang yang sama sepanjang tahapan. Setiap tahap wajib berurutan (lihat masing-masing guard
+    // di bawah) dan dicatat lewat AddLog supaya riwayatnya terlihat jelas di Transaksi/Overview.
+
+    [HttpPatch("{itemId:int}/cek-lokasi")]
+    public async Task<IActionResult> CekLokasi(int itemId, [FromBody] ExecutionStageRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsApprovedFinal(item))
+            return StatusCode(403, new { detail = "Data belum disetujui final" });
+        if (item.ExecutionStage != ExecutionStageEnum.MENUNGGU)
+            return StatusCode(403, new { detail = "Lokasi sudah pernah dicek" });
+
+        item.ExecutionStage = ExecutionStageEnum.LOKASI_DICEK;
+        item.LokasiDicekBy = user!.Id;
+        item.LokasiDicekAt = DateTime.UtcNow;
+        AddLog(item, "LOKASI_DICEK", user, payload.Catatan);
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "menandai lokasi sudah dicek");
+        return Ok(PerbaikanSaranaOut.From(item));
+    }
+
+    private static (bool ok, string? contentType, string? error) ValidateGambarFile(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+            return (false, null, "Gambar wajib diunggah");
+        if (file.Length > MaxGambarFileSizeBytes)
+            return (false, null, $"Ukuran file maksimal {MaxGambarFileSizeBytes / 1024 / 1024} MB");
+        var ext = Path.GetExtension(file.FileName);
+        if (string.IsNullOrEmpty(ext) || !AllowedGambarExtensions.TryGetValue(ext, out var contentType))
+            return (false, null, "Format gambar tidak didukung. Gunakan JPG atau PNG.");
+        return (true, contentType, null);
+    }
+
+    [HttpPost("{itemId:int}/gambar")]
+    public async Task<IActionResult> UploadGambar(int itemId, [FromForm] string? catatan, [FromForm] IFormFile? file)
+    {
+        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsApprovedFinal(item))
+            return StatusCode(403, new { detail = "Data belum disetujui final" });
+        if (item.ExecutionStage != ExecutionStageEnum.LOKASI_DICEK)
+            return StatusCode(403, new { detail = "Lokasi harus dicek terlebih dahulu" });
+
+        var (fileOk, contentType, fileError) = ValidateGambarFile(file);
+        if (!fileOk) return BadRequest(new { detail = fileError });
+
+        var storedFilename = $"{Guid.NewGuid():N}{Path.GetExtension(file!.FileName)}";
+        var destPath = Path.Combine(_uploadDir, storedFilename);
+        using (var stream = System.IO.File.Create(destPath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        item.ExecutionStage = ExecutionStageEnum.GAMBAR_DIBUAT;
+        item.GambarDibuatBy = user!.Id;
+        item.GambarDibuatAt = DateTime.UtcNow;
+        item.GambarFilePath = storedFilename;
+        item.GambarOriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
+        item.GambarContentType = contentType!;
+        AddLog(item, "GAMBAR_DIBUAT", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "mengunggah gambar rencana perbaikan");
+        return Ok(PerbaikanSaranaOut.From(item));
+    }
+
+    [HttpGet("{itemId:int}/gambar")]
+    public async Task<IActionResult> DownloadGambar(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.GambarFilePath == null) return NotFound(new { detail = "Belum ada gambar untuk laporan ini" });
+
+        var path = Path.Combine(_uploadDir, item.GambarFilePath);
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { detail = "File gambar tidak ditemukan di server" });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var cd = new ContentDisposition { Inline = true, FileName = item.GambarOriginalFilename ?? item.GambarFilePath };
+        Response.Headers["Content-Disposition"] = cd.ToString();
+        return File(bytes, item.GambarContentType ?? "application/octet-stream");
+    }
+
+    [HttpPatch("{itemId:int}/eksekusi")]
+    public async Task<IActionResult> Eksekusi(int itemId, [FromBody] ExecutionStageRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsApprovedFinal(item))
+            return StatusCode(403, new { detail = "Data belum disetujui final" });
+        if (item.ExecutionStage != ExecutionStageEnum.GAMBAR_DIBUAT)
+            return StatusCode(403, new { detail = "Gambar rencana perbaikan harus dibuat terlebih dahulu" });
+
+        item.ExecutionStage = ExecutionStageEnum.SELESAI;
+        item.SelesaiBy = user!.Id;
+        item.SelesaiAt = DateTime.UtcNow;
+        AddLog(item, "SELESAI", user, payload.Catatan);
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "menyelesaikan eksekusi perbaikan");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 

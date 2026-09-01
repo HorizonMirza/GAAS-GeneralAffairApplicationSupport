@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
+import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -134,6 +134,10 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   APPROVED_KPU: { label: "Disetujui KPU & Resi Diterbitkan", type: "approve" },
   REJECTED_KPU: { label: "Ditolak KPU", type: "reject" },
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
+  // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
+  LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
+  GAMBAR_DIBUAT: { label: "Gambar Rencana Perbaikan Dibuat", type: "neutral" },
+  SELESAI: { label: "Eksekusi Perbaikan Selesai", type: "approve" },
 };
 
 export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
@@ -470,6 +474,20 @@ export function isSaranaDeletableByOrigin(item: PerbaikanSarana, me: Me): boolea
 export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
   return item.status === "APPROVED_L1";
 }
+
+// Eksekusi fisik (Cek Lokasi -> Buat Gambar -> Eksekusi) hanya berjalan setelah disetujui final -
+// Admin GA dan Approval GA sama-sama bisa menjalankan tahap manapun (lihat
+// PerbaikanSaranaController's ExecutionRoles), tidak dibatasi harus orang yang sama.
+export function isSaranaExecutionActor(me: Me): boolean {
+  return me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+export const EXECUTION_STAGE_LABEL: Record<ExecutionStage, string> = {
+  MENUNGGU: "Menunggu Eksekusi",
+  LOKASI_DICEK: "Lokasi Dicek",
+  GAMBAR_DIBUAT: "Gambar Dibuat",
+  SELESAI: "Selesai Dieksekusi",
+};
 
 // --- Archive ---
 

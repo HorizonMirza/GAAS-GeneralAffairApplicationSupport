@@ -422,6 +422,16 @@ using (var scope = app.Services.CreateScope())
             last_read_at TIMESTAMP NOT NULL,
             UNIQUE (perbaikan_sarana_id, user_id)
         )");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS execution_stage VARCHAR(20) NOT NULL DEFAULT 'MENUNGGU'");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS lokasi_dicek_by INT REFERENCES users(id)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS lokasi_dicek_at TIMESTAMP");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_dibuat_by INT REFERENCES users(id)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_dibuat_at TIMESTAMP");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_file_path VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_original_filename VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_content_type VARCHAR(100)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_by INT REFERENCES users(id)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_at TIMESTAMP");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_status ON perbaikan_sarana (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_divisi ON perbaikan_sarana (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");

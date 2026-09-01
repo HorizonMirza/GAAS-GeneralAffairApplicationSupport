@@ -45,6 +45,14 @@ public class PerbaikanSaranaOut
     public DateTime? ApprovedL1At { get; set; }
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
+    public ExecutionStageEnum ExecutionStage { get; set; }
+    public int? LokasiDicekBy { get; set; }
+    public DateTime? LokasiDicekAt { get; set; }
+    public int? GambarDibuatBy { get; set; }
+    public DateTime? GambarDibuatAt { get; set; }
+    public string? GambarOriginalFilename { get; set; }
+    public int? SelesaiBy { get; set; }
+    public DateTime? SelesaiAt { get; set; }
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
@@ -72,8 +80,20 @@ public class PerbaikanSaranaOut
         ApprovedL1At = p.ApprovedL1At,
         ApprovedGaAt = p.ApprovedGaAt,
         ApprovedApprovalGaAt = p.ApprovedApprovalGaAt,
+        ExecutionStage = p.ExecutionStage,
+        LokasiDicekBy = p.LokasiDicekBy,
+        LokasiDicekAt = p.LokasiDicekAt,
+        GambarDibuatBy = p.GambarDibuatBy,
+        GambarDibuatAt = p.GambarDibuatAt,
+        GambarOriginalFilename = p.GambarOriginalFilename,
+        SelesaiBy = p.SelesaiBy,
+        SelesaiAt = p.SelesaiAt,
     };
 }
+
+// Catatan opsional untuk tahap cek lokasi/eksekusi - upload gambar punya request-nya sendiri
+// ([FromForm], lihat PerbaikanSaranaController.UploadGambar) karena membawa file, bukan JSON.
+public record ExecutionStageRequest(string? Catatan);
 
 public class PerbaikanSaranaListResponse
 {

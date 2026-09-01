@@ -733,6 +733,17 @@ public class AppDbContext : DbContext
             e.Property(p => p.ApprovedGaAt).HasColumnName("approved_ga_at");
             e.Property(p => p.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
 
+            e.Property(p => p.ExecutionStage).HasColumnName("execution_stage").HasConversion<string>().HasMaxLength(20).IsRequired();
+            e.Property(p => p.LokasiDicekBy).HasColumnName("lokasi_dicek_by");
+            e.Property(p => p.LokasiDicekAt).HasColumnName("lokasi_dicek_at");
+            e.Property(p => p.GambarDibuatBy).HasColumnName("gambar_dibuat_by");
+            e.Property(p => p.GambarDibuatAt).HasColumnName("gambar_dibuat_at");
+            e.Property(p => p.GambarFilePath).HasColumnName("gambar_file_path").HasMaxLength(255);
+            e.Property(p => p.GambarOriginalFilename).HasColumnName("gambar_original_filename").HasMaxLength(255);
+            e.Property(p => p.GambarContentType).HasColumnName("gambar_content_type").HasMaxLength(100);
+            e.Property(p => p.SelesaiBy).HasColumnName("selesai_by");
+            e.Property(p => p.SelesaiAt).HasColumnName("selesai_at");
+
             e.HasOne(p => p.Pembuat)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedBy)

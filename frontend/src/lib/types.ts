@@ -35,6 +35,10 @@ export type RejectTarget = "GA" | "ORIGIN";
 
 export type SumberPembelian = "KPU" | "PADI";
 
+// Maintenance: tahap eksekusi fisik setelah laporan disetujui final - berjalan terpisah dari
+// status approval-nya sendiri (lihat backend PerbaikanSarana.cs).
+export type ExecutionStage = "MENUNGGU" | "LOKASI_DICEK" | "GAMBAR_DIBUAT" | "SELESAI";
+
 export type TipeBooking = "INTERNAL" | "EXTERNAL";
 
 export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
@@ -429,6 +433,14 @@ export interface PerbaikanSarana {
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
+  executionStage: ExecutionStage;
+  lokasiDicekBy: number | null;
+  lokasiDicekAt: string | null;
+  gambarDibuatBy: number | null;
+  gambarDibuatAt: string | null;
+  gambarOriginalFilename: string | null;
+  selesaiBy: number | null;
+  selesaiAt: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }

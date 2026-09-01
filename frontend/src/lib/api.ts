@@ -495,6 +495,32 @@ export const api = {
   getSaranaChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/perbaikan-sarana/${id}/chat`),
   sendSaranaChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/perbaikan-sarana/${id}/chat`, { method: "POST", body: { message } }),
+  cekLokasiSarana: (id: number, catatan: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/cek-lokasi`, { method: "PATCH", body: { catatan } }),
+  uploadGambarSarana: async (id: number, file: File, catatan: string | null) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (catatan) formData.append("catatan", catatan);
+    const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/gambar`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah gambar";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json() as Promise<PerbaikanSarana>;
+  },
+  eksekusiSarana: (id: number, catatan: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi`, { method: "PATCH", body: { catatan } }),
+  saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
 
   listArchive: (params: ListArchiveParams) =>
     apiRequest<ArchiveDocumentListResponse>("/archive", { params: archiveListParams(params) }),
