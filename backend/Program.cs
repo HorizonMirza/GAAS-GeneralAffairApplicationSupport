@@ -64,7 +64,11 @@ using (var scope = app.Services.CreateScope())
     // comparisons and dropdown options), so it's rewritten here to the corrected value. Self-
     // limiting: once a row is updated it no longer matches the WHERE clause, so this is a no-op on
     // every restart after the first.
-    foreach (var tableCol in new[] { "users", "pengiriman", "booking_ruang", "booking_kendaraan", "permintaan_atk", "perbaikan_sarana", "archive_documents" })
+    // permintaan_arsip is a brand new table (never existed with the old en-dash value), so it has
+    // no rows to backfill and is deliberately left out of this list - unlike the other tables
+    // here, it can't be added until it's actually existed in this loop's own array in a prior
+    // deploy, otherwise this UPDATE would run before its CREATE TABLE below on first migration.
+    foreach (var tableCol in new[] { "users", "pengiriman", "booking_ruang", "booking_kendaraan", "permintaan_atk", "perbaikan_sarana" })
     {
         migrateDb.Database.ExecuteSqlRaw(
             $"UPDATE {tableCol} SET departemen = {{0}} WHERE departemen = {{1}}",
@@ -437,30 +441,82 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_tanggal ON perbaikan_sarana (tanggal)");
 
-    // Archive: brand new table, same reasoning as the blocks above - EnsureCreated() won't add
-    // tables to an already-existing database. No approval workflow here (see ArchiveDocument.cs),
-    // so unlike the other modules there is no logs/counter/chat table to go with it.
+    // Archive (Permintaan Arsip): replaces the old open-upload archive_documents table entirely -
+    // this is now a request-and-approval workflow (divisi/departemen requests moving arsip from
+    // aktif to inaktif/GA custody), same shape as Permintaan ATK, so it gets the same
+    // table/logs/counter/chat family. archive_documents itself is left in place (unused, no code
+    // references it) rather than dropped, matching this migration path's non-destructive
+    // convention elsewhere.
     migrateDb.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS archive_documents (
+        CREATE TABLE IF NOT EXISTS permintaan_arsip (
             id SERIAL PRIMARY KEY,
-            nama_dokumen VARCHAR(255) NOT NULL,
-            kategori VARCHAR(50) NOT NULL,
-            file_path VARCHAR(255) NOT NULL,
-            original_filename VARCHAR(255) NOT NULL,
-            content_type VARCHAR(150) NOT NULL,
-            file_size_bytes BIGINT NOT NULL,
+            nomor_arsip VARCHAR(50),
+            tanggal DATE NOT NULL,
+            keperluan VARCHAR(255) NOT NULL,
+            lokasi_penyimpanan VARCHAR(255) NOT NULL,
             catatan TEXT,
             divisi VARCHAR(255) NOT NULL,
             departemen VARCHAR(255),
-            uploaded_by INT NOT NULL REFERENCES users(id),
-            uploaded_by_role VARCHAR(50) NOT NULL,
+            status VARCHAR(50) NOT NULL,
+            reject_reason TEXT,
+            created_by INT NOT NULL REFERENCES users(id),
+            created_by_role VARCHAR(50) NOT NULL,
+            approved_by_l1 INT NULL REFERENCES users(id),
+            approved_by_ga INT NULL REFERENCES users(id),
+            approved_by_approval_ga INT NULL REFERENCES users(id),
             created_at TIMESTAMP NOT NULL,
-            updated_at TIMESTAMP NOT NULL
+            updated_at TIMESTAMP NOT NULL,
+            approved_l1_at TIMESTAMP NULL,
+            approved_ga_at TIMESTAMP NULL,
+            approved_approval_ga_at TIMESTAMP NULL
         )");
-    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_kategori ON archive_documents (kategori)");
-    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_divisi ON archive_documents (divisi)");
-    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_departemen ON archive_documents (departemen)");
-    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_archive_documents_created_at ON archive_documents (created_at)");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS permintaan_arsip_items (
+            id SERIAL PRIMARY KEY,
+            permintaan_arsip_id INT NOT NULL REFERENCES permintaan_arsip(id) ON DELETE CASCADE,
+            nama_arsip VARCHAR(255) NOT NULL,
+            kategori VARCHAR(50) NOT NULL,
+            tahun_arsip VARCHAR(20) NOT NULL,
+            jumlah INT NOT NULL,
+            satuan VARCHAR(50) NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS permintaan_arsip_logs (
+            id SERIAL PRIMARY KEY,
+            permintaan_arsip_id INT NOT NULL REFERENCES permintaan_arsip(id) ON DELETE CASCADE,
+            action VARCHAR(50) NOT NULL,
+            actor_id INT NULL REFERENCES users(id),
+            reason TEXT,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS arsip_counters (
+            divisi VARCHAR(255) NOT NULL,
+            year INT NOT NULL,
+            month INT NOT NULL,
+            last_sequence INT NOT NULL,
+            PRIMARY KEY (divisi, year, month)
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS permintaan_arsip_chat_messages (
+            id SERIAL PRIMARY KEY,
+            permintaan_arsip_id INT NOT NULL REFERENCES permintaan_arsip(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS permintaan_arsip_chat_reads (
+            id SERIAL PRIMARY KEY,
+            permintaan_arsip_id INT NOT NULL REFERENCES permintaan_arsip(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (permintaan_arsip_id, user_id)
+        )");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_status ON permintaan_arsip (status)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_divisi ON permintaan_arsip (divisi)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_departemen ON permintaan_arsip (departemen)");
+    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_tanggal ON permintaan_arsip (tanggal)");
 
     // Cancel Booking feature - plain name snapshot of who cancelled it (see
     // BookingRuangController.Cancel/BookingKendaraanController.Cancel), not a User FK.
@@ -472,7 +528,7 @@ if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

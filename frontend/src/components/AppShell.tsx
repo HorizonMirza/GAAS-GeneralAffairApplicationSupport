@@ -99,7 +99,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     icon: ARSIP_ICON,
     label: "Archive",
     items: [
-      { label: "Dokumen", href: "/arsip" },
+      { label: "Overview", href: "/arsip/overview" },
+      { label: "Transaction", href: "/arsip/transaksi" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },

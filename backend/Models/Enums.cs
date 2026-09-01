@@ -115,7 +115,8 @@ public enum ExecutionStageEnum
     SELESAI,
 }
 
-// Archive: kategori bebas untuk dokumen umum perusahaan, dipakai sebagai "folder" saat filter.
+// Archive: jenis dokumen asli setiap arsip di dalam sebuah PermintaanArsip (lihat
+// PermintaanArsipItem.Kategori) - dipakai sebagai "folder" saat filter.
 public enum ArchiveKategoriEnum
 {
     SOP,

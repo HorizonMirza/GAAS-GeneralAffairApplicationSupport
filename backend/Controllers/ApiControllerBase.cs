@@ -152,6 +152,20 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
+    public static bool CanAccessPermintaanArsip(User user, PermintaanArsip item)
+    {
+        if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
+            return true;
+
+        var sameUnit = item.Departemen != null
+            ? user.Departemen == item.Departemen
+            : user.Divisi == item.Divisi && user.Departemen == null;
+        return item.Status == BookingStatusEnum.DRAFT
+            ? item.CreatedBy == user.Id
+            : sameUnit;
+    }
+
+    // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
     public static bool CanAccessPermintaanAtk(User user, PermintaanAtk item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))

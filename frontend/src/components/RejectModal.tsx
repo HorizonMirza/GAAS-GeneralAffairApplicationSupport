@@ -24,7 +24,10 @@ export type RejectType =
   | "atk-kpu"
   | "sarana-l1"
   | "sarana-ga"
-  | "sarana-ga-approval";
+  | "sarana-ga-approval"
+  | "arsip-l1"
+  | "arsip-ga"
+  | "arsip-ga-approval";
 
 interface Props {
   open: boolean;
@@ -117,9 +120,16 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectSaranaL1(targetId, reasonValue);
       } else if (targetType === "sarana-ga") {
         await api.rejectSaranaGa(targetId, reasonValue);
-      } else {
+      } else if (targetType === "sarana-ga-approval") {
         await api.rejectSaranaGaApproval(targetId, reasonValue);
         message = "Laporan ditolak";
+      } else if (targetType === "arsip-l1") {
+        await api.rejectArsipL1(targetId, reasonValue);
+      } else if (targetType === "arsip-ga") {
+        await api.rejectArsipGa(targetId, reasonValue);
+      } else {
+        await api.rejectArsipGaApproval(targetId, reasonValue);
+        message = "Permintaan arsip ditolak";
       }
       showToast(message);
       reset();

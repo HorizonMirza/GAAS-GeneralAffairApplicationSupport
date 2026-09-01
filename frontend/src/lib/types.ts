@@ -375,32 +375,80 @@ export interface BookingRuangActionResult {
   detail: string | null;
 }
 
-// --- Archive: penyimpanan dokumen umum, tanpa alur approval ---
+// --- Archive: permintaan pemindahan arsip aktif (dipegang divisi/departemen) ke inaktif
+// (dipegang Admin/Approval GA), lewat alur approval yang sama dengan Office Supplies/Maintenance ---
 
 export type ArchiveKategori = "SOP" | "SURAT" | "KONTRAK" | "LAPORAN" | "PANDUAN" | "LAINNYA";
 
-export interface ArchiveDocument {
+export interface PermintaanArsipItem {
   id: number;
-  namaDokumen: string;
+  namaArsip: string;
   kategori: ArchiveKategori;
-  originalFilename: string;
-  contentType: string;
-  fileSizeBytes: number;
-  catatan: string | null;
-  divisi: string;
-  departemen: string | null;
-  uploadedBy: number;
-  uploaderNama: string | null;
-  uploadedByRole: Role;
-  createdAt: string;
-  updatedAt: string;
+  tahunArsip: string;
+  jumlah: number;
+  satuan: string;
 }
 
-export interface ArchiveDocumentListResponse {
-  items: ArchiveDocument[];
+export interface PermintaanArsip {
+  id: number;
+  nomorArsip: string | null;
+  tanggal: string;
+  keperluan: string;
+  lokasiPenyimpanan: string;
+  catatan: string | null;
+  items: PermintaanArsipItem[];
+  divisi: string;
+  departemen: string | null;
+  status: BookingStatus;
+  rejectReason: string | null;
+  createdBy: number;
+  createdByRole: Role;
+  approvedByL1: number | null;
+  approvedByGa: number | null;
+  approvedByApprovalGa: number | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedL1At: string | null;
+  approvedGaAt: string | null;
+  approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
+  hasUnreadMention: boolean;
+}
+
+export interface PermintaanArsipListResponse {
+  items: PermintaanArsip[];
   total: number;
   page: number;
   limit: number;
+}
+
+export interface PermintaanArsipStatsResponse {
+  countsByStatus: Partial<Record<BookingStatus, number>>;
+}
+
+export interface PermintaanArsipLog {
+  id: number;
+  action: string;
+  actorNama: string | null;
+  actorRole: Role | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface PermintaanArsipItemPayload {
+  namaArsip: string;
+  kategori: ArchiveKategori;
+  tahunArsip: string;
+  jumlah: number;
+  satuan: string;
+}
+
+export interface PermintaanArsipCreatePayload {
+  tanggal: string;
+  keperluan: string;
+  lokasiPenyimpanan: string;
+  catatan: string | null;
+  items: PermintaanArsipItemPayload[];
 }
 
 // --- Maintenance (Perbaikan Sarana) ---

@@ -1,7 +1,5 @@
 import type {
   ApproveKpuPayload,
-  ArchiveDocument,
-  ArchiveDocumentListResponse,
   ArchiveKategori,
   BookingKendaraan,
   BookingKendaraanCreatePayload,
@@ -36,6 +34,11 @@ import type {
   PerbaikanSaranaListResponse,
   PerbaikanSaranaLog,
   PerbaikanSaranaStatsResponse,
+  PermintaanArsip,
+  PermintaanArsipCreatePayload,
+  PermintaanArsipListResponse,
+  PermintaanArsipLog,
+  PermintaanArsipStatsResponse,
   PermintaanAtk,
   PermintaanAtkCreatePayload,
   PermintaanAtkListResponse,
@@ -522,66 +525,40 @@ export const api = {
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi`, { method: "PATCH", body: { catatan } }),
   saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
 
-  listArchive: (params: ListArchiveParams) =>
-    apiRequest<ArchiveDocumentListResponse>("/archive", { params: archiveListParams(params) }),
-  uploadArchive: async (payload: { namaDokumen: string; kategori: ArchiveKategori; catatan: string | null; file: File }) => {
-    const formData = new FormData();
-    formData.append("namaDokumen", payload.namaDokumen);
-    formData.append("kategori", payload.kategori);
-    if (payload.catatan) formData.append("catatan", payload.catatan);
-    formData.append("file", payload.file);
-    const response = await fetch(`${API_BASE}/archive`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-    if (!response.ok) {
-      let detail = "Gagal mengunggah dokumen";
-      try {
-        const data = await response.json();
-        detail = data.detail || detail;
-      } catch {
-        /* ignore */
-      }
-      throw new ApiError(detail, response.status);
-    }
-    return response.json() as Promise<ArchiveDocument>;
-  },
-  updateArchive: async (
-    id: number,
-    payload: { namaDokumen?: string; kategori?: ArchiveKategori; catatan?: string | null; file?: File | null }
-  ) => {
-    const formData = new FormData();
-    if (payload.namaDokumen !== undefined) formData.append("namaDokumen", payload.namaDokumen);
-    if (payload.kategori !== undefined) formData.append("kategori", payload.kategori);
-    if (payload.catatan !== undefined) formData.append("catatan", payload.catatan || "");
-    if (payload.file) formData.append("file", payload.file);
-    const response = await fetch(`${API_BASE}/archive/${id}`, {
-      method: "PUT",
-      credentials: "include",
-      body: formData,
-    });
-    if (!response.ok) {
-      let detail = "Gagal memperbarui dokumen";
-      try {
-        const data = await response.json();
-        detail = data.detail || detail;
-      } catch {
-        /* ignore */
-      }
-      throw new ApiError(detail, response.status);
-    }
-    return response.json() as Promise<ArchiveDocument>;
-  },
-  deleteArchive: (id: number) => apiRequest(`/archive/${id}`, { method: "DELETE" }),
-  archiveFileUrl: (id: number) => `${API_BASE}/archive/${id}/file`,
-  archiveDownloadUrl: (id: number) => `${API_BASE}/archive/${id}/file?download=true`,
+  nextArsipNomor: (tanggal: string) =>
+    apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal } }),
+  listArsip: (params: ListArsipParams) =>
+    apiRequest<PermintaanArsipListResponse>("/permintaan-arsip", { params: arsipListParams(params) }),
+  getArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`),
+  getArsipStats: (bulan: string) =>
+    apiRequest<PermintaanArsipStatsResponse>("/permintaan-arsip/stats", { params: { bulan } }),
+  createArsip: (payload: PermintaanArsipCreatePayload) =>
+    apiRequest<PermintaanArsip>("/permintaan-arsip", { method: "POST", body: payload }),
+  updateArsip: (id: number, payload: PermintaanArsipCreatePayload) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`, { method: "PUT", body: payload }),
+  deleteArsip: (id: number) => apiRequest(`/permintaan-arsip/${id}`, { method: "DELETE" }),
+  superAdminDeleteArsip: (id: number) => apiRequest(`/permintaan-arsip/${id}/super-admin`, { method: "DELETE" }),
+  submitArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/submit`, { method: "PATCH" }),
+  approveArsipL1: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/approve-l1`, { method: "PATCH" }),
+  rejectArsipL1: (id: number, reason: string | null) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
+  approveArsipGa: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/approve-ga`, { method: "PATCH" }),
+  rejectArsipGa: (id: number, reason: string | null) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
+  approveArsipGaApproval: (id: number) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/approve-ga-approval`, { method: "PATCH" }),
+  rejectArsipGaApproval: (id: number, reason: string | null) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  getArsipLogs: (id: number) => apiRequest<PermintaanArsipLog[]>(`/permintaan-arsip/${id}/logs`),
+  getArsipChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-arsip/${id}/chat`),
+  sendArsipChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/permintaan-arsip/${id}/chat`, { method: "POST", body: { message } }),
 };
 
-export interface ListArchiveParams {
+export interface ListArsipParams {
   page?: number;
   limit?: number;
-  kategori?: ArchiveKategori | "";
+  status?: BookingStatus | "REJECTED" | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;
@@ -589,11 +566,11 @@ export interface ListArchiveParams {
   search?: string;
 }
 
-function archiveListParams(p: ListArchiveParams) {
+function arsipListParams(p: ListArsipParams) {
   return {
     page: p.page,
     limit: p.limit,
-    kategori: p.kategori,
+    status: p.status,
     divisi: p.divisi,
     departemen: p.departemen,
     direktorat: p.direktorat,

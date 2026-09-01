@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -489,7 +489,7 @@ export const EXECUTION_STAGE_LABEL: Record<ExecutionStage, string> = {
   SELESAI: "Selesai Dieksekusi",
 };
 
-// --- Archive ---
+// --- Archive / Permintaan Arsip (pola yang sama dengan Booking & ATK di atas) ---
 
 export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {
   SOP: "SOP",
@@ -500,12 +500,32 @@ export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {
   LAINNYA: "Lainnya",
 };
 
-// Matches ArchiveController's MaxArchiveFileSizeBytes - checked here too so an oversized file is
-// rejected the instant it's picked, before an upload attempt can fail with a raw connection error.
-export const MAX_ARCHIVE_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+export function arsipOriginActorLabel(item: PermintaanArsip): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
+}
 
-// Mirrors ArchiveController.CanManage exactly - the uploader manages their own document,
-// Admin/Approval GA and Super Admin manage every document.
-export function canManageArchiveDocument(item: ArchiveDocument, me: Me): boolean {
-  return item.uploadedBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
+// Same rule as isBookingEditableByOrigin - mirrors the backend's
+// PermintaanArsipController.IsEditableByOrigin exactly.
+export function isArsipEditableByOrigin(item: PermintaanArsip, me: Me): boolean {
+  return item.status === "DRAFT" && item.createdBy === me.id;
+}
+
+// Same rule as isBookingDeletableByOrigin - mirrors the backend's
+// PermintaanArsipController.IsDeletableByOrigin exactly.
+export function isArsipDeletableByOrigin(item: PermintaanArsip, me: Me): boolean {
+  if (isArsipEditableByOrigin(item, me)) return true;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+export function isArsipGaActionable(item: PermintaanArsip): boolean {
+  return item.status === "APPROVED_L1";
+}
+
+// Ringkasan daftar arsip untuk sel tabel/kartu: "Kontrak Vendor 2018-2019 (5 boks), ...".
+export function arsipItemsSummary(item: PermintaanArsip): string {
+  return item.items.map((i) => `${i.namaArsip} (${i.jumlah} ${i.satuan})`).join(", ");
 }

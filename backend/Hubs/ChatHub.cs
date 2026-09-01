@@ -123,10 +123,27 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, SaranaGroup(perbaikanSaranaId));
     }
 
+    // Same as JoinSaranaChat, but for Archive (Permintaan Arsip) - also excludes KPU, matching
+    // PermintaanArsipChatController.List/Send.
+    public async Task JoinArsipChat(int permintaanArsipId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null || user.Role == RoleEnum.KPU) return;
+        var item = await _db.PermintaanArsips.FindAsync(permintaanArsipId);
+        if (item == null || !ApiControllerBase.CanAccessPermintaanArsip(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, ArsipGroup(permintaanArsipId));
+    }
+
+    public async Task LeaveArsipChat(int permintaanArsipId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, ArsipGroup(permintaanArsipId));
+    }
+
     public static string PengirimanGroup(int pengirimanId) => $"pengiriman-chat-{pengirimanId}";
     public static string BookingGroup(int bookingRuangId) => $"booking-chat-{bookingRuangId}";
     public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
     public static string AtkGroup(int permintaanAtkId) => $"atk-chat-{permintaanAtkId}";
     public static string SaranaGroup(int perbaikanSaranaId) => $"sarana-chat-{perbaikanSaranaId}";
+    public static string ArsipGroup(int permintaanArsipId) => $"arsip-chat-{permintaanArsipId}";
     public static string UserGroup(int userId) => $"user-{userId}";
 }

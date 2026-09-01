@@ -38,7 +38,12 @@ public class AppDbContext : DbContext
     public DbSet<PerbaikanSaranaChatMessage> PerbaikanSaranaChatMessages => Set<PerbaikanSaranaChatMessage>();
     public DbSet<PerbaikanSaranaChatRead> PerbaikanSaranaChatReads => Set<PerbaikanSaranaChatRead>();
     public DbSet<SaranaCounter> SaranaCounters => Set<SaranaCounter>();
-    public DbSet<ArchiveDocument> ArchiveDocuments => Set<ArchiveDocument>();
+    public DbSet<PermintaanArsip> PermintaanArsips => Set<PermintaanArsip>();
+    public DbSet<PermintaanArsipItem> PermintaanArsipItems => Set<PermintaanArsipItem>();
+    public DbSet<PermintaanArsipLog> PermintaanArsipLogs => Set<PermintaanArsipLog>();
+    public DbSet<PermintaanArsipChatMessage> PermintaanArsipChatMessages => Set<PermintaanArsipChatMessage>();
+    public DbSet<PermintaanArsipChatRead> PermintaanArsipChatReads => Set<PermintaanArsipChatRead>();
+    public DbSet<ArsipCounter> ArsipCounters => Set<ArsipCounter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -124,10 +129,18 @@ public class AppDbContext : DbContext
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
-        foreach (var entry in ChangeTracker.Entries<ArchiveDocument>())
+        foreach (var entry in ChangeTracker.Entries<PermintaanArsip>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
             if (entry.State is EntityState.Added or EntityState.Modified) entry.Entity.UpdatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PermintaanArsipLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<PermintaanArsipChatMessage>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -829,37 +842,136 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<ArchiveDocument>(e =>
+        modelBuilder.Entity<PermintaanArsip>(e =>
         {
-            e.ToTable("archive_documents");
-            e.HasKey(a => a.Id);
-            e.Property(a => a.Id).HasColumnName("id");
-            e.Property(a => a.NamaDokumen).HasColumnName("nama_dokumen").HasMaxLength(255).IsRequired();
-            e.Property(a => a.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
-            e.Property(a => a.FilePath).HasColumnName("file_path").HasMaxLength(255).IsRequired();
-            e.Property(a => a.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();
-            e.Property(a => a.ContentType).HasColumnName("content_type").HasMaxLength(150).IsRequired();
-            e.Property(a => a.FileSizeBytes).HasColumnName("file_size_bytes");
-            e.Property(a => a.Catatan).HasColumnName("catatan");
+            e.ToTable("permintaan_arsip");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.NomorArsip).HasColumnName("nomor_arsip").HasMaxLength(50);
+            e.Property(p => p.Tanggal).HasColumnName("tanggal");
+            e.Property(p => p.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
+            e.Property(p => p.LokasiPenyimpanan).HasColumnName("lokasi_penyimpanan").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Catatan).HasColumnName("catatan");
 
-            e.Property(a => a.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
-            e.Property(a => a.Departemen).HasColumnName("departemen").HasMaxLength(255);
+            e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
-            e.Property(a => a.UploadedBy).HasColumnName("uploaded_by");
-            e.Property(a => a.UploadedByRole).HasColumnName("uploaded_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.RejectReason).HasColumnName("reject_reason");
 
-            e.Property(a => a.CreatedAt).HasColumnName("created_at");
-            e.Property(a => a.UpdatedAt).HasColumnName("updated_at");
+            e.Property(p => p.CreatedBy).HasColumnName("created_by");
+            e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.ApprovedByL1).HasColumnName("approved_by_l1");
+            e.Property(p => p.ApprovedByGa).HasColumnName("approved_by_ga");
+            e.Property(p => p.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
 
-            e.HasOne(a => a.Pengunggah)
+            e.Property(p => p.CreatedAt).HasColumnName("created_at");
+            e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+            e.Property(p => p.ApprovedL1At).HasColumnName("approved_l1_at");
+            e.Property(p => p.ApprovedGaAt).HasColumnName("approved_ga_at");
+            e.Property(p => p.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+
+            e.HasOne(p => p.Pembuat)
                 .WithMany()
-                .HasForeignKey(a => a.UploadedBy)
+                .HasForeignKey(p => p.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasIndex(a => a.Kategori).HasDatabaseName("ix_archive_documents_kategori");
-            e.HasIndex(a => a.Divisi).HasDatabaseName("ix_archive_documents_divisi");
-            e.HasIndex(a => a.Departemen).HasDatabaseName("ix_archive_documents_departemen");
-            e.HasIndex(a => a.CreatedAt).HasDatabaseName("ix_archive_documents_created_at");
+            e.HasIndex(p => p.Status).HasDatabaseName("ix_permintaan_arsip_status");
+            e.HasIndex(p => p.Divisi).HasDatabaseName("ix_permintaan_arsip_divisi");
+            e.HasIndex(p => p.Departemen).HasDatabaseName("ix_permintaan_arsip_departemen");
+            e.HasIndex(p => p.Tanggal).HasDatabaseName("ix_permintaan_arsip_tanggal");
+        });
+
+        modelBuilder.Entity<PermintaanArsipItem>(e =>
+        {
+            e.ToTable("permintaan_arsip_items");
+            e.HasKey(i => i.Id);
+            e.Property(i => i.Id).HasColumnName("id");
+            e.Property(i => i.PermintaanArsipId).HasColumnName("permintaan_arsip_id");
+            e.Property(i => i.NamaArsip).HasColumnName("nama_arsip").HasMaxLength(255).IsRequired();
+            e.Property(i => i.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(i => i.TahunArsip).HasColumnName("tahun_arsip").HasMaxLength(20).IsRequired();
+            e.Property(i => i.Jumlah).HasColumnName("jumlah");
+            e.Property(i => i.Satuan).HasColumnName("satuan").HasMaxLength(50).IsRequired();
+
+            e.HasOne(i => i.PermintaanArsip)
+                .WithMany(p => p.Items)
+                .HasForeignKey(i => i.PermintaanArsipId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PermintaanArsipLog>(e =>
+        {
+            e.ToTable("permintaan_arsip_logs");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.PermintaanArsipId).HasColumnName("permintaan_arsip_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.PermintaanArsip)
+                .WithMany(p => p.Logs)
+                .HasForeignKey(l => l.PermintaanArsipId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ArsipCounter>(e =>
+        {
+            e.ToTable("arsip_counters");
+            e.HasKey(c => new { c.Divisi, c.Year, c.Month });
+            e.Property(c => c.Divisi).HasColumnName("divisi").HasMaxLength(255);
+            e.Property(c => c.Year).HasColumnName("year");
+            e.Property(c => c.Month).HasColumnName("month");
+            e.Property(c => c.LastSequence).HasColumnName("last_sequence");
+        });
+
+        modelBuilder.Entity<PermintaanArsipChatMessage>(e =>
+        {
+            e.ToTable("permintaan_arsip_chat_messages");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.PermintaanArsipId).HasColumnName("permintaan_arsip_id");
+            e.Property(m => m.SenderId).HasColumnName("sender_id");
+            e.Property(m => m.Message).HasColumnName("message").IsRequired();
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(m => m.PermintaanArsip)
+                .WithMany()
+                .HasForeignKey(m => m.PermintaanArsipId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PermintaanArsipChatRead>(e =>
+        {
+            e.ToTable("permintaan_arsip_chat_reads");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.PermintaanArsipId).HasColumnName("permintaan_arsip_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.LastReadAt).HasColumnName("last_read_at");
+            e.HasIndex(r => new { r.PermintaanArsipId, r.UserId }).IsUnique();
+
+            e.HasOne(r => r.PermintaanArsip)
+                .WithMany()
+                .HasForeignKey(r => r.PermintaanArsipId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<DivisiCounter>(e =>
