@@ -12,6 +12,9 @@ interface Props {
   // Demo facility chips shown below Kapasitas (e.g. "TV") - no real per-room facility data exists
   // yet, so callers pass a fixed placeholder list until that's tracked for real.
   facilities?: string[];
+  // Real label/value rows shown below Kapasitas (e.g. Plat Nomor, Nama Supir for a vehicle) -
+  // unlike facilities, this is actual data, not a placeholder.
+  extraDetails?: { label: string; value: string }[];
   // Up to 5 photos, shown as an auto-advancing slideshow (click also advances one slide).
   photoUrls: string[];
   availability: RoomInfoAvailability;
@@ -84,6 +87,7 @@ export default function RoomInfoModal({
   nama,
   kapasitas,
   facilities,
+  extraDetails,
   photoUrls,
   availability,
   availLabel,
@@ -109,6 +113,12 @@ export default function RoomInfoModal({
             <span>{kapasitas} orang</span>
           </div>
         )}
+        {extraDetails && extraDetails.map(({ label, value }) => (
+          <div key={label} className="room-info-row">
+            <span className="text-secondary">{label}</span>
+            <span>{value}</span>
+          </div>
+        ))}
         {facilities && facilities.length > 0 && (
           <div className="room-info-row room-info-row-stack">
             <span className="text-secondary">Fasilitas</span>

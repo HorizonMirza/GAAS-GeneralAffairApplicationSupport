@@ -78,8 +78,6 @@ function vehiclePhotoUrls(vehicleName: string): string[] {
   return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
-// Demo facility list, shown in the info modal until real per-vehicle facility data exists.
-const VEHICLE_DEMO_FACILITIES = ["AC", "Radio/Tape", "Sabuk Pengaman", "Kotak P3K"];
 
 // Free (bookable) hours left today, one entry per whole hour within operating hours - same rule
 // as Room Booking's roomFreeSlotsToday.
@@ -349,7 +347,14 @@ export default function VehicleBookingOverviewPage() {
         open={!!infoVehicle}
         nama={infoVehicle?.nama ?? null}
         kapasitas={infoVehicle?.kapasitas ?? null}
-        facilities={infoVehicle ? VEHICLE_DEMO_FACILITIES : []}
+        extraDetails={
+          infoVehicle
+            ? [
+                { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
+                { label: "Nama Supir", value: infoVehicle.supir || "-" },
+              ]
+            : []
+        }
         photoUrls={infoVehicle ? vehiclePhotoUrls(infoVehicle.nama) : []}
         availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
         availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
