@@ -331,7 +331,9 @@ public class BookingKendaraanController : ApiControllerBase
                 && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)))
             .ToListAsync();
 
-        return Ok(items.Select(BookingKendaraanOut.From).ToList());
+        var outItems = items.Select(BookingKendaraanOut.From).ToList();
+        await PopulateUnreadChatAsync(outItems, user!);
+        return Ok(outItems);
     }
 
     [HttpGet("schedule-range")]
@@ -352,7 +354,56 @@ public class BookingKendaraanController : ApiControllerBase
             query = query.Where(b => b.NamaKendaraan == namaKendaraan);
 
         var items = await query.ToListAsync();
-        return Ok(items.Select(BookingKendaraanOut.From).ToList());
+        var outItems = items.Select(BookingKendaraanOut.From).ToList();
+        await PopulateUnreadChatAsync(outItems, user!);
+        return Ok(outItems);
+    }
+
+    // Shared by List/GetSchedule/GetScheduleRange - fills in UnreadChatCount/HasUnreadMention on
+    // an already-built list of BookingKendaraanOut, since Chat's unread badge (the card icon on
+    // Overview/Transaksi, RowMenuDropdown's Chat item on Calendar) needs it regardless of which
+    // endpoint built the list.
+    private async Task PopulateUnreadChatAsync(List<BookingKendaraanOut> outItems, User user)
+    {
+        var itemIds = outItems.Select(i => i.Id).ToList();
+        if (itemIds.Count == 0) return;
+
+        var messageTimes = await _db.BookingKendaraanChatMessages
+            .Where(m => itemIds.Contains(m.BookingKendaraanId) && m.SenderId != user.Id)
+            .Select(m => new { m.BookingKendaraanId, m.CreatedAt })
+            .ToListAsync();
+        var lastReadAt = await _db.BookingKendaraanChatReads
+            .Where(r => r.UserId == user.Id && itemIds.Contains(r.BookingKendaraanId))
+            .ToDictionaryAsync(r => r.BookingKendaraanId, r => r.LastReadAt);
+        var outById = outItems.ToDictionary(o => o.Id);
+        foreach (var group in messageTimes.GroupBy(m => m.BookingKendaraanId))
+        {
+            if (!outById.TryGetValue(group.Key, out var outItem)) continue;
+            var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+            outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+        }
+
+        var mentionLabel = MentionLabelForRole(user.Role);
+        var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
+        if (mentionLabel != null && unreadItemIds.Count > 0)
+        {
+            var mentionTag = "@" + mentionLabel;
+            var reads = _db.BookingKendaraanChatReads.Where(r => r.UserId == user.Id && unreadItemIds.Contains(r.BookingKendaraanId));
+            var candidateMessages = await (
+                from m in _db.BookingKendaraanChatMessages
+                where unreadItemIds.Contains(m.BookingKendaraanId) && m.SenderId != user.Id
+                join r in reads on m.BookingKendaraanId equals r.BookingKendaraanId into rj
+                from r in rj.DefaultIfEmpty()
+                where r == null || m.CreatedAt > r.LastReadAt
+                select new { m.BookingKendaraanId, m.Message }
+            ).ToListAsync();
+            var mentionedIds = candidateMessages
+                .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                .Select(m => m.BookingKendaraanId)
+                .ToHashSet();
+            foreach (var outItem in outItems)
+                if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
+        }
     }
 
     [HttpPost]
@@ -621,46 +672,7 @@ public class BookingKendaraanController : ApiControllerBase
             .ToListAsync();
 
         var outItems = items.Select(BookingKendaraanOut.From).ToList();
-        var itemIds = items.Select(i => i.Id).ToList();
-        if (itemIds.Count > 0)
-        {
-            var messageTimes = await _db.BookingKendaraanChatMessages
-                .Where(m => itemIds.Contains(m.BookingKendaraanId) && m.SenderId != user!.Id)
-                .Select(m => new { m.BookingKendaraanId, m.CreatedAt })
-                .ToListAsync();
-            var lastReadAt = await _db.BookingKendaraanChatReads
-                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.BookingKendaraanId))
-                .ToDictionaryAsync(r => r.BookingKendaraanId, r => r.LastReadAt);
-            var outById = outItems.ToDictionary(o => o.Id);
-            foreach (var group in messageTimes.GroupBy(m => m.BookingKendaraanId))
-            {
-                if (!outById.TryGetValue(group.Key, out var outItem)) continue;
-                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
-                outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
-            }
-
-            var mentionLabel = MentionLabelForRole(user!.Role);
-            var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
-            if (mentionLabel != null && unreadItemIds.Count > 0)
-            {
-                var mentionTag = "@" + mentionLabel;
-                var reads = _db.BookingKendaraanChatReads.Where(r => r.UserId == user!.Id && unreadItemIds.Contains(r.BookingKendaraanId));
-                var candidateMessages = await (
-                    from m in _db.BookingKendaraanChatMessages
-                    where unreadItemIds.Contains(m.BookingKendaraanId) && m.SenderId != user!.Id
-                    join r in reads on m.BookingKendaraanId equals r.BookingKendaraanId into rj
-                    from r in rj.DefaultIfEmpty()
-                    where r == null || m.CreatedAt > r.LastReadAt
-                    select new { m.BookingKendaraanId, m.Message }
-                ).ToListAsync();
-                var mentionedIds = candidateMessages
-                    .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
-                    .Select(m => m.BookingKendaraanId)
-                    .ToHashSet();
-                foreach (var outItem in outItems)
-                    if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
-            }
-        }
+        await PopulateUnreadChatAsync(outItems, user!);
 
         return Ok(new BookingKendaraanListResponse
         {

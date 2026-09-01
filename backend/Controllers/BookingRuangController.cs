@@ -600,7 +600,9 @@ public class BookingRuangController : ApiControllerBase
                 && (ActiveStatuses.Contains(b.Status) || (b.Status == BookingStatusEnum.DRAFT && b.CreatedBy == user!.Id)))
             .ToListAsync();
 
-        return Ok(items.Select(BookingRuangOut.From).ToList());
+        var outItems = items.Select(BookingRuangOut.From).ToList();
+        await PopulateUnreadChatAsync(outItems, user!);
+        return Ok(outItems);
     }
 
     // Same visibility rules as GetSchedule (global, read-only), but spans a date range so the
@@ -626,7 +628,63 @@ public class BookingRuangController : ApiControllerBase
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
 
         var items = await query.ToListAsync();
-        return Ok(items.Select(BookingRuangOut.From).ToList());
+        var outItems = items.Select(BookingRuangOut.From).ToList();
+        await PopulateUnreadChatAsync(outItems, user!);
+        return Ok(outItems);
+    }
+
+    // Shared by List/GetSchedule/GetScheduleRange - fills in UnreadChatCount/HasUnreadMention on
+    // an already-built list of BookingRuangOut, since Chat's unread badge (the card icon on
+    // Overview/Transaksi, RowMenuDropdown's Chat item on Calendar) needs it regardless of which
+    // endpoint built the list.
+    private async Task PopulateUnreadChatAsync(List<BookingRuangOut> outItems, User user)
+    {
+        var itemIds = outItems.Select(i => i.Id).ToList();
+        if (itemIds.Count == 0) return;
+
+        // Excludes the current user's own messages - own messages should never count as
+        // "unread" for the person who sent them, and doing it here (rather than by advancing
+        // their read cursor past them on send) avoids also hiding a concurrently-arrived
+        // message from someone else that this user hasn't actually seen yet.
+        var messageTimes = await _db.BookingChatMessages
+            .Where(m => itemIds.Contains(m.BookingRuangId) && m.SenderId != user.Id)
+            .Select(m => new { m.BookingRuangId, m.CreatedAt })
+            .ToListAsync();
+        var lastReadAt = await _db.BookingChatReads
+            .Where(r => r.UserId == user.Id && itemIds.Contains(r.BookingRuangId))
+            .ToDictionaryAsync(r => r.BookingRuangId, r => r.LastReadAt);
+        var outById = outItems.ToDictionary(o => o.Id);
+        foreach (var group in messageTimes.GroupBy(m => m.BookingRuangId))
+        {
+            if (!outById.TryGetValue(group.Key, out var outItem)) continue;
+            var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+            outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+        }
+
+        var mentionLabel = MentionLabelForRole(user.Role);
+        var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
+        if (mentionLabel != null && unreadItemIds.Count > 0)
+        {
+            var mentionTag = "@" + mentionLabel;
+            // Unread bound applied in SQL (left join against this user's read cursor) instead
+            // of fetching every candidate message's full text and filtering by CreatedAt in
+            // C# afterward - only the rows that are actually unread come back from the DB.
+            var reads = _db.BookingChatReads.Where(r => r.UserId == user.Id && unreadItemIds.Contains(r.BookingRuangId));
+            var candidateMessages = await (
+                from m in _db.BookingChatMessages
+                where unreadItemIds.Contains(m.BookingRuangId) && m.SenderId != user.Id
+                join r in reads on m.BookingRuangId equals r.BookingRuangId into rj
+                from r in rj.DefaultIfEmpty()
+                where r == null || m.CreatedAt > r.LastReadAt
+                select new { m.BookingRuangId, m.Message }
+            ).ToListAsync();
+            var mentionedIds = candidateMessages
+                .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
+                .Select(m => m.BookingRuangId)
+                .ToHashSet();
+            foreach (var outItem in outItems)
+                if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
+        }
     }
 
     [HttpPost]
@@ -1192,53 +1250,7 @@ public class BookingRuangController : ApiControllerBase
             .ToListAsync();
 
         var outItems = items.Select(BookingRuangOut.From).ToList();
-        var itemIds = items.Select(i => i.Id).ToList();
-        if (itemIds.Count > 0)
-        {
-            // Excludes the current user's own messages - own messages should never count as
-            // "unread" for the person who sent them, and doing it here (rather than by advancing
-            // their read cursor past them on send) avoids also hiding a concurrently-arrived
-            // message from someone else that this user hasn't actually seen yet.
-            var messageTimes = await _db.BookingChatMessages
-                .Where(m => itemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id)
-                .Select(m => new { m.BookingRuangId, m.CreatedAt })
-                .ToListAsync();
-            var lastReadAt = await _db.BookingChatReads
-                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.BookingRuangId))
-                .ToDictionaryAsync(r => r.BookingRuangId, r => r.LastReadAt);
-            var outById = outItems.ToDictionary(o => o.Id);
-            foreach (var group in messageTimes.GroupBy(m => m.BookingRuangId))
-            {
-                if (!outById.TryGetValue(group.Key, out var outItem)) continue;
-                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
-                outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
-            }
-
-            var mentionLabel = MentionLabelForRole(user!.Role);
-            var unreadItemIds = outItems.Where(i => i.UnreadChatCount > 0).Select(i => i.Id).ToList();
-            if (mentionLabel != null && unreadItemIds.Count > 0)
-            {
-                var mentionTag = "@" + mentionLabel;
-                // Unread bound applied in SQL (left join against this user's read cursor) instead
-                // of fetching every candidate message's full text and filtering by CreatedAt in
-                // C# afterward - only the rows that are actually unread come back from the DB.
-                var reads = _db.BookingChatReads.Where(r => r.UserId == user!.Id && unreadItemIds.Contains(r.BookingRuangId));
-                var candidateMessages = await (
-                    from m in _db.BookingChatMessages
-                    where unreadItemIds.Contains(m.BookingRuangId) && m.SenderId != user!.Id
-                    join r in reads on m.BookingRuangId equals r.BookingRuangId into rj
-                    from r in rj.DefaultIfEmpty()
-                    where r == null || m.CreatedAt > r.LastReadAt
-                    select new { m.BookingRuangId, m.Message }
-                ).ToListAsync();
-                var mentionedIds = candidateMessages
-                    .Where(m => m.Message.Contains(mentionTag, StringComparison.OrdinalIgnoreCase))
-                    .Select(m => m.BookingRuangId)
-                    .ToHashSet();
-                foreach (var outItem in outItems)
-                    if (mentionedIds.Contains(outItem.Id)) outItem.HasUnreadMention = true;
-            }
-        }
+        await PopulateUnreadChatAsync(outItems, user!);
 
         return Ok(new BookingRuangListResponse
         {
