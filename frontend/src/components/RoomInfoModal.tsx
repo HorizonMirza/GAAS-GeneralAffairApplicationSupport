@@ -109,7 +109,7 @@ export default function RoomInfoModal({
             <span className="text-secondary">Fasilitas</span>
             <div className="room-info-slots">
               {facilities.map((f) => (
-                <span key={f} className="room-info-slot-chip room-info-facility-chip">{f}</span>
+                <span key={f} className="room-info-slot-chip">{f}</span>
               ))}
             </div>
           </div>

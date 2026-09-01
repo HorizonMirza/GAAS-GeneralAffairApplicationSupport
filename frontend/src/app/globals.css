@@ -1077,6 +1077,8 @@ body.auth-ready .app-shell {
   margin-bottom: 16px;
   cursor: default;
   padding: 0;
+  border-left-width: 1px;
+  border-left-color: var(--border-subtle);
 }
 
 .room-info-photo:hover {
@@ -1100,12 +1102,6 @@ body.auth-ready .app-shell {
 .room-info-slideshow-track {
   display: flex;
   transition: transform 250ms ease;
-}
-
-.room-info-facility-chip {
-  background: var(--bg-surface-alt);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
 }
 
 .room-info-row {
@@ -1132,8 +1128,9 @@ body.auth-ready .app-shell {
 .room-info-slot-chip {
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--badge-completed-bg);
-  color: var(--badge-completed-fg);
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
   font-size: 0.76rem;
   font-weight: 600;
 }
