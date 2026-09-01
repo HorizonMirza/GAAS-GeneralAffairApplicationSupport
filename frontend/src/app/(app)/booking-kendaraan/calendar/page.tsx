@@ -410,6 +410,7 @@ function VehicleCalendarPageInner() {
           if (item) setChatItem(item);
         }}
         unreadChatCount={rowMenu.menuItem?.unreadChatCount}
+        hasUnreadMention={rowMenu.menuItem?.hasUnreadMention}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
