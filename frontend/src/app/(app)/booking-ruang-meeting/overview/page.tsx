@@ -66,6 +66,9 @@ function roomPhotoUrls(roomName: string): string[] {
   return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
+// Demo facility list, shown in the info modal until real per-room facility data exists.
+const ROOM_DEMO_FACILITIES = ["TV", "AC", "Proyektor", "WiFi", "Whiteboard"];
+
 // Free (bookable) gaps left today within operating hours, after subtracting every
 // APPROVED_GA_APPROVAL booking (final, not draft/still-in-approval) - same "actual minutes, not
 // rounded to the hour" rule as before, so two short meetings with a real gap between them don't
@@ -394,6 +397,7 @@ export default function BookingOverviewPage() {
         open={!!infoRoom}
         nama={infoRoom?.nama ?? null}
         kapasitas={infoRoom?.kapasitas ?? null}
+        facilities={infoRoom ? ROOM_DEMO_FACILITIES : []}
         photoUrls={infoRoom ? roomPhotoUrls(infoRoom.nama) : []}
         availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
         availLabel={
@@ -413,12 +417,7 @@ export default function BookingOverviewPage() {
           if (!infoRoom) return;
           const nama = infoRoom.nama;
           setInfoRoom(null);
-          if (isOrigin) {
-            setFormInitial({ namaRuang: nama });
-            setFormOpen(true);
-          } else {
-            router.push(`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(nama)}`);
-          }
+          router.push(`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(nama)}`);
         }}
       />
 

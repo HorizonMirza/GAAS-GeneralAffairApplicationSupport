@@ -77,6 +77,9 @@ function vehiclePhotoUrls(vehicleName: string): string[] {
   return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
+// Demo facility list, shown in the info modal until real per-vehicle facility data exists.
+const VEHICLE_DEMO_FACILITIES = ["AC", "Radio/Tape", "Sabuk Pengaman", "Kotak P3K"];
+
 // Free (bookable) gaps left today within operating hours - same rule as Room Booking's
 // roomFreeSlotsToday.
 function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
@@ -347,6 +350,7 @@ export default function VehicleBookingOverviewPage() {
         open={!!infoVehicle}
         nama={infoVehicle?.nama ?? null}
         kapasitas={infoVehicle?.kapasitas ?? null}
+        facilities={infoVehicle ? VEHICLE_DEMO_FACILITIES : []}
         photoUrls={infoVehicle ? vehiclePhotoUrls(infoVehicle.nama) : []}
         availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
         availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
@@ -357,12 +361,7 @@ export default function VehicleBookingOverviewPage() {
           if (!infoVehicle) return;
           const nama = infoVehicle.nama;
           setInfoVehicle(null);
-          if (isOrigin) {
-            setFormInitial({ namaKendaraan: nama });
-            setFormOpen(true);
-          } else {
-            router.push(`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(nama)}`);
-          }
+          router.push(`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(nama)}`);
         }}
       />
 

@@ -9,6 +9,9 @@ interface Props {
   open: boolean;
   nama: string | null;
   kapasitas: number | null;
+  // Demo facility chips shown below Kapasitas (e.g. "TV") - no real per-room facility data exists
+  // yet, so callers pass a fixed placeholder list until that's tracked for real.
+  facilities?: string[];
   // Up to 5 photos, shown as an auto-advancing slideshow (click also advances one slide).
   photoUrls: string[];
   availability: RoomInfoAvailability;
@@ -20,14 +23,13 @@ interface Props {
   // undefined when it is.
   closedLabel?: string;
   onClose: () => void;
+  // Always routes to Calendar pre-filtered to this room/vehicle, never straight into the booking
+  // form - the label still varies by role, since read-only roles get "Lihat Kalender" instead.
   onBook: () => void;
-  // Only the origin roles that can actually submit a booking get routed to the form on click -
-  // everyone else lands on Calendar instead (read-only, same as before this modal existed), so
-  // the button's own label says which one is about to happen.
   bookLabel?: string;
 }
 
-const SLIDE_INTERVAL_MS = 3500;
+const SLIDE_INTERVAL_MS = 1600;
 
 function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: string[]; availability: RoomInfoAvailability; availLabel: string }) {
   const [index, setIndex] = useState(0);
@@ -66,13 +68,6 @@ function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: st
           ))}
         </div>
       </button>
-      {count > 1 && (
-        <div className="room-info-slideshow-dots">
-          {photoUrls.map((_, i) => (
-            <span key={i} className={`room-info-slideshow-dot${i === index ? " room-info-slideshow-dot-active" : ""}`} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -84,6 +79,7 @@ export default function RoomInfoModal({
   open,
   nama,
   kapasitas,
+  facilities,
   photoUrls,
   availability,
   availLabel,
@@ -106,6 +102,16 @@ export default function RoomInfoModal({
           <div className="room-info-row">
             <span className="text-secondary">Kapasitas</span>
             <span>{kapasitas} orang</span>
+          </div>
+        )}
+        {facilities && facilities.length > 0 && (
+          <div className="room-info-row room-info-row-stack">
+            <span className="text-secondary">Fasilitas</span>
+            <div className="room-info-slots">
+              {facilities.map((f) => (
+                <span key={f} className="room-info-slot-chip room-info-facility-chip">{f}</span>
+              ))}
+            </div>
           </div>
         )}
         <div className="room-info-row room-info-row-stack">
