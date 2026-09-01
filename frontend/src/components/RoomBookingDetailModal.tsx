@@ -19,6 +19,7 @@ import type { BookingRuang, BookingRuangCreatePayload, Me, RecurrenceFrequency, 
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import RoomMultiSelect from "./RoomMultiSelect";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -238,21 +239,25 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field">
               <label htmlFor="bv-jam-mulai">Jam Mulai</label>
-              <select id="bv-jam-mulai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="bv-jam-mulai"
+                value={form.jamMulai || undefined}
+                onChange={(v) => set("jamMulai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={!isEdit || form.isWholeDay}
+              />
             </div>
             <div className="field">
               <label htmlFor="bv-jam-selesai">Jam Selesai</label>
-              <select id="bv-jam-selesai" required={!form.isWholeDay} disabled={!isEdit || form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="bv-jam-selesai"
+                value={form.jamSelesai || undefined}
+                onChange={(v) => set("jamSelesai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={!isEdit || form.isWholeDay}
+              />
             </div>
             <div className="field full">
               <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
@@ -274,12 +279,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field full">
               <label htmlFor="bv-ruang">Ruangan</label>
-              <select id="bv-ruang" required disabled={!isEdit} value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
-                <option value={form.namaRuang} disabled hidden>{form.namaRuang}</option>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="bv-ruang"
+                value={form.namaRuang || undefined}
+                onChange={setNamaRuang}
+                options={rooms.map((r) => r.nama)}
+                placeholder="Pilih ruang"
+                disabled={!isEdit}
+              />
             </div>
             {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
               <div className="field full">
@@ -296,11 +303,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             )}
             <div className="field full">
               <label htmlFor="bv-tipe">Tipe</label>
-              <select id="bv-tipe" disabled={!isEdit} value={form.tipe} onChange={(e) => set("tipe", e.target.value as BookingRuangCreatePayload["tipe"])}>
-                {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
-                  <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="bv-tipe"
+                value={form.tipe}
+                onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
+                options={Object.keys(TIPE_BOOKING_LABELS)}
+                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
+                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
+                disabled={!isEdit}
+              />
             </div>
             {/* Editing lets the origin creator redefine an existing series' recurrence too (not
                 just add one to a still-standalone booking) - Update() below regenerates the
@@ -329,16 +340,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                   <>
                     <div className="field">
                       <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
-                      <select
+                      <SearchableSelect
                         id="bv-recurrence-frequency"
-                        required
-                        value={form.recurrenceFrequency || ""}
-                        onChange={(e) => set("recurrenceFrequency", e.target.value as RecurrenceFrequency)}
-                      >
-                        {RECURRENCE_OPTIONS.map((freq) => (
-                          <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
-                        ))}
-                      </select>
+                        value={form.recurrenceFrequency || undefined}
+                        onChange={(v) => set("recurrenceFrequency", v as RecurrenceFrequency)}
+                        options={RECURRENCE_OPTIONS}
+                        getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
+                        placeholder="Pilih frekuensi"
+                      />
                     </div>
                     <div className="field">
                       <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
@@ -367,11 +376,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 </div>
                 <div className="field">
                   <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
-                  <select id="bv-recurrence-frequency" disabled value={item.recurrenceFrequency || ""}>
-                    {RECURRENCE_OPTIONS.map((freq) => (
-                      <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    id="bv-recurrence-frequency"
+                    value={item.recurrenceFrequency || undefined}
+                    onChange={() => {}}
+                    options={RECURRENCE_OPTIONS}
+                    getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
+                    placeholder="Pilih frekuensi"
+                    disabled
+                  />
                 </div>
                 <div className="field">
                   <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>

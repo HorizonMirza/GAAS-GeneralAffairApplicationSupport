@@ -7,6 +7,7 @@ import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -121,21 +122,25 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="rs-jam-mulai">Jam Mulai</label>
-              <select id="rs-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rs-jam-mulai"
+                value={form.jamMulai || undefined}
+                onChange={(v) => set("jamMulai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={form.isWholeDay}
+              />
             </div>
             <div className="field">
               <label htmlFor="rs-jam-selesai">Jam Selesai</label>
-              <select id="rs-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rs-jam-selesai"
+                value={form.jamSelesai || undefined}
+                onChange={(v) => set("jamSelesai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={form.isWholeDay}
+              />
             </div>
             <div className="field full">
               <label htmlFor="rs-sepanjang-hari">Durasi (Opsional)</label>
@@ -156,11 +161,13 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             <div className="field full">
               <label htmlFor="rs-ruang">Ruangan</label>
-              <select id="rs-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rs-ruang"
+                value={form.namaRuang || undefined}
+                onChange={setNamaRuang}
+                options={rooms.map((r) => r.nama)}
+                placeholder="Pilih ruang"
+              />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
@@ -176,11 +183,15 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             )}
             <div className="field full">
               <label htmlFor="rs-tipe">Tipe</label>
-              <select id="rs-tipe" disabled value={item.tipe}>
-                {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
-                  <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rs-tipe"
+                value={item.tipe}
+                onChange={() => {}}
+                options={Object.keys(TIPE_BOOKING_LABELS)}
+                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
+                placeholder={TIPE_BOOKING_LABELS[item.tipe]}
+                disabled
+              />
             </div>
             <div className="field full">
               <label htmlFor="rs-catatan">Catatan</label>

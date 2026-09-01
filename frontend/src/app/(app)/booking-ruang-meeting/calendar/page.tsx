@@ -19,6 +19,7 @@ import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
+import SearchableSelect from "@/components/SearchableSelect";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
@@ -242,11 +243,10 @@ function BookingCalendarPageInner() {
           )}
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-room-select">Ruangan</label>
-            <select
+            <SearchableSelect
               id="calendar-room-select"
               value={view === "avail" ? ALL_ROOMS_VALUE : selectedRoom}
-              onChange={(e) => {
-                const v = e.target.value;
+              onChange={(v) => {
                 if (v === ALL_ROOMS_VALUE) {
                   setView("avail");
                 } else {
@@ -254,12 +254,10 @@ function BookingCalendarPageInner() {
                   if (view === "avail") setView("day");
                 }
               }}
-            >
-              <option value={ALL_ROOMS_VALUE}>Ketersediaan Ruangan</option>
-              {rooms.map((r) => (
-                <option key={r.nama} value={r.nama}>{r.nama}</option>
-              ))}
-            </select>
+              options={[ALL_ROOMS_VALUE, ...rooms.map((r) => r.nama)]}
+              getLabel={(v) => (v === ALL_ROOMS_VALUE ? "Ketersediaan Ruangan" : v)}
+              placeholder="Ketersediaan Ruangan"
+            />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-date-input">Tanggal</label>

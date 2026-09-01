@@ -220,21 +220,25 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-jam-mulai">Jam Mulai</label>
-              <select id="f-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="f-jam-mulai"
+                value={form.jamMulai || undefined}
+                onChange={(v) => set("jamMulai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={form.isWholeDay}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-jam-selesai">Jam Selesai</label>
-              <select id="f-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="f-jam-selesai"
+                value={form.jamSelesai || undefined}
+                onChange={(v) => set("jamSelesai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+                disabled={form.isWholeDay}
+              />
             </div>
             <div className="field full">
               <label htmlFor="f-sepanjang-hari">Durasi (Opsional)</label>
@@ -255,12 +259,13 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field full">
               <label htmlFor="f-ruang">Ruangan</label>
-              <select id="f-ruang" required value={form.namaRuang} onChange={(e) => setNamaRuang(e.target.value)}>
-                <option value="" disabled>Pilih ruang</option>
-                {rooms.map((r) => (
-                  <option key={r.nama} value={r.nama}>{r.nama}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="f-ruang"
+                value={form.namaRuang || undefined}
+                onChange={setNamaRuang}
+                options={rooms.map((r) => r.nama)}
+                placeholder="Pilih ruang"
+              />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
@@ -276,11 +281,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             )}
             <div className="field full">
               <label htmlFor="f-tipe">Tipe</label>
-              <select id="f-tipe" value={form.tipe} onChange={(e) => set("tipe", e.target.value as BookingRuangCreatePayload["tipe"])}>
-                {(Object.keys(TIPE_BOOKING_LABELS) as (keyof typeof TIPE_BOOKING_LABELS)[]).map((k) => (
-                  <option key={k} value={k}>{TIPE_BOOKING_LABELS[k]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="f-tipe"
+                value={form.tipe}
+                onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
+                options={Object.keys(TIPE_BOOKING_LABELS)}
+                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
+                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
+              />
             </div>
             <div className="field full">
               <label htmlFor="f-booking-berulang">Pengulangan (Opsional)</label>
@@ -303,16 +311,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <>
                 <div className="field">
                   <label htmlFor="f-recurrence-frequency">Frekuensi</label>
-                  <select
+                  <SearchableSelect
                     id="f-recurrence-frequency"
-                    required
-                    value={form.recurrenceFrequency || ""}
-                    onChange={(e) => set("recurrenceFrequency", e.target.value as RecurrenceFrequency)}
-                  >
-                    {RECURRENCE_OPTIONS.map((freq) => (
-                      <option key={freq} value={freq}>{RECURRENCE_FREQUENCY_LABELS[freq]}</option>
-                    ))}
-                  </select>
+                    value={form.recurrenceFrequency || undefined}
+                    onChange={(v) => set("recurrenceFrequency", v as RecurrenceFrequency)}
+                    options={RECURRENCE_OPTIONS}
+                    getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
+                    placeholder="Pilih frekuensi"
+                  />
                 </div>
                 <div className="field">
                   <label htmlFor="f-recurrence-end">Berulang Sampai Tanggal</label>
