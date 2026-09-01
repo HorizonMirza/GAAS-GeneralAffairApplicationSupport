@@ -28,6 +28,7 @@ import { isWeekend } from "@/components/RoomCalendarView";
 // dianggap menutup seluruh jam itu.
 const OPEN_MIN = 7 * 60;
 const CLOSE_MIN = 18 * 60;
+const TOTAL_HOUR_SLOTS = (CLOSE_MIN - OPEN_MIN) / 60;
 
 function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
@@ -69,10 +70,10 @@ function roomPhotoUrls(roomName: string): string[] {
 // Demo facility list, shown in the info modal until real per-room facility data exists.
 const ROOM_DEMO_FACILITIES = ["TV", "AC", "Proyektor", "WiFi", "Whiteboard"];
 
-// Free (bookable) gaps left today within operating hours, after subtracting every
-// APPROVED_GA_APPROVAL booking (final, not draft/still-in-approval) - same "actual minutes, not
-// rounded to the hour" rule as before, so two short meetings with a real gap between them don't
-// get merged into one solid block.
+// Free (bookable) hours left today, one entry per whole hour within operating hours (e.g.
+// 07:00-08:00, 08:00-09:00, ...) - bookings are only ever made on the hour, so there's no reason
+// to offer a half-hour slot, and listing every open hour individually (instead of collapsing
+// contiguous ones into one big range) is what actually lets someone see "which hours" at a glance.
 function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
   const booked: [number, number][] = [];
   for (const entry of todayEntries) {
@@ -87,14 +88,12 @@ function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [nu
     const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
     if (end > start) booked.push([start, end]);
   }
-  booked.sort((a, b) => a[0] - b[0]);
   const free: [number, number][] = [];
-  let cursor = OPEN_MIN;
-  for (const [start, end] of booked) {
-    if (start > cursor) free.push([cursor, start]);
-    cursor = Math.max(cursor, end);
+  for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
+    const slotEnd = h + 60;
+    const isBooked = booked.some(([bs, be]) => bs < slotEnd && be > h);
+    if (!isBooked) free.push([h, slotEnd]);
   }
-  if (cursor < CLOSE_MIN) free.push([cursor, CLOSE_MIN]);
   return free;
 }
 
@@ -411,6 +410,11 @@ export default function BookingOverviewPage() {
         }
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         closedLabel={closedToday ? "Tutup (akhir pekan)" : undefined}
+        fullyOpenLabel={
+          infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === TOTAL_HOUR_SLOTS
+            ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
+            : undefined
+        }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
         onClose={() => setInfoRoom(null)}
         onBook={() => {

@@ -22,6 +22,10 @@ interface Props {
   // Shown instead of the free-slots list when the room isn't open at all today (e.g. weekend) -
   // undefined when it is.
   closedLabel?: string;
+  // Shown instead of the per-hour chip list when every operating hour today is still free -
+  // undefined otherwise. A wall of 11 identical-looking chips says nothing a one-line summary
+  // doesn't; the chips only earn their place once some hours are actually taken.
+  fullyOpenLabel?: string;
   onClose: () => void;
   // Always routes to Calendar pre-filtered to this room/vehicle, never straight into the booking
   // form - the label still varies by role, since read-only roles get "Lihat Kalender" instead.
@@ -85,6 +89,7 @@ export default function RoomInfoModal({
   availLabel,
   freeSlotsToday,
   closedLabel,
+  fullyOpenLabel,
   onClose,
   onBook,
   bookLabel = "Booking",
@@ -118,6 +123,8 @@ export default function RoomInfoModal({
           <span className="text-secondary">Jam tersedia hari ini</span>
           {closedLabel ? (
             <span>{closedLabel}</span>
+          ) : fullyOpenLabel ? (
+            <span>{fullyOpenLabel}</span>
           ) : freeSlotsToday.length > 0 ? (
             <div className="room-info-slots">
               {freeSlotsToday.map((slot) => (

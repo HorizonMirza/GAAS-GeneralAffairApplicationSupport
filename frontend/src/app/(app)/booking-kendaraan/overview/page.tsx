@@ -39,6 +39,7 @@ type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED" | 
 // (bukan dibulatkan ke blok jam), sama seperti Room Booking's isRoomFullyBookedToday.
 const OPEN_MIN = 7 * 60;
 const CLOSE_MIN = 18 * 60;
+const TOTAL_HOUR_SLOTS = (CLOSE_MIN - OPEN_MIN) / 60;
 
 function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
@@ -80,8 +81,8 @@ function vehiclePhotoUrls(vehicleName: string): string[] {
 // Demo facility list, shown in the info modal until real per-vehicle facility data exists.
 const VEHICLE_DEMO_FACILITIES = ["AC", "Radio/Tape", "Sabuk Pengaman", "Kotak P3K"];
 
-// Free (bookable) gaps left today within operating hours - same rule as Room Booking's
-// roomFreeSlotsToday.
+// Free (bookable) hours left today, one entry per whole hour within operating hours - same rule
+// as Room Booking's roomFreeSlotsToday.
 function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
   const booked: [number, number][] = [];
   for (const entry of todayEntries) {
@@ -96,14 +97,12 @@ function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendara
     const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
     if (end > start) booked.push([start, end]);
   }
-  booked.sort((a, b) => a[0] - b[0]);
   const free: [number, number][] = [];
-  let cursor = OPEN_MIN;
-  for (const [start, end] of booked) {
-    if (start > cursor) free.push([cursor, start]);
-    cursor = Math.max(cursor, end);
+  for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
+    const slotEnd = h + 60;
+    const isBooked = booked.some(([bs, be]) => bs < slotEnd && be > h);
+    if (!isBooked) free.push([h, slotEnd]);
   }
-  if (cursor < CLOSE_MIN) free.push([cursor, CLOSE_MIN]);
   return free;
 }
 
@@ -355,6 +354,11 @@ export default function VehicleBookingOverviewPage() {
         availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
         availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
         freeSlotsToday={infoVehicle ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
+        fullyOpenLabel={
+          infoVehicle && vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).length === TOTAL_HOUR_SLOTS
+            ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
+            : undefined
+        }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
         onClose={() => setInfoVehicle(null)}
         onBook={() => {
