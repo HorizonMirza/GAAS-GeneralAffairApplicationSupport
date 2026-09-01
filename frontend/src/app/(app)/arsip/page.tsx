@@ -11,6 +11,7 @@ import type { ArchiveDocument, ArchiveKategori } from "@/lib/types";
 import ArchiveUploadModal from "@/components/ArchiveUploadModal";
 import ArchiveUpdateModal from "@/components/ArchiveUpdateModal";
 import ArchiveRowMenuDropdown from "@/components/ArchiveRowMenuDropdown";
+import SearchableSelect from "@/components/SearchableSelect";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -182,43 +183,48 @@ export default function ArchivePage() {
               <div className="filter-dropdown-panel">
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label htmlFor="archive-filter-kategori">Kategori</label>
-                  <select id="archive-filter-kategori" value={filterKategori} onChange={(e) => { setFilterKategori(e.target.value as ArchiveKategori | ""); setPage(1); }}>
-                    <option value="">Semua Kategori</option>
-                    {KATEGORI_OPTIONS.map((k) => (
-                      <option key={k} value={k}>{ARCHIVE_KATEGORI_LABEL[k]}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    id="archive-filter-kategori"
+                    value={filterKategori}
+                    onChange={(v) => { setFilterKategori(v as ArchiveKategori | ""); setPage(1); }}
+                    options={KATEGORI_OPTIONS}
+                    getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                    clearLabel="Semua Kategori"
+                    placeholder="Semua Kategori"
+                  />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="archive-filter-direktorat">Direktorat</label>
-                  <select
+                  <SearchableSelect
                     id="archive-filter-direktorat"
                     value={filterDirektorat}
-                    onChange={(e) => { setFilterDirektorat(e.target.value); setFilterDivisi(""); setFilterDepartemen(""); setPage(1); }}
-                  >
-                    <option value="">Semua Direktorat</option>
-                    {(orgStructure?.direktorat || []).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => { setFilterDirektorat(v); setFilterDivisi(""); setFilterDepartemen(""); setPage(1); }}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="archive-filter-divisi">Divisi</label>
-                  <select id="archive-filter-divisi" value={filterDivisi} onChange={(e) => { setFilterDivisi(e.target.value); setFilterDepartemen(""); setPage(1); }}>
-                    <option value="">Semua Divisi</option>
-                    {divisiOptions.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    id="archive-filter-divisi"
+                    value={filterDivisi}
+                    onChange={(v) => { setFilterDivisi(v); setFilterDepartemen(""); setPage(1); }}
+                    options={divisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="archive-filter-departemen">Departemen</label>
-                  <select id="archive-filter-departemen" value={filterDepartemen} onChange={(e) => { setFilterDepartemen(e.target.value); setPage(1); }}>
-                    <option value="">Semua Departemen</option>
-                    {departemenOptions.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    id="archive-filter-departemen"
+                    value={filterDepartemen}
+                    onChange={(v) => { setFilterDepartemen(v); setPage(1); }}
+                    options={departemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
                 </div>
               </div>
             )}
@@ -275,12 +281,14 @@ export default function ArchivePage() {
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="archive-limit">Tampilkan</label>
-              <select id="archive-limit" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-                <option value={5}>5 dokumen</option>
-                <option value={10}>10 dokumen</option>
-                <option value={20}>20 dokumen</option>
-                <option value={50}>50 dokumen</option>
-              </select>
+              <SearchableSelect
+                id="archive-limit"
+                value={String(limit)}
+                onChange={(v) => { setLimit(Number(v)); setPage(1); }}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} dokumen`}
+                placeholder={`${limit} dokumen`}
+              />
             </div>
           </div>
           <div className="pagination-right">

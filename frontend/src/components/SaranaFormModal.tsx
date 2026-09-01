@@ -7,6 +7,7 @@ import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KategoriKerusakan, Me, PerbaikanSaranaCreatePayload, Urgensi } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -99,19 +100,25 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field">
               <label htmlFor="fs-kategori">Kategori Kerusakan</label>
-              <select id="fs-kategori" required value={form.kategori} onChange={(e) => set("kategori", e.target.value as KategoriKerusakan)}>
-                {KATEGORI_OPTIONS.map((k) => (
-                  <option key={k} value={k}>{KATEGORI_KERUSAKAN_LABEL[k]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="fs-kategori"
+                value={form.kategori}
+                onChange={(v) => set("kategori", v as KategoriKerusakan)}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                placeholder="Pilih kategori"
+              />
             </div>
             <div className="field">
               <label htmlFor="fs-urgensi">Tingkat Urgensi</label>
-              <select id="fs-urgensi" required value={form.urgensi} onChange={(e) => set("urgensi", e.target.value as Urgensi)}>
-                {URGENSI_OPTIONS.map((u) => (
-                  <option key={u} value={u}>{URGENSI_LABEL[u]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="fs-urgensi"
+                value={form.urgensi}
+                onChange={(v) => set("urgensi", v as Urgensi)}
+                options={URGENSI_OPTIONS}
+                getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
+                placeholder="Pilih urgensi"
+              />
             </div>
             <div className="field full">
               <label htmlFor="fs-deskripsi">Deskripsi Kerusakan</label>

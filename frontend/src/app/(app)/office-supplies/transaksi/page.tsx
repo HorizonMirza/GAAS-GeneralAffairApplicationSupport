@@ -16,6 +16,7 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingStatus, PermintaanAtk } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
+import SearchableSelect from "@/components/SearchableSelect";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -195,48 +196,57 @@ export default function OfficeSuppliesTransaksiPage() {
               <div className="filter-dropdown-panel">
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label htmlFor="filter-atk-status">Status</label>
-                  <select id="filter-atk-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as BookingStatus | "REJECTED" | "" })}>
-                    <option value="">Semua Status</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="SUBMITTED">On-Approval: Approval Departemen/Divisi</option>
-                    <option value="APPROVED_L1">On-Approval: Admin General Affair</option>
-                    <option value="APPROVED_GA">On-Approval: Approval GA</option>
-                    <option value="REJECTED">Rejected</option>
-                    <option value="APPROVED_GA_APPROVAL">Approved</option>
-                  </select>
+                  <SearchableSelect
+                    id="filter-atk-status"
+                    value={filters.status}
+                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin General Affair",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
                 </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-atk-direktorat">Direktorat</label>
-                      <select
+                      <SearchableSelect
                         id="filter-atk-direktorat"
                         value={filters.direktorat}
-                        onChange={(e) => updateFilter({ direktorat: e.target.value, divisi: "", departemen: "" })}
-                      >
-                        <option value="">Semua Direktorat</option>
-                        {(orgStructure?.direktorat || []).map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
+                        options={orgStructure?.direktorat || []}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
+                      />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-atk-divisi">Divisi</label>
-                      <select id="filter-atk-divisi" value={filters.divisi} onChange={(e) => updateFilter({ divisi: e.target.value, departemen: "" })}>
-                        <option value="">Semua Divisi</option>
-                        {divisiOptions.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        id="filter-atk-divisi"
+                        value={filters.divisi}
+                        onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
+                        options={divisiOptions}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
+                      />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-atk-departemen">Departemen</label>
-                      <select id="filter-atk-departemen" value={filters.departemen} onChange={(e) => updateFilter({ departemen: e.target.value })}>
-                        <option value="">Semua Departemen</option>
-                        {departemenOptions.map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        id="filter-atk-departemen"
+                        value={filters.departemen}
+                        onChange={(v) => updateFilter({ departemen: v })}
+                        options={departemenOptions}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
+                      />
                     </div>
                   </>
                 )}
@@ -319,12 +329,14 @@ export default function OfficeSuppliesTransaksiPage() {
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="filter-atk-limit">Tampilkan</label>
-              <select id="filter-atk-limit" value={filters.limit} onChange={(e) => updateFilter({ limit: Number(e.target.value) })}>
-                <option value={5}>5 permintaan</option>
-                <option value={10}>10 permintaan</option>
-                <option value={20}>20 permintaan</option>
-                <option value={50}>50 permintaan</option>
-              </select>
+              <SearchableSelect
+                id="filter-atk-limit"
+                value={String(filters.limit)}
+                onChange={(v) => updateFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} permintaan`}
+                placeholder={`${filters.limit} permintaan`}
+              />
             </div>
           </div>
           <div className="pagination-right">

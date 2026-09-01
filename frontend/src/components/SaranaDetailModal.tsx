@@ -16,6 +16,7 @@ import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePayload, Urgensi } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -153,19 +154,27 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field">
               <label htmlFor="ds-kategori">Kategori Kerusakan</label>
-              <select id="ds-kategori" required disabled={!isEdit} value={form.kategori} onChange={(e) => set("kategori", e.target.value as KategoriKerusakan)}>
-                {KATEGORI_OPTIONS.map((k) => (
-                  <option key={k} value={k}>{KATEGORI_KERUSAKAN_LABEL[k]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="ds-kategori"
+                disabled={!isEdit}
+                value={form.kategori}
+                onChange={(v) => set("kategori", v as KategoriKerusakan)}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                placeholder="Pilih kategori"
+              />
             </div>
             <div className="field">
               <label htmlFor="ds-urgensi">Tingkat Urgensi</label>
-              <select id="ds-urgensi" required disabled={!isEdit} value={form.urgensi} onChange={(e) => set("urgensi", e.target.value as Urgensi)}>
-                {URGENSI_OPTIONS.map((u) => (
-                  <option key={u} value={u}>{URGENSI_LABEL[u]}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="ds-urgensi"
+                disabled={!isEdit}
+                value={form.urgensi}
+                onChange={(v) => set("urgensi", v as Urgensi)}
+                options={URGENSI_OPTIONS}
+                getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
+                placeholder="Pilih urgensi"
+              />
             </div>
             <div className="field full">
               <label htmlFor="ds-deskripsi">Deskripsi Kerusakan</label>

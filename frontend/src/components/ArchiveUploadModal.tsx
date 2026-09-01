@@ -6,6 +6,7 @@ import { ARCHIVE_KATEGORI_LABEL, MAX_ARCHIVE_FILE_SIZE_BYTES } from "@/lib/const
 import { useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveKategori } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -110,11 +111,14 @@ export default function ArchiveUploadModal({ open, onClose, onDone }: Props) {
           </div>
           <div className="field">
             <label htmlFor="archive-upload-kategori">Kategori</label>
-            <select id="archive-upload-kategori" required value={kategori} onChange={(e) => setKategori(e.target.value as ArchiveKategori)}>
-              {KATEGORI_OPTIONS.map((k) => (
-                <option key={k} value={k}>{ARCHIVE_KATEGORI_LABEL[k]}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              id="archive-upload-kategori"
+              value={kategori}
+              onChange={(v) => setKategori(v as ArchiveKategori)}
+              options={KATEGORI_OPTIONS}
+              getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+              placeholder="Pilih kategori"
+            />
           </div>
           <div className="field">
             <label htmlFor="archive-upload-file">File Dokumen</label>

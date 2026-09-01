@@ -26,6 +26,7 @@ import SaranaDetailModal from "@/components/SaranaDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
 import SaranaChatModal from "@/components/SaranaChatModal";
+import SearchableSelect from "@/components/SearchableSelect";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -149,13 +150,20 @@ export default function MaintenanceOverviewPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Laporan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
-          <select id="overview-sarana-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
-            <option value="ALL">Semua Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="ON_APPROVAL">On-Approval</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
+          <SearchableSelect
+            id="overview-sarana-status-filter"
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+            getLabel={(v) => ({
+              ALL: "Semua Status",
+              DRAFT: "Draft",
+              ON_APPROVAL: "On-Approval",
+              APPROVED: "Approved",
+              REJECTED: "Rejected",
+            } as Record<string, string>)[v] || v}
+            placeholder="Semua Status"
+          />
         </div>
       </div>
 
