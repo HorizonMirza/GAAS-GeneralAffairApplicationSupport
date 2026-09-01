@@ -84,7 +84,7 @@ function vehiclePhotoUrls(vehicleName: string): string[] {
 function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
   const booked: [number, number][] = [];
   for (const entry of todayEntries) {
-    if (entry.status !== "APPROVED_GA_APPROVAL") continue;
+    if (entry.status === "DRAFT") continue;
     if (entry.namaKendaraan !== vehicleName) continue;
     if (entry.isWholeDay) {
       booked.push([OPEN_MIN, CLOSE_MIN]);
@@ -350,13 +350,12 @@ export default function VehicleBookingOverviewPage() {
         extraDetails={
           infoVehicle
             ? [
-                { label: "Merek & Model", value: `${infoVehicle.merek} ${infoVehicle.model}`.trim() || "-" },
-                { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
-                { label: "Warna", value: infoVehicle.warna || "-" },
+                { label: "Merek", value: infoVehicle.merek || "-" },
                 { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
+                { label: "Warna", value: infoVehicle.warna || "-" },
+                { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
                 { label: "Nama Supir", value: infoVehicle.supir || "-" },
                 { label: "Telepon Supir", value: infoVehicle.nomorTeleponSupir || "-" },
-                { label: "Lokasi Parkir", value: infoVehicle.lokasiParkir || "-" },
               ]
             : []
         }

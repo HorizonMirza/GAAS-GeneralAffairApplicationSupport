@@ -71,10 +71,13 @@ function roomPhotoUrls(roomName: string): string[] {
 // 07:00-08:00, 08:00-09:00, ...) - bookings are only ever made on the hour, so there's no reason
 // to offer a half-hour slot, and listing every open hour individually (instead of collapsing
 // contiguous ones into one big range) is what actually lets someone see "which hours" at a glance.
+// Any entry still in flight (SUBMITTED/APPROVED_L1/APPROVED_GA/APPROVED_GA_APPROVAL) blocks the
+// slot, matching RoomCalendarView's own busy/pending/confirmed rule - only a DRAFT (not yet
+// submitted) leaves the hour still free.
 function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
   const booked: [number, number][] = [];
   for (const entry of todayEntries) {
-    if (entry.status !== "APPROVED_GA_APPROVAL") continue;
+    if (entry.status === "DRAFT") continue;
     if (entry.namaRuang !== roomName && !entry.additionalRooms.includes(roomName)) continue;
     if (entry.isWholeDay) {
       booked.push([OPEN_MIN, CLOSE_MIN]);
