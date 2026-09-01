@@ -2720,6 +2720,17 @@ table.data-table {
   background: rgba(214, 69, 69, 0.1);
 }
 
+/* Stronger than .row-menu-item-danger - the red surround shows at rest, not only on hover, so a
+   mentioned Chat item reads the same whether or not the mouse is over it. */
+.row-menu-item-mentioned {
+  color: #d64545;
+  background: rgba(214, 69, 69, 0.1);
+}
+
+.row-menu-item-mentioned:hover {
+  background: rgba(214, 69, 69, 0.18);
+}
+
 .row-menu-item-badge {
   margin-left: auto;
   min-width: 18px;
