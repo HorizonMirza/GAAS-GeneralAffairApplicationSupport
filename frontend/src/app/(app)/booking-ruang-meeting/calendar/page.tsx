@@ -115,9 +115,14 @@ function BookingCalendarPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomFromQuery]);
 
-  const loadSchedule = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open (see BookingChatController.Send's broadcast) and
+  // would otherwise unmount RoomCalendarView to "Memuat jadwal..." and back on every message,
+  // flickering the calendar visible behind the modal's blurred backdrop for no visible benefit
+  // (the badge is inside the closed dropdown, not on screen while the modal is open).
+  const loadSchedule = useCallback(async (opts?: { silent?: boolean }) => {
     if (!selectedRoom || view === "avail") return;
-    setScheduleBusy(true);
+    if (!opts?.silent) setScheduleBusy(true);
     try {
       const { from, to } = rangeForView(view, refDate);
       const data = await api.getBookingScheduleRange(from, to, selectedRoom);
@@ -137,9 +142,9 @@ function BookingCalendarPageInner() {
     loadSchedule();
   }, [loadSchedule]);
 
-  const loadAvail = useCallback(async () => {
+  const loadAvail = useCallback(async (opts?: { silent?: boolean }) => {
     if (view !== "avail") return;
-    setAvailBusy(true);
+    if (!opts?.silent) setAvailBusy(true);
     try {
       const data = await api.getBookingSchedule(refDate);
       setAvailEntries(data);
@@ -220,6 +225,7 @@ function BookingCalendarPageInner() {
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
   const reload = view === "avail" ? loadAvail : loadSchedule;
+  const silentReload = () => reload({ silent: true });
 
   return (
     <>
@@ -394,7 +400,6 @@ function BookingCalendarPageInner() {
           if (item) setChatItem(item);
         }}
         unreadChatCount={rowMenu.menuItem?.unreadChatCount}
-        hasUnreadMention={rowMenu.menuItem?.hasUnreadMention}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -499,7 +504,7 @@ function BookingCalendarPageInner() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={reload}
+          onRead={silentReload}
         />
       )}
     </>

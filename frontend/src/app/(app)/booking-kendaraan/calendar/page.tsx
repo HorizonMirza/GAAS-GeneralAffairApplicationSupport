@@ -116,9 +116,13 @@ function VehicleCalendarPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleFromQuery]);
 
-  const loadSchedule = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open and would otherwise unmount RoomCalendarView to
+  // "Memuat jadwal..." and back on every message, flickering the calendar visible behind the
+  // modal's blurred backdrop for no visible benefit.
+  const loadSchedule = useCallback(async (opts?: { silent?: boolean }) => {
     if (!selectedVehicle || view === "avail") return;
-    setScheduleBusy(true);
+    if (!opts?.silent) setScheduleBusy(true);
     try {
       const { from, to } = rangeForView(view, refDate);
       const data = await api.getKendaraanScheduleRange(from, to, selectedVehicle);
@@ -136,9 +140,9 @@ function VehicleCalendarPageInner() {
     loadSchedule();
   }, [loadSchedule]);
 
-  const loadAvail = useCallback(async () => {
+  const loadAvail = useCallback(async (opts?: { silent?: boolean }) => {
     if (view !== "avail") return;
-    setAvailBusy(true);
+    if (!opts?.silent) setAvailBusy(true);
     try {
       const data = await api.getKendaraanSchedule(refDate);
       setRawAvailEntries(data);
@@ -197,10 +201,10 @@ function VehicleCalendarPageInner() {
     );
   }, [availEntries, search]);
 
-  function reloadAll() {
-    if (view === "avail") loadAvail();
-    else loadSchedule();
-    loadMiniEntries();
+  function reloadAll(opts?: { silent?: boolean }) {
+    if (view === "avail") loadAvail(opts);
+    else loadSchedule(opts);
+    if (!opts?.silent) loadMiniEntries();
   }
 
   function goToday() {
@@ -406,7 +410,6 @@ function VehicleCalendarPageInner() {
           if (item) setChatItem(item);
         }}
         unreadChatCount={rowMenu.menuItem?.unreadChatCount}
-        hasUnreadMention={rowMenu.menuItem?.hasUnreadMention}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -489,7 +492,7 @@ function VehicleCalendarPageInner() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={reloadAll}
+          onRead={() => reloadAll({ silent: true })}
         />
       )}
     </>

@@ -115,9 +115,13 @@ export default function BookingOverviewPage() {
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
-  const load = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open and would otherwise unmount the card grid to
+  // "Memuat data..." and back on every message, flickering the page visible behind the modal's
+  // blurred backdrop for no visible benefit.
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!me) return;
-    setBusy(true);
+    if (!opts?.silent) setBusy(true);
     try {
       // sejakBulan (not bulan) so this list covers the current month AND every future month -
       // an upcoming booking shouldn't vanish the moment the calendar rolls past it. Still drops
@@ -399,7 +403,7 @@ export default function BookingOverviewPage() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={load}
+          onRead={() => load({ silent: true })}
         />
       )}
     </>

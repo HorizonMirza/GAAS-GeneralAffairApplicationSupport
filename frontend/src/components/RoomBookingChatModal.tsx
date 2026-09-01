@@ -203,7 +203,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   }
 
   return (
-    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered chat-modal-overlay">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal chat-modal">
         <div className="chat-modal-header-bar">
           <div className="modal-header">

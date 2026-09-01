@@ -2366,16 +2366,6 @@ table.data-table {
   align-items: center;
 }
 
-/* Room/Vehicle Booking's chat modal only - a new message arrives every few seconds and briefly
-   pushes several state updates through in a row (append message, clear draft, autoscroll), and
-   backdrop-filter's blur otherwise gets recomposited on every one of those, flickering the
-   backdrop behind the modal. Promoting it to its own GPU layer stops the repaint without any
-   visible change to how it looks. Scoped here rather than on .modal-overlay itself, which every
-   other modal (Ekspedisi's ChatModal included) also renders with. */
-.chat-modal-overlay {
-  will-change: backdrop-filter;
-}
-
 .modal {
   background: var(--bg-surface);
   border-radius: 18px;
@@ -2728,17 +2718,6 @@ table.data-table {
 
 .row-menu-item-danger:hover {
   background: rgba(214, 69, 69, 0.1);
-}
-
-/* Mirrors .card-chat-btn-mentioned/.chat-count-badge (Overview/Transaksi's separate chat icon
-   button) for the one place Chat lives inside this dropdown instead - Room/Vehicle Booking
-   Calendar, which has no per-row card to hang a standalone icon button off of. */
-.row-menu-item-mentioned {
-  color: #ef4444;
-}
-
-.row-menu-item-mentioned:hover {
-  background: rgba(239, 68, 68, 0.1);
 }
 
 .row-menu-item-badge {
@@ -3309,7 +3288,7 @@ table.data-table {
 }
 
 .chat-bubble-mine .chat-mention {
-  color: #fff;
+  color: var(--blue-300);
 }
 
 .chat-input-wrap {

@@ -88,9 +88,13 @@ export default function VehicleBookingTransaksiPage() {
     api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
   }, []);
 
-  const loadTable = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open and would otherwise unmount the table to "Memuat
+  // data..." and back on every message, flickering the page visible behind the modal's blurred
+  // backdrop for no visible benefit.
+  const loadTable = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++tableReqIdRef.current;
-    setTableBusy(true);
+    if (!opts?.silent) setTableBusy(true);
     setTableError("");
     try {
       const result = await api.listKendaraanBooking({
@@ -467,7 +471,7 @@ export default function VehicleBookingTransaksiPage() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={loadTable}
+          onRead={() => loadTable({ silent: true })}
         />
       )}
     </>
