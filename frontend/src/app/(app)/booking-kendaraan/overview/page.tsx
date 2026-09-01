@@ -205,6 +205,8 @@ export default function VehicleBookingOverviewPage() {
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
+  const isPastClosingToday = nowMinutesLocal() >= CLOSE_MIN;
+
   function handleDelete(item: BookingKendaraan) {
     confirm("Hapus booking kendaraan ini secara permanen?", async () => {
       try {
@@ -231,9 +233,16 @@ export default function VehicleBookingOverviewPage() {
       {vehicles.length > 0 && (
         <div className="room-grid">
           {vehicles.map((v) => {
-            const availability: "available" | "full" = isVehicleFullyBookedToday(v.nama, todayEntries) ? "full" : "available";
-            const availLabel = availability === "full" ? "Full" : "Available";
-            const availTitle = availability === "full" ? "Full hari ini" : "Available hari ini";
+            // Today's operating hours (07:00-18:00) are already over - "Close" rather than
+            // "Full", which would otherwise wrongly imply every hour was genuinely booked out.
+            const availability: "available" | "full" | "closed" = isPastClosingToday
+              ? "closed"
+              : isVehicleFullyBookedToday(v.nama, todayEntries)
+              ? "full"
+              : "available";
+            const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
+            const availTitle =
+              availability === "closed" ? "Close (di luar jam operasional)" : availability === "full" ? "Full hari ini" : "Available hari ini";
             return (
               <button
                 type="button"
@@ -388,11 +397,28 @@ export default function VehicleBookingOverviewPage() {
             : []
         }
         photoUrls={infoVehicle ? vehiclePhotoUrls(infoVehicle.nama) : []}
-        availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
-        availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
-        freeSlotsToday={infoVehicle ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
+        availability={
+          infoVehicle
+            ? isPastClosingToday
+              ? "closed"
+              : isVehicleFullyBookedToday(infoVehicle.nama, todayEntries)
+              ? "full"
+              : "available"
+            : "available"
+        }
+        availLabel={
+          infoVehicle
+            ? isPastClosingToday
+              ? "Close"
+              : isVehicleFullyBookedToday(infoVehicle.nama, todayEntries)
+              ? "Full"
+              : "Available"
+            : ""
+        }
+        freeSlotsToday={infoVehicle && !isPastClosingToday ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
+        closedLabel={isPastClosingToday ? "Tutup (di luar jam operasional)" : undefined}
         fullyOpenLabel={
-          infoVehicle && vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
+          infoVehicle && !isPastClosingToday && vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
             ? "Tersedia"
             : undefined
         }

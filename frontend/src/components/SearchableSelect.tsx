@@ -36,16 +36,19 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
   const inputRef = useRef<HTMLInputElement>(null);
   useClickOutside([wrapRef], () => setOpen(false), open);
   const label = (v: string) => (getLabel ? getLabel(v) : v);
+  // A handful of options is faster to just scan by eye - the search box only earns its keep
+  // (and the extra click-to-focus step) once there's enough of a list to actually search through.
+  const showSearch = options.length > 5;
 
   useEffect(() => {
-    if (open) {
+    if (open && showSearch) {
       setQuery("");
       // Focus after the panel actually mounts, not on the same tick as setOpen.
       requestAnimationFrame(() => inputRef.current?.focus());
     }
-  }, [open]);
+  }, [open, showSearch]);
 
-  const filtered = query.trim()
+  const filtered = showSearch && query.trim()
     ? options.filter((o) => label(o).toLowerCase().includes(query.trim().toLowerCase()))
     : options;
 
@@ -85,15 +88,17 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
       </button>
       {open && !disabled && (
         <div className="searchable-select-panel">
-          <input
-            ref={inputRef}
-            type="text"
-            className="searchable-select-search"
-            placeholder="Ketik untuk mencari..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+          {showSearch && (
+            <input
+              ref={inputRef}
+              type="text"
+              className="searchable-select-search"
+              placeholder="Ketik untuk mencari..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+          )}
           <div className="searchable-select-options">
             {clearLabel && (
               <div

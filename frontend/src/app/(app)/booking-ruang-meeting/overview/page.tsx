@@ -221,7 +221,12 @@ export default function BookingOverviewPage() {
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
 
-  const closedToday = isWeekend(todayLocalDate());
+  // Weekend, or today's operating hours (07:00-18:00) are already over - either way nothing is
+  // actually bookable right now, so this should read "Close" rather than "Full" (which implies
+  // every hour was genuinely taken by a booking).
+  const isWeekendToday = isWeekend(todayLocalDate());
+  const isPastClosingToday = nowMinutesLocal() >= CLOSE_MIN;
+  const closedToday = isWeekendToday || isPastClosingToday;
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
@@ -259,7 +264,13 @@ export default function BookingOverviewPage() {
               : "available";
             const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
             const availTitle =
-              availability === "closed" ? "Close (akhir pekan)" : availability === "full" ? "Full hari ini" : "Available hari ini";
+              availability === "closed"
+                ? isWeekendToday
+                  ? "Close (akhir pekan)"
+                  : "Close (di luar jam operasional)"
+                : availability === "full"
+                ? "Full hari ini"
+                : "Available hari ini";
             return (
               <button
                 type="button"
@@ -441,7 +452,7 @@ export default function BookingOverviewPage() {
             : ""
         }
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
-        closedLabel={closedToday ? "Tutup (akhir pekan)" : undefined}
+        closedLabel={closedToday ? (isWeekendToday ? "Tutup (akhir pekan)" : "Tutup (di luar jam operasional)") : undefined}
         fullyOpenLabel={
           infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
             ? "Tersedia"
