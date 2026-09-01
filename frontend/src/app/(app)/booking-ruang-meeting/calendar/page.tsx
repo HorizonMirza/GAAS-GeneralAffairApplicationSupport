@@ -61,7 +61,11 @@ function BookingCalendarPageInner() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [view, setView] = useState<CalendarViewMode>("avail");
+  // Coming here with a room already picked (the info modal's Booking button) means someone wants
+  // that room's actual schedule, not the cross-room availability grid - land on Harian instead of
+  // the usual "avail" default. Plain nav to Calendar from the sidebar (no query param) is
+  // unaffected.
+  const [view, setView] = useState<CalendarViewMode>(() => (roomFromQuery ? "day" : "avail"));
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("");

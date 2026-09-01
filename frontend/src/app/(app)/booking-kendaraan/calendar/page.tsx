@@ -67,7 +67,10 @@ function VehicleCalendarPageInner() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [view, setView] = useState<CalendarViewMode>("avail");
+  // Same as Room Booking's calendar: arriving with a vehicle already picked (the info modal's
+  // Booking button) means someone wants that vehicle's actual schedule, not the cross-vehicle
+  // availability grid - land on Harian instead of the usual "avail" default.
+  const [view, setView] = useState<CalendarViewMode>(() => (vehicleFromQuery ? "day" : "avail"));
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>("");
