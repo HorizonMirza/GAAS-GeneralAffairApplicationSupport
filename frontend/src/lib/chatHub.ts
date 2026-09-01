@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, ChatNotification } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 // The hub is mapped at the app root (Program.cs: app.MapHub<ChatHub>("/hubs/chat")), not under
@@ -52,7 +52,11 @@ function getConnection(): signalR.HubConnection {
   return connection;
 }
 
-async function ensureStarted(): Promise<void> {
+// Exported so a global, always-mounted listener (AppShell) can bring the connection up as soon
+// as someone logs in - not just lazily when a chat modal first opens - so the personal
+// notification group join (ChatHub.OnConnectedAsync) happens immediately, before any message
+// arrives to miss.
+export async function ensureStarted(): Promise<void> {
   const conn = getConnection();
   if (conn.state === signalR.HubConnectionState.Connected) return;
   if (conn.state === signalR.HubConnectionState.Connecting || conn.state === signalR.HubConnectionState.Reconnecting) {
@@ -102,4 +106,13 @@ export function onChatMessage(kind: ChatKind, handler: (message: ChatMessage) =>
     : "ReceiveBookingMessage";
   conn.on(event, handler);
   return () => conn.off(event, handler);
+}
+
+// App-wide notification (ChatHub.UserGroup) - unlike onChatMessage, this fires for every chat
+// kind's message the current user is allowed to see, regardless of which thread (if any) they
+// have open, so it needs no `kind`/`joinChat` pairing - the server already scoped who receives it.
+export function onChatNotification(handler: (notification: ChatNotification) => void): () => void {
+  const conn = getConnection();
+  conn.on("ReceiveChatNotification", handler);
+  return () => conn.off("ReceiveChatNotification", handler);
 }

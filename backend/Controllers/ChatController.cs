@@ -93,6 +93,16 @@ public class ChatController : ApiControllerBase
         // duplicate there (same id, same content).
         await _hub.Clients.Group(ChatHub.PengirimanGroup(pengirimanId)).SendAsync("ReceivePengirimanMessage", outMessage);
 
+        var recipientIds = await _db.Users.Where(u => u.Id != user.Id).ToListAsync();
+        await BroadcastChatNotificationAsync(
+            _hub,
+            recipientIds.Where(u => CanAccessPengiriman(u, item)).Select(u => u.Id),
+            "pengiriman",
+            pengirimanId,
+            $"Pengiriman {item.NomorTransmittal}",
+            user.Nama,
+            text);
+
         return StatusCode(201, outMessage);
     }
 }

@@ -93,6 +93,18 @@ public class BookingChatController : ApiControllerBase
         // making them wait for their next poll.
         await _hub.Clients.Group(ChatHub.BookingGroup(bookingRuangId)).SendAsync("ReceiveBookingMessage", outMessage);
 
+        // Also pushed app-wide to everyone who can see this booking (minus the sender), so the
+        // notification banner/sound fires even for someone who doesn't have this thread open.
+        var recipientIds = await _db.Users.Where(u => u.Id != user.Id).ToListAsync();
+        await BroadcastChatNotificationAsync(
+            _hub,
+            recipientIds.Where(u => CanAccessBookingRuang(u, item)).Select(u => u.Id),
+            "booking",
+            bookingRuangId,
+            $"{item.NamaRuang} - {item.NomorPemesanan ?? item.NamaKegiatan}",
+            user.Nama,
+            text);
+
         return StatusCode(201, outMessage);
     }
 }

@@ -9,6 +9,7 @@ import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import ChatNotificationListener from "@/components/ChatNotificationListener";
 import type { Role } from "@/lib/types";
 
 interface NavLeaf {
@@ -215,6 +216,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
+      <ChatNotificationListener />
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
         <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
           {/* eslint-disable-next-line @next/next/no-img-element */}

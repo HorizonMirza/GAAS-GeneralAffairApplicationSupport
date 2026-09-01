@@ -119,6 +119,18 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+// Pushed app-wide (ChatHub.UserGroup) whenever anyone sends a chat message on an item this user
+// can access - drives the global top-center notification banner + sound, independent of whether
+// the relevant chat thread (or that page at all) is open. `kind` matches chatHub.ts's ChatKind.
+export interface ChatNotification {
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana";
+  itemId: number;
+  itemLabel: string;
+  senderNama: string;
+  preview: string;
+  createdAt: string;
+}
+
 export interface PengirimanListResponse {
   items: Pengiriman[];
   total: number;

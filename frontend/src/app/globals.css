@@ -2942,6 +2942,102 @@ table.data-table {
 .toast.error { border-color: #d64545; color: #d64545; }
 .toast.success { border-color: #0f9d58; color: #0f9d58; }
 
+/* ---------- Global chat notification banner (WhatsApp-style, top-center) ---------- */
+.chat-notification-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--glow-blue-strong);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  z-index: 400;
+  animation: chat-notification-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-notification-banner-leaving {
+  animation: chat-notification-out 280ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.chat-notification-avatar {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--gradient-primary);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.chat-notification-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-notification-title {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-notification-preview {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-notification-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.chat-notification-close:hover {
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+}
+
+@keyframes chat-notification-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes chat-notification-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-notification-banner, .chat-notification-banner-leaving { animation: none; }
+}
+
 /* ---------- Nav category (hover/accordion dropdown) ---------- */
 .nav-category {
   position: relative;

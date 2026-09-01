@@ -31,6 +31,11 @@ public class ChatHub : Hub
             Context.Abort();
             return;
         }
+        // Every connection (every open tab) joins its own user's personal group - this is what
+        // lets a *ChatController.Send broadcast a "someone messaged you" notification app-wide,
+        // to whichever pages/tabs a user has open, not just to whoever has that exact chat thread
+        // open (see JoinBookingChat etc. above, which is thread-scoped, not user-scoped).
+        await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(user.Id));
         await base.OnConnectedAsync();
     }
 
@@ -123,4 +128,5 @@ public class ChatHub : Hub
     public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
     public static string AtkGroup(int permintaanAtkId) => $"atk-chat-{permintaanAtkId}";
     public static string SaranaGroup(int perbaikanSaranaId) => $"sarana-chat-{perbaikanSaranaId}";
+    public static string UserGroup(int userId) => $"user-{userId}";
 }

@@ -84,6 +84,16 @@ public class BookingKendaraanChatController : ApiControllerBase
         var outMessage = new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt);
         await _hub.Clients.Group(ChatHub.KendaraanGroup(bookingKendaraanId)).SendAsync("ReceiveKendaraanMessage", outMessage);
 
+        var recipientIds = await _db.Users.Where(u => u.Id != user.Id).ToListAsync();
+        await BroadcastChatNotificationAsync(
+            _hub,
+            recipientIds.Where(u => CanAccessBookingKendaraan(u, item)).Select(u => u.Id),
+            "kendaraan",
+            bookingKendaraanId,
+            $"{item.NamaKendaraan} - {item.NomorPemesanan ?? item.PlatNomor ?? "-"}",
+            user.Nama,
+            text);
+
         return StatusCode(201, outMessage);
     }
 }

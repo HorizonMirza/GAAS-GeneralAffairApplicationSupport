@@ -84,6 +84,16 @@ public class PermintaanAtkChatController : ApiControllerBase
         var outMessage = new ChatMessageOut(message.Id, user.Id, user.Nama, user.Role, message.Message, message.CreatedAt);
         await _hub.Clients.Group(ChatHub.AtkGroup(permintaanAtkId)).SendAsync("ReceiveAtkMessage", outMessage);
 
+        var recipientIds = await _db.Users.Where(u => u.Id != user.Id).ToListAsync();
+        await BroadcastChatNotificationAsync(
+            _hub,
+            recipientIds.Where(u => CanAccessPermintaanAtk(u, item)).Select(u => u.Id),
+            "atk",
+            permintaanAtkId,
+            $"{item.Keperluan} - {item.NomorPermintaan ?? "#" + permintaanAtkId}",
+            user.Nama,
+            text);
+
         return StatusCode(201, outMessage);
     }
 }

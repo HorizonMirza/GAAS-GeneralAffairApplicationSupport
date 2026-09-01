@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -13,6 +16,28 @@ public abstract class ApiControllerBase : ControllerBase
     protected ApiControllerBase(CurrentUserService currentUser)
     {
         CurrentUser = currentUser;
+    }
+
+    // Pushed app-wide (every recipient's personal ChatHub.UserGroup) right after a *ChatController
+    // saves a message, on top of that thread's own group broadcast - lets a global listener
+    // (frontend AppShell) show a WhatsApp-style banner/sound for anyone who can see the item,
+    // whether or not they have that specific chat thread (or that page at all) open. Recipients
+    // is every user CanAccessX(...) already lets in, minus the sender - reuses the exact same
+    // visibility rule as the join check instead of a separate notion of "who gets notified".
+    protected static async Task BroadcastChatNotificationAsync(
+        IHubContext<ChatHub> hub,
+        IEnumerable<int> recipientUserIds,
+        string kind,
+        int itemId,
+        string itemLabel,
+        string senderNama,
+        string message)
+    {
+        var recipients = recipientUserIds.ToList();
+        if (recipients.Count == 0) return;
+        var preview = message.Length > 120 ? message[..120] + "…" : message;
+        var notification = new ChatNotificationOut(kind, itemId, itemLabel, senderNama, preview, DateTime.UtcNow);
+        await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveChatNotification", notification);
     }
 
     // Wraps SaveChangesAsync for approve/reject endpoints guarded by an IsConcurrencyToken
