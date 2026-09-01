@@ -16,6 +16,7 @@ import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingKendaraan, BookingStatus, VehicleOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
+import SearchableSelect from "@/components/SearchableSelect";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
@@ -223,58 +224,69 @@ export default function VehicleBookingTransaksiPage() {
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-kendaraan-status">Status</label>
-                  <select id="filter-kendaraan-status" value={filters.status} onChange={(e) => updateFilter({ status: e.target.value as BookingStatus | "REJECTED" | "" })}>
-                    <option value="">Semua Status</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="SUBMITTED">On-Approval: Approval Departemen/Divisi</option>
-                    <option value="APPROVED_L1">On-Approval: Admin GA</option>
-                    <option value="APPROVED_GA">On-Approval: Approval GA</option>
-                    <option value="REJECTED">Rejected</option>
-                    <option value="APPROVED_GA_APPROVAL">Approved</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
+                  <SearchableSelect
+                    id="filter-kendaraan-status"
+                    value={filters.status}
+                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                      CANCELLED: "Cancelled",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-kendaraan-vehicle">Kendaraan</label>
-                  <select id="filter-kendaraan-vehicle" value={filters.namaKendaraan} onChange={(e) => updateFilter({ namaKendaraan: e.target.value })}>
-                    <option value="">Semua Kendaraan</option>
-                    {vehicles.map((v) => (
-                      <option key={v.nama} value={v.nama}>{v.nama}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    id="filter-kendaraan-vehicle"
+                    value={filters.namaKendaraan}
+                    onChange={(v) => updateFilter({ namaKendaraan: v })}
+                    options={vehicles.map((v) => v.nama)}
+                    clearLabel="Semua Kendaraan"
+                    placeholder="Semua Kendaraan"
+                  />
                 </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-kendaraan-direktorat">Direktorat</label>
-                      <select
+                      <SearchableSelect
                         id="filter-kendaraan-direktorat"
                         value={filters.direktorat}
-                        onChange={(e) => updateFilter({ direktorat: e.target.value, divisi: "", departemen: "" })}
-                      >
-                        <option value="">Semua Direktorat</option>
-                        {(orgStructure?.direktorat || []).map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
+                        options={orgStructure?.direktorat || []}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
+                      />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-kendaraan-divisi">Divisi</label>
-                      <select id="filter-kendaraan-divisi" value={filters.divisi} onChange={(e) => updateFilter({ divisi: e.target.value, departemen: "" })}>
-                        <option value="">Semua Divisi</option>
-                        {divisiOptions.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        id="filter-kendaraan-divisi"
+                        value={filters.divisi}
+                        onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
+                        options={divisiOptions}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
+                      />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                       <label htmlFor="filter-kendaraan-departemen">Departemen</label>
-                      <select id="filter-kendaraan-departemen" value={filters.departemen} onChange={(e) => updateFilter({ departemen: e.target.value })}>
-                        <option value="">Semua Departemen</option>
-                        {departemenOptions.map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        id="filter-kendaraan-departemen"
+                        value={filters.departemen}
+                        onChange={(v) => updateFilter({ departemen: v })}
+                        options={departemenOptions}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
+                      />
                     </div>
                   </>
                 )}
@@ -358,12 +370,14 @@ export default function VehicleBookingTransaksiPage() {
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="filter-kendaraan-limit">Tampilkan</label>
-              <select id="filter-kendaraan-limit" value={filters.limit} onChange={(e) => updateFilter({ limit: Number(e.target.value) })}>
-                <option value={5}>5 booking</option>
-                <option value={10}>10 booking</option>
-                <option value={20}>20 booking</option>
-                <option value={50}>50 booking</option>
-              </select>
+              <SearchableSelect
+                id="filter-kendaraan-limit"
+                value={String(filters.limit)}
+                onChange={(v) => updateFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} booking`}
+                placeholder={`${filters.limit} booking`}
+              />
             </div>
           </div>
           <div className="pagination-right">

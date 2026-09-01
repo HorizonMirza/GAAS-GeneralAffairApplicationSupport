@@ -18,6 +18,7 @@ import type { BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, Veh
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
+import SearchableSelect from "@/components/SearchableSelect";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
@@ -256,11 +257,10 @@ function VehicleCalendarPageInner() {
           )}
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-select">Kendaraan</label>
-            <select
+            <SearchableSelect
               id="calendar-kendaraan-select"
               value={view === "avail" ? ALL_VEHICLES_VALUE : selectedVehicle}
-              onChange={(e) => {
-                const v = e.target.value;
+              onChange={(v) => {
                 if (v === ALL_VEHICLES_VALUE) {
                   setView("avail");
                 } else {
@@ -268,12 +268,10 @@ function VehicleCalendarPageInner() {
                   if (view === "avail") setView("day");
                 }
               }}
-            >
-              <option value={ALL_VEHICLES_VALUE}>Ketersediaan Kendaraan</option>
-              {vehicles.map((v) => (
-                <option key={v.nama} value={v.nama}>{v.nama}</option>
-              ))}
-            </select>
+              options={[ALL_VEHICLES_VALUE, ...vehicles.map((v) => v.nama)]}
+              getLabel={(v) => (v === ALL_VEHICLES_VALUE ? "Ketersediaan Kendaraan" : v)}
+              placeholder="Ketersediaan Kendaraan"
+            />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-date-input">Tanggal</label>

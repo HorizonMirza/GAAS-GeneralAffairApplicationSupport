@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
@@ -109,21 +110,25 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
             </div>
             <div className="field">
               <label htmlFor="rk-jam-mulai">Jam Mulai</label>
-              <select id="rk-jam-mulai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamMulai || ""} onChange={(e) => set("jamMulai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rk-jam-mulai"
+                disabled={form.isWholeDay}
+                value={form.jamMulai || undefined}
+                onChange={(v) => set("jamMulai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+              />
             </div>
             <div className="field">
               <label htmlFor="rk-jam-selesai">Jam Selesai</label>
-              <select id="rk-jam-selesai" required={!form.isWholeDay} disabled={form.isWholeDay} value={form.jamSelesai || ""} onChange={(e) => set("jamSelesai", e.target.value)}>
-                <option value="" disabled>Pilih jam</option>
-                {HOUR_OPTIONS.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rk-jam-selesai"
+                disabled={form.isWholeDay}
+                value={form.jamSelesai || undefined}
+                onChange={(v) => set("jamSelesai", v)}
+                options={HOUR_OPTIONS}
+                placeholder="Pilih jam"
+              />
             </div>
             <div className="field full">
               <label htmlFor="rk-sepanjang-hari">Durasi (Opsional)</label>
@@ -144,11 +149,17 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
             </div>
             <div className="field full">
               <label htmlFor="rk-kendaraan">Kendaraan</label>
-              <select id="rk-kendaraan" required value={form.namaKendaraan} onChange={(e) => set("namaKendaraan", e.target.value)}>
-                {vehicles.map((v) => (
-                  <option key={v.nama} value={v.nama}>{v.nama} - {v.platNomor} - Supir: {v.supir}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                id="rk-kendaraan"
+                value={form.namaKendaraan}
+                onChange={(v) => set("namaKendaraan", v)}
+                options={vehicles.map((v) => v.nama)}
+                getLabel={(nama) => {
+                  const v = vehicles.find((x) => x.nama === nama);
+                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
+                }}
+                placeholder={form.namaKendaraan}
+              />
             </div>
             <div className="field full">
               <label htmlFor="rk-supir">Supir</label>
