@@ -209,7 +209,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
           <p className="chat-participant-line">{participantLabels.join(", ")}</p>
         </div>
 
-        <div className="chat-message-list" ref={listRef}>
+        <div className="chat-message-list chat-message-list-fixed" ref={listRef}>
           {messages === null && error ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Gagal memuat chat: {error}</p>
           ) : messages === null ? (

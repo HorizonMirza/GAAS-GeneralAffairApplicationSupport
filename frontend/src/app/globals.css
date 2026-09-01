@@ -3201,6 +3201,17 @@ table.data-table {
   margin-top: 8px;
 }
 
+/* Room/Vehicle Booking's chat only (see RoomBookingChatModal/VehicleBookingChatModal) - a fixed
+   height instead of the min/max range above, so the box itself never visibly grows as a
+   conversation gets longer; it just scrolls in place. Scoped to this extra class rather than
+   changing .chat-message-list itself, which every other module's chat modal (ATK, Maintenance,
+   Ekspedisi's ChatModal) also renders with. */
+.chat-message-list.chat-message-list-fixed {
+  height: 420px;
+  min-height: 0;
+  max-height: none;
+}
+
 .chat-bubble-row {
   display: flex;
   align-items: flex-end;
@@ -3382,6 +3393,7 @@ table.data-table {
   .chat-modal { max-width: 100%; }
   .chat-modal-header-bar { margin: -18px -18px 14px; padding: 16px 18px 12px; border-radius: 14px 14px 0 0; }
   .chat-message-list { max-height: 320px; }
+  .chat-message-list.chat-message-list-fixed { height: 320px; }
   .chat-bubble-stack { max-width: 88%; }
 }
 
