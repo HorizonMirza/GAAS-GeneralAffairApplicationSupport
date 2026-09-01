@@ -263,7 +263,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Submit</button>
             )}
             {canL1Act && (
               <>
