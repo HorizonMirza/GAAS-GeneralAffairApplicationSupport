@@ -67,7 +67,7 @@ function VehicleCalendarPageInner() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [view, setView] = useState<CalendarViewMode>("week");
+  const [view, setView] = useState<CalendarViewMode>("avail");
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>("");
@@ -405,6 +405,8 @@ function VehicleCalendarPageInner() {
           rowMenu.close();
           if (item) setChatItem(item);
         }}
+        unreadChatCount={rowMenu.menuItem?.unreadChatCount}
+        hasUnreadMention={rowMenu.menuItem?.hasUnreadMention}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

@@ -2720,6 +2720,31 @@ table.data-table {
   background: rgba(214, 69, 69, 0.1);
 }
 
+/* Mirrors .card-chat-btn-mentioned/.chat-count-badge (Overview/Transaksi's separate chat icon
+   button) for the one place Chat lives inside this dropdown instead - Room/Vehicle Booking
+   Calendar, which has no per-row card to hang a standalone icon button off of. */
+.row-menu-item-mentioned {
+  color: #ef4444;
+}
+
+.row-menu-item-mentioned:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.row-menu-item-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
 /* ---------- Detail modal ---------- */
 .detail-grid {
   display: grid;

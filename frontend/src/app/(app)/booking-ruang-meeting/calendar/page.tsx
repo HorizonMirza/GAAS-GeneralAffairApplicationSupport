@@ -61,7 +61,7 @@ function BookingCalendarPageInner() {
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [view, setView] = useState<CalendarViewMode>("week");
+  const [view, setView] = useState<CalendarViewMode>("avail");
   const [refDate, setRefDate] = useState<string>(todayIso());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("");
@@ -393,6 +393,8 @@ function BookingCalendarPageInner() {
           rowMenu.close();
           if (item) setChatItem(item);
         }}
+        unreadChatCount={rowMenu.menuItem?.unreadChatCount}
+        hasUnreadMention={rowMenu.menuItem?.hasUnreadMention}
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
