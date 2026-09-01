@@ -506,6 +506,12 @@ export interface VehicleOption {
   platNomor: string;
   kapasitas: number;
   supir: string;
+  merek: string;
+  model: string;
+  tahun: number;
+  warna: string;
+  nomorTeleponSupir: string;
+  lokasiParkir: string;
 }
 
 export interface BookingKendaraan {

@@ -350,8 +350,13 @@ export default function VehicleBookingOverviewPage() {
         extraDetails={
           infoVehicle
             ? [
+                { label: "Merek & Model", value: `${infoVehicle.merek} ${infoVehicle.model}`.trim() || "-" },
+                { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
+                { label: "Warna", value: infoVehicle.warna || "-" },
                 { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
                 { label: "Nama Supir", value: infoVehicle.supir || "-" },
+                { label: "Telepon Supir", value: infoVehicle.nomorTeleponSupir || "-" },
+                { label: "Lokasi Parkir", value: infoVehicle.lokasiParkir || "-" },
               ]
             : []
         }
