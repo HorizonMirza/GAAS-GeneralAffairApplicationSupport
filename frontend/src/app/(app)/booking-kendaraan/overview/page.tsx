@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -16,12 +15,13 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingKendaraan, VehicleOption } from "@/lib/types";
+import type { BookingKendaraan, BookingKendaraanCreatePayload, VehicleOption } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
+import RoomInfoModal from "@/components/RoomInfoModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -92,6 +92,8 @@ export default function VehicleBookingOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
+  const [infoVehicle, setInfoVehicle] = useState<VehicleOption | null>(null);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
@@ -183,9 +185,10 @@ export default function VehicleBookingOverviewPage() {
             const availLabel = availability === "full" ? "Full" : "Available";
             const availTitle = availability === "full" ? "Full hari ini" : "Available hari ini";
             return (
-              <Link
+              <button
+                type="button"
                 key={v.nama}
-                href={`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(v.nama)}`}
+                onClick={() => setInfoVehicle(v)}
                 className={`room-card room-card-${availability}`}
                 title={availTitle}
               >
@@ -194,7 +197,7 @@ export default function VehicleBookingOverviewPage() {
                 <div className="room-card-body">
                   <h4>{v.nama}</h4>
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -302,8 +305,36 @@ export default function VehicleBookingOverviewPage() {
       />
 
       {me && (
-        <VehicleBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
+        <VehicleBookingFormModal
+          open={formOpen}
+          me={me}
+          initial={formInitial}
+          onClose={() => { setFormOpen(false); setFormInitial(undefined); }}
+          onCreated={load}
+        />
       )}
+
+      <RoomInfoModal
+        open={!!infoVehicle}
+        nama={infoVehicle?.nama ?? null}
+        kapasitas={infoVehicle?.kapasitas ?? null}
+        photoUrl={infoVehicle ? vehiclePhotoUrl(infoVehicle.nama) : ""}
+        availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
+        availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
+        bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
+        onClose={() => setInfoVehicle(null)}
+        onBook={() => {
+          if (!infoVehicle) return;
+          const nama = infoVehicle.nama;
+          setInfoVehicle(null);
+          if (isOrigin) {
+            setFormInitial({ namaKendaraan: nama });
+            setFormOpen(true);
+          } else {
+            router.push(`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(nama)}`);
+          }
+        }}
+      />
 
       {me && (
         <VehicleBookingDetailModal

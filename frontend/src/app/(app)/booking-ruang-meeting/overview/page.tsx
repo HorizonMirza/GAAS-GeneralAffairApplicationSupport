@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -19,7 +18,7 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingRuang, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
 
 // Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView). "Penuh" hanya berarti
@@ -75,6 +74,7 @@ import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
+import RoomInfoModal from "@/components/RoomInfoModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -97,6 +97,8 @@ export default function BookingOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
+  const [infoRoom, setInfoRoom] = useState<RoomOption | null>(null);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
@@ -202,9 +204,10 @@ export default function BookingOverviewPage() {
             const availTitle =
               availability === "closed" ? "Close (akhir pekan)" : availability === "full" ? "Full hari ini" : "Available hari ini";
             return (
-              <Link
+              <button
+                type="button"
                 key={r.nama}
-                href={`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(r.nama)}`}
+                onClick={() => setInfoRoom(r)}
                 className={`room-card room-card-${availability}`}
                 title={availTitle}
               >
@@ -213,7 +216,7 @@ export default function BookingOverviewPage() {
                 <div className="room-card-body">
                   <h4>{r.nama}</h4>
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -347,8 +350,44 @@ export default function BookingOverviewPage() {
       />
 
       {me && (
-        <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={load} />
+        <RoomBookingFormModal
+          open={formOpen}
+          me={me}
+          initial={formInitial}
+          onClose={() => { setFormOpen(false); setFormInitial(undefined); }}
+          onCreated={load}
+        />
       )}
+
+      <RoomInfoModal
+        open={!!infoRoom}
+        nama={infoRoom?.nama ?? null}
+        kapasitas={infoRoom?.kapasitas ?? null}
+        photoUrl={infoRoom ? roomPhotoUrl(infoRoom.nama) : ""}
+        availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
+        availLabel={
+          infoRoom
+            ? closedToday
+              ? "Close"
+              : isRoomFullyBookedToday(infoRoom.nama, todayEntries)
+              ? "Full"
+              : "Available"
+            : ""
+        }
+        bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
+        onClose={() => setInfoRoom(null)}
+        onBook={() => {
+          if (!infoRoom) return;
+          const nama = infoRoom.nama;
+          setInfoRoom(null);
+          if (isOrigin) {
+            setFormInitial({ namaRuang: nama });
+            setFormOpen(true);
+          } else {
+            router.push(`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(nama)}`);
+          }
+        }}
+      />
 
       {me && (
         <RoomBookingDetailModal
