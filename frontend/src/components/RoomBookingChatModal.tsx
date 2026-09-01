@@ -79,6 +79,10 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
       : [];
 
   useEffect(() => {
+    // Cleared on every open/item change - otherwise a failure from a previous thread (e.g. a
+    // send that 403'd on a booking outside this user's unit) stays on screen after switching to
+    // a different, perfectly accessible booking's chat.
+    setError("");
     if (!open || itemId == null) {
       setMessages(null);
       readNotified.current = false;
@@ -199,7 +203,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   }
 
   return (
-    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered chat-modal-overlay">
       <div className="modal chat-modal">
         <div className="chat-modal-header-bar">
           <div className="modal-header">

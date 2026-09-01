@@ -2366,6 +2366,16 @@ table.data-table {
   align-items: center;
 }
 
+/* Room/Vehicle Booking's chat modal only - a new message arrives every few seconds and briefly
+   pushes several state updates through in a row (append message, clear draft, autoscroll), and
+   backdrop-filter's blur otherwise gets recomposited on every one of those, flickering the
+   backdrop behind the modal. Promoting it to its own GPU layer stops the repaint without any
+   visible change to how it looks. Scoped here rather than on .modal-overlay itself, which every
+   other modal (Ekspedisi's ChatModal included) also renders with. */
+.chat-modal-overlay {
+  will-change: backdrop-filter;
+}
+
 .modal {
   background: var(--bg-surface);
   border-radius: 18px;
