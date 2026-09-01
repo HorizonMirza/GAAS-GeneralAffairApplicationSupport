@@ -208,6 +208,10 @@ export interface InvoiceLog {
 export interface RoomOption {
   nama: string;
   kapasitas: number;
+  // Optional (not just VehicleOption's nama/kapasitas) so RoomCalendarView, shared between Room
+  // and Vehicle Booking calendars, keeps accepting a VehicleOption[] as its `rooms` prop.
+  lantai?: string;
+  fasilitas?: string[];
 }
 
 export interface WaitlistEntry {

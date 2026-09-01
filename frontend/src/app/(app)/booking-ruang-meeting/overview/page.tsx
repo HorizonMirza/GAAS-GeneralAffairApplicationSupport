@@ -67,9 +67,6 @@ function roomPhotoUrls(roomName: string): string[] {
   return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
-// Demo facility list, shown in the info modal until real per-room facility data exists.
-const ROOM_DEMO_FACILITIES = ["TV", "AC", "Proyektor", "WiFi", "Whiteboard"];
-
 // Free (bookable) hours left today, one entry per whole hour within operating hours (e.g.
 // 07:00-08:00, 08:00-09:00, ...) - bookings are only ever made on the hour, so there's no reason
 // to offer a half-hour slot, and listing every open hour individually (instead of collapsing
@@ -396,7 +393,8 @@ export default function BookingOverviewPage() {
         open={!!infoRoom}
         nama={infoRoom?.nama ?? null}
         kapasitas={infoRoom?.kapasitas ?? null}
-        facilities={infoRoom ? ROOM_DEMO_FACILITIES : []}
+        extraDetails={infoRoom ? [{ label: "Lantai", value: infoRoom.lantai ?? "-" }] : []}
+        facilities={infoRoom ? infoRoom.fasilitas ?? [] : []}
         photoUrls={infoRoom ? roomPhotoUrls(infoRoom.nama) : []}
         availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
         availLabel={
