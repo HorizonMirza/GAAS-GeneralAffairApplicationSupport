@@ -385,9 +385,7 @@ export default function VehicleBookingOverviewPage() {
         freeSlotsToday={infoVehicle ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         fullyOpenLabel={
           infoVehicle && vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
-            ? remainingHourSlotsToday().start <= OPEN_MIN
-              ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
-              : `Tersedia sisa hari ini (${minutesToHHMM(remainingHourSlotsToday().start)}–${minutesToHHMM(CLOSE_MIN)})`
+            ? "Tersedia"
             : undefined
         }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}

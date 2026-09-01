@@ -436,9 +436,7 @@ export default function BookingOverviewPage() {
         closedLabel={closedToday ? "Tutup (akhir pekan)" : undefined}
         fullyOpenLabel={
           infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
-            ? remainingHourSlotsToday().start <= OPEN_MIN
-              ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
-              : `Tersedia sisa hari ini (${minutesToHHMM(remainingHourSlotsToday().start)}–${minutesToHHMM(CLOSE_MIN)})`
+            ? "Tersedia"
             : undefined
         }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
