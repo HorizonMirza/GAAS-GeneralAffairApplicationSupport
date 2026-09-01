@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -46,10 +48,24 @@ public class BookingKendaraanController : ApiControllerBase
     };
 
     private readonly AppDbContext _db;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public BookingKendaraanController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public BookingKendaraanController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
+        _hub = hub;
+    }
+
+    // Label shown in the "transaksi baru"/"proses approval" notification banner - same
+    // Nama+Nomor convention as BookingRuangController.ItemLabel.
+    private static string ItemLabel(BookingKendaraan item) => $"{item.NamaKendaraan} - {item.NomorPemesanan ?? "-"}";
+
+    // Every recipient of a workflow notification for this booking: everyone CanAccessBookingKendaraan
+    // already lets see it, minus the actor who just triggered the event.
+    private async Task<List<int>> ActivityRecipientIdsAsync(BookingKendaraan item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanAccessBookingKendaraan(u, item)).Select(u => u.Id).ToList();
     }
 
     private static string EffectiveDivisi(User user) =>
@@ -619,6 +635,7 @@ public class BookingKendaraanController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "kendaraan", item.Id, ItemLabel(item), user.Nama, "mengajukan booking kendaraan baru");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -683,6 +700,22 @@ public class BookingKendaraanController : ApiControllerBase
         });
     }
 
+    // Single-item fetch, independent of List's pagination/filters - lets a notification banner's
+    // click deep-link straight into an item's chat (or its detail) even when that item isn't on
+    // whatever page/filter the Transaksi table happens to be showing right now.
+    [HttpGet("{itemId:int}")]
+    public async Task<IActionResult> GetOne(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.BookingKendaraans.FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingKendaraan(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        return Ok(BookingKendaraanOut.From(item));
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
     {
@@ -742,6 +775,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menyetujui (Approval Departemen/Divisi)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -760,6 +794,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menolak (Approval Departemen/Divisi)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -781,6 +816,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menyetujui (Admin GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -802,6 +838,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menolak (Admin GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -826,6 +863,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menyetujui (Approval GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -847,6 +885,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "menolak (Approval GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -52,9 +52,10 @@ function defaultFilters(): FilterState {
   return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", namaRuang: "", search: "" };
 }
 
-export default function BookingTransaksiPage() {
+function BookingTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
@@ -96,6 +97,18 @@ export default function BookingTransaksiPage() {
     // part of their workflow, so a direct link/URL shouldn't land them here either.
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
+
+  // A chat notification banner's click lands here with ?chat=<itemId> - fetched directly (not
+  // found-in-loaded-items, since the item may not be on whatever page/filter is currently shown)
+  // so the thread opens regardless of pagination. The param is stripped right after so a later
+  // refresh of this same URL doesn't keep reopening it.
+  useEffect(() => {
+    const chatId = searchParams.get("chat");
+    if (!chatId) return;
+    api.getBooking(Number(chatId)).then(setChatItem).catch(() => {});
+    router.replace("/booking-ruang-meeting/transaksi");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     api.listRooms().then(setRooms).catch(() => setRooms([]));
@@ -555,5 +568,13 @@ export default function BookingTransaksiPage() {
         />
       )}
     </>
+  );
+}
+
+export default function BookingTransaksiPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingTransaksiPageInner />
+    </Suspense>
   );
 }

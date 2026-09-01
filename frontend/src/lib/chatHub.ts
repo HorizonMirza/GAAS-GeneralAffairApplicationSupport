@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import type { ChatMessage, ChatNotification } from "./types";
+import type { ActivityNotification, ChatMessage, ChatNotification } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 // The hub is mapped at the app root (Program.cs: app.MapHub<ChatHub>("/hubs/chat")), not under
@@ -115,4 +115,13 @@ export function onChatNotification(handler: (notification: ChatNotification) => 
   const conn = getConnection();
   conn.on("ReceiveChatNotification", handler);
   return () => conn.off("ReceiveChatNotification", handler);
+}
+
+// Same idea as onChatNotification, but for workflow events (a new transaction submitted, or an
+// approve/reject step) instead of chat messages - a separate event so the two can carry different
+// payload shapes and get a different notification sound without one handler branching on type.
+export function onActivityNotification(handler: (notification: ActivityNotification) => void): () => void {
+  const conn = getConnection();
+  conn.on("ReceiveActivityNotification", handler);
+  return () => conn.off("ReceiveActivityNotification", handler);
 }

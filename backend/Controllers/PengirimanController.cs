@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -46,10 +48,20 @@ public class PengirimanController : ApiControllerBase
     private const string GaDepartemenLabel = "Asset Management and General Affair";
 
     private readonly AppDbContext _db;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public PengirimanController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public PengirimanController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
+        _hub = hub;
+    }
+
+    private static string ItemLabel(Pengiriman item) => $"Pengiriman {item.NomorTransmittal}";
+
+    private async Task<List<int>> ActivityRecipientIdsAsync(Pengiriman item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanAccessPengiriman(u, item)).Select(u => u.Id).ToList();
     }
 
     private static string EffectiveDivisi(User user) =>
@@ -445,6 +457,7 @@ public class PengirimanController : ApiControllerBase
         item.RejectTarget = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "created", "pengiriman", item.Id, ItemLabel(item), user.Nama, "mengajukan pengiriman baru");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -561,6 +574,22 @@ public class PengirimanController : ApiControllerBase
         });
     }
 
+    // Single-item fetch, independent of List's pagination/filters - lets a notification banner's
+    // click deep-link straight into an item's chat (or its detail) even when that item isn't on
+    // whatever page/filter the Transaksi table happens to be showing right now.
+    [HttpGet("{itemId:int}")]
+    public async Task<IActionResult> GetOne(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPengiriman(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        return Ok(PengirimanOut.From(item));
+    }
+
     // Status breakdown for a scope (e.g. Overview's stat cards) in one query instead of one
     // List() call per status - List() itself still does the extra chat/mention work per item,
     // which none of these counts need.
@@ -648,6 +677,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval Departemen/Divisi)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -666,6 +696,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menolak (Approval Departemen/Divisi)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -688,6 +719,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (Admin GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -712,6 +744,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user!.Nama, "menolak (Admin GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -733,6 +766,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -758,6 +792,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user!.Nama, "menolak (Approval GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -797,6 +832,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_KPU", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (KPU)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -819,6 +855,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user!.Nama, "menolak (KPU)");
         return Ok(PengirimanOut.From(item));
     }
 

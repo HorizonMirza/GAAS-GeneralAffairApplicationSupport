@@ -12,10 +12,10 @@ function getContext(): AudioContext | null {
   return ctx;
 }
 
-function tone(context: AudioContext, freq: number, startAt: number, duration: number, peakGain: number): void {
+function tone(context: AudioContext, freq: number, startAt: number, duration: number, peakGain: number, type: OscillatorType = "sine"): void {
   const osc = context.createOscillator();
   const gain = context.createGain();
-  osc.type = "sine";
+  osc.type = type;
   osc.frequency.value = freq;
   // Quick fade in/out envelope instead of a hard on/off, so the tone doesn't click.
   gain.gain.setValueAtTime(0, startAt);
@@ -27,6 +27,7 @@ function tone(context: AudioContext, freq: number, startAt: number, duration: nu
   osc.stop(startAt + duration + 0.02);
 }
 
+// Rising two-tone "ding" (sine) - a new chat message.
 export function playChatNotificationSound(): void {
   try {
     const context = getContext();
@@ -35,6 +36,21 @@ export function playChatNotificationSound(): void {
     const now = context.currentTime;
     tone(context, 880, now, 0.13, 0.18);
     tone(context, 1318.5, now + 0.11, 0.16, 0.16);
+  } catch {
+    // Sound is a nice-to-have, never worth surfacing an error for.
+  }
+}
+
+// Falling two-tone "pop" (triangle wave, lower register) - deliberately a different shape and
+// direction from the chat ding above, for a new transaction or an approval step.
+export function playActivityNotificationSound(): void {
+  try {
+    const context = getContext();
+    if (!context) return;
+    if (context.state === "suspended") context.resume().catch(() => {});
+    const now = context.currentTime;
+    tone(context, 660, now, 0.12, 0.16, "triangle");
+    tone(context, 440, now + 0.1, 0.18, 0.18, "triangle");
   } catch {
     // Sound is a nice-to-have, never worth surfacing an error for.
   }

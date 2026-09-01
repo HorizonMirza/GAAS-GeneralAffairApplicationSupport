@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -39,10 +41,24 @@ public class PermintaanAtkController : ApiControllerBase
     };
 
     private readonly AppDbContext _db;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public PermintaanAtkController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public PermintaanAtkController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
+        _hub = hub;
+    }
+
+    // Label shown in the "transaksi baru"/"proses approval" notification banner - same
+    // Keperluan+Nomor convention as BookingRuangController's ItemLabel.
+    private static string ItemLabel(PermintaanAtk item) => $"{item.Keperluan} - {item.NomorPermintaan ?? "#" + item.Id}";
+
+    // Every recipient of a workflow notification for this request: everyone CanAccessPermintaanAtk
+    // already lets see it, minus the actor who just triggered the event.
+    private async Task<List<int>> ActivityRecipientIdsAsync(PermintaanAtk item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanAccessPermintaanAtk(u, item)).Select(u => u.Id).ToList();
     }
 
     private static string EffectiveDivisi(User user) =>
@@ -337,6 +353,7 @@ public class PermintaanAtkController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "atk", item.Id, ItemLabel(item), user.Nama, "mengajukan permintaan ATK baru");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -438,6 +455,22 @@ public class PermintaanAtkController : ApiControllerBase
         });
     }
 
+    // Single-item fetch, independent of List's pagination/filters - lets a notification banner's
+    // click deep-link straight into an item's chat (or its detail) even when that item isn't on
+    // whatever page/filter the Transaksi table happens to be showing right now.
+    [HttpGet("{itemId:int}")]
+    public async Task<IActionResult> GetOne(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPermintaanAtk(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        return Ok(PermintaanAtkOut.From(item));
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
     {
@@ -497,6 +530,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval Departemen/Divisi)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -515,6 +549,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menolak (Approval Departemen/Divisi)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -536,6 +571,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menyetujui (Admin GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -557,6 +593,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menolak (Admin GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -578,6 +615,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -599,6 +637,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menolak (Approval GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 

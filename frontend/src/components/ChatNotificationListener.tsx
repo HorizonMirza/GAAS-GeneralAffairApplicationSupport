@@ -2,34 +2,48 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ensureStarted, onChatNotification } from "@/lib/chatHub";
-import { playChatNotificationSound } from "@/lib/notificationSound";
+import { ensureStarted, onActivityNotification, onChatNotification } from "@/lib/chatHub";
+import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
-import type { ChatNotification } from "@/lib/types";
+import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const DISMISS_AFTER_MS = 6000;
 const LEAVE_ANIM_MS = 300;
 
-// Where the banner's click lands - a general "go see it" landing page per kind, not a deep link
-// into the exact chat thread (that would need every Overview/Transaksi page to accept a
-// chat-to-open query param, which is a larger follow-up, not part of this notification feature).
-const LANDING_PATH: Record<ChatNotification["kind"], string> = {
-  pengiriman: "/ekspedisi/overview",
-  booking: "/booking-ruang-meeting/overview",
-  kendaraan: "/booking-kendaraan/overview",
-  atk: "/office-supplies/overview",
-  sarana: "/maintenance/overview",
+type Kind = ChatNotification["kind"];
+
+// Transaksi page per module - a chat notification's click adds ?chat=<itemId> so that page can
+// deep-link straight into the thread (see booking-ruang-meeting/transaksi's `chat` query param
+// handling); an activity notification just lands on the plain list, no item-specific handling
+// needed to satisfy "go to the transaction".
+const TRANSAKSI_PATH: Record<Kind, string> = {
+  pengiriman: "/ekspedisi/transaksi",
+  booking: "/booking-ruang-meeting/transaksi",
+  kendaraan: "/booking-kendaraan/transaksi",
+  atk: "/office-supplies/transaksi",
+  sarana: "/maintenance/transaksi",
 };
 
-interface BannerState extends ChatNotification {
-  id: number;
-  leaving: boolean;
+type BannerState =
+  | ({ id: number; leaving: boolean; source: "chat" } & ChatNotification)
+  | ({ id: number; leaving: boolean; source: "activity" } & ActivityNotification);
+
+function initials(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || "?";
+}
+
+function bannerHref(banner: BannerState): string {
+  const base = TRANSAKSI_PATH[banner.kind];
+  return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : base;
 }
 
 // Always-mounted (rendered once from AppShell, for every authenticated page) WhatsApp-style
 // notification: brings the shared SignalR connection up as soon as someone's logged in (instead
-// of only when a chat modal happens to be open), and on every ReceiveChatNotification shows a
-// top-center banner + plays a sound - independent of which page/chat thread, if any, is open.
+// of only when a chat modal happens to be open), and on every incoming chat message or workflow
+// event (new transaction submitted, approve/reject step) shows a top-center banner + plays a
+// sound - independent of which page, if any, is open. The two event kinds share this one banner
+// UI but get a different sound and a different click target (straight into the chat vs. the
+// plain Transaksi list).
 export default function ChatNotificationListener() {
   const { me } = useAuth();
   const router = useRouter();
@@ -47,25 +61,37 @@ export default function ChatNotificationListener() {
     }, LEAVE_ANIM_MS);
   }, []);
 
+  const show = useCallback((next: Omit<BannerState, "id" | "leaving">) => {
+    clearTimeout(timers.current.leave);
+    clearTimeout(timers.current.remove);
+    const id = ++idRef.current;
+    setBanner({ ...next, id, leaving: false } as BannerState);
+    timers.current.leave = setTimeout(dismiss, DISMISS_AFTER_MS);
+  }, [dismiss]);
+
   useEffect(() => {
     if (!me) return;
     ensureStarted().catch(() => {});
-    const unsubscribe = onChatNotification((notification) => {
+    const unsubChat = onChatNotification((notification) => {
       playChatNotificationSound();
-      clearTimeout(timers.current.leave);
-      clearTimeout(timers.current.remove);
-      const id = ++idRef.current;
-      setBanner({ ...notification, id, leaving: false });
-      timers.current.leave = setTimeout(dismiss, DISMISS_AFTER_MS);
+      show({ source: "chat", ...notification });
+    });
+    const unsubActivity = onActivityNotification((notification) => {
+      playActivityNotificationSound();
+      show({ source: "activity", ...notification });
     });
     return () => {
-      unsubscribe();
+      unsubChat();
+      unsubActivity();
       clearTimeout(timers.current.leave);
       clearTimeout(timers.current.remove);
     };
-  }, [me, dismiss]);
+  }, [me, show]);
 
   if (!banner) return null;
+
+  const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
+  const detail = banner.source === "chat" ? banner.preview : banner.message;
 
   return (
     <button
@@ -73,15 +99,15 @@ export default function ChatNotificationListener() {
       className={`chat-notification-banner${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
       onClick={() => {
         dismiss();
-        router.push(LANDING_PATH[banner.kind]);
+        router.push(bannerHref(banner));
       }}
     >
-      <span className="chat-notification-avatar">{banner.senderNama.trim().charAt(0).toUpperCase() || "?"}</span>
+      <span className="chat-notification-avatar">{initials(actorNama)}</span>
       <span className="chat-notification-body">
         <span className="chat-notification-title">
-          <strong>{banner.senderNama}</strong> · {banner.itemLabel}
+          <strong>{actorNama}</strong> · {banner.itemLabel}
         </span>
-        <span className="chat-notification-preview">{banner.preview}</span>
+        <span className="chat-notification-preview">{detail}</span>
       </span>
       <span
         className="chat-notification-close"

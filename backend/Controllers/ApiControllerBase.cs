@@ -40,6 +40,28 @@ public abstract class ApiControllerBase : ControllerBase
         await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveChatNotification", notification);
     }
 
+    // Same recipient-targeting idea as BroadcastChatNotificationAsync, but for a workflow event
+    // (a new transaction submitted, or an approve/reject step) instead of a chat message - pushed
+    // on "ReceiveActivityNotification" so the frontend can play a different sound for it. Called
+    // once per real user action, after the triggering SaveChangesAsync succeeds - never from
+    // inside a per-series-member loop (a recurring booking's Submit/Approve still only fires one
+    // notification for the whole action, not one per occurrence).
+    protected static async Task BroadcastActivityNotificationAsync(
+        IHubContext<ChatHub> hub,
+        IEnumerable<int> recipientUserIds,
+        string type,
+        string kind,
+        int itemId,
+        string itemLabel,
+        string actorNama,
+        string message)
+    {
+        var recipients = recipientUserIds.ToList();
+        if (recipients.Count == 0) return;
+        var notification = new ActivityNotificationOut(type, kind, itemId, itemLabel, actorNama, message, DateTime.UtcNow);
+        await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveActivityNotification", notification);
+    }
+
     // Wraps SaveChangesAsync for approve/reject endpoints guarded by an IsConcurrencyToken
     // property (Pengiriman.Status, Invoice.Status): if another request already changed that row
     // between this request's read and its save, EF throws DbUpdateConcurrencyException instead

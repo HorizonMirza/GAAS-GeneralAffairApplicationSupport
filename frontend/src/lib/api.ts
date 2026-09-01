@@ -26,6 +26,7 @@ import type {
   InvoiceLog,
   Me,
   OrgStructure,
+  Pengiriman,
   PengirimanCreatePayload,
   PengirimanListResponse,
   PengirimanLog,
@@ -196,6 +197,7 @@ export const api = {
 
   listPengiriman: (params: ListPengirimanParams) =>
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),
+  getPengiriman: (id: number) => apiRequest<Pengiriman>(`/pengiriman/${id}`),
   getPengirimanStats: (bulan: string) =>
     apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan } }),
   createPengiriman: (payload: PengirimanCreatePayload) =>
@@ -327,6 +329,9 @@ export const api = {
     }),
   listBooking: (params: ListBookingParams) =>
     apiRequest<BookingRuangListResponse>("/booking-ruang", { params: bookingListParams(params) }),
+  // Single-item fetch independent of List's pagination/filters - used to deep-link a notification
+  // banner click straight to an item's chat even when it isn't on whatever page is loaded.
+  getBooking: (id: number) => apiRequest<BookingRuang>(`/booking-ruang/${id}`),
   getBookingStats: (bulan: string) =>
     apiRequest<BookingRuangStatsResponse>("/booking-ruang/stats", { params: { bulan } }),
   // Create always returns a list of occurrences, even a single non-recurring booking (one-item
@@ -392,6 +397,7 @@ export const api = {
     }),
   listKendaraanBooking: (params: ListKendaraanBookingParams) =>
     apiRequest<BookingKendaraanListResponse>("/booking-kendaraan", { params: kendaraanListParams(params) }),
+  getKendaraanBooking: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}`),
   getKendaraanStats: (bulan: string) =>
     apiRequest<BookingKendaraanStatsResponse>("/booking-kendaraan/stats", { params: { bulan } }),
   createKendaraanBooking: (payload: BookingKendaraanCreatePayload) =>
@@ -427,6 +433,7 @@ export const api = {
     apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal } }),
   listAtk: (params: ListAtkParams) =>
     apiRequest<PermintaanAtkListResponse>("/permintaan-atk", { params: atkListParams(params) }),
+  getAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`),
   getAtkStats: (bulan: string) =>
     apiRequest<PermintaanAtkStatsResponse>("/permintaan-atk/stats", { params: { bulan } }),
   createAtk: (payload: PermintaanAtkCreatePayload) =>
@@ -455,6 +462,7 @@ export const api = {
     apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal } }),
   listSarana: (params: ListSaranaParams) =>
     apiRequest<PerbaikanSaranaListResponse>("/perbaikan-sarana", { params: saranaListParams(params) }),
+  getSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`),
   getSaranaStats: (bulan: string) =>
     apiRequest<PerbaikanSaranaStatsResponse>("/perbaikan-sarana/stats", { params: { bulan } }),
   createSarana: (payload: PerbaikanSaranaCreatePayload) =>

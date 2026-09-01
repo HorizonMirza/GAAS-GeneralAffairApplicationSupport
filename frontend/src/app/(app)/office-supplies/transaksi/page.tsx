@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -40,9 +40,10 @@ function defaultFilters(): FilterState {
   return { page: 1, limit: 10, bulan: "", status: "", divisi: "", departemen: "", direktorat: "", search: "" };
 }
 
-export default function OfficeSuppliesTransaksiPage() {
+function OfficeSuppliesTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
@@ -70,6 +71,18 @@ export default function OfficeSuppliesTransaksiPage() {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
+
+  // A chat/activity notification banner's click lands here with ?chat=<itemId> - fetched
+  // directly (not found-in-loaded-items, since the item may not be on whatever page/filter is
+  // currently shown) so the thread opens regardless of pagination. The param is stripped right
+  // after so a later refresh of this same URL doesn't keep reopening it.
+  useEffect(() => {
+    const chatId = searchParams.get("chat");
+    if (!chatId) return;
+    api.getAtk(Number(chatId)).then(setChatItem).catch(() => {});
+    router.replace("/office-supplies/transaksi");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const loadTable = useCallback(async () => {
     const reqId = ++tableReqIdRef.current;
@@ -419,5 +432,13 @@ export default function OfficeSuppliesTransaksiPage() {
         />
       )}
     </>
+  );
+}
+
+export default function OfficeSuppliesTransaksiPage() {
+  return (
+    <Suspense fallback={null}>
+      <OfficeSuppliesTransaksiPageInner />
+    </Suspense>
   );
 }

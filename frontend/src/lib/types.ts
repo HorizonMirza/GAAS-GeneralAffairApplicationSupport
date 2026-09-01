@@ -131,6 +131,19 @@ export interface ChatNotification {
   createdAt: string;
 }
 
+// Pushed the same way as ChatNotification (ChatHub.UserGroup) but on "ReceiveActivityNotification"
+// instead - a workflow event (a new transaction submitted, or an approve/reject step), not a chat
+// message. Type distinguishes the two cases the notification banner/sound treats differently.
+export interface ActivityNotification {
+  type: "created" | "approval";
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana";
+  itemId: number;
+  itemLabel: string;
+  actorNama: string;
+  message: string;
+  createdAt: string;
+}
+
 export interface PengirimanListResponse {
   items: Pengiriman[];
   total: number;

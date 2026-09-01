@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -45,9 +45,10 @@ function defaultFilters(): FilterState {
   return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", namaKendaraan: "", search: "" };
 }
 
-export default function VehicleBookingTransaksiPage() {
+function VehicleBookingTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
@@ -84,6 +85,18 @@ export default function VehicleBookingTransaksiPage() {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
+
+  // A chat/activity notification banner's click lands here with ?chat=<itemId> - fetched
+  // directly (not found-in-loaded-items, since the item may not be on whatever page/filter is
+  // currently shown) so the thread opens regardless of pagination. The param is stripped right
+  // after so a later refresh of this same URL doesn't keep reopening it.
+  useEffect(() => {
+    const chatId = searchParams.get("chat");
+    if (!chatId) return;
+    api.getKendaraanBooking(Number(chatId)).then(setChatItem).catch(() => {});
+    router.replace("/booking-kendaraan/transaksi");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
@@ -489,5 +502,13 @@ export default function VehicleBookingTransaksiPage() {
         />
       )}
     </>
+  );
+}
+
+export default function VehicleBookingTransaksiPage() {
+  return (
+    <Suspense fallback={null}>
+      <VehicleBookingTransaksiPageInner />
+    </Suspense>
   );
 }

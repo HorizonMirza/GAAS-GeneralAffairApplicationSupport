@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 
@@ -57,11 +59,25 @@ public class BookingRuangController : ApiControllerBase
 
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public BookingRuangController(AppDbContext db, CurrentUserService currentUser, IConfiguration config) : base(currentUser)
+    public BookingRuangController(AppDbContext db, CurrentUserService currentUser, IConfiguration config, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
         _config = config;
+        _hub = hub;
+    }
+
+    // Label shown in the "transaksi baru"/"proses approval" notification banner - same
+    // Nama+Nomor convention as BroadcastChatNotificationAsync's itemLabel in BookingChatController.
+    private static string ItemLabel(BookingRuang item) => $"{item.NamaRuang} - {item.NomorPemesanan ?? item.NamaKegiatan}";
+
+    // Every recipient of a workflow notification for this booking: everyone CanAccessBookingRuang
+    // already lets see it, minus the actor who just triggered the event.
+    private async Task<List<int>> ActivityRecipientIdsAsync(BookingRuang item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanAccessBookingRuang(u, item)).Select(u => u.Id).ToList();
     }
 
     // Per-room webcal feed token: HMAC-SHA256(roomName) keyed on the same secret already used to
@@ -1176,6 +1192,7 @@ public class BookingRuangController : ApiControllerBase
             var (confirmed, conflicted) = await FinalizeSeriesAsync(members, user, fromStatus: BookingStatusEnum.DRAFT);
             await _db.SaveChangesAsync();
             await _db.Entry(item).ReloadAsync();
+            await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "mengajukan booking ruang baru");
             return Ok(new
             {
                 item = BookingRuangOut.From(item),
@@ -1190,6 +1207,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectTarget = null;
         });
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "mengajukan booking ruang baru");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1259,6 +1277,22 @@ public class BookingRuangController : ApiControllerBase
             Page = page,
             Limit = limit,
         });
+    }
+
+    // Single-item fetch, independent of List's pagination/filters - lets a notification banner's
+    // click deep-link straight into an item's chat (or its detail) even when that item isn't on
+    // whatever page/filter the Transaksi table happens to be showing right now.
+    [HttpGet("{itemId:int}")]
+    public async Task<IActionResult> GetOne(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.BookingRuangs.Include(b => b.AdditionalRooms).FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingRuang(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        return Ok(BookingRuangOut.From(item));
     }
 
     // Same role-scoped visibility as List (via ApplyListFilters), but rolled up into a per-status
@@ -1407,6 +1441,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectReason = null;
         });
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "menyetujui (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1426,6 +1461,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedL1At = null;
         });
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "menolak (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1449,6 +1485,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectTarget = null;
         });
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menyetujui (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1472,6 +1509,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedGaAt = null;
         });
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menolak (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1613,6 +1651,7 @@ public class BookingRuangController : ApiControllerBase
         var totalConfirmed = members.Count(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
         var totalConflicted = members.Count(m => m.HasConflict);
 
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval GA)");
         return Ok(new
         {
             item = BookingRuangOut.From(item),
@@ -1666,6 +1705,7 @@ public class BookingRuangController : ApiControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         await _db.Entry(item).ReloadAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menolak (Approval GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
