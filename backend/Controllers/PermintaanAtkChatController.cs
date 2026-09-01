@@ -38,7 +38,7 @@ public class PermintaanAtkChatController : ApiControllerBase
     [HttpGet("")]
     public async Task<IActionResult> List(int permintaanAtkId)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var item = await _db.PermintaanAtks.FindAsync(permintaanAtkId);
@@ -61,7 +61,7 @@ public class PermintaanAtkChatController : ApiControllerBase
     [HttpPost("")]
     public async Task<IActionResult> Send(int permintaanAtkId, [FromBody] SendChatMessageRequest payload)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var item = await _db.PermintaanAtks.FindAsync(permintaanAtkId);

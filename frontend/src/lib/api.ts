@@ -44,6 +44,7 @@ import type {
   RejectTarget,
   RoomOption,
   Status,
+  SumberPembelian,
   UtilizationResponse,
   VehicleOption,
   WaitlistEntry,
@@ -442,17 +443,25 @@ export const api = {
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`, { method: "PUT", body: payload }),
   deleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}`, { method: "DELETE" }),
   superAdminDeleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}/super-admin`, { method: "DELETE" }),
-  submitAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/submit`, { method: "PATCH" }),
+  // sumberPembelian is only actually required by the backend when Submit's own self-skip logic
+  // lands the item past the Admin GA tier (an Admin/Approval GA submitting their own draft) -
+  // every other caller passes null and the backend ignores it.
+  submitAtk: (id: number, sumberPembelian: SumberPembelian | null = null) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/submit`, { method: "PATCH", body: { sumberPembelian } }),
   approveAtkL1: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-l1`, { method: "PATCH" }),
   rejectAtkL1: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-l1`, { method: "PATCH", body: { reason } }),
-  approveAtkGa: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga`, { method: "PATCH" }),
+  approveAtkGa: (id: number, sumberPembelian: SumberPembelian) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga`, { method: "PATCH", body: { sumberPembelian } }),
   rejectAtkGa: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
   approveAtkGaApproval: (id: number) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga-approval`, { method: "PATCH" }),
   rejectAtkGaApproval: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  approveAtkKpu: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-kpu`, { method: "PATCH" }),
+  rejectAtkKpu: (id: number, reason: string | null) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-kpu`, { method: "PATCH", body: { reason } }),
   getAtkLogs: (id: number) => apiRequest<PermintaanAtkLog[]>(`/permintaan-atk/${id}/logs`),
   getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),
   sendAtkChatMessage: (id: number, message: string) =>
@@ -598,7 +607,7 @@ function saranaListParams(p: ListSaranaParams) {
 export interface ListAtkParams {
   page?: number;
   limit?: number;
-  status?: BookingStatus | "REJECTED" | "";
+  status?: Status | "REJECTED" | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;

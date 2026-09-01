@@ -2,19 +2,29 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
 import {
-  BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
-  BOOKING_L1_ACTIONABLE_STATUSES,
+  GA_APPROVAL_ACTIONABLE_STATUSES,
+  L1_ACTIONABLE_STATUSES,
+  SUMBER_PEMBELIAN_LABEL,
   atkOriginActorLabel,
   isAtkEditableByOrigin,
   isAtkGaActionable,
+  isAtkKpuActionable,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
+import type { Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload, SumberPembelian } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
+
+// Exact-match lookup only (typing something not in the catalog just stays free text) - used to
+// auto-fill Satuan the moment a row's Nama Barang matches one of the 200 starter items.
+const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
+
+const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
 
 interface Props {
   open: boolean;
@@ -39,6 +49,7 @@ function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
 
 export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PermintaanAtkCreatePayload | null>(null);
+  const [sumberPembelian, setSumberPembelian] = useState<SumberPembelian | "">("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -54,6 +65,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
+    setSumberPembelian("");
     setError("");
   }, [open, item]);
 
@@ -61,9 +73,14 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isAtkEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isAtkGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canKpuAct = !isEdit && me.role === "KPU" && isAtkKpuActionable(item);
+  // Submit's own self-skip (see PermintaanAtkController.Submit) lands an Admin/Approval GA's own
+  // draft straight past the tier where SumberPembelian is normally captured (ApproveGa), so this
+  // is the only remaining place to still ask for it on that path.
+  const submitNeedsSumberPembelian = canSubmitDraft && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA");
 
   function set<K extends keyof PermintaanAtkCreatePayload>(key: K, value: PermintaanAtkCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -85,8 +102,12 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   }
 
   async function handleSubmitDraft() {
+    if (submitNeedsSumberPembelian && !sumberPembelian) {
+      setError("Sumber pembelian wajib dipilih");
+      return;
+    }
     try {
-      await api.submitAtk(item!.id);
+      await api.submitAtk(item!.id, submitNeedsSumberPembelian ? (sumberPembelian as SumberPembelian) : null);
       showToast("Permintaan berhasil dikirim untuk approval");
       onClose();
       onSaved();
@@ -107,9 +128,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   }
 
   async function handleApproveGa() {
+    if (!sumberPembelian) {
+      setError("Sumber pembelian wajib dipilih");
+      return;
+    }
     onClose();
     try {
-      await api.approveAtkGa(item!.id);
+      await api.approveAtkGa(item!.id, sumberPembelian);
       showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
@@ -121,6 +146,17 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkGaApproval(item!.id);
+      showToast("Permintaan berhasil di-approve, diteruskan ke KPU");
+      onSaved();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
+
+  async function handleApproveKpu() {
+    onClose();
+    try {
+      await api.approveAtkKpu(item!.id);
       showToast("Permintaan ATK berhasil disetujui");
       onSaved();
     } catch (err) {
@@ -171,10 +207,15 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     aria-label={`Nama barang ${idx + 1}`}
                     required
                     disabled={!isEdit}
+                    list={ATK_CATALOG_DATALIST_ID}
                     placeholder="Nama barang"
                     style={{ flex: 3, minWidth: 0 }}
                     value={row.namaBarang}
-                    onChange={(e) => setItem(idx, { namaBarang: e.target.value })}
+                    onChange={(e) => {
+                      const namaBarang = e.target.value;
+                      const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
+                      setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
+                    }}
                   />
                   <input
                     type="text"
@@ -228,9 +269,29 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
           </div>
 
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
+
+          {(canGaAct || submitNeedsSumberPembelian) && (
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
+              <SearchableSelect
+                id="da-sumber-pembelian"
+                value={sumberPembelian}
+                onChange={(v) => setSumberPembelian(v as SumberPembelian)}
+                options={SUMBER_PEMBELIAN_OPTIONS}
+                getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian]}
+                placeholder="Pilih sumber pembelian"
+              />
+            </div>
+          )}
+
+          {!canGaAct && !submitNeedsSumberPembelian && item.sumberPembelian && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Sumber Pembelian:</strong> {SUMBER_PEMBELIAN_LABEL[item.sumberPembelian]}
             </div>
           )}
 
@@ -264,11 +325,23 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
+            {canKpuAct && (
+              <>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-kpu", atkOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveKpu}>Approve</button>
+              </>
+            )}
             {isEdit && (
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
           </div>
         </form>
+
+        <datalist id={ATK_CATALOG_DATALIST_ID}>
+          {ATK_CATALOG.map((i) => (
+            <option key={i.namaBarang} value={i.namaBarang} />
+          ))}
+        </datalist>
       </div>
     </ModalOverlay>
   );

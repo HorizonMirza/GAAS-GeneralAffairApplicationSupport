@@ -38,18 +38,21 @@ public class PermintaanAtkOut
     public List<PermintaanAtkItemOut> Items { get; set; } = new();
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
-    public BookingStatusEnum Status { get; set; }
+    public StatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
+    public SumberPembelianEnum? SumberPembelian { get; set; }
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
     public int? ApprovedByGa { get; set; }
     public int? ApprovedByApprovalGa { get; set; }
+    public int? ApprovedByKpu { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? ApprovedL1At { get; set; }
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
+    public DateTime? ApprovedKpuAt { get; set; }
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
@@ -70,16 +73,19 @@ public class PermintaanAtkOut
         Departemen = p.Departemen,
         Status = p.Status,
         RejectReason = p.RejectReason,
+        SumberPembelian = p.SumberPembelian,
         CreatedBy = p.CreatedBy,
         CreatedByRole = p.CreatedByRole,
         ApprovedByL1 = p.ApprovedByL1,
         ApprovedByGa = p.ApprovedByGa,
         ApprovedByApprovalGa = p.ApprovedByApprovalGa,
+        ApprovedByKpu = p.ApprovedByKpu,
         CreatedAt = p.CreatedAt,
         UpdatedAt = p.UpdatedAt,
         ApprovedL1At = p.ApprovedL1At,
         ApprovedGaAt = p.ApprovedGaAt,
         ApprovedApprovalGaAt = p.ApprovedApprovalGaAt,
+        ApprovedKpuAt = p.ApprovedKpuAt,
     };
 }
 
@@ -95,3 +101,14 @@ public class PermintaanAtkStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
 }
+
+// SumberPembelian is required here (not just optional) - Admin GA is the one who actually
+// executes procurement, so their own approval is the point where the purchase channel has to be
+// pinned down (see PermintaanAtkController.ApproveGa).
+public record ApproveGaAtkRequest(SumberPembelianEnum? SumberPembelian);
+
+// Only relevant when Submit's self-skip logic (see PermintaanAtkController.Submit) lands the
+// item straight at APPROVED_GA or APPROVED_GA_APPROVAL - an Admin/Approval GA submitting their
+// own draft skips past the normal ApproveGa/ApproveGaApproval endpoints entirely, so this is the
+// only place left to still capture SumberPembelian for that path.
+public record SubmitAtkRequest(SumberPembelianEnum? SumberPembelian);

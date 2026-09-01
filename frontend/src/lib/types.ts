@@ -33,6 +33,8 @@ export type BookingStatus =
 
 export type RejectTarget = "GA" | "ORIGIN";
 
+export type SumberPembelian = "KPU" | "PADI";
+
 export type TipeBooking = "INTERNAL" | "EXTERNAL";
 
 export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
@@ -481,18 +483,21 @@ export interface PermintaanAtk {
   items: PermintaanAtkItem[];
   divisi: string;
   departemen: string | null;
-  status: BookingStatus;
+  status: Status;
   rejectReason: string | null;
+  sumberPembelian: SumberPembelian | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;
   approvedByGa: number | null;
   approvedByApprovalGa: number | null;
+  approvedByKpu: number | null;
   createdAt: string;
   updatedAt: string;
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
+  approvedKpuAt: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }
@@ -505,7 +510,7 @@ export interface PermintaanAtkListResponse {
 }
 
 export interface PermintaanAtkStatsResponse {
-  countsByStatus: Partial<Record<BookingStatus, number>>;
+  countsByStatus: Partial<Record<Status, number>>;
 }
 
 export interface PermintaanAtkLog {

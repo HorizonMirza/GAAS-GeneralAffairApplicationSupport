@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
+import { ROLE_COLOR, ROLE_SHORT_LABEL, chatParticipantLabels } from "@/lib/constants";
 import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
 import type { ChatMessage, Me, Role } from "@/lib/types";
@@ -74,7 +74,7 @@ export default function AtkChatModal({ open, itemId, itemLabel, departemen, crea
   const myLabel = ROLE_SHORT_LABEL[me.role];
   // ATK memakai rantai approval yang sama dengan Booking (tanpa KPU), jadi daftar peserta chat
   // Booking bisa dipakai ulang apa adanya.
-  const participantLabels = bookingChatParticipantLabels(departemen);
+  const participantLabels = chatParticipantLabels(departemen);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l !== myLabel && l.toLowerCase().includes(mentionQuery.toLowerCase()))

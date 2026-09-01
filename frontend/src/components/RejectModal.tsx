@@ -21,6 +21,7 @@ export type RejectType =
   | "atk-l1"
   | "atk-ga"
   | "atk-ga-approval"
+  | "atk-kpu"
   | "sarana-l1"
   | "sarana-ga"
   | "sarana-ga-approval";
@@ -108,6 +109,9 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectAtkGa(targetId, reasonValue);
       } else if (targetType === "atk-ga-approval") {
         await api.rejectAtkGaApproval(targetId, reasonValue);
+        message = "Permintaan ditolak";
+      } else if (targetType === "atk-kpu") {
+        await api.rejectAtkKpu(targetId, reasonValue);
         message = "Permintaan ditolak";
       } else if (targetType === "sarana-l1") {
         await api.rejectSaranaL1(targetId, reasonValue);

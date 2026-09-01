@@ -13,8 +13,8 @@ import {
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import type { BookingStatus, PermintaanAtk } from "@/lib/types";
-import BookingStatusBadge from "@/components/BookingStatusBadge";
+import type { PermintaanAtk, Status } from "@/lib/types";
+import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SearchableSelect from "@/components/SearchableSelect";
 import AtkFormModal from "@/components/AtkFormModal";
@@ -29,7 +29,7 @@ interface FilterState {
   page: number;
   limit: number;
   bulan: string;
-  status: BookingStatus | "REJECTED" | "";
+  status: Status | "REJECTED" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -69,7 +69,6 @@ function OfficeSuppliesTransaksiPageInner() {
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-    if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
   // A chat/activity notification banner's click lands here with ?chat=<itemId> - fetched
@@ -123,7 +122,7 @@ function OfficeSuppliesTransaksiPageInner() {
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
-  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
+  if (!me || me.role === "SUPER_ADMIN") return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
@@ -212,15 +211,16 @@ function OfficeSuppliesTransaksiPageInner() {
                   <SearchableSelect
                     id="filter-atk-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "" })}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
                       SUBMITTED: "On-Approval: Approval Departemen/Divisi",
                       APPROVED_L1: "On-Approval: Admin General Affair",
                       APPROVED_GA: "On-Approval: Approval GA",
                       REJECTED: "Rejected",
-                      APPROVED_GA_APPROVAL: "Approved",
+                      APPROVED_GA_APPROVAL: "On-Approval: KPU",
+                      COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}
                     clearLabel="Semua Status"
                     placeholder="Semua Status"
@@ -312,7 +312,7 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} />
+                            <AtkStatusBadge status={item.status} departemen={item.departemen} />
                           </span>
                           <button
                             type="button"

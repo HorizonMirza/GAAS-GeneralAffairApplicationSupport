@@ -105,10 +105,11 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
 ];
 
-// KPU only deals with Expedition (final sign-off + invoices) - Dashboard and Profile are always
-// shown regardless of role, so together that leaves Dashboard/Expedition/Profile as their whole
-// sidebar.
-const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Office Supplies", "Maintenance", "Archive"]);
+// KPU deals with Expedition (final sign-off + invoices) and now Office Supplies too (Admin GA/
+// Approval GA buy either through KPU or the external PaDi channel, so KPU signs off there as
+// well) - Dashboard and Profile are always shown regardless of role, so together that leaves
+// Dashboard/Expedition/Office Supplies/Profile as their whole sidebar.
+const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Maintenance", "Archive"]);
 
 function AccountMenu() {
   const { me } = useAuth();

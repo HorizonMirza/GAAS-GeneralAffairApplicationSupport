@@ -585,18 +585,21 @@ public class AppDbContext : DbContext
 
             e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
+            e.Property(p => p.SumberPembelian).HasColumnName("sumber_pembelian").HasConversion<string>().HasMaxLength(20);
 
             e.Property(p => p.CreatedBy).HasColumnName("created_by");
             e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.ApprovedByL1).HasColumnName("approved_by_l1");
             e.Property(p => p.ApprovedByGa).HasColumnName("approved_by_ga");
             e.Property(p => p.ApprovedByApprovalGa).HasColumnName("approved_by_approval_ga");
+            e.Property(p => p.ApprovedByKpu).HasColumnName("approved_by_kpu");
 
             e.Property(p => p.CreatedAt).HasColumnName("created_at");
             e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
             e.Property(p => p.ApprovedL1At).HasColumnName("approved_l1_at");
             e.Property(p => p.ApprovedGaAt).HasColumnName("approved_ga_at");
             e.Property(p => p.ApprovedApprovalGaAt).HasColumnName("approved_approval_ga_at");
+            e.Property(p => p.ApprovedKpuAt).HasColumnName("approved_kpu_at");
 
             e.HasOne(p => p.Pembuat)
                 .WithMany()

@@ -160,7 +160,7 @@ public abstract class ApiControllerBase : ControllerBase
         var sameUnit = item.Departemen != null
             ? user.Departemen == item.Departemen
             : user.Divisi == item.Divisi && user.Departemen == null;
-        return item.Status == BookingStatusEnum.DRAFT
+        return item.Status == StatusEnum.DRAFT
             ? item.CreatedBy == user.Id
             : sameUnit;
     }

@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, TipeBooking, Urgensi } from "./types";
+import type { ArchiveDocument, ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -376,7 +376,9 @@ export function isKendaraanCancellableByOrigin(item: BookingKendaraan, me: Me): 
   return !isPastBookingStart(item.tanggal, item.jamMulai, item.isWholeDay);
 }
 
-// --- Office Supplies / Permintaan ATK (pola yang sama dengan Booking di atas) ---
+// --- Office Supplies / Permintaan ATK (approval chain sama seperti Pengiriman - lihat Status di
+// bawah, termasuk tahap KPU - tapi reject tetap dead end di setiap tier, sama seperti Room/
+// Vehicle Booking) ---
 
 export function atkOriginActorLabel(item: PermintaanAtk): string {
   if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
@@ -395,13 +397,22 @@ export function isAtkEditableByOrigin(item: PermintaanAtk, me: Me): boolean {
 // PermintaanAtkController.IsDeletableByOrigin exactly.
 export function isAtkDeletableByOrigin(item: PermintaanAtk, me: Me): boolean {
   if (isAtkEditableByOrigin(item, me)) return true;
-  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  if (!REJECTED_STATUSES.includes(item.status)) return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
 export function isAtkGaActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_L1";
 }
+
+export function isAtkKpuActionable(item: PermintaanAtk): boolean {
+  return item.status === "APPROVED_GA_APPROVAL";
+}
+
+export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
+  KPU: "KPU",
+  PADI: "PaDi (Eksternal)",
+};
 
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".
 export function atkItemsSummary(item: PermintaanAtk): string {

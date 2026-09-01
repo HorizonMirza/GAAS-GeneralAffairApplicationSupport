@@ -354,6 +354,9 @@ using (var scope = app.Services.CreateScope())
             last_read_at TIMESTAMP NOT NULL,
             UNIQUE (permintaan_atk_id, user_id)
         )");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS approved_by_kpu INT REFERENCES users(id)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS approved_kpu_at TIMESTAMP");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS sumber_pembelian VARCHAR(20)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_status ON permintaan_atk (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_divisi ON permintaan_atk (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_departemen ON permintaan_atk (departemen)");

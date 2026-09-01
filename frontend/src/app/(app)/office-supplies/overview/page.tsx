@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  BOOKING_ON_APPROVAL_STATUSES,
-  BOOKING_REJECTED_STATUSES,
+  ON_APPROVAL_STATUSES,
+  REJECTED_STATUSES,
   atkItemsSummary,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
@@ -14,10 +14,10 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingStatus, PermintaanAtk } from "@/lib/types";
+import type { PermintaanAtk, Status } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
-import BookingStatusBadge from "@/components/BookingStatusBadge";
-import RoomBookingStepper from "@/components/RoomBookingStepper";
+import AtkStatusBadge from "@/components/AtkStatusBadge";
+import AtkStepper from "@/components/AtkStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
@@ -34,6 +34,7 @@ interface Stats {
   waitingL1: number;
   waitingGa: number;
   waitingGaApproval: number;
+  waitingKpu: number;
   approved: number;
 }
 
@@ -60,7 +61,6 @@ export default function OfficeSuppliesOverviewPage() {
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-    if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
   const load = useCallback(async () => {
@@ -75,13 +75,14 @@ export default function OfficeSuppliesOverviewPage() {
         api.getAtkStats(bulan),
       ]);
       const counts = statsResp.countsByStatus;
-      const count = (status: BookingStatus) => counts[status] ?? 0;
+      const count = (status: Status) => counts[status] ?? 0;
       setItems(queue);
       setStats({
         waitingL1: count("SUBMITTED"),
         waitingGa: count("APPROVED_L1"),
         waitingGaApproval: count("APPROVED_GA"),
-        approved: count("APPROVED_GA_APPROVAL"),
+        waitingKpu: count("APPROVED_GA_APPROVAL"),
+        approved: count("COMPLETED"),
       });
     } finally {
       setBusy(false);
@@ -96,12 +97,12 @@ export default function OfficeSuppliesOverviewPage() {
   const filteredItems = useMemo(() => {
     if (statusFilter === "ALL") return items;
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
-    if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
-    if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
-    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+    if (statusFilter === "APPROVED") return items.filter((i) => i.status === "COMPLETED");
+    if (statusFilter === "ON_APPROVAL") return items.filter((i) => ON_APPROVAL_STATUSES.includes(i.status));
+    return items.filter((i) => REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
-  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
+  if (!me || me.role === "SUPER_ADMIN") return null;
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
@@ -138,6 +139,7 @@ export default function OfficeSuppliesOverviewPage() {
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">KPU</div></div>
           <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
         </div>
       )}
@@ -184,7 +186,7 @@ export default function OfficeSuppliesOverviewPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} departemen={item.departemen} />
+                  <AtkStatusBadge status={item.status} departemen={item.departemen} />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -201,7 +203,7 @@ export default function OfficeSuppliesOverviewPage() {
                   </button>
                 </div>
               </div>
-              <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+              <AtkStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}

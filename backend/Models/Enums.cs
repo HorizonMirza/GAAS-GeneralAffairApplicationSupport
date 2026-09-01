@@ -46,6 +46,15 @@ public enum RejectTargetEnum
     ORIGIN,
 }
 
+// Office Supplies: channel Admin GA/Approval GA actually buys through - selected when they
+// approve their own tier (see PermintaanAtkController.ApproveGa/Submit), then carried through to
+// KPU's own final sign-off.
+public enum SumberPembelianEnum
+{
+    KPU,
+    PADI,
+}
+
 public enum BookingStatusEnum
 {
     DRAFT,

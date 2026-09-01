@@ -2,11 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
+
+// Exact-match lookup only (typing something not in the catalog just stays free text) - used to
+// auto-fill Satuan the moment a row's Nama Barang matches one of the 200 starter items.
+const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
 
 interface Props {
   open: boolean;
@@ -121,10 +126,15 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     type="text"
                     aria-label={`Nama barang ${idx + 1}`}
                     required
+                    list={ATK_CATALOG_DATALIST_ID}
                     placeholder="Nama barang (contoh: Pulpen)"
                     style={{ flex: 3, minWidth: 0 }}
                     value={row.namaBarang}
-                    onChange={(e) => setItem(idx, { namaBarang: e.target.value })}
+                    onChange={(e) => {
+                      const namaBarang = e.target.value;
+                      const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
+                      setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
+                    }}
                   />
                   <input
                     type="text"
@@ -173,6 +183,12 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               <input type="text" id="fa-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
+          <datalist id={ATK_CATALOG_DATALIST_ID}>
+            {ATK_CATALOG.map((i) => (
+              <option key={i.namaBarang} value={i.namaBarang} />
+            ))}
+          </datalist>
+
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>

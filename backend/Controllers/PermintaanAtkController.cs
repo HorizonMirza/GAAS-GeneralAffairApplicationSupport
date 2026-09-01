@@ -9,10 +9,11 @@ using PengirimanApi.Services;
 
 namespace PengirimanApi.Controllers;
 
-// Office Supplies (Permintaan ATK): same 3-stage approval workflow as Room/Vehicle Booking
-// (Departemen/Divisi -> Admin GA -> Approval GA, no KPU stage). One request carries many item
-// rows (PermintaanAtkItem) - there is no scheduling/conflict dimension here, so this is the
-// simplest controller of the family.
+// Office Supplies (Permintaan ATK): same approval chain as Pengiriman (Departemen/Divisi -> Admin
+// GA -> Approval GA -> KPU, since Admin GA/Approval GA buy either through KPU or the external
+// PaDi channel - see SumberPembelian), but reject is a dead end at every tier, same as
+// Room/Vehicle Booking - there is no revision-and-resubmit path. One request carries many item
+// rows (PermintaanAtkItem) - there is no scheduling/conflict dimension here.
 [Route("api/permintaan-atk")]
 public class PermintaanAtkController : ApiControllerBase
 {
@@ -35,9 +36,9 @@ public class PermintaanAtkController : ApiControllerBase
     private const string GaDivisiLabel = "Procurement and General Affair";
     private const string GaDepartemenLabel = "Asset Management and General Affair";
 
-    private static readonly BookingStatusEnum[] RejectedStatuses =
+    private static readonly StatusEnum[] RejectedStatuses =
     {
-        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
+        StatusEnum.REJECTED_L1, StatusEnum.REJECTED_GA, StatusEnum.REJECTED_GA_APPROVAL, StatusEnum.REJECTED_KPU,
     };
 
     private readonly AppDbContext _db;
@@ -70,7 +71,7 @@ public class PermintaanAtkController : ApiControllerBase
     // A rejected request is a dead end (no revision-and-resubmit path, same as the booking
     // modules) - the only thing editable by its creator is a never-submitted DRAFT.
     private static bool IsEditableByOrigin(PermintaanAtk item, User currentUser) =>
-        item.Status == BookingStatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
+        item.Status == StatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
 
     private static bool IsDeletableByOrigin(PermintaanAtk item, User currentUser)
     {
@@ -79,9 +80,10 @@ public class PermintaanAtkController : ApiControllerBase
         return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
     }
 
-    private static bool IsL1Actionable(PermintaanAtk item) => item.Status == BookingStatusEnum.SUBMITTED;
-    private static bool IsGaActionable(PermintaanAtk item) => item.Status == BookingStatusEnum.APPROVED_L1;
-    private static bool IsGaApprovalActionable(PermintaanAtk item) => item.Status == BookingStatusEnum.APPROVED_GA;
+    private static bool IsL1Actionable(PermintaanAtk item) => item.Status == StatusEnum.SUBMITTED;
+    private static bool IsGaActionable(PermintaanAtk item) => item.Status == StatusEnum.APPROVED_L1;
+    private static bool IsGaApprovalActionable(PermintaanAtk item) => item.Status == StatusEnum.APPROVED_GA;
+    private static bool IsKpuActionable(PermintaanAtk item) => item.Status == StatusEnum.APPROVED_GA_APPROVAL;
 
     private void AddLog(PermintaanAtk item, string action, User actor, string? reason = null)
     {
@@ -107,7 +109,7 @@ public class PermintaanAtkController : ApiControllerBase
         AppDbContext db,
         IQueryable<PermintaanAtk> query,
         User currentUser,
-        BookingStatusEnum? statusFilter,
+        StatusEnum? statusFilter,
         string? divisi,
         string? departemen,
         string? direktorat = null,
@@ -118,20 +120,20 @@ public class PermintaanAtkController : ApiControllerBase
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
             query = query.Where(p => p.Departemen == currentUser.Departemen
-                && (p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(p => p.Divisi == currentUser.Divisi && p.Departemen == null
-                && (p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
+                && (p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id));
         }
         else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
         {
-            query = query.Where(p => p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == currentUser.Id);
+            query = query.Where(p => p.Status != StatusEnum.DRAFT || p.CreatedBy == currentUser.Id);
         }
         else
         {
-            query = query.Where(p => p.Status != BookingStatusEnum.DRAFT);
+            query = query.Where(p => p.Status != StatusEnum.DRAFT);
         }
 
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
@@ -250,7 +252,7 @@ public class PermintaanAtkController : ApiControllerBase
         {
             CreatedBy = user!.Id,
             CreatedByRole = user.Role,
-            Status = BookingStatusEnum.DRAFT,
+            Status = StatusEnum.DRAFT,
             Divisi = divisi,
             Departemen = EffectiveDepartemen(user),
         };
@@ -323,27 +325,37 @@ public class PermintaanAtkController : ApiControllerBase
     }
 
     [HttpPatch("{itemId:int}/submit")]
-    public async Task<IActionResult> Submit(int itemId)
+    public async Task<IActionResult> Submit(int itemId, [FromBody] SubmitAtkRequest? payload)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
         var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (item.Status != BookingStatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
+        if (item.Status != StatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
 
         // Whichever tier the submitter's own role would normally sit at gets skipped, same
         // convention as the booking modules/Pengiriman.
         var nextStatus = user!.Role switch
         {
-            RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI => BookingStatusEnum.APPROVED_L1,
-            RoleEnum.ADMIN_GA => BookingStatusEnum.APPROVED_GA,
-            RoleEnum.APPROVAL_GA => BookingStatusEnum.APPROVED_GA_APPROVAL,
-            _ => BookingStatusEnum.SUBMITTED,
+            RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.APPROVAL_DIVISI => StatusEnum.APPROVED_L1,
+            RoleEnum.ADMIN_GA => StatusEnum.APPROVED_GA,
+            RoleEnum.APPROVAL_GA => StatusEnum.APPROVED_GA_APPROVAL,
+            _ => StatusEnum.SUBMITTED,
         };
 
-        if (nextStatus == BookingStatusEnum.APPROVED_GA_APPROVAL)
+        // Whenever the self-skip above lands past the Admin GA tier, ApproveGa's own endpoint
+        // (where SumberPembelian is normally required, see ApproveGa below) never runs for this
+        // item - this is the only remaining place to capture it for that path.
+        if (nextStatus is StatusEnum.APPROVED_GA or StatusEnum.APPROVED_GA_APPROVAL)
+        {
+            if (payload?.SumberPembelian == null)
+                return BadRequest(new { detail = "Sumber pembelian wajib dipilih" });
+            item.SumberPembelian = payload.SumberPembelian;
+        }
+
+        if (nextStatus == StatusEnum.APPROVED_GA_APPROVAL)
         {
             item.ApprovedByApprovalGa = user.Id;
             item.ApprovedApprovalGaAt = DateTime.UtcNow;
@@ -368,7 +380,7 @@ public class PermintaanAtkController : ApiControllerBase
         [FromQuery] string? bulan = null,
         [FromQuery] string? search = null)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         if (!AllowedLimits.Contains(limit))
@@ -376,12 +388,12 @@ public class PermintaanAtkController : ApiControllerBase
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
-        BookingStatusEnum? statusFilter = null;
+        StatusEnum? statusFilter = null;
         var onlyRejected = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
-            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
 
@@ -461,7 +473,7 @@ public class PermintaanAtkController : ApiControllerBase
     [HttpGet("{itemId:int}")]
     public async Task<IActionResult> GetOne(int itemId)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
@@ -474,7 +486,7 @@ public class PermintaanAtkController : ApiControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         IQueryable<PermintaanAtk> query;
@@ -523,7 +535,7 @@ public class PermintaanAtkController : ApiControllerBase
         if (!IsL1Actionable(item!))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
-        item!.Status = BookingStatusEnum.APPROVED_L1;
+        item!.Status = StatusEnum.APPROVED_L1;
         item.ApprovedByL1 = user!.Id;
         item.ApprovedL1At = DateTime.UtcNow;
         item.RejectReason = null;
@@ -542,7 +554,7 @@ public class PermintaanAtkController : ApiControllerBase
         if (!IsL1Actionable(item!))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item!.Status = BookingStatusEnum.REJECTED_L1;
+        item!.Status = StatusEnum.REJECTED_L1;
         item.RejectReason = payload.Reason;
         item.ApprovedByL1 = null;
         item.ApprovedL1At = null;
@@ -554,7 +566,7 @@ public class PermintaanAtkController : ApiControllerBase
     }
 
     [HttpPatch("{itemId:int}/approve-ga")]
-    public async Task<IActionResult> ApproveGa(int itemId)
+    public async Task<IActionResult> ApproveGa(int itemId, [FromBody] ApproveGaAtkRequest payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
         if (roleError != null) return roleError;
@@ -563,8 +575,11 @@ public class PermintaanAtkController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+        if (payload.SumberPembelian == null)
+            return BadRequest(new { detail = "Sumber pembelian wajib dipilih" });
 
-        item.Status = BookingStatusEnum.APPROVED_GA;
+        item.Status = StatusEnum.APPROVED_GA;
+        item.SumberPembelian = payload.SumberPembelian;
         item.ApprovedByGa = user!.Id;
         item.ApprovedGaAt = DateTime.UtcNow;
         item.RejectReason = null;
@@ -586,7 +601,7 @@ public class PermintaanAtkController : ApiControllerBase
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item.Status = BookingStatusEnum.REJECTED_GA;
+        item.Status = StatusEnum.REJECTED_GA;
         item.RejectReason = payload.Reason;
         item.ApprovedByGa = null;
         item.ApprovedGaAt = null;
@@ -608,7 +623,7 @@ public class PermintaanAtkController : ApiControllerBase
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
-        item.Status = BookingStatusEnum.APPROVED_GA_APPROVAL;
+        item.Status = StatusEnum.APPROVED_GA_APPROVAL;
         item.ApprovedByApprovalGa = user!.Id;
         item.ApprovedApprovalGaAt = DateTime.UtcNow;
         item.RejectReason = null;
@@ -630,7 +645,7 @@ public class PermintaanAtkController : ApiControllerBase
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
 
-        item.Status = BookingStatusEnum.REJECTED_GA_APPROVAL;
+        item.Status = StatusEnum.REJECTED_GA_APPROVAL;
         item.RejectReason = payload.Reason;
         item.ApprovedByApprovalGa = null;
         item.ApprovedApprovalGaAt = null;
@@ -638,6 +653,50 @@ public class PermintaanAtkController : ApiControllerBase
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menolak (Approval GA)");
+        return Ok(PermintaanAtkOut.From(item));
+    }
+
+    [HttpPatch("{itemId:int}/approve-kpu")]
+    public async Task<IActionResult> ApproveKpu(int itemId)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsKpuActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+
+        item.Status = StatusEnum.COMPLETED;
+        item.ApprovedByKpu = user!.Id;
+        item.ApprovedKpuAt = DateTime.UtcNow;
+        item.RejectReason = null;
+        AddLog(item, "APPROVED_KPU", user);
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "menyetujui (KPU)");
+        return Ok(PermintaanAtkOut.From(item));
+    }
+
+    // Terminal, same as every other reject in this controller - unlike Pengiriman's own
+    // reject-kpu, there is no RejectTarget/revision routing here.
+    [HttpPatch("{itemId:int}/reject-kpu")]
+    public async Task<IActionResult> RejectKpu(int itemId, [FromBody] RejectRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsKpuActionable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
+
+        item.Status = StatusEnum.REJECTED_KPU;
+        item.RejectReason = payload.Reason;
+        AddLog(item, "REJECTED_KPU", user!, payload.Reason);
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user!.Nama, "menolak (KPU)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -649,13 +708,14 @@ public class PermintaanAtkController : ApiControllerBase
         RoleEnum.APPROVAL_DIVISI => "Approval Divisi",
         RoleEnum.ADMIN_GA => "Admin General Affair",
         RoleEnum.APPROVAL_GA => "Approval GA",
+        RoleEnum.KPU => "KPU",
         _ => null,
     };
 
     [HttpGet("{itemId:int}/logs")]
     public async Task<IActionResult> GetLogs(int itemId)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var item = await _db.PermintaanAtks.FindAsync(itemId);
