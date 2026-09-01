@@ -104,10 +104,12 @@ public class BookingRuangController : ApiControllerBase
     // IsEditableByOrigin (only its own creator), but once rejected - a dead end nobody can edit
     // back to life, see IsEditableByOrigin's comment - it's still fair game to clear out, either
     // by whoever created it or by Admin/Approval GA, who run the approval process it died in.
+    // CANCELLED is the same kind of dead end (see IsCancellableByOrigin below), so it gets the
+    // same deletion rule.
     private static bool IsDeletableByOrigin(BookingRuang item, User currentUser)
     {
         if (IsEditableByOrigin(item, currentUser)) return true;
-        if (!RejectedStatuses.Contains(item.Status)) return false;
+        if (!RejectedStatuses.Contains(item.Status) && item.Status != BookingStatusEnum.CANCELLED) return false;
         return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
     }
 

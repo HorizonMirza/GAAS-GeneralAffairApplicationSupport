@@ -262,13 +262,13 @@ export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
 }
 
 // Deleting is a step further than editing: a still-DRAFT item follows isBookingEditableByOrigin's
-// rule (only its own creator), but once rejected - a dead end nobody can edit back to life, see
-// isBookingEditableByOrigin's comment - it's still fair game to clear out, either by whoever
-// created it or by Admin/Approval GA, who run the approval process it died in. Mirrors the
-// backend's BookingRuangController.IsDeletableByOrigin exactly.
+// rule (only its own creator), but once rejected or cancelled - a dead end nobody can edit back
+// to life, see isBookingEditableByOrigin's comment - it's still fair game to clear out, either by
+// whoever created it or by Admin/Approval GA, who run the approval process it died in. Mirrors
+// the backend's BookingRuangController.IsDeletableByOrigin exactly.
 export function isBookingDeletableByOrigin(item: BookingRuang, me: Me): boolean {
   if (isBookingEditableByOrigin(item, me)) return true;
-  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status) && item.status !== "CANCELLED") return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
@@ -349,7 +349,7 @@ export function isKendaraanEditableByOrigin(item: BookingKendaraan, me: Me): boo
 // BookingKendaraanController.IsDeletableByOrigin exactly.
 export function isKendaraanDeletableByOrigin(item: BookingKendaraan, me: Me): boolean {
   if (isKendaraanEditableByOrigin(item, me)) return true;
-  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
+  if (!BOOKING_REJECTED_STATUSES.includes(item.status) && item.status !== "CANCELLED") return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 

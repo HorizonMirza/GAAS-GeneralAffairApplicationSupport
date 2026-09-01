@@ -71,10 +71,12 @@ public class BookingKendaraanController : ApiControllerBase
     private static bool IsEditableByOrigin(BookingKendaraan item, User currentUser) =>
         item.Status == BookingStatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
 
+    // CANCELLED is the same kind of dead end as a rejected booking (see IsCancellableByOrigin),
+    // so it gets the same deletion rule.
     private static bool IsDeletableByOrigin(BookingKendaraan item, User currentUser)
     {
         if (IsEditableByOrigin(item, currentUser)) return true;
-        if (!RejectedStatuses.Contains(item.Status)) return false;
+        if (!RejectedStatuses.Contains(item.Status) && item.Status != BookingStatusEnum.CANCELLED) return false;
         return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
     }
 
