@@ -853,6 +853,13 @@ body.auth-ready .app-shell {
 .page-body {
   padding: 26px 28px 40px;
   flex: 1;
+  /* Unbounded on purpose up to this cap - a normal/small desktop window never reaches it, but an
+     ultra-wide or very large monitor otherwise stretches every card, table and grid edge-to-edge,
+     leaving huge dead whitespace instead of dense content. Centered so the sidebar-adjacent
+     content area still reads as "the page", not off-center. */
+  max-width: 1760px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ---------- Cards ---------- */
@@ -982,7 +989,11 @@ body.auth-ready .app-shell {
 /* ---------- Room booking: room picker grid ---------- */
 .room-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* auto-fit + minmax (not a fixed column count) so the same rule already scales cleanly from
+     phone to a large desktop monitor: exactly as many 150px+ columns as actually fit, rather than
+     forcing 5 columns that get squeezed unreadably thin on a small/tablet-width window or forcing
+     only 5 even on a wide monitor with room to show more per row. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -3158,6 +3169,7 @@ table.data-table {
   .page-body { padding: 18px; }
   .form-grid { grid-template-columns: 1fr; }
   .profile-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
 
   .account-info { display: none; }
   .account-chevron { display: none; }
@@ -3211,7 +3223,9 @@ table.data-table {
   .stat-tile { padding: 10px 8px; }
   .stat-tile .value { font-size: 1.1rem; }
   .stat-tile .label { font-size: 0.68rem; line-height: 1.2; margin-top: 3px; }
-  .room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  /* Column count itself now comes from .room-grid's own auto-fit/minmax rule above - only the
+     gap needs tightening here for the narrower mobile gutters. */
+  .room-grid { gap: 8px; }
   .welcome-heading { font-size: 1.15rem; }
 
   .card.item-row-card { padding: 20px; }

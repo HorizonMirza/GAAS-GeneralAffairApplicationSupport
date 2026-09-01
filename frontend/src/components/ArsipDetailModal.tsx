@@ -174,18 +174,18 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             <div className="field full">
               <label>Daftar Arsip</label>
               {form.items.map((row, idx) => (
-                <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+                <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                   <input
                     type="text"
                     aria-label={`Nama arsip ${idx + 1}`}
                     required
                     disabled={!isEdit}
                     placeholder="Nama arsip"
-                    style={{ flex: 3, minWidth: 0 }}
+                    style={{ flex: "3 1 180px", minWidth: 180 }}
                     value={row.namaArsip}
                     onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
                   />
-                  <div style={{ flex: 1.5, minWidth: 0 }}>
+                  <div style={{ flex: "1.5 1 130px", minWidth: 130 }}>
                     <SearchableSelect
                       id={`dr-kategori-${idx}`}
                       disabled={!isEdit}
@@ -204,7 +204,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     required
                     disabled={!isEdit}
                     placeholder="Tahun"
-                    style={{ flex: 1, minWidth: 0 }}
+                    style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.tahunArsip}
                     onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
                   />
@@ -216,7 +216,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     required
                     disabled={!isEdit}
                     placeholder="Jumlah"
-                    style={{ flex: 1, minWidth: 0 }}
+                    style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.jumlah === 0 ? "" : String(row.jumlah)}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
@@ -229,7 +229,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     required
                     disabled={!isEdit}
                     placeholder="Satuan"
-                    style={{ flex: 1.5, minWidth: 0 }}
+                    style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
                     onChange={(e) => setItem(idx, { satuan: e.target.value })}
                   />

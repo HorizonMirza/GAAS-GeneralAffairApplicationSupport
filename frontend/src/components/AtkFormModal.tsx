@@ -121,14 +121,14 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
             <div className="field full">
               <label>Daftar Barang</label>
               {form.items.map((row, idx) => (
-                <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+                <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                   <input
                     type="text"
                     aria-label={`Nama barang ${idx + 1}`}
                     required
                     list={ATK_CATALOG_DATALIST_ID}
                     placeholder="Nama barang (contoh: Pulpen)"
-                    style={{ flex: 3, minWidth: 0 }}
+                    style={{ flex: "3 1 180px", minWidth: 180 }}
                     value={row.namaBarang}
                     onChange={(e) => {
                       const namaBarang = e.target.value;
@@ -143,7 +143,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     aria-label={`Jumlah barang ${idx + 1}`}
                     required
                     placeholder="Jumlah"
-                    style={{ flex: 1, minWidth: 0 }}
+                    style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.jumlah === 0 ? "" : String(row.jumlah)}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
@@ -155,7 +155,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     aria-label={`Satuan barang ${idx + 1}`}
                     required
                     placeholder="Satuan (pcs/rim/box)"
-                    style={{ flex: 1.5, minWidth: 0 }}
+                    style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
                     onChange={(e) => setItem(idx, { satuan: e.target.value })}
                   />
