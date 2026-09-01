@@ -28,7 +28,6 @@ import { isWeekend } from "@/components/RoomCalendarView";
 // dianggap menutup seluruh jam itu.
 const OPEN_MIN = 7 * 60;
 const CLOSE_MIN = 18 * 60;
-const TOTAL_HOUR_SLOTS = (CLOSE_MIN - OPEN_MIN) / 60;
 
 function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
@@ -38,6 +37,26 @@ function minutesToHHMM(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function nowMinutesLocal(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+// How much of today's operating hours are still ahead of "now" - the yardstick for "fully open"
+// has to shrink over the day too, since an already-elapsed hour was excluded from freeSlotsToday
+// and can no longer count toward a room being open the *whole* remaining day.
+function remainingHourSlotsToday(): { count: number; start: number } {
+  const now = nowMinutesLocal();
+  let count = 0;
+  let start = CLOSE_MIN;
+  for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
+    if (h < now) continue;
+    if (count === 0) start = h;
+    count++;
+  }
+  return { count, start };
 }
 
 // Placeholder room photos - filenames are the room name slugified, so replacing the look of a
@@ -73,7 +92,9 @@ function roomPhotoUrls(roomName: string): string[] {
 // contiguous ones into one big range) is what actually lets someone see "which hours" at a glance.
 // Any entry still in flight (SUBMITTED/APPROVED_L1/APPROVED_GA/APPROVED_GA_APPROVAL) blocks the
 // slot, matching RoomCalendarView's own busy/pending/confirmed rule - only a DRAFT (not yet
-// submitted) leaves the hour still free.
+// submitted) leaves the hour still free. An hour that has already started today is excluded too -
+// "available" has to mean actually bookable right now, not just unbooked at some point earlier
+// today that's already gone.
 function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
   const booked: [number, number][] = [];
   for (const entry of todayEntries) {
@@ -88,8 +109,10 @@ function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [nu
     const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
     if (end > start) booked.push([start, end]);
   }
+  const now = nowMinutesLocal();
   const free: [number, number][] = [];
   for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
+    if (h < now) continue;
     const slotEnd = h + 60;
     const isBooked = booked.some(([bs, be]) => bs < slotEnd && be > h);
     if (!isBooked) free.push([h, slotEnd]);
@@ -412,8 +435,10 @@ export default function BookingOverviewPage() {
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         closedLabel={closedToday ? "Tutup (akhir pekan)" : undefined}
         fullyOpenLabel={
-          infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === TOTAL_HOUR_SLOTS
-            ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
+          infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
+            ? remainingHourSlotsToday().start <= OPEN_MIN
+              ? `Tersedia sepanjang hari (${minutesToHHMM(OPEN_MIN)}–${minutesToHHMM(CLOSE_MIN)})`
+              : `Tersedia sisa hari ini (${minutesToHHMM(remainingHourSlotsToday().start)}–${minutesToHHMM(CLOSE_MIN)})`
             : undefined
         }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
