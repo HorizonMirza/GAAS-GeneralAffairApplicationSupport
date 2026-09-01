@@ -195,17 +195,23 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field">
               <label htmlFor="f-asuransi">Asuransi</label>
-              <select id="f-asuransi" required value={form.asuransiStatus} onChange={(e) => set("asuransiStatus", e.target.value as Asuransi)}>
-                <option value="Tidak">Tidak</option>
-                <option value="Ya">Ya</option>
-              </select>
+              <SearchableSelect
+                id="f-asuransi"
+                value={form.asuransiStatus}
+                onChange={(v) => set("asuransiStatus", v as Asuransi)}
+                options={["Tidak", "Ya"]}
+                placeholder="Tidak"
+              />
             </div>
             <div className="field">
               <label htmlFor="f-packing">Pengemasan Tambahan</label>
-              <select id="f-packing" required value={form.requestPacking} onChange={(e) => set("requestPacking", e.target.value)}>
-                <option value="Tidak">Tidak</option>
-                <option value="Tambahan Kayu">Tambahan Kayu</option>
-              </select>
+              <SearchableSelect
+                id="f-packing"
+                value={form.requestPacking}
+                onChange={(v) => set("requestPacking", v)}
+                options={["Tidak", "Tambahan Kayu"]}
+                placeholder="Tidak"
+              />
             </div>
             <div className="field full">
               <label htmlFor="f-catatan">Catatan</label>

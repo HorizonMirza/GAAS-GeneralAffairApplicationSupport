@@ -8,6 +8,7 @@ import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, isEdita
 import { currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
+import SearchableSelect from "@/components/SearchableSelect";
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -145,13 +146,22 @@ export default function OverviewPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Transaksi Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
-            <option value="ALL">Semua Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="ON_APPROVAL">On-Approval</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
+          <SearchableSelect
+            id="overview-status-filter"
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+            getLabel={(v) =>
+              ({
+                ALL: "Semua Status",
+                DRAFT: "Draft",
+                ON_APPROVAL: "On-Approval",
+                APPROVED: "Approved",
+                REJECTED: "Rejected",
+              } as Record<string, string>)[v] || v
+            }
+            placeholder="Semua Status"
+          />
         </div>
       </div>
 

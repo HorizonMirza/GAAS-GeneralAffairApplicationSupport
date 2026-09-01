@@ -16,6 +16,7 @@ import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
+import SearchableSelect from "@/components/SearchableSelect";
 
 // Invoice pembiayaan history is only relevant to the 3 roles that ever touch it: Admin GA
 // uploads, Approval GA reviews, KPU is the final approver.
@@ -156,16 +157,15 @@ export default function InvoiceHistoryPage() {
           {invoiceUploaders.length > 1 && (
             <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
               <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
-              <select
+              <SearchableSelect
                 id="invoice-filter-uploader"
-                value={invoiceFilterUploader}
-                onChange={(e) => { setInvoiceFilterUploader(e.target.value === "" ? "" : Number(e.target.value)); setInvoicePage(1); }}
-              >
-                <option value="">Semua KPU</option>
-                {invoiceUploaders.map((u) => (
-                  <option key={u.id} value={u.id}>{u.nama}</option>
-                ))}
-              </select>
+                value={String(invoiceFilterUploader)}
+                onChange={(v) => { setInvoiceFilterUploader(v === "" ? "" : Number(v)); setInvoicePage(1); }}
+                options={invoiceUploaders.map((u) => String(u.id))}
+                getLabel={(v) => invoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
+                clearLabel="Semua KPU"
+                placeholder="Semua KPU"
+              />
             </div>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
@@ -232,12 +232,14 @@ export default function InvoiceHistoryPage() {
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="invoice-limit">Tampilkan</label>
-              <select id="invoice-limit" value={invoiceLimit} onChange={(e) => { setInvoiceLimit(Number(e.target.value)); setInvoicePage(1); }}>
-                <option value={5}>5 invoice</option>
-                <option value={10}>10 invoice</option>
-                <option value={20}>20 invoice</option>
-                <option value={50}>50 invoice</option>
-              </select>
+              <SearchableSelect
+                id="invoice-limit"
+                value={String(invoiceLimit)}
+                onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} invoice`}
+                placeholder={`${invoiceLimit} invoice`}
+              />
             </div>
           </div>
           <div className="pagination-right">

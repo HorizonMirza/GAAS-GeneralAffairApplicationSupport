@@ -9,6 +9,7 @@ import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
+import SearchableSelect from "./SearchableSelect";
 
 interface Props {
   open: boolean;
@@ -265,17 +266,25 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-asuransi">Asuransi</label>
-              <select id="pv-asuransi" required disabled={!isEdit} value={form.asuransiStatus} onChange={(e) => set("asuransiStatus", e.target.value as Asuransi)}>
-                <option value="Tidak">Tidak</option>
-                <option value="Ya">Ya</option>
-              </select>
+              <SearchableSelect
+                id="pv-asuransi"
+                disabled={!isEdit}
+                value={form.asuransiStatus}
+                onChange={(v) => set("asuransiStatus", v as Asuransi)}
+                options={["Tidak", "Ya"]}
+                placeholder="Tidak"
+              />
             </div>
             <div className="field">
               <label htmlFor="pv-packing">Pengemasan Tambahan</label>
-              <select id="pv-packing" required disabled={!isEdit} value={form.requestPacking} onChange={(e) => set("requestPacking", e.target.value)}>
-                <option value="Tidak">Tidak</option>
-                <option value="Tambahan Kayu">Tambahan Kayu</option>
-              </select>
+              <SearchableSelect
+                id="pv-packing"
+                disabled={!isEdit}
+                value={form.requestPacking}
+                onChange={(v) => set("requestPacking", v)}
+                options={["Tidak", "Tambahan Kayu"]}
+                placeholder="Tidak"
+              />
             </div>
             <div className="field full">
               <label htmlFor="pv-catatan">Catatan</label>
