@@ -20,17 +20,22 @@ interface Props {
   clearLabel?: string;
   disabled?: boolean;
   emptyOptionsText?: string;
+  // Maps an option's underlying value (e.g. a status code) to what's actually shown/searched -
+  // e.g. "APPROVED_GA_APPROVAL" -> "Approved". Defaults to the value itself when omitted, so every
+  // existing plain-string caller is unaffected.
+  getLabel?: (value: string) => string;
 }
 
 // Click-to-open, type-to-filter single select - same collapsed-by-default trigger/panel pattern
 // as RoomMultiSelect, but for picking one value out of a long list (e.g. every Divisi/Departemen
 // in the org tree) without having to scroll through it one by one.
-export default function SearchableSelect({ id, value, onChange, options, placeholder, clearLabel, disabled, emptyOptionsText }: Props) {
+export default function SearchableSelect({ id, value, onChange, options, placeholder, clearLabel, disabled, emptyOptionsText, getLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useClickOutside([wrapRef], () => setOpen(false), open);
+  const label = (v: string) => (getLabel ? getLabel(v) : v);
 
   useEffect(() => {
     if (open) {
@@ -41,7 +46,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
   }, [open]);
 
   const filtered = query.trim()
-    ? options.filter((o) => o.toLowerCase().includes(query.trim().toLowerCase()))
+    ? options.filter((o) => label(o).toLowerCase().includes(query.trim().toLowerCase()))
     : options;
 
   function select(next: string) {
@@ -74,7 +79,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
         onClick={() => setOpen((v) => !v)}
       >
         <span className={value === undefined ? "searchable-select-placeholder" : ""}>
-          {value === undefined ? placeholder : value === "" ? clearLabel || placeholder : value}
+          {value === undefined ? placeholder : value === "" ? clearLabel || placeholder : label(value)}
         </span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
@@ -109,7 +114,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
                   className={`searchable-select-option${o === value ? " searchable-select-option-active" : ""}`}
                   onClick={() => select(o)}
                 >
-                  {o}
+                  {label(o)}
                 </div>
               ))
             )}
