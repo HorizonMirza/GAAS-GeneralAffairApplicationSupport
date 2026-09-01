@@ -2688,6 +2688,13 @@ table.data-table {
   z-index: 30;
 }
 
+/* Trigger too close to the bottom of the viewport (e.g. the last field in a tall modal) - opens
+   above the trigger instead of below, so the list is never cut off by the screen's edge. */
+.searchable-select-panel-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
 .searchable-select-search {
   width: 100%;
   padding: 8px 10px;
