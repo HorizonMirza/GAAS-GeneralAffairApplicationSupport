@@ -33,6 +33,12 @@ function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 }
 
+function minutesToHHMM(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 // Placeholder room photos - filenames are the room name slugified, so replacing the look of a
 // room later is just overwriting /public/assets/rooms/<slug>.png with a real photo (same name,
 // no code change needed).
@@ -45,27 +51,52 @@ function roomPhotoUrl(roomName: string): string {
   return `/assets/rooms/${slug}.png`;
 }
 
-function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]): boolean {
-  const intervals: [number, number][] = [];
+// Every room only has the one placeholder photo above so far - pads the info modal's slideshow
+// out to a handful of slides by borrowing a few other rooms' placeholders, until real per-room
+// photos exist (see roomPhotoUrl's comment on how those get swapped in later).
+const DEMO_ROOM_PHOTOS = [
+  "/assets/rooms/ruang-eksternal-receptionist.png",
+  "/assets/rooms/ruang-eksternal-besar.png",
+  "/assets/rooms/ruang-eksternal-kecil.png",
+  "/assets/rooms/ruang-golf.png",
+  "/assets/rooms/ruang-open-space.png",
+];
+function roomPhotoUrls(roomName: string): string[] {
+  const own = roomPhotoUrl(roomName);
+  return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
+}
+
+// Free (bookable) gaps left today within operating hours, after subtracting every
+// APPROVED_GA_APPROVAL booking (final, not draft/still-in-approval) - same "actual minutes, not
+// rounded to the hour" rule as before, so two short meetings with a real gap between them don't
+// get merged into one solid block.
+function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
+  const booked: [number, number][] = [];
   for (const entry of todayEntries) {
     if (entry.status !== "APPROVED_GA_APPROVAL") continue;
     if (entry.namaRuang !== roomName && !entry.additionalRooms.includes(roomName)) continue;
     if (entry.isWholeDay) {
-      intervals.push([OPEN_MIN, CLOSE_MIN]);
+      booked.push([OPEN_MIN, CLOSE_MIN]);
       continue;
     }
     if (!entry.jamMulai || !entry.jamSelesai) continue;
     const start = Math.max(OPEN_MIN, toMinutes(entry.jamMulai));
     const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
-    if (end > start) intervals.push([start, end]);
+    if (end > start) booked.push([start, end]);
   }
-  intervals.sort((a, b) => a[0] - b[0]);
-  let coveredUntil = OPEN_MIN;
-  for (const [start, end] of intervals) {
-    if (start > coveredUntil) return false; // ada celah kosong sebelum interval ini
-    coveredUntil = Math.max(coveredUntil, end);
+  booked.sort((a, b) => a[0] - b[0]);
+  const free: [number, number][] = [];
+  let cursor = OPEN_MIN;
+  for (const [start, end] of booked) {
+    if (start > cursor) free.push([cursor, start]);
+    cursor = Math.max(cursor, end);
   }
-  return coveredUntil >= CLOSE_MIN;
+  if (cursor < CLOSE_MIN) free.push([cursor, CLOSE_MIN]);
+  return free;
+}
+
+function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]): boolean {
+  return roomFreeSlotsToday(roomName, todayEntries).length === 0;
 }
 
 type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED" | "CANCELLED";
@@ -363,7 +394,7 @@ export default function BookingOverviewPage() {
         open={!!infoRoom}
         nama={infoRoom?.nama ?? null}
         kapasitas={infoRoom?.kapasitas ?? null}
-        photoUrl={infoRoom ? roomPhotoUrl(infoRoom.nama) : ""}
+        photoUrls={infoRoom ? roomPhotoUrls(infoRoom.nama) : []}
         availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
         availLabel={
           infoRoom
@@ -374,6 +405,8 @@ export default function BookingOverviewPage() {
               : "Available"
             : ""
         }
+        freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
+        closedLabel={closedToday ? "Tutup (akhir pekan)" : undefined}
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
         onClose={() => setInfoRoom(null)}
         onBook={() => {

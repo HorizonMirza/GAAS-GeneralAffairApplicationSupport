@@ -1076,6 +1076,7 @@ body.auth-ready .app-shell {
   border-radius: 12px;
   margin-bottom: 16px;
   cursor: default;
+  padding: 0;
 }
 
 .room-info-photo:hover {
@@ -1084,7 +1085,45 @@ body.auth-ready .app-shell {
   border-color: var(--border-subtle);
 }
 
-.room-info-photo-icon { height: 160px; }
+.room-info-photo-icon { height: 160px; flex-shrink: 0; }
+
+.room-info-slideshow {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.room-info-slideshow-track {
+  display: flex;
+  transition: transform 400ms ease;
+}
+
+.room-info-slideshow-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.room-info-slideshow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.room-info-slideshow-dot-active {
+  background: #fff;
+  transform: scale(1.3);
+}
 
 .room-info-row {
   display: flex;
@@ -1093,6 +1132,27 @@ body.auth-ready .app-shell {
   padding: 10px 0;
   border-top: 1px solid var(--border-subtle);
   font-size: 0.88rem;
+}
+
+.room-info-row-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.room-info-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.room-info-slot-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--badge-completed-bg);
+  color: var(--badge-completed-fg);
+  font-size: 0.76rem;
+  font-weight: 600;
 }
 
 /* ---------- Home module grid ---------- */

@@ -44,6 +44,12 @@ function toMinutes(hhmm: string): number {
   return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 }
 
+function minutesToHHMM(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 // Placeholder vehicle photos - filenames are the vehicle name slugified, so replacing the look of
 // a vehicle later is just overwriting /public/assets/vehicles/<slug>.png with a real photo (same
 // name, no code change needed). Same convention as roomPhotoUrl in the Room Booking overview.
@@ -56,27 +62,50 @@ function vehiclePhotoUrl(vehicleName: string): string {
   return `/assets/vehicles/${slug}.png`;
 }
 
-function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKendaraan[]): boolean {
-  const intervals: [number, number][] = [];
+// Every vehicle only has the one placeholder photo above so far - pads the info modal's
+// slideshow out to a handful of slides by borrowing a few other vehicles' placeholders, until
+// real per-vehicle photos exist. Same convention as roomPhotoUrls in the Room Booking overview.
+const DEMO_VEHICLE_PHOTOS = [
+  "/assets/vehicles/toyota-avanza-1.png",
+  "/assets/vehicles/toyota-innova.png",
+  "/assets/vehicles/honda-hr-v.png",
+  "/assets/vehicles/mitsubishi-xpander.png",
+  "/assets/vehicles/toyota-fortuner.png",
+];
+function vehiclePhotoUrls(vehicleName: string): string[] {
+  const own = vehiclePhotoUrl(vehicleName);
+  return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
+}
+
+// Free (bookable) gaps left today within operating hours - same rule as Room Booking's
+// roomFreeSlotsToday.
+function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
+  const booked: [number, number][] = [];
   for (const entry of todayEntries) {
     if (entry.status !== "APPROVED_GA_APPROVAL") continue;
     if (entry.namaKendaraan !== vehicleName) continue;
     if (entry.isWholeDay) {
-      intervals.push([OPEN_MIN, CLOSE_MIN]);
+      booked.push([OPEN_MIN, CLOSE_MIN]);
       continue;
     }
     if (!entry.jamMulai || !entry.jamSelesai) continue;
     const start = Math.max(OPEN_MIN, toMinutes(entry.jamMulai));
     const end = Math.min(CLOSE_MIN, toMinutes(entry.jamSelesai));
-    if (end > start) intervals.push([start, end]);
+    if (end > start) booked.push([start, end]);
   }
-  intervals.sort((a, b) => a[0] - b[0]);
-  let coveredUntil = OPEN_MIN;
-  for (const [start, end] of intervals) {
-    if (start > coveredUntil) return false; // ada celah kosong sebelum interval ini
-    coveredUntil = Math.max(coveredUntil, end);
+  booked.sort((a, b) => a[0] - b[0]);
+  const free: [number, number][] = [];
+  let cursor = OPEN_MIN;
+  for (const [start, end] of booked) {
+    if (start > cursor) free.push([cursor, start]);
+    cursor = Math.max(cursor, end);
   }
-  return coveredUntil >= CLOSE_MIN;
+  if (cursor < CLOSE_MIN) free.push([cursor, CLOSE_MIN]);
+  return free;
+}
+
+function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKendaraan[]): boolean {
+  return vehicleFreeSlotsToday(vehicleName, todayEntries).length === 0;
 }
 
 export default function VehicleBookingOverviewPage() {
@@ -318,9 +347,10 @@ export default function VehicleBookingOverviewPage() {
         open={!!infoVehicle}
         nama={infoVehicle?.nama ?? null}
         kapasitas={infoVehicle?.kapasitas ?? null}
-        photoUrl={infoVehicle ? vehiclePhotoUrl(infoVehicle.nama) : ""}
+        photoUrls={infoVehicle ? vehiclePhotoUrls(infoVehicle.nama) : []}
         availability={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "full" : "available"}
         availLabel={infoVehicle && isVehicleFullyBookedToday(infoVehicle.nama, todayEntries) ? "Full" : "Available"}
+        freeSlotsToday={infoVehicle ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
         onClose={() => setInfoVehicle(null)}
         onBook={() => {
