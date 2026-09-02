@@ -256,18 +256,6 @@ button, input, select, textarea {
   font-weight: 700;
 }
 
-.login-brand p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-@media (max-width: 640px) {
-  .login-brand p {
-    display: none;
-  }
-}
-
 .login-float-field {
   position: relative;
   z-index: 0;
