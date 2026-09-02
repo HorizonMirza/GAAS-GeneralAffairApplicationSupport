@@ -243,6 +243,122 @@ button, input, select, textarea {
   font-size: 0.85rem;
 }
 
+/* ---------- Login page: animated card (tilt, glow blobs, border beam) ----------
+   framer-motion drives the actual motion (tilt rotation, blob pulsing) via inline styles/props -
+   the CSS here only supplies the static layout those motion values hook into, plus the one
+   CSS-only animation (the border beam, which reuses the exact conic-gradient technique already
+   established for .item-row-card-onapproval below, just in the login page's own blue tones so
+   the two don't fight over the same custom property). */
+.login-card-perspective {
+  perspective: 1500px;
+}
+
+.login-glow-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(70px);
+}
+
+.login-glow-blob-top {
+  top: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  height: 480px;
+  background: var(--blue-400);
+}
+
+.login-glow-blob-bottom {
+  bottom: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  height: 420px;
+  background: var(--navy-700);
+}
+
+@property --login-beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.login-card-beam-wrap {
+  position: relative;
+  border-radius: 20px;
+}
+
+.login-card-beam-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--login-beam-angle), transparent 0%, transparent 60%, rgba(75, 141, 255, 0.35) 75%, var(--blue-300) 88%, rgba(75, 141, 255, 0.35) 96%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: login-card-border-beam 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes login-card-border-beam {
+  to { --login-beam-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card-beam-wrap::before { animation: none; }
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.login-divider span {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.btn-azure {
+  width: 100%;
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.btn-azure:hover:not(:disabled) {
+  border-color: var(--blue-400);
+}
+
+.btn-azure:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-azure-badge {
+  margin-left: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
 .field {
   margin-bottom: 18px;
   /* Grid items default to min-width: auto, which lets nowrap-truncated content inside (e.g.
@@ -361,6 +477,35 @@ button, input, select, textarea {
 }
 
 .password-toggle:hover {
+  color: var(--blue-500);
+}
+
+/* Leading icon inside an input (Username/Password on the login card) - the icon sits absolutely
+   over the input's own left padding, which is widened just for these two fields via
+   .field-icon-input rather than touching the shared .field input rule every other page relies on.
+   Placed here (after .field input's own padding rule above) on purpose: both selectors tie on
+   specificity, and CSS breaks ties by source order, so .field-icon-input input has to come later
+   in the file to actually win - same reasoning .password-wrapper input above already relies on. */
+.field-icon-input {
+  position: relative;
+}
+
+.field-icon-input input {
+  padding-left: 40px;
+}
+
+.field-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  display: flex;
+  transition: color 150ms ease;
+}
+
+.field-icon-input:focus-within .field-icon {
   color: var(--blue-500);
 }
 
