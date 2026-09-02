@@ -544,7 +544,7 @@ export const CONTACT_PERSONS: ContactPerson[] = [
   { name: "Melda", modules: ["Expedition", "Room Booking", "Office Supplies"], phone: "+62 812-1555-6739" },
   { name: "Ardi", modules: ["Vehicle Booking"], phone: "+62 812-8120-5697" },
   { name: "Ceuta", modules: ["Maintenance"], phone: "+62 811-1814-606" },
-  { name: "Yosua", modules: ["Kepala Departemen General Affair"], phone: "+62 812-8105-8747" },
-  { name: "Esther", modules: ["General Affair Approval"], phone: "+62 812-8202-9417" },
   { name: "Wawa", modules: ["Archive"], phone: "+62 812-9790-2368" },
+  { name: "Esther", modules: ["General Affair Approval"], phone: "+62 812-8202-9417" },
+  { name: "Yosua", modules: ["Kepala Departemen General Affair"], phone: "+62 812-8105-8747" },
 ];
