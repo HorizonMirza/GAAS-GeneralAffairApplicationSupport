@@ -671,6 +671,12 @@ using (var scope = app.Services.CreateScope())
     // BookingRuangController.Cancel/BookingKendaraanController.Cancel), not a User FK.
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
+
+    // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
+    // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
+    // restart, instead of silently requiring the seed command to be run by hand. Insert-if-
+    // missing per account, so this is a no-op for everything that already exists.
+    DbSeeder.Seed(migrateDb);
 }
 
 if (args.Contains("resetdb"))
