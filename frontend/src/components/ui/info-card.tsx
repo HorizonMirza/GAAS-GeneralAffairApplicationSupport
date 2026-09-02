@@ -1,7 +1,7 @@
 "use client";
 
-import { Mail } from "lucide-react";
-import type { ContactPerson } from "@/lib/constants";
+import { Clock, Mail } from "lucide-react";
+import { CONTACT_WORKING_HOURS, type ContactPerson } from "@/lib/constants";
 
 // wa.me needs digits only, already carrying the country code (62...) - the phone numbers in
 // CONTACT_PERSONS are entered as "+62 812-1555-6739" for readability, so + / spaces / dashes are
@@ -88,6 +88,13 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
           <p className="mt-1 leading-none text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
             {person.email}
           </p>
+        </div>
+
+        {/* Office hours - shared across everyone (not a per-person fact), so it stays neutral
+            gray and doesn't grow/turn blue on hover like the identity fields above. */}
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 relative z-10">
+          <Clock className="h-3.5 w-3.5" />
+          <span>{CONTACT_WORKING_HOURS}</span>
         </div>
 
         {/* Modules covered, as tags */}

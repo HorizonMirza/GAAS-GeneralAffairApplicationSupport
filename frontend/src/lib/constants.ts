@@ -542,6 +542,10 @@ export interface ContactPerson {
 // Placeholder email shared by everyone for now until each person's real address is provided.
 const TEMP_CONTACT_EMAIL = "purbandonomirza@gmail.com";
 
+// Shared office hours for every PIC listed below - not a per-person field since it's the same
+// for the whole team, so it's kept as one constant rather than repeated on each entry.
+export const CONTACT_WORKING_HOURS = "08:00 - 17:00";
+
 // One card per person (not per module) - several people cover more than one module, so the same
 // name/number would otherwise repeat across several near-identical cards.
 export const CONTACT_PERSONS: ContactPerson[] = [
