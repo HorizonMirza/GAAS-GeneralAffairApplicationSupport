@@ -94,6 +94,24 @@ export default function ProfilePage() {
           <label>Peran</label>
           <input type="text" disabled value={ROLE_LABEL[me.role] || me.role} />
         </div>
+        {me.direktorat && (
+          <div className="field">
+            <label>Direktorat</label>
+            <input type="text" disabled value={me.direktorat} />
+          </div>
+        )}
+        {me.divisi && (
+          <div className="field">
+            <label>Divisi</label>
+            <input type="text" disabled value={me.divisi} />
+          </div>
+        )}
+        {me.departemen && (
+          <div className="field">
+            <label>Departemen</label>
+            <input type="text" disabled value={me.departemen} />
+          </div>
+        )}
       </div>
 
       <div className="card">
