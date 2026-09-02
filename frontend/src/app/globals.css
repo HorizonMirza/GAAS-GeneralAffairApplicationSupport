@@ -458,23 +458,18 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
-/* Floats only once the field actually holds a value (or is autofilled) - not on bare focus, so
-   clicking an empty field keeps the icon+label fully visible instead of shrinking them away
-   immediately. */
+/* Floats as soon as the field is focused (or already holds a value/autofill) - the icon rides
+   along at the shrunk scale instead of fading out, staying visible right next to the label
+   text. */
+.login-float-field input:focus ~ label,
 .login-float-field input:not(:placeholder-shown) ~ label {
   transform: translateY(-20px) scale(0.8);
   color: var(--blue-300);
 }
 
-.login-float-field input:focus ~ label svg {
-  color: var(--blue-300);
-}
-
-/* The icon rides inside the label at full size and shrinks along with it - once the label is
-   floated up small, the icon just reads as a tiny bullet rather than a legible glyph, so it's
-   faded out instead of trying to stay crisp at 80% scale. */
+.login-float-field input:focus ~ label svg,
 .login-float-field input:not(:placeholder-shown) ~ label svg {
-  opacity: 0;
+  color: var(--blue-300);
 }
 
 .password-wrapper {
