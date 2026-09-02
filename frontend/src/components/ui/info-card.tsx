@@ -170,10 +170,25 @@ interface ContactInfoCardGridProps {
 
 export default function ContactInfoCardGrid({ people }: ContactInfoCardGridProps) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-10">
-      {people.map((person, index) => (
-        <ContactInfoCard key={person.name} person={person} colorIndex={index} />
-      ))}
+    <div>
+      {/* Legend for the status dot on each card - the dot's meaning is otherwise only reachable
+          via its hover tooltip, which touch/mobile visitors can't trigger. */}
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500" aria-hidden="true" />
+          Jam kerja (08:00–17:00)
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
+          Di luar jam kerja
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-10">
+        {people.map((person, index) => (
+          <ContactInfoCard key={person.name} person={person} colorIndex={index} />
+        ))}
+      </div>
     </div>
   );
 }
