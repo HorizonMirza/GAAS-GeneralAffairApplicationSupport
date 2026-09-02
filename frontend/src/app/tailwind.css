@@ -1,0 +1,13 @@
+/* Tailwind utilities only - the app already has a complete, hand-built design system in
+   globals.css (colors, .card/.btn/.field, dark/light theme), so importing Tailwind's preflight
+   here would reset default element styling app-wide and fight with it. Utility classes are still
+   useful in isolation for new Tailwind-authored components (see components/ui). */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+/* The app's theme toggle (see layout.tsx's THEME_INIT_SCRIPT and ThemeToggle) always stamps
+   data-theme="light"|"dark" on <html> before paint - it never leaves the attribute unset - so
+   Tailwind's dark: variant is pointed at that attribute instead of its default
+   prefers-color-scheme media query, keeping Tailwind-authored components in sync with the rest
+   of the app's manual toggle rather than only the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"] *));
