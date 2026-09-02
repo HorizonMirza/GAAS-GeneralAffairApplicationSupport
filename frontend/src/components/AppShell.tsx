@@ -108,6 +108,24 @@ const NAV_CATEGORIES: NavCategory[] = [
   },
 ];
 
+// Tracks a media query client-side, defaulting to false until mount so the server-rendered and
+// first client render agree (no hydration mismatch) - matches the 861px breakpoint the sidebar's
+// own CSS already uses for the mobile/desktop split.
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMatches(mql.matches);
+    const onChange = () => setMatches(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
+}
+
 // KPU deals with Expedition (final sign-off + invoices) and now Office Supplies too (Admin GA/
 // Approval GA buy either through KPU or the external PaDi channel, so KPU signs off there as
 // well) - Dashboard and Profile are always shown regardless of role, so together that leaves
@@ -182,6 +200,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
+  const isDesktop = useMediaQuery("(min-width: 861px)");
+  // sidebarOpen means opposite things per breakpoint (mobile: drawer visible; desktop: collapsed
+  // to icon rail) - this combines it with the actual viewport to get the one thing needed here:
+  // "is the sidebar currently showing icons only, with no room for a category's submenu".
+  const isIconCollapsed = sidebarOpen && isDesktop;
 
   useEffect(() => {
     // Deferred to the client on purpose - the server and the browser can format "now" into a
@@ -254,6 +277,24 @@ export default function AppShell({ children }: { children: ReactNode }) {
               // together on that page.
               const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
               const isOpen = openCategory === cat.label || hasActive;
+
+              // Collapsed to icons: there's no room for a submenu, so the trigger becomes a plain
+              // link straight to the category's Overview page instead of a dead expand button.
+              if (isIconCollapsed) {
+                const overviewHref = cat.items.find((item) => item.label === "Overview")?.href ?? cat.items[0].href;
+                return (
+                  <Link
+                    key={cat.label}
+                    className={`nav-category-trigger ${hasActive ? "has-active" : ""}`}
+                    href={overviewHref}
+                    title={cat.label}
+                  >
+                    {cat.icon}
+                    <span>{cat.label}</span>
+                  </Link>
+                );
+              }
+
               return (
                 <Collapsible
                   key={cat.label}
@@ -300,16 +341,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </ScrollArea>
-
-        <button
-          type="button"
-          className="sidebar-collapse-toggle"
-          aria-label={sidebarOpen ? "Perluas sidebar" : "Ciutkan sidebar jadi ikon"}
-          title={sidebarOpen ? "Perluas sidebar" : "Ciutkan sidebar jadi ikon"}
-          onClick={() => setSidebarOpen((v) => !v)}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: sidebarOpen ? "rotate(180deg)" : "none" }}><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
       </aside>
 
       {sidebarOpen && <div className="sidebar-backdrop visible" onClick={() => setSidebarOpen(false)} />}

@@ -709,32 +709,6 @@ body.auth-ready .app-shell {
   padding-bottom: 4px;
 }
 
-.sidebar-collapse-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  align-self: center;
-  width: 32px;
-  height: 32px;
-  margin-top: 10px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  transition: background 200ms ease, color 200ms ease;
-}
-
-.sidebar-collapse-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.sidebar-collapse-toggle svg {
-  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 .brand-logo-sidebar {
   display: flex;
   justify-content: center;
@@ -794,11 +768,25 @@ body.auth-ready .app-shell {
   background: transparent;
   width: 100%;
   text-align: left;
-  transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease;
+  transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
+    gap 320ms cubic-bezier(0.4, 0, 0.2, 1), padding 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link svg {
   flex-shrink: 0;
+}
+
+/* The label text itself, sized via max-width rather than display:none - collapsing the sidebar
+   then animates it shrinking away from the right edge (and growing back in from the left) instead
+   of vanishing/appearing instantly. max-width is used because width can't transition to/from
+   "auto", and a generous fixed value here is never actually reached by real label lengths. */
+.nav-link span,
+.nav-category-trigger span {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 180px;
+  transition: max-width 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link:hover {
@@ -3537,6 +3525,7 @@ table.data-table {
   padding: 11px 14px;
   border-radius: 10px;
   color: rgba(255, 255, 255, 0.78);
+  text-decoration: none !important;
   font-weight: 500;
   font-size: 0.92rem;
   cursor: pointer;
@@ -3544,14 +3533,13 @@ table.data-table {
   background: transparent;
   width: 100%;
   text-align: left;
-  transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease;
+  transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
+    gap 320ms cubic-bezier(0.4, 0, 0.2, 1), padding 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-category-trigger svg:first-child { flex-shrink: 0; }
 .nav-category-trigger span {
   flex: 1;
-  white-space: normal;
-  line-height: 1.2;
 }
 
 .nav-category-chevron {
@@ -3603,9 +3591,12 @@ table.data-table {
   flex: 1;
 }
 
-/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide) - labels,
-   the chevrons, open submenus, the divider, and the full-width logo wordmark all disappear,
-   leaving just the icons with a hover/title tooltip standing in for their labels. */
+/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). Labels
+   shrink away via max-width/gap/padding transitions (see .nav-link span etc. above) rather than
+   an instant display:none, so they visually wipe out from the right edge as the sidebar narrows,
+   and wipe back in the same way on expand - only the logo wordmark and the divider (a bare 1px
+   line with nothing to animate) still cut instantly. Icons stay left-aligned throughout, not
+   re-centered, so they don't jump position mid-transition. */
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
     width: 76px;
@@ -3614,19 +3605,22 @@ table.data-table {
   }
 
   .sidebar.sidebar-toggled .brand-logo-sidebar-img,
-  .sidebar.sidebar-toggled .nav-link span,
-  .sidebar.sidebar-toggled .nav-category-trigger span,
   .sidebar.sidebar-toggled .nav-category-chevron,
   .sidebar.sidebar-toggled .nav-category-submenu,
   .sidebar.sidebar-toggled .sidebar-divider {
     display: none;
   }
 
+  .sidebar.sidebar-toggled .nav-link span,
+  .sidebar.sidebar-toggled .nav-category-trigger span {
+    max-width: 0;
+  }
+
   .sidebar.sidebar-toggled .nav-link,
   .sidebar.sidebar-toggled .nav-category-trigger {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
+    gap: 0;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
 
@@ -3647,13 +3641,6 @@ table.data-table {
     transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sidebar.sidebar-toggled { transform: translateX(0); }
-
-  /* This toggle's icon/label describe the desktop icon-collapse behavior only - on mobile the
-     topbar hamburger is the sidebar's one open/close control, so the button is hidden here
-     rather than showing a second control with a mismatched label. */
-  .sidebar-collapse-toggle {
-    display: none;
-  }
 
   .sidebar-backdrop {
     display: none;
