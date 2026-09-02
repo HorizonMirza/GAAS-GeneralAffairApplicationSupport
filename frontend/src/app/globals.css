@@ -799,7 +799,10 @@ body.auth-ready .app-shell {
    time" for short labels: the starting width is already close to the text's real size, so clipping
    is visible for virtually the whole transition instead of only its last moment. overflow:hidden
    is repeated here (the row above already clips too) because a flex item narrower than its own
-   text content isn't reliably clipped by an ancestor's overflow alone. */
+   text content isn't reliably clipped by an ancestor's overflow alone.
+
+   Expanding uses this exact same width transition in reverse - the label grows back at the same
+   rate it shrank, so opening mirrors closing instead of using a different effect. */
 .nav-link span,
 .nav-category-trigger span {
   display: inline-block;
@@ -3635,9 +3638,10 @@ table.data-table {
     padding-right: 10px;
   }
 
+  /* Shrinks in place rather than fading away to nothing, so the collapsed rail still shows a
+     (small, centered) brand mark instead of empty space above the nav icons. */
   .sidebar.sidebar-toggled .brand-logo-sidebar-img {
-    max-width: 0;
-    opacity: 0;
+    max-width: 40px;
   }
 
   .sidebar.sidebar-toggled .nav-category-chevron,
@@ -3648,8 +3652,8 @@ table.data-table {
   /* Without this the label would just take whatever space is left over in the 44px square after
      the icon, instead of collapsing away entirely - leaving a stray sliver of text and pushing the
      icon off-center. flex-grow: 0 is needed on top of width: 0 specifically for the category
-     trigger's label, which normally has flex: 1 (to push its chevron to the far right) - that
-     flex-basis/flex-grow combination otherwise overrides "width" entirely. */
+     trigger's label, which normally has margin-right:auto (to push its chevron to the far right) -
+     without it, growth from leftover row space would fight the width transition. */
   .sidebar.sidebar-toggled .nav-link span,
   .sidebar.sidebar-toggled .nav-category-trigger span {
     width: 0;
