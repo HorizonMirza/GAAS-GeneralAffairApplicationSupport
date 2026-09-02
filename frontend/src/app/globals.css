@@ -1456,7 +1456,11 @@ body.auth-ready .app-shell {
 
 .profile-hero-header {
   padding: 0 28px 4px;
-  margin-top: -44px;
+  /* Pulls the row up so the avatar overlaps the banner, bottom-anchored via align-items: flex-end
+     below. Deliberately less than the avatar's own height (88px): the name+badge block sits in
+     the same bottom-anchored row and is shorter than the avatar, so pulling up by the avatar's
+     full height would put the top of the name text over the banner instead of on white. */
+  margin-top: -26px;
   display: flex;
   align-items: flex-end;
   gap: 20px;
