@@ -62,13 +62,13 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.name}
         </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.modules[0]}
         </p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.phone}
         </p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.email}
         </p>
       </div>
