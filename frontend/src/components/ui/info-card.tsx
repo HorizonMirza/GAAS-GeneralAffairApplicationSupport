@@ -1,7 +1,31 @@
 "use client";
 
-import { Clock, Mail } from "lucide-react";
-import { CONTACT_WORKING_HOURS, type ContactPerson } from "@/lib/constants";
+import { Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ContactPerson } from "@/lib/constants";
+
+const WORKING_HOURS_START = 8;
+const WORKING_HOURS_END = 17;
+
+// Client-only: the status dot reflects whether it's currently office hours (08:00-17:00), which
+// depends on the viewer's clock. Computed after mount (not during the initial render) so a
+// statically-prerendered page doesn't hydrate with a value baked in at build time that's already
+// stale by the time a visitor loads it.
+function useIsWorkingHours(): boolean {
+  const [isWorkingHours, setIsWorkingHours] = useState(true);
+
+  useEffect(() => {
+    function check() {
+      const hour = new Date().getHours();
+      setIsWorkingHours(hour >= WORKING_HOURS_START && hour < WORKING_HOURS_END);
+    }
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  return isWorkingHours;
+}
 
 // wa.me needs digits only, already carrying the country code (62...) - the phone numbers in
 // CONTACT_PERSONS are entered as "+62 812-1555-6739" for readability, so + / spaces / dashes are
@@ -37,18 +61,26 @@ interface ContactInfoCardProps {
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
 export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
   const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
+  const isWorkingHours = useIsWorkingHours();
+  const statusDotClasses = isWorkingHours
+    ? "h-3 w-3 rounded-full border-2 border-white bg-green-500 transition-transform duration-300 ease-out group-hover:scale-125 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
+    : "h-3 w-3 rounded-full border-2 border-white bg-red-500 transition-transform duration-300 ease-out group-hover:scale-125 group-hover:shadow-[0_0_20px_rgba(239,68,68,0.6)]";
+  const statusPingClasses = isWorkingHours
+    ? "absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30"
+    : "absolute inset-0 h-3 w-3 rounded-full bg-red-500 animate-ping opacity-30";
+  const statusLabel = isWorkingHours ? "PIC aktif (jam kerja)" : "Di luar jam kerja";
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)]">
       {/* Cover banner - LinkedIn-style cover strip behind the avatar, in the app's own blue
           gradient (same tokens as the Profile page hero banner). */}
       <div className="h-20 bg-gradient-to-br from-blue-600 to-blue-400" aria-hidden="true" />
 
-      {/* Status indicator - marks an active assigned PIC (every listed person currently is one),
-          not real-time presence: there is no login/presence tracking behind this list. */}
+      {/* Status indicator - green during office hours (08:00-17:00), red outside them. Marks
+          whether this is a good time to reach the PIC, not real-time login/presence. */}
       <div className="absolute right-4 top-4 z-10">
-        <div className="relative" title="PIC aktif" aria-label="PIC aktif">
-          <div className="h-3 w-3 rounded-full border-2 border-white bg-green-500 transition-transform duration-300 ease-out group-hover:scale-125 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]" />
-          <div className="absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30" />
+        <div className="relative" title={statusLabel} aria-label={statusLabel}>
+          <div className={statusDotClasses} />
+          <div className={statusPingClasses} />
         </div>
       </div>
 
@@ -88,13 +120,6 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
           <p className="mt-1 leading-none text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
             {person.email}
           </p>
-        </div>
-
-        {/* Office hours - shared across everyone (not a per-person fact), so it stays neutral
-            gray and doesn't grow/turn blue on hover like the identity fields above. */}
-        <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 relative z-10">
-          <Clock className="h-3.5 w-3.5" />
-          <span>{CONTACT_WORKING_HOURS}</span>
         </div>
 
         {/* Modules covered, as tags */}
