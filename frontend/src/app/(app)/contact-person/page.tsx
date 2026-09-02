@@ -42,12 +42,12 @@ export default function ContactPersonPage() {
             <div className="contact-card-photo" style={{ backgroundImage: `url(${contactPhotoUrl(c.name)})` }} />
             <div className="contact-card-body">
               <div className="contact-card-name">{c.name}</div>
+              <div className="contact-card-phone">{c.phone}</div>
               <div className="contact-card-modules">
                 {c.modules.map((m) => (
                   <span key={m} className="contact-card-module-tag">{m}</span>
                 ))}
               </div>
-              <div className="contact-card-phone">{c.phone}</div>
               <div className="contact-card-actions">
                 <a
                   className="contact-card-btn"
