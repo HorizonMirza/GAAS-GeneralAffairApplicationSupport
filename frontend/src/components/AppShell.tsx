@@ -126,6 +126,16 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+// Sets the label span's collapse-transition starting width to roughly its own text length (in ch,
+// a real transitionable length unit) rather than one fixed guess shared by every item - CSS can't
+// animate "width" starting from auto/max-content at all (those aren't interpolatable, so the label
+// would just snap to its collapsed size instantly instead of shrinking), and a single oversized
+// fixed value would leave short labels doing nothing for most of the transition before a late,
+// abrupt cut. See the --label-w rule in globals.css.
+function labelWidthStyle(label: string) {
+  return { "--label-w": `${label.length}ch` } as React.CSSProperties;
+}
+
 // KPU deals with Expedition (final sign-off + invoices) and now Office Supplies too (Admin GA/
 // Approval GA buy either through KPU or the external PaDi channel, so KPU signs off there as
 // well) - Dashboard and Profile are always shown regardless of role, so together that leaves
@@ -264,7 +274,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div className="sidebar-nav-list">
             <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard" title="Dashboard">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
-              <span>Dashboard</span>
+              <span style={labelWidthStyle("Dashboard")}>Dashboard</span>
             </Link>
 
             {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
@@ -303,7 +313,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                     }}
                   >
                     {cat.icon}
-                    <span>{cat.label}</span>
+                    <span style={labelWidthStyle(cat.label)}>{cat.label}</span>
                     <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                   <CollapsibleContent className="nav-category-submenu">
@@ -330,11 +340,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
             <div className="sidebar-divider"></div>
             <Link className={`nav-link ${pathname === "/profile" ? "active" : ""}`} href="/profile" title="Profile">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
-              <span>Profile</span>
+              <span style={labelWidthStyle("Profile")}>Profile</span>
             </Link>
             <Link className={`nav-link ${pathname === "/contact-person" ? "active" : ""}`} href="/contact-person" title="Contact Person">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              <span>Contact Person</span>
+              <span style={labelWidthStyle("Contact Person")}>Contact Person</span>
             </Link>
           </div>
         </ScrollArea>

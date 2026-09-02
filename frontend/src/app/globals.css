@@ -688,9 +688,8 @@ body.auth-ready .app-shell {
   top: 0;
   height: 100vh;
   align-self: flex-start;
-  transition: width 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    padding 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    opacity 750ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Wraps the nav links so the sidebar can scroll its middle section (via Radix ScrollArea)
@@ -718,9 +717,9 @@ body.auth-ready .app-shell {
   text-decoration: none;
   cursor: pointer;
   border-radius: 10px;
-  transition: background-color 150ms ease-in-out, width 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    height 750ms cubic-bezier(0.65, 0, 0.35, 1), padding 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    margin-bottom 750ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition: background-color 150ms ease-in-out, width 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    height 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    margin-bottom 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-logo-sidebar:hover {
@@ -735,7 +734,7 @@ body.auth-ready .app-shell {
   width: auto;
   height: auto;
   opacity: 1;
-  transition: max-width 750ms cubic-bezier(0.65, 0, 0.35, 1), opacity 750ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition: max-width 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-logo-sidebar-fallback {
@@ -782,26 +781,32 @@ body.auth-ready .app-shell {
   background: transparent;
   width: 100%;
   text-align: left;
+  overflow: hidden;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 750ms cubic-bezier(0.65, 0, 0.35, 1), padding 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    width 750ms cubic-bezier(0.65, 0, 0.35, 1), height 750ms cubic-bezier(0.65, 0, 0.35, 1);
+    gap 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link svg {
   flex-shrink: 0;
 }
 
-/* The label text itself, sized via max-width rather than display:none - collapsing the sidebar
-   then animates it shrinking away from the right edge (and growing back in from the left) instead
-   of vanishing/appearing instantly. max-width is used because width can't transition to/from
-   "auto", and a generous fixed value here is never actually reached by real label lengths. */
+/* --label-w (set inline per item, sized to that label's own character count) gives the label a
+   real, transitionable length instead of "auto"/max-content - width can't animate from either of
+   those keywords (they aren't interpolatable values, only concrete lengths are), which is what
+   caused the label to snap straight to its collapsed size instead of shrinking gradually. Sizing
+   it in ch per label (rather than one shared fixed px guess for every item) is what avoids "dead
+   time" for short labels: the starting width is already close to the text's real size, so clipping
+   is visible for virtually the whole transition instead of only its last moment. overflow:hidden
+   is repeated here (the row above already clips too) because a flex item narrower than its own
+   text content isn't reliably clipped by an ancestor's overflow alone. */
 .nav-link span,
 .nav-category-trigger span {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
-  max-width: 180px;
-  transition: max-width 750ms cubic-bezier(0.65, 0, 0.35, 1);
+  width: var(--label-w, auto);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link:hover {
@@ -3548,14 +3553,17 @@ table.data-table {
   background: transparent;
   width: 100%;
   text-align: left;
+  overflow: hidden;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 750ms cubic-bezier(0.65, 0, 0.35, 1), padding 750ms cubic-bezier(0.65, 0, 0.35, 1),
-    width 750ms cubic-bezier(0.65, 0, 0.35, 1), height 750ms cubic-bezier(0.65, 0, 0.35, 1);
+    gap 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-category-trigger svg:first-child { flex-shrink: 0; }
+/* margin-right auto (not flex:1) pushes the chevron to the row's far end - flex:1 would force
+   flex-basis:0%, which overrides the span's own width and defeats the --label-w sizing above. */
 .nav-category-trigger span {
-  flex: 1;
+  margin-right: auto;
 }
 
 .nav-category-chevron {
@@ -3611,13 +3619,15 @@ table.data-table {
   flex: 1;
 }
 
-/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). Labels and
-   the logo wordmark shrink/fade away via width/opacity transitions rather than an instant
-   display:none, so everything visually wipes out together as the sidebar narrows, and wipes back
-   in the same way on expand. The divider stays visible throughout (it's what visually separates
-   Profile/Contact Person from the modules above, in both states) - only the chevron and submenu
-   are struck instantly, since collapsed categories render as a plain link with neither in the
-   DOM at all (see AppShell.tsx). */
+/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). There's a
+   single shared clip boundary driving the whole reveal/hide - each row's own width (see
+   .nav-link/.nav-category-trigger below) plus the sidebar's own width, both transitioning on the
+   same 300ms curve - and the label span just sits at its natural width with no clip or transition
+   of its own, so it gets progressively covered/uncovered by that one moving edge as the row
+   resizes, matching a plain width-collapse rather than a separately-animated label. The divider
+   stays visible throughout (it's what visually separates Profile/Contact Person from the modules
+   above, in both states) - only the chevron and submenu are struck instantly, since collapsed
+   categories render as a plain link with neither in the DOM at all (see AppShell.tsx). */
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
     width: 76px;
@@ -3635,9 +3645,15 @@ table.data-table {
     display: none;
   }
 
+  /* Without this the label would just take whatever space is left over in the 44px square after
+     the icon, instead of collapsing away entirely - leaving a stray sliver of text and pushing the
+     icon off-center. flex-grow: 0 is needed on top of width: 0 specifically for the category
+     trigger's label, which normally has flex: 1 (to push its chevron to the far right) - that
+     flex-basis/flex-grow combination otherwise overrides "width" entirely. */
   .sidebar.sidebar-toggled .nav-link span,
   .sidebar.sidebar-toggled .nav-category-trigger span {
-    max-width: 0;
+    width: 0;
+    flex-grow: 0;
   }
 
   /* Fixed 1:1 square, centered in the rail, replacing the full-width row - so the hover/active/
