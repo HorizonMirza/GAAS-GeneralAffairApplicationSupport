@@ -1414,13 +1414,12 @@ body.auth-ready .app-shell {
   background: var(--gradient-primary);
 }
 
-.profile-hero-body {
-  padding: 0 22px 22px;
+.profile-hero-header {
+  padding: 0 28px 4px;
   margin-top: -44px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-end;
+  gap: 20px;
 }
 
 .profile-hero-avatar {
@@ -1444,10 +1443,14 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
+.profile-hero-identity {
+  flex: 1;
+  min-width: 0;
+}
+
 .profile-hero-name {
   font-size: 1.15rem;
   font-weight: 700;
-  margin-top: 12px;
 }
 
 .profile-role-badge {
@@ -1464,16 +1467,50 @@ body.auth-ready .app-shell {
 .profile-hero-actions {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.profile-photo-hint-header {
+  padding: 0 28px;
+  margin-top: 0;
+  margin-bottom: 6px;
 }
 
 .profile-org-grid {
   width: 100%;
   margin-top: 22px;
+  padding: 22px 28px 28px;
+  border-top: 1px solid var(--border-subtle);
   text-align: left;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px 16px;
+}
+
+.profile-org-grid-wide {
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+}
+
+@media (max-width: 720px) {
+  .profile-hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .profile-hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .profile-org-grid-wide {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-org-grid-wide {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-info-label {

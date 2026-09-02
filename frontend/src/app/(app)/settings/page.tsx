@@ -146,7 +146,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="profile-grid">
       <div className="card">
         <div className="card-header"><h3>Kontak &amp; Akun</h3></div>
         {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
