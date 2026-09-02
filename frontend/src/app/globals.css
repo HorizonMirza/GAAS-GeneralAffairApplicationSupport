@@ -126,30 +126,26 @@ button, input, select, textarea {
   overflow: hidden;
 }
 
-.login-page::before,
-.login-page::after {
-  content: "";
+/* Full-viewport WebGL shader (see SmokeyBackground.tsx) sitting behind the card - opaque, so it
+   fully replaces .login-page's own background once it starts rendering; .login-page's background
+   color below only shows for the first frame or if WebGL isn't supported. */
+.login-smokey-bg {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.5;
-  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.login-page::before {
-  width: 420px;
-  height: 420px;
-  background: var(--blue-400);
-  top: -120px;
-  right: -100px;
+.login-smokey-bg-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.login-page::after {
-  width: 360px;
-  height: 360px;
-  background: var(--blue-300);
-  bottom: -140px;
-  left: -80px;
+.login-smokey-bg-blur {
+  position: absolute;
+  inset: 0;
 }
 
 .login-outer {
@@ -162,28 +158,33 @@ button, input, select, textarea {
   align-items: center;
 }
 
-/* Login always renders light, regardless of the app's saved/system theme - it overrides the
-   theme tokens on itself so :root[data-theme="dark"] never reaches these descendants. */
+/* Login always renders as a dark glass card over the animated shader background, regardless of
+   the app's saved/system theme - it overrides the theme tokens on itself so
+   :root[data-theme="dark"]/[data-theme="light"] never reaches these descendants. Every other
+   login-page rule below (.login-divider, .btn-azure, .password-toggle, .field label, ...) reads
+   these same tokens, so overriding them here is enough to make the whole card read correctly
+   against the dark background without re-styling each of those individually. */
 .login-page {
-  --bg-app: var(--ice-100);
-  --bg-surface: var(--white);
-  --bg-surface-alt: #f5f9ff;
+  --bg-app: var(--navy-950);
+  --bg-surface: rgba(255, 255, 255, 0.08);
+  --bg-surface-alt: rgba(255, 255, 255, 0.06);
   --bg-header: var(--gradient-primary);
-  --text-primary: #0b1a33;
-  --text-secondary: #4a5b7a;
-  --text-inverse: #ffffff;
-  --border-subtle: #dbe6fb;
-  --border-strong: #b7d3ff;
-  --shadow-card: 0 6px 20px rgba(15, 40, 90, 0.08);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-inverse: #0b1a33;
+  --border-subtle: rgba(255, 255, 255, 0.18);
+  --border-strong: rgba(255, 255, 255, 0.32);
+  --shadow-card: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
 
-.login-card {
+.login-glass-card {
   width: 100%;
   background: var(--bg-surface);
+  backdrop-filter: blur(16px);
   border-radius: 20px;
-  padding: 36px 36px 40px;
-  box-shadow: var(--glow-blue-strong);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 32px 32px 36px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
 }
 
 .brand-logo {
@@ -231,7 +232,7 @@ button, input, select, textarea {
 }
 
 .login-brand h1 {
-  font-size: 1.3rem;
+  font-size: 1.7rem;
   margin: 0;
   color: var(--text-primary);
   font-weight: 700;
@@ -243,72 +244,9 @@ button, input, select, textarea {
   font-size: 0.85rem;
 }
 
-/* ---------- Login page: animated card (tilt, glow blobs, border beam) ----------
-   framer-motion drives the actual motion (tilt rotation, blob pulsing) via inline styles/props -
-   the CSS here only supplies the static layout those motion values hook into, plus the one
-   CSS-only animation (the border beam, which reuses the exact conic-gradient technique already
-   established for .item-row-card-onapproval below, just in the login page's own blue tones so
-   the two don't fight over the same custom property). */
-.login-card-perspective {
-  perspective: 1500px;
-}
-
-.login-glow-blob {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(70px);
-}
-
-.login-glow-blob-top {
-  top: -180px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 480px;
-  height: 480px;
-  background: var(--blue-400);
-}
-
-.login-glow-blob-bottom {
-  bottom: -200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 420px;
-  height: 420px;
-  background: var(--navy-700);
-}
-
-@property --login-beam-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.login-card-beam-wrap {
+.login-float-field {
   position: relative;
-  border-radius: 20px;
-}
-
-.login-card-beam-wrap::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(from var(--login-beam-angle), transparent 0%, transparent 60%, rgba(75, 141, 255, 0.35) 75%, var(--blue-300) 88%, rgba(75, 141, 255, 0.35) 96%, transparent 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: login-card-border-beam 5s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes login-card-border-beam {
-  to { --login-beam-angle: 360deg; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-card-beam-wrap::before { animation: none; }
+  z-index: 0;
 }
 
 .login-divider {
@@ -453,6 +391,79 @@ button, input, select, textarea {
   min-height: 70px;
 }
 
+/* Floating-label field (Username/Password on the login card) - the label sits on top of the
+   input until it either holds a value or is focused, then shrinks and slides up above it. Pure
+   CSS: the ":placeholder-shown" pseudo-class only matches while the input's placeholder is
+   showing (so an actual value or browser autofill both count as "not empty"), and the label is a
+   sibling right after the input so the "~" combinator can react to it - the same mechanism
+   Tailwind's peer-* classes compile down to, just written directly instead of through a utility
+   class layer. The input needs a non-empty placeholder (a single space) for :placeholder-shown to
+   ever match in the first place.
+   These rules are placed after the generic ".field input"/".field label" block above (same
+   0,1,1 specificity) so they win the cascade tie by source order - see the ".password-wrapper
+   input" rule below for the precedent this follows. */
+.login-float-field input {
+  display: block;
+  width: 100%;
+  padding: 9px 0;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border-subtle);
+  outline: none;
+  border-radius: 0;
+}
+
+.login-float-field.password-wrapper input {
+  padding-right: 30px;
+}
+
+.login-float-field input:focus {
+  border-bottom-color: var(--blue-400);
+  box-shadow: none;
+}
+
+.login-float-field label {
+  position: absolute;
+  left: 0;
+  top: 9px;
+  z-index: -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 400;
+  transform-origin: 0 0;
+  transform: translateY(0) scale(1);
+  transition: transform 200ms ease, color 200ms ease;
+  pointer-events: none;
+}
+
+.login-float-field label svg {
+  flex-shrink: 0;
+}
+
+.login-float-field input:focus ~ label,
+.login-float-field input:not(:placeholder-shown) ~ label {
+  transform: translateY(-20px) scale(0.8);
+  color: var(--blue-300);
+}
+
+.login-float-field input:focus ~ label svg {
+  color: var(--blue-300);
+}
+
+/* The icon rides inside the label at full size and shrinks along with it - once the label is
+   floated up small, the icon just reads as a tiny bullet rather than a legible glyph, so it's
+   faded out instead of trying to stay crisp at 80% scale. */
+.login-float-field input:focus ~ label svg,
+.login-float-field input:not(:placeholder-shown) ~ label svg {
+  opacity: 0;
+}
+
 .password-wrapper {
   position: relative;
 }
@@ -477,35 +488,6 @@ button, input, select, textarea {
 }
 
 .password-toggle:hover {
-  color: var(--blue-500);
-}
-
-/* Leading icon inside an input (Username/Password on the login card) - the icon sits absolutely
-   over the input's own left padding, which is widened just for these two fields via
-   .field-icon-input rather than touching the shared .field input rule every other page relies on.
-   Placed here (after .field input's own padding rule above) on purpose: both selectors tie on
-   specificity, and CSS breaks ties by source order, so .field-icon-input input has to come later
-   in the file to actually win - same reasoning .password-wrapper input above already relies on. */
-.field-icon-input {
-  position: relative;
-}
-
-.field-icon-input input {
-  padding-left: 40px;
-}
-
-.field-icon {
-  position: absolute;
-  left: 13px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  pointer-events: none;
-  display: flex;
-  transition: color 150ms ease;
-}
-
-.field-icon-input:focus-within .field-icon {
   color: var(--blue-500);
 }
 
