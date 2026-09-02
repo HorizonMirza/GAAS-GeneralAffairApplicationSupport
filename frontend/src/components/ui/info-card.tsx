@@ -59,23 +59,23 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
       {/* Name, primary module (used as the "role" line), phone, email - all grow and turn blue
           together on card hover. */}
       <div className="text-center relative z-10">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <h3 className="leading-none text-lg font-semibold text-gray-900 dark:text-gray-100 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.name}
         </h3>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-1 leading-none text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.modules[0]}
         </p>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-1 leading-none text-xs font-bold text-gray-500 dark:text-gray-400 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.phone}
         </p>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        <p className="mt-1 leading-none text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.email}
         </p>
       </div>
 
       {/* Modules covered, as tags */}
       {person.modules.length > 0 && (
-        <div className="mt-2 flex flex-wrap justify-center gap-2 relative z-10">
+        <div className="mt-1.5 flex flex-wrap justify-center gap-2 relative z-10">
           {person.modules.map((m) => (
             <span
               key={m}
