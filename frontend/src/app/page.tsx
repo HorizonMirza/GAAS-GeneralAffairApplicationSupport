@@ -6,8 +6,6 @@ import { api } from "@/lib/api";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { SmokeyBackground } from "@/components/SmokeyBackground";
 
-const LAST_USERNAME_KEY = "gaas_last_username";
-
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -21,10 +19,6 @@ export default function LoginPage() {
       .me()
       .then(() => router.replace("/dashboard"))
       .catch(() => {});
-    // Silently pre-fill the last username that logged in successfully on this device - the
-    // convenience of browser autocomplete without its suggestion dropdown, which the login card's
-    // dark theme can't restyle (see autoComplete="off" on the field below).
-    setUsername(localStorage.getItem(LAST_USERNAME_KEY) || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -33,9 +27,7 @@ export default function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      const trimmedUsername = username.trim();
-      await api.login(trimmedUsername, password);
-      localStorage.setItem(LAST_USERNAME_KEY, trimmedUsername);
+      await api.login(username.trim(), password);
       router.replace("/dashboard");
     } catch (err) {
       const status = (err as { status?: number }).status;
@@ -86,7 +78,7 @@ export default function LoginPage() {
                 id="username"
                 required
                 autoFocus
-                autoComplete="off"
+                autoComplete="username"
                 placeholder=" "
                 value={username}
                 onChange={(e) => {
