@@ -2709,7 +2709,7 @@ table.data-table {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .contact-card-module-tag {
@@ -2758,7 +2758,7 @@ table.data-table {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 12px;
   width: 100%;
 }
 
