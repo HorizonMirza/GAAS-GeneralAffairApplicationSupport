@@ -1466,7 +1466,29 @@ body.auth-ready .app-shell {
   gap: 20px;
 }
 
+.profile-hero-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Decorative rounded-square accent sitting behind/above the avatar circle, inside the dark
+   banner strip - same idea as a LinkedIn-style profile cover, using the app's own blue gradient
+   (not an arbitrary color) so it reads as part of this app rather than a copied palette. */
+.profile-hero-avatar-backdrop {
+  position: absolute;
+  top: -36px;
+  left: 32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
+  box-shadow: 0 4px 16px rgba(20, 80, 201, 0.4);
+  z-index: 0;
+}
+
 .profile-hero-avatar {
+  position: relative;
+  z-index: 1;
   width: 88px;
   height: 88px;
   border-radius: 50%;
