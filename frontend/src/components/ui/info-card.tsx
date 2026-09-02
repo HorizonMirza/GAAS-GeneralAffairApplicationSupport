@@ -56,15 +56,12 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
         </div>
       </div>
 
-      {/* Name, primary module (used as the "role" line), phone, email - all grow and turn blue
-          together on card hover. */}
+      {/* Name, phone, email - all grow and turn blue together on card hover. The role/module line
+          was dropped since it just repeated the module tags shown right below. */}
       <div className="text-center relative z-10">
         <h3 className="leading-none text-lg font-semibold text-gray-900 dark:text-gray-100 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.name}
         </h3>
-        <p className="mt-1 leading-none text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-          {person.modules[0]}
-        </p>
         <p className="mt-1 leading-none text-xs font-bold text-gray-500 dark:text-gray-400 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.phone}
         </p>
