@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import type { ContactPerson } from "@/lib/constants";
 
 // wa.me needs digits only, already carrying the country code (62...) - the phone numbers in
@@ -15,45 +15,32 @@ interface ContactInfoCardProps {
   photoUrl: string;
 }
 
-// Adapted from a neumorphic "animated profile card" design - the shape (avatar, status dot,
-// verified badge, tag row, two round action buttons, hover lift) is kept, but every field is
-// re-mapped to what a support-contact directory actually has: modules replace generic tags, the
-// "verified" badge reads as "PIC resmi" instead of a social-account checkmark, and the status dot
-// marks an active assigned PIC rather than fabricated live presence. There's no follower count
+// Adapted from a neumorphic "animated profile card" design - the shape (avatar, status dot, tag
+// row, two round action buttons, hover lift) is kept, but every field is re-mapped to what a
+// support-contact directory actually has: modules replace generic tags, and the status dot marks
+// an active assigned PIC rather than fabricated live presence. There's no follower count
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
 export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-6 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-all duration-500 hover:shadow-[20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)] hover:scale-105 hover:-translate-y-2">
+    <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-6 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)] hover:scale-105 hover:-translate-y-2 active:scale-100 active:translate-y-0 active:duration-150">
       {/* Status indicator - marks an active assigned PIC (every listed person currently is one),
           not real-time presence: there is no login/presence tracking behind this list. */}
       <div className="absolute right-4 top-4 z-10">
         <div className="relative" title="PIC aktif" aria-label="PIC aktif">
-          <div className="h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500 transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]" />
+          <div className="h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500 transition-transform duration-300 ease-out group-hover:scale-125 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]" />
           <div className="absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30" />
         </div>
       </div>
 
-      {/* "PIC resmi" badge - this person is an officially designated contact, not a social-account
-          verification checkmark. */}
-      <div className="absolute right-4 top-10 z-10">
-        <div
-          className="rounded-full bg-blue-500 dark:bg-blue-600 p-1 shadow-[2px_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-          title="PIC Resmi"
-          aria-label="PIC Resmi"
-        >
-          <BadgeCheck className="h-3 w-3 fill-white text-blue-500" />
-        </div>
-      </div>
-
-      {/* Photo */}
+      {/* Photo, with an always-on blue ring that brightens and pulses faster on hover */}
       <div className="mb-4 flex justify-center relative z-10">
-        <div className="relative group-hover:animate-pulse">
-          <div className="h-28 w-28 overflow-hidden rounded-full bg-white dark:bg-gray-700 p-1 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-500 group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.15),inset_-8px_-8px_16px_rgba(255,255,255,1)] dark:group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.4),inset_-8px_-8px_16px_rgba(255,255,255,0.15)] group-hover:scale-110">
+        <div className="relative">
+          <div className="h-28 w-28 overflow-hidden rounded-full bg-white dark:bg-gray-700 p-1 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.15),inset_-8px_-8px_16px_rgba(255,255,255,1)] dark:group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.4),inset_-8px_-8px_16px_rgba(255,255,255,0.15)] group-hover:scale-110">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photoUrl}
               alt={person.name}
-              className="h-full w-full rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full rounded-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
               onError={(e) => {
                 // No real photo dropped in at this filename yet - fall back to an initial avatar
                 // rather than a broken-image icon (same convention roomPhotoUrl uses elsewhere).
@@ -65,20 +52,24 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
               {person.name.charAt(0)}
             </div>
           </div>
-          <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-0 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
+          <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-60 group-hover:opacity-100 transition-opacity duration-300 ease-out animate-pulse" />
         </div>
       </div>
 
-      {/* Name + primary module (used as the "role" line) */}
-      <div className="text-center relative z-10 transition-transform duration-300 group-hover:-translate-y-1">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+      {/* Name, primary module (used as the "role" line), phone, email - all grow and turn blue
+          together on card hover. */}
+      <div className="text-center relative z-10">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.name}
         </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-gray-300">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.modules[0]}
         </p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
           {person.phone}
+        </p>
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 break-all transition-[transform,color] duration-300 ease-out group-hover:scale-110 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+          {person.email}
         </p>
       </div>
 
@@ -88,7 +79,7 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
           {person.modules.map((m) => (
             <span
               key={m}
-              className="inline-block rounded-full bg-white dark:bg-gray-700 px-3 py-1 text-xs font-medium shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.2),-2px_-2px_4px_rgba(255,255,255,0.1)] transition-all duration-300 text-blue-600 dark:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:scale-105 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+              className="inline-block rounded-full bg-white dark:bg-gray-700 px-3 py-1 text-xs font-medium shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.2),-2px_-2px_4px_rgba(255,255,255,0.1)] transition-all duration-300 ease-out text-blue-600 dark:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:scale-105 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.3)]"
             >
               {m}
             </span>
@@ -96,29 +87,27 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
         </div>
       )}
 
-      {/* WhatsApp + Email */}
+      {/* WhatsApp + Email - identical styling/interaction, only the icon differs */}
       <div className="mt-6 flex gap-2 relative z-10">
         <a
           href={waLink(person.phone)}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Chat WhatsApp ${person.name}`}
-          className="flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 flex items-center justify-center"
+          className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 active:duration-100 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transition-transform duration-300 hover:scale-110">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.9-4.44 9.9-9.9C21.96 6.45 17.5 2 12.04 2Zm0 18.11h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.03-.2-.31a8.2 8.2 0 0 1-1.26-4.35c0-4.53 3.69-8.22 8.23-8.22 2.2 0 4.26.86 5.82 2.41a8.17 8.17 0 0 1 2.41 5.81c0 4.53-3.7 8.22-8.23 8.22Zm4.5-6.16c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.13-.17.25-.64.81-.78.97-.14.17-.29.19-.53.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.42-.14-.01-.31-.01-.48-.01s-.43.06-.66.31c-.23.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.24 3.74.59.26 1.06.41 1.42.52.6.19 1.14.16 1.57.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.14-1.18-.06-.11-.23-.17-.48-.29Z" />
           </svg>
         </a>
         <a
           href={`mailto:${person.email}`}
           aria-label={`Email ${person.name}`}
-          className="flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-gray-50 dark:group-hover:bg-gray-600 flex items-center justify-center"
+          className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 active:duration-100 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30"
         >
-          <Mail className="h-4 w-4 transition-transform duration-300 hover:scale-110" />
+          <Mail className="h-4 w-4" />
         </a>
       </div>
-
-      <div className="absolute inset-0 rounded-3xl border border-blue-200 dark:border-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
   );
 }
