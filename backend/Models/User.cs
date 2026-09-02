@@ -10,6 +10,13 @@ public class User
     public string? Direktorat { get; set; }
     public string? Divisi { get; set; }
     public string? Departemen { get; set; }
+    public string? NoHp { get; set; }
+    public string? Email { get; set; }
+    // Profile photo, stored the same way as PerbaikanSarana's Gambar (filename on disk under
+    // ProfileController's upload dir, plus the metadata needed to serve it back correctly).
+    public string? PhotoPath { get; set; }
+    public string? PhotoContentType { get; set; }
+    public string? PhotoOriginalFilename { get; set; }
     public DateTime CreatedAt { get; set; }
     // Set whenever the password changes (ProfileController.ChangePassword). Stamped into every
     // freshly issued JWT (JwtService.CreateAccessToken) and checked against the token's copy on

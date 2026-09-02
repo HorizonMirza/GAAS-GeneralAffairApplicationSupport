@@ -198,6 +198,32 @@ export const api = {
       method: "PUT",
       body: { currentPassword, newPassword },
     }),
+  updateProfile: (payload: { nama: string; username: string; noHp: string | null; email: string | null }) =>
+    apiRequest<Me>("/profile", { method: "PUT", body: payload }),
+  uploadProfilePhoto: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/profile/photo`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah foto";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        // ignore - response body wasn't JSON
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return (await response.json()) as Me;
+  },
+  // `v` lets a caller cache-bust after a fresh upload (the URL is otherwise identical to the
+  // previous photo's, so the browser would keep showing its cached copy) without recomputing a
+  // new value - and therefore a new <img src> - on every render.
+  profilePhotoUrl: (v?: number) => (v ? `${API_BASE}/profile/photo?v=${v}` : `${API_BASE}/profile/photo`),
 
   listPengiriman: (params: ListPengirimanParams) =>
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),

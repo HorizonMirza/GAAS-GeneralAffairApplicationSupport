@@ -57,15 +57,7 @@ public class AuthController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        return Ok(new MeResponse(
-            user!.Id,
-            user.Username,
-            user.Nama,
-            user.Role,
-            user.Direktorat,
-            user.Divisi,
-            user.Departemen
-        ));
+        return Ok(MeResponse.From(user!));
     }
 
     [HttpGet("org-structure")]

@@ -11,8 +11,25 @@ public record MeResponse(
     RoleEnum Role,
     string? Direktorat,
     string? Divisi,
-    string? Departemen
-);
+    string? Departemen,
+    string? NoHp,
+    string? Email,
+    bool HasPhoto
+)
+{
+    public static MeResponse From(User user) => new(
+        user.Id,
+        user.Username,
+        user.Nama,
+        user.Role,
+        user.Direktorat,
+        user.Divisi,
+        user.Departemen,
+        user.NoHp,
+        user.Email,
+        user.PhotoPath != null
+    );
+}
 
 public record DivisiOut(string Nama, List<string> Departemen);
 
@@ -26,3 +43,5 @@ public record OrgStructureResponse(
 );
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public record UpdateProfileRequest(string Nama, string Username, string? NoHp, string? Email);

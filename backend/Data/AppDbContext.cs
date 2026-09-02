@@ -160,6 +160,11 @@ public class AppDbContext : DbContext
             e.Property(u => u.Direktorat).HasColumnName("direktorat").HasMaxLength(255);
             e.Property(u => u.Divisi).HasColumnName("divisi").HasMaxLength(255);
             e.Property(u => u.Departemen).HasColumnName("departemen").HasMaxLength(255);
+            e.Property(u => u.NoHp).HasColumnName("no_hp").HasMaxLength(50);
+            e.Property(u => u.Email).HasColumnName("email").HasMaxLength(255);
+            e.Property(u => u.PhotoPath).HasColumnName("photo_path").HasMaxLength(255);
+            e.Property(u => u.PhotoContentType).HasColumnName("photo_content_type").HasMaxLength(100);
+            e.Property(u => u.PhotoOriginalFilename).HasColumnName("photo_original_filename").HasMaxLength(255);
             e.Property(u => u.CreatedAt).HasColumnName("created_at");
             e.Property(u => u.PasswordChangedAt).HasColumnName("password_changed_at");
         });

@@ -58,6 +58,13 @@ using (var scope = app.Services.CreateScope())
     // CurrentUserService: a token minted before the most recent password change no longer matches
     // this column and is rejected, instead of staying valid for the rest of its lifetime.
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP");
+    // Self-service profile fields (ProfileController.UpdateProfile) plus photo storage metadata
+    // (ProfileController.UploadPhoto/GetPhoto), mirroring PerbaikanSarana's Gambar columns.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS no_hp VARCHAR(50)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS email VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_path VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_content_type VARCHAR(100)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_original_filename VARCHAR(255)");
     // One-time backfill: "Engineering Project – EPC" (en-dash) was the departemen name actually seeded/stored
     // before OrgTree.cs was corrected to the hyphen form below - any row already stamped with the
     // old en-dash string no longer matches OrgTree's canonical list (used for access-control

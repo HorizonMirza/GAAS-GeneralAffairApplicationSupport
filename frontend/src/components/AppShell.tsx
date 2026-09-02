@@ -136,7 +136,11 @@ function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
       >
         <span className="account-avatar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
+          {me.hasPhoto ? (
+            <img src={api.profilePhotoUrl()} alt="" />
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
+          )}
         </span>
         <span className="account-info">
           <span className="name">{me.nama}</span>
@@ -148,7 +152,11 @@ function AccountMenu() {
         <div className="account-dropdown" onClick={(e) => e.stopPropagation()}>
           <div className="account-dropdown-header">
             <span className="account-avatar-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
+              {me.hasPhoto ? (
+                <img src={api.profilePhotoUrl()} alt="" />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
+              )}
             </span>
             <div>
               <div className="account-dropdown-name">{me.nama}</div>

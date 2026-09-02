@@ -55,6 +55,9 @@ export interface Me {
   direktorat: string | null;
   divisi: string | null;
   departemen: string | null;
+  noHp: string | null;
+  email: string | null;
+  hasPhoto: boolean;
 }
 
 export interface DivisiNode {
