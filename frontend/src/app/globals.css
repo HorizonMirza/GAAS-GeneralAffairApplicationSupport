@@ -2686,7 +2686,7 @@ table.data-table {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 18px 20px 22px;
+  padding: 8px 20px 22px;
 }
 
 .contact-card-name {
@@ -2726,7 +2726,7 @@ table.data-table {
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-secondary);
-  margin-top: 12px;
+  margin-top: 8px;
   font-variant-numeric: tabular-nums;
   transition: color 200ms ease, font-size 200ms ease;
 }
@@ -2740,9 +2740,18 @@ table.data-table {
 
 .contact-card-email {
   font-size: 0.78rem;
+  font-weight: 400;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 8px;
   word-break: break-all;
+  transition: color 200ms ease, font-size 200ms ease;
+}
+
+.contact-card:hover .contact-card-email,
+.contact-card:focus-within .contact-card-email,
+.contact-card:active .contact-card-email {
+  color: var(--blue-400);
+  font-size: 0.9rem;
 }
 
 .contact-card-actions {
