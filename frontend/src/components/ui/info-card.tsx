@@ -25,18 +25,6 @@ const AVATAR_COLORS = [
   "bg-slate-700",
 ];
 
-// A contrasting "shoulders" color per avatar color (same index), filling the bottom half of the
-// circle behind the person icon - mimics the two-tone bust silhouette look of a real headshot
-// (head-color background, darker/contrasting torso) instead of one flat disc of color.
-const SHOULDER_COLORS = [
-  "bg-rose-500",
-  "bg-indigo-700",
-  "bg-emerald-700",
-  "bg-fuchsia-900",
-  "bg-slate-800",
-  "bg-slate-900",
-];
-
 interface ContactInfoCardProps {
   person: ContactPerson;
   colorIndex: number;
@@ -49,7 +37,6 @@ interface ContactInfoCardProps {
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
 export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
   const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
-  const shoulderColor = SHOULDER_COLORS[colorIndex % SHOULDER_COLORS.length];
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-5 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)] hover:scale-105 hover:-translate-y-2 active:scale-100 active:translate-y-0 active:duration-150">
       {/* Status indicator - marks an active assigned PIC (every listed person currently is one),
@@ -61,15 +48,19 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
         </div>
       </div>
 
-      {/* Placeholder avatar (real photos not wired up yet) - a two-tone bust silhouette per
-          person (head-color circle, contrasting "shoulders" filling the bottom half) plus a
+      {/* Placeholder avatar (real photos not wired up yet) - a plain solid-color circle plus a
           generic person icon on top, standing in for a real headshot until one is dropped in.
-          The always-on blue ring is the same one the real photos will keep. */}
+          A rounded-square blue accent sits behind the circle (same idea as the Profile page
+          hero avatar), always the app's own blue regardless of the avatar's own color. The
+          always-on blue ring is the same one the real photos will keep. */}
       <div className="mb-6 flex justify-center relative z-10">
         <div className="relative">
-          <div className="h-28 w-28 rounded-full p-1 bg-white dark:bg-gray-700 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-transform duration-300 ease-out group-hover:scale-110">
+          <div
+            className="absolute -top-4 -right-2 h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 shadow-[0_4px_16px_rgba(20,80,201,0.4)]"
+            aria-hidden="true"
+          />
+          <div className="relative h-28 w-28 rounded-full p-1 bg-white dark:bg-gray-700 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-transform duration-300 ease-out group-hover:scale-110">
             <div className={`relative h-full w-full rounded-full overflow-hidden ${avatarColor}`}>
-              <div className={`absolute bottom-0 left-1/2 w-[90%] h-[48%] -translate-x-1/2 rounded-t-full ${shoulderColor}`} />
               <div className="absolute inset-0 flex items-center justify-center text-white">
                 <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="8" r="4"></circle>
