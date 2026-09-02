@@ -688,9 +688,9 @@ body.auth-ready .app-shell {
   top: 0;
   height: 100vh;
   align-self: flex-start;
-  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1),
-    padding 320ms cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 750ms cubic-bezier(0.65, 0, 0.35, 1),
+    padding 750ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 750ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* Wraps the nav links so the sidebar can scroll its middle section (via Radix ScrollArea)
@@ -769,7 +769,7 @@ body.auth-ready .app-shell {
   width: 100%;
   text-align: left;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 320ms cubic-bezier(0.4, 0, 0.2, 1), padding 320ms cubic-bezier(0.4, 0, 0.2, 1);
+    gap 750ms cubic-bezier(0.65, 0, 0.35, 1), padding 750ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .nav-link svg {
@@ -786,7 +786,7 @@ body.auth-ready .app-shell {
   overflow: hidden;
   white-space: nowrap;
   max-width: 180px;
-  transition: max-width 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-width 750ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .nav-link:hover {
@@ -3534,7 +3534,7 @@ table.data-table {
   width: 100%;
   text-align: left;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 320ms cubic-bezier(0.4, 0, 0.2, 1), padding 320ms cubic-bezier(0.4, 0, 0.2, 1);
+    gap 750ms cubic-bezier(0.65, 0, 0.35, 1), padding 750ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .nav-category-trigger svg:first-child { flex-shrink: 0; }
@@ -3557,7 +3557,11 @@ table.data-table {
   color: #fff;
 }
 
-.nav-category.has-active .nav-category-trigger {
+.nav-category.has-active .nav-category-trigger,
+/* Collapsed sidebar: the category becomes a plain Overview link and carries has-active directly
+   on itself (no .nav-category wrapper around it), so the descendant selector above doesn't match
+   it - this covers that case with the same styling. */
+.nav-category-trigger.has-active {
   background: linear-gradient(135deg, rgba(96, 165, 250, 0.38) 0%, rgba(96, 165, 250, 0.14) 100%);
   color: #fff;
   font-weight: 700;
@@ -3621,6 +3625,17 @@ table.data-table {
     gap: 0;
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  /* With the wordmark image hidden, this Link would otherwise stay full sidebar width but only
+     as tall as its own padding - a short wide hover rectangle rather than a clean icon-sized
+     square. Fixed square size, centered, matches the nav rows' hover targets instead. */
+  .sidebar.sidebar-toggled .brand-logo-sidebar {
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin-bottom: 20px;
   }
 }
 
