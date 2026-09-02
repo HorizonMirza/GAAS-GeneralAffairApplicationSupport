@@ -441,6 +441,21 @@ button, input, select, textarea {
   box-shadow: none;
 }
 
+/* Chrome/Edge paint autofilled inputs with an opaque white (or yellow) background and black
+   text no matter what the input's own CSS says - this is the standard workaround: an inset
+   box-shadow the size of the field to paint over the browser's fill, plus -webkit-text-fill-color
+   since autofill ignores a plain `color`. The very long transition delays the color swap past
+   the point Chrome would otherwise flash it in. */
+.login-float-field input:-webkit-autofill,
+.login-float-field input:-webkit-autofill:hover,
+.login-float-field input:-webkit-autofill:focus,
+.login-float-field input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--navy-950) inset;
+  box-shadow: 0 0 0px 1000px var(--navy-950) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 .login-float-field label {
   position: absolute;
   left: 0;

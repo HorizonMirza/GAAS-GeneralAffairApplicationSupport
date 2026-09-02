@@ -78,7 +78,7 @@ export default function LoginPage() {
                 id="username"
                 required
                 autoFocus
-                autoComplete="username"
+                autoComplete="off"
                 placeholder=" "
                 value={username}
                 onChange={(e) => {
