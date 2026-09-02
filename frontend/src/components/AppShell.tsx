@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Role } from "@/lib/types";
 
@@ -197,6 +197,7 @@ function AccountMenu() {
 export default function AppShell({ children }: { children: ReactNode }) {
   const { me } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
@@ -271,39 +272,40 @@ export default function AppShell({ children }: { children: ReactNode }) {
               // must not count as "this category is active", or all 6 categories highlight/expand
               // together on that page.
               const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
-              const isOpen = openCategory === cat.label || hasActive;
-
-              // Collapsed to icons: there's no room for a submenu, so the trigger becomes a plain
-              // link straight to the category's Overview page instead of a dead expand button.
-              if (isIconCollapsed) {
-                const overviewHref = cat.items.find((item) => item.label === "Overview")?.href ?? cat.items[0].href;
-                return (
-                  <Link
-                    key={cat.label}
-                    className={`nav-category-trigger ${hasActive ? "has-active" : ""}`}
-                    href={overviewHref}
-                    title={cat.label}
-                  >
-                    {cat.icon}
-                    <span>{cat.label}</span>
-                  </Link>
-                );
-              }
+              // Forced closed while collapsed to icons - there's no room for a submenu there, so
+              // pressing the trigger navigates straight to the category's Overview page instead.
+              const isOpen = !isIconCollapsed && (openCategory === cat.label || hasActive);
+              const overviewHref = cat.items.find((item) => item.label === "Overview")?.href ?? cat.items[0].href;
 
               return (
                 <Collapsible
                   key={cat.label}
                   open={isOpen}
-                  onOpenChange={(next) => setOpenCategory(next ? cat.label : null)}
+                  onOpenChange={(next) => {
+                    if (!isIconCollapsed) setOpenCategory(next ? cat.label : null);
+                  }}
                   className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}
                 >
-                  <CollapsibleTrigger asChild>
-                    <button type="button" className="nav-category-trigger" title={cat.label}>
-                      {cat.icon}
-                      <span>{cat.label}</span>
-                      <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  </CollapsibleTrigger>
+                  {/* A single, always-mounted button (not swapped for a <Link> when collapsed) so
+                      the label span stays the same DOM node across the collapse toggle and can
+                      actually transition, instead of unmounting straight into its collapsed style. */}
+                  <button
+                    type="button"
+                    className={`nav-category-trigger ${isIconCollapsed && hasActive ? "has-active" : ""}`}
+                    title={cat.label}
+                    aria-expanded={isOpen}
+                    onClick={() => {
+                      if (isIconCollapsed) {
+                        router.push(overviewHref);
+                      } else {
+                        setOpenCategory(isOpen ? null : cat.label);
+                      }
+                    }}
+                  >
+                    {cat.icon}
+                    <span>{cat.label}</span>
+                    <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
                   <CollapsibleContent className="nav-category-submenu">
                     {cat.items.map((item) => {
                       if (item.superAdminOnly && !isSuperAdmin) return null;
