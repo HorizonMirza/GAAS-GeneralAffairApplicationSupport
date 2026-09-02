@@ -38,7 +38,7 @@ interface ContactInfoCardProps {
 export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
   const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
   return (
-    <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)] hover:scale-105 hover:-translate-y-2 active:scale-100 active:translate-y-0 active:duration-150">
+    <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)]">
       {/* Cover banner - LinkedIn-style cover strip behind the avatar, in the app's own blue
           gradient (same tokens as the Profile page hero banner). */}
       <div className="h-20 bg-gradient-to-br from-blue-600 to-blue-400" aria-hidden="true" />
@@ -138,7 +138,7 @@ interface ContactInfoCardGridProps {
 
 export default function ContactInfoCardGrid({ people }: ContactInfoCardGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
+    <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-10">
       {people.map((person, index) => (
         <ContactInfoCard key={person.name} person={person} colorIndex={index} />
       ))}
