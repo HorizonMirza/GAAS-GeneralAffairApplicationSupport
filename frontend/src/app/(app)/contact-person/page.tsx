@@ -29,12 +29,16 @@ export default function ContactPersonPage() {
     <div className="contact-page">
       <div className="contact-page-grid">
         {CONTACT_PERSONS.map((c) => (
-          <div key={c.module} className="contact-card">
+          <div key={c.name} className="contact-card">
             <span className="contact-card-avatar">
               <span className="contact-card-avatar-inner">{AVATAR_EMOJI}</span>
             </span>
             <div className="contact-card-name">{c.name}</div>
-            <div className="contact-card-module">{c.module}</div>
+            <div className="contact-card-modules">
+              {c.modules.map((m) => (
+                <span key={m} className="contact-card-module-tag">{m}</span>
+              ))}
+            </div>
             <div className="contact-card-phone">{c.phone}</div>
             <div className="contact-card-actions">
               <a

@@ -2636,12 +2636,8 @@ table.data-table {
    tiles, one per module's PIC. Avatar is a placeholder emoji until real photos exist. */
 .contact-page-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-}
-
-@media (max-width: 900px) {
-  .contact-page-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 560px) {
@@ -2720,10 +2716,23 @@ table.data-table {
   color: var(--blue-400);
 }
 
-.contact-card-module {
-  font-size: 0.84rem;
+.contact-card-modules {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.contact-card-module-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  margin-top: 6px;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 3px 9px;
 }
 
 .contact-card-phone {

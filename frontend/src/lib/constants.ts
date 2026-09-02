@@ -533,16 +533,16 @@ export function arsipItemsSummary(item: PermintaanArsip): string {
 // --- Contact Person (halaman /contact-person, lihat app/(app)/contact-person/page.tsx) ---
 
 export interface ContactPerson {
-  module: string;
   name: string;
+  modules: string[];
   phone: string;
 }
 
+// One card per person (not per module) - several people cover more than one module, so the same
+// name/number would otherwise repeat across several near-identical cards.
 export const CONTACT_PERSONS: ContactPerson[] = [
-  { module: "Expedition", name: "Melda", phone: "+62 812-1555-6739" },
-  { module: "Room Booking", name: "Melda", phone: "+62 812-1555-6739" },
-  { module: "Vehicle Booking", name: "Ardi", phone: "+62 812-8120-5697" },
-  { module: "Office Supplies", name: "Melda", phone: "+62 812-1555-6739" },
-  { module: "Maintenance", name: "Ceuta", phone: "+62 811-1814-606" },
-  { module: "Archive", name: "Wawa", phone: "+62 812-9790-2368" },
+  { name: "Melda", modules: ["Expedition", "Room Booking", "Office Supplies"], phone: "+62 812-1555-6739" },
+  { name: "Ardi", modules: ["Vehicle Booking"], phone: "+62 812-8120-5697" },
+  { name: "Ceuta", modules: ["Maintenance"], phone: "+62 811-1814-606" },
+  { name: "Wawa", modules: ["Archive"], phone: "+62 812-9790-2368" },
 ];
