@@ -56,8 +56,8 @@ export default function LoginPage() {
 
         <div className="login-glass-card">
           <div className="login-brand">
-            <h1>Welcome Back</h1>
-            <p>Enter your username to sign in your account</p>
+            <h1>Login</h1>
+            <p>Enter your username to login your account</p>
           </div>
 
           <div className={`alert-error ${error ? "alert-error-visible" : ""}`}>
@@ -125,7 +125,7 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop: 30 }}>
-              {submitting ? "Logging in..." : "Sign In"}
+              {submitting ? "Logging in..." : "Login"}
               {!submitting && (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               )}
@@ -146,7 +146,7 @@ export default function LoginPage() {
               <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
               <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
             </svg>
-            Sign in with Azure
+            Login with Azure
             <span className="btn-azure-badge">Coming soon</span>
           </button>
         </div>
