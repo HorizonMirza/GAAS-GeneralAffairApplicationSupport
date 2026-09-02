@@ -10,9 +10,24 @@ function waLink(phone: string): string {
   return `https://wa.me/${phone.replace(/\D/g, "")}`;
 }
 
+// Vibrant solid background per person for the placeholder avatar - a plain single pastel would
+// look flat compared to the real photos this is standing in for, so each person gets a distinct
+// color like they will once a real photo is dropped in. Assigned by list position (cycling
+// through the palette) rather than hashing the name - with only a handful of people, a hash
+// clusters several of them onto the same color by chance, while position guarantees each of the
+// first N people (N = palette length) gets a color no one else has.
+const AVATAR_COLORS = [
+  "bg-blue-500",
+  "bg-teal-500",
+  "bg-amber-500",
+  "bg-purple-500",
+  "bg-emerald-500",
+  "bg-slate-700",
+];
+
 interface ContactInfoCardProps {
   person: ContactPerson;
-  photoUrl: string;
+  colorIndex: number;
 }
 
 // Adapted from a neumorphic "animated profile card" design - the shape (avatar, status dot, tag
@@ -20,7 +35,8 @@ interface ContactInfoCardProps {
 // support-contact directory actually has: modules replace generic tags, and the status dot marks
 // an active assigned PIC rather than fabricated live presence. There's no follower count
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
-export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
+export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
+  const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-5 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)] hover:scale-105 hover:-translate-y-2 active:scale-100 active:translate-y-0 active:duration-150">
       {/* Status indicator - marks an active assigned PIC (every listed person currently is one),
@@ -32,25 +48,18 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
         </div>
       </div>
 
-      {/* Photo, with an always-on blue ring that brightens and pulses faster on hover */}
-      <div className="mb-3 flex justify-center relative z-10">
+      {/* Placeholder avatar (real photos not wired up yet) - a colored circle per person plus a
+          generic person icon, matching the "no photo" convention used on the Profile page, with
+          the same always-on blue ring the real photos will keep once they're dropped in. */}
+      <div className="mb-6 flex justify-center relative z-10">
         <div className="relative">
-          <div className="h-28 w-28 overflow-hidden rounded-full bg-white dark:bg-gray-700 p-1 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow] duration-300 ease-out group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.15),inset_-8px_-8px_16px_rgba(255,255,255,1)] dark:group-hover:shadow-[inset_8px_8px_16px_rgba(0,0,0,0.4),inset_-8px_-8px_16px_rgba(255,255,255,0.15)] group-hover:scale-110">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photoUrl}
-              alt={person.name}
-              className="h-full w-full rounded-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-              onError={(e) => {
-                // No real photo dropped in at this filename yet - fall back to an initial avatar
-                // rather than a broken-image icon (same convention roomPhotoUrl uses elsewhere).
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-              }}
-            />
-            <div className="hidden h-full w-full rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl font-semibold text-blue-600 dark:text-blue-400">
-              {person.name.charAt(0)}
-            </div>
+          <div
+            className={`h-28 w-28 rounded-full p-1 flex items-center justify-center text-white shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-transform duration-300 ease-out group-hover:scale-110 ${avatarColor}`}
+          >
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path>
+            </svg>
           </div>
           <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-60 group-hover:opacity-100 transition-opacity duration-300 ease-out animate-pulse" />
         </div>
@@ -113,14 +122,13 @@ export function ContactInfoCard({ person, photoUrl }: ContactInfoCardProps) {
 
 interface ContactInfoCardGridProps {
   people: ContactPerson[];
-  photoUrl: (name: string) => string;
 }
 
-export default function ContactInfoCardGrid({ people, photoUrl }: ContactInfoCardGridProps) {
+export default function ContactInfoCardGrid({ people }: ContactInfoCardGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
-      {people.map((person) => (
-        <ContactInfoCard key={person.name} person={person} photoUrl={photoUrl(person.name)} />
+      {people.map((person, index) => (
+        <ContactInfoCard key={person.name} person={person} colorIndex={index} />
       ))}
     </div>
   );
