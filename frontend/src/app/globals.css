@@ -2647,40 +2647,41 @@ table.data-table {
   .contact-page-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Mobile: keep the 3-column grid but shrink everything down to fit - a 1-per-row stack
-   would push the page to 6 long scrolls on a phone. */
+/* Mobile: 2 columns x 3 rows, everything scaled down a notch from desktop - the buttons
+   stay side by side (there's enough width per card at 2 columns) but get smaller padding,
+   font and icons so "WhatsApp"/"Email" still fit without overflowing. */
 @media (max-width: 560px) {
-  .contact-page-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .contact-page-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
-  .contact-card-photo { height: 64px; }
+  .contact-card-photo { height: 100px; }
 
-  .contact-card-body { padding: 6px 6px 8px; }
+  .contact-card-body { padding: 7px 8px 12px; }
 
   .contact-card-name {
-    font-size: 0.66rem;
+    font-size: 0.9rem;
     line-height: 1.15;
   }
 
   .contact-card:hover .contact-card-name,
   .contact-card:focus-within .contact-card-name,
   .contact-card:active .contact-card-name {
-    font-size: 0.72rem;
+    font-size: 1rem;
   }
 
   .contact-card-phone {
-    font-size: 0.56rem;
+    font-size: 0.74rem;
     margin-top: 3px;
   }
 
   .contact-card:hover .contact-card-phone,
   .contact-card:focus-within .contact-card-phone,
   .contact-card:active .contact-card-phone {
-    font-size: 0.62rem;
+    font-size: 0.82rem;
   }
 
   .contact-card-email {
-    font-size: 0.5rem;
-    margin-top: 2px;
+    font-size: 0.64rem;
+    margin-top: 3px;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2690,37 +2691,38 @@ table.data-table {
   .contact-card:hover .contact-card-email,
   .contact-card:focus-within .contact-card-email,
   .contact-card:active .contact-card-email {
-    font-size: 0.56rem;
+    font-size: 0.7rem;
   }
 
   .contact-card-modules {
-    gap: 3px;
-    margin-top: 5px;
+    gap: 4px;
+    margin-top: 7px;
   }
 
   .contact-card-module-tag {
-    font-size: 0.5rem;
-    padding: 1px 5px;
+    font-size: 0.6rem;
+    padding: 2px 7px;
   }
 
   .contact-card-actions {
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 6px;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  /* Icon-only at this width - "WhatsApp"/"Email" won't fit two-up without clipping, and
+     the buttons already carry an aria-label for screen readers. */
+  .contact-card-btn-label {
+    display: none;
   }
 
   .contact-card-btn {
-    flex: none;
-    width: 100%;
-    gap: 4px;
-    padding: 5px 2px;
-    font-size: 0.58rem;
-    border-radius: 7px;
+    padding: 8px;
+    border-radius: 8px;
   }
 
   .contact-card-btn svg {
-    width: 10px;
-    height: 10px;
+    width: 15px;
+    height: 15px;
   }
 }
 
