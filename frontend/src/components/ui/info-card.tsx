@@ -53,14 +53,17 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
       </div>
 
       <div className="px-5 pb-5">
-        {/* Placeholder avatar (real photos not wired up yet) - a plain solid-color circle plus a
-            generic person icon on top, standing in for a real headshot until one is dropped in.
-            Pulled up to overlap the cover banner's bottom edge, LinkedIn-style. The always-on
-            blue ring is the same one the real photos will keep. */}
+        {/* Placeholder avatar (real photos not wired up yet) - a glossy solid-color sphere (radial
+            highlight top-left, soft shadow bottom-right, plus a blurred highlight streak) topped
+            with a generic person icon, standing in for a real headshot until one is dropped in.
+            Pulled up to overlap the cover banner's bottom edge, LinkedIn-style. The blue ring is
+            hidden at rest and only fades in on hover - the same one the real photos will keep. */}
         <div className="-mt-14 mb-6 flex justify-center relative z-10">
           <div className="relative">
             <div className="relative h-28 w-28 rounded-full p-1 bg-white dark:bg-gray-700 shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.3),inset_-6px_-6px_12px_rgba(255,255,255,0.1)] transition-transform duration-300 ease-out group-hover:scale-110">
               <div className={`relative h-full w-full rounded-full overflow-hidden ${avatarColor}`}>
+                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_45%),radial-gradient(circle_at_70%_85%,rgba(0,0,0,0.3)_0%,rgba(0,0,0,0)_60%)]" />
+                <div className="absolute -top-3 left-1/2 h-10 w-20 -translate-x-1/2 rounded-full bg-white/45 blur-md" />
                 <div className="absolute inset-0 flex items-center justify-center text-white">
                   <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="8" r="4"></circle>
@@ -69,7 +72,7 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
                 </div>
               </div>
             </div>
-            <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-60 group-hover:opacity-100 transition-opacity duration-300 ease-out animate-pulse" />
+            <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out group-hover:animate-pulse" />
           </div>
         </div>
 
