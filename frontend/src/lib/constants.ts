@@ -530,7 +530,7 @@ export function arsipItemsSummary(item: PermintaanArsip): string {
   return item.items.map((i) => `${i.namaArsip} (${i.jumlah} ${i.satuan})`).join(", ");
 }
 
-// --- Contact Person (tombol "Contact Person" di sidebar, lihat ContactPersonModal.tsx) ---
+// --- Contact Person (halaman /contact-person, lihat app/(app)/contact-person/page.tsx) ---
 
 export interface ContactPerson {
   module: string;

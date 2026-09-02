@@ -10,7 +10,6 @@ import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
-import ContactPersonModal from "@/components/ContactPersonModal";
 import type { Role } from "@/lib/types";
 
 interface NavLeaf {
@@ -173,7 +172,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
-  const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
     // Deferred to the client on purpose - the server and the browser can format "now" into a
@@ -216,6 +214,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }
   if (pathname === "/dashboard") topbarTitle = "Dashboard";
   if (pathname === "/profile") topbarTitle = "Profile";
+  if (pathname === "/contact-person") topbarTitle = "Contact Person";
   if (pathname === "/superadmin") topbarTitle = "Super Admin";
 
   return (
@@ -280,14 +279,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
           Profile
         </Link>
-        <button type="button" className="nav-link" onClick={() => setContactOpen(true)}>
+        <Link className={`nav-link ${pathname === "/contact-person" ? "active" : ""}`} href="/contact-person">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
           Contact Person
-        </button>
+        </Link>
       </aside>
 
       {sidebarOpen && <div className="sidebar-backdrop visible" onClick={() => setSidebarOpen(false)} />}
-      <ContactPersonModal open={contactOpen} onClose={() => setContactOpen(false)} />
 
       <div className="main-content">
         <header className="topbar" onClick={() => setOpenCategory((c) => c)}>

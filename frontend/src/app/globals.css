@@ -2631,127 +2631,107 @@ table.data-table {
   line-height: 1;
 }
 
-/* ---------- Contact Person full-screen panel (ContactPersonModal.tsx) ----------
-   Takes over the whole viewport (not a small centered modal) and lists every module's PIC at
-   once - each row matches the app's existing row/list-item look (avatar, label, action icon). */
-.contact-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--bg-app);
+/* ---------- Contact Person page (app/(app)/contact-person/page.tsx) ----------
+   A real sidebar section like Profile/Archive, not a modal - a grid of info-card-style tiles,
+   one per module's PIC. Avatar is a placeholder emoji until real photos exist. */
+.contact-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.contact-card {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  animation: modal-overlay-in 180ms ease-out;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 2px rgba(16, 25, 46, 0.04);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .contact-fullscreen {
-    animation: none;
-  }
-}
-
-.contact-fullscreen-header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+.contact-card-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 22px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-app);
+  justify-content: center;
+  font-size: 2rem;
+  background: var(--bg-surface-alt);
+  box-shadow: 0 0 0 3px var(--blue-400);
+  margin-bottom: 14px;
 }
 
-.contact-fullscreen-header h2 {
-  margin: 0;
-  font-size: 1.2rem;
+.contact-card-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--blue-400);
 }
 
-.contact-fullscreen-body {
-  flex: 1;
+.contact-card-module {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.contact-card-phone {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
   width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 28px 24px 48px;
 }
 
-.contact-fullscreen-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
-}
-
-.contact-item {
-  display: flex;
+.contact-card-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 12px;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: filter 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.contact-card-btn-wa {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #25d366;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.contact-card-btn-wa:hover {
+  filter: brightness(1.08);
+}
+
+.contact-card-btn-copy {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 10px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface-alt);
-  text-decoration: none !important;
-  color: var(--text-primary);
-  transition: border-color 150ms ease, background 150ms ease;
-}
-
-.contact-item:hover {
-  border-color: #25d366;
-  background: rgba(37, 211, 102, 0.08);
-}
-
-.contact-avatar {
-  flex-shrink: 0;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--gradient-primary);
-}
-
-.contact-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.contact-module {
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.contact-name {
-  font-size: 0.82rem;
   color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.contact-wa-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: #fff;
-  background: #25d366;
-}
-
-.contact-hint {
-  margin: 20px 0 0;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  text-align: center;
+.contact-card-btn-copy:hover {
+  border-color: var(--blue-400);
+  color: var(--blue-400);
 }
 
 .form-grid {
