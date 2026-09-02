@@ -529,3 +529,20 @@ export function isArsipGaActionable(item: PermintaanArsip): boolean {
 export function arsipItemsSummary(item: PermintaanArsip): string {
   return item.items.map((i) => `${i.namaArsip} (${i.jumlah} ${i.satuan})`).join(", ");
 }
+
+// --- Contact Person (tombol "Contact Person" di sidebar, lihat ContactPersonModal.tsx) ---
+
+export interface ContactPerson {
+  module: string;
+  name: string;
+  phone: string;
+}
+
+export const CONTACT_PERSONS: ContactPerson[] = [
+  { module: "Expedition", name: "Melda", phone: "+62 812-1555-6739" },
+  { module: "Room Booking", name: "Melda", phone: "+62 812-1555-6739" },
+  { module: "Vehicle Booking", name: "Ardi", phone: "+62 812-8120-5697" },
+  { module: "Office Supplies", name: "Melda", phone: "+62 812-1555-6739" },
+  { module: "Maintenance", name: "Ceuta", phone: "+62 811-1814-606" },
+  { module: "Archive", name: "Wawa", phone: "+62 812-9790-2368" },
+];
