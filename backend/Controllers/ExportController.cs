@@ -56,8 +56,8 @@ public class ExportController : ApiControllerBase
         ["REJECTED_GA"] = "Rejected Admin General Affair",
         ["APPROVED_GA"] = "On-Approval Approval GA",
         ["REJECTED_GA_APPROVAL"] = "Rejected Approval GA",
-        ["APPROVED_GA_APPROVAL"] = "On-Approval KPU",
-        ["REJECTED_KPU"] = "Rejected KPU",
+        ["APPROVED_GA_APPROVAL"] = "On-Approval Mitra",
+        ["REJECTED_KPU"] = "Rejected Mitra",
         ["COMPLETED"] = "Approved",
     };
 

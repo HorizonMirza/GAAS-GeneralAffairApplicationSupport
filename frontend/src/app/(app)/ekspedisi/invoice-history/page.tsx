@@ -163,8 +163,8 @@ export default function InvoiceHistoryPage() {
                 onChange={(v) => { setInvoiceFilterUploader(v === "" ? "" : Number(v)); setInvoicePage(1); }}
                 options={invoiceUploaders.map((u) => String(u.id))}
                 getLabel={(v) => invoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
-                clearLabel="Semua KPU"
-                placeholder="Semua KPU"
+                clearLabel="Semua Mitra"
+                placeholder="Semua Mitra"
               />
             </div>
           )}
@@ -214,7 +214,7 @@ export default function InvoiceHistoryPage() {
                   {inv.status === "REJECTED" ? (
                     <div className="badge-stack">
                       <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
-                      <span className="badge badge-waiting">Waiting: KPU</span>
+                      <span className="badge badge-waiting">Waiting: Mitra</span>
                     </div>
                   ) : (
                     <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>

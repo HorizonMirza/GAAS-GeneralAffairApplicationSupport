@@ -832,7 +832,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_KPU", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (KPU)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Nama, "menyetujui (Mitra)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -855,7 +855,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user!.Nama, "menolak (KPU)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user!.Nama, "menolak (Mitra)");
         return Ok(PengirimanOut.From(item));
     }
 

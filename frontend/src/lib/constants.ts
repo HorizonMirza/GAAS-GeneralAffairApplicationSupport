@@ -9,8 +9,8 @@ export const STATUS_LABEL: Record<Status, string> = {
   REJECTED_GA: "Rejected: Admin General Affair",
   APPROVED_GA: "On-Approval: Approval GA",
   REJECTED_GA_APPROVAL: "Rejected: Approval GA",
-  APPROVED_GA_APPROVAL: "On-Approval: KPU",
-  REJECTED_KPU: "Rejected: KPU",
+  APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+  REJECTED_KPU: "Rejected: Mitra",
   COMPLETED: "Approved",
 };
 
@@ -38,7 +38,7 @@ export function trackWord(departemen: string | null | undefined): "Departemen" |
 // could already open and post in the chat.
 export function chatParticipantLabels(departemen: string | null | undefined): string[] {
   const track = trackWord(departemen);
-  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA", "KPU"];
+  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA", "Mitra"];
 }
 
 // Same reasoning as chatParticipantLabels above. Room booking's approval chain stops at Approval
@@ -72,7 +72,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   APPROVAL_DIVISI: "Approval Divisi",
   ADMIN_GA: "Admin General Affair",
   APPROVAL_GA: "Approval General Affair",
-  KPU: "KPU",
+  KPU: "Mitra",
   SUPER_ADMIN: "Super Admin",
 };
 
@@ -85,7 +85,7 @@ export const ROLE_SHORT_LABEL: Record<Role, string> = {
   APPROVAL_DIVISI: "Approval Divisi",
   ADMIN_GA: "Admin General Affair",
   APPROVAL_GA: "Approval GA",
-  KPU: "KPU",
+  KPU: "Mitra",
   SUPER_ADMIN: "Super Admin",
 };
 
@@ -131,8 +131,8 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   REJECTED_GA: { label: "Ditolak Admin General Affair", type: "reject" },
   APPROVED_GA_APPROVAL: { label: "Disetujui Approval GA", type: "approve" },
   REJECTED_GA_APPROVAL: { label: "Ditolak Approval GA", type: "reject" },
-  APPROVED_KPU: { label: "Disetujui KPU & Resi Diterbitkan", type: "approve" },
-  REJECTED_KPU: { label: "Ditolak KPU", type: "reject" },
+  APPROVED_KPU: { label: "Disetujui Mitra & Resi Diterbitkan", type: "approve" },
+  REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
   LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },

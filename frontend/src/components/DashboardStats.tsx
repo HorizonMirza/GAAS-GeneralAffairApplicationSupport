@@ -171,7 +171,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
             <div className="stat-tile"><div className="value">{pengiriman.waitingL1}</div><div className="label">{l1Label}</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.waitingGa}</div><div className="label">Admin General Affair</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">KPU</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">Mitra</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.completed}</div><div className="label">Approved</div></div>
           </div>
         )}

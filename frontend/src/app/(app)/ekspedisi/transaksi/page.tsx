@@ -246,7 +246,7 @@ function TransaksiPageInner() {
                       SUBMITTED: "On-Approval: Approval Departemen/Divisi",
                       APPROVED_L1: "On-Approval: Admin GA",
                       APPROVED_GA: "On-Approval: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: KPU",
+                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
                       REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}

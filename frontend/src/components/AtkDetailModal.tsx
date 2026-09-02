@@ -146,7 +146,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkGaApproval(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke KPU");
+      showToast("Permintaan berhasil di-approve, diteruskan ke Mitra");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

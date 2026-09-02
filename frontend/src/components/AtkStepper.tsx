@@ -10,7 +10,7 @@ function buildSteps(departemen: PermintaanAtk["departemen"]) {
     { label: `Approval ${track}` },
     { label: "Admin General Affair" },
     { label: "Approval GA" },
-    { label: "KPU" },
+    { label: "Mitra" },
   ];
 }
 

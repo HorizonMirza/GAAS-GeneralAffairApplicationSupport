@@ -444,8 +444,8 @@ export default function SuperAdminPage() {
                       REJECTED_GA: "Rejected: Admin GA",
                       APPROVED_GA: "On-Approval: Approval GA",
                       REJECTED_GA_APPROVAL: "Rejected: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: KPU",
-                      REJECTED_KPU: "Rejected: KPU",
+                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      REJECTED_KPU: "Rejected: Mitra",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}
                     clearLabel="Semua Status"

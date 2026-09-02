@@ -154,7 +154,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     onClose();
     try {
       await api.approveGaApproval(item!.id);
-      showToast("Data berhasil di-approve, diteruskan ke KPU");
+      showToast("Data berhasil di-approve, diteruskan ke Mitra");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -294,7 +294,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
 
           {showKpuSection && (
             <div style={{ marginTop: 6, paddingTop: 16, borderTop: "1px solid var(--border-subtle)" }}>
-              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (KPU)</h4>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (Mitra)</h4>
               <div className="form-grid">
                 <div className="field">
                   <label htmlFor="pv-k-resi">No Resi</label>

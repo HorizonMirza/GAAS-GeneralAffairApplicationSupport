@@ -139,7 +139,7 @@ export default function OfficeSuppliesOverviewPage() {
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">KPU</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">Mitra</div></div>
           <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
         </div>
       )}

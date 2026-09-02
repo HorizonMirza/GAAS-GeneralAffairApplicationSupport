@@ -28,10 +28,14 @@ public static class DbSeeder
             }
         }
 
-        accounts.Add(new("AdminGeneralAffair", DefaultPassword, "Admin General Affair", RoleEnum.ADMIN_GA, null, null, null));
-        accounts.Add(new("ApprovalGeneralAffair", DefaultPassword, "Approval General Affair", RoleEnum.APPROVAL_GA, null, null, null));
+        // Two Admin GA / two Approval GA accounts now (was one each) - same Nama within each pair
+        // since the login-facing Username is what actually tells the two apart.
+        accounts.Add(new("Admin General Affair 1", DefaultPassword, "Admin General Affair", RoleEnum.ADMIN_GA, null, null, null));
+        accounts.Add(new("Admin General Affair 2", DefaultPassword, "Admin General Affair", RoleEnum.ADMIN_GA, null, null, null));
+        accounts.Add(new("Approval General Affair 1", DefaultPassword, "Approval General Affair", RoleEnum.APPROVAL_GA, null, null, null));
+        accounts.Add(new("Approval General Affair 2", DefaultPassword, "Approval General Affair", RoleEnum.APPROVAL_GA, null, null, null));
         accounts.Add(new("KPU", DefaultPassword, "KPU", RoleEnum.KPU, null, null, null));
-        accounts.Add(new("SuperAdminGAAS", DefaultPassword, "Super Admin", RoleEnum.SUPER_ADMIN, null, null, null));
+        accounts.Add(new("Super Admin GAAS", DefaultPassword, "Super Admin", RoleEnum.SUPER_ADMIN, null, null, null));
 
         return accounts;
     }
