@@ -2632,8 +2632,11 @@ table.data-table {
 }
 
 /* ---------- Contact Person page (app/(app)/contact-person/page.tsx) ----------
-   A real sidebar section like Profile/Archive, not a modal - a 3-per-row grid of info-card-style
-   tiles, one per module's PIC. Avatar is a placeholder emoji until real photos exist. */
+   A real sidebar section like Profile/Archive, not a modal - a grid of info-card-style tiles,
+   one per person (several people cover more than one module - see CONTACT_PERSONS.modules).
+   Photo banner follows the same placeholder convention as the Room Booking overview's room
+   photos (roomPhotoUrl): a themed gradient + icon until a real photo is dropped in at the same
+   filename. */
 .contact-page-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2647,20 +2650,18 @@ table.data-table {
 .contact-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 28px 20px 22px;
   border-radius: 16px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   box-shadow: 0 1px 2px rgba(16, 25, 46, 0.04);
+  overflow: hidden;
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .contact-card:hover,
 .contact-card:focus-within,
 .contact-card:active {
-  transform: scale(1.045);
+  transform: scale(1.03);
   box-shadow: 0 0 0 1px var(--blue-400), 0 0 28px 6px rgba(75, 141, 255, 0.45);
   z-index: 1;
 }
@@ -2670,37 +2671,18 @@ table.data-table {
   .contact-card:hover, .contact-card:focus-within, .contact-card:active { transform: none; }
 }
 
-/* Glossy ring: a gradient "ring" wrapper (padding reveals it as a band around the inner circle)
-   rather than a flat single-color box-shadow outline, so it reads as shiny rather than flat. */
-.contact-card-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  padding: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #bfdcff 0%, #4b8dff 45%, #1450c9 100%);
-  margin-bottom: 14px;
-  transition: filter 200ms ease, box-shadow 200ms ease;
+.contact-card-photo {
+  height: 150px;
+  flex-shrink: 0;
+  background: var(--bg-surface-alt) center / cover no-repeat;
 }
 
-.contact-card-avatar-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+.contact-card-body {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  background: var(--bg-surface-alt);
-}
-
-.contact-card:hover .contact-card-avatar,
-.contact-card:focus-within .contact-card-avatar,
-.contact-card:active .contact-card-avatar {
-  filter: brightness(1.15) saturate(1.1);
-  box-shadow: 0 0 16px 4px rgba(75, 141, 255, 0.55);
+  text-align: center;
+  padding: 18px 20px 22px;
 }
 
 .contact-card-name {
