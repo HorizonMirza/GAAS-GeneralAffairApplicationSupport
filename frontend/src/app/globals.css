@@ -2647,8 +2647,81 @@ table.data-table {
   .contact-page-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* Mobile: keep the 3-column grid but shrink everything down to fit - a 1-per-row stack
+   would push the page to 6 long scrolls on a phone. */
 @media (max-width: 560px) {
-  .contact-page-grid { grid-template-columns: 1fr; }
+  .contact-page-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .contact-card-photo { height: 64px; }
+
+  .contact-card-body { padding: 6px 6px 8px; }
+
+  .contact-card-name {
+    font-size: 0.66rem;
+    line-height: 1.15;
+  }
+
+  .contact-card:hover .contact-card-name,
+  .contact-card:focus-within .contact-card-name,
+  .contact-card:active .contact-card-name {
+    font-size: 0.72rem;
+  }
+
+  .contact-card-phone {
+    font-size: 0.56rem;
+    margin-top: 3px;
+  }
+
+  .contact-card:hover .contact-card-phone,
+  .contact-card:focus-within .contact-card-phone,
+  .contact-card:active .contact-card-phone {
+    font-size: 0.62rem;
+  }
+
+  .contact-card-email {
+    font-size: 0.5rem;
+    margin-top: 2px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .contact-card:hover .contact-card-email,
+  .contact-card:focus-within .contact-card-email,
+  .contact-card:active .contact-card-email {
+    font-size: 0.56rem;
+  }
+
+  .contact-card-modules {
+    gap: 3px;
+    margin-top: 5px;
+  }
+
+  .contact-card-module-tag {
+    font-size: 0.5rem;
+    padding: 1px 5px;
+  }
+
+  .contact-card-actions {
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .contact-card-btn {
+    flex: none;
+    width: 100%;
+    gap: 4px;
+    padding: 5px 2px;
+    font-size: 0.58rem;
+    border-radius: 7px;
+  }
+
+  .contact-card-btn svg {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 .contact-card {
