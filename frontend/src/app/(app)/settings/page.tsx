@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 
 type AccountField = "username" | "noHp" | "email";
@@ -83,13 +83,10 @@ export default function SettingsPage() {
   const [draft, setDraft] = useState("");
   const [savingField, setSavingField] = useState(false);
 
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
-  useAutofocusFirstField(formRef, showPasswordForm ? me?.username : undefined);
 
   if (!me) return null;
 
@@ -139,7 +136,6 @@ export default function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setShowPasswordForm(false);
     } catch (err) {
       setPasswordError((err as Error).message);
     }
@@ -194,35 +190,15 @@ export default function SettingsPage() {
           <h3>Keamanan</h3>
         </div>
 
-        {!showPasswordForm ? (
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setShowPasswordForm(true)}>
-            Ubah Password
-          </button>
-        ) : (
-          <form ref={formRef} className="settings-edit-panel" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
-            <PasswordField id="current-password" label="Password Saat Ini" placeholder="Min. 8 Karakter" value={currentPassword} onChange={setCurrentPassword} />
-            <PasswordField id="new-password" label="Password Baru" placeholder="Min. 8 Karakter" minLength={8} value={newPassword} onChange={setNewPassword} />
-            <PasswordField id="confirm-password" label="Konfirmasi Password Baru" placeholder="Ulangi Password Baru" minLength={8} value={confirmPassword} onChange={setConfirmPassword} />
-            <div className="error-text">{passwordError}</div>
-            <div className="settings-edit-panel-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: "auto" }}
-                onClick={() => {
-                  setShowPasswordForm(false);
-                  setPasswordError("");
-                  setCurrentPassword("");
-                  setNewPassword("");
-                  setConfirmPassword("");
-                }}
-              >
-                Batal
-              </button>
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan Password</button>
-            </div>
-          </form>
-        )}
+        <form className="settings-edit-panel" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
+          <PasswordField id="current-password" label="Password Saat Ini" placeholder="Min. 8 Karakter" value={currentPassword} onChange={setCurrentPassword} />
+          <PasswordField id="new-password" label="Password Baru" placeholder="Min. 8 Karakter" minLength={8} value={newPassword} onChange={setNewPassword} />
+          <PasswordField id="confirm-password" label="Konfirmasi Password Baru" placeholder="Ulangi Password Baru" minLength={8} value={confirmPassword} onChange={setConfirmPassword} />
+          <div className="error-text">{passwordError}</div>
+          <div className="settings-edit-panel-actions">
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan Password</button>
+          </div>
+        </form>
       </div>
     </div>
   );

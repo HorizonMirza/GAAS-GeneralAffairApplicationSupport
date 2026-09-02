@@ -58,6 +58,8 @@ export interface Me {
   noHp: string | null;
   email: string | null;
   hasPhoto: boolean;
+  hasCoverPhoto: boolean;
+  coverPreset: string | null;
 }
 
 export interface DivisiNode {

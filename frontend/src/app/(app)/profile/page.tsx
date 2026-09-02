@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ROLE_LABEL } from "@/lib/constants";
+import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { useToast } from "@/components/ui/ToastProvider";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
@@ -20,6 +20,12 @@ export default function ProfilePage() {
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const [editingCover, setEditingCover] = useState(false);
+  const [coverVersion, setCoverVersion] = useState(0);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   if (!me) return null;
 
@@ -72,9 +78,71 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleCoverPresetPick(key: string) {
+    setSavingCoverPreset(key);
+    try {
+      await api.updateCoverPreset(key);
+      await refresh();
+      showToast("Background berhasil diubah");
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setSavingCoverPreset(null);
+    }
+  }
+
+  async function handleCoverPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      showToast("Format gambar tidak didukung. Gunakan JPG atau PNG.", "error");
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
+      showToast("Ukuran gambar maksimal 5 MB", "error");
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      await api.uploadCoverPhoto(file);
+      await refresh();
+      setCoverVersion(Date.now());
+      showToast("Background berhasil diubah");
+    } catch (err) {
+      showToast((err as Error).message || "Gagal mengunggah gambar", "error");
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  async function handleRemoveCoverPhoto() {
+    setUploadingCover(true);
+    try {
+      await api.deleteCoverPhoto();
+      await refresh();
+      showToast("Foto background dihapus");
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  const bannerStyle =
+    !me.hasCoverPhoto && me.coverPreset
+      ? { background: COVER_PRESETS.find((p) => p.key === me.coverPreset)?.gradient }
+      : undefined;
+
   return (
     <div className="card profile-hero-card">
-      <div className="profile-hero-banner" />
+      <div className="profile-hero-banner" style={bannerStyle}>
+        {me.hasCoverPhoto && (
+          <img className="profile-hero-banner-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
+        )}
+      </div>
       <div className="profile-hero-header">
         <div className="profile-hero-avatar">
           {me.hasPhoto ? (
@@ -92,12 +160,57 @@ export default function ProfilePage() {
             {uploadingPhoto ? "Mengunggah..." : "Ganti Foto"}
           </button>
           <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
+          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingCover((v) => !v)}>
+            Ganti Background
+          </button>
+          <input ref={coverInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handleCoverPhotoChange} />
           <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={openNamaEdit}>
             Ubah Nama
           </button>
         </div>
       </div>
       <div className="profile-photo-hint profile-photo-hint-header">JPG atau PNG, maks. 5 MB</div>
+
+      {editingCover && (
+        <div className="settings-edit-panel">
+          <div className="field">
+            <label>Pilih Warna Background</label>
+            <div className="cover-preset-row">
+              {COVER_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
+                  style={{ background: p.gradient }}
+                  title={p.label}
+                  aria-label={p.label}
+                  disabled={savingCoverPreset !== null}
+                  onClick={() => handleCoverPresetPick(p.key)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="settings-edit-panel-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto" }}
+              disabled={uploadingCover}
+              onClick={() => coverInputRef.current?.click()}
+            >
+              {uploadingCover ? "Mengunggah..." : "Upload Gambar"}
+            </button>
+            {me.hasCoverPhoto && (
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={handleRemoveCoverPhoto}>
+                Hapus Foto
+              </button>
+            )}
+            <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setEditingCover(false)}>
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
 
       {editingNama && (
         <form className="settings-edit-panel" onSubmit={handleNamaSubmit}>

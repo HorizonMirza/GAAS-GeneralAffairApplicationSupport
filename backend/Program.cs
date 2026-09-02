@@ -65,6 +65,11 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_path VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_content_type VARCHAR(100)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS photo_original_filename VARCHAR(255)");
+    // Profile hero banner background (ProfileController.UploadCoverPhoto/GetCoverPhoto/UpdateCoverPreset).
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover_photo_path VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover_photo_content_type VARCHAR(100)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover_photo_original_filename VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover_preset VARCHAR(50)");
     // One-time backfill: "Engineering Project – EPC" (en-dash) was the departemen name actually seeded/stored
     // before OrgTree.cs was corrected to the hyphen form below - any row already stamped with the
     // old en-dash string no longer matches OrgTree's canonical list (used for access-control

@@ -552,3 +552,20 @@ export const CONTACT_PERSONS: ContactPerson[] = [
   { name: "Esther", modules: ["General Affair Approval"], phone: "+62 812-8202-9417", email: TEMP_CONTACT_EMAIL },
   { name: "Yosua", modules: ["Department Head General Affair"], phone: "+62 812-8105-8747", email: TEMP_CONTACT_EMAIL },
 ];
+
+// --- Profile hero banner backgrounds (halaman /profile) ---
+// Keys must match AllowedCoverPresets in the backend's ProfileController.
+export interface CoverPreset {
+  key: string;
+  label: string;
+  gradient: string;
+}
+
+export const COVER_PRESETS: CoverPreset[] = [
+  { key: "navy", label: "Navy", gradient: "linear-gradient(135deg, #081328 0%, #1450c9 55%, #4b8dff 100%)" },
+  { key: "ocean", label: "Ocean", gradient: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #38bdf8 100%)" },
+  { key: "emerald", label: "Emerald", gradient: "linear-gradient(135deg, #064e3b 0%, #059669 55%, #34d399 100%)" },
+  { key: "sunset", label: "Sunset", gradient: "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fb923c 100%)" },
+  { key: "purple", label: "Purple", gradient: "linear-gradient(135deg, #3b0764 0%, #7e22ce 55%, #c084fc 100%)" },
+  { key: "slate", label: "Slate", gradient: "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)" },
+];

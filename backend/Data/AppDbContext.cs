@@ -165,6 +165,10 @@ public class AppDbContext : DbContext
             e.Property(u => u.PhotoPath).HasColumnName("photo_path").HasMaxLength(255);
             e.Property(u => u.PhotoContentType).HasColumnName("photo_content_type").HasMaxLength(100);
             e.Property(u => u.PhotoOriginalFilename).HasColumnName("photo_original_filename").HasMaxLength(255);
+            e.Property(u => u.CoverPhotoPath).HasColumnName("cover_photo_path").HasMaxLength(255);
+            e.Property(u => u.CoverPhotoContentType).HasColumnName("cover_photo_content_type").HasMaxLength(100);
+            e.Property(u => u.CoverPhotoOriginalFilename).HasColumnName("cover_photo_original_filename").HasMaxLength(255);
+            e.Property(u => u.CoverPreset).HasColumnName("cover_preset").HasMaxLength(50);
             e.Property(u => u.CreatedAt).HasColumnName("created_at");
             e.Property(u => u.PasswordChangedAt).HasColumnName("password_changed_at");
         });

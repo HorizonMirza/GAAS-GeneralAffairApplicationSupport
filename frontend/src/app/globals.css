@@ -1412,6 +1412,46 @@ body.auth-ready .app-shell {
 .profile-hero-banner {
   height: 88px;
   background: var(--gradient-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-hero-banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cover-preset-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.cover-preset-swatch:hover {
+  transform: scale(1.08);
+}
+
+.cover-preset-swatch.active {
+  border-color: var(--bg-surface);
+  box-shadow: 0 0 0 2px var(--blue-400);
+}
+
+.cover-preset-swatch:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .profile-hero-header {

@@ -20,6 +20,14 @@ public class ProfileController : ApiControllerBase
     };
     private const long MaxPhotoFileSizeBytes = 5 * 1024 * 1024; // 5 MB
 
+    // Keys must match COVER_PRESETS in the frontend's constants.ts - kept as an explicit allowlist
+    // here rather than accepting any string, since CoverPreset is rendered straight into a CSS
+    // class name client-side.
+    private static readonly HashSet<string> AllowedCoverPresets = new(StringComparer.Ordinal)
+    {
+        "navy", "ocean", "emerald", "sunset", "purple", "slate",
+    };
+
     private readonly AppDbContext _db;
     private readonly JwtService _jwt;
     private readonly IConfiguration _config;
@@ -162,5 +170,102 @@ public class ProfileController : ApiControllerBase
         var cd = new ContentDisposition { Inline = true, FileName = user.PhotoOriginalFilename ?? user.PhotoPath };
         Response.Headers["Content-Disposition"] = cd.ToString();
         return File(bytes, user.PhotoContentType ?? "application/octet-stream");
+    }
+
+    [HttpPut("cover-preset")]
+    public async Task<IActionResult> UpdateCoverPreset([FromBody] UpdateCoverPresetRequest payload)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        if (!AllowedCoverPresets.Contains(payload.Preset))
+            return StatusCode(400, new { detail = "Preset background tidak dikenali" });
+
+        // Picking a preset always wins over any uploaded cover photo, so the old file is removed
+        // rather than left orphaned on disk pointing at nothing.
+        var oldPath = user!.CoverPhotoPath != null ? Path.Combine(_uploadDir, user.CoverPhotoPath) : null;
+
+        user.CoverPreset = payload.Preset;
+        user.CoverPhotoPath = null;
+        user.CoverPhotoContentType = null;
+        user.CoverPhotoOriginalFilename = null;
+        await _db.SaveChangesAsync();
+
+        if (oldPath != null && System.IO.File.Exists(oldPath))
+            System.IO.File.Delete(oldPath);
+
+        return Ok(MeResponse.From(user));
+    }
+
+    [HttpPost("cover-photo")]
+    public async Task<IActionResult> UploadCoverPhoto([FromForm] IFormFile? file)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        if (file == null || file.Length == 0)
+            return StatusCode(400, new { detail = "Gambar wajib diunggah" });
+        if (file.Length > MaxPhotoFileSizeBytes)
+            return StatusCode(400, new { detail = $"Ukuran file maksimal {MaxPhotoFileSizeBytes / 1024 / 1024} MB" });
+        var ext = Path.GetExtension(file.FileName);
+        if (string.IsNullOrEmpty(ext) || !AllowedPhotoExtensions.TryGetValue(ext, out var contentType))
+            return StatusCode(400, new { detail = "Format gambar tidak didukung. Gunakan JPG atau PNG." });
+
+        var storedFilename = $"{Guid.NewGuid():N}{ext}";
+        var destPath = Path.Combine(_uploadDir, storedFilename);
+        using (var stream = System.IO.File.Create(destPath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var oldPath = user!.CoverPhotoPath != null ? Path.Combine(_uploadDir, user.CoverPhotoPath) : null;
+
+        user.CoverPhotoPath = storedFilename;
+        user.CoverPhotoContentType = contentType;
+        user.CoverPhotoOriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
+        await _db.SaveChangesAsync();
+
+        if (oldPath != null && System.IO.File.Exists(oldPath))
+            System.IO.File.Delete(oldPath);
+
+        return Ok(MeResponse.From(user));
+    }
+
+    [HttpDelete("cover-photo")]
+    public async Task<IActionResult> DeleteCoverPhoto()
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var oldPath = user!.CoverPhotoPath != null ? Path.Combine(_uploadDir, user.CoverPhotoPath) : null;
+
+        user.CoverPhotoPath = null;
+        user.CoverPhotoContentType = null;
+        user.CoverPhotoOriginalFilename = null;
+        await _db.SaveChangesAsync();
+
+        if (oldPath != null && System.IO.File.Exists(oldPath))
+            System.IO.File.Delete(oldPath);
+
+        return Ok(MeResponse.From(user));
+    }
+
+    [HttpGet("cover-photo")]
+    public async Task<IActionResult> GetCoverPhoto()
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        if (user!.CoverPhotoPath == null)
+            return NotFound(new { detail = "Belum ada foto background" });
+
+        var path = Path.Combine(_uploadDir, user.CoverPhotoPath);
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { detail = "File background tidak ditemukan di server" });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var cd = new ContentDisposition { Inline = true, FileName = user.CoverPhotoOriginalFilename ?? user.CoverPhotoPath };
+        Response.Headers["Content-Disposition"] = cd.ToString();
+        return File(bytes, user.CoverPhotoContentType ?? "application/octet-stream");
     }
 }

@@ -14,7 +14,9 @@ public record MeResponse(
     string? Departemen,
     string? NoHp,
     string? Email,
-    bool HasPhoto
+    bool HasPhoto,
+    bool HasCoverPhoto,
+    string? CoverPreset
 )
 {
     public static MeResponse From(User user) => new(
@@ -27,7 +29,9 @@ public record MeResponse(
         user.Departemen,
         user.NoHp,
         user.Email,
-        user.PhotoPath != null
+        user.PhotoPath != null,
+        user.CoverPhotoPath != null,
+        user.CoverPreset
     );
 }
 
@@ -45,3 +49,5 @@ public record OrgStructureResponse(
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 public record UpdateProfileRequest(string Nama, string Username, string? NoHp, string? Email);
+
+public record UpdateCoverPresetRequest(string Preset);
