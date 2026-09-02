@@ -2738,6 +2738,13 @@ table.data-table {
   font-size: 1.05rem;
 }
 
+.contact-card-email {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  word-break: break-all;
+}
+
 .contact-card-actions {
   display: flex;
   align-items: center;

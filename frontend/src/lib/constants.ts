@@ -536,15 +536,19 @@ export interface ContactPerson {
   name: string;
   modules: string[];
   phone: string;
+  email: string;
 }
+
+// Placeholder email shared by everyone for now until each person's real address is provided.
+const TEMP_CONTACT_EMAIL = "purbandonomirza@gmail.com";
 
 // One card per person (not per module) - several people cover more than one module, so the same
 // name/number would otherwise repeat across several near-identical cards.
 export const CONTACT_PERSONS: ContactPerson[] = [
-  { name: "Melda", modules: ["Expedition", "Room Booking", "Office Supplies"], phone: "+62 812-1555-6739" },
-  { name: "Ardi", modules: ["Vehicle Booking"], phone: "+62 812-8120-5697" },
-  { name: "Ceuta", modules: ["Maintenance"], phone: "+62 811-1814-606" },
-  { name: "Wawa", modules: ["Archive"], phone: "+62 812-9790-2368" },
-  { name: "Esther", modules: ["General Affair Approval"], phone: "+62 812-8202-9417" },
-  { name: "Yosua", modules: ["Department Head General Affair"], phone: "+62 812-8105-8747" },
+  { name: "Melda", modules: ["Expedition", "Room Booking", "Office Supplies"], phone: "+62 812-1555-6739", email: TEMP_CONTACT_EMAIL },
+  { name: "Ardi", modules: ["Vehicle Booking"], phone: "+62 812-8120-5697", email: TEMP_CONTACT_EMAIL },
+  { name: "Ceuta", modules: ["Maintenance"], phone: "+62 811-1814-606", email: TEMP_CONTACT_EMAIL },
+  { name: "Wawa", modules: ["Archive"], phone: "+62 812-9790-2368", email: TEMP_CONTACT_EMAIL },
+  { name: "Esther", modules: ["General Affair Approval"], phone: "+62 812-8202-9417", email: TEMP_CONTACT_EMAIL },
+  { name: "Yosua", modules: ["Department Head General Affair"], phone: "+62 812-8105-8747", email: TEMP_CONTACT_EMAIL },
 ];

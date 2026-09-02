@@ -1,7 +1,6 @@
 "use client";
 
 import { CONTACT_PERSONS } from "@/lib/constants";
-import { useToast } from "@/components/ui/ToastProvider";
 
 // wa.me needs digits only, already carrying the country code (62...) - the phone numbers in
 // CONTACT_PERSONS are entered as "+62 812-1555-6739" for readability, so + / spaces / dashes are
@@ -23,17 +22,6 @@ function contactPhotoUrl(name: string): string {
 }
 
 export default function ContactPersonPage() {
-  const { showToast } = useToast();
-
-  async function copyPhone(phone: string) {
-    try {
-      await navigator.clipboard.writeText(phone);
-      showToast("Nomor disalin");
-    } catch {
-      showToast("Gagal menyalin nomor", "error");
-    }
-  }
-
   return (
     <div className="contact-page">
       <div className="contact-page-grid">
@@ -43,6 +31,7 @@ export default function ContactPersonPage() {
             <div className="contact-card-body">
               <div className="contact-card-name">{c.name}</div>
               <div className="contact-card-phone">{c.phone}</div>
+              <div className="contact-card-email">{c.email}</div>
               <div className="contact-card-modules">
                 {c.modules.map((m) => (
                   <span key={m} className="contact-card-module-tag">{m}</span>
@@ -61,15 +50,14 @@ export default function ContactPersonPage() {
                   </svg>
                   WhatsApp
                 </a>
-                <button
-                  type="button"
+                <a
                   className="contact-card-btn"
-                  onClick={() => copyPhone(c.phone)}
-                  aria-label={`Salin nomor ${c.name}`}
+                  href={`mailto:${c.email}`}
+                  aria-label={`Email ${c.name}`}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  Copy
-                </button>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 6 10 7 10-7"></path></svg>
+                  Email
+                </a>
               </div>
             </div>
           </div>
