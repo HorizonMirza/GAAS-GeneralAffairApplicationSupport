@@ -693,6 +693,48 @@ body.auth-ready .app-shell {
     opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Wraps the nav links so the sidebar can scroll its middle section (via Radix ScrollArea)
+   without the fixed logo/collapse-toggle above and below it scrolling away too. min-height: 0 is
+   required on a flex child for its own overflow/scroll to actually kick in, instead of just
+   growing the flex parent. */
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+
+.sidebar-collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.sidebar-collapse-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.sidebar-collapse-toggle svg {
+  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .brand-logo-sidebar {
   display: flex;
   justify-content: center;
@@ -3561,13 +3603,30 @@ table.data-table {
   flex: 1;
 }
 
+/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide) - labels,
+   the chevrons, open submenus, the divider, and the full-width logo wordmark all disappear,
+   leaving just the icons with a hover/title tooltip standing in for their labels. */
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
-    width: 0;
+    width: 76px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar.sidebar-toggled .brand-logo-sidebar-img,
+  .sidebar.sidebar-toggled .nav-link span,
+  .sidebar.sidebar-toggled .nav-category-trigger span,
+  .sidebar.sidebar-toggled .nav-category-chevron,
+  .sidebar.sidebar-toggled .nav-category-submenu,
+  .sidebar.sidebar-toggled .sidebar-divider {
+    display: none;
+  }
+
+  .sidebar.sidebar-toggled .nav-link,
+  .sidebar.sidebar-toggled .nav-category-trigger {
+    justify-content: center;
     padding-left: 0;
     padding-right: 0;
-    opacity: 0;
-    pointer-events: none;
   }
 }
 
@@ -3585,10 +3644,16 @@ table.data-table {
     transform: translateX(-100%);
     opacity: 1;
     z-index: 60;
-    overflow-y: auto;
     transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sidebar.sidebar-toggled { transform: translateX(0); }
+
+  /* This toggle's icon/label describe the desktop icon-collapse behavior only - on mobile the
+     topbar hamburger is the sidebar's one open/close control, so the button is hidden here
+     rather than showing a second control with a mismatched label. */
+  .sidebar-collapse-toggle {
+    display: none;
+  }
 
   .sidebar-backdrop {
     display: none;

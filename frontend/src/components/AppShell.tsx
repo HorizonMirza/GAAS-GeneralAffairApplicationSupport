@@ -10,6 +10,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Role } from "@/lib/types";
 
 interface NavLeaf {
@@ -239,58 +241,75 @@ export default function AppShell({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
-          Dashboard
-        </Link>
+        <ScrollArea className="sidebar-scroll">
+          <div className="sidebar-nav-list">
+            <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard" title="Dashboard">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+              <span>Dashboard</span>
+            </Link>
 
-        {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
-          // Same exclusion as the pathname-watching effect above - the shared /superadmin href
-          // must not count as "this category is active", or all 6 categories highlight/expand
-          // together on that page.
-          const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
-          const isOpen = openCategory === cat.label || hasActive;
-          return (
-            <div key={cat.label} className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}>
-              <button
-                type="button"
-                className="nav-category-trigger"
-                onClick={() => setOpenCategory((current) => (current === cat.label ? null : cat.label))}
-              >
-                {cat.icon}
-                <span>{cat.label}</span>
-                <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </button>
-              <div className="nav-category-submenu">
-                {cat.items.map((item) => {
-                  if (item.superAdminOnly && !isSuperAdmin) return null;
-                  if (!item.superAdminOnly && isSuperAdmin) return null;
-                  if (item.roles && !item.roles.includes(me.role)) return null;
-                  return (
-                    <Link
-                      key={item.label}
-                      className={`nav-link ${pathname === item.href ? "active" : ""}`}
-                      href={item.href}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+            {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
+              // Same exclusion as the pathname-watching effect above - the shared /superadmin href
+              // must not count as "this category is active", or all 6 categories highlight/expand
+              // together on that page.
+              const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
+              const isOpen = openCategory === cat.label || hasActive;
+              return (
+                <Collapsible
+                  key={cat.label}
+                  open={isOpen}
+                  onOpenChange={(next) => setOpenCategory(next ? cat.label : null)}
+                  className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}
+                >
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="nav-category-trigger" title={cat.label}>
+                      {cat.icon}
+                      <span>{cat.label}</span>
+                      <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="nav-category-submenu">
+                    {cat.items.map((item) => {
+                      if (item.superAdminOnly && !isSuperAdmin) return null;
+                      if (!item.superAdminOnly && isSuperAdmin) return null;
+                      if (item.roles && !item.roles.includes(me.role)) return null;
+                      return (
+                        <Link
+                          key={item.label}
+                          className={`nav-link ${pathname === item.href ? "active" : ""}`}
+                          href={item.href}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
 
-        <div className="sidebar-spacer"></div>
-        <div className="sidebar-divider"></div>
-        <Link className={`nav-link ${pathname === "/profile" ? "active" : ""}`} href="/profile">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
-          Profile
-        </Link>
-        <Link className={`nav-link ${pathname === "/contact-person" ? "active" : ""}`} href="/contact-person">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-          Contact Person
-        </Link>
+            <div className="sidebar-spacer"></div>
+            <div className="sidebar-divider"></div>
+            <Link className={`nav-link ${pathname === "/profile" ? "active" : ""}`} href="/profile" title="Profile">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
+              <span>Profile</span>
+            </Link>
+            <Link className={`nav-link ${pathname === "/contact-person" ? "active" : ""}`} href="/contact-person" title="Contact Person">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              <span>Contact Person</span>
+            </Link>
+          </div>
+        </ScrollArea>
+
+        <button
+          type="button"
+          className="sidebar-collapse-toggle"
+          aria-label={sidebarOpen ? "Perluas sidebar" : "Ciutkan sidebar jadi ikon"}
+          title={sidebarOpen ? "Perluas sidebar" : "Ciutkan sidebar jadi ikon"}
+          onClick={() => setSidebarOpen((v) => !v)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: sidebarOpen ? "rotate(180deg)" : "none" }}><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
       </aside>
 
       {sidebarOpen && <div className="sidebar-backdrop visible" onClick={() => setSidebarOpen(false)} />}
