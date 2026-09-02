@@ -2674,21 +2674,41 @@ table.data-table {
   .contact-card:hover, .contact-card:focus-within, .contact-card:active { transform: none; }
 }
 
+/* Glossy ring: a gradient "ring" wrapper (padding reveals it as a band around the inner circle)
+   rather than a flat single-color box-shadow outline, so it reads as shiny rather than flat. */
 .contact-card-avatar {
   width: 68px;
   height: 68px;
+  border-radius: 50%;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #bfdcff 0%, #4b8dff 45%, #1450c9 100%);
+  margin-bottom: 14px;
+  transition: filter 200ms ease, box-shadow 200ms ease;
+}
+
+.contact-card-avatar-inner {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
   background: var(--bg-surface-alt);
-  box-shadow: 0 0 0 3px var(--blue-400);
-  margin-bottom: 14px;
+}
+
+.contact-card:hover .contact-card-avatar,
+.contact-card:focus-within .contact-card-avatar,
+.contact-card:active .contact-card-avatar {
+  filter: brightness(1.15) saturate(1.1);
+  box-shadow: 0 0 16px 4px rgba(75, 141, 255, 0.55);
 }
 
 .contact-card-name {
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: var(--text-primary);
   transition: color 200ms ease;
@@ -2701,13 +2721,13 @@ table.data-table {
 }
 
 .contact-card-module {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
   margin-top: 6px;
 }
 
 .contact-card-phone {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   margin-top: 6px;
   font-variant-numeric: tabular-nums;
@@ -2737,12 +2757,14 @@ table.data-table {
   font-weight: 700;
   font-size: 0.82rem;
   text-decoration: none !important;
-  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+  transition: border-color 150ms ease, background 150ms ease;
 }
 
+/* Only the outer border/background reacts on hover - the label and icon keep their normal color,
+   not the border's blue. */
 .contact-card-btn:hover {
   border-color: var(--blue-400);
-  color: var(--blue-400) !important;
+  background: var(--bg-surface);
 }
 
 .form-grid {
