@@ -39,7 +39,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </div>
           <p style={{ margin: 0, color: "var(--text-secondary)", whiteSpace: "pre-line" }}>{state?.message}</p>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={close}>{t("common.cancel")}</button>
             <button
               type="button"
               className={isApprove ? "btn btn-confirm-approve" : "btn btn-confirm-danger"}

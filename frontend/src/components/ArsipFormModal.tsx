@@ -208,7 +208,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t("common.cancel")}</button>
             <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
           </div>
         </form>

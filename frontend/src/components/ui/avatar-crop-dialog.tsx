@@ -106,9 +106,6 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
         </div>
 
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} disabled={busy} onClick={onCancel}>
-            {t("common.cancel")}
-          </button>
           <button
             type="button"
             className="btn btn-primary"

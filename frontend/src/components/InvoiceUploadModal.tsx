@@ -132,7 +132,6 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={handleClose}>{t("common.cancel")}</button>
             <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>{t("common.save")}</button>
           </div>
         </form>

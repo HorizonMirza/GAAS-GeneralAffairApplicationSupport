@@ -71,7 +71,6 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
         </div>
         <div className="error-text">{error}</div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={handleClose}>{t("common.cancel")}</button>
           <button
             type="button"
             className={type === "approve" ? "btn btn-confirm-approve" : "btn btn-confirm-danger"}

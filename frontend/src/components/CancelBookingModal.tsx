@@ -76,7 +76,6 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
         </div>
         <div className="error-text">{error}</div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={handleClose}>{t("common.cancel")}</button>
           <button
             type="button"
             className="btn btn-danger"

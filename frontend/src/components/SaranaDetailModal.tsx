@@ -333,7 +333,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? t("common.cancel") : t("common.close")}</button>
             {canSubmitDraft && (
               <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.approve")}</button>
             )}

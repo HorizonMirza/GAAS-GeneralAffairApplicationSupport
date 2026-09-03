@@ -7,7 +7,7 @@ import { COVER_PRESETS, getRoleLabelMap } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { useToast } from "@/components/ui/ToastProvider";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
 import { Camera, Lock, Palette, Pencil, X } from "lucide-react";
 
@@ -507,9 +507,6 @@ export default function ProfilePage() {
           </form>
 
           <DialogFooter>
-            <DialogClose asChild>
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
-            </DialogClose>
             <button type="submit" form="edit-profile-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingProfile}>
               {savingProfile ? t("common.saving") : t("common.save")}
             </button>
@@ -565,9 +562,6 @@ export default function ProfilePage() {
               </form>
 
               <DialogFooter>
-                <DialogClose asChild>
-                  <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
-                </DialogClose>
                 <button type="submit" form="field-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
                   {savingField ? t("common.saving") : t("common.save")}
                 </button>
@@ -630,9 +624,6 @@ export default function ProfilePage() {
           </form>
 
           <DialogFooter>
-            <DialogClose asChild>
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
-            </DialogClose>
             <button type="submit" form="password-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
               {savingPassword ? t("common.saving") : t("common.save")}
             </button>
