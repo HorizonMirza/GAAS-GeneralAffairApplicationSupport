@@ -1896,10 +1896,19 @@ body.auth-ready .app-shell {
 }
 
 /* ---------- Edit Profile dialog (cover preset strip + avatar upload) ---------- */
+/* Cover + avatar together, avatar overlapping the cover's bottom-left corner like the app's own
+   profile hero card - the wrap's bottom margin reserves room for the half of the avatar that
+   hangs below the cover before the preset swatches row starts. The cover itself bleeds edge to
+   edge (negative side margins cancel the dialog's own padding) rather than sitting inset like a
+   regular card. */
+.edit-profile-cover-wrap {
+  position: relative;
+  margin: 0 -26px 34px;
+}
+
 .edit-profile-cover {
   position: relative;
   height: 110px;
-  border-radius: 10px;
   overflow: hidden;
   background: var(--gradient-primary);
 }
@@ -1912,43 +1921,43 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-.edit-profile-cover-remove-btn {
+.edit-profile-cover-actions {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 10px;
+}
+
+/* Shared semi-transparent round icon button - the "choose a background color" / "remove cover
+   photo" pair floating on the cover, and the avatar's own edit badge. */
+.edit-profile-icon-btn {
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
   border-radius: 50%;
   cursor: pointer;
-  background: rgba(5, 11, 26, 0.55);
+  background: rgba(17, 24, 39, 0.55);
   color: #fff;
   transition: background 0.15s ease;
 }
 
-.edit-profile-cover-remove-btn:hover {
-  background: rgba(5, 11, 26, 0.75);
+.edit-profile-icon-btn:hover {
+  background: rgba(17, 24, 39, 0.75);
 }
 
-.edit-profile-cover-remove-btn:disabled {
+.edit-profile-icon-btn:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-/* Cover + avatar together, avatar overlapping the cover's bottom-left corner like the app's own
-   profile hero card - the wrap's bottom margin reserves room for the half of the avatar that
-   hangs below the cover before the preset swatches row starts. */
-.edit-profile-cover-wrap {
-  position: relative;
-  margin-bottom: 34px;
-}
-
 .edit-profile-avatar {
   position: absolute;
-  left: 16px;
+  left: 42px;
   bottom: -28px;
   width: 72px;
   height: 72px;
@@ -1978,24 +1987,7 @@ body.auth-ready .app-shell {
   bottom: -2px;
   width: 26px;
   height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: 2px solid var(--bg-surface);
-  border-radius: 50%;
-  cursor: pointer;
-  background: var(--blue-600);
-  color: #fff;
-  transition: background 0.15s ease;
-}
-
-.edit-profile-avatar-edit-btn:hover {
-  background: var(--blue-500);
-}
-
-.edit-profile-avatar-edit-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .avatar-crop-area {

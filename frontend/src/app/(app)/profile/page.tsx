@@ -8,7 +8,7 @@ import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
-import { Camera, Pencil, X } from "lucide-react";
+import { Camera, Palette, Pencil, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -134,6 +134,7 @@ export default function ProfilePage() {
   const [coverVersion, setCoverVersion] = useState(0);
   const [removingCover, setRemovingCover] = useState(false);
   const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
+  const [showCoverPresets, setShowCoverPresets] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -153,6 +154,7 @@ export default function ProfilePage() {
     setProfileDraft({ nama: me!.nama, username: me!.username, noHp: me!.noHp ?? "", email: me!.email ?? "" });
     setContactPassword("");
     setContactPasswordError("");
+    setShowCoverPresets(false);
     setEditOpen(true);
   }
 
@@ -426,17 +428,27 @@ export default function ProfilePage() {
               {me.hasCoverPhoto && (
                 <img className="edit-profile-cover-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
               )}
-              {me.hasCoverPhoto && (
+              <div className="edit-profile-cover-actions">
                 <button
                   type="button"
-                  className="edit-profile-cover-remove-btn"
-                  aria-label="Hapus foto background"
-                  disabled={removingCover}
-                  onClick={handleRemoveCoverPhoto}
+                  className="edit-profile-icon-btn"
+                  aria-label="Pilih warna background"
+                  onClick={() => setShowCoverPresets((v) => !v)}
                 >
-                  <X width={14} height={14} />
+                  <Palette width={16} height={16} />
                 </button>
-              )}
+                {me.hasCoverPhoto && (
+                  <button
+                    type="button"
+                    className="edit-profile-icon-btn"
+                    aria-label="Hapus foto background"
+                    disabled={removingCover}
+                    onClick={handleRemoveCoverPhoto}
+                  >
+                    <X width={16} height={16} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="edit-profile-avatar">
               {me.hasPhoto ? (
@@ -446,7 +458,7 @@ export default function ProfilePage() {
               )}
               <button
                 type="button"
-                className="edit-profile-avatar-edit-btn"
+                className="edit-profile-icon-btn edit-profile-avatar-edit-btn"
                 aria-label="Ganti foto profil"
                 disabled={uploadingPhoto}
                 onClick={() => photoInputRef.current?.click()}
@@ -457,20 +469,22 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="cover-preset-row">
-            {COVER_PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
-                style={{ background: p.gradient }}
-                title={p.label}
-                aria-label={p.label}
-                disabled={savingCoverPreset !== null}
-                onClick={() => handleCoverPresetPick(p.key)}
-              />
-            ))}
-          </div>
+          {showCoverPresets && (
+            <div className="cover-preset-row">
+              {COVER_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
+                  style={{ background: p.gradient }}
+                  title={p.label}
+                  aria-label={p.label}
+                  disabled={savingCoverPreset !== null}
+                  onClick={() => handleCoverPresetPick(p.key)}
+                />
+              ))}
+            </div>
+          )}
 
           <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">

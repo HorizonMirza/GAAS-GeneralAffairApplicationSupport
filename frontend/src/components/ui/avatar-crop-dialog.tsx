@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 // The backend re-encodes every upload itself (resized to 512px, JPEG quality 85 - see
 // ProfileController.NormalizeImageAsync), so this crop step only needs to hand it clean pixels,
@@ -69,7 +69,6 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Sesuaikan Foto Profil</DialogTitle>
-          <DialogDescription>Geser untuk memindahkan, gunakan slider untuk memperbesar.</DialogDescription>
         </DialogHeader>
 
         {imageSrc && (
@@ -112,7 +111,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
             disabled={busy || !croppedAreaPixels}
             onClick={handleConfirm}
           >
-            {busy ? "Menyimpan..." : "Simpan Foto Profil"}
+            {busy ? "Menyimpan..." : "Simpan"}
           </button>
         </DialogFooter>
       </DialogContent>
