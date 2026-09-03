@@ -1632,7 +1632,6 @@ body.auth-ready .app-shell {
   color: var(--text-secondary);
   font-size: 0.88rem;
   line-height: 1.6;
-  max-width: 66ch;
 }
 
 /* Bottom padding only applies once open - if it stayed on the paragraph unconditionally, that

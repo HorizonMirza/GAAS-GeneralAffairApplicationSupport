@@ -7,49 +7,51 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Bagaimana cara mengajukan pengiriman, booking, atau permintaan baru?",
     answer:
-      "Buka modul terkait dari sidebar, masuk ke halaman Overview atau Transaction, lalu klik tombol \"+ Tambah\". Isi form sampai lengkap dan klik Ajukan.",
+      "Buka modul yang sesuai dari sidebar (Expedition, Room Booking, Vehicle Booking, Office Supplies, Maintenance, atau Archive), lalu masuk ke halaman Overview atau Transaction dan klik tombol \"+ Tambah\". Isi form sampai lengkap — data bisa disimpan dulu sebagai Draft kalau belum yakin, atau langsung klik Ajukan untuk masuk ke antrean approval.",
   },
   {
-    question: "Kenapa status pengajuan saya masih \"Diajukan\" / \"Menunggu Approval\"?",
+    question: "Bagaimana alur dan tingkatan approval untuk setiap pengajuan?",
     answer:
-      "Pengajuan sedang menunggu persetujuan atasan/approver terkait. Buka detail pengajuan untuk melihat riwayat approval dan siapa yang sedang memprosesnya.",
+      "Setiap pengajuan yang sudah diajukan (bukan Draft) berjalan berurutan lewat beberapa tingkat: Approval Departemen/Divisi (atasan langsung pemohon), lalu Admin General Affair, lalu Approval GA. Untuk modul yang melibatkan vendor seperti Expedition dan Office Supplies, ada tahap tambahan persetujuan Mitra setelah Approval GA sebelum pengajuan resmi selesai. Kalau salah satu tingkat menolak, pengajuan langsung berhenti berstatus Rejected di tingkat itu dan tidak lanjut ke tingkat berikutnya.",
+  },
+  {
+    question: "Apa arti setiap status pengajuan yang saya lihat?",
+    answer:
+      "Draft berarti data belum diajukan dan masih bebas diedit atau dihapus. On-Approval (dengan keterangan tingkat yang sedang memproses, misalnya \"On-Approval: Admin General Affair\") berarti sedang menunggu persetujuan di tingkat tersebut. Rejected berarti ditolak pada tingkat yang tertulis di statusnya dan pengajuan itu dianggap selesai/gagal. Approved berarti pengajuan sudah lolos semua tingkat approval dan resmi disetujui.",
   },
   {
     question: "Di mana saya bisa melihat riwayat pengajuan saya?",
-    answer: "Masuk ke halaman Transaction pada modul terkait, lalu gunakan filter status atau tanggal untuk mencari pengajuan lama.",
+    answer:
+      "Masuk ke halaman Transaction pada modul terkait, lalu gunakan filter status atau tanggal untuk mencari pengajuan lama. Klik salah satu baris untuk membuka detail lengkapnya, termasuk riwayat approval dan siapa saja yang sudah memprosesnya.",
   },
   {
-    question: "Saya salah isi data, apakah bisa diedit?",
+    question: "Saya salah isi data, apakah bisa diedit atau dibatalkan?",
     answer:
-      "Selama masih berstatus Draft, data bisa diedit atau dihapus bebas. Setelah diajukan, hubungi approver terkait untuk pembatalan sebelum mengajukan ulang.",
+      "Selama masih berstatus Draft, data bisa diedit atau dihapus bebas tanpa perlu izin siapa pun. Setelah diajukan dan berstatus On-Approval, Anda tidak bisa mengedit langsung — hubungi approver terkait lewat fitur chat pada detail pengajuan untuk minta dibatalkan atau ditolak dulu, baru ajukan ulang dengan data yang benar.",
+  },
+  {
+    question: "Bagaimana cara mengganti username, email, nomor telepon, atau password akun saya?",
+    answer:
+      "Buka halaman Profile dari menu akun di pojok kanan atas, lalu pada baris Username, Phone Number, Email, atau Password klik tombol \"Change\". Untuk mengganti username, email, atau nomor telepon, Anda perlu memasukkan password saat ini sebagai konfirmasi sebelum perubahannya disimpan.",
+  },
+  {
+    question: "Bagaimana cara berkomunikasi dengan approver terkait pengajuan saya?",
+    answer:
+      "Buka detail pengajuan yang ingin didiskusikan, lalu klik ikon chat di dalamnya. Semua pihak yang terlibat di alur approval pengajuan tersebut — Admin/Approval Departemen atau Divisi, Admin General Affair, Approval GA, dan Mitra kalau ada — bisa membaca dan membalas di percakapan yang sama, jadi tidak perlu koordinasi terpisah lewat WhatsApp atau email untuk hal-hal teknis pengajuan.",
+  },
+  {
+    question: "Apa saja modul yang tersedia di aplikasi ini dan fungsinya masing-masing?",
+    answer:
+      "Ada 6 modul utama: Expedition untuk mengirim & melacak pengiriman barang kantor lengkap invoice, Room Booking untuk memesan ruang rapat dan mengecek ketersediaannya lewat kalender, Vehicle Booking untuk mengajukan & menjadwalkan pemakaian kendaraan dinas, Office Supplies untuk mengajukan permintaan alat tulis & keperluan kantor, Maintenance untuk melaporkan & memantau perbaikan sarana/fasilitas, dan Archive untuk mengunggah & mengelola dokumen arsip perusahaan.",
+  },
+  {
+    question: "Bagaimana cara memesan ruang rapat atau kendaraan dan mengecek ketersediaannya?",
+    answer:
+      "Buka modul Room Booking atau Vehicle Booking, lalu masuk ke halaman Calendar untuk melihat jadwal yang sudah terisi sebelum mengajukan. Saat mengisi form pengajuan, sistem otomatis menandai kalau jadwal yang dipilih bentrok dengan pengajuan lain yang masih diproses, jadi tidak perlu cek manual satu per satu.",
   },
   {
     question: "Ada kendala teknis atau butuh bantuan lain, harus hubungi siapa?",
     answer: "Buka halaman Contact Person untuk daftar PIC tiap modul, lengkap dengan nomor WhatsApp dan email yang bisa langsung dihubungi.",
-  },
-  {
-    question: "Apa itu modul Expedition?",
-    answer: "Modul untuk mengirim & melacak pengiriman barang kantor, lengkap dengan invoice.",
-  },
-  {
-    question: "Apa itu modul Room Booking?",
-    answer: "Modul untuk memesan ruang rapat dan mengecek ketersediaannya lewat kalender.",
-  },
-  {
-    question: "Apa itu modul Vehicle Booking?",
-    answer: "Modul untuk mengajukan & menjadwalkan pemakaian kendaraan dinas.",
-  },
-  {
-    question: "Apa itu modul Office Supplies?",
-    answer: "Modul untuk mengajukan permintaan alat tulis & keperluan kantor.",
-  },
-  {
-    question: "Apa itu modul Maintenance?",
-    answer: "Modul untuk melaporkan & memantau perbaikan sarana/fasilitas.",
-  },
-  {
-    question: "Apa itu modul Archive?",
-    answer: "Modul untuk mengunggah & mengelola dokumen arsip perusahaan.",
   },
 ];
 
