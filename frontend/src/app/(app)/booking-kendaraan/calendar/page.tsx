@@ -14,6 +14,7 @@ import {
   isKendaraanEditableByOrigin,
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, VehicleOption } from "@/lib/types";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
@@ -67,6 +68,7 @@ function VehicleCalendarPageInner() {
   const vehicleFromQuery = searchParams.get("kendaraan") || "";
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   // Same as Room Booking's calendar: arriving with a vehicle already picked (the info modal's
   // Booking button) means someone wants that vehicle's actual schedule, not the cross-vehicle
@@ -233,10 +235,10 @@ function VehicleCalendarPageInner() {
   }
 
   function handleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+    confirm(t("vbk.confirmDeleteBooking"), async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
-        showToast("Booking berhasil dihapus");
+        showToast(t("bk.toastBookingDeleted"));
         reloadAll();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -252,11 +254,11 @@ function VehicleCalendarPageInner() {
         <div className="calendar-sidebar" ref={sidebarRef}>
           {isOrigin && (
             <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={openCreateForm}>
-              + Booking Kendaraan
+              + {t("nav.vehicleBooking")}
             </button>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-kendaraan-select">Kendaraan</label>
+            <label htmlFor="calendar-kendaraan-select">{t("vbk.kendaraan")}</label>
             <SearchableSelect
               id="calendar-kendaraan-select"
               value={view === "avail" ? ALL_VEHICLES_VALUE : selectedVehicle}
@@ -269,21 +271,21 @@ function VehicleCalendarPageInner() {
                 }
               }}
               options={[ALL_VEHICLES_VALUE, ...vehicles.map((v) => v.nama)]}
-              getLabel={(v) => (v === ALL_VEHICLES_VALUE ? "Ketersediaan Kendaraan" : v)}
-              placeholder="Ketersediaan Kendaraan"
+              getLabel={(v) => (v === ALL_VEHICLES_VALUE ? t("vbk.ketersediaanKendaraan") : v)}
+              placeholder={t("vbk.ketersediaanKendaraan")}
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-kendaraan-date-input">Tanggal</label>
+            <label htmlFor="calendar-kendaraan-date-input">{t("common.date")}</label>
             <input type="date" id="calendar-kendaraan-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-kendaraan-search-input">Cari Pesanan</label>
+            <label htmlFor="calendar-kendaraan-search-input">{t("bk.cariPesanan")}</label>
             <input
               type="text"
               id="calendar-kendaraan-search-input"
               className="calendar-search-input"
-              placeholder="No Pesanan"
+              placeholder={t("bk.noPesananPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -301,7 +303,7 @@ function VehicleCalendarPageInner() {
         >
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">
-              <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
+              <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>{t("common.today")}</button>
               <div
                 className="calendar-nav-arrows"
                 style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}
@@ -309,7 +311,7 @@ function VehicleCalendarPageInner() {
                 <button
                   className="page-btn"
                   onClick={goPrev}
-                  aria-label="Sebelumnya"
+                  aria-label={t("bk.sebelumnya")}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -319,7 +321,7 @@ function VehicleCalendarPageInner() {
                 <button
                   className="page-btn"
                   onClick={goNext}
-                  aria-label="Berikutnya"
+                  aria-label={t("bk.berikutnya")}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -327,7 +329,7 @@ function VehicleCalendarPageInner() {
                   </svg>
                 </button>
               </div>
-              <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Kendaraan" : selectedVehicle}</div>
+              <div className="calendar-topbar-room">{view === "avail" ? t("vbk.ketersediaanKendaraan") : selectedVehicle}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="calendar-view-toggle">
@@ -338,7 +340,7 @@ function VehicleCalendarPageInner() {
                     className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
                     onClick={() => setView(v)}
                   >
-                    {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
+                    {v === "day" ? t("word.daily") : v === "week" ? t("word.weekly") : t("word.monthly")}
                   </button>
                 ))}
               </div>
@@ -348,14 +350,14 @@ function VehicleCalendarPageInner() {
                   className={`calendar-view-btn${view === "avail" ? " calendar-view-btn-active" : ""}`}
                   onClick={() => setView("avail")}
                 >
-                  Ketersediaan
+                  {t("bk.ketersediaan")}
                 </button>
               </div>
             </div>
           </div>
 
           {(view === "avail" ? availBusy : scheduleBusy) ? (
-            <p className="text-secondary">Memuat jadwal...</p>
+            <p className="text-secondary">{t("bk.memuatJadwal")}</p>
           ) : (
             <RoomCalendarView
               view={view}

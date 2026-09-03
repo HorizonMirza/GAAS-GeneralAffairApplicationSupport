@@ -17,6 +17,7 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, VehicleOption } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -136,6 +137,7 @@ export default function VehicleBookingOverviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const [items, setItems] = useState<BookingKendaraan[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
@@ -210,10 +212,10 @@ export default function VehicleBookingOverviewPage() {
   const isPastClosingToday = nowMinutesLocal() >= CLOSE_MIN;
 
   function handleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+    confirm(t("vbk.confirmDeleteBooking"), async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
-        showToast("Booking berhasil dihapus");
+        showToast(t("bk.toastBookingDeleted"));
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -227,7 +229,7 @@ export default function VehicleBookingOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Booking Kendaraan
+            + {t("nav.vehicleBooking")}
           </button>
         )}
       </div>
@@ -242,9 +244,9 @@ export default function VehicleBookingOverviewPage() {
               : isVehicleFullyBookedToday(v.nama, todayEntries)
               ? "full"
               : "available";
-            const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
+            const availLabel = availability === "closed" ? t("bk.badgeClose") : availability === "full" ? t("bk.badgeFull") : t("bk.badgeAvailable");
             const availTitle =
-              availability === "closed" ? "Close (di luar jam operasional)" : availability === "full" ? "Full hari ini" : "Available hari ini";
+              availability === "closed" ? t("bk.closeAfterHours") : availability === "full" ? t("bk.fullToday") : t("bk.availableToday");
             return (
               <button
                 type="button"
@@ -265,7 +267,7 @@ export default function VehicleBookingOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>{t("bk.pesananTerbaruSaya")}</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
           <SearchableSelect
             id="overview-kendaraan-status-filter"
@@ -273,22 +275,22 @@ export default function VehicleBookingOverviewPage() {
             onChange={(v) => setStatusFilter(v as StatusFilter)}
             options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED", "CANCELLED"]}
             getLabel={(v) => ({
-              ALL: "Semua Status",
-              DRAFT: "Draft",
-              ON_APPROVAL: "On-Approval",
-              APPROVED: "Approved",
-              REJECTED: "Rejected",
-              CANCELLED: "Cancelled",
+              ALL: t("common.allStatus"),
+              DRAFT: t("word.draft"),
+              ON_APPROVAL: t("word.onApproval"),
+              APPROVED: t("word.approved"),
+              REJECTED: t("word.rejected"),
+              CANCELLED: t("word.cancelled"),
             } as Record<string, string>)[v] || v}
-            placeholder="Semua Status"
+            placeholder={t("common.allStatus")}
           />
         </div>
       </div>
 
       {busy ? (
-        <p className="text-secondary">Memuat data...</p>
+        <p className="text-secondary">{t("common.loadingData")}</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">Tidak ada data.</div>
+        <div className="card table-empty">{t("common.noDataPeriod")}</div>
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
@@ -311,7 +313,7 @@ export default function VehicleBookingOverviewPage() {
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                    aria-label="Chat"
+                    aria-label={t("common.chat")}
                     onClick={(e) => { e.stopPropagation(); setChatItem(item); }}
                   >
                     <MessageSquare width="17" height="17" />
@@ -319,7 +321,7 @@ export default function VehicleBookingOverviewPage() {
                       <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
+                  <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -327,7 +329,7 @@ export default function VehicleBookingOverviewPage() {
               <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                  <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
                 </div>
               )}
             </div>
@@ -389,12 +391,12 @@ export default function VehicleBookingOverviewPage() {
         extraDetails={
           infoVehicle
             ? [
-                { label: "Merek", value: infoVehicle.merek || "-" },
-                { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
-                { label: "Warna", value: infoVehicle.warna || "-" },
-                { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
-                { label: "Nama Supir", value: infoVehicle.supir || "-" },
-                { label: "Telepon Supir", value: infoVehicle.nomorTeleponSupir || "-" },
+                { label: t("vbk.merek"), value: infoVehicle.merek || "-" },
+                { label: t("vbk.platNomor"), value: infoVehicle.platNomor || "-" },
+                { label: t("vbk.warna"), value: infoVehicle.warna || "-" },
+                { label: t("vbk.tahun"), value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
+                { label: t("vbk.namaSupir"), value: infoVehicle.supir || "-" },
+                { label: t("vbk.teleponSupir"), value: infoVehicle.nomorTeleponSupir || "-" },
               ]
             : []
         }
@@ -411,20 +413,20 @@ export default function VehicleBookingOverviewPage() {
         availLabel={
           infoVehicle
             ? isPastClosingToday
-              ? "Close"
+              ? t("bk.badgeClose")
               : isVehicleFullyBookedToday(infoVehicle.nama, todayEntries)
-              ? "Full"
-              : "Available"
+              ? t("bk.badgeFull")
+              : t("bk.badgeAvailable")
             : ""
         }
         freeSlotsToday={infoVehicle && !isPastClosingToday ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
-        closedLabel={isPastClosingToday ? "Tutup (di luar jam operasional)" : undefined}
+        closedLabel={isPastClosingToday ? t("bk.tutupAfterHours") : undefined}
         fullyOpenLabel={
           infoVehicle && !isPastClosingToday && vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
-            ? "Tersedia"
+            ? t("bk.tersedia")
             : undefined
         }
-        bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
+        bookLabel={isOrigin ? t("bk.bookingLabel") : t("bk.lihatKalender")}
         onClose={() => setInfoVehicle(null)}
         onBook={() => {
           if (!infoVehicle) return;
