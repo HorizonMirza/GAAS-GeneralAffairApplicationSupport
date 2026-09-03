@@ -1900,17 +1900,17 @@ body.auth-ready .app-shell {
 /* ---------- Edit Profile dialog (cover preset strip + avatar upload) ---------- */
 /* Cover + avatar together, avatar overlapping the cover's bottom-left corner like the app's own
    profile hero card - the wrap's bottom margin reserves room for the half of the avatar that
-   hangs below the cover before the preset swatches row starts. The cover itself bleeds edge to
-   edge (negative side margins cancel the dialog's own padding) rather than sitting inset like a
-   regular card. */
+   hangs below the cover before the preset swatches row starts. The cover sits inset within the
+   dialog's own padding, like a regular rounded card, rather than bleeding to the dialog's edges. */
 .edit-profile-cover-wrap {
   position: relative;
-  margin: -12px -26px 34px;
+  margin-bottom: 34px;
 }
 
 .edit-profile-cover {
   position: relative;
   height: 110px;
+  border-radius: 10px;
   overflow: hidden;
   background: var(--gradient-primary);
 }
@@ -1959,7 +1959,7 @@ body.auth-ready .app-shell {
 
 .edit-profile-avatar {
   position: absolute;
-  left: 42px;
+  left: 16px;
   bottom: -28px;
   width: 72px;
   height: 72px;

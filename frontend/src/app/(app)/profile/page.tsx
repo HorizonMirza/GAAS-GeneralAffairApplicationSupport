@@ -114,17 +114,19 @@ function validateConfirmPassword(value: string, newPassword: string): string | u
   return undefined;
 }
 
-type ProfileDraft = { nama: string; username: string; noHp: string; email: string };
-
 export default function ProfilePage() {
   const { me, refresh } = useAuth();
   const { showToast } = useToast();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({ nama: "", username: "", noHp: "", email: "" });
+  const [namaDraft, setNamaDraft] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-  const [contactPassword, setContactPassword] = useState("");
-  const [contactPasswordError, setContactPasswordError] = useState("");
+
+  const [editingField, setEditingField] = useState<AccountField | null>(null);
+  const [fieldDraft, setFieldDraft] = useState("");
+  const [fieldPassword, setFieldPassword] = useState("");
+  const [fieldPasswordError, setFieldPasswordError] = useState("");
+  const [savingField, setSavingField] = useState(false);
 
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -151,49 +153,63 @@ export default function ProfilePage() {
   };
 
   function openEditProfile() {
-    setProfileDraft({ nama: me!.nama, username: me!.username, noHp: me!.noHp ?? "", email: me!.email ?? "" });
-    setContactPassword("");
-    setContactPasswordError("");
+    setNamaDraft(me!.nama);
     setShowCoverPresets(false);
     setEditOpen(true);
   }
 
-  // Editing Username, No HP, or Email re-proves account ownership with the current password,
-  // same as ChangePassword below - all are handled server-side in ProfileController.UpdateProfile.
-  const contactChanged =
-    profileDraft.username.trim() !== me.username ||
-    profileDraft.noHp.trim() !== (me.noHp ?? "") ||
-    profileDraft.email.trim() !== (me.email ?? "");
-
   async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (contactChanged && !contactPassword.trim()) {
-      setContactPasswordError("Password saat ini wajib diisi untuk mengubah email atau nomor HP");
-      return;
-    }
-    setContactPasswordError("");
-
     setSavingProfile(true);
     try {
       await api.updateProfile({
-        nama: profileDraft.nama.trim(),
-        username: profileDraft.username.trim(),
-        noHp: profileDraft.noHp.trim() || null,
-        email: profileDraft.email.trim() || null,
-        currentPassword: contactChanged ? contactPassword : undefined,
+        nama: namaDraft.trim(),
+        username: me!.username,
+        noHp: me!.noHp,
+        email: me!.email,
       });
       await refresh();
       setEditOpen(false);
       showToast("Profil berhasil diperbarui");
     } catch (err) {
-      if (contactChanged) {
-        setContactPasswordError((err as Error).message);
-      } else {
-        showToast((err as Error).message, "error");
-      }
+      showToast((err as Error).message, "error");
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  function openFieldEdit(field: AccountField) {
+    setFieldDraft(currentValue[field]);
+    setFieldPassword("");
+    setFieldPasswordError("");
+    setEditingField(field);
+  }
+
+  async function handleFieldSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingField) return;
+    if (!fieldPassword.trim()) {
+      setFieldPasswordError("Password saat ini wajib diisi");
+      return;
+    }
+
+    setSavingField(true);
+    try {
+      const next = { ...currentValue, [editingField]: fieldDraft.trim() };
+      await api.updateProfile({
+        nama: me!.nama,
+        username: next.username,
+        noHp: next.noHp || null,
+        email: next.email || null,
+        currentPassword: fieldPassword,
+      });
+      await refresh();
+      showToast(`${FIELD_META[editingField].label} berhasil diperbarui`);
+      setEditingField(null);
+    } catch (err) {
+      setFieldPasswordError((err as Error).message);
+    } finally {
+      setSavingField(false);
     }
   }
 
@@ -358,8 +374,46 @@ export default function ProfilePage() {
                 <div className="profile-info-label">{FIELD_META[field].label}</div>
                 <div className="profile-info-value">{currentValue[field] || "-"}</div>
               </div>
+              <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
+                Ubah
+              </button>
             </div>
           ))}
+
+          {editingField && (
+            <form className="settings-edit-panel" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
+              <div className="field">
+                <label htmlFor="field-draft">Ubah {FIELD_META[editingField].label}</label>
+                <input
+                  id="field-draft"
+                  type={FIELD_META[editingField].type}
+                  placeholder={FIELD_META[editingField].placeholder}
+                  required={editingField === "username"}
+                  autoFocus
+                  value={fieldDraft}
+                  onChange={(e) => setFieldDraft(e.target.value)}
+                />
+              </div>
+              <PasswordField
+                id="field-password"
+                label="Konfirmasi Password"
+                placeholder="Masukkan password saat ini"
+                value={fieldPassword}
+                error={fieldPasswordError}
+                hint="Diperlukan untuk mengubah username, email, atau nomor HP"
+                onChange={(v) => {
+                  setFieldPassword(v);
+                  if (fieldPasswordError) setFieldPasswordError("");
+                }}
+              />
+              <div className="settings-edit-panel-actions">
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingField(null)}>Batal</button>
+                <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
+                  {savingField ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <div className="card">
@@ -496,37 +550,10 @@ export default function ProfilePage() {
                 type="text"
                 id="edit-nama"
                 required
-                value={profileDraft.nama}
-                onChange={(e) => setProfileDraft((d) => ({ ...d, nama: e.target.value }))}
+                value={namaDraft}
+                onChange={(e) => setNamaDraft(e.target.value)}
               />
             </div>
-            {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
-              <div className="field" key={field}>
-                <label htmlFor={`edit-${field}`}>{FIELD_META[field].label}</label>
-                <input
-                  id={`edit-${field}`}
-                  type={FIELD_META[field].type}
-                  placeholder={FIELD_META[field].placeholder}
-                  required={field === "username"}
-                  value={profileDraft[field]}
-                  onChange={(e) => setProfileDraft((d) => ({ ...d, [field]: e.target.value }))}
-                />
-              </div>
-            ))}
-            {contactChanged && (
-              <PasswordField
-                id="edit-contact-password"
-                label="Konfirmasi Password"
-                placeholder="Masukkan password saat ini"
-                value={contactPassword}
-                error={contactPasswordError}
-                hint="Diperlukan karena Anda mengubah username, email, atau nomor HP"
-                onChange={(v) => {
-                  setContactPassword(v);
-                  if (contactPasswordError) setContactPasswordError("");
-                }}
-              />
-            )}
           </form>
 
           <DialogFooter>
