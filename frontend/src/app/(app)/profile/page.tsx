@@ -442,8 +442,8 @@ export default function ProfilePage() {
           </div>
           <div className="profile-photo-hint">Background hanya bisa diganti dengan warna di atas. Foto profil: JPG atau PNG, maks. 5 MB.</div>
 
-          <form id="edit-profile-form" className="form-grid" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
-            <div className="field full">
+          <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
+            <div className="field">
               <label htmlFor="edit-nama">Nama Akun</label>
               <input
                 type="text"
@@ -454,7 +454,7 @@ export default function ProfilePage() {
               />
             </div>
             {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
-              <div className={`field${field === "email" ? " full" : ""}`} key={field}>
+              <div className="field" key={field}>
                 <label htmlFor={`edit-${field}`}>{FIELD_META[field].label}</label>
                 <input
                   id={`edit-${field}`}
