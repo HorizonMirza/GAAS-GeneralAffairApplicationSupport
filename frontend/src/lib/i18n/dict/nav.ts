@@ -10,7 +10,7 @@ export const nav = {
     "nav.overview": "Ringkasan",
     "nav.transaction": "Transaksi",
     "nav.invoice": "Invoice",
-    "nav.booking": "Booking",
+    "nav.booking": "Pemesanan",
     "nav.calendar": "Kalender",
     "nav.superAdmin": "Super Admin",
     "nav.profile": "Profil",

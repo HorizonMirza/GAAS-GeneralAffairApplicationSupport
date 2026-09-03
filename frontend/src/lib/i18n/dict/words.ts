@@ -18,7 +18,7 @@ export const words = {
     "word.waiting": "Menunggu",
     "word.cancelled": "Dibatalkan",
     "word.internal": "Internal",
-    "word.external": "External",
+    "word.external": "Eksternal",
     "word.daily": "Harian",
     "word.weekly": "Mingguan",
     "word.monthly": "Bulanan",

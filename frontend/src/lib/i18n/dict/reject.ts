@@ -1,6 +1,6 @@
 export const reject = {
   id: {
-    "reject.title": "Reject Data",
+    "reject.title": "Tolak Data",
     "reject.returnTo": "Kembalikan data ke",
     "reject.creatorSuffix": "(pembuat data)",
     "reject.reasonLabel": "Alasan (opsional)",

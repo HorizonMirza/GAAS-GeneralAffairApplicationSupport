@@ -5,7 +5,7 @@ export const superadmin = {
     "sa.hapusFilter": "Hapus Filter",
     "sa.historyInvoicePembiayaan": "History Invoice Pembiayaan",
     "sa.filterTanggal": "Filter Tanggal",
-    "sa.roomBookingMeetingTitle": "Room Booking Meeting",
+    "sa.roomBookingMeetingTitle": "Booking Ruang Meeting",
     "sa.thNoPesanan": "No Pesanan",
     "sa.thPeserta": "Peserta",
     "sa.bentrok": "Bentrok",
