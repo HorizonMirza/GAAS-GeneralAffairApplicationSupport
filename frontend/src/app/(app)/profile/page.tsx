@@ -8,7 +8,7 @@ import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
-import { Camera, Palette, Pencil, X } from "lucide-react";
+import { Camera, Lock, Palette, Pencil, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -50,6 +50,7 @@ function PasswordField({
   minLength,
   error,
   hint,
+  icon,
 }: {
   id: string;
   label: string;
@@ -59,13 +60,15 @@ function PasswordField({
   minLength?: number;
   error?: string;
   hint?: string;
+  icon?: React.ReactNode;
 }) {
   const [show, setShow] = useState(false);
   const errorId = error ? `${id}-error` : undefined;
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <div className="password-wrapper">
+      <div className={`password-wrapper ${icon ? "has-leading-icon" : ""}`}>
+        {icon && <span className="password-leading-icon">{icon}</span>}
         <input
           type={show ? "text" : "password"}
           id={id}
@@ -382,22 +385,42 @@ export default function ProfilePage() {
 
           {editingField && (
             <form className="settings-edit-panel" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
-              <div className="field">
-                <label htmlFor="field-draft">Ubah {FIELD_META[editingField].label}</label>
-                <input
-                  id="field-draft"
-                  type={FIELD_META[editingField].type}
-                  placeholder={FIELD_META[editingField].placeholder}
-                  required={editingField === "username"}
-                  autoFocus
-                  value={fieldDraft}
-                  onChange={(e) => setFieldDraft(e.target.value)}
-                />
+              <div className="settings-edit-panel-intro">
+                <div className="settings-edit-panel-title">Ubah {FIELD_META[editingField].label}</div>
+                <div className="settings-edit-panel-desc">
+                  Perbarui {FIELD_META[editingField].label.toLowerCase()} akun Anda. Konfirmasi password saat ini diperlukan untuk menyimpan perubahan.
+                </div>
               </div>
+
+              <div className="settings-current-value">
+                <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
+                <div>
+                  <div className="settings-current-value-label">Saat ini</div>
+                  <div className="settings-current-value-text">{currentValue[editingField] || "-"}</div>
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="field-draft">{FIELD_META[editingField].label} Baru</label>
+                <div className="field-icon-wrap">
+                  <span className="field-input-icon">{FIELD_META[editingField].icon}</span>
+                  <input
+                    id="field-draft"
+                    type={FIELD_META[editingField].type}
+                    placeholder={FIELD_META[editingField].placeholder}
+                    required={editingField === "username"}
+                    autoFocus
+                    value={fieldDraft}
+                    onChange={(e) => setFieldDraft(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <PasswordField
                 id="field-password"
-                label="Konfirmasi Password"
+                label="Password"
                 placeholder="Masukkan password saat ini"
+                icon={<Lock width={15} height={15} />}
                 value={fieldPassword}
                 error={fieldPasswordError}
                 hint="Diperlukan untuk mengubah username, email, atau nomor HP"
@@ -409,7 +432,7 @@ export default function ProfilePage() {
               <div className="settings-edit-panel-actions">
                 <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingField(null)}>Batal</button>
                 <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                  {savingField ? "Menyimpan..." : "Simpan"}
+                  {savingField ? "Menyimpan..." : `Simpan ${FIELD_META[editingField].label}`}
                 </button>
               </div>
             </form>
