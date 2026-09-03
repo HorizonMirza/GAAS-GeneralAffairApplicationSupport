@@ -722,7 +722,8 @@ body.auth-ready .app-shell {
   text-decoration: none;
   cursor: pointer;
   border-radius: 10px;
-  transition: background-color 150ms ease-in-out, width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms ease-in-out, width 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-logo-sidebar:hover {
@@ -730,9 +731,10 @@ body.auth-ready .app-shell {
 }
 
 /* Fixed size always - flex-shrink:0 so it never shrinks to fit, only gets clipped by the row's
-   own overflow:hidden above as that row narrows. */
+   own overflow:hidden above as that row narrows. Sized to roughly reach the same right edge as
+   the nav row hover/active state below it. */
 .brand-logo-sidebar-img {
-  max-width: 170px;
+  max-width: 205px;
   max-height: 52px;
   width: auto;
   height: auto;
@@ -3636,6 +3638,15 @@ table.data-table {
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
     width: 76px;
+  }
+
+  /* Unlike the nav rows (which keep their icon and only lose their label), the logo has no icon
+     of its own to keep showing - collapsing shrinks its box straight to 0, so the wordmark is
+     fully gone rather than left as a clipped sliver. */
+  .sidebar.sidebar-toggled .brand-logo-sidebar {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .sidebar.sidebar-toggled .nav-category-chevron,

@@ -132,8 +132,11 @@ function useMediaQuery(query: string): boolean {
 // would just snap to its collapsed size instantly instead of shrinking), and a single oversized
 // fixed value would leave short labels doing nothing for most of the transition before a late,
 // abrupt cut. See the --label-w rule in globals.css.
+// +1.5ch is slack for the active route's bolder weight (font-weight: 700 vs the normal 500) -
+// without it, ch sized off the normal weight is a hair too narrow for the bold render, so
+// overflow:hidden quietly clips the last character instead of leaving room for it.
 function labelWidthStyle(label: string) {
-  return { "--label-w": `${label.length}ch` } as React.CSSProperties;
+  return { "--label-w": `${label.length + 1.5}ch` } as React.CSSProperties;
 }
 
 // KPU deals with Expedition (final sign-off + invoices) and now Office Supplies too (Admin GA/
