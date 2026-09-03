@@ -190,17 +190,17 @@ function AccountMenu() {
   const navItems: MenuNavItem[] = [
     { icon: PROFILE_ICON, label: "Profile", href: "/profile", active: pathname === "/profile" },
     {
+      icon: theme === "dark" ? SUN_ICON : MOON_ICON,
+      label: theme === "dark" ? "Light Mode" : "Dark Mode",
+      onClick: toggleTheme,
+    },
+    { icon: HELP_ICON, label: "Help Center", href: "/bantuan", active: pathname === "/bantuan" },
+    {
       icon: CONTACT_PERSON_ICON,
       label: "Contact Person",
       href: "/contact-person",
       active: pathname === "/contact-person",
     },
-    {
-      icon: theme === "dark" ? SUN_ICON : MOON_ICON,
-      label: theme === "dark" ? "Light Mode" : "Dark Mode",
-      onClick: toggleTheme,
-    },
-    { icon: HELP_ICON, label: "Bantuan", href: "/bantuan", active: pathname === "/bantuan", isSeparator: true },
   ];
 
   return (
@@ -305,7 +305,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   if (pathname === "/dashboard") topbarTitle = "Dashboard";
   if (pathname === "/profile") topbarTitle = "Profile";
   if (pathname === "/contact-person") topbarTitle = "Contact Person";
-  if (pathname === "/bantuan") topbarTitle = "Bantuan";
+  if (pathname === "/bantuan") topbarTitle = "Help Center";
   if (pathname === "/superadmin") topbarTitle = "Super Admin";
 
   return (
