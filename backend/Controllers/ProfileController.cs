@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
 using PengirimanApi.Services;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
 using System.Net.Mime;
 
 namespace PengirimanApi.Controllers;
@@ -19,6 +23,18 @@ public class ProfileController : ApiControllerBase
         [".png"] = "image/png",
     };
     private const long MaxPhotoFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+
+    // Upstream uploads arrive at whatever resolution the user's phone/camera produced (often
+    // several MB, thousands of pixels wide) and were previously stored - and served back - as-is:
+    // the round avatar is never shown past 88px CSS, so a huge original just cost disk space and
+    // bandwidth for zero visible gain, while a genuinely low-resolution upload stayed exactly as
+    // blurry as it arrived. Normalizing on save (see NormalizeImageAsync) fixes both: it caps the
+    // stored size to comfortably more than any current display size (headroom for retina and any
+    // future larger avatar), and re-encoding at a fixed quality keeps every stored photo
+    // consistent regardless of the source file's original compression.
+    private const int PhotoMaxDimension = 512;
+    private const int CoverMaxWidth = 1920;
+    private const int CoverMaxHeight = 480;
 
     // Keys must match COVER_PRESETS in the frontend's constants.ts - kept as an explicit allowlist
     // here rather than accepting any string, since CoverPreset is rendered straight into a CSS
@@ -117,6 +133,27 @@ public class ProfileController : ApiControllerBase
         return Ok(new { message = "Password berhasil diubah" });
     }
 
+    // Decodes whatever the browser sent (auto-detecting the real format from its bytes, not the
+    // filename), corrects EXIF rotation so phone photos don't come out sideways, then shrinks it
+    // only if it's actually bigger than the target box - ResizeMode.Max preserves aspect ratio and
+    // never upscales a smaller source, so a low-res upload is re-encoded but not stretched. Throws
+    // SixLabors.ImageSharp.UnknownImageFormatException/InvalidImageContentException for a file
+    // that isn't a real image despite passing the extension check - callers turn that into a 400.
+    private static async Task<byte[]> NormalizeImageAsync(Stream input, string contentType, int maxWidth, int maxHeight)
+    {
+        using var image = await Image.LoadAsync(input);
+        image.Mutate(x => x.AutoOrient());
+        if (image.Width > maxWidth || image.Height > maxHeight)
+            image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Max, Size = new Size(maxWidth, maxHeight) }));
+
+        using var output = new MemoryStream();
+        if (contentType == "image/png")
+            await image.SaveAsync(output, new PngEncoder());
+        else
+            await image.SaveAsync(output, new JpegEncoder { Quality = 85 });
+        return output.ToArray();
+    }
+
     [HttpPost("photo")]
     public async Task<IActionResult> UploadPhoto([FromForm] IFormFile? file)
     {
@@ -131,12 +168,24 @@ public class ProfileController : ApiControllerBase
         if (string.IsNullOrEmpty(ext) || !AllowedPhotoExtensions.TryGetValue(ext, out var contentType))
             return StatusCode(400, new { detail = "Format foto tidak didukung. Gunakan JPG atau PNG." });
 
+        byte[] normalized;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            normalized = await NormalizeImageAsync(input, contentType, PhotoMaxDimension, PhotoMaxDimension);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
+        }
+        catch (InvalidImageContentException)
+        {
+            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
+        }
+
         var storedFilename = $"{Guid.NewGuid():N}{ext}";
         var destPath = Path.Combine(_uploadDir, storedFilename);
-        using (var stream = System.IO.File.Create(destPath))
-        {
-            await file.CopyToAsync(stream);
-        }
+        await System.IO.File.WriteAllBytesAsync(destPath, normalized);
 
         // The old file on disk is now orphaned once the row points at the new one - clean it up so
         // uploads don't accumulate forever, but only after the new file is safely written above.
@@ -211,12 +260,24 @@ public class ProfileController : ApiControllerBase
         if (string.IsNullOrEmpty(ext) || !AllowedPhotoExtensions.TryGetValue(ext, out var contentType))
             return StatusCode(400, new { detail = "Format gambar tidak didukung. Gunakan JPG atau PNG." });
 
+        byte[] normalized;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            normalized = await NormalizeImageAsync(input, contentType, CoverMaxWidth, CoverMaxHeight);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
+        }
+        catch (InvalidImageContentException)
+        {
+            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
+        }
+
         var storedFilename = $"{Guid.NewGuid():N}{ext}";
         var destPath = Path.Combine(_uploadDir, storedFilename);
-        using (var stream = System.IO.File.Create(destPath))
-        {
-            await file.CopyToAsync(stream);
-        }
+        await System.IO.File.WriteAllBytesAsync(destPath, normalized);
 
         var oldPath = user!.CoverPhotoPath != null ? Path.Combine(_uploadDir, user.CoverPhotoPath) : null;
 

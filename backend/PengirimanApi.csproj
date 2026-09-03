@@ -20,6 +20,10 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     <PackageReference Include="QuestPDF" Version="2024.10.4" />
+    <!-- Apache-2.0-licensed 2.x line (pinned below the 3.x Six Labors Split License) - only used to
+         normalize profile/cover photo uploads to a consistent resolution on save, see
+         ProfileController. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
   </ItemGroup>
