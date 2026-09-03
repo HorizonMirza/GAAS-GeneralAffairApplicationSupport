@@ -56,7 +56,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 ];
 
 export default function BantuanPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
     <>
