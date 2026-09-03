@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -36,6 +37,7 @@ function emptyForm(): PermintaanAtkCreatePayload {
 const MAX_ITEM_ROWS = 30;
 
 export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
+  const { t } = useLanguage();
   const [form, setForm] = useState<PermintaanAtkCreatePayload>(emptyForm());
   const [error, setError] = useState("");
   const [nomorPermintaan, setNomorPermintaan] = useState("");
@@ -63,7 +65,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? `${t("word.admin")} ${t("word.generalAffair")}` : me.role === "APPROVAL_GA" ? `${t("word.approval")} ${t("word.generalAffair")}` : "");
 
   function set<K extends keyof PermintaanAtkCreatePayload>(key: K, value: PermintaanAtkCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -88,7 +90,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
     e.preventDefault();
     try {
       await api.createAtk({ ...form, catatan: form.catatan || null });
-      showToast("Permintaan ATK berhasil disimpan sebagai Draft");
+      showToast(t("atk.toastSavedDraft"));
       onClose();
       onCreated();
     } catch (err) {
@@ -100,34 +102,34 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan ATK {unitName ? `(${unitName})` : ""}</h3>
+          <h3>{t("atk.formPermintaanTitle")} {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fa-nomor-permintaan">Nomor Permintaan ATK</label>
+              <label htmlFor="fa-nomor-permintaan">{t("atk.nomorPermintaan")}</label>
               <input type="text" id="fa-nomor-permintaan" disabled value={nomorPermintaan} />
             </div>
             <div className="field">
-              <label htmlFor="fa-tanggal">Tanggal Dibutuhkan</label>
+              <label htmlFor="fa-tanggal">{t("atk.tanggalDibutuhkan")}</label>
               <input type="date" id="fa-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fa-keperluan">Keperluan</label>
-              <input type="text" id="fa-keperluan" required placeholder="Contoh: Kebutuhan ATK bulanan tim" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <label htmlFor="fa-keperluan">{t("vbk.keperluan")}</label>
+              <input type="text" id="fa-keperluan" required placeholder={t("atk.contohKebutuhanAtkBulanan")} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
-              <label>Daftar Barang</label>
+              <label>{t("atk.daftarBarang")}</label>
               {form.items.map((row, idx) => (
                 <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                   <input
                     type="text"
-                    aria-label={`Nama barang ${idx + 1}`}
+                    aria-label={`${t("atk.namaBarangAria")} ${idx + 1}`}
                     required
                     list={ATK_CATALOG_DATALIST_ID}
-                    placeholder="Nama barang (contoh: Pulpen)"
+                    placeholder={t("atk.namaBarangPlaceholder")}
                     style={{ flex: "3 1 180px", minWidth: 180 }}
                     value={row.namaBarang}
                     onChange={(e) => {
@@ -140,9 +142,9 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label={`Jumlah barang ${idx + 1}`}
+                    aria-label={`${t("atk.jumlahBarangAria")} ${idx + 1}`}
                     required
-                    placeholder="Jumlah"
+                    placeholder={t("atk.jumlahPlaceholder")}
                     style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.jumlah === 0 ? "" : String(row.jumlah)}
                     onChange={(e) => {
@@ -152,9 +154,9 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                   />
                   <input
                     type="text"
-                    aria-label={`Satuan barang ${idx + 1}`}
+                    aria-label={`${t("atk.satuanBarangAria")} ${idx + 1}`}
                     required
-                    placeholder="Satuan (pcs/rim/box)"
+                    placeholder={t("atk.satuanPlaceholder")}
                     style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
                     onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -162,7 +164,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                   <button
                     type="button"
                     className="card-icon-btn"
-                    aria-label={`Hapus baris barang ${idx + 1}`}
+                    aria-label={`${t("atk.hapusBarisBarangAria")} ${idx + 1}`}
                     disabled={form.items.length <= 1}
                     style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
                     onClick={() => removeItemRow(idx)}
@@ -173,14 +175,14 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               ))}
               {form.items.length < MAX_ITEM_ROWS && (
                 <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
-                  + Tambah Barang
+                  {t("atk.tambahBarang")}
                 </button>
               )}
             </div>
 
             <div className="field full">
-              <label htmlFor="fa-catatan">Catatan</label>
-              <input type="text" id="fa-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="fa-catatan">{t("common.notes")}</label>
+              <input type="text" id="fa-catatan" placeholder={t("bk.contohSegeraDiApprove")} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <datalist id={ATK_CATALOG_DATALIST_ID}>
@@ -191,8 +193,8 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t("common.cancel")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
           </div>
         </form>
       </div>

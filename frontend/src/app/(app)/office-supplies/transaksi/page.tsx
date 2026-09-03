@@ -15,6 +15,7 @@ import {
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { PermintaanAtk, Status } from "@/lib/types";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -48,6 +49,7 @@ function OfficeSuppliesTransaksiPageInner() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -149,10 +151,10 @@ function OfficeSuppliesTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus permintaan ATK ini secara permanen?", async () => {
+    confirm(t("atk.confirmDeleteRequest"), async () => {
       try {
         await api.deleteAtk(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast(t("atk.toastRequestDeleted"));
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -190,77 +192,77 @@ function OfficeSuppliesTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-atk-search">Cari Permintaan</label>
-            <input type="text" id="filter-atk-search" placeholder="No Permintaan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-atk-search">{t("atk.cariPermintaan")}</label>
+            <input type="text" id="filter-atk-search" placeholder={t("atk.noPermintaanPlaceholder")} value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
-            <label htmlFor="filter-atk-bulan">Filter Bulan</label>
+            <label htmlFor="filter-atk-bulan">{t("common.filterMonth")}</label>
             <input type="month" id="filter-atk-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">Filter</label>
+            <label className="field-label-spacer">{t("common.filter")}</label>
             <button type="button" className="btn btn-secondary" id="filter-atk-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Semua Filter
+              {t("common.allFilters")}
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label htmlFor="filter-atk-status">Status</label>
+                  <label htmlFor="filter-atk-status">{t("common.status")}</label>
                   <SearchableSelect
                     id="filter-atk-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "" })}
                     options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "COMPLETED"]}
                     getLabel={(v) => ({
-                      DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin General Affair",
-                      APPROVED_GA: "On-Approval: Approval GA",
-                      REJECTED: "Rejected",
-                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
-                      COMPLETED: "Approved",
+                      DRAFT: t("word.draft"),
+                      SUBMITTED: `${t("word.onApproval")}: ${t("word.approval")} ${t("word.department")}/${t("word.division")}`,
+                      APPROVED_L1: `${t("word.onApproval")}: ${t("word.admin")} ${t("word.generalAffair")}`,
+                      APPROVED_GA: `${t("word.onApproval")}: ${t("word.approval")} GA`,
+                      REJECTED: t("word.rejected"),
+                      APPROVED_GA_APPROVAL: `${t("word.onApproval")}: ${t("word.partner")}`,
+                      COMPLETED: t("word.approved"),
                     } as Record<string, string>)[v] || v}
-                    clearLabel="Semua Status"
-                    placeholder="Semua Status"
+                    clearLabel={t("common.allStatus")}
+                    placeholder={t("common.allStatus")}
                   />
                 </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-atk-direktorat">Direktorat</label>
+                      <label htmlFor="filter-atk-direktorat">{t("word.directorate")}</label>
                       <SearchableSelect
                         id="filter-atk-direktorat"
                         value={filters.direktorat}
                         onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
                         options={orgStructure?.direktorat || []}
-                        clearLabel="Semua Direktorat"
-                        placeholder="Semua Direktorat"
+                        clearLabel={t("common.allDirectorate")}
+                        placeholder={t("common.allDirectorate")}
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-atk-divisi">Divisi</label>
+                      <label htmlFor="filter-atk-divisi">{t("word.division")}</label>
                       <SearchableSelect
                         id="filter-atk-divisi"
                         value={filters.divisi}
                         onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
                         options={divisiOptions}
-                        clearLabel="Semua Divisi"
-                        placeholder="Semua Divisi"
+                        clearLabel={t("common.allDivision")}
+                        placeholder={t("common.allDivision")}
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-atk-departemen">Departemen</label>
+                      <label htmlFor="filter-atk-departemen">{t("word.department")}</label>
                       <SearchableSelect
                         id="filter-atk-departemen"
                         value={filters.departemen}
                         onChange={(v) => updateFilter({ departemen: v })}
                         options={departemenOptions}
-                        clearLabel="Semua Departemen"
-                        placeholder="Semua Departemen"
+                        clearLabel={t("common.allDepartment")}
+                        placeholder={t("common.allDepartment")}
                       />
                     </div>
                   </>
@@ -269,12 +271,12 @@ function OfficeSuppliesTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>{t("atk.semuaPermintaan")}</button>
 
           <div className="toolbar-actions">
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + Permintaan ATK
+                {t("atk.tambahPermintaan")}
               </button>
             )}
           </div>
@@ -284,17 +286,17 @@ function OfficeSuppliesTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Keperluan</th><th>Daftar Barang</th><th>Jumlah Jenis</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Dibutuhkan</th><th>Catatan</th><th>Status</th>
+                <th>{t("common.rowNo")}</th><th>{t("atk.noPermintaanHeader")}</th><th>{t("bk.diajukanHeader")}</th><th>{t("vbk.keperluan")}</th><th>{t("atk.daftarBarang")}</th><th>{t("atk.jumlahJenisHeader")}</th>
+                <th>{t("word.division")}</th><th>{t("word.department")}</th><th>{t("atk.tanggalDibutuhkan")}</th><th>{t("common.notes")}</th><th>{t("common.status")}</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={11} className="table-empty">{t("common.loadingData")}</td></tr>
               ) : tableError ? (
                 <tr><td colSpan={11} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={11} className="table-empty">{t("eks.noDataForFilter")}</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -319,7 +321,7 @@ function OfficeSuppliesTransaksiPageInner() {
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                            aria-label="Chat"
+                            aria-label={t("common.chat")}
                             onClick={() => setChatItem(item)}
                           >
                             <MessageSquare width="17" height="17" />
@@ -327,7 +329,7 @@ function OfficeSuppliesTransaksiPageInner() {
                               <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                             )}
                           </button>
-                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                          <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
                         </div>
@@ -343,19 +345,19 @@ function OfficeSuppliesTransaksiPageInner() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-atk-limit">Tampilkan</label>
+              <label htmlFor="filter-atk-limit">{t("common.show")}</label>
               <SearchableSelect
                 id="filter-atk-limit"
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${filters.limit} permintaan`}
+                getLabel={(v) => `${v} ${t("atk.unitPermintaan")}`}
+                placeholder={`${filters.limit} ${t("atk.unitPermintaan")}`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} permintaan · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">{t("common.total")} {total} {t("atk.unitPermintaan")} · {t("common.page")} {filters.page} {t("common.ofTotal")} {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (

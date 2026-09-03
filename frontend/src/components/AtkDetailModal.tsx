@@ -6,7 +6,7 @@ import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
 import {
   GA_APPROVAL_ACTIONABLE_STATUSES,
   L1_ACTIONABLE_STATUSES,
-  SUMBER_PEMBELIAN_LABEL,
+  getSumberPembelianLabelMap,
   atkOriginActorLabel,
   isAtkEditableByOrigin,
   isAtkGaActionable,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload, SumberPembelian } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
@@ -48,6 +49,7 @@ function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
 }
 
 export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const { language, t } = useLanguage();
   const [form, setForm] = useState<PermintaanAtkCreatePayload | null>(null);
   const [sumberPembelian, setSumberPembelian] = useState<SumberPembelian | "">("");
   const [error, setError] = useState("");
@@ -103,12 +105,12 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   async function handleSubmitDraft() {
     if (submitNeedsSumberPembelian && !sumberPembelian) {
-      setError("Sumber pembelian wajib dipilih");
+      setError(t("atk.sumberPembelianRequired"));
       return;
     }
     try {
       await api.submitAtk(item!.id, submitNeedsSumberPembelian ? (sumberPembelian as SumberPembelian) : null);
-      showToast("Permintaan berhasil dikirim untuk approval");
+      showToast(t("atk.toastSubmittedForApproval"));
       onClose();
       onSaved();
     } catch (err) {
@@ -120,7 +122,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast(t("atk.toastApprovedToAdminGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -129,13 +131,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   async function handleApproveGa() {
     if (!sumberPembelian) {
-      setError("Sumber pembelian wajib dipilih");
+      setError(t("atk.sumberPembelianRequired"));
       return;
     }
     onClose();
     try {
       await api.approveAtkGa(item!.id, sumberPembelian);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast(t("atk.toastApprovedToApprovalGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -146,7 +148,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkGaApproval(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Mitra");
+      showToast(t("atk.toastApprovedToMitra"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -157,7 +159,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkKpu(item!.id);
-      showToast("Permintaan ATK berhasil disetujui");
+      showToast(t("atk.toastApprovedKpu"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -168,7 +170,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     e.preventDefault();
     try {
       await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Permintaan berhasil diperbarui");
+      showToast(t("atk.toastUpdated"));
       onClose();
       onSaved();
     } catch (err) {
@@ -180,35 +182,35 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Permintaan ATK" : "Detail Permintaan ATK"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? t("atk.formPermintaanTitle") : t("atk.detailPermintaanTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="da-nomor-permintaan">Nomor Permintaan ATK</label>
+              <label htmlFor="da-nomor-permintaan">{t("atk.nomorPermintaan")}</label>
               <input type="text" id="da-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="da-tanggal">Tanggal Dibutuhkan</label>
+              <label htmlFor="da-tanggal">{t("atk.tanggalDibutuhkan")}</label>
               <input type="date" id="da-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="da-keperluan">Keperluan</label>
+              <label htmlFor="da-keperluan">{t("vbk.keperluan")}</label>
               <input type="text" id="da-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
-              <label>Daftar Barang</label>
+              <label>{t("atk.daftarBarang")}</label>
               {form.items.map((row, idx) => (
                 <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                   <input
                     type="text"
-                    aria-label={`Nama barang ${idx + 1}`}
+                    aria-label={`${t("atk.namaBarangAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
                     list={ATK_CATALOG_DATALIST_ID}
-                    placeholder="Nama barang"
+                    placeholder={t("atk.namaBarangAria")}
                     style={{ flex: "3 1 180px", minWidth: 180 }}
                     value={row.namaBarang}
                     onChange={(e) => {
@@ -221,10 +223,10 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label={`Jumlah barang ${idx + 1}`}
+                    aria-label={`${t("atk.jumlahBarangAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Jumlah"
+                    placeholder={t("atk.jumlahPlaceholder")}
                     style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.jumlah === 0 ? "" : String(row.jumlah)}
                     onChange={(e) => {
@@ -234,10 +236,10 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                   />
                   <input
                     type="text"
-                    aria-label={`Satuan barang ${idx + 1}`}
+                    aria-label={`${t("atk.satuanBarangAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Satuan"
+                    placeholder={t("atk.satuanBarangAria")}
                     style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
                     onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -246,7 +248,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     <button
                       type="button"
                       className="card-icon-btn"
-                      aria-label={`Hapus baris barang ${idx + 1}`}
+                      aria-label={`${t("atk.hapusBarisBarangAria")} ${idx + 1}`}
                       disabled={form.items.length <= 1}
                       style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
                       onClick={() => removeItemRow(idx)}
@@ -258,81 +260,81 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               ))}
               {isEdit && form.items.length < MAX_ITEM_ROWS && (
                 <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
-                  + Tambah Barang
+                  {t("atk.tambahBarang")}
                 </button>
               )}
             </div>
 
             <div className="field full">
-              <label htmlFor="da-catatan">Catatan</label>
-              <input type="text" id="da-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="da-catatan">{t("common.notes")}</label>
+              <input type="text" id="da-catatan" disabled={!isEdit} placeholder={isEdit ? t("bk.contohSegeraDiApprove") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+              <strong>{t("bk.diajukanColon")}</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
 
           {(canGaAct || submitNeedsSumberPembelian) && (
             <div className="field" style={{ marginBottom: 12 }}>
-              <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
+              <label htmlFor="da-sumber-pembelian">{t("atk.sumberPembelianLabel")}</label>
               <SearchableSelect
                 id="da-sumber-pembelian"
                 value={sumberPembelian}
                 onChange={(v) => setSumberPembelian(v as SumberPembelian)}
                 options={SUMBER_PEMBELIAN_OPTIONS}
-                getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian]}
-                placeholder="Pilih sumber pembelian"
+                getLabel={(v) => getSumberPembelianLabelMap(language)[v as SumberPembelian]}
+                placeholder={t("atk.pilihSumberPembelian")}
               />
             </div>
           )}
 
           {!canGaAct && !submitNeedsSumberPembelian && item.sumberPembelian && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Sumber Pembelian:</strong> {SUMBER_PEMBELIAN_LABEL[item.sumberPembelian]}
+              <strong>{t("atk.sumberPembelianLabel")}:</strong> {getSumberPembelianLabelMap(language)[item.sumberPembelian]}
             </div>
           )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Catatan Penolakan:</strong> {item.rejectReason}
+              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
             </div>
           )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? t("common.cancel") : t("common.close")}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.approve")}</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-l1", atkOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-l1", atkOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-ga", atkOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-ga", atkOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-ga-approval", atkOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-ga-approval", atkOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
               </>
             )}
             {canKpuAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-kpu", atkOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveKpu}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "atk-kpu", atkOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveKpu}>{t("common.approve")}</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
             )}
           </div>
         </form>

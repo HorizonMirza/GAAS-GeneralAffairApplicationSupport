@@ -16,6 +16,7 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { PermintaanAtk, Status } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
@@ -45,6 +46,7 @@ export default function OfficeSuppliesOverviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const [items, setItems] = useState<PermintaanAtk[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -108,16 +110,16 @@ export default function OfficeSuppliesOverviewPage() {
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? "Approval Departemen"
+      ? `${t("word.approval")} ${t("word.department")}`
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? "Approval Divisi"
-      : "Approval Departemen/Divisi";
+      ? `${t("word.approval")} ${t("word.division")}`
+      : `${t("word.approval")} ${t("word.department")}/${t("word.division")}`;
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus permintaan ATK ini secara permanen?", async () => {
+    confirm(t("atk.confirmDeleteRequest"), async () => {
       try {
         await api.deleteAtk(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast(t("atk.toastRequestDeleted"));
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -131,7 +133,7 @@ export default function OfficeSuppliesOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Permintaan ATK
+            {t("atk.tambahPermintaan")}
           </button>
         )}
       </div>
@@ -139,15 +141,15 @@ export default function OfficeSuppliesOverviewPage() {
       {stats && (
         <div className="stat-grid">
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">Mitra</div></div>
-          <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">{t("word.admin")} {t("word.generalAffair")}</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">{t("word.approval")} {t("word.generalAffair")}</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">{t("word.partner")}</div></div>
+          <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">{t("word.approved")}</div></div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>{t("atk.permintaanTerbaruSaya")}</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
           <SearchableSelect
             id="overview-atk-status-filter"
@@ -155,21 +157,21 @@ export default function OfficeSuppliesOverviewPage() {
             onChange={(v) => setStatusFilter(v as StatusFilter)}
             options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
             getLabel={(v) => ({
-              ALL: "Semua Status",
-              DRAFT: "Draft",
-              ON_APPROVAL: "On-Approval",
-              APPROVED: "Approved",
-              REJECTED: "Rejected",
+              ALL: t("common.allStatus"),
+              DRAFT: t("word.draft"),
+              ON_APPROVAL: t("word.onApproval"),
+              APPROVED: t("word.approved"),
+              REJECTED: t("word.rejected"),
             } as Record<string, string>)[v] || v}
-            placeholder="Semua Status"
+            placeholder={t("common.allStatus")}
           />
         </div>
       </div>
 
       {busy ? (
-        <p className="text-secondary">Memuat data...</p>
+        <p className="text-secondary">{t("common.loadingData")}</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">Tidak ada data.</div>
+        <div className="card table-empty">{t("common.noDataPeriod")}</div>
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
@@ -192,7 +194,7 @@ export default function OfficeSuppliesOverviewPage() {
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                    aria-label="Chat"
+                    aria-label={t("common.chat")}
                     onClick={(e) => { e.stopPropagation(); setChatItem(item); }}
                   >
                     <MessageSquare width="17" height="17" />
@@ -200,7 +202,7 @@ export default function OfficeSuppliesOverviewPage() {
                       <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
+                  <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -208,7 +210,7 @@ export default function OfficeSuppliesOverviewPage() {
               <AtkStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                  <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
                 </div>
               )}
             </div>
