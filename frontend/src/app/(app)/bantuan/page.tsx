@@ -88,12 +88,11 @@ export default function BantuanPage() {
 
   return (
     <>
-      <div className="bantuan-intro">
-        <p>Kumpulan pertanyaan yang sering ditanyakan dan panduan singkat tiap modul. Kalau jawabannya belum ketemu di sini, hubungi PIC lewat Contact Person.</p>
-      </div>
-
       <div className="bantuan-section">
-        <h3 className="bantuan-section-label">Pertanyaan Umum</h3>
+        <div className="bantuan-faq-header">
+          <p className="bantuan-faq-eyebrow">FAQ</p>
+          <h2 className="bantuan-faq-title">Pertanyaan Yang Sering Diajukan</h2>
+        </div>
         <div className="faq-list">
           {FAQ_ITEMS.map((item, index) => {
             const open = openFaq === index;

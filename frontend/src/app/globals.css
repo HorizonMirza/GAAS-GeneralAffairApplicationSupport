@@ -1534,19 +1534,12 @@ body.auth-ready .app-shell {
 }
 
 /* ---------- Bantuan (help) page ---------- */
-.bantuan-intro {
-  max-width: 62ch;
-  margin-bottom: 8px;
-}
-
-.bantuan-intro p {
-  margin: 0;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
 .bantuan-section {
   margin-top: 28px;
+}
+
+.bantuan-section:first-child {
+  margin-top: 0;
 }
 
 .bantuan-section-label {
@@ -1556,6 +1549,27 @@ body.auth-ready .app-shell {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+.bantuan-faq-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.bantuan-faq-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue-500);
+}
+
+.bantuan-faq-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 .faq-list {
