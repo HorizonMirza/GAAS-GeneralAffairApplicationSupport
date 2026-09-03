@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 
 // A menu row either navigates (href, rendered as a Link) or performs an action (onClick, rendered
 // as a button) - the theme toggle is the latter, Profile/Contact Person the former. `active`
-// highlights the row for whichever page is currently open.
+// highlights the row for whichever page is currently open. `disabled` renders the row inert (no
+// navigation, no action) for a feature that's present in the menu but not wired up yet.
 export interface NavItem {
   icon: React.ReactNode;
   label: string;
@@ -15,6 +16,7 @@ export interface NavItem {
   onClick?: () => void;
   active?: boolean;
   isSeparator?: boolean;
+  disabled?: boolean;
 }
 
 export interface UserProfile {
@@ -106,7 +108,13 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
             <React.Fragment key={index}>
               {item.isSeparator && <motion.div variants={itemVariants} className="h-2" />}
               <motion.div variants={itemVariants}>
-                {item.href ? (
+                {item.disabled ? (
+                  <div className={cn(rowClass, "cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground")}>
+                    <span className="mr-3 h-5 w-5">{item.icon}</span>
+                    <span>{item.label}</span>
+                    <span className="ml-auto text-xs font-normal">Segera hadir</span>
+                  </div>
+                ) : item.href ? (
                   <Link href={item.href} className={cn(rowClass, item.active && "bg-accent text-accent-foreground")}>
                     <span className="mr-3 h-5 w-5">{item.icon}</span>
                     <span>{item.label}</span>
