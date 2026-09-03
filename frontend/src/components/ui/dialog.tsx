@@ -60,7 +60,11 @@ const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn("text-xl font-bold leading-tight", className)} {...props} />
+  // Radix renders Title as a plain <h2> with no styling of its own, but this app skips Tailwind's
+  // preflight reset app-wide, so the browser's UA stylesheet default h2 margin (~0.83em) survives
+  // and pushes the text down inside DialogHeader - out of line with the close button, which has
+  // no such margin. m-0 kills it so the title's line box actually starts where it's positioned.
+  <DialogPrimitive.Title ref={ref} className={cn("m-0 text-xl font-bold leading-tight", className)} {...props} />
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 

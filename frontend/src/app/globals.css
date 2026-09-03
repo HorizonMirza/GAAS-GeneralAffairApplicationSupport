@@ -1703,7 +1703,7 @@ body.auth-ready .app-shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .profile-grid .card {
@@ -1749,9 +1749,11 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
+/* Fixed 3-column grid rather than a wrapping flex row - with exactly 9 presets this lays out as
+   a clean 3x3 block instead of an uneven wrap. */
 .cover-preset-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
   gap: 10px;
 }
 
@@ -1903,7 +1905,7 @@ body.auth-ready .app-shell {
    regular card. */
 .edit-profile-cover-wrap {
   position: relative;
-  margin: 0 -26px 34px;
+  margin: -12px -26px 34px;
 }
 
 .edit-profile-cover {
@@ -1978,16 +1980,14 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-/* Small badge button fixed at the avatar's corner, like a standard "edit avatar" affordance -
+/* Centered on the avatar itself, matching the semi-transparent buttons floating on the cover -
    always visible instead of a hover-only overlay, since a circle this size is an easy touch
    target to miss with a hover-reveal control. */
 .edit-profile-avatar-edit-btn {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 26px;
-  height: 26px;
-  border: 2px solid var(--bg-surface);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .avatar-crop-area {

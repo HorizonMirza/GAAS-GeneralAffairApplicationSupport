@@ -158,9 +158,12 @@ export default function ProfilePage() {
     setEditOpen(true);
   }
 
-  // Editing Email or No HP re-proves account ownership with the current password, same as
-  // ChangePassword below - both are handled server-side in ProfileController.UpdateProfile.
-  const contactChanged = profileDraft.noHp.trim() !== (me.noHp ?? "") || profileDraft.email.trim() !== (me.email ?? "");
+  // Editing Username, No HP, or Email re-proves account ownership with the current password,
+  // same as ChangePassword below - all are handled server-side in ProfileController.UpdateProfile.
+  const contactChanged =
+    profileDraft.username.trim() !== me.username ||
+    profileDraft.noHp.trim() !== (me.noHp ?? "") ||
+    profileDraft.email.trim() !== (me.email ?? "");
 
   async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -463,7 +466,7 @@ export default function ProfilePage() {
                 disabled={uploadingPhoto}
                 onClick={() => photoInputRef.current?.click()}
               >
-                <Camera width={13} height={13} />
+                <Camera width={16} height={16} />
               </button>
               <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
             </div>
@@ -517,7 +520,7 @@ export default function ProfilePage() {
                 placeholder="Masukkan password saat ini"
                 value={contactPassword}
                 error={contactPasswordError}
-                hint="Diperlukan karena Anda mengubah email atau nomor HP"
+                hint="Diperlukan karena Anda mengubah username, email, atau nomor HP"
                 onChange={(v) => {
                   setContactPassword(v);
                   if (contactPasswordError) setContactPasswordError("");

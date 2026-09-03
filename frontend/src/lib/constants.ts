@@ -564,8 +564,11 @@ export interface CoverPreset {
 export const COVER_PRESETS: CoverPreset[] = [
   { key: "navy", label: "Navy", gradient: "linear-gradient(135deg, #081328 0%, #1450c9 55%, #4b8dff 100%)" },
   { key: "ocean", label: "Ocean", gradient: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #38bdf8 100%)" },
+  { key: "teal", label: "Teal", gradient: "linear-gradient(135deg, #042f2e 0%, #0d9488 55%, #5eead4 100%)" },
   { key: "emerald", label: "Emerald", gradient: "linear-gradient(135deg, #064e3b 0%, #059669 55%, #34d399 100%)" },
+  { key: "gold", label: "Gold", gradient: "linear-gradient(135deg, #451a03 0%, #b45309 55%, #fbbf24 100%)" },
   { key: "sunset", label: "Sunset", gradient: "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fb923c 100%)" },
+  { key: "rose", label: "Rose", gradient: "linear-gradient(135deg, #4c0519 0%, #be123c 55%, #fb7185 100%)" },
   { key: "purple", label: "Purple", gradient: "linear-gradient(135deg, #3b0764 0%, #7e22ce 55%, #c084fc 100%)" },
   { key: "slate", label: "Slate", gradient: "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)" },
 ];

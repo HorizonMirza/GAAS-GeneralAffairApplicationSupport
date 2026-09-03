@@ -41,7 +41,7 @@ public class ProfileController : ApiControllerBase
     // class name client-side.
     private static readonly HashSet<string> AllowedCoverPresets = new(StringComparer.Ordinal)
     {
-        "navy", "ocean", "emerald", "sunset", "purple", "slate",
+        "navy", "ocean", "teal", "emerald", "gold", "sunset", "rose", "purple", "slate",
     };
 
     private readonly AppDbContext _db;
@@ -90,15 +90,15 @@ public class ProfileController : ApiControllerBase
 
         var newNoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
         var newEmail = string.IsNullOrWhiteSpace(payload.Email) ? null : payload.Email.Trim();
-        var contactChanged = newNoHp != user!.NoHp || newEmail != user.Email;
+        var contactChanged = username != user!.Username || newNoHp != user.NoHp || newEmail != user.Email;
 
-        // Changing the contact fields that gate password recovery / notifications is treated like
-        // a sensitive action - the caller must re-prove they hold the current password, the same
-        // way ChangePassword below does, rather than relying on the session cookie alone.
+        // Changing the account/contact fields that gate login and password recovery is treated
+        // like a sensitive action - the caller must re-prove they hold the current password, the
+        // same way ChangePassword below does, rather than relying on the session cookie alone.
         if (contactChanged)
         {
             if (string.IsNullOrEmpty(payload.CurrentPassword))
-                return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah email atau nomor HP" });
+                return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah username, email, atau nomor HP" });
             if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user.PasswordHash))
                 return StatusCode(400, new { detail = "Password saat ini salah" });
         }
