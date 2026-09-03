@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ensureStarted, onActivityNotification, onChatNotification } from "@/lib/chatHub";
+import { ensureStarted, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
@@ -10,19 +10,10 @@ import type { ActivityNotification, ChatNotification } from "@/lib/types";
 const DISMISS_AFTER_MS = 6000;
 const LEAVE_ANIM_MS = 300;
 
-type Kind = ChatNotification["kind"];
-
 // Transaksi page per module - a chat notification's click adds ?chat=<itemId> so that page can
 // deep-link straight into the thread (see booking-ruang-meeting/transaksi's `chat` query param
 // handling); an activity notification just lands on the plain list, no item-specific handling
 // needed to satisfy "go to the transaction".
-const TRANSAKSI_PATH: Record<Kind, string> = {
-  pengiriman: "/ekspedisi/transaksi",
-  booking: "/booking-ruang-meeting/transaksi",
-  kendaraan: "/booking-kendaraan/transaksi",
-  atk: "/office-supplies/transaksi",
-  sarana: "/maintenance/transaksi",
-};
 
 type BannerState =
   | ({ id: number; leaving: boolean; source: "chat" } & ChatNotification)
@@ -33,7 +24,7 @@ function initials(name: string): string {
 }
 
 function bannerHref(banner: BannerState): string {
-  const base = TRANSAKSI_PATH[banner.kind];
+  const base = NOTIFICATION_TRANSAKSI_PATH[banner.kind];
   return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : base;
 }
 

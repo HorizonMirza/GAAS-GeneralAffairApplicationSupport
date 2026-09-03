@@ -128,3 +128,14 @@ export function onActivityNotification(handler: (notification: ActivityNotificat
   conn.on("ReceiveActivityNotification", handler);
   return () => conn.off("ReceiveActivityNotification", handler);
 }
+
+// Where a ChatNotification/ActivityNotification's "kind" lands when clicked - shared by the topbar
+// toast (ChatNotificationListener) and the notification bell's history dropdown so the two can't
+// drift into linking the same kind to different pages.
+export const NOTIFICATION_TRANSAKSI_PATH: Record<ChatNotification["kind"], string> = {
+  pengiriman: "/ekspedisi/transaksi",
+  booking: "/booking-ruang-meeting/transaksi",
+  kendaraan: "/booking-kendaraan/transaksi",
+  atk: "/office-supplies/transaksi",
+  sarana: "/maintenance/transaksi",
+};

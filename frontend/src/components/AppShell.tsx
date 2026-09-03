@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
+import NotificationBell from "@/components/NotificationBell";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Role } from "@/lib/types";
@@ -366,6 +367,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-date">{dateText}</div>
           <div className="topbar-right" onClick={(e) => e.stopPropagation()}>
             <AccountMenu />
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

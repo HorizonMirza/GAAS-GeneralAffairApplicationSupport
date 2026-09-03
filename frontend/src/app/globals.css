@@ -1088,6 +1088,129 @@ body.auth-ready .app-shell {
   background: rgba(214, 69, 69, 0.1);
 }
 
+/* ---------- Notification bell ---------- */
+.notification-bell {
+  position: relative;
+}
+
+.notification-bell-trigger {
+  position: relative;
+}
+
+.notification-bell-badge {
+  top: -4px;
+  right: -4px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card), 0 12px 28px rgba(15, 40, 90, 0.18);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.notification-mark-all {
+  border: none;
+  background: transparent;
+  color: var(--blue-500);
+  font-weight: 600;
+  font-size: 0.76rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.notification-mark-all:hover {
+  text-decoration: underline;
+}
+
+.notification-dropdown-empty {
+  padding: 28px 14px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.notification-dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.notification-item:hover {
+  background: var(--bg-surface-alt);
+}
+
+/* A subtle dot on the title line, not a full-row highlight - the row already carries a lot of
+   text, and the mark-all-read affordance is what clears this, not a per-item click alone. */
+.notification-item-unread .notification-item-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--badge-rejected-bg);
+  vertical-align: middle;
+}
+
+.notification-item-title {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.notification-item-title strong {
+  font-weight: 700;
+}
+
+.notification-item-preview {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-item-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
 .page-body {
   padding: 26px 28px 40px;
   flex: 1;
@@ -3773,6 +3896,7 @@ table.data-table {
   .topbar-date { display: none; }
   .topbar-right { gap: 8px; }
   .account-dropdown { width: 230px; right: -8px; }
+  .notification-dropdown { width: min(320px, calc(100vw - 32px)); right: -8px; }
 }
 
 @media (max-width: 640px) {
