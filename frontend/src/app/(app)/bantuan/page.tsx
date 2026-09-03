@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Calendar, Car, Folder, Layers, Wrench } from "lucide-react";
 
 const FAQ_ITEMS: { question: string; answer: string }[] = [
@@ -81,6 +84,8 @@ const MODULE_GUIDES: ModuleGuide[] = [
 ];
 
 export default function BantuanPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
   return (
     <>
       <div className="bantuan-intro">
@@ -90,15 +95,25 @@ export default function BantuanPage() {
       <div className="bantuan-section">
         <h3 className="bantuan-section-label">Pertanyaan Umum</h3>
         <div className="faq-list">
-          {FAQ_ITEMS.map((item, index) => (
-            <details key={item.question} open={index === 0}>
-              <summary>
-                {item.question}
-                <svg className="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </summary>
-              <p>{item.answer}</p>
-            </details>
-          ))}
+          {FAQ_ITEMS.map((item, index) => {
+            const open = openFaq === index;
+            return (
+              <div key={item.question} className={`faq-item${open ? " faq-item-open" : ""}`}>
+                <button
+                  type="button"
+                  className="faq-item-trigger"
+                  aria-expanded={open}
+                  onClick={() => setOpenFaq(open ? null : index)}
+                >
+                  <span>{item.question}</span>
+                  <svg className="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div className="faq-item-answer">
+                  <p>{item.answer}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

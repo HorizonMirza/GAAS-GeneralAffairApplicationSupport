@@ -1559,56 +1559,83 @@ body.auth-ready .app-shell {
 }
 
 .faq-list {
-  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faq-item {
+  background: linear-gradient(120deg, rgba(75, 141, 255, 0.08), var(--bg-surface) 60%);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--shadow-card);
   overflow: hidden;
+  transition: border-color 200ms ease;
 }
 
-.faq-list details {
-  border-bottom: 1px solid var(--border-subtle);
+.faq-item-open {
+  border-color: var(--blue-300);
 }
 
-.faq-list details:last-child {
-  border-bottom: none;
-}
-
-.faq-list summary {
-  list-style: none;
+.faq-item-trigger {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 15px 18px;
+  border: none;
+  background: none;
   cursor: pointer;
+  text-align: left;
   font-weight: 600;
   font-size: 0.92rem;
-}
-
-/* Chrome/Safari draw their own disclosure triangle in addition to ::marker unless this is hidden
-   too - list-style:none above only removes the generic bullet, not this one. */
-.faq-list summary::-webkit-details-marker {
-  display: none;
+  color: var(--text-primary);
 }
 
 .faq-chevron {
   flex-shrink: 0;
   color: var(--text-secondary);
-  transition: transform 180ms ease;
+  transition: transform 280ms ease;
 }
 
-.faq-list details[open] .faq-chevron {
-  transform: rotate(90deg);
+.faq-item-open .faq-chevron {
+  transform: rotate(180deg);
+  color: var(--blue-500);
 }
 
-.faq-list details p {
+/* Animates open/close via the grid-template-rows 0fr->1fr trick - no JS height measurement, and
+   (unlike a fixed max-height cap) it never clips a longer answer or leaves a gap under a short
+   one. min-height:0 + overflow:hidden on both the track and the inner <p> are required for the
+   0fr collapsed state to actually reach zero instead of the content's intrinsic height. */
+.faq-item-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms ease;
+  overflow: hidden;
+}
+
+.faq-item-open .faq-item-answer {
+  grid-template-rows: 1fr;
+}
+
+.faq-item-answer p {
   margin: 0;
-  padding: 0 18px 17px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 18px;
   color: var(--text-secondary);
   font-size: 0.88rem;
   line-height: 1.6;
   max-width: 66ch;
+}
+
+/* Bottom padding only applies once open - if it stayed on the paragraph unconditionally, that
+   fixed padding would keep contributing to the grid item's intrinsic height even at
+   grid-template-rows: 0fr (min-height: 0 zeroes out the text's own box, padding is separate),
+   leaving a visible sliver of the collapsed answer instead of a true 0px collapse. */
+.faq-item-open .faq-item-answer p {
+  padding-bottom: 17px;
 }
 
 /* Its own grid/card rather than reusing dashboard's .module-grid/.module-card - those are built
