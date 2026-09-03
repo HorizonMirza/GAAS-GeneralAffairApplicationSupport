@@ -2042,12 +2042,6 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
-.settings-edit-panel-desc {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
 /* "Signed in as"-style readout of the field's current value, shown above the editable input so
    the user can confirm what they're changing before typing a new one. */
 .settings-current-value {

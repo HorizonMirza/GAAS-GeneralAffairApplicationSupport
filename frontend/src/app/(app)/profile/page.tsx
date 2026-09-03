@@ -515,10 +515,6 @@ export default function ProfilePage() {
               </DialogHeader>
 
               <form id="field-edit-form" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
-                <div className="settings-edit-panel-desc" style={{ marginBottom: 18 }}>
-                  Perbarui {FIELD_META[editingField].label.toLowerCase()} akun Anda. Konfirmasi password saat ini diperlukan untuk menyimpan perubahan.
-                </div>
-
                 <div className="settings-current-value">
                   <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
                   <div>
@@ -550,7 +546,6 @@ export default function ProfilePage() {
                   icon={<Lock width={15} height={15} />}
                   value={fieldPassword}
                   error={fieldPasswordError}
-                  hint="Diperlukan untuk mengubah username, email, atau Phone Number"
                   onChange={(v) => {
                     setFieldPassword(v);
                     if (fieldPasswordError) setFieldPasswordError("");
@@ -563,7 +558,7 @@ export default function ProfilePage() {
                   <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
                 </DialogClose>
                 <button type="submit" form="field-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                  {savingField ? "Menyimpan..." : `Simpan ${FIELD_META[editingField].label}`}
+                  {savingField ? "Menyimpan..." : "Simpan"}
                 </button>
               </DialogFooter>
             </>
