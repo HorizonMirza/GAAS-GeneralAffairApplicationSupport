@@ -708,33 +708,35 @@ body.auth-ready .app-shell {
   padding-bottom: 4px;
 }
 
+/* Left-anchored, not centered, and clips its own overflow: the logo image itself never changes
+   size - only this box's width does (100%, tracking the sidebar's own width same as the nav rows
+   below) - so collapsing progressively covers the wordmark from its right edge inward, and
+   expanding uncovers it left-to-right, instead of the whole mark shrinking in place. */
 .brand-logo-sidebar {
   display: flex;
-  justify-content: center;
   align-items: center;
+  width: 100%;
+  overflow: hidden;
   margin-bottom: 30px;
   padding: 4px 6px;
   text-decoration: none;
   cursor: pointer;
   border-radius: 10px;
-  transition: background-color 150ms ease-in-out, width 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    height 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    margin-bottom 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms ease-in-out, width 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-logo-sidebar:hover {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Sizing lives here (not inline on the <img>) so the collapsed-sidebar override below can
-   transition it - shrinking width and fading opacity together instead of an instant vanish. */
+/* Fixed size always - flex-shrink:0 so it never shrinks to fit, only gets clipped by the row's
+   own overflow:hidden above as that row narrows. */
 .brand-logo-sidebar-img {
   max-width: 170px;
   max-height: 52px;
   width: auto;
   height: auto;
-  opacity: 1;
-  transition: max-width 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
 }
 
 .brand-logo-sidebar-fallback {
@@ -783,8 +785,7 @@ body.auth-ready .app-shell {
   text-align: left;
   overflow: hidden;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link svg {
@@ -3558,8 +3559,7 @@ table.data-table {
   text-align: left;
   overflow: hidden;
   transition: background 220ms ease, color 220ms ease, box-shadow 220ms ease,
-    gap 300ms cubic-bezier(0.4, 0, 0.2, 1), padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-category-trigger svg:first-child { flex-shrink: 0; }
@@ -3622,26 +3622,20 @@ table.data-table {
   flex: 1;
 }
 
-/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). There's a
-   single shared clip boundary driving the whole reveal/hide - each row's own width (see
-   .nav-link/.nav-category-trigger below) plus the sidebar's own width, both transitioning on the
-   same 300ms curve - and the label span just sits at its natural width with no clip or transition
-   of its own, so it gets progressively covered/uncovered by that one moving edge as the row
-   resizes, matching a plain width-collapse rather than a separately-animated label. The divider
-   stays visible throughout (it's what visually separates Profile/Contact Person from the modules
-   above, in both states) - only the chevron and submenu are struck instantly, since collapsed
-   categories render as a plain link with neither in the DOM at all (see AppShell.tsx). */
+/* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). The icon
+   (and the logo mark) never move - .sidebar's own left/right padding and each row's own padding
+   and gap are left untouched here on purpose, so the fixed offset from the sidebar's edge to the
+   icon stays identical in both states. Only the sidebar's width, and each row's own width (still
+   100% - see .nav-link/.nav-category-trigger's base rule), narrow - and since that's the only
+   thing moving, the label (and the logo wordmark, via its own left-anchored overflow:hidden box)
+   get progressively covered from the right as their shared row/box narrows, and uncovered
+   left-to-right as it widens back. The divider stays visible throughout (it's what visually
+   separates Profile/Contact Person from the modules above, in both states) - only the chevron and
+   submenu are struck instantly, since collapsed categories render as a plain link with neither in
+   the DOM at all (see AppShell.tsx). */
 @media (min-width: 861px) {
   .sidebar.sidebar-toggled {
     width: 76px;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  /* Shrinks in place rather than fading away to nothing, so the collapsed rail still shows a
-     (small, centered) brand mark instead of empty space above the nav icons. */
-  .sidebar.sidebar-toggled .brand-logo-sidebar-img {
-    max-width: 40px;
   }
 
   .sidebar.sidebar-toggled .nav-category-chevron,
@@ -3649,38 +3643,15 @@ table.data-table {
     display: none;
   }
 
-  /* Without this the label would just take whatever space is left over in the 44px square after
-     the icon, instead of collapsing away entirely - leaving a stray sliver of text and pushing the
-     icon off-center. flex-grow: 0 is needed on top of width: 0 specifically for the category
-     trigger's label, which normally has margin-right:auto (to push its chevron to the far right) -
-     without it, growth from leftover row space would fight the width transition. */
+  /* Without this the label would just take whatever space is left over in the row after the
+     icon, instead of collapsing away entirely. flex-grow: 0 is needed on top of width: 0
+     specifically for the category trigger's label, which normally has margin-right:auto (to push
+     its chevron to the far right) - without it, growth from leftover row space would fight the
+     width transition. */
   .sidebar.sidebar-toggled .nav-link span,
   .sidebar.sidebar-toggled .nav-category-trigger span {
     width: 0;
     flex-grow: 0;
-  }
-
-  /* Fixed 1:1 square, centered in the rail, replacing the full-width row - so the hover/active/
-     pressed highlight is a neat icon-sized square instead of a wide, off-center rectangle. */
-  .sidebar.sidebar-toggled .nav-link,
-  .sidebar.sidebar-toggled .nav-category-trigger {
-    align-self: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    gap: 0;
-    padding: 0;
-  }
-
-  /* Same square treatment for the logo link, now that the wordmark image inside it has shrunk
-     away - otherwise it'd stay full sidebar width but only as tall as its own padding, a short
-     wide hover rectangle rather than a clean icon-sized square like the nav rows above. */
-  .sidebar.sidebar-toggled .brand-logo-sidebar {
-    align-self: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    margin-bottom: 20px;
   }
 }
 
