@@ -7,7 +7,7 @@ import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Camera, ImagePlus } from "lucide-react";
+import { Camera, ImagePlus, Pencil } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -289,8 +289,12 @@ export default function ProfilePage() {
           {me.hasCoverPhoto && (
             <img className="profile-hero-banner-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
           )}
+          <button type="button" className="profile-hero-edit-btn" onClick={openEditProfile}>
+            <Pencil width={14} height={14} />
+            Edit Profile
+          </button>
         </div>
-        <div className="profile-hero-header">
+        <div className="profile-hero-body">
           <div className="profile-hero-avatar-wrap">
             <div className="profile-hero-avatar">
               {me.hasPhoto ? (
@@ -300,14 +304,9 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          <div className="profile-hero-identity">
+          <div>
             <div className="profile-hero-name">{me.nama}</div>
             <div className="profile-role-badge">{ROLE_LABEL[me.role] || me.role}</div>
-          </div>
-          <div className="profile-hero-actions">
-            <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openEditProfile}>
-              Edit Profile
-            </button>
           </div>
         </div>
 

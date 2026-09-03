@@ -1735,7 +1735,7 @@ body.auth-ready .app-shell {
 }
 
 .profile-hero-banner {
-  height: 88px;
+  height: 140px;
   background: var(--gradient-primary);
   position: relative;
   overflow: hidden;
@@ -1779,15 +1779,38 @@ body.auth-ready .app-shell {
   cursor: default;
 }
 
-.profile-hero-header {
-  padding: 0 28px 4px;
-  /* Pulls the row up so the avatar overlaps the banner. align-items: center keeps the shorter
-     name+badge block vertically centered against the taller avatar instead of pinned to its
-     bottom edge. */
-  margin-top: -36px;
-  display: flex;
+.profile-hero-edit-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
   align-items: center;
-  gap: 20px;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.profile-hero-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.profile-hero-body {
+  padding: 0 28px 20px;
+  /* Pulls the block up so the avatar overlaps the banner by exactly half its own height (56px of
+     112px), instead of the avatar sitting beside the name in one row. */
+  margin-top: -56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .profile-hero-avatar-wrap {
@@ -1817,11 +1840,6 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-.profile-hero-identity {
-  flex: 1;
-  min-width: 0;
-}
-
 .profile-hero-name {
   font-size: 1.15rem;
   font-weight: 700;
@@ -1832,18 +1850,6 @@ body.auth-ready .app-shell {
   color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
-}
-
-.profile-hero-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.profile-photo-hint-header {
-  padding: 0 28px;
-  margin-top: 0;
-  margin-bottom: 6px;
 }
 
 .profile-org-grid {
@@ -1858,22 +1864,14 @@ body.auth-ready .app-shell {
 }
 
 .profile-org-grid-wide {
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, auto);
+  justify-content: space-between;
 }
 
 @media (max-width: 720px) {
-  .profile-hero-header {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  .profile-hero-actions {
-    flex-wrap: wrap;
-  }
-
   .profile-org-grid-wide {
     grid-template-columns: 1fr 1fr;
+    justify-content: normal;
   }
 }
 
