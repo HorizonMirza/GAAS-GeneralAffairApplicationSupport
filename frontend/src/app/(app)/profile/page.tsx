@@ -47,6 +47,8 @@ function PasswordField({
   value,
   onChange,
   minLength,
+  error,
+  hint,
 }: {
   id: string;
   label: string;
@@ -54,8 +56,11 @@ function PasswordField({
   value: string;
   onChange: (v: string) => void;
   minLength?: number;
+  error?: string;
+  hint?: string;
 }) {
   const [show, setShow] = useState(false);
+  const errorId = error ? `${id}-error` : undefined;
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -67,6 +72,8 @@ function PasswordField({
           minLength={minLength}
           required
           value={value}
+          aria-invalid={!!error}
+          aria-describedby={errorId}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="password-toggle" aria-label="Tampilkan password" onClick={() => setShow((v) => !v)}>
@@ -77,8 +84,33 @@ function PasswordField({
           )}
         </button>
       </div>
+      {error && <div className="field-error-text" id={errorId} aria-live="polite">{error}</div>}
+      {!error && hint && <div className="field-hint-text">{hint}</div>}
     </div>
   );
+}
+
+type PasswordErrors = { currentPassword?: string; newPassword?: string; confirmPassword?: string; general?: string };
+
+function validateCurrentPassword(value: string): string | undefined {
+  if (!value.trim()) return "Password saat ini wajib diisi";
+  return undefined;
+}
+
+function validateNewPassword(value: string, currentPassword: string): string | undefined {
+  if (!value.trim()) return "Password baru wajib diisi";
+  if (value.length < 8) return "Password minimal 8 karakter";
+  if (!/(?=.*[a-z])/.test(value)) return "Password harus mengandung huruf kecil";
+  if (!/(?=.*[A-Z])/.test(value)) return "Password harus mengandung huruf besar";
+  if (!/(?=.*\d)/.test(value)) return "Password harus mengandung angka";
+  if (value === currentPassword) return "Password baru harus berbeda dari password saat ini";
+  return undefined;
+}
+
+function validateConfirmPassword(value: string, newPassword: string): string | undefined {
+  if (!value.trim()) return "Konfirmasi password wajib diisi";
+  if (value !== newPassword) return "Konfirmasi password tidak cocok";
+  return undefined;
 }
 
 type ProfileDraft = { nama: string; username: string; noHp: string; email: string };
@@ -103,7 +135,8 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
+  const [savingPassword, setSavingPassword] = useState(false);
 
   if (!me) return null;
 
@@ -220,11 +253,17 @@ export default function ProfilePage() {
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setPasswordError("");
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Konfirmasi password baru tidak cocok");
+
+    const currentPasswordError = validateCurrentPassword(currentPassword);
+    const newPasswordError = validateNewPassword(newPassword, currentPassword);
+    const confirmPasswordError = validateConfirmPassword(confirmPassword, newPassword);
+    if (currentPasswordError || newPasswordError || confirmPasswordError) {
+      setPasswordErrors({ currentPassword: currentPasswordError, newPassword: newPasswordError, confirmPassword: confirmPasswordError });
       return;
     }
+
+    setPasswordErrors({});
+    setSavingPassword(true);
     try {
       await api.changePassword(currentPassword, newPassword);
       showToast("Password berhasil diubah");
@@ -232,7 +271,9 @@ export default function ProfilePage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setPasswordError((err as Error).message);
+      setPasswordErrors({ general: (err as Error).message });
+    } finally {
+      setSavingPassword(false);
     }
   }
 
@@ -323,12 +364,50 @@ export default function ProfilePage() {
           </div>
 
           <form className="settings-edit-panel" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
-            <PasswordField id="current-password" label="Password Saat Ini" placeholder="Min. 8 Karakter" value={currentPassword} onChange={setCurrentPassword} />
-            <PasswordField id="new-password" label="Password Baru" placeholder="Min. 8 Karakter" minLength={8} value={newPassword} onChange={setNewPassword} />
-            <PasswordField id="confirm-password" label="Konfirmasi Password Baru" placeholder="Ulangi Password Baru" minLength={8} value={confirmPassword} onChange={setConfirmPassword} />
-            <div className="error-text">{passwordError}</div>
+            <PasswordField
+              id="current-password"
+              label="Password Saat Ini"
+              placeholder="Min. 8 Karakter"
+              value={currentPassword}
+              error={passwordErrors.currentPassword}
+              onChange={(v) => {
+                setCurrentPassword(v);
+                if (passwordErrors.currentPassword) setPasswordErrors((prev) => ({ ...prev, currentPassword: validateCurrentPassword(v) }));
+              }}
+            />
+            <PasswordField
+              id="new-password"
+              label="Password Baru"
+              placeholder="Min. 8 Karakter"
+              minLength={8}
+              value={newPassword}
+              error={passwordErrors.newPassword}
+              hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
+              onChange={(v) => {
+                setNewPassword(v);
+                if (passwordErrors.newPassword) setPasswordErrors((prev) => ({ ...prev, newPassword: validateNewPassword(v, currentPassword) }));
+                if (passwordErrors.confirmPassword && confirmPassword) {
+                  setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(confirmPassword, v) }));
+                }
+              }}
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Konfirmasi Password Baru"
+              placeholder="Ulangi Password Baru"
+              minLength={8}
+              value={confirmPassword}
+              error={passwordErrors.confirmPassword}
+              onChange={(v) => {
+                setConfirmPassword(v);
+                if (passwordErrors.confirmPassword) setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(v, newPassword) }));
+              }}
+            />
+            {passwordErrors.general && <div className="error-text">{passwordErrors.general}</div>}
             <div className="settings-edit-panel-actions">
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan Password</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
+                {savingPassword ? "Menyimpan..." : "Simpan Password"}
+              </button>
             </div>
           </form>
         </div>

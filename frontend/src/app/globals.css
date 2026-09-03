@@ -672,6 +672,18 @@ body {
   min-height: 1.2em;
 }
 
+.field-error-text {
+  color: #d64545;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.field-hint-text {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  margin-top: 6px;
+}
+
 /* ---------- App shell ---------- */
 .app-shell {
   min-height: 100vh;
