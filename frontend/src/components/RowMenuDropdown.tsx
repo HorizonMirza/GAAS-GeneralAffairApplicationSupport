@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
+import { Download, FileText, ListChecks, MessageSquare } from "lucide-react";
 
 interface Props {
   position: { top: number; left: number } | null;
@@ -72,7 +72,7 @@ export default function RowMenuDropdown({
         </button>
       )}
       <button type="button" className="row-menu-item" onClick={onDetail}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+        <ListChecks width={16} height={16} />
         Detail
       </button>
       {canEditDelete && (
@@ -82,12 +82,12 @@ export default function RowMenuDropdown({
         </button>
       )}
       <button type="button" className="row-menu-item" onClick={onStatus}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <FileText width={16} height={16} />
         History
       </button>
       {pdfUrl && (
         <button type="button" className="row-menu-item" onClick={onPdfClick}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <Download width={16} height={16} />
           Download PDF
         </button>
       )}
