@@ -198,8 +198,13 @@ export const api = {
       method: "PUT",
       body: { currentPassword, newPassword },
     }),
-  updateProfile: (payload: { nama: string; username: string; noHp: string | null; email: string | null }) =>
-    apiRequest<Me>("/profile", { method: "PUT", body: payload }),
+  updateProfile: (payload: {
+    nama: string;
+    username: string;
+    noHp: string | null;
+    email: string | null;
+    currentPassword?: string;
+  }) => apiRequest<Me>("/profile", { method: "PUT", body: payload }),
   uploadProfilePhoto: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);

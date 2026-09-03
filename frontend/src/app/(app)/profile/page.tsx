@@ -7,6 +7,7 @@ import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
 import { Camera, Pencil, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
@@ -122,10 +123,13 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>({ nama: "", username: "", noHp: "", email: "" });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [contactPassword, setContactPassword] = useState("");
+  const [contactPasswordError, setContactPasswordError] = useState("");
 
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [pendingPhotoSrc, setPendingPhotoSrc] = useState<string | null>(null);
 
   const [coverVersion, setCoverVersion] = useState(0);
   const [removingCover, setRemovingCover] = useState(false);
@@ -147,11 +151,24 @@ export default function ProfilePage() {
 
   function openEditProfile() {
     setProfileDraft({ nama: me!.nama, username: me!.username, noHp: me!.noHp ?? "", email: me!.email ?? "" });
+    setContactPassword("");
+    setContactPasswordError("");
     setEditOpen(true);
   }
 
+  // Editing Email or No HP re-proves account ownership with the current password, same as
+  // ChangePassword below - both are handled server-side in ProfileController.UpdateProfile.
+  const contactChanged = profileDraft.noHp.trim() !== (me.noHp ?? "") || profileDraft.email.trim() !== (me.email ?? "");
+
   async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (contactChanged && !contactPassword.trim()) {
+      setContactPasswordError("Password saat ini wajib diisi untuk mengubah email atau nomor HP");
+      return;
+    }
+    setContactPasswordError("");
+
     setSavingProfile(true);
     try {
       await api.updateProfile({
@@ -159,18 +176,23 @@ export default function ProfilePage() {
         username: profileDraft.username.trim(),
         noHp: profileDraft.noHp.trim() || null,
         email: profileDraft.email.trim() || null,
+        currentPassword: contactChanged ? contactPassword : undefined,
       });
       await refresh();
       setEditOpen(false);
       showToast("Profil berhasil diperbarui");
     } catch (err) {
-      showToast((err as Error).message, "error");
+      if (contactChanged) {
+        setContactPasswordError((err as Error).message);
+      } else {
+        showToast((err as Error).message, "error");
+      }
     } finally {
       setSavingProfile(false);
     }
   }
 
-  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -184,12 +206,22 @@ export default function ProfilePage() {
       return;
     }
 
+    setPendingPhotoSrc(URL.createObjectURL(file));
+  }
+
+  function closePhotoCrop() {
+    if (pendingPhotoSrc) URL.revokeObjectURL(pendingPhotoSrc);
+    setPendingPhotoSrc(null);
+  }
+
+  async function handlePhotoCropConfirm(blob: Blob) {
     setUploadingPhoto(true);
     try {
-      await api.uploadProfilePhoto(file);
+      await api.uploadProfilePhoto(new File([blob], "profile-photo.jpg", { type: "image/jpeg" }));
       await refresh();
       setPhotoVersion(Date.now());
       showToast("Foto profil berhasil diubah");
+      closePhotoCrop();
     } catch (err) {
       showToast((err as Error).message || "Gagal mengunggah foto", "error");
     } finally {
@@ -466,6 +498,20 @@ export default function ProfilePage() {
                 />
               </div>
             ))}
+            {contactChanged && (
+              <PasswordField
+                id="edit-contact-password"
+                label="Konfirmasi Password"
+                placeholder="Masukkan password saat ini"
+                value={contactPassword}
+                error={contactPasswordError}
+                hint="Diperlukan karena Anda mengubah email atau nomor HP"
+                onChange={(v) => {
+                  setContactPassword(v);
+                  if (contactPasswordError) setContactPasswordError("");
+                }}
+              />
+            )}
           </form>
 
           <DialogFooter>
@@ -478,6 +524,8 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AvatarCropDialog imageSrc={pendingPhotoSrc} onCancel={closePhotoCrop} onConfirm={handlePhotoCropConfirm} saving={uploadingPhoto} />
     </>
   );
 }

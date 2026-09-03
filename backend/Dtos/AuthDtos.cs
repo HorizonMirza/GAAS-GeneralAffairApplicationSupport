@@ -48,6 +48,6 @@ public record OrgStructureResponse(
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
-public record UpdateProfileRequest(string Nama, string Username, string? NoHp, string? Email);
+public record UpdateProfileRequest(string Nama, string Username, string? NoHp, string? Email, string? CurrentPassword);
 
 public record UpdateCoverPresetRequest(string Preset);

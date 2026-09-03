@@ -88,10 +88,25 @@ public class ProfileController : ApiControllerBase
         if (usernameTaken)
             return StatusCode(400, new { detail = "Username sudah dipakai akun lain" });
 
-        user!.Nama = nama;
+        var newNoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
+        var newEmail = string.IsNullOrWhiteSpace(payload.Email) ? null : payload.Email.Trim();
+        var contactChanged = newNoHp != user!.NoHp || newEmail != user.Email;
+
+        // Changing the contact fields that gate password recovery / notifications is treated like
+        // a sensitive action - the caller must re-prove they hold the current password, the same
+        // way ChangePassword below does, rather than relying on the session cookie alone.
+        if (contactChanged)
+        {
+            if (string.IsNullOrEmpty(payload.CurrentPassword))
+                return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah email atau nomor HP" });
+            if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user.PasswordHash))
+                return StatusCode(400, new { detail = "Password saat ini salah" });
+        }
+
+        user.Nama = nama;
         user.Username = username;
-        user.NoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
-        user.Email = string.IsNullOrWhiteSpace(payload.Email) ? null : payload.Email.Trim();
+        user.NoHp = newNoHp;
+        user.Email = newEmail;
         await _db.SaveChangesAsync();
 
         return Ok(MeResponse.From(user));
