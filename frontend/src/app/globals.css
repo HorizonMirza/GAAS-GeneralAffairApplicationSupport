@@ -2042,25 +2042,6 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
-.settings-section-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.settings-section-header h3 {
-  margin: 0;
-  font-size: 1.02rem;
-}
-
-/* Separates two stacked sections (Kontak & Akun / Keamanan) sharing one .card. */
-.settings-section-divider {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-subtle);
-}
-
 .settings-edit-panel {
   margin-top: 16px;
   padding: 16px;

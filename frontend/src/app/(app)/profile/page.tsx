@@ -141,6 +141,7 @@ export default function ProfilePage() {
   const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
   const [showCoverPresets, setShowCoverPresets] = useState(false);
 
+  const [passwordFormOpen, setPasswordFormOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -186,6 +187,24 @@ export default function ProfilePage() {
     setFieldPassword("");
     setFieldPasswordError("");
     setEditingField(field);
+    closePasswordForm();
+  }
+
+  function openPasswordForm() {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordErrors({});
+    setEditingField(null);
+    setPasswordFormOpen(true);
+  }
+
+  function closePasswordForm() {
+    setPasswordFormOpen(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordErrors({});
   }
 
   async function handleFieldSubmit(e: React.FormEvent) {
@@ -298,6 +317,7 @@ export default function ProfilePage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setPasswordFormOpen(false);
     } catch (err) {
       setPasswordErrors({ general: (err as Error).message });
     } finally {
@@ -363,12 +383,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="card" style={{ marginTop: 20 }}>
-        <div className="settings-section-header">
-          <div className="settings-icon-chip">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
-          </div>
-          <h3>Kontak &amp; Akun</h3>
-        </div>
           {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
             <Fragment key={field}>
               <div className="settings-icon-row">
@@ -439,13 +453,20 @@ export default function ProfilePage() {
             </Fragment>
           ))}
 
-          <div className="settings-section-header settings-section-divider">
+          <div className="settings-icon-row">
             <div className="settings-icon-chip">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
-            <h3>Keamanan</h3>
+            <div className="settings-icon-row-body">
+              <div className="profile-info-label">Password</div>
+              <div className="profile-info-value">****</div>
+            </div>
+            <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={openPasswordForm}>
+              Ubah
+            </button>
           </div>
 
+          {passwordFormOpen && (
           <form className="settings-edit-panel" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
             <PasswordField
               id="current-password"
@@ -488,11 +509,13 @@ export default function ProfilePage() {
             />
             {passwordErrors.general && <div className="error-text">{passwordErrors.general}</div>}
             <div className="settings-edit-panel-actions">
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={closePasswordForm}>Batal</button>
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
                 {savingPassword ? "Menyimpan..." : "Simpan Password"}
               </button>
             </div>
           </form>
+          )}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
