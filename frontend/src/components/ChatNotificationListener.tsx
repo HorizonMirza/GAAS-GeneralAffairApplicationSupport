@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ensureStarted, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const DISMISS_AFTER_MS = 6000;
@@ -38,6 +39,7 @@ function bannerHref(banner: BannerState): string {
 export default function ChatNotificationListener() {
   const { me } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const [banner, setBanner] = useState<BannerState | null>(null);
   const idRef = useRef(0);
   const timers = useRef<{ leave?: ReturnType<typeof setTimeout>; remove?: ReturnType<typeof setTimeout> }>({});
@@ -103,7 +105,7 @@ export default function ChatNotificationListener() {
       <span
         className="chat-notification-close"
         role="button"
-        aria-label="Tutup notifikasi"
+        aria-label={t("common.closeNotification")}
         onClick={(e) => {
           e.stopPropagation();
           dismiss();

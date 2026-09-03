@@ -46,6 +46,11 @@ export const profile = {
     "profile.confirmNewPasswordLabel": "Konfirmasi Password Baru",
     "profile.repeatNewPassword": "Ulangi Password Baru",
     "profile.profilePhotoAlt": "Foto profil",
+    "profile.sesuaikanFotoProfil": "Sesuaikan Foto Profil",
+    "profile.perbesar": "Perbesar",
+    "profile.errGagalMemuatGambar": "Gagal memuat gambar",
+    "profile.errBrowserTidakMendukung": "Browser tidak mendukung pemrosesan gambar",
+    "profile.errGagalMemprosesGambar": "Gagal memproses gambar",
   },
   en: {
     "profile.editProfile": "Edit Profile",
@@ -94,5 +99,10 @@ export const profile = {
     "profile.confirmNewPasswordLabel": "Confirm New Password",
     "profile.repeatNewPassword": "Repeat New Password",
     "profile.profilePhotoAlt": "Profile photo",
+    "profile.sesuaikanFotoProfil": "Adjust Profile Photo",
+    "profile.perbesar": "Zoom",
+    "profile.errGagalMemuatGambar": "Failed to load image",
+    "profile.errBrowserTidakMendukung": "Browser doesn't support image processing",
+    "profile.errGagalMemprosesGambar": "Failed to process image",
   },
 };

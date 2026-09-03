@@ -6,6 +6,9 @@ import { Bell } from "lucide-react";
 import { ensureStarted, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { translations } from "@/lib/i18n/translations";
+import type { Language } from "@/lib/i18n/language-context";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const MAX_ITEMS = 20;
@@ -21,13 +24,14 @@ function itemHref(item: Item): string {
 
 // Coarse relative label ("5 menit lalu") - this history is session-only and never more than a
 // few hours deep in practice, so a full timestamp would be more precision than useful.
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, lang: Language): string {
+  const t = (key: string) => translations[lang][key] ?? key;
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (minutes < 1) return "Baru saja";
-  if (minutes < 60) return `${minutes} menit lalu`;
+  if (minutes < 1) return t("common.justNow");
+  if (minutes < 60) return `${minutes} ${t("common.minutesAgoSuffix")}`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} jam lalu`;
-  return `${Math.floor(hours / 24)} hari lalu`;
+  if (hours < 24) return `${hours} ${t("common.hoursAgoSuffix")}`;
+  return `${Math.floor(hours / 24)} ${t("common.daysAgoSuffix")}`;
 }
 
 // Bell dropdown fed by the same SignalR stream as ChatNotificationListener's toast banner
@@ -39,6 +43,7 @@ function relativeTime(iso: string): string {
 export default function NotificationBell() {
   const { me } = useAuth();
   const router = useRouter();
+  const { language, t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
   const idRef = useRef(0);
@@ -80,7 +85,7 @@ export default function NotificationBell() {
       <button
         type="button"
         className="icon-btn notification-bell-trigger"
-        aria-label="Notifikasi"
+        aria-label={t("common.notifications")}
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -91,15 +96,15 @@ export default function NotificationBell() {
       {open && (
         <div className="notification-dropdown" onClick={(e) => e.stopPropagation()}>
           <div className="notification-dropdown-header">
-            <span>Notifikasi</span>
+            <span>{t("common.notifications")}</span>
             {unreadCount > 0 && (
               <button type="button" className="notification-mark-all" onClick={markAllRead}>
-                Tandai semua dibaca
+                {t("common.markAllRead")}
               </button>
             )}
           </div>
           {items.length === 0 ? (
-            <div className="notification-dropdown-empty">Belum ada notifikasi baru</div>
+            <div className="notification-dropdown-empty">{t("common.noNewNotifications")}</div>
           ) : (
             <ul className="notification-dropdown-list">
               {items.map((item) => {
@@ -116,7 +121,7 @@ export default function NotificationBell() {
                         <strong>{actorNama}</strong> · {item.itemLabel}
                       </span>
                       <span className="notification-item-preview">{detail}</span>
-                      <span className="notification-item-time">{relativeTime(item.createdAt)}</span>
+                      <span className="notification-item-time">{relativeTime(item.createdAt, language)}</span>
                     </button>
                   </li>
                 );
