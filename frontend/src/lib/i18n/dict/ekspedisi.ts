@@ -69,7 +69,7 @@ export const ekspedisi = {
     "eks.confirmDeleteData": "Hapus data pengiriman ini secara permanen?",
     "eks.noTransmittalPlaceholder": "No Transmittal",
     "eks.thNoResi": "No Resi",
-    "eks.thItem": "Jml. Barang",
+    "eks.thItem": "Barang",
     "eks.thPengirim": "Pengirim",
     "eks.thTelpPengirim": "Telp. Pengirim",
     "eks.thPenerima": "Penerima",
