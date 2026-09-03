@@ -1749,18 +1749,15 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-/* Fixed 3-column grid rather than a wrapping flex row - with exactly 9 presets this lays out as
-   a clean 3x3 block instead of an uneven wrap. */
 .cover-preset-row {
-  display: grid;
-  grid-template-columns: repeat(3, 36px);
-  gap: 10px;
+  display: flex;
+  gap: 8px;
 }
 
 .cover-preset-swatch {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;

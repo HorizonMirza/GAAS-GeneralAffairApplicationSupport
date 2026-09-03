@@ -526,23 +526,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {showCoverPresets && (
-            <div className="cover-preset-row">
-              {COVER_PRESETS.map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
-                  style={{ background: p.gradient }}
-                  title={p.label}
-                  aria-label={p.label}
-                  disabled={savingCoverPreset !== null}
-                  onClick={() => handleCoverPresetPick(p.key)}
-                />
-              ))}
-            </div>
-          )}
-
           <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">
               <label htmlFor="edit-nama">Nama Akun</label>
@@ -554,6 +537,26 @@ export default function ProfilePage() {
                 onChange={(e) => setNamaDraft(e.target.value)}
               />
             </div>
+
+            {showCoverPresets && (
+              <div className="field">
+                <label>Warna Sampul</label>
+                <div className="cover-preset-row">
+                  {COVER_PRESETS.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
+                      style={{ background: p.gradient }}
+                      title={p.label}
+                      aria-label={p.label}
+                      disabled={savingCoverPreset !== null}
+                      onClick={() => handleCoverPresetPick(p.key)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
 
           <DialogFooter>
