@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
-import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS, getRecurrenceFrequencyLabelMap } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n/language-context";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
 import SearchableSelect from "./SearchableSelect";
@@ -45,6 +46,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
 
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
+  const { language, t } = useLanguage();
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -82,7 +84,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? `${t("word.admin")} ${t("word.generalAffair")}` : me.role === "APPROVAL_GA" ? `${t("word.approval")} ${t("word.generalAffair")}` : "");
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -118,11 +120,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     e.preventDefault();
     if (isGaActor) {
       if (!form.divisi) {
-        setError("Divisi wajib dipilih");
+        setError(t("eks.errDivisiRequired"));
         return;
       }
       if (form.departemen === undefined) {
-        setError("Departemen wajib dipilih");
+        setError(t("eks.errDepartemenRequired"));
         return;
       }
     }
@@ -141,8 +143,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
       });
       showToast(
         created.length > 1
-          ? `${created.length} jadwal berulang berhasil disimpan sebagai Draft`
-          : "Booking berhasil disimpan sebagai Draft"
+          ? `${created.length} ${t("bk.jadwalBerulangSuffix")}`
+          : t("bk.toastBookingSavedDraft")
       );
       onClose();
       onCreated();
@@ -155,55 +157,55 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Booking Ruang Meeting {unitName ? `(${unitName})` : ""}</h3>
+          <h3>{t("bk.formBookingRuangTitle")} {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="f-nomor-pemesanan">Nomor Pesanan Ruangan</label>
+              <label htmlFor="f-nomor-pemesanan">{t("bk.nomorPesananRuangan")}</label>
               <input type="text" id="f-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
             {isGaActor && (
               <>
                 <div className="field">
-                  <label htmlFor="f-divisi">Divisi</label>
+                  <label htmlFor="f-divisi">{t("word.division")}</label>
                   <SearchableSelect
                     id="f-divisi"
                     value={form.divisi}
                     onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
                     options={orgStructure?.divisi || []}
-                    placeholder="Pilih Divisi"
+                    placeholder={t("eks.pilihDivisi")}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="f-departemen">Departemen</label>
+                  <label htmlFor="f-departemen">{t("word.department")}</label>
                   <SearchableSelect
                     id="f-departemen"
                     value={form.departemen}
                     onChange={(next) => set("departemen", next)}
                     options={departemenOptions}
-                    placeholder="Pilih Departemen"
-                    clearLabel="Kebutuhan Divisi"
+                    placeholder={t("eks.pilihDepartemen")}
+                    clearLabel={t("eks.kebutuhanDivisi")}
                     disabled={!form.divisi}
                   />
                 </div>
               </>
             )}
             <div className="field full">
-              <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
-              <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
+              <label htmlFor="f-nama-kegiatan">{t("bk.namaKegiatan")}</label>
+              <input type="text" id="f-nama-kegiatan" required placeholder={t("bk.contohTechnicalMeeting")} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="f-pic">PIC</label>
-              <input type="text" id="f-pic" required placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <label htmlFor="f-pic">{t("bk.pic")}</label>
+              <input type="text" id="f-pic" required placeholder={t("bk.namaPenanggungJawab")} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="f-tanggal">Tanggal</label>
+              <label htmlFor="f-tanggal">{t("common.date")}</label>
               <input type="date" id="f-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="f-peserta">Jumlah Peserta</label>
+              <label htmlFor="f-peserta">{t("bk.jumlahPeserta")}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -219,29 +221,29 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               />
             </div>
             <div className="field">
-              <label htmlFor="f-jam-mulai">Jam Mulai</label>
+              <label htmlFor="f-jam-mulai">{t("bk.jamMulai")}</label>
               <SearchableSelect
                 id="f-jam-mulai"
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                placeholder={t("bk.pilihJam")}
                 disabled={form.isWholeDay}
               />
             </div>
             <div className="field">
-              <label htmlFor="f-jam-selesai">Jam Selesai</label>
+              <label htmlFor="f-jam-selesai">{t("bk.jamSelesai")}</label>
               <SearchableSelect
                 id="f-jam-selesai"
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                placeholder={t("bk.pilihJam")}
                 disabled={form.isWholeDay}
               />
             </div>
             <div className="field full">
-              <label htmlFor="f-sepanjang-hari">Durasi (Opsional)</label>
+              <label htmlFor="f-sepanjang-hari">{t("bk.durasiOpsional")}</label>
               <button
                 type="button"
                 id="f-sepanjang-hari"
@@ -254,22 +256,22 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                Sepanjang Hari
+                {t("bk.sepanjangHari")}
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="f-ruang">Ruangan</label>
+              <label htmlFor="f-ruang">{t("bk.ruangan")}</label>
               <SearchableSelect
                 id="f-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder="Pilih ruang"
+                placeholder={t("bk.pilihRuang")}
               />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="f-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
+                <label htmlFor="f-ruang-tambahan">{t("bk.ruanganTambahanOpsional")}</label>
                 <RoomMultiSelect
                   id="f-ruang-tambahan"
                   rooms={rooms}
@@ -280,18 +282,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </div>
             )}
             <div className="field full">
-              <label htmlFor="f-tipe">Tipe</label>
+              <label htmlFor="f-tipe">{t("bk.tipe")}</label>
               <SearchableSelect
                 id="f-tipe"
                 value={form.tipe}
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
                 options={Object.keys(TIPE_BOOKING_LABELS)}
                 getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
-                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
+                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : t("bk.pilihTipe")}
               />
             </div>
             <div className="field full">
-              <label htmlFor="f-booking-berulang">Pengulangan (Opsional)</label>
+              <label htmlFor="f-booking-berulang">{t("bk.pengulanganOpsional")}</label>
               <button
                 type="button"
                 id="f-booking-berulang"
@@ -304,24 +306,24 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                Booking Berulang
+                {t("bk.bookingBerulang")}
               </button>
             </div>
             {form.isRecurring && (
               <>
                 <div className="field">
-                  <label htmlFor="f-recurrence-frequency">Frekuensi</label>
+                  <label htmlFor="f-recurrence-frequency">{t("bk.frekuensi")}</label>
                   <SearchableSelect
                     id="f-recurrence-frequency"
                     value={form.recurrenceFrequency || undefined}
                     onChange={(v) => set("recurrenceFrequency", v as RecurrenceFrequency)}
                     options={RECURRENCE_OPTIONS}
-                    getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
-                    placeholder="Pilih frekuensi"
+                    getLabel={(v) => getRecurrenceFrequencyLabelMap(language)[v as RecurrenceFrequency] || v}
+                    placeholder={t("bk.pilihFrekuensi")}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="f-recurrence-end">Berulang Sampai Tanggal</label>
+                  <label htmlFor="f-recurrence-end">{t("bk.berulangSampaiTanggal")}</label>
                   <input
                     type="date"
                     id="f-recurrence-end"
@@ -334,14 +336,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </>
             )}
             <div className="field full">
-              <label htmlFor="f-catatan">Catatan</label>
-              <input type="text" id="f-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="f-catatan">{t("common.notes")}</label>
+              <input type="text" id="f-catatan" placeholder={t("bk.contohSegeraDiApprove")} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t("common.cancel")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
           </div>
         </form>
       </div>
