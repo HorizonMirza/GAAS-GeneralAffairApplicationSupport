@@ -7,7 +7,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Bagaimana cara mengajukan pengiriman, booking, atau permintaan baru?",
     answer:
-      "Buka modul yang sesuai dari sidebar (Expedition, Room Booking, Vehicle Booking, Office Supplies, Maintenance, atau Archive), lalu masuk ke halaman Overview atau Transaction dan klik tombol \"+ Tambah\". Isi form sampai lengkap — data bisa disimpan dulu sebagai Draft kalau belum yakin, atau langsung klik Ajukan untuk masuk ke antrean approval.",
+      "Buka modul yang sesuai dari sidebar (Expedition, Room Booking, Vehicle Booking, Office Supplies, Maintenance, atau Archive), lalu masuk ke halaman Overview atau Transaction dan klik tombol \"+ Tambah\". Isi form sampai lengkap. Data bisa disimpan dulu sebagai Draft kalau belum yakin, atau langsung klik Ajukan untuk masuk ke antrean approval.",
   },
   {
     question: "Bagaimana alur dan tingkatan approval untuk setiap pengajuan?",
@@ -27,7 +27,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Saya salah isi data, apakah bisa diedit atau dibatalkan?",
     answer:
-      "Selama masih berstatus Draft, data bisa diedit atau dihapus bebas tanpa perlu izin siapa pun. Setelah diajukan dan berstatus On-Approval, Anda tidak bisa mengedit langsung — hubungi approver terkait lewat fitur chat pada detail pengajuan untuk minta dibatalkan atau ditolak dulu, baru ajukan ulang dengan data yang benar.",
+      "Selama masih berstatus Draft, data bisa diedit atau dihapus bebas tanpa perlu izin siapa pun. Setelah diajukan dan berstatus On-Approval, Anda tidak bisa mengedit langsung. Hubungi approver terkait lewat fitur chat pada detail pengajuan untuk minta dibatalkan atau ditolak dulu, baru ajukan ulang dengan data yang benar.",
   },
   {
     question: "Bagaimana cara mengganti username, email, nomor telepon, atau password akun saya?",
@@ -37,7 +37,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Bagaimana cara berkomunikasi dengan approver terkait pengajuan saya?",
     answer:
-      "Buka detail pengajuan yang ingin didiskusikan, lalu klik ikon chat di dalamnya. Semua pihak yang terlibat di alur approval pengajuan tersebut — Admin/Approval Departemen atau Divisi, Admin General Affair, Approval GA, dan Mitra kalau ada — bisa membaca dan membalas di percakapan yang sama, jadi tidak perlu koordinasi terpisah lewat WhatsApp atau email untuk hal-hal teknis pengajuan.",
+      "Buka detail pengajuan yang ingin didiskusikan, lalu klik ikon chat di dalamnya. Semua pihak yang terlibat di alur approval pengajuan tersebut (Admin/Approval Departemen atau Divisi, Admin General Affair, Approval GA, dan Mitra kalau ada) bisa membaca dan membalas di percakapan yang sama, jadi tidak perlu koordinasi terpisah lewat WhatsApp atau email untuk hal-hal teknis pengajuan.",
   },
   {
     question: "Apa saja modul yang tersedia di aplikasi ini dan fungsinya masing-masing?",
@@ -91,7 +91,7 @@ export default function BantuanPage() {
       <div className="bantuan-cta">
         <div>
           <h4>Belum ketemu jawabannya?</h4>
-          <p>PIC tiap modul siap dihubungi langsung lewat WhatsApp atau email.</p>
+          <p>Hubungi PIC langsung lewat WhatsApp atau Email.</p>
         </div>
         <Link className="bantuan-cta-btn" href="/contact-person">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
