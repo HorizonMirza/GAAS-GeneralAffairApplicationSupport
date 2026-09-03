@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // A menu row either navigates (href, rendered as a Link) or performs an action (onClick, rendered
@@ -111,7 +110,6 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
                   <Link href={item.href} className={cn(rowClass, item.active && "bg-accent text-accent-foreground")}>
                     <span className="mr-3 h-5 w-5">{item.icon}</span>
                     <span>{item.label}</span>
-                    <ChevronRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
                   </Link>
                 ) : (
                   <button type="button" onClick={item.onClick} className={cn(rowClass, item.active && "bg-accent text-accent-foreground")}>
