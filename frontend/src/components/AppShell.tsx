@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Car, LayoutGrid, Layers, PanelsLeftRight } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, PanelsLeftRight, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_LABEL } from "@/lib/constants";
@@ -33,12 +33,8 @@ const EXPEDITION_ICON = <Layers width={20} height={20} />;
 const RUMAH_ICON = <PanelsLeftRight width={20} height={20} />;
 const KENDARAAN_ICON = <Car width={20} height={20} />;
 const MEETING_ICON = <Calendar width={20} height={20} />;
-const SARANA_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"></path></svg>
-);
-const ARSIP_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
-);
+const SARANA_ICON = <Wrench width={20} height={20} />;
+const ARSIP_ICON = <Folder width={20} height={20} />;
 
 const NAV_CATEGORIES: NavCategory[] = [
   {
@@ -190,17 +186,17 @@ function AccountMenu() {
   }
 
   const navItems: MenuNavItem[] = [
-    {
-      icon: theme === "dark" ? SUN_ICON : MOON_ICON,
-      label: theme === "dark" ? "Mode Terang" : "Mode Gelap",
-      onClick: toggleTheme,
-    },
     { icon: PROFILE_ICON, label: "Profile", href: "/profile", active: pathname === "/profile" },
     {
       icon: CONTACT_PERSON_ICON,
       label: "Contact Person",
       href: "/contact-person",
       active: pathname === "/contact-person",
+    },
+    {
+      icon: theme === "dark" ? SUN_ICON : MOON_ICON,
+      label: theme === "dark" ? "Light Mode" : "Dark Mode",
+      onClick: toggleTheme,
     },
     { icon: HELP_ICON, label: "Bantuan", href: "/bantuan", active: pathname === "/bantuan", isSeparator: true },
   ];
