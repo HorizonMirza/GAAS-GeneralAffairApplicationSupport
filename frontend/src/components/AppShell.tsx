@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, PanelsLeftRight, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_LABEL } from "@/lib/constants";
@@ -30,7 +30,9 @@ interface NavCategory {
 }
 
 const EXPEDITION_ICON = <Layers width={20} height={20} />;
-const RUMAH_ICON = <PanelsLeftRight width={20} height={20} />;
+const RUMAH_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.986L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>
+);
 const KENDARAAN_ICON = <Car width={20} height={20} />;
 const MEETING_ICON = <Calendar width={20} height={20} />;
 const SARANA_ICON = <Wrench width={20} height={20} />;

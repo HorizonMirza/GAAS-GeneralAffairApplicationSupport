@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Car, Folder, Layers, PanelsLeftRight, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, Layers, Wrench } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import DashboardStats from "@/components/DashboardStats";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -29,7 +29,7 @@ const MODULES: ModuleDef[] = [
     title: "Office Supplies",
     href: "/office-supplies/overview",
     kpuHidden: true,
-    icon: <PanelsLeftRight width={24} height={24} />,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.986L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>,
   },
   {
     key: "bookingkendaraan",
