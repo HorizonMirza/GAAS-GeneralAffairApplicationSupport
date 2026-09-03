@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, ShieldQuestion, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_LABEL } from "@/lib/constants";
@@ -13,7 +13,7 @@ import ChatNotificationListener from "@/components/ChatNotificationListener";
 import NotificationBell from "@/components/NotificationBell";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { UserProfileSidebar, type NavItem as MenuNavItem } from "@/components/ui/menu";
 import type { Role } from "@/lib/types";
 
@@ -166,7 +166,7 @@ function AccountMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState("light");
-  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const confirm = useConfirm();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useClickOutside([menuRef], () => setOpen(false), open);
@@ -248,41 +248,14 @@ function AccountMenu() {
               avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
             }}
             navItems={navItems}
-            logoutItem={{ icon: LOGOUT_ICON, label: "Log out", onClick: () => setConfirmLogoutOpen(true) }}
+            logoutItem={{
+              icon: LOGOUT_ICON,
+              label: "Log out",
+              onClick: () => confirm("Anda yakin ingin logout dari akun ini?", handleLogout, "Ya, Logout"),
+            }}
           />
         </div>
       )}
-
-      <Dialog open={confirmLogoutOpen} onOpenChange={setConfirmLogoutOpen}>
-        <DialogContent className="max-w-[360px] gap-0 p-0">
-          <div className="flex flex-col items-center px-8 pb-6 pt-9 text-center">
-            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#7c5cff]/12 text-[#7c5cff]">
-              <ShieldQuestion width={26} height={26} />
-            </span>
-            <h3 className="m-0 text-lg font-bold text-foreground">Are you sure?</h3>
-            <p className="m-0 mt-1.5 text-sm text-muted-foreground">You can always log in later to your account.</p>
-          </div>
-          <div className="flex border-t border-border">
-            <button
-              type="button"
-              onClick={() => setConfirmLogoutOpen(false)}
-              className="flex-1 cursor-pointer rounded-bl-[18px] border-0 border-r border-border bg-transparent py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              No
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmLogoutOpen(false);
-                handleLogout();
-              }}
-              className="flex-1 cursor-pointer rounded-br-[18px] border-0 bg-transparent py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              Yes, Log out
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
