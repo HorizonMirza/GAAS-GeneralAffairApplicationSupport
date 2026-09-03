@@ -1895,7 +1895,7 @@ body.auth-ready .app-shell {
   margin-top: 3px;
 }
 
-/* ---------- Edit Profile dialog (cover/avatar hover-upload) ---------- */
+/* ---------- Edit Profile dialog (cover preset strip + avatar upload) ---------- */
 .edit-profile-cover {
   position: relative;
   height: 110px;
@@ -1912,30 +1912,29 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-.edit-profile-cover-overlay {
+.edit-profile-cover-remove-btn {
   position: absolute;
-  inset: 0;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   border: 0;
+  border-radius: 50%;
   cursor: pointer;
-  background: rgba(5, 11, 26, 0.45);
+  background: rgba(5, 11, 26, 0.55);
   color: #fff;
-  font-size: 0.8rem;
-  font-weight: 600;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.edit-profile-cover:hover .edit-profile-cover-overlay,
-.edit-profile-cover-overlay:focus-visible {
-  opacity: 1;
+.edit-profile-cover-remove-btn:hover {
+  background: rgba(5, 11, 26, 0.75);
 }
 
-.edit-profile-cover-overlay:disabled {
-  opacity: 1;
+.edit-profile-cover-remove-btn:disabled {
+  opacity: 0.6;
   cursor: default;
 }
 
@@ -1969,28 +1968,32 @@ body.auth-ready .app-shell {
   object-fit: cover;
 }
 
-.edit-profile-avatar-overlay {
+/* Small badge button fixed at the avatar's corner, like a standard "edit avatar" affordance -
+   always visible instead of a hover-only overlay, since a circle this size is an easy touch
+   target to miss with a hover-reveal control. */
+.edit-profile-avatar-edit-btn {
   position: absolute;
-  inset: 0;
+  right: -2px;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  border: 2px solid var(--bg-surface);
   border-radius: 50%;
   cursor: pointer;
-  background: rgba(5, 11, 26, 0.45);
+  background: var(--blue-600);
   color: #fff;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.edit-profile-avatar:hover .edit-profile-avatar-overlay,
-.edit-profile-avatar-overlay:focus-visible {
-  opacity: 1;
+.edit-profile-avatar-edit-btn:hover {
+  background: var(--blue-500);
 }
 
-.edit-profile-avatar-overlay:disabled {
-  opacity: 1;
+.edit-profile-avatar-edit-btn:disabled {
+  opacity: 0.6;
   cursor: default;
 }
 

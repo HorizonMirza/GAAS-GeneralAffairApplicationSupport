@@ -7,7 +7,7 @@ import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Camera, ImagePlus, Pencil } from "lucide-react";
+import { Camera, Pencil, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -128,9 +128,8 @@ export default function ProfilePage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [coverVersion, setCoverVersion] = useState(0);
-  const [uploadingCover, setUploadingCover] = useState(false);
+  const [removingCover, setRemovingCover] = useState(false);
   const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -211,35 +210,8 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleCoverPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      showToast("Format gambar tidak didukung. Gunakan JPG atau PNG.", "error");
-      return;
-    }
-    if (file.size > MAX_PHOTO_SIZE_BYTES) {
-      showToast("Ukuran gambar maksimal 5 MB", "error");
-      return;
-    }
-
-    setUploadingCover(true);
-    try {
-      await api.uploadCoverPhoto(file);
-      await refresh();
-      setCoverVersion(Date.now());
-      showToast("Background berhasil diubah");
-    } catch (err) {
-      showToast((err as Error).message || "Gagal mengunggah gambar", "error");
-    } finally {
-      setUploadingCover(false);
-    }
-  }
-
   async function handleRemoveCoverPhoto() {
-    setUploadingCover(true);
+    setRemovingCover(true);
     try {
       await api.deleteCoverPhoto();
       await refresh();
@@ -247,7 +219,7 @@ export default function ProfilePage() {
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
-      setUploadingCover(false);
+      setRemovingCover(false);
     }
   }
 
@@ -422,16 +394,17 @@ export default function ProfilePage() {
             {me.hasCoverPhoto && (
               <img className="edit-profile-cover-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
             )}
-            <button
-              type="button"
-              className="edit-profile-cover-overlay"
-              disabled={uploadingCover}
-              onClick={() => coverInputRef.current?.click()}
-            >
-              <ImagePlus width={16} height={16} />
-              {uploadingCover ? "Mengunggah..." : "Ganti Background"}
-            </button>
-            <input ref={coverInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handleCoverPhotoChange} />
+            {me.hasCoverPhoto && (
+              <button
+                type="button"
+                className="edit-profile-cover-remove-btn"
+                aria-label="Hapus foto background"
+                disabled={removingCover}
+                onClick={handleRemoveCoverPhoto}
+              >
+                <X width={14} height={14} />
+              </button>
+            )}
           </div>
 
           <div className="edit-profile-avatar-row">
@@ -443,12 +416,12 @@ export default function ProfilePage() {
               )}
               <button
                 type="button"
-                className="edit-profile-avatar-overlay"
+                className="edit-profile-avatar-edit-btn"
                 aria-label="Ganti foto profil"
                 disabled={uploadingPhoto}
                 onClick={() => photoInputRef.current?.click()}
               >
-                <Camera width={18} height={18} />
+                <Camera width={13} height={13} />
               </button>
               <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
             </div>
@@ -465,14 +438,9 @@ export default function ProfilePage() {
                   onClick={() => handleCoverPresetPick(p.key)}
                 />
               ))}
-              {me.hasCoverPhoto && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={handleRemoveCoverPhoto}>
-                  Hapus Foto
-                </button>
-              )}
             </div>
           </div>
-          <div className="profile-photo-hint">JPG atau PNG, maks. 5 MB</div>
+          <div className="profile-photo-hint">Background hanya bisa diganti dengan warna di atas. Foto profil: JPG atau PNG, maks. 5 MB.</div>
 
           <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">
