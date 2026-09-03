@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
@@ -24,7 +24,7 @@ const FIELD_META: Record<AccountField, { label: string; type: string; placeholde
     ),
   },
   noHp: {
-    label: "Nomor Telepon",
+    label: "Phone Number",
     type: "tel",
     placeholder: "Contoh: 0812xxxxxxx",
     icon: (
@@ -384,73 +384,16 @@ export default function ProfilePage() {
 
       <div className="card" style={{ marginTop: 20 }}>
           {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
-            <Fragment key={field}>
-              <div className="settings-icon-row">
-                <div className="settings-icon-chip">{FIELD_META[field].icon}</div>
-                <div className="settings-icon-row-body">
-                  <div className="profile-info-label">{FIELD_META[field].label}</div>
-                  <div className="profile-info-value">{currentValue[field] || "-"}</div>
-                </div>
-                <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
-                  Ubah
-                </button>
+            <div key={field} className="settings-icon-row">
+              <div className="settings-icon-chip">{FIELD_META[field].icon}</div>
+              <div className="settings-icon-row-body">
+                <div className="profile-info-label">{FIELD_META[field].label}</div>
+                <div className="profile-info-value">{currentValue[field] || "-"}</div>
               </div>
-
-              {editingField === field && (
-                <form className="settings-edit-panel" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
-                  <div className="settings-edit-panel-intro">
-                    <div className="settings-edit-panel-title">Ubah {FIELD_META[field].label}</div>
-                    <div className="settings-edit-panel-desc">
-                      Perbarui {FIELD_META[field].label.toLowerCase()} akun Anda. Konfirmasi password saat ini diperlukan untuk menyimpan perubahan.
-                    </div>
-                  </div>
-
-                  <div className="settings-current-value">
-                    <div className="settings-current-value-icon">{FIELD_META[field].icon}</div>
-                    <div>
-                      <div className="settings-current-value-label">Saat ini</div>
-                      <div className="settings-current-value-text">{currentValue[field] || "-"}</div>
-                    </div>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="field-draft">{FIELD_META[field].label} Baru</label>
-                    <div className="field-icon-wrap">
-                      <span className="field-input-icon">{FIELD_META[field].icon}</span>
-                      <input
-                        id="field-draft"
-                        type={FIELD_META[field].type}
-                        placeholder={FIELD_META[field].placeholder}
-                        required={field === "username"}
-                        autoFocus
-                        value={fieldDraft}
-                        onChange={(e) => setFieldDraft(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <PasswordField
-                    id="field-password"
-                    label="Password"
-                    placeholder="Masukkan password saat ini"
-                    icon={<Lock width={15} height={15} />}
-                    value={fieldPassword}
-                    error={fieldPasswordError}
-                    hint="Diperlukan untuk mengubah username, email, atau nomor telepon"
-                    onChange={(v) => {
-                      setFieldPassword(v);
-                      if (fieldPasswordError) setFieldPasswordError("");
-                    }}
-                  />
-                  <div className="settings-edit-panel-actions">
-                    <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingField(null)}>Batal</button>
-                    <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                      {savingField ? "Menyimpan..." : `Simpan ${FIELD_META[field].label}`}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </Fragment>
+              <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
+                Ubah
+              </button>
+            </div>
           ))}
 
           <div className="settings-icon-row">
@@ -465,57 +408,6 @@ export default function ProfilePage() {
               Ubah
             </button>
           </div>
-
-          {passwordFormOpen && (
-          <form className="settings-edit-panel" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
-            <PasswordField
-              id="current-password"
-              label="Password Saat Ini"
-              placeholder="Min. 8 Karakter"
-              value={currentPassword}
-              error={passwordErrors.currentPassword}
-              onChange={(v) => {
-                setCurrentPassword(v);
-                if (passwordErrors.currentPassword) setPasswordErrors((prev) => ({ ...prev, currentPassword: validateCurrentPassword(v) }));
-              }}
-            />
-            <PasswordField
-              id="new-password"
-              label="Password Baru"
-              placeholder="Min. 8 Karakter"
-              minLength={8}
-              value={newPassword}
-              error={passwordErrors.newPassword}
-              hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
-              onChange={(v) => {
-                setNewPassword(v);
-                if (passwordErrors.newPassword) setPasswordErrors((prev) => ({ ...prev, newPassword: validateNewPassword(v, currentPassword) }));
-                if (passwordErrors.confirmPassword && confirmPassword) {
-                  setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(confirmPassword, v) }));
-                }
-              }}
-            />
-            <PasswordField
-              id="confirm-password"
-              label="Konfirmasi Password Baru"
-              placeholder="Ulangi Password Baru"
-              minLength={8}
-              value={confirmPassword}
-              error={passwordErrors.confirmPassword}
-              onChange={(v) => {
-                setConfirmPassword(v);
-                if (passwordErrors.confirmPassword) setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(v, newPassword) }));
-              }}
-            />
-            {passwordErrors.general && <div className="error-text">{passwordErrors.general}</div>}
-            <div className="settings-edit-panel-actions">
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={closePasswordForm}>Batal</button>
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
-                {savingPassword ? "Menyimpan..." : "Simpan Password"}
-              </button>
-            </div>
-          </form>
-          )}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -572,7 +464,7 @@ export default function ProfilePage() {
 
           <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">
-              <label htmlFor="edit-nama">Nama Akun</label>
+              <label htmlFor="edit-nama">Account Name</label>
               <input
                 type="text"
                 id="edit-nama"
@@ -584,6 +476,7 @@ export default function ProfilePage() {
 
             {showCoverPresets && (
               <div className="field">
+                <label>Cover Image</label>
                 <div className="cover-preset-row">
                   {COVER_PRESETS.map((p) => (
                     <button
@@ -608,6 +501,131 @@ export default function ProfilePage() {
             </DialogClose>
             <button type="submit" form="edit-profile-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingProfile}>
               {savingProfile ? "Menyimpan..." : "Simpan"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingField !== null} onOpenChange={(open) => { if (!open) setEditingField(null); }}>
+        <DialogContent>
+          {editingField && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Ubah {FIELD_META[editingField].label}</DialogTitle>
+              </DialogHeader>
+
+              <form id="field-edit-form" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
+                <div className="settings-edit-panel-desc" style={{ marginBottom: 18 }}>
+                  Perbarui {FIELD_META[editingField].label.toLowerCase()} akun Anda. Konfirmasi password saat ini diperlukan untuk menyimpan perubahan.
+                </div>
+
+                <div className="settings-current-value">
+                  <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
+                  <div>
+                    <div className="settings-current-value-label">Saat ini</div>
+                    <div className="settings-current-value-text">{currentValue[editingField] || "-"}</div>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="field-draft">{FIELD_META[editingField].label} Baru</label>
+                  <div className="field-icon-wrap">
+                    <span className="field-input-icon">{FIELD_META[editingField].icon}</span>
+                    <input
+                      id="field-draft"
+                      type={FIELD_META[editingField].type}
+                      placeholder={FIELD_META[editingField].placeholder}
+                      required={editingField === "username"}
+                      autoFocus
+                      value={fieldDraft}
+                      onChange={(e) => setFieldDraft(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <PasswordField
+                  id="field-password"
+                  label="Password"
+                  placeholder="Masukkan password saat ini"
+                  icon={<Lock width={15} height={15} />}
+                  value={fieldPassword}
+                  error={fieldPasswordError}
+                  hint="Diperlukan untuk mengubah username, email, atau Phone Number"
+                  onChange={(v) => {
+                    setFieldPassword(v);
+                    if (fieldPasswordError) setFieldPasswordError("");
+                  }}
+                />
+              </form>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+                </DialogClose>
+                <button type="submit" form="field-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
+                  {savingField ? "Menyimpan..." : `Simpan ${FIELD_META[editingField].label}`}
+                </button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passwordFormOpen} onOpenChange={(open) => { if (!open) closePasswordForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ubah Password</DialogTitle>
+          </DialogHeader>
+
+          <form id="password-edit-form" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
+            <PasswordField
+              id="current-password"
+              label="Password Saat Ini"
+              placeholder="Min. 8 Karakter"
+              value={currentPassword}
+              error={passwordErrors.currentPassword}
+              onChange={(v) => {
+                setCurrentPassword(v);
+                if (passwordErrors.currentPassword) setPasswordErrors((prev) => ({ ...prev, currentPassword: validateCurrentPassword(v) }));
+              }}
+            />
+            <PasswordField
+              id="new-password"
+              label="Password Baru"
+              placeholder="Min. 8 Karakter"
+              minLength={8}
+              value={newPassword}
+              error={passwordErrors.newPassword}
+              hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
+              onChange={(v) => {
+                setNewPassword(v);
+                if (passwordErrors.newPassword) setPasswordErrors((prev) => ({ ...prev, newPassword: validateNewPassword(v, currentPassword) }));
+                if (passwordErrors.confirmPassword && confirmPassword) {
+                  setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(confirmPassword, v) }));
+                }
+              }}
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Konfirmasi Password Baru"
+              placeholder="Ulangi Password Baru"
+              minLength={8}
+              value={confirmPassword}
+              error={passwordErrors.confirmPassword}
+              onChange={(v) => {
+                setConfirmPassword(v);
+                if (passwordErrors.confirmPassword) setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(v, newPassword) }));
+              }}
+            />
+            {passwordErrors.general && <div className="error-text">{passwordErrors.general}</div>}
+          </form>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+            </DialogClose>
+            <button type="submit" form="password-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
+              {savingPassword ? "Menyimpan..." : "Simpan Password"}
             </button>
           </DialogFooter>
         </DialogContent>
