@@ -3,8 +3,9 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
+import { COVER_PRESETS, getRoleLabelMap } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
@@ -14,32 +15,6 @@ const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
 
 type AccountField = "username" | "noHp" | "email";
-
-const FIELD_META: Record<AccountField, { label: string; type: string; placeholder?: string; icon: React.ReactNode }> = {
-  username: {
-    label: "Username",
-    type: "text",
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
-    ),
-  },
-  noHp: {
-    label: "Phone Number",
-    type: "tel",
-    placeholder: "Contoh: 0812xxxxxxx",
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-    ),
-  },
-  email: {
-    label: "Email",
-    type: "email",
-    placeholder: "nama@perusahaan.com",
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 6 10 7 10-7"></path></svg>
-    ),
-  },
-};
 
 function PasswordField({
   id,
@@ -62,6 +37,7 @@ function PasswordField({
   hint?: string;
   icon?: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   const [show, setShow] = useState(false);
   const errorId = error ? `${id}-error` : undefined;
   return (
@@ -80,7 +56,7 @@ function PasswordField({
           aria-describedby={errorId}
           onChange={(e) => onChange(e.target.value)}
         />
-        <button type="button" className="password-toggle" aria-label="Tampilkan password" onClick={() => setShow((v) => !v)}>
+        <button type="button" className="password-toggle" aria-label={t("profile.showPassword")} onClick={() => setShow((v) => !v)}>
           {show ? (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.62 21.62 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           ) : (
@@ -96,30 +72,63 @@ function PasswordField({
 
 type PasswordErrors = { currentPassword?: string; newPassword?: string; confirmPassword?: string; general?: string };
 
-function validateCurrentPassword(value: string): string | undefined {
-  if (!value.trim()) return "Password saat ini wajib diisi";
-  return undefined;
-}
-
-function validateNewPassword(value: string, currentPassword: string): string | undefined {
-  if (!value.trim()) return "Password baru wajib diisi";
-  if (value.length < 8) return "Password minimal 8 karakter";
-  if (!/(?=.*[a-z])/.test(value)) return "Password harus mengandung huruf kecil";
-  if (!/(?=.*[A-Z])/.test(value)) return "Password harus mengandung huruf besar";
-  if (!/(?=.*\d)/.test(value)) return "Password harus mengandung angka";
-  if (value === currentPassword) return "Password baru harus berbeda dari password saat ini";
-  return undefined;
-}
-
-function validateConfirmPassword(value: string, newPassword: string): string | undefined {
-  if (!value.trim()) return "Konfirmasi password wajib diisi";
-  if (value !== newPassword) return "Konfirmasi password tidak cocok";
-  return undefined;
-}
-
 export default function ProfilePage() {
   const { me, refresh } = useAuth();
   const { showToast } = useToast();
+  const { language, t } = useLanguage();
+
+  const FIELD_META: Record<AccountField, { label: string; type: string; placeholder?: string; icon: React.ReactNode }> = {
+    username: {
+      label: t("profile.usernameLabel"),
+      type: "text",
+      icon: (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
+      ),
+    },
+    noHp: {
+      label: t("profile.phoneLabel"),
+      type: "tel",
+      placeholder: t("profile.phonePlaceholder"),
+      icon: (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+      ),
+    },
+    email: {
+      label: t("profile.emailLabel"),
+      type: "email",
+      placeholder: "nama@perusahaan.com",
+      icon: (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 6 10 7 10-7"></path></svg>
+      ),
+    },
+  };
+
+  const NEW_FIELD_LABEL: Record<AccountField, string> = {
+    username: t("profile.newUsername"),
+    noHp: t("profile.newPhone"),
+    email: t("profile.newEmail"),
+  };
+
+  function validateCurrentPassword(value: string): string | undefined {
+    if (!value.trim()) return t("profile.errCurrentPasswordRequired");
+    return undefined;
+  }
+
+  function validateNewPassword(value: string, currentPassword: string): string | undefined {
+    if (!value.trim()) return t("profile.errNewPasswordRequired");
+    if (value.length < 8) return t("profile.errPasswordMinLength");
+    if (!/(?=.*[a-z])/.test(value)) return t("profile.errPasswordLowercase");
+    if (!/(?=.*[A-Z])/.test(value)) return t("profile.errPasswordUppercase");
+    if (!/(?=.*\d)/.test(value)) return t("profile.errPasswordNumber");
+    if (value === currentPassword) return t("profile.errPasswordSameAsCurrent");
+    return undefined;
+  }
+
+  function validateConfirmPassword(value: string, newPassword: string): string | undefined {
+    if (!value.trim()) return t("profile.errConfirmPasswordRequired");
+    if (value !== newPassword) return t("profile.errConfirmPasswordMismatch");
+    return undefined;
+  }
 
   const [editOpen, setEditOpen] = useState(false);
   const [namaDraft, setNamaDraft] = useState("");
@@ -174,7 +183,7 @@ export default function ProfilePage() {
       });
       await refresh();
       setEditOpen(false);
-      showToast("Profil berhasil diperbarui");
+      showToast(t("profile.toastProfileUpdated"));
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
@@ -211,7 +220,7 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!editingField) return;
     if (!fieldPassword.trim()) {
-      setFieldPasswordError("Password saat ini wajib diisi");
+      setFieldPasswordError(t("profile.errCurrentPasswordRequired"));
       return;
     }
 
@@ -226,7 +235,7 @@ export default function ProfilePage() {
         currentPassword: fieldPassword,
       });
       await refresh();
-      showToast(`${FIELD_META[editingField].label} berhasil diperbarui`);
+      showToast(`${FIELD_META[editingField].label} ${t("profile.toastUpdatedSuffix")}`);
       setEditingField(null);
     } catch (err) {
       setFieldPasswordError((err as Error).message);
@@ -241,11 +250,11 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      showToast("Format foto tidak didukung. Gunakan JPG atau PNG.", "error");
+      showToast(t("profile.toastPhotoFormatUnsupported"), "error");
       return;
     }
     if (file.size > MAX_PHOTO_SIZE_BYTES) {
-      showToast("Ukuran foto maksimal 5 MB", "error");
+      showToast(t("profile.toastPhotoTooLarge"), "error");
       return;
     }
 
@@ -263,10 +272,10 @@ export default function ProfilePage() {
       await api.uploadProfilePhoto(new File([blob], "profile-photo.png", { type: "image/png" }));
       await refresh();
       setPhotoVersion(Date.now());
-      showToast("Foto profil berhasil diubah");
+      showToast(t("profile.toastPhotoUpdated"));
       closePhotoCrop();
     } catch (err) {
-      showToast((err as Error).message || "Gagal mengunggah foto", "error");
+      showToast((err as Error).message || t("profile.toastPhotoUploadFailed"), "error");
     } finally {
       setUploadingPhoto(false);
     }
@@ -277,7 +286,7 @@ export default function ProfilePage() {
     try {
       await api.updateCoverPreset(key);
       await refresh();
-      showToast("Background berhasil diubah");
+      showToast(t("profile.toastBackgroundUpdated"));
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
@@ -290,7 +299,7 @@ export default function ProfilePage() {
     try {
       await api.deleteCoverPhoto();
       await refresh();
-      showToast("Foto background dihapus");
+      showToast(t("profile.toastBackgroundRemoved"));
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
@@ -313,7 +322,7 @@ export default function ProfilePage() {
     setSavingPassword(true);
     try {
       await api.changePassword(currentPassword, newPassword);
-      showToast("Password berhasil diubah");
+      showToast(t("profile.toastPasswordChanged"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -330,6 +339,8 @@ export default function ProfilePage() {
       ? { background: COVER_PRESETS.find((p) => p.key === me.coverPreset)?.gradient }
       : undefined;
 
+  const roleLabel = getRoleLabelMap(language);
+
   return (
     <>
       <div className="card profile-hero-card">
@@ -339,14 +350,14 @@ export default function ProfilePage() {
           )}
           <button type="button" className="profile-hero-edit-btn" onClick={openEditProfile}>
             <Pencil width={14} height={14} />
-            Edit Profile
+            {t("profile.editProfile")}
           </button>
         </div>
         <div className="profile-hero-body">
           <div className="profile-hero-avatar-wrap">
             <div className="profile-hero-avatar">
               {me.hasPhoto ? (
-                <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
+                <img src={api.profilePhotoUrl(photoVersion || undefined)} alt={t("profile.profilePhotoAlt")} />
               ) : (
                 <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
               )}
@@ -354,7 +365,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <div className="profile-hero-name">{me.nama}</div>
-            <div className="profile-role-badge">{ROLE_LABEL[me.role] || me.role}</div>
+            <div className="profile-role-badge">{roleLabel[me.role] || me.role}</div>
           </div>
         </div>
 
@@ -362,19 +373,19 @@ export default function ProfilePage() {
           <div className="profile-org-grid profile-org-grid-wide">
             {me.direktorat && (
               <div>
-                <div className="profile-info-label">Direktorat</div>
+                <div className="profile-info-label">{t("profile.directorate")}</div>
                 <div className="profile-info-value">{me.direktorat}</div>
               </div>
             )}
             {me.divisi && (
               <div>
-                <div className="profile-info-label">Divisi</div>
+                <div className="profile-info-label">{t("profile.division")}</div>
                 <div className="profile-info-value">{me.divisi}</div>
               </div>
             )}
             {me.departemen && (
               <div>
-                <div className="profile-info-label">Departemen</div>
+                <div className="profile-info-label">{t("profile.department")}</div>
                 <div className="profile-info-value">{me.departemen}</div>
               </div>
             )}
@@ -391,7 +402,7 @@ export default function ProfilePage() {
                 <div className="profile-info-value">{currentValue[field] || "-"}</div>
               </div>
               <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
-                Change
+                {t("common.change")}
               </button>
             </div>
           ))}
@@ -401,11 +412,11 @@ export default function ProfilePage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
             <div className="settings-icon-row-body">
-              <div className="profile-info-label">Password</div>
+              <div className="profile-info-label">{t("profile.passwordLabel")}</div>
               <div className="profile-info-value">••••••••</div>
             </div>
             <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={openPasswordForm}>
-              Change
+              {t("common.change")}
             </button>
           </div>
       </div>
@@ -413,7 +424,7 @@ export default function ProfilePage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogTitle>{t("profile.editProfile")}</DialogTitle>
           </DialogHeader>
 
           <div className="edit-profile-cover-wrap">
@@ -425,7 +436,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   className="edit-profile-icon-btn"
-                  aria-label="Pilih warna background"
+                  aria-label={t("profile.chooseBackgroundColor")}
                   onClick={() => setShowCoverPresets((v) => !v)}
                 >
                   <Palette width={16} height={16} />
@@ -434,7 +445,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     className="edit-profile-icon-btn"
-                    aria-label="Hapus foto background"
+                    aria-label={t("profile.removeBackgroundPhoto")}
                     disabled={removingCover}
                     onClick={handleRemoveCoverPhoto}
                   >
@@ -445,14 +456,14 @@ export default function ProfilePage() {
             </div>
             <div className="edit-profile-avatar">
               {me.hasPhoto ? (
-                <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
+                <img src={api.profilePhotoUrl(photoVersion || undefined)} alt={t("profile.profilePhotoAlt")} />
               ) : (
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
               )}
               <button
                 type="button"
                 className="edit-profile-icon-btn edit-profile-avatar-edit-btn"
-                aria-label="Ganti foto profil"
+                aria-label={t("profile.changeProfilePhoto")}
                 disabled={uploadingPhoto}
                 onClick={() => photoInputRef.current?.click()}
               >
@@ -464,7 +475,7 @@ export default function ProfilePage() {
 
           <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
             <div className="field">
-              <label htmlFor="edit-nama">Account Name</label>
+              <label htmlFor="edit-nama">{t("profile.accountNameLabel")}</label>
               <input
                 type="text"
                 id="edit-nama"
@@ -476,7 +487,7 @@ export default function ProfilePage() {
 
             {showCoverPresets && (
               <div className="field">
-                <label>Cover Image</label>
+                <label>{t("profile.coverImageLabel")}</label>
                 <div className="cover-preset-row">
                   {COVER_PRESETS.map((p) => (
                     <button
@@ -497,10 +508,10 @@ export default function ProfilePage() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
             </DialogClose>
             <button type="submit" form="edit-profile-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingProfile}>
-              {savingProfile ? "Menyimpan..." : "Simpan"}
+              {savingProfile ? t("common.saving") : t("common.save")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -511,20 +522,20 @@ export default function ProfilePage() {
           {editingField && (
             <>
               <DialogHeader>
-                <DialogTitle>Change {FIELD_META[editingField].label}</DialogTitle>
+                <DialogTitle>{t("common.change")} {FIELD_META[editingField].label}</DialogTitle>
               </DialogHeader>
 
               <form id="field-edit-form" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
                 <div className="settings-current-value">
                   <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
                   <div>
-                    <div className="settings-current-value-label">Saat ini</div>
+                    <div className="settings-current-value-label">{t("profile.currentValueLabel")}</div>
                     <div className="settings-current-value-text">{currentValue[editingField] || "-"}</div>
                   </div>
                 </div>
 
                 <div className="field">
-                  <label htmlFor="field-draft">{FIELD_META[editingField].label} Baru</label>
+                  <label htmlFor="field-draft">{NEW_FIELD_LABEL[editingField]}</label>
                   <div className="field-icon-wrap">
                     <span className="field-input-icon">{FIELD_META[editingField].icon}</span>
                     <input
@@ -541,8 +552,8 @@ export default function ProfilePage() {
 
                 <PasswordField
                   id="field-password"
-                  label="Password"
-                  placeholder="Masukkan password saat ini"
+                  label={t("profile.passwordLabel")}
+                  placeholder={t("profile.enterCurrentPassword")}
                   icon={<Lock width={15} height={15} />}
                   value={fieldPassword}
                   error={fieldPasswordError}
@@ -555,10 +566,10 @@ export default function ProfilePage() {
 
               <DialogFooter>
                 <DialogClose asChild>
-                  <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+                  <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
                 </DialogClose>
                 <button type="submit" form="field-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                  {savingField ? "Menyimpan..." : "Simpan"}
+                  {savingField ? t("common.saving") : t("common.save")}
                 </button>
               </DialogFooter>
             </>
@@ -569,14 +580,14 @@ export default function ProfilePage() {
       <Dialog open={passwordFormOpen} onOpenChange={(open) => { if (!open) closePasswordForm(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t("profile.changePasswordTitle")}</DialogTitle>
           </DialogHeader>
 
           <form id="password-edit-form" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
             <PasswordField
               id="current-password"
-              label="Password Saat Ini"
-              placeholder="Min. 8 Karakter"
+              label={t("profile.currentPasswordLabel")}
+              placeholder={t("profile.min8Chars")}
               icon={<Lock width={15} height={15} />}
               value={currentPassword}
               error={passwordErrors.currentPassword}
@@ -587,13 +598,13 @@ export default function ProfilePage() {
             />
             <PasswordField
               id="new-password"
-              label="Password Baru"
-              placeholder="Min. 8 Karakter"
+              label={t("profile.newPasswordLabel")}
+              placeholder={t("profile.min8Chars")}
               minLength={8}
               icon={<Lock width={15} height={15} />}
               value={newPassword}
               error={passwordErrors.newPassword}
-              hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
+              hint={t("profile.newPasswordHint")}
               onChange={(v) => {
                 setNewPassword(v);
                 if (passwordErrors.newPassword) setPasswordErrors((prev) => ({ ...prev, newPassword: validateNewPassword(v, currentPassword) }));
@@ -604,8 +615,8 @@ export default function ProfilePage() {
             />
             <PasswordField
               id="confirm-password"
-              label="Konfirmasi Password Baru"
-              placeholder="Ulangi Password Baru"
+              label={t("profile.confirmNewPasswordLabel")}
+              placeholder={t("profile.repeatNewPassword")}
               minLength={8}
               icon={<Lock width={15} height={15} />}
               value={confirmPassword}
@@ -620,10 +631,10 @@ export default function ProfilePage() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>{t("common.cancel")}</button>
             </DialogClose>
             <button type="submit" form="password-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
-              {savingPassword ? "Menyimpan..." : "Simpan"}
+              {savingPassword ? t("common.saving") : t("common.save")}
             </button>
           </DialogFooter>
         </DialogContent>

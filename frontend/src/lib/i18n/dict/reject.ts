@@ -1,0 +1,28 @@
+export const reject = {
+  id: {
+    "reject.title": "Reject Data",
+    "reject.returnTo": "Kembalikan data ke",
+    "reject.creatorSuffix": "(pembuat data)",
+    "reject.reasonLabel": "Alasan (opsional)",
+    "reject.reasonPlaceholder": "Contoh: Barang fisik tidak ditemukan",
+    "reject.errChooseTarget": "Pilih tujuan pengembalian data terlebih dahulu.",
+    "reject.dataReturnedTo": "Data ditolak, dikembalikan ke",
+    "reject.bookingRejected": "Booking ditolak",
+    "reject.requestRejected": "Permintaan ditolak",
+    "reject.reportRejected": "Laporan ditolak",
+    "reject.archiveRequestRejected": "Permintaan arsip ditolak",
+  },
+  en: {
+    "reject.title": "Reject Data",
+    "reject.returnTo": "Return data to",
+    "reject.creatorSuffix": "(data's creator)",
+    "reject.reasonLabel": "Reason (optional)",
+    "reject.reasonPlaceholder": "Example: The physical item wasn't found",
+    "reject.errChooseTarget": "Choose where to return the data first.",
+    "reject.dataReturnedTo": "Data rejected, returned to",
+    "reject.bookingRejected": "Booking rejected",
+    "reject.requestRejected": "Request rejected",
+    "reject.reportRejected": "Report rejected",
+    "reject.archiveRequestRejected": "Archive request rejected",
+  },
+};

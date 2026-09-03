@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { INVOICE_STATUS_CLASS, getInvoiceStatusLabelMap } from "@/lib/constants";
 import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { Invoice } from "@/lib/types";
 import InvoiceActionModal from "@/components/InvoiceActionModal";
 import InvoiceUploadModal from "@/components/InvoiceUploadModal";
@@ -27,6 +28,7 @@ export default function InvoiceHistoryPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { language, t } = useLanguage();
 
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
@@ -112,10 +114,10 @@ export default function InvoiceHistoryPage() {
   if (!me || !INVOICE_HISTORY_ROLES.includes(me.role)) return null;
 
   function handleDeleteInvoice(inv: Invoice) {
-    confirm("Yakin ingin menghapus invoice ini?", async () => {
+    confirm(t("eks.confirmDeleteInvoice"), async () => {
       try {
         await api.deleteInvoice(inv.id);
-        showToast("Invoice berhasil dihapus");
+        showToast(t("eks.toastInvoiceDeleted"));
         loadInvoices();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -134,17 +136,17 @@ export default function InvoiceHistoryPage() {
       <div className="card">
         <div className="invoice-toolbar-slim invoices-page-toolbar">
           <div className="field invoice-search-field" style={{ marginBottom: 0 }}>
-            <label htmlFor="invoice-filter-search">Cari Invoice</label>
+            <label htmlFor="invoice-filter-search">{t("eks.cariInvoice")}</label>
             <input
               type="text"
               id="invoice-filter-search"
-              placeholder="Nama File"
+              placeholder={t("eks.namaFilePlaceholder")}
               value={invoiceSearchInput}
               onChange={(e) => handleInvoiceSearchChange(e.target.value)}
             />
           </div>
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
+            <label htmlFor="invoice-filter-bulan">{t("common.filterMonth")}</label>
             <input
               type="month"
               id="invoice-filter-bulan"
@@ -156,32 +158,32 @@ export default function InvoiceHistoryPage() {
           </div>
           {invoiceUploaders.length > 1 && (
             <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-              <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
+              <label htmlFor="invoice-filter-uploader">{t("eks.diunggahOleh")}</label>
               <SearchableSelect
                 id="invoice-filter-uploader"
                 value={String(invoiceFilterUploader)}
                 onChange={(v) => { setInvoiceFilterUploader(v === "" ? "" : Number(v)); setInvoicePage(1); }}
                 options={invoiceUploaders.map((u) => String(u.id))}
                 getLabel={(v) => invoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
-                clearLabel="Semua Mitra"
-                placeholder="Semua Mitra"
+                clearLabel={t("eks.semuaMitra")}
+                placeholder={t("eks.semuaMitra")}
               />
             </div>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <span className="field-label-spacer">Semua Invoice</span>
+            <span className="field-label-spacer">{t("eks.semuaInvoice")}</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={{ width: "auto" }}
               onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
             >
-              Semua Invoice
+              {t("eks.semuaInvoice")}
             </button>
           </div>
           {me.role === "KPU" && (
             <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
-              + Input Invoice
+              + {t("eks.inputInvoiceTitle")}
             </button>
           )}
         </div>
@@ -190,9 +192,9 @@ export default function InvoiceHistoryPage() {
           {invoiceError ? (
             <p className="text-secondary">{invoiceError}</p>
           ) : invoices == null ? (
-            <p className="text-secondary">Memuat data invoice...</p>
+            <p className="text-secondary">{t("eks.loadingInvoiceData")}</p>
           ) : invoices.length === 0 ? (
-            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
+            <p className="text-secondary">{invoiceFilterBulan ? t("eks.noInvoiceForFilter") : t("eks.noInvoiceYet")}</p>
           ) : (
             invoices.map((inv) => (
               <div className="invoice-row" key={inv.id}>
@@ -203,23 +205,23 @@ export default function InvoiceHistoryPage() {
                   <div className="invoice-row-info">
                     <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
                     <div className="invoice-row-meta">
-                      {inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}
-                      {invoiceUploaders.length > 1 && inv.uploaderNama ? ` oleh ${inv.uploaderNama}` : ""}
+                      {inv.originalFilename} · {t("eks.diunggah")} {formatDateTime(inv.uploadedAt)}
+                      {invoiceUploaders.length > 1 && inv.uploaderNama ? ` ${t("eks.byUploader")} ${inv.uploaderNama}` : ""}
                     </div>
-                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
-                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
+                    {inv.reviewedAt && <div className="invoice-row-meta">{t("eks.ditinjau")}: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>{t("common.notes")}:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
                 <div className="invoice-row-actions">
                   {inv.status === "REJECTED" ? (
                     <div className="badge-stack">
-                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
-                      <span className="badge badge-waiting">Waiting: Mitra</span>
+                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{getInvoiceStatusLabelMap(language)[inv.status] || inv.status}</span>
+                      <span className="badge badge-waiting">{t("word.waiting")}: {t("word.partner")}</span>
                     </div>
                   ) : (
-                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{getInvoiceStatusLabelMap(language)[inv.status] || inv.status}</span>
                   )}
-                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                  <button type="button" className="row-menu-btn" aria-label={t("common.aksi")} onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -231,19 +233,19 @@ export default function InvoiceHistoryPage() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="invoice-limit">Tampilkan</label>
+              <label htmlFor="invoice-limit">{t("common.show")}</label>
               <SearchableSelect
                 id="invoice-limit"
                 value={String(invoiceLimit)}
                 onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} invoice`}
-                placeholder={`${invoiceLimit} invoice`}
+                getLabel={(v) => `${v} ${t("eks.unitInvoice")}`}
+                placeholder={`${invoiceLimit} ${t("eks.unitInvoice")}`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <span className="text-secondary">{t("common.total")} {invoiceTotal} {t("eks.unitInvoice")} · {t("common.page")} {invoicePage} {t("common.ofTotal")} {invoiceTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
               {invoicePageButtons.map((p) => (

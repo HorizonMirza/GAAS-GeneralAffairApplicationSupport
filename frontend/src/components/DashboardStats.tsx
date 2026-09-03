@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { currentYearMonth } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type {
   BookingKendaraanStatsResponse,
   BookingRuangStatsResponse,
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats, onAtkStats, onSaranaStats }: Props) {
+  const { t } = useLanguage();
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [kendaraan, setKendaraan] = useState<BookingStatsView | null>(null);
@@ -150,29 +152,33 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
   // and falls back to the combined label for accounts with no single track (GA, KPU, Super Admin).
   const l1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? "Approval Departemen"
+      ? `${t("word.approval")} ${t("word.department")}`
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? "Approval Divisi"
-      : "Approval Departemen/Divisi";
+      ? `${t("word.approval")} ${t("word.division")}`
+      : `${t("word.approval")} ${t("word.department")}/${t("word.division")}`;
+  const adminGaLabel = `${t("word.admin")} ${t("word.generalAffair")}`;
+  const approvalGaLabel = `${t("word.approval")} ${t("word.generalAffair")}`;
+  const approvedLabel = t("word.approved");
+  const rejectedLabel = t("word.rejected");
 
   return (
     <>
-      <h3 style={{ margin: "0 0 14px" }}>Ringkasan Bulan Ini</h3>
+      <h3 style={{ margin: "0 0 14px" }}>{t("dashboard.summaryThisMonth")}</h3>
 
       <div className="dashboard-stats-section">
         <div className="dashboard-stats-section-head">
-          <h4>Expedition</h4>
-          <Link href="/ekspedisi/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+          <h4>{t("nav.expedition")}</h4>
+          <Link href="/ekspedisi/transaksi" className="dashboard-stats-link">{t("dashboard.viewAll")} &rarr;</Link>
         </div>
         {!pengiriman ? (
-          <p className="text-secondary">{pengirimanFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          <p className="text-secondary">{pengirimanFailed ? t("dashboard.summaryLoadFailed") : t("dashboard.summaryLoading")}</p>
         ) : (
           <div className="stat-grid">
             <div className="stat-tile"><div className="value">{pengiriman.waitingL1}</div><div className="label">{l1Label}</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.waitingGa}</div><div className="label">Admin General Affair</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">Mitra</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.completed}</div><div className="label">Approved</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.waitingGa}</div><div className="label">{adminGaLabel}</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.waitingGaApproval}</div><div className="label">{approvalGaLabel}</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">{t("word.partner")}</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.completed}</div><div className="label">{approvedLabel}</div></div>
           </div>
         )}
       </div>
@@ -180,18 +186,18 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       {me.role !== "KPU" && (
         <div className="dashboard-stats-section">
           <div className="dashboard-stats-section-head">
-            <h4>Room Booking</h4>
-            <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+            <h4>{t("nav.roomBooking")}</h4>
+            <Link href="/booking-ruang-meeting/transaksi" className="dashboard-stats-link">{t("dashboard.viewAll")} &rarr;</Link>
           </div>
           {!booking ? (
-            <p className="text-secondary">{bookingFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+            <p className="text-secondary">{bookingFailed ? t("dashboard.summaryLoadFailed") : t("dashboard.summaryLoading")}</p>
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
-              <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-              <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
-              <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">{adminGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">{approvalGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">{approvedLabel}</div></div>
+              <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">{rejectedLabel}</div></div>
             </div>
           )}
         </div>
@@ -200,18 +206,18 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       {me.role !== "KPU" && (
         <div className="dashboard-stats-section">
           <div className="dashboard-stats-section-head">
-            <h4>Vehicle Booking</h4>
-            <Link href="/booking-kendaraan/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+            <h4>{t("nav.vehicleBooking")}</h4>
+            <Link href="/booking-kendaraan/transaksi" className="dashboard-stats-link">{t("dashboard.viewAll")} &rarr;</Link>
           </div>
           {!kendaraan ? (
-            <p className="text-secondary">{kendaraanFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+            <p className="text-secondary">{kendaraanFailed ? t("dashboard.summaryLoadFailed") : t("dashboard.summaryLoading")}</p>
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{kendaraan.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{kendaraan.waitingGa}</div><div className="label">Admin General Affair</div></div>
-              <div className="stat-tile"><div className="value">{kendaraan.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-              <div className="stat-tile"><div className="value">{kendaraan.completed}</div><div className="label">Approved</div></div>
-              <div className="stat-tile"><div className="value">{kendaraan.rejected}</div><div className="label">Rejected</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.waitingGa}</div><div className="label">{adminGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.waitingGaApproval}</div><div className="label">{approvalGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.completed}</div><div className="label">{approvedLabel}</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.rejected}</div><div className="label">{rejectedLabel}</div></div>
             </div>
           )}
         </div>
@@ -220,18 +226,18 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       {me.role !== "KPU" && (
         <div className="dashboard-stats-section">
           <div className="dashboard-stats-section-head">
-            <h4>Office Supplies</h4>
-            <Link href="/office-supplies/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+            <h4>{t("nav.officeSupplies")}</h4>
+            <Link href="/office-supplies/transaksi" className="dashboard-stats-link">{t("dashboard.viewAll")} &rarr;</Link>
           </div>
           {!atk ? (
-            <p className="text-secondary">{atkFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+            <p className="text-secondary">{atkFailed ? t("dashboard.summaryLoadFailed") : t("dashboard.summaryLoading")}</p>
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{atk.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{atk.waitingGa}</div><div className="label">Admin General Affair</div></div>
-              <div className="stat-tile"><div className="value">{atk.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-              <div className="stat-tile"><div className="value">{atk.completed}</div><div className="label">Approved</div></div>
-              <div className="stat-tile"><div className="value">{atk.rejected}</div><div className="label">Rejected</div></div>
+              <div className="stat-tile"><div className="value">{atk.waitingGa}</div><div className="label">{adminGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{atk.waitingGaApproval}</div><div className="label">{approvalGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{atk.completed}</div><div className="label">{approvedLabel}</div></div>
+              <div className="stat-tile"><div className="value">{atk.rejected}</div><div className="label">{rejectedLabel}</div></div>
             </div>
           )}
         </div>
@@ -240,18 +246,18 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       {me.role !== "KPU" && (
         <div className="dashboard-stats-section">
           <div className="dashboard-stats-section-head">
-            <h4>Maintenance</h4>
-            <Link href="/maintenance/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+            <h4>{t("nav.maintenance")}</h4>
+            <Link href="/maintenance/transaksi" className="dashboard-stats-link">{t("dashboard.viewAll")} &rarr;</Link>
           </div>
           {!sarana ? (
-            <p className="text-secondary">{saranaFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+            <p className="text-secondary">{saranaFailed ? t("dashboard.summaryLoadFailed") : t("dashboard.summaryLoading")}</p>
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{sarana.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{sarana.waitingGa}</div><div className="label">Admin General Affair</div></div>
-              <div className="stat-tile"><div className="value">{sarana.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
-              <div className="stat-tile"><div className="value">{sarana.completed}</div><div className="label">Approved</div></div>
-              <div className="stat-tile"><div className="value">{sarana.rejected}</div><div className="label">Rejected</div></div>
+              <div className="stat-tile"><div className="value">{sarana.waitingGa}</div><div className="label">{adminGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{sarana.waitingGaApproval}</div><div className="label">{approvalGaLabel}</div></div>
+              <div className="stat-tile"><div className="value">{sarana.completed}</div><div className="label">{approvedLabel}</div></div>
+              <div className="stat-tile"><div className="value">{sarana.rejected}</div><div className="label">{rejectedLabel}</div></div>
             </div>
           )}
         </div>

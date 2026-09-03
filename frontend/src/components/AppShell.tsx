@@ -5,10 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
-import { ROLE_LABEL } from "@/lib/constants";
+import { getRoleLabelMap } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useLanguage } from "@/lib/i18n/language-context";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
 import NotificationBell from "@/components/NotificationBell";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -17,6 +18,7 @@ import { UserProfileSidebar, type NavItem as MenuNavItem } from "@/components/ui
 import type { Role } from "@/lib/types";
 
 interface NavLeaf {
+  key: string;
   label: string;
   href: string;
   superAdminOnly?: boolean;
@@ -24,6 +26,7 @@ interface NavLeaf {
 }
 
 interface NavCategory {
+  key: string;
   icon: ReactNode;
   label: string;
   items: NavLeaf[];
@@ -38,67 +41,79 @@ const MEETING_ICON = <Calendar width={20} height={20} />;
 const SARANA_ICON = <Wrench width={20} height={20} />;
 const ARSIP_ICON = <Folder width={20} height={20} />;
 
-const NAV_CATEGORIES: NavCategory[] = [
-  {
-    icon: EXPEDITION_ICON,
-    label: "Expedition",
-    items: [
-      { label: "Overview", href: "/ekspedisi/overview" },
-      { label: "Transaction", href: "/ekspedisi/transaksi" },
-      { label: "Invoice", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-  {
-    icon: MEETING_ICON,
-    label: "Room Booking",
-    items: [
-      { label: "Overview", href: "/booking-ruang-meeting/overview" },
-      { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
-      { label: "Booking", href: "/booking-ruang-meeting/transaksi" },
-      // "Laporan" temporarily hidden from the nav while its design gets revisited - the page
-      // itself and its API are left untouched so this is a one-line revert, not a rebuild.
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-  {
-    icon: KENDARAAN_ICON,
-    label: "Vehicle Booking",
-    items: [
-      { label: "Overview", href: "/booking-kendaraan/overview" },
-      { label: "Calendar", href: "/booking-kendaraan/calendar" },
-      { label: "Booking", href: "/booking-kendaraan/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-  {
-    icon: RUMAH_ICON,
-    label: "Office Supplies",
-    items: [
-      { label: "Overview", href: "/office-supplies/overview" },
-      { label: "Transaction", href: "/office-supplies/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-  {
-    icon: SARANA_ICON,
-    label: "Maintenance",
-    items: [
-      { label: "Overview", href: "/maintenance/overview" },
-      { label: "Transaction", href: "/maintenance/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-  {
-    icon: ARSIP_ICON,
-    label: "Archive",
-    items: [
-      { label: "Overview", href: "/arsip/overview" },
-      { label: "Transaction", href: "/arsip/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
-    ],
-  },
-];
+// Rebuilt on every render from the current language rather than kept as a module-level constant -
+// labels need to switch live when the language toggle is used. `key` (not the translated `label`)
+// is what everything else in this file matches/keys/filters on, so it stays stable across a
+// language switch instead of silently breaking (see KPU_HIDDEN_CATEGORIES, openCategory, overviewHref).
+function buildNavCategories(t: (key: string) => string): NavCategory[] {
+  return [
+    {
+      key: "expedition",
+      icon: EXPEDITION_ICON,
+      label: t("nav.expedition"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/ekspedisi/overview" },
+        { key: "transaction", label: t("nav.transaction"), href: "/ekspedisi/transaksi" },
+        { key: "invoice", label: t("nav.invoice"), href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+    {
+      key: "roomBooking",
+      icon: MEETING_ICON,
+      label: t("nav.roomBooking"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/booking-ruang-meeting/overview" },
+        { key: "calendar", label: t("nav.calendar"), href: "/booking-ruang-meeting/calendar" },
+        { key: "booking", label: t("nav.booking"), href: "/booking-ruang-meeting/transaksi" },
+        // "Laporan" temporarily hidden from the nav while its design gets revisited - the page
+        // itself and its API are left untouched so this is a one-line revert, not a rebuild.
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+    {
+      key: "vehicleBooking",
+      icon: KENDARAAN_ICON,
+      label: t("nav.vehicleBooking"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/booking-kendaraan/overview" },
+        { key: "calendar", label: t("nav.calendar"), href: "/booking-kendaraan/calendar" },
+        { key: "booking", label: t("nav.booking"), href: "/booking-kendaraan/transaksi" },
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+    {
+      key: "officeSupplies",
+      icon: RUMAH_ICON,
+      label: t("nav.officeSupplies"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/office-supplies/overview" },
+        { key: "transaction", label: t("nav.transaction"), href: "/office-supplies/transaksi" },
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+    {
+      key: "maintenance",
+      icon: SARANA_ICON,
+      label: t("nav.maintenance"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/maintenance/overview" },
+        { key: "transaction", label: t("nav.transaction"), href: "/maintenance/transaksi" },
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+    {
+      key: "archive",
+      icon: ARSIP_ICON,
+      label: t("nav.archive"),
+      items: [
+        { key: "overview", label: t("nav.overview"), href: "/arsip/overview" },
+        { key: "transaction", label: t("nav.transaction"), href: "/arsip/transaksi" },
+        { key: "superadmin", label: t("nav.superAdmin"), href: "/superadmin", superAdminOnly: true },
+      ],
+    },
+  ];
+}
 
 // Tracks a media query client-side, defaulting to false until mount so the server-rendered and
 // first client render agree (no hydration mismatch) - matches the 861px breakpoint the sidebar's
@@ -135,7 +150,7 @@ function labelWidthStyle(label: string) {
 // Approval GA buy either through KPU or the external PaDi channel, so KPU signs off there as
 // well) - Dashboard and Profile are always shown regardless of role, so together that leaves
 // Dashboard/Expedition/Office Supplies/Profile as their whole sidebar.
-const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Maintenance", "Archive"]);
+const KPU_HIDDEN_CATEGORIES = new Set(["roomBooking", "vehicleBooking", "maintenance", "archive"]);
 
 const SUN_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -161,6 +176,7 @@ const LOGOUT_ICON = (
 
 function AccountMenu() {
   const { me } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -191,20 +207,31 @@ function AccountMenu() {
   }
 
   const navItems: MenuNavItem[] = [
-    { icon: PROFILE_ICON, label: "Profile", href: "/profile", active: pathname === "/profile" },
+    { icon: PROFILE_ICON, label: t("nav.profile"), href: "/profile", active: pathname === "/profile" },
     {
       icon: theme === "dark" ? SUN_ICON : MOON_ICON,
-      label: theme === "dark" ? "Light Mode" : "Dark Mode",
+      label: theme === "dark" ? t("nav.lightMode") : t("nav.darkMode"),
       onClick: toggleTheme,
     },
-    { icon: HELP_ICON, label: "Help Center", href: "/bantuan", active: pathname === "/bantuan" },
+    { icon: HELP_ICON, label: t("nav.helpCenter"), href: "/bantuan", active: pathname === "/bantuan" },
     {
       icon: CONTACT_PERSON_ICON,
-      label: "Contact Person",
+      label: t("nav.contactPerson"),
       href: "/contact-person",
       active: pathname === "/contact-person",
     },
-    { icon: GLOBE_ICON, label: "Bahasa Indonesia", disabled: true },
+    {
+      icon: GLOBE_ICON,
+      label: t("nav.languageIndonesian"),
+      active: language === "id",
+      onClick: () => setLanguage("id"),
+    },
+    {
+      icon: GLOBE_ICON,
+      label: t("nav.languageEnglish"),
+      active: language === "en",
+      onClick: () => setLanguage("en"),
+    },
   ];
 
   return (
@@ -224,7 +251,7 @@ function AccountMenu() {
         </span>
         <span className="account-info">
           <span className="name">{me.nama}</span>
-          <span className="role">{ROLE_LABEL[me.role] || me.role}</span>
+          <span className="role">{getRoleLabelMap(language)[me.role] || me.role}</span>
         </span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
@@ -242,11 +269,11 @@ function AccountMenu() {
           <UserProfileSidebar
             user={{
               name: me.nama,
-              subtitle: ROLE_LABEL[me.role] || me.role,
+              subtitle: getRoleLabelMap(language)[me.role] || me.role,
               avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
             }}
             navItems={navItems}
-            logoutItem={{ icon: LOGOUT_ICON, label: "Log out", onClick: handleLogout }}
+            logoutItem={{ icon: LOGOUT_ICON, label: t("nav.logout"), onClick: handleLogout }}
           />
         </div>
       )}
@@ -256,12 +283,14 @@ function AccountMenu() {
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { me } = useAuth();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
   const isDesktop = useMediaQuery("(min-width: 861px)");
+  const navCategories = buildNavCategories(t);
   // sidebarOpen means opposite things per breakpoint (mobile: drawer visible; desktop: collapsed
   // to icon rail) - this combines it with the actual viewport to get the one thing needed here:
   // "is the sidebar currently showing icons only, with no room for a category's submenu".
@@ -281,10 +310,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
     // in between navigations, since this effect only re-runs when pathname changes.
     // superAdminOnly items all share the same /superadmin href, so they're excluded from this
     // match - otherwise every category would "match" on /superadmin and this would always pick
-    // whichever one happens to be first in NAV_CATEGORIES.
-    const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
+    // whichever one happens to be first in navCategories.
+    const active = navCategories.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpenCategory(active ? active.label : null);
+    setOpenCategory(active ? active.key : null);
+    // navCategories is rebuilt every render from the current language, but its content only
+    // actually needs re-syncing when the route changes - not every time the language flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
@@ -298,52 +330,52 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const isSuperAdmin = me.role === "SUPER_ADMIN";
 
-  let topbarTitle = "Dashboard";
-  for (const cat of NAV_CATEGORIES) {
+  let topbarTitle = t("nav.dashboard");
+  for (const cat of navCategories) {
     const match = cat.items.find((item) => item.href === pathname);
     if (match) {
       topbarTitle = `${cat.label} → ${match.label}`;
       break;
     }
   }
-  if (pathname === "/dashboard") topbarTitle = "Dashboard";
-  if (pathname === "/profile") topbarTitle = "Profile";
-  if (pathname === "/contact-person") topbarTitle = "Contact Person";
-  if (pathname === "/bantuan") topbarTitle = "Help Center";
-  if (pathname === "/superadmin") topbarTitle = "Super Admin";
+  if (pathname === "/dashboard") topbarTitle = t("nav.dashboard");
+  if (pathname === "/profile") topbarTitle = t("nav.profile");
+  if (pathname === "/contact-person") topbarTitle = t("nav.contactPerson");
+  if (pathname === "/bantuan") topbarTitle = t("nav.helpCenter");
+  if (pathname === "/superadmin") topbarTitle = t("nav.superAdmin");
 
   return (
     <div className="app-shell">
       <ChatNotificationListener />
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
-        <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
+        <Link className="brand-logo-sidebar" href="/dashboard" aria-label={t("nav.toDashboard")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/logo-pgm-solution.png" alt="PGM Solution" className="brand-logo-sidebar-img" />
         </Link>
 
         <ScrollArea className="sidebar-scroll">
           <div className="sidebar-nav-list">
-            <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard" title="Dashboard">
+            <Link className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`} href="/dashboard" title={t("nav.dashboard")}>
               <LayoutGrid width={20} height={20} />
-              <span style={labelWidthStyle("Dashboard")}>Dashboard</span>
+              <span style={labelWidthStyle(t("nav.dashboard"))}>{t("nav.dashboard")}</span>
             </Link>
 
-            {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
+            {navCategories.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.key)).map((cat) => {
               // Same exclusion as the pathname-watching effect above - the shared /superadmin href
               // must not count as "this category is active", or all 6 categories highlight/expand
               // together on that page.
               const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
               // Forced closed while collapsed to icons - there's no room for a submenu there, so
               // pressing the trigger navigates straight to the category's Overview page instead.
-              const isOpen = !isIconCollapsed && (openCategory === cat.label || hasActive);
-              const overviewHref = cat.items.find((item) => item.label === "Overview")?.href ?? cat.items[0].href;
+              const isOpen = !isIconCollapsed && (openCategory === cat.key || hasActive);
+              const overviewHref = cat.items.find((item) => item.key === "overview")?.href ?? cat.items[0].href;
 
               return (
                 <Collapsible
-                  key={cat.label}
+                  key={cat.key}
                   open={isOpen}
                   onOpenChange={(next) => {
-                    if (!isIconCollapsed) setOpenCategory(next ? cat.label : null);
+                    if (!isIconCollapsed) setOpenCategory(next ? cat.key : null);
                   }}
                   className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}
                 >
@@ -359,7 +391,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                       if (isIconCollapsed) {
                         router.push(overviewHref);
                       } else {
-                        setOpenCategory(isOpen ? null : cat.label);
+                        setOpenCategory(isOpen ? null : cat.key);
                       }
                     }}
                   >
@@ -374,7 +406,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                       if (item.roles && !item.roles.includes(me.role)) return null;
                       return (
                         <Link
-                          key={item.label}
+                          key={item.key}
                           className={`nav-link ${pathname === item.href ? "active" : ""}`}
                           href={item.href}
                         >
@@ -395,7 +427,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="main-content">
         <header className="topbar" onClick={() => setOpenCategory((c) => c)}>
           <div className="topbar-left">
-            <button className="icon-btn" aria-label="Toggle navigasi" onClick={() => setSidebarOpen((v) => !v)}>
+            <button className="icon-btn" aria-label={t("nav.toggleNav")} onClick={() => setSidebarOpen((v) => !v)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
             <h2>{topbarTitle}</h2>

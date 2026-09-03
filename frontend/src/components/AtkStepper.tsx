@@ -1,16 +1,18 @@
 import { trackWord } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n/language-context";
+import type { Language } from "@/lib/i18n/language-context";
 import type { PermintaanAtk, Role, Status } from "@/lib/types";
 
 const FLOW_DURATION = 1.8;
 
-function buildSteps(departemen: PermintaanAtk["departemen"]) {
-  const track = trackWord(departemen);
+function buildSteps(departemen: PermintaanAtk["departemen"], lang: Language, t: (key: string) => string) {
+  const track = trackWord(departemen, lang);
   return [
-    { label: `Admin ${track}` },
-    { label: `Approval ${track}` },
-    { label: "Admin General Affair" },
-    { label: "Approval GA" },
-    { label: "Mitra" },
+    { label: `${t("word.admin")} ${track}` },
+    { label: `${t("word.approval")} ${track}` },
+    { label: `${t("word.admin")} ${t("word.generalAffair")}` },
+    { label: `${t("word.approval")} GA` },
+    { label: t("word.partner") },
   ];
 }
 
@@ -63,11 +65,12 @@ export default function AtkStepper({
   departemen?: PermintaanAtk["departemen"];
   createdByRole?: Role;
 }) {
+  const { language, t } = useLanguage();
   const currentIdx = PROGRESS[status] ?? 0;
   const rejectAt = REJECTED_IDX[status];
   const originIdx = originIdxForRole(createdByRole);
   const rejectFrom = rejectAt != null ? originIdx : null;
-  const steps = buildSteps(departemen);
+  const steps = buildSteps(departemen, language, t);
 
   return (
     <div className="stepper">

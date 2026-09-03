@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
 import { useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { Invoice } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Props) {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
 
   function handleFileChange(picked: File | null) {
     if (picked && picked.size > MAX_INVOICE_FILE_SIZE_BYTES) {
-      setError("File terlalu besar, maksimal 10 MB");
+      setError(t("common.fileTooLarge"));
       setFile(null);
       return;
     }
@@ -64,17 +66,17 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     e.preventDefault();
     setError("");
     if (!file || !item) {
-      setError("Pilih file invoice yang baru.");
+      setError(t("eks.errPilihFileInvoice"));
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
-      setError("File terlalu besar, maksimal 10 MB");
+      setError(t("common.fileTooLarge"));
       return;
     }
     setBusy(true);
     try {
       await api.updateInvoice(item.id, file);
-      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Revisi invoice tersimpan sebagai draft, kirim kembali lewat Detail");
+      showToast(isDraft ? t("eks.toastDraftUpdated") : t("eks.toastRevisiSaved"));
       setFile(null);
       onDone();
     } catch (err) {
@@ -88,12 +90,12 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
-          <h3>Update Invoice</h3>
+          <h3>{t("eks.updateInvoiceTitle")}</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
+            <label htmlFor="invoice-update-file">{t("eks.fileInvoiceBaru")}</label>
             <div
               className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
               onDragOver={handleDragOver}
@@ -106,7 +108,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 {file ? (
                   <strong>{file.name}</strong>
                 ) : (
-                  <>Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span></>
+                  <>{t("common.dragFileHere")} <span className="file-dropzone-link">{t("common.chooseFile")}</span></>
                 )}
               </div>
               <input
@@ -117,12 +119,12 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
-            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>Maksimal 10 MB</div>
+            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>{t("common.maxSize10mb")}</div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={handleClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Simpan</button>
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>{t("common.cancel")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>{t("common.save")}</button>
           </div>
         </form>
       </div>

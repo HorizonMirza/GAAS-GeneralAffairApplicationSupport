@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 // Rough upper bound on the panel's own height (search input + padding + the options list's own
 // 220px max-height, see .searchable-select-options) - used to decide whether it fits below the
@@ -36,6 +37,7 @@ interface Props {
 // as RoomMultiSelect, but for picking one value out of a long list (e.g. every Divisi/Departemen
 // in the org tree) without having to scroll through it one by one.
 export default function SearchableSelect({ id, value, onChange, options, placeholder, clearLabel, disabled, emptyOptionsText, getLabel }: Props) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [dropUp, setDropUp] = useState(false);
@@ -125,7 +127,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
               ref={inputRef}
               type="text"
               className="searchable-select-search"
-              placeholder="Ketik untuk mencari..."
+              placeholder={t("select.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -142,7 +144,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
             )}
             {filtered.length === 0 ? (
               <div className="text-secondary" style={{ fontSize: "0.85rem", padding: "8px 10px" }}>
-                {emptyOptionsText || "Tidak ditemukan"}
+                {emptyOptionsText || t("select.notFound")}
               </div>
             ) : (
               filtered.map((o) => (

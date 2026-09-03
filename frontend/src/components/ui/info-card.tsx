@@ -2,6 +2,21 @@
 
 import { Mail } from "lucide-react";
 import type { ContactPerson } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n/language-context";
+
+// CONTACT_PERSONS.modules holds canonical English strings (see lib/constants.ts) - this maps each
+// to the translation key that renders it as a tag, reusing the same nav.* labels shown in the
+// sidebar for actual modules, plus two contactPerson.* keys for the two non-module role tags.
+const MODULE_TAG_KEY: Record<string, string> = {
+  Expedition: "nav.expedition",
+  "Room Booking": "nav.roomBooking",
+  "Vehicle Booking": "nav.vehicleBooking",
+  "Office Supplies": "nav.officeSupplies",
+  Maintenance: "nav.maintenance",
+  Archive: "nav.archive",
+  "General Affair Approval": "contactPerson.generalAffairApproval",
+  "Department Head General Affair": "contactPerson.deptHeadGeneralAffair",
+};
 
 // wa.me needs digits only, already carrying the country code (62...) - the phone numbers in
 // CONTACT_PERSONS are entered as "+62 812-1555-6739" for readability, so + / spaces / dashes are
@@ -35,6 +50,7 @@ interface ContactInfoCardProps {
 // support-contact directory actually has: modules replace generic tags. There's no follower count
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
 export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
+  const { t } = useLanguage();
   const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)]">
@@ -88,7 +104,7 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
                 key={m}
                 className="inline-block rounded-full bg-white dark:bg-gray-700 px-3 py-1 text-xs font-medium shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.2),-2px_-2px_4px_rgba(255,255,255,0.1)] transition-all duration-300 ease-out text-blue-600 dark:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:scale-105 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.3)]"
               >
-                {m}
+                {t(MODULE_TAG_KEY[m] ?? m)}
               </span>
             ))}
           </div>
@@ -102,7 +118,7 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
             href={waLink(person.phone)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Chat WhatsApp ${person.name}`}
+            aria-label={`${t("contactPerson.chatWhatsapp")} ${person.name}`}
             className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-gray-700 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 active:duration-100"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -111,7 +127,7 @@ export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
           </a>
           <a
             href={`mailto:${person.email}`}
-            aria-label={`Email ${person.name}`}
+            aria-label={`${t("contactPerson.emailAction")} ${person.name}`}
             className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-gray-700 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-[transform,box-shadow,background-color] duration-200 ease-out hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 active:duration-100"
           >
             <Mail className="h-4 w-4" />
