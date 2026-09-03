@@ -5,9 +5,26 @@
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/utilities" layer(utilities);
 
-/* The app's theme toggle (see layout.tsx's THEME_INIT_SCRIPT and ThemeToggle) always stamps
-   data-theme="light"|"dark" on <html> before paint - it never leaves the attribute unset - so
-   Tailwind's dark: variant is pointed at that attribute instead of its default
+/* The app's theme toggle (see layout.tsx's THEME_INIT_SCRIPT and AccountMenu's toggleTheme)
+   always stamps data-theme="light"|"dark" on <html> before paint - it never leaves the attribute
+   unset - so Tailwind's dark: variant is pointed at that attribute instead of its default
    prefers-color-scheme media query, keeping Tailwind-authored components in sync with the rest
    of the app's manual toggle rather than only the OS setting. */
 @custom-variant dark (&:where([data-theme="dark"] *));
+
+/* shadcn's usual semantic color tokens (bg-card, text-muted-foreground, border-border, etc.),
+   mapped onto the CSS custom properties globals.css already defines and flips for light/dark
+   (see its :root and :root[data-theme="dark"] blocks) - "inline" so each generated utility keeps
+   referencing the live custom property instead of baking in one resolved value, letting a
+   Tailwind-authored component (see components/ui/menu.tsx) stay in sync with the rest of the
+   app's theme without duplicating its palette. Only the tokens actually used by such components
+   are mapped; add more here as needed rather than mapping the full shadcn set speculatively. */
+@theme inline {
+  --color-card: var(--bg-surface);
+  --color-card-foreground: var(--text-primary);
+  --color-border: var(--border-subtle);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--bg-surface-alt);
+  --color-accent-foreground: var(--text-primary);
+  --color-destructive: var(--badge-rejected-bg);
+}

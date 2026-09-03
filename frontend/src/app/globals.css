@@ -101,12 +101,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: inherit; }
+/* Wrapped in Tailwind's "base" layer (registered by tailwind.css's @import "tailwindcss/theme"/
+   "tailwindcss/utilities") rather than left unlayered - CSS Cascade Layers rank ANY unlayered rule
+   above EVERY layered one regardless of specificity, so left as plain rules these would silently
+   beat every Tailwind utility class a component ever sets for color on an <a>/<button>/<input>/
+   <select>/<textarea> (see components/ui/menu.tsx, the first Tailwind-authored component to
+   actually hit this). Tailwind's fixed layer order (theme, base, components, utilities) still
+   guarantees a real utility class overrides this base layer's defaults, exactly like it would in
+   a stock Tailwind project. */
+@layer base {
+  a { color: inherit; }
 
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: 1rem;
-  color: inherit;
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: 1rem;
+    color: inherit;
+  }
 }
 
 /* ---------- Utility ---------- */
@@ -980,8 +990,7 @@ body.auth-ready .app-shell {
   box-shadow: var(--glow-blue);
 }
 
-.account-avatar img,
-.account-avatar-lg img {
+.account-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1017,75 +1026,17 @@ body.auth-ready .app-shell {
   transform: rotate(180deg);
 }
 
+/* Positioning shell only - the panel's own look (background, border, shadow, padding) comes from
+   the Tailwind classes on UserProfileSidebar (components/ui/menu.tsx) that renders inside it. An
+   explicit width here (rather than leaving it to that child's own w-full/max-w-xs) keeps the
+   shrink-to-fit sizing of this absolutely-positioned wrapper unambiguous - same reasoning as
+   .notification-dropdown just below, and the two intentionally match at 320px. */
 .account-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 250px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  box-shadow: var(--shadow-card), 0 12px 28px rgba(15, 40, 90, 0.18);
-  padding: 14px;
+  width: 320px;
   z-index: 30;
-}
-
-.account-dropdown-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.account-avatar-lg {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: var(--glow-blue);
-}
-
-.account-dropdown-name {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-}
-
-.account-dropdown-email {
-  font-size: 0.76rem;
-  color: var(--text-secondary);
-  word-break: break-all;
-}
-
-.account-dropdown-divider {
-  border: none;
-  border-top: 1px solid var(--border-subtle);
-  margin: 12px 0;
-}
-
-.account-dropdown-logout {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 9px 10px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #d64545;
-  font-weight: 600;
-  font-size: 0.86rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.account-dropdown-logout:hover {
-  background: rgba(214, 69, 69, 0.1);
 }
 
 /* ---------- Notification bell ---------- */
@@ -3753,27 +3704,14 @@ table.data-table {
 .nav-category.open .nav-category-submenu { display: flex; }
 .nav-category.open .nav-category-chevron { transform: rotate(90deg); }
 
-.sidebar-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 8px 14px;
-}
-
-/* Pushes the divider + Profile/Contact Person links (whatever follows it) all the way to the
-   bottom of the sidebar, regardless of how many nav categories a given role sees. */
-.sidebar-spacer {
-  flex: 1;
-}
-
 /* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). The icon
    (and the logo mark) never move - .sidebar's own left/right padding and each row's own
    padding-left and gap are left untouched here on purpose, so the fixed offset from the sidebar's
    edge to the icon stays identical in both states. The label (and the logo wordmark, via its own
    left-anchored overflow:hidden box) get progressively covered from the right as the sidebar
-   narrows, and uncovered left-to-right as it widens back. The divider stays visible throughout
-   (it's what visually separates Profile/Contact Person from the modules above, in both states) -
-   only the chevron and submenu are struck instantly, since collapsed categories render as a plain
-   link with neither in the DOM at all (see AppShell.tsx). */
+   narrows, and uncovered left-to-right as it widens back. Only the chevron and submenu are struck
+   instantly, since collapsed categories render as a plain link with neither in the DOM at all
+   (see AppShell.tsx). */
 @media (min-width: 861px) {
   /* 88px, not a tighter 76px: the collapsed row below is pinned to a fixed 48px (padding-left 14
      + icon 20 + padding-right 14) so it frames the icon symmetrically, and needs a content area at
@@ -3895,7 +3833,7 @@ table.data-table {
   .topbar { grid-template-columns: auto 1fr; padding: 14px 16px; }
   .topbar-date { display: none; }
   .topbar-right { gap: 8px; }
-  .account-dropdown { width: 230px; right: -8px; }
+  .account-dropdown { width: min(320px, calc(100vw - 32px)); right: -8px; }
   .notification-dropdown { width: min(320px, calc(100vw - 32px)); right: -8px; }
 }
 

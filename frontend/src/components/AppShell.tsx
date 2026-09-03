@@ -8,11 +8,11 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
 import NotificationBell from "@/components/NotificationBell";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserProfileSidebar, type NavItem as MenuNavItem } from "@/components/ui/menu";
 import type { Role } from "@/lib/types";
 
 interface NavLeaf {
@@ -146,13 +146,38 @@ function labelWidthStyle(label: string) {
 // Dashboard/Expedition/Office Supplies/Profile as their whole sidebar.
 const KPU_HIDDEN_CATEGORIES = new Set(["Room Booking", "Vehicle Booking", "Maintenance", "Archive"]);
 
+const SUN_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+);
+const MOON_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>
+);
+const PROFILE_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
+);
+const CONTACT_PERSON_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+);
+const LOGOUT_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+);
+
 function AccountMenu() {
   const { me } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState("light");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useClickOutside([menuRef], () => setOpen(false), open);
+
+  useEffect(() => {
+    // Reads the theme a pre-hydration inline script already stamped onto <html> - genuinely
+    // synchronizing local state with that external DOM attribute, not state derived from props.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(document.documentElement.getAttribute("data-theme") || "light");
+  }, []);
 
   if (!me) return null;
 
@@ -160,6 +185,28 @@ function AccountMenu() {
     await api.logout();
     router.replace("/");
   }
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("pengiriman-theme", next);
+    setTheme(next);
+  }
+
+  const navItems: MenuNavItem[] = [
+    {
+      icon: theme === "dark" ? SUN_ICON : MOON_ICON,
+      label: theme === "dark" ? "Mode Terang" : "Mode Gelap",
+      onClick: toggleTheme,
+    },
+    { icon: PROFILE_ICON, label: "Profile", href: "/profile", active: pathname === "/profile" },
+    {
+      icon: CONTACT_PERSON_ICON,
+      label: "Contact Person",
+      href: "/contact-person",
+      active: pathname === "/contact-person",
+    },
+  ];
 
   return (
     <div className="account-menu" ref={menuRef}>
@@ -183,25 +230,25 @@ function AccountMenu() {
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       {open && (
-        <div className="account-dropdown" onClick={(e) => e.stopPropagation()}>
-          <div className="account-dropdown-header">
-            <span className="account-avatar-lg">
-              {me.hasPhoto ? (
-                <img src={api.profilePhotoUrl()} alt="" />
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
-              )}
-            </span>
-            <div>
-              <div className="account-dropdown-name">{me.nama}</div>
-              <div className="account-dropdown-email">{ROLE_LABEL[me.role] || me.role}</div>
-            </div>
-          </div>
-          <hr className="account-dropdown-divider" />
-          <button className="account-dropdown-logout" onClick={handleLogout}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Log out
-          </button>
+        // Closes on any click inside, not just outside - a Profile/Contact Person Link navigates
+        // within the same app shell (no unmount to rely on, unlike logout), and toggling the theme
+        // is a one-shot action too, so every row here is a "pick this, menu goes away" action.
+        <div
+          className="account-dropdown"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(false);
+          }}
+        >
+          <UserProfileSidebar
+            user={{
+              name: me.nama,
+              subtitle: ROLE_LABEL[me.role] || me.role,
+              avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
+            }}
+            navItems={navItems}
+            logoutItem={{ icon: LOGOUT_ICON, label: "Log out", onClick: handleLogout }}
+          />
         </div>
       )}
     </div>
@@ -339,17 +386,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 </Collapsible>
               );
             })}
-
-            <div className="sidebar-spacer"></div>
-            <div className="sidebar-divider"></div>
-            <Link className={`nav-link ${pathname === "/profile" ? "active" : ""}`} href="/profile" title="Profile">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
-              <span style={labelWidthStyle("Profile")}>Profile</span>
-            </Link>
-            <Link className={`nav-link ${pathname === "/contact-person" ? "active" : ""}`} href="/contact-person" title="Contact Person">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              <span style={labelWidthStyle("Contact Person")}>Contact Person</span>
-            </Link>
           </div>
         </ScrollArea>
       </aside>
@@ -368,7 +404,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-right" onClick={(e) => e.stopPropagation()}>
             <AccountMenu />
             <NotificationBell />
-            <ThemeToggle />
           </div>
         </header>
 
