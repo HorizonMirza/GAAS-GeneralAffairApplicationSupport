@@ -1803,10 +1803,10 @@ body.auth-ready .app-shell {
 }
 
 .profile-hero-body {
-  padding: 0 28px 20px;
-  /* Pulls the block up so the avatar overlaps the banner by exactly half its own height (56px of
-     112px), instead of the avatar sitting beside the name in one row. */
-  margin-top: -56px;
+  padding: 0 28px 8px;
+  /* Pulls the block up so the avatar overlaps the banner by exactly half its own height (68px of
+     136px), instead of the avatar sitting beside the name in one row. */
+  margin-top: -68px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1820,8 +1820,8 @@ body.auth-ready .app-shell {
 
 .profile-hero-avatar {
   position: relative;
-  width: 112px;
-  height: 112px;
+  width: 136px;
+  height: 136px;
   border-radius: 50%;
   flex-shrink: 0;
   overflow: hidden;
@@ -1854,8 +1854,8 @@ body.auth-ready .app-shell {
 
 .profile-org-grid {
   width: 100%;
-  margin-top: 22px;
-  padding: 22px 28px 28px;
+  margin-top: 4px;
+  padding: 16px 28px 28px;
   border-top: 1px solid var(--border-subtle);
   text-align: left;
   display: grid;
