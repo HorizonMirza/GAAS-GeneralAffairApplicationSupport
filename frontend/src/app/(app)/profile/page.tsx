@@ -391,7 +391,7 @@ export default function ProfilePage() {
                 <div className="profile-info-value">{currentValue[field] || "-"}</div>
               </div>
               <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
-                Ubah
+                Change
               </button>
             </div>
           ))}
@@ -402,10 +402,10 @@ export default function ProfilePage() {
             </div>
             <div className="settings-icon-row-body">
               <div className="profile-info-label">Password</div>
-              <div className="profile-info-value">****</div>
+              <div className="profile-info-value">••••••••</div>
             </div>
             <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={openPasswordForm}>
-              Ubah
+              Change
             </button>
           </div>
       </div>
@@ -511,7 +511,7 @@ export default function ProfilePage() {
           {editingField && (
             <>
               <DialogHeader>
-                <DialogTitle>Ubah {FIELD_META[editingField].label}</DialogTitle>
+                <DialogTitle>Change {FIELD_META[editingField].label}</DialogTitle>
               </DialogHeader>
 
               <form id="field-edit-form" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
@@ -574,7 +574,7 @@ export default function ProfilePage() {
       <Dialog open={passwordFormOpen} onOpenChange={(open) => { if (!open) closePasswordForm(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ubah Password</DialogTitle>
+            <DialogTitle>Change Password</DialogTitle>
           </DialogHeader>
 
           <form id="password-edit-form" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
