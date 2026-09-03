@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useToast } from "@/components/ui/ToastProvider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Camera, ImagePlus } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -79,27 +81,24 @@ function PasswordField({
   );
 }
 
+type ProfileDraft = { nama: string; username: string; noHp: string; email: string };
+
 export default function ProfilePage() {
   const { me, refresh } = useAuth();
   const { showToast } = useToast();
 
-  const [editingNama, setEditingNama] = useState(false);
-  const [namaDraft, setNamaDraft] = useState(me?.nama ?? "");
-  const [savingNama, setSavingNama] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({ nama: "", username: "", noHp: "", email: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [photoVersion, setPhotoVersion] = useState(0);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const [editingCover, setEditingCover] = useState(false);
   const [coverVersion, setCoverVersion] = useState(0);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
-
-  const [editingField, setEditingField] = useState<AccountField | null>(null);
-  const [draft, setDraft] = useState("");
-  const [savingField, setSavingField] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -114,25 +113,28 @@ export default function ProfilePage() {
     email: me.email ?? "",
   };
 
-  function openNamaEdit() {
-    setNamaDraft(me!.nama);
-    setEditingNama(true);
+  function openEditProfile() {
+    setProfileDraft({ nama: me!.nama, username: me!.username, noHp: me!.noHp ?? "", email: me!.email ?? "" });
+    setEditOpen(true);
   }
 
-  async function handleNamaSubmit(e: React.FormEvent) {
+  async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSavingNama(true);
+    setSavingProfile(true);
     try {
-      // Only Nama Akun is edited here - Username/No HP/Email have their own "Ubah" flow below, so
-      // they're passed through unchanged rather than re-typed on this form.
-      await api.updateProfile({ nama: namaDraft.trim(), username: me!.username, noHp: me!.noHp, email: me!.email });
+      await api.updateProfile({
+        nama: profileDraft.nama.trim(),
+        username: profileDraft.username.trim(),
+        noHp: profileDraft.noHp.trim() || null,
+        email: profileDraft.email.trim() || null,
+      });
       await refresh();
-      setEditingNama(false);
-      showToast("Nama akun berhasil diperbarui");
+      setEditOpen(false);
+      showToast("Profil berhasil diperbarui");
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
-      setSavingNama(false);
+      setSavingProfile(false);
     }
   }
 
@@ -216,33 +218,6 @@ export default function ProfilePage() {
     }
   }
 
-  function openFieldEdit(field: AccountField) {
-    setDraft(currentValue[field]);
-    setEditingField(field);
-  }
-
-  async function handleFieldSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingField) return;
-    setSavingField(true);
-    try {
-      const next = { ...currentValue, [editingField]: draft.trim() };
-      await api.updateProfile({
-        nama: me!.nama,
-        username: next.username,
-        noHp: next.noHp || null,
-        email: next.email || null,
-      });
-      await refresh();
-      setEditingField(null);
-      showToast(`${FIELD_META[editingField].label} berhasil diperbarui`);
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setSavingField(false);
-    }
-  }
-
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPasswordError("");
@@ -290,76 +265,11 @@ export default function ProfilePage() {
             <div className="profile-role-badge">{ROLE_LABEL[me.role] || me.role}</div>
           </div>
           <div className="profile-hero-actions">
-            <button type="button" className="btn btn-secondary" style={{ width: "auto" }} disabled={uploadingPhoto} onClick={() => photoInputRef.current?.click()}>
-              {uploadingPhoto ? "Mengunggah..." : "Ganti Foto"}
-            </button>
-            <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
-            <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingCover((v) => !v)}>
-              Ganti Background
-            </button>
-            <input ref={coverInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handleCoverPhotoChange} />
-            <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={openNamaEdit}>
-              Ubah Nama
+            <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openEditProfile}>
+              Edit Profile
             </button>
           </div>
         </div>
-        <div className="profile-photo-hint profile-photo-hint-header">JPG atau PNG, maks. 5 MB</div>
-
-        {editingCover && (
-          <div className="settings-edit-panel">
-            <div className="field">
-              <label>Pilih Warna Background</label>
-              <div className="cover-preset-row">
-                {COVER_PRESETS.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
-                    style={{ background: p.gradient }}
-                    title={p.label}
-                    aria-label={p.label}
-                    disabled={savingCoverPreset !== null}
-                    onClick={() => handleCoverPresetPick(p.key)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="settings-edit-panel-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: "auto" }}
-                disabled={uploadingCover}
-                onClick={() => coverInputRef.current?.click()}
-              >
-                {uploadingCover ? "Mengunggah..." : "Upload Gambar"}
-              </button>
-              {me.hasCoverPhoto && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={handleRemoveCoverPhoto}>
-                  Hapus Foto
-                </button>
-              )}
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setEditingCover(false)}>
-                Selesai
-              </button>
-            </div>
-          </div>
-        )}
-
-        {editingNama && (
-          <form className="settings-edit-panel" onSubmit={handleNamaSubmit}>
-            <div className="field">
-              <label htmlFor="nama-akun">Nama Akun</label>
-              <input type="text" id="nama-akun" required autoFocus value={namaDraft} onChange={(e) => setNamaDraft(e.target.value)} />
-            </div>
-            <div className="settings-edit-panel-actions">
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingNama(false)}>Batal</button>
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingNama}>
-                {savingNama ? "Menyimpan..." : "Simpan"}
-              </button>
-            </div>
-          </form>
-        )}
 
         {(me.direktorat || me.divisi || me.departemen) && (
           <div className="profile-org-grid profile-org-grid-wide">
@@ -400,34 +310,8 @@ export default function ProfilePage() {
                 <div className="profile-info-label">{FIELD_META[field].label}</div>
                 <div className="profile-info-value">{currentValue[field] || "-"}</div>
               </div>
-              <button type="button" className="btn btn-secondary settings-ubah-btn" onClick={() => openFieldEdit(field)}>
-                Ubah
-              </button>
             </div>
           ))}
-
-          {editingField && (
-            <form className="settings-edit-panel" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
-              <div className="field">
-                <label htmlFor="field-draft">Ubah {FIELD_META[editingField].label}</label>
-                <input
-                  id="field-draft"
-                  type={FIELD_META[editingField].type}
-                  placeholder={FIELD_META[editingField].placeholder}
-                  required={editingField === "username"}
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                />
-              </div>
-              <div className="settings-edit-panel-actions">
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setEditingField(null)}>Batal</button>
-                <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                  {savingField ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
-          )}
         </div>
 
         <div className="card">
@@ -449,6 +333,106 @@ export default function ProfilePage() {
           </form>
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>Perbarui foto, background, dan informasi akun Anda.</DialogDescription>
+          </DialogHeader>
+
+          <div className="edit-profile-cover" style={bannerStyle}>
+            {me.hasCoverPhoto && (
+              <img className="edit-profile-cover-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
+            )}
+            <button
+              type="button"
+              className="edit-profile-cover-overlay"
+              disabled={uploadingCover}
+              onClick={() => coverInputRef.current?.click()}
+            >
+              <ImagePlus width={16} height={16} />
+              {uploadingCover ? "Mengunggah..." : "Ganti Background"}
+            </button>
+            <input ref={coverInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handleCoverPhotoChange} />
+          </div>
+
+          <div className="edit-profile-avatar-row">
+            <div className="edit-profile-avatar">
+              {me.hasPhoto ? (
+                <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
+              ) : (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
+              )}
+              <button
+                type="button"
+                className="edit-profile-avatar-overlay"
+                aria-label="Ganti foto profil"
+                disabled={uploadingPhoto}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <Camera width={18} height={18} />
+              </button>
+              <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
+            </div>
+            <div className="cover-preset-row">
+              {COVER_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
+                  style={{ background: p.gradient }}
+                  title={p.label}
+                  aria-label={p.label}
+                  disabled={savingCoverPreset !== null}
+                  onClick={() => handleCoverPresetPick(p.key)}
+                />
+              ))}
+              {me.hasCoverPhoto && (
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={handleRemoveCoverPhoto}>
+                  Hapus Foto
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="profile-photo-hint">JPG atau PNG, maks. 5 MB</div>
+
+          <form id="edit-profile-form" onSubmit={handleProfileSubmit} onKeyDown={focusNextFieldOnEnter}>
+            <div className="field">
+              <label htmlFor="edit-nama">Nama Akun</label>
+              <input
+                type="text"
+                id="edit-nama"
+                required
+                value={profileDraft.nama}
+                onChange={(e) => setProfileDraft((d) => ({ ...d, nama: e.target.value }))}
+              />
+            </div>
+            {(Object.keys(FIELD_META) as AccountField[]).map((field) => (
+              <div className="field" key={field}>
+                <label htmlFor={`edit-${field}`}>{FIELD_META[field].label}</label>
+                <input
+                  id={`edit-${field}`}
+                  type={FIELD_META[field].type}
+                  placeholder={FIELD_META[field].placeholder}
+                  required={field === "username"}
+                  value={profileDraft[field]}
+                  onChange={(e) => setProfileDraft((d) => ({ ...d, [field]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </form>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
+            </DialogClose>
+            <button type="submit" form="edit-profile-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingProfile}>
+              {savingProfile ? "Menyimpan..." : "Simpan"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
