@@ -2054,6 +2054,13 @@ body.auth-ready .app-shell {
   font-size: 1.02rem;
 }
 
+/* Separates two stacked sections (Kontak & Akun / Keamanan) sharing one .card. */
+.settings-section-divider {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+}
+
 .settings-edit-panel {
   margin-top: 16px;
   padding: 16px;

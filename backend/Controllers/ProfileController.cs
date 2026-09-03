@@ -98,7 +98,7 @@ public class ProfileController : ApiControllerBase
         if (contactChanged)
         {
             if (string.IsNullOrEmpty(payload.CurrentPassword))
-                return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah username, email, atau nomor HP" });
+                return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah username, email, atau nomor telepon" });
             if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user.PasswordHash))
                 return StatusCode(400, new { detail = "Password saat ini salah" });
         }
