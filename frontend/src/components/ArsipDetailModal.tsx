@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
-  ARCHIVE_KATEGORI_LABEL,
+  getArchiveKategoriLabelMap,
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
   arsipOriginActorLabel,
@@ -12,13 +12,14 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { ArchiveKategori, Me, PermintaanArsip, PermintaanArsipCreatePayload, PermintaanArsipItemPayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
-const KATEGORI_OPTIONS = Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[];
+const KATEGORI_OPTIONS: ArchiveKategori[] = ["SOP", "SURAT", "KONTRAK", "LAPORAN", "PANDUAN", "LAINNYA"];
 
 interface Props {
   open: boolean;
@@ -43,6 +44,7 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
 }
 
 export default function ArsipDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const { language, t } = useLanguage();
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
   const [error, setError] = useState("");
   const { showToast } = useToast();
@@ -92,7 +94,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
   async function handleSubmitDraft() {
     try {
       await api.submitArsip(item!.id);
-      showToast("Permintaan berhasil dikirim untuk approval");
+      showToast(t("arsip.toastSubmittedForApproval"));
       onClose();
       onSaved();
     } catch (err) {
@@ -104,7 +106,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast(t("arsip.toastApprovedToAdminGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -115,7 +117,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipGa(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast(t("arsip.toastApprovedToApprovalGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -126,7 +128,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipGaApproval(item!.id);
-      showToast("Permintaan pemindahan arsip berhasil disetujui");
+      showToast(t("arsip.toastApprovedFinal"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -137,7 +139,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     e.preventDefault();
     try {
       await api.updateArsip(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Permintaan berhasil diperbarui");
+      showToast(t("arsip.toastUpdated"));
       onClose();
       onSaved();
     } catch (err) {
@@ -149,38 +151,38 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Permintaan Pemindahan Arsip" : "Detail Permintaan Pemindahan Arsip"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? t("arsip.formPermintaanTitle") : t("arsip.detailPermintaanTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="dr-nomor-arsip">Nomor Permintaan Arsip</label>
+              <label htmlFor="dr-nomor-arsip">{t("arsip.nomorPermintaan")}</label>
               <input type="text" id="dr-nomor-arsip" disabled value={item.nomorArsip || ""} />
             </div>
             <div className="field">
-              <label htmlFor="dr-tanggal">Tanggal</label>
+              <label htmlFor="dr-tanggal">{t("common.date")}</label>
               <input type="date" id="dr-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="dr-keperluan">Keperluan</label>
+              <label htmlFor="dr-keperluan">{t("arsip.keperluan")}</label>
               <input type="text" id="dr-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <label htmlFor="dr-lokasi">{t("arsip.lokasiPenyimpanan")}</label>
               <input type="text" id="dr-lokasi" required disabled={!isEdit} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 
             <div className="field full">
-              <label>Daftar Arsip</label>
+              <label>{t("arsip.daftarArsip")}</label>
               {form.items.map((row, idx) => (
                 <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                   <input
                     type="text"
-                    aria-label={`Nama arsip ${idx + 1}`}
+                    aria-label={`${t("arsip.namaArsipAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Nama arsip"
+                    placeholder={t("arsip.namaArsipAria")}
                     style={{ flex: "3 1 180px", minWidth: 180 }}
                     value={row.namaArsip}
                     onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
@@ -192,18 +194,18 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       value={row.kategori}
                       onChange={(v) => setItem(idx, { kategori: v as ArchiveKategori })}
                       options={KATEGORI_OPTIONS}
-                      getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
-                      placeholder="Kategori"
+                      getLabel={(v) => getArchiveKategoriLabelMap(language)[v as ArchiveKategori] || v}
+                      placeholder={t("arsip.kategoriPlaceholder")}
                     />
                   </div>
                   <input
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label={`Tahun arsip ${idx + 1}`}
+                    aria-label={`${t("arsip.tahunArsipAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Tahun"
+                    placeholder={t("arsip.tahunPlaceholder")}
                     style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.tahunArsip}
                     onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
@@ -212,10 +214,10 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label={`Jumlah arsip ${idx + 1}`}
+                    aria-label={`${t("arsip.jumlahArsipAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Jumlah"
+                    placeholder={t("arsip.jumlahPlaceholder")}
                     style={{ flex: "1 1 80px", minWidth: 80 }}
                     value={row.jumlah === 0 ? "" : String(row.jumlah)}
                     onChange={(e) => {
@@ -225,10 +227,10 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                   />
                   <input
                     type="text"
-                    aria-label={`Satuan arsip ${idx + 1}`}
+                    aria-label={`${t("arsip.satuanArsipAria")} ${idx + 1}`}
                     required
                     disabled={!isEdit}
-                    placeholder="Satuan"
+                    placeholder={t("arsip.satuanArsipAria")}
                     style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
                     onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -237,7 +239,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     <button
                       type="button"
                       className="card-icon-btn"
-                      aria-label={`Hapus baris arsip ${idx + 1}`}
+                      aria-label={`${t("arsip.hapusBarisArsipAria")} ${idx + 1}`}
                       disabled={form.items.length <= 1}
                       style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
                       onClick={() => removeItemRow(idx)}
@@ -249,55 +251,55 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               ))}
               {isEdit && form.items.length < MAX_ITEM_ROWS && (
                 <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
-                  + Tambah Arsip
+                  {t("arsip.tambahArsip")}
                 </button>
               )}
             </div>
 
             <div className="field full">
-              <label htmlFor="dr-catatan">Catatan</label>
-              <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="dr-catatan">{t("common.notes")}</label>
+              <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? t("arsip.contohSudahTidakDipakai") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+              <strong>{t("bk.diajukanColon")}</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Catatan Penolakan:</strong> {item.rejectReason}
+              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
             </div>
           )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? t("common.cancel") : t("common.close")}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.approve")}</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-l1", arsipOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-l1", arsipOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-ga", arsipOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-ga", arsipOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-ga-approval", arsipOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "arsip-ga-approval", arsipOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
             )}
           </div>
         </form>
