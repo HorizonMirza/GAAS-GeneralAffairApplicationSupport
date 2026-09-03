@@ -13,7 +13,6 @@ import ChatNotificationListener from "@/components/ChatNotificationListener";
 import NotificationBell from "@/components/NotificationBell";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { UserProfileSidebar, type NavItem as MenuNavItem } from "@/components/ui/menu";
 import type { Role } from "@/lib/types";
 
@@ -166,7 +165,6 @@ function AccountMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState("light");
-  const confirm = useConfirm();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useClickOutside([menuRef], () => setOpen(false), open);
@@ -248,11 +246,7 @@ function AccountMenu() {
               avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
             }}
             navItems={navItems}
-            logoutItem={{
-              icon: LOGOUT_ICON,
-              label: "Log out",
-              onClick: () => confirm("Anda yakin ingin logout dari akun ini?", handleLogout, "Ya, Logout"),
-            }}
+            logoutItem={{ icon: LOGOUT_ICON, label: "Log out", onClick: handleLogout }}
           />
         </div>
       )}
