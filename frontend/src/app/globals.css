@@ -3643,19 +3643,21 @@ table.data-table {
 }
 
 /* Desktop: toggling the sidebar collapses it to an icon-only rail (not a full hide). The icon
-   (and the logo mark) never move - .sidebar's own left/right padding and each row's own padding
-   and gap are left untouched here on purpose, so the fixed offset from the sidebar's edge to the
-   icon stays identical in both states. Only the sidebar's width, and each row's own width (still
-   100% - see .nav-link/.nav-category-trigger's base rule), narrow - and since that's the only
-   thing moving, the label (and the logo wordmark, via its own left-anchored overflow:hidden box)
-   get progressively covered from the right as their shared row/box narrows, and uncovered
-   left-to-right as it widens back. The divider stays visible throughout (it's what visually
-   separates Profile/Contact Person from the modules above, in both states) - only the chevron and
-   submenu are struck instantly, since collapsed categories render as a plain link with neither in
-   the DOM at all (see AppShell.tsx). */
+   (and the logo mark) never move - .sidebar's own left/right padding and each row's own
+   padding-left and gap are left untouched here on purpose, so the fixed offset from the sidebar's
+   edge to the icon stays identical in both states. The label (and the logo wordmark, via its own
+   left-anchored overflow:hidden box) get progressively covered from the right as the sidebar
+   narrows, and uncovered left-to-right as it widens back. The divider stays visible throughout
+   (it's what visually separates Profile/Contact Person from the modules above, in both states) -
+   only the chevron and submenu are struck instantly, since collapsed categories render as a plain
+   link with neither in the DOM at all (see AppShell.tsx). */
 @media (min-width: 861px) {
+  /* 88px, not a tighter 76px: the collapsed row below is pinned to a fixed 48px (padding-left 14
+     + icon 20 + padding-right 14) so it frames the icon symmetrically, and needs a content area at
+     least that wide - a narrower sidebar left its right edge clipped by the scroll viewport's own
+     boundary before its rounded corner could finish curving, flattening that side. */
   .sidebar.sidebar-toggled {
-    width: 76px;
+    width: 88px;
   }
 
   /* Unlike the nav rows (which keep their icon and only lose their label), the logo has no icon
@@ -3665,6 +3667,17 @@ table.data-table {
     width: 0;
     padding-left: 0;
     padding-right: 0;
+  }
+
+  /* Each row's own width (normally 100%, tracking the sidebar) is pinned to exactly
+     padding-left + icon + padding-right (14 + 20 + 14) here instead - the collapsed rail's
+     content area is narrower than that, so left at 100% the row's own overflow:hidden clipped its
+     right-hand padding short, leaving noticeably less breathing room right of the icon than left
+     of it. padding-left is untouched (as above), so this only moves the row's right/bottom edges
+     in around the icon - the icon's own position doesn't shift. */
+  .sidebar.sidebar-toggled .nav-link,
+  .sidebar.sidebar-toggled .nav-category-trigger {
+    width: 48px;
   }
 
   .sidebar.sidebar-toggled .nav-category-chevron,
