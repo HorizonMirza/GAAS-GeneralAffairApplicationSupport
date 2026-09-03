@@ -1781,13 +1781,12 @@ body.auth-ready .app-shell {
 
 .profile-hero-header {
   padding: 0 28px 4px;
-  /* Pulls the row up so the avatar overlaps the banner, bottom-anchored via align-items: flex-end
-     below. Deliberately less than the avatar's own height (88px): the name+badge block sits in
-     the same bottom-anchored row and is shorter than the avatar, so pulling up by the avatar's
-     full height would put the top of the name text over the banner instead of on white. */
-  margin-top: -26px;
+  /* Pulls the row up so the avatar overlaps the banner. align-items: center keeps the shorter
+     name+badge block vertically centered against the taller avatar instead of pinned to its
+     bottom edge. */
+  margin-top: -36px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 20px;
 }
 
@@ -1796,26 +1795,10 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
-/* Decorative rounded-square accent sitting behind/above the avatar circle, inside the dark
-   banner strip - same idea as a LinkedIn-style profile cover, using the app's own blue gradient
-   (not an arbitrary color) so it reads as part of this app rather than a copied palette. */
-.profile-hero-avatar-backdrop {
-  position: absolute;
-  top: -36px;
-  left: 32px;
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
-  box-shadow: 0 4px 16px rgba(20, 80, 201, 0.4);
-  z-index: 0;
-}
-
 .profile-hero-avatar {
   position: relative;
-  z-index: 1;
-  width: 88px;
-  height: 88px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   flex-shrink: 0;
   overflow: hidden;
@@ -1845,14 +1828,10 @@ body.auth-ready .app-shell {
 }
 
 .profile-role-badge {
-  margin-top: 6px;
-  display: inline-flex;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--blue-200);
-  color: var(--blue-600);
-  font-size: 0.75rem;
-  font-weight: 700;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .profile-hero-actions {
