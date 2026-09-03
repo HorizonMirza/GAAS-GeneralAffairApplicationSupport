@@ -577,6 +577,7 @@ export default function ProfilePage() {
               id="current-password"
               label="Password Saat Ini"
               placeholder="Min. 8 Karakter"
+              icon={<Lock width={15} height={15} />}
               value={currentPassword}
               error={passwordErrors.currentPassword}
               onChange={(v) => {
@@ -589,6 +590,7 @@ export default function ProfilePage() {
               label="Password Baru"
               placeholder="Min. 8 Karakter"
               minLength={8}
+              icon={<Lock width={15} height={15} />}
               value={newPassword}
               error={passwordErrors.newPassword}
               hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
@@ -605,6 +607,7 @@ export default function ProfilePage() {
               label="Konfirmasi Password Baru"
               placeholder="Ulangi Password Baru"
               minLength={8}
+              icon={<Lock width={15} height={15} />}
               value={confirmPassword}
               error={passwordErrors.confirmPassword}
               onChange={(v) => {
@@ -620,7 +623,7 @@ export default function ProfilePage() {
               <button type="button" className="btn btn-secondary" style={{ width: "auto" }}>Batal</button>
             </DialogClose>
             <button type="submit" form="password-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
-              {savingPassword ? "Menyimpan..." : "Simpan Password"}
+              {savingPassword ? "Menyimpan..." : "Simpan"}
             </button>
           </DialogFooter>
         </DialogContent>
