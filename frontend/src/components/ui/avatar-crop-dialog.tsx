@@ -5,6 +5,14 @@ import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
+// The backend re-encodes every upload itself (resized to 512px, JPEG quality 85 - see
+// ProfileController.NormalizeImageAsync), so this crop step only needs to hand it clean pixels,
+// not a second lossy pass on top. Re-encoding as JPEG here as well would compound compression
+// artifacts on every upload; PNG keeps this step lossless. The output is still capped well above
+// the backend's own 512px target (2x, for retina headroom) so a large source photo doesn't turn
+// into an oversized PNG for no visual benefit.
+const CROP_OUTPUT_MAX = 1024;
+
 async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
   const image = new Image();
   await new Promise<void>((resolve, reject) => {
@@ -13,15 +21,16 @@ async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
     image.src = imageSrc;
   });
 
+  const outputSize = Math.round(Math.min(area.width, area.height, CROP_OUTPUT_MAX));
   const canvas = document.createElement("canvas");
-  canvas.width = area.width;
-  canvas.height = area.height;
+  canvas.width = outputSize;
+  canvas.height = outputSize;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Browser tidak mendukung pemrosesan gambar");
-  ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
+  ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, outputSize, outputSize);
 
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Gagal memproses gambar"))), "image/jpeg", 0.92);
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Gagal memproses gambar"))), "image/png");
   });
 }
 

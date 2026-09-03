@@ -1938,20 +1938,21 @@ body.auth-ready .app-shell {
   cursor: default;
 }
 
-.edit-profile-avatar-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: -40px;
-  padding-left: 16px;
+/* Cover + avatar together, avatar overlapping the cover's bottom-left corner like the app's own
+   profile hero card - the wrap's bottom margin reserves room for the half of the avatar that
+   hangs below the cover before the preset swatches row starts. */
+.edit-profile-cover-wrap {
+  position: relative;
+  margin-bottom: 34px;
 }
 
 .edit-profile-avatar {
-  position: relative;
+  position: absolute;
+  left: 16px;
+  bottom: -28px;
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  flex-shrink: 0;
   overflow: hidden;
   display: flex;
   align-items: center;
