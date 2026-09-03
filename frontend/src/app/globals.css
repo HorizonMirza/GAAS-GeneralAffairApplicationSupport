@@ -1542,15 +1542,6 @@ body.auth-ready .app-shell {
   margin-top: 0;
 }
 
-.bantuan-section-label {
-  margin: 0 0 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
 .bantuan-faq-header {
   text-align: center;
   margin-bottom: 22px;
@@ -1650,58 +1641,6 @@ body.auth-ready .app-shell {
    leaving a visible sliver of the collapsed answer instead of a true 0px collapse. */
 .faq-item-open .faq-item-answer p {
   padding-bottom: 17px;
-}
-
-/* Its own grid/card rather than reusing dashboard's .module-grid/.module-card - those are built
-   for a single-line title in a centered row (icon, truncated h4, arrow) and visibly squeezed once
-   6 columns share the width with a 3-4 line description under the title. */
-.bantuan-module-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.bantuan-module-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  box-shadow: var(--shadow-card);
-  text-decoration: none;
-  color: inherit;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-}
-
-.bantuan-module-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow-blue);
-  border-color: var(--blue-400);
-}
-
-.bantuan-module-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-primary);
-  color: #fff;
-}
-
-.bantuan-module-card h4 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 700; }
-.bantuan-module-card p { margin: 0; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; }
-
-@media (max-width: 900px) {
-  .bantuan-module-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 560px) {
-  .bantuan-module-grid { grid-template-columns: 1fr; }
 }
 
 .bantuan-cta {
