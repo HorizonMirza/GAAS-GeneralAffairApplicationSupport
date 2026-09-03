@@ -5,9 +5,9 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
-  EXECUTION_STAGE_LABEL,
-  KATEGORI_KERUSAKAN_LABEL,
-  URGENSI_LABEL,
+  getExecutionStageLabelMap,
+  getKategoriKerusakanLabelMap,
+  getUrgensiLabelMap,
   isSaranaEditableByOrigin,
   isSaranaExecutionActor,
   isSaranaGaActionable,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePayload, Urgensi } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
@@ -31,8 +32,8 @@ interface Props {
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
+const KATEGORI_OPTIONS: KategoriKerusakan[] = ["AC", "LISTRIK", "AIR", "FURNITUR", "GEDUNG", "IT", "LAINNYA"];
+const URGENSI_OPTIONS: Urgensi[] = ["RENDAH", "SEDANG", "TINGGI"];
 
 function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
   return {
@@ -46,6 +47,7 @@ function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
 }
 
 export default function SaranaDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const { language, t } = useLanguage();
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload | null>(null);
   const [error, setError] = useState("");
   const [execNote, setExecNote] = useState("");
@@ -87,7 +89,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   async function handleSubmitDraft() {
     try {
       await api.submitSarana(item!.id);
-      showToast("Laporan berhasil dikirim untuk approval");
+      showToast(t("mnt.toastSubmittedForApproval"));
       onClose();
       onSaved();
     } catch (err) {
@@ -99,7 +101,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaL1(item!.id);
-      showToast("Laporan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast(t("mnt.toastApprovedToAdminGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -110,7 +112,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaGa(item!.id);
-      showToast("Laporan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast(t("mnt.toastApprovedToApprovalGa"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -121,7 +123,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaGaApproval(item!.id);
-      showToast("Laporan perbaikan berhasil disetujui");
+      showToast(t("mnt.toastApprovedFinal"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -136,7 +138,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.cekLokasiSarana(item!.id, note);
-      showToast("Lokasi ditandai sudah dicek");
+      showToast(t("mnt.toastLokasiDicek"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -145,7 +147,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   async function handleUploadGambar() {
     if (!gambarFile) {
-      setError("Pilih file gambar terlebih dahulu");
+      setError(t("mnt.pilihFileGambarDulu"));
       return;
     }
     const file = gambarFile;
@@ -153,7 +155,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.uploadGambarSarana(item!.id, file, note);
-      showToast("Gambar rencana perbaikan berhasil diunggah");
+      showToast(t("mnt.toastGambarUploaded"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -165,7 +167,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.eksekusiSarana(item!.id, note);
-      showToast("Eksekusi perbaikan ditandai selesai");
+      showToast(t("mnt.toastEksekusiSelesai"));
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -176,7 +178,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     e.preventDefault();
     try {
       await api.updateSarana(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Laporan berhasil diperbarui");
+      showToast(t("mnt.toastUpdated"));
       onClose();
       onSaved();
     } catch (err) {
@@ -188,49 +190,49 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Laporan Perbaikan" : "Detail Laporan Perbaikan"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? t("mnt.formLaporanTitle") : t("mnt.detailLaporanTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ds-nomor-perbaikan">Nomor Laporan Perbaikan</label>
+              <label htmlFor="ds-nomor-perbaikan">{t("mnt.nomorLaporan")}</label>
               <input type="text" id="ds-nomor-perbaikan" disabled value={item.nomorPerbaikan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="ds-tanggal">Tanggal Laporan</label>
+              <label htmlFor="ds-tanggal">{t("mnt.tanggalLaporan")}</label>
               <input type="date" id="ds-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ds-lokasi">Lokasi</label>
+              <label htmlFor="ds-lokasi">{t("mnt.lokasi")}</label>
               <input type="text" id="ds-lokasi" required disabled={!isEdit} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ds-kategori">Kategori Kerusakan</label>
+              <label htmlFor="ds-kategori">{t("mnt.kategoriKerusakan")}</label>
               <SearchableSelect
                 id="ds-kategori"
                 disabled={!isEdit}
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as KategoriKerusakan)}
                 options={KATEGORI_OPTIONS}
-                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
-                placeholder="Pilih kategori"
+                getLabel={(v) => getKategoriKerusakanLabelMap(language)[v as KategoriKerusakan] || v}
+                placeholder={t("mnt.pilihKategori")}
               />
             </div>
             <div className="field">
-              <label htmlFor="ds-urgensi">Tingkat Urgensi</label>
+              <label htmlFor="ds-urgensi">{t("mnt.tingkatUrgensi")}</label>
               <SearchableSelect
                 id="ds-urgensi"
                 disabled={!isEdit}
                 value={form.urgensi}
                 onChange={(v) => set("urgensi", v as Urgensi)}
                 options={URGENSI_OPTIONS}
-                getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
-                placeholder="Pilih urgensi"
+                getLabel={(v) => getUrgensiLabelMap(language)[v as Urgensi] || v}
+                placeholder={t("mnt.pilihUrgensi")}
               />
             </div>
             <div className="field full">
-              <label htmlFor="ds-deskripsi">Deskripsi Kerusakan</label>
+              <label htmlFor="ds-deskripsi">{t("mnt.deskripsiKerusakan")}</label>
               <textarea
                 id="ds-deskripsi"
                 required
@@ -243,39 +245,39 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               />
             </div>
             <div className="field full">
-              <label htmlFor="ds-catatan">Catatan</label>
-              <input type="text" id="ds-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="ds-catatan">{t("common.notes")}</label>
+              <input type="text" id="ds-catatan" disabled={!isEdit} placeholder={isEdit ? t("mnt.contohCatatanMohonDiperbaiki") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Dilaporkan:</strong> {formatDateTime(item.createdAt)}
+              <strong>{t("mnt.dilaporkanColon")}</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Catatan Penolakan:</strong> {item.rejectReason}
+              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
             </div>
           )}
 
           {item.status === "APPROVED_GA_APPROVAL" && (
             <div className="card" style={{ padding: 14, marginBottom: 12 }}>
               <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                Eksekusi Perbaikan: {EXECUTION_STAGE_LABEL[item.executionStage]}
+                {t("mnt.eksekusiPerbaikanColon")} {getExecutionStageLabelMap(language)[item.executionStage]}
               </div>
               {item.gambarOriginalFilename && (
                 <div style={{ marginBottom: 8 }}>
                   <a href={api.saranaGambarUrl(item.id)} target="_blank" rel="noopener noreferrer">
-                    Lihat Gambar Rencana Perbaikan
+                    {t("mnt.lihatGambarRencana")}
                   </a>
                 </div>
               )}
               {canExecute && item.executionStage === "MENUNGGU" && (
                 <>
                   <textarea
-                    placeholder="Catatan hasil cek lokasi (opsional)"
+                    placeholder={t("mnt.catatanCekLokasi")}
                     value={execNote}
                     onChange={(e) => setExecNote(e.target.value)}
                     onKeyDown={(e) => {
@@ -284,7 +286,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     style={{ marginBottom: 8 }}
                   />
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleCekLokasi}>
-                    Tandai Lokasi Sudah Dicek
+                    {t("mnt.tandaiLokasiSudahDicek")}
                   </button>
                 </>
               )}
@@ -297,7 +299,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     style={{ marginBottom: 8 }}
                   />
                   <textarea
-                    placeholder="Catatan gambar rencana perbaikan (opsional)"
+                    placeholder={t("mnt.catatanGambarRencana")}
                     value={execNote}
                     onChange={(e) => setExecNote(e.target.value)}
                     onKeyDown={(e) => {
@@ -306,14 +308,14 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     style={{ marginBottom: 8 }}
                   />
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleUploadGambar}>
-                    Unggah Gambar
+                    {t("mnt.unggahGambar")}
                   </button>
                 </>
               )}
               {canExecute && item.executionStage === "GAMBAR_DIBUAT" && (
                 <>
                   <textarea
-                    placeholder="Catatan hasil eksekusi (opsional)"
+                    placeholder={t("mnt.catatanHasilEksekusi")}
                     value={execNote}
                     onChange={(e) => setExecNote(e.target.value)}
                     onKeyDown={(e) => {
@@ -322,7 +324,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     style={{ marginBottom: 8 }}
                   />
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleEksekusi}>
-                    Tandai Selesai Dieksekusi
+                    {t("mnt.tandaiSelesaiDieksekusi")}
                   </button>
                 </>
               )}
@@ -331,30 +333,30 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? "Batal" : "Tutup"}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{isEdit ? t("common.cancel") : t("common.close")}</button>
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.approve")}</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-l1", saranaOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-l1", saranaOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-ga", saranaOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-ga", saranaOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-ga-approval", saranaOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "sarana-ga-approval", saranaOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
             )}
           </div>
         </form>

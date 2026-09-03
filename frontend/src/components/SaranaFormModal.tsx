@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { KATEGORI_KERUSAKAN_LABEL, URGENSI_LABEL } from "@/lib/constants";
+import { getKategoriKerusakanLabelMap, getUrgensiLabelMap } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useLanguage } from "@/lib/i18n/language-context";
 import type { KategoriKerusakan, Me, PerbaikanSaranaCreatePayload, Urgensi } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
@@ -28,10 +29,11 @@ function emptyForm(): PerbaikanSaranaCreatePayload {
   };
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
+const KATEGORI_OPTIONS: KategoriKerusakan[] = ["AC", "LISTRIK", "AIR", "FURNITUR", "GEDUNG", "IT", "LAINNYA"];
+const URGENSI_OPTIONS: Urgensi[] = ["RENDAH", "SEDANG", "TINGGI"];
 
 export default function SaranaFormModal({ open, me, onClose, onCreated }: Props) {
+  const { language, t } = useLanguage();
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload>(emptyForm());
   const [error, setError] = useState("");
   const [nomorPerbaikan, setNomorPerbaikan] = useState("");
@@ -59,7 +61,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? `${t("word.admin")} ${t("word.generalAffair")}` : me.role === "APPROVAL_GA" ? `${t("word.approval")} ${t("word.generalAffair")}` : "");
 
   function set<K extends keyof PerbaikanSaranaCreatePayload>(key: K, value: PerbaikanSaranaCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -69,7 +71,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     e.preventDefault();
     try {
       await api.createSarana({ ...form, catatan: form.catatan || null });
-      showToast("Laporan perbaikan berhasil disimpan sebagai Draft");
+      showToast(t("mnt.toastSavedDraft"));
       onClose();
       onCreated();
     } catch (err) {
@@ -81,51 +83,51 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Laporan Perbaikan {unitName ? `(${unitName})` : ""}</h3>
+          <h3>{t("mnt.formLaporanTitle")} {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fs-nomor-perbaikan">Nomor Laporan Perbaikan</label>
+              <label htmlFor="fs-nomor-perbaikan">{t("mnt.nomorLaporan")}</label>
               <input type="text" id="fs-nomor-perbaikan" disabled value={nomorPerbaikan} />
             </div>
             <div className="field">
-              <label htmlFor="fs-tanggal">Tanggal Laporan</label>
+              <label htmlFor="fs-tanggal">{t("mnt.tanggalLaporan")}</label>
               <input type="date" id="fs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fs-lokasi">Lokasi</label>
-              <input type="text" id="fs-lokasi" required placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <label htmlFor="fs-lokasi">{t("mnt.lokasi")}</label>
+              <input type="text" id="fs-lokasi" required placeholder={t("mnt.contohLokasi")} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fs-kategori">Kategori Kerusakan</label>
+              <label htmlFor="fs-kategori">{t("mnt.kategoriKerusakan")}</label>
               <SearchableSelect
                 id="fs-kategori"
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as KategoriKerusakan)}
                 options={KATEGORI_OPTIONS}
-                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
-                placeholder="Pilih kategori"
+                getLabel={(v) => getKategoriKerusakanLabelMap(language)[v as KategoriKerusakan] || v}
+                placeholder={t("mnt.pilihKategori")}
               />
             </div>
             <div className="field">
-              <label htmlFor="fs-urgensi">Tingkat Urgensi</label>
+              <label htmlFor="fs-urgensi">{t("mnt.tingkatUrgensi")}</label>
               <SearchableSelect
                 id="fs-urgensi"
                 value={form.urgensi}
                 onChange={(v) => set("urgensi", v as Urgensi)}
                 options={URGENSI_OPTIONS}
-                getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
-                placeholder="Pilih urgensi"
+                getLabel={(v) => getUrgensiLabelMap(language)[v as Urgensi] || v}
+                placeholder={t("mnt.pilihUrgensi")}
               />
             </div>
             <div className="field full">
-              <label htmlFor="fs-deskripsi">Deskripsi Kerusakan</label>
+              <label htmlFor="fs-deskripsi">{t("mnt.deskripsiKerusakan")}</label>
               <textarea
                 id="fs-deskripsi"
                 required
-                placeholder="Contoh: AC tidak dingin dan mengeluarkan bunyi berisik sejak Senin pagi"
+                placeholder={t("mnt.contohDeskripsiKerusakan")}
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
                 onKeyDown={(e) => {
@@ -134,14 +136,14 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               />
             </div>
             <div className="field full">
-              <label htmlFor="fs-catatan">Catatan</label>
-              <input type="text" id="fs-catatan" placeholder="Contoh: Mohon diperbaiki sebelum rapat Jumat" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="fs-catatan">{t("common.notes")}</label>
+              <input type="text" id="fs-catatan" placeholder={t("mnt.contohCatatanMohonDiperbaiki")} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Batal</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t("common.cancel")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
           </div>
         </form>
       </div>
