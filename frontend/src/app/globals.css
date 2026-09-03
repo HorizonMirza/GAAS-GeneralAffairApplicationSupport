@@ -701,9 +701,26 @@ body.auth-ready .app-shell {
   min-height: 0;
 }
 
+/* Radix ScrollArea's Viewport wraps its children in its own anonymous, inline-styled
+   `display:table` div (to measure content for its custom scrollbar) - a table auto-sizes to its
+   widest content and ignores descendants' overflow:hidden entirely, so any row whose un-clipped
+   content is wider than the sidebar silently drags this wrapper (and everything below it, via
+   width:100%) wider than the true 204px viewport. !important is required since it's an inline
+   style, which normal stylesheet rules can't outrank. */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* width:100% (not the flex-column default fit-content) so this stays pinned to the ScrollArea
+   viewport's actual width - otherwise a row whose content briefly exceeds that width (e.g. a long
+   label before its wipe-collapse finishes) drags the whole list wider to fit it, and every row's
+   own width:100% then inherits that wrong, oversized reference instead of the real 204px. */
 .sidebar-nav-list {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 6px;
   padding-bottom: 4px;
 }
@@ -731,10 +748,11 @@ body.auth-ready .app-shell {
 }
 
 /* Fixed size always - flex-shrink:0 so it never shrinks to fit, only gets clipped by the row's
-   own overflow:hidden above as that row narrows. Sized to roughly reach the same right edge as
-   the nav row hover/active state below it. */
+   own overflow:hidden above as that row narrows. max-width is the logo box's own available
+   content width (204px sidebar content area - 6px+6px box padding = 192px) so it renders at its
+   full intended size without the box's own overflow:hidden clipping it. */
 .brand-logo-sidebar-img {
-  max-width: 205px;
+  max-width: 190px;
   max-height: 52px;
   width: auto;
   height: auto;
