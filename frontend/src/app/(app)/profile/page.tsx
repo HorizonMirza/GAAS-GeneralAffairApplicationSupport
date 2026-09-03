@@ -96,7 +96,7 @@ export default function ProfilePage() {
     email: {
       label: t("profile.emailLabel"),
       type: "email",
-      placeholder: "nama@perusahaan.com",
+      placeholder: t("profile.emailPlaceholder"),
       icon: (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 6 10 7 10-7"></path></svg>
       ),

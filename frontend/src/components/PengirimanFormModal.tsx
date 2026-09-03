@@ -193,7 +193,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field full">
               <label htmlFor="f-kode-program">{t("eks.kodeProgram")}</label>
-              <input type="text" id="f-kode-program" required placeholder="Contoh: 11.03.018.206.29.0313.47.09" value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
+              <input type="text" id="f-kode-program" required placeholder={t("eks.contohKodeProgram")} value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-asuransi">{t("eks.asuransi")}</label>

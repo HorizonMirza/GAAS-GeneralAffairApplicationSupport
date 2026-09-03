@@ -410,7 +410,7 @@ export default function BookingOverviewPage() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
+            await downloadFile(api.bookingPdfUrl(item.id), `${t("bk.buktiFilePrefix")}-Booking-${item.nomorPemesanan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }
