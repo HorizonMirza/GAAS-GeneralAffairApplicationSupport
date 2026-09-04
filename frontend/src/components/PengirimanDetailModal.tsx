@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
@@ -41,7 +40,6 @@ function toFormFields(item: Pengiriman): PengirimanCreatePayload {
 }
 
 export default function PengirimanDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
-  const { language, t } = useLanguage();
   const [form, setForm] = useState<PengirimanCreatePayload | null>(null);
   const [kResi, setKResi] = useState("");
   const [kBerat, setKBerat] = useState("");
@@ -122,7 +120,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   async function handleSubmitDraft() {
     try {
       await api.submitPengiriman(item!.id);
-      showToast(t("eks.toastSubmitted"));
+      showToast("Data berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -134,7 +132,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     onClose();
     try {
       await api.approveL1(item!.id);
-      showToast(t("eks.toastApprovedToAdminGa"));
+      showToast("Data berhasil di-approve, diteruskan ke Admin General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -145,7 +143,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     onClose();
     try {
       await api.approveGa(item!.id);
-      showToast(t("eks.toastApprovedToApprovalGa"));
+      showToast("Data berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -156,7 +154,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     onClose();
     try {
       await api.approveGaApproval(item!.id);
-      showToast(t("eks.toastApprovedToMitra"));
+      showToast("Data berhasil di-approve, diteruskan ke Mitra");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -170,7 +168,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     const subTotalStr = parseThousandSeparator(kSubtotal.trim());
     const totalStr = parseThousandSeparator(kTotal.trim());
     if (!noResi || !beratStr || subTotalStr === "" || (asuransiApplicable && asuransiStr === "")) {
-      setError(asuransiApplicable ? t("eks.errLengkapiWithAsuransi") : t("eks.errLengkapiNoAsuransi"));
+      setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Harga Asuransi, dan Harga Ongkos Kirim." : "Lengkapi No Resi, Berat, dan Harga Ongkos Kirim.");
       return;
     }
     try {
@@ -181,7 +179,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
         subTotal: Number(subTotalStr),
         total: Number(totalStr || "0"),
       });
-      showToast(t("eks.toastApprovedResiPrinted"));
+      showToast("Data berhasil di-approve & resi dicetak");
       onClose();
       onSaved();
     } catch (err) {
@@ -193,7 +191,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     e.preventDefault();
     try {
       await api.updatePengiriman(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast(t("eks.toastUpdated"));
+      showToast("Data berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -205,21 +203,21 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? t("eks.formDataBarang") : t("eks.detailDataBarang")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="pv-nomor-transmittal">{t("eks.nomorTransmittal")}</label>
+              <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>
               <input type="text" id="pv-nomor-transmittal" disabled value={item.nomorTransmittal} />
             </div>
             <div className="field">
-              <label htmlFor="pv-tanggal">{t("common.date")}</label>
+              <label htmlFor="pv-tanggal">Tanggal</label>
               <input type="date" id="pv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-jumlah-item">{t("eks.jumlahBarang")}</label>
+              <label htmlFor="pv-jumlah-item">Jumlah Barang</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -235,97 +233,95 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field">
-              <label htmlFor="pv-pengirim">{t("eks.namaPengirim")}</label>
+              <label htmlFor="pv-pengirim">Nama Pengirim</label>
               <input type="text" id="pv-pengirim" required disabled={!isEdit} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-telepon-pengirim">{t("eks.noTeleponPengirim")}</label>
+              <label htmlFor="pv-telepon-pengirim">No. Telepon Pengirim</label>
               <input type="text" id="pv-telepon-pengirim" required disabled={!isEdit} value={form.noTeleponPengirim} onChange={(e) => set("noTeleponPengirim", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-alamat-pengirim">{t("eks.alamatPengirim")}</label>
+              <label htmlFor="pv-alamat-pengirim">Alamat Pengirim</label>
               <textarea id="pv-alamat-pengirim" required disabled={!isEdit} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-penerima">{t("eks.namaPenerima")}</label>
+              <label htmlFor="pv-penerima">Nama Penerima</label>
               <input type="text" id="pv-penerima" required disabled={!isEdit} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-telepon">{t("eks.noTeleponPenerima")}</label>
+              <label htmlFor="pv-telepon">No. Telepon Penerima</label>
               <input type="text" id="pv-telepon" required disabled={!isEdit} value={form.noTeleponPenerima} onChange={(e) => set("noTeleponPenerima", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-alamat">{t("eks.alamatPenerima")}</label>
+              <label htmlFor="pv-alamat">Alamat Penerima</label>
               <textarea id="pv-alamat" required disabled={!isEdit} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-tujuan">{t("eks.tujuan")}</label>
+              <label htmlFor="pv-tujuan">Tujuan</label>
               <input type="text" id="pv-tujuan" required disabled={!isEdit} value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-kode-program">{t("eks.kodeProgram")}</label>
+              <label htmlFor="pv-kode-program">Kode Program</label>
               <input type="text" id="pv-kode-program" required disabled={!isEdit} value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-asuransi">{t("eks.asuransi")}</label>
+              <label htmlFor="pv-asuransi">Asuransi</label>
               <SearchableSelect
                 id="pv-asuransi"
                 disabled={!isEdit}
                 value={form.asuransiStatus}
                 onChange={(v) => set("asuransiStatus", v as Asuransi)}
                 options={["Tidak", "Ya"]}
-                getLabel={(v) => (v === "Ya" ? t("eks.ya") : t("eks.tidak"))}
-                placeholder={t("eks.tidak")}
+                placeholder="Tidak"
               />
             </div>
             <div className="field">
-              <label htmlFor="pv-packing">{t("eks.pengemasanTambahan")}</label>
+              <label htmlFor="pv-packing">Pengemasan Tambahan</label>
               <SearchableSelect
                 id="pv-packing"
                 disabled={!isEdit}
                 value={form.requestPacking}
                 onChange={(v) => set("requestPacking", v)}
                 options={["Tidak", "Tambahan Kayu"]}
-                getLabel={(v) => (v === "Tambahan Kayu" ? t("eks.tambahanKayu") : t("eks.tidak"))}
-                placeholder={t("eks.tidak")}
+                placeholder="Tidak"
               />
             </div>
             <div className="field full">
-              <label htmlFor="pv-catatan">{t("common.notes")}</label>
-              <input type="text" id="pv-catatan" disabled={!isEdit} placeholder={isEdit ? t("eks.contohRequestJne") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="pv-catatan">Catatan</label>
+              <input type="text" id="pv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
           {showKpuSection && (
             <div style={{ marginTop: 6, paddingTop: 16, borderTop: "1px solid var(--border-subtle)" }}>
-              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>{t("eks.formResiBiaya")}</h4>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (Mitra)</h4>
               <div className="form-grid">
                 <div className="field">
-                  <label htmlFor="pv-k-resi">{t("eks.noResi")}</label>
-                  <input type="text" id="pv-k-resi" placeholder={t("eks.contohAwb")} disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value)} />
+                  <label htmlFor="pv-k-resi">No Resi</label>
+                  <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label htmlFor="pv-k-berat">{t("eks.beratBarangKg")}</label>
-                  <input type="text" inputMode="decimal" id="pv-k-berat" placeholder={t("eks.contohBerat")} disabled={!canKpuAct} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
+                  <label htmlFor="pv-k-berat">Berat Barang (Kg)</label>
+                  <input type="text" inputMode="decimal" id="pv-k-berat" placeholder="Contoh: 2,5" disabled={!canKpuAct} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
                 </div>
                 <div className={`field ${asuransiApplicable ? "" : "field-strike"}`}>
-                  <label htmlFor="pv-k-asuransi-harga">{t("eks.hargaAsuransi")}</label>
+                  <label htmlFor="pv-k-asuransi-harga">Harga Asuransi</label>
                   <input
                     type="text"
                     inputMode="numeric"
                     id="pv-k-asuransi-harga"
                     disabled={!canKpuAct || !asuransiApplicable}
-                    placeholder={asuransiApplicable ? "" : t("eks.tidakMenggunakanAsuransi")}
+                    placeholder={asuransiApplicable ? "" : "Anda tidak menggunakan asuransi"}
                     value={kAsuransi}
                     onChange={(e) => handleAsuransiChange(e.target.value)}
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="pv-k-subtotal">{t("eks.hargaOngkosKirim")}</label>
+                  <label htmlFor="pv-k-subtotal">Harga Ongkos Kirim</label>
                   <input type="text" inputMode="numeric" id="pv-k-subtotal" disabled={!canKpuAct} value={kSubtotal} onChange={(e) => handleSubtotalChange(e.target.value)} />
                 </div>
                 <div className="field full">
-                  <label htmlFor="pv-k-total">{t("common.total")}</label>
+                  <label htmlFor="pv-k-total">Total</label>
                   <input type="text" id="pv-k-total" readOnly value={kTotal} />
                 </div>
               </div>
@@ -334,41 +330,41 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+              <strong>Catatan Penolakan:</strong> {item.rejectReason}
             </div>
           )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.approve")}</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1", originActorLabel(item, language), item.createdByRole); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga", originActorLabel(item, language), item.createdByRole); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval", originActorLabel(item, language), item.createdByRole); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
             {canKpuAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item, language), item.createdByRole); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>Approve</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
           </div>
         </form>

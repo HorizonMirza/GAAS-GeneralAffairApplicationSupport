@@ -1,62 +1,32 @@
 import { formatDate } from "./format";
-import type { Language } from "./i18n/language-context";
-import { translations } from "./i18n/translations";
 import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
 
-// Looks up one of the shared word/phrase primitives from lib/i18n/dict/words.ts for the given
-// language - the building block every label-composing function below uses instead of a hardcoded
-// Indonesian string, so switching language switches every derived label at once.
-function w(key: string, lang: Language): string {
-  return translations[lang][key] ?? key;
+export const STATUS_LABEL: Record<Status, string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+  REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+  APPROVED_L1: "On-Approval: Admin General Affair",
+  REJECTED_GA: "Rejected: Admin General Affair",
+  APPROVED_GA: "On-Approval: Approval GA",
+  REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+  APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+  REJECTED_KPU: "Rejected: Mitra",
+  COMPLETED: "Approved",
+};
+
+export function greetingName(me: Me): string {
+  return ROLE_LABEL[me.role] || me.role;
 }
 
-function adminWord(lang: Language): string {
-  return w("word.admin", lang);
-}
-function approvalWord(lang: Language): string {
-  return w("word.approval", lang);
-}
-function generalAffairWord(lang: Language): string {
-  return w("word.generalAffair", lang);
-}
-function partnerWord(lang: Language): string {
-  return w("word.partner", lang);
-}
-
-export function getStatusLabelMap(lang: Language): Record<Status, string> {
-  const onApproval = w("word.onApproval", lang);
-  const rejected = w("word.rejected", lang);
-  const admin = adminWord(lang);
-  const approval = approvalWord(lang);
-  const ga = generalAffairWord(lang);
-  const partner = partnerWord(lang);
-  return {
-    DRAFT: w("word.draft", lang),
-    SUBMITTED: `${onApproval}: ${approval} Departemen/Divisi`,
-    REJECTED_L1: `${rejected}: ${approval} Departemen/Divisi`,
-    APPROVED_L1: `${onApproval}: ${admin} ${ga}`,
-    REJECTED_GA: `${rejected}: ${admin} ${ga}`,
-    APPROVED_GA: `${onApproval}: ${approval} GA`,
-    REJECTED_GA_APPROVAL: `${rejected}: ${approval} GA`,
-    APPROVED_GA_APPROVAL: `${onApproval}: ${partner}`,
-    REJECTED_KPU: `${rejected}: ${partner}`,
-    COMPLETED: w("word.approved", lang),
-  };
-}
-
-export function greetingName(me: Me, lang: Language): string {
-  return getRoleLabelMap(lang)[me.role] || me.role;
-}
-
-export function greetingTimeWord(lang: Language): string {
+export function greetingTimeWord(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return w("word.morning", lang);
-  if (hour < 18) return w("word.afternoon", lang);
-  return w("word.evening", lang);
+  if (hour < 12) return "Good Morning";
+  if (hour < 18) return "Good Afternoon";
+  return "Good Evening";
 }
 
-export function trackWord(departemen: string | null | undefined, lang: Language): string {
-  return departemen ? w("word.department", lang) : w("word.division", lang);
+export function trackWord(departemen: string | null | undefined): "Departemen" | "Divisi" {
+  return departemen ? "Departemen" : "Divisi";
 }
 
 // Always derived from the item's own Departemen (never from who created it) - this matches
@@ -66,20 +36,16 @@ export function trackWord(departemen: string | null | undefined, lang: Language)
 // createdByRole instead of the item's real Departemen used to silently omit the real
 // Departemen/Divisi's own Admin/Approval accounts from the participant list even though they
 // could already open and post in the chat.
-export function chatParticipantLabels(departemen: string | null | undefined, lang: Language): string[] {
-  const track = trackWord(departemen, lang);
-  const admin = adminWord(lang);
-  const approval = approvalWord(lang);
-  return [`${admin} ${track}`, `${approval} ${track}`, `${admin} ${generalAffairWord(lang)}`, `${approval} GA`, partnerWord(lang)];
+export function chatParticipantLabels(departemen: string | null | undefined): string[] {
+  const track = trackWord(departemen);
+  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA", "Mitra"];
 }
 
 // Same reasoning as chatParticipantLabels above. Room booking's approval chain stops at Approval
 // GA (no KPU stage), so it has its own, shorter participant list.
-export function bookingChatParticipantLabels(departemen: string | null | undefined, lang: Language): string[] {
-  const track = trackWord(departemen, lang);
-  const admin = adminWord(lang);
-  const approval = approvalWord(lang);
-  return [`${admin} ${track}`, `${approval} ${track}`, `${admin} ${generalAffairWord(lang)}`, `${approval} GA`];
+export function bookingChatParticipantLabels(departemen: string | null | undefined): string[] {
+  const track = trackWord(departemen);
+  return [`Admin ${track}`, `Approval ${track}`, "Admin General Affair", "Approval GA"];
 }
 
 export const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
@@ -93,49 +59,35 @@ export function cardStatusBorderClass(status: Status): string {
   return "";
 }
 
-export function getStatusLabel(status: Status, departemen: string | null | undefined, lang: Language): string {
-  const approval = approvalWord(lang);
-  if (status === "SUBMITTED") return `${w("word.onApproval", lang)}: ${approval} ${trackWord(departemen, lang)}`;
-  if (status === "REJECTED_L1") return `${w("word.rejected", lang)}: ${approval} ${trackWord(departemen, lang)}`;
-  return getStatusLabelMap(lang)[status];
+export function getStatusLabel(status: Status, departemen: string | null | undefined): string {
+  if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
+  if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;
+  return STATUS_LABEL[status];
 }
 
-export function getRoleLabelMap(lang: Language): Record<Role, string> {
-  const admin = adminWord(lang);
-  const approval = approvalWord(lang);
-  const division = w("word.division", lang);
-  const department = w("word.department", lang);
-  const ga = generalAffairWord(lang);
-  return {
-    ADMIN_DEPARTEMEN: `${admin} ${department}`,
-    APPROVAL_DEPARTEMEN: `${approval} ${department}`,
-    ADMIN_DIVISI: `${admin} ${division}`,
-    APPROVAL_DIVISI: `${approval} ${division}`,
-    ADMIN_GA: `${admin} ${ga}`,
-    APPROVAL_GA: `${approval} ${ga}`,
-    KPU: partnerWord(lang),
-    SUPER_ADMIN: "Super Admin",
-  };
-}
+export const ROLE_LABEL: Record<Role, string> = {
+  ADMIN_DEPARTEMEN: "Admin Departemen",
+  APPROVAL_DEPARTEMEN: "Approval Departemen",
+  ADMIN_DIVISI: "Admin Divisi",
+  APPROVAL_DIVISI: "Approval Divisi",
+  ADMIN_GA: "Admin General Affair",
+  APPROVAL_GA: "Approval General Affair",
+  KPU: "Mitra",
+  SUPER_ADMIN: "Super Admin",
+};
 
 // Short form matching the chat participant list wording ("Approval GA" not "Approval General
 // Affair"), used for the sender pill on chat bubbles.
-export function getRoleShortLabelMap(lang: Language): Record<Role, string> {
-  const admin = adminWord(lang);
-  const approval = approvalWord(lang);
-  const division = w("word.division", lang);
-  const department = w("word.department", lang);
-  return {
-    ADMIN_DEPARTEMEN: `${admin} ${department}`,
-    APPROVAL_DEPARTEMEN: `${approval} ${department}`,
-    ADMIN_DIVISI: `${admin} ${division}`,
-    APPROVAL_DIVISI: `${approval} ${division}`,
-    ADMIN_GA: `${admin} ${generalAffairWord(lang)}`,
-    APPROVAL_GA: `${approval} GA`,
-    KPU: partnerWord(lang),
-    SUPER_ADMIN: "Super Admin",
-  };
-}
+export const ROLE_SHORT_LABEL: Record<Role, string> = {
+  ADMIN_DEPARTEMEN: "Admin Departemen",
+  APPROVAL_DEPARTEMEN: "Approval Departemen",
+  ADMIN_DIVISI: "Admin Divisi",
+  APPROVAL_DIVISI: "Approval Divisi",
+  ADMIN_GA: "Admin General Affair",
+  APPROVAL_GA: "Approval GA",
+  KPU: "Mitra",
+  SUPER_ADMIN: "Super Admin",
+};
 
 // Per-role accent color for chat sender names/avatars, so a group conversation reads at a
 // glance like WhatsApp's per-contact name coloring.
@@ -152,48 +104,43 @@ export const ROLE_COLOR: Record<Role, string> = {
 
 // Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya, bukan
 // selalu "Admin". Dipakai baik untuk badge "Waiting" maupun untuk label pilihan target reject.
-export function originActorLabel(item: Pengiriman, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function originActorLabel(item: Pengiriman): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
-export function getWaitingLabel(item: Pengiriman, lang: Language): string | undefined {
-  const waiting = w("word.waiting", lang);
+export function getWaitingLabel(item: Pengiriman): string | undefined {
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "GA" ? `${waiting}: ${adminWord(lang)} ${generalAffairWord(lang)}` : `${waiting}: ${originActorLabel(item, lang)}`;
+    return item.rejectTarget === "GA" ? "Waiting: Admin General Affair" : `Waiting: ${originActorLabel(item)}`;
   }
   if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
-    return `${waiting}: ${originActorLabel(item, lang)}`;
+    return `Waiting: ${originActorLabel(item)}`;
   }
   return undefined;
 }
 
-export function getLogActionMeta(lang: Language): Record<string, { label: string; type: "neutral" | "approve" | "reject" }> {
-  return {
-    CREATED: { label: w("log.CREATED", lang), type: "neutral" },
-    REVISED: { label: w("log.REVISED", lang), type: "neutral" },
-    SUBMITTED: { label: w("log.SUBMITTED", lang), type: "neutral" },
-    APPROVED_L1: { label: w("log.APPROVED_L1", lang), type: "approve" },
-    REJECTED_L1: { label: w("log.REJECTED_L1", lang), type: "reject" },
-    APPROVED_GA: { label: w("log.APPROVED_GA", lang), type: "approve" },
-    REJECTED_GA: { label: w("log.REJECTED_GA", lang), type: "reject" },
-    APPROVED_GA_APPROVAL: { label: w("log.APPROVED_GA_APPROVAL", lang), type: "approve" },
-    REJECTED_GA_APPROVAL: { label: w("log.REJECTED_GA_APPROVAL", lang), type: "reject" },
-    APPROVED_KPU: { label: w("log.APPROVED_KPU", lang), type: "approve" },
-    REJECTED_KPU: { label: w("log.REJECTED_KPU", lang), type: "reject" },
-    RESCHEDULED: { label: w("log.RESCHEDULED", lang), type: "neutral" },
-    // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
-    LOKASI_DICEK: { label: w("log.LOKASI_DICEK", lang), type: "neutral" },
-    GAMBAR_DIBUAT: { label: w("log.GAMBAR_DIBUAT", lang), type: "neutral" },
-    SELESAI: { label: w("log.SELESAI", lang), type: "approve" },
-  };
-}
+export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
+  CREATED: { label: "Draft Dibuat", type: "neutral" },
+  REVISED: { label: "Data Direvisi & Dikirim Ulang", type: "neutral" },
+  SUBMITTED: { label: "Dikirim untuk Approval", type: "neutral" },
+  APPROVED_L1: { label: "Disetujui Approval Departemen/Divisi", type: "approve" },
+  REJECTED_L1: { label: "Ditolak Approval Departemen/Divisi", type: "reject" },
+  APPROVED_GA: { label: "Disetujui Admin General Affair", type: "approve" },
+  REJECTED_GA: { label: "Ditolak Admin General Affair", type: "reject" },
+  APPROVED_GA_APPROVAL: { label: "Disetujui Approval GA", type: "approve" },
+  REJECTED_GA_APPROVAL: { label: "Ditolak Approval GA", type: "reject" },
+  APPROVED_KPU: { label: "Disetujui Mitra & Resi Diterbitkan", type: "approve" },
+  REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
+  RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
+  // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
+  LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
+  GAMBAR_DIBUAT: { label: "Gambar Rencana Perbaikan Dibuat", type: "neutral" },
+  SELESAI: { label: "Eksekusi Perbaikan Selesai", type: "approve" },
+};
 
-export function getLogRoleLabelMap(lang: Language): Partial<Record<Role, string>> {
-  return getRoleLabelMap(lang);
-}
+export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
 
 // "Origin" untuk revisi/reject-balik selalu pembuat aslinya - Admin atau Approval
 // Departemen/Divisi, siapapun yang menginput data ini pertama kali.
@@ -215,15 +162,12 @@ export function isGaActionable(item: Pengiriman): boolean {
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
-export function getInvoiceStatusLabelMap(lang: Language): Record<string, string> {
-  const adminGa = `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  return {
-    DRAFT: w("word.draft", lang),
-    PENDING: `${w("word.onApproval", lang)}: ${adminGa}`,
-    APPROVED: w("word.approved", lang),
-    REJECTED: `${w("word.rejected", lang)}: ${adminGa}`,
-  };
-}
+export const INVOICE_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Draft",
+  PENDING: "On-Approval: Admin General Affair",
+  APPROVED: "Approved",
+  REJECTED: "Rejected: Admin General Affair",
+};
 
 export const INVOICE_STATUS_CLASS: Record<string, string> = {
   DRAFT: "badge-draft",
@@ -238,16 +182,14 @@ export const INVOICE_STATUS_CLASS: Record<string, string> = {
 // cap, which produces an unhelpful "Failed to fetch" instead of a real server error message).
 export const MAX_INVOICE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
-export function getInvoiceLogActionMeta(lang: Language): Record<string, { label: string; type: "neutral" | "approve" | "reject" }> {
-  return {
-    UPLOADED: { label: w("invoiceLog.UPLOADED", lang), type: "neutral" },
-    SUBMITTED: { label: w("invoiceLog.SUBMITTED", lang), type: "neutral" },
-    DRAFT_UPDATED: { label: w("invoiceLog.DRAFT_UPDATED", lang), type: "neutral" },
-    REVISED: { label: w("invoiceLog.REVISED", lang), type: "neutral" },
-    APPROVED: { label: w("invoiceLog.APPROVED", lang), type: "approve" },
-    REJECTED: { label: w("invoiceLog.REJECTED", lang), type: "reject" },
-  };
-}
+export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
+  UPLOADED: { label: "Invoice Disimpan sebagai Draft", type: "neutral" },
+  SUBMITTED: { label: "Invoice Dikirim untuk Approval", type: "neutral" },
+  DRAFT_UPDATED: { label: "Draft Invoice Diperbarui", type: "neutral" },
+  REVISED: { label: "Invoice Direvisi & Dikirim Ulang", type: "neutral" },
+  APPROVED: { label: "Disetujui Admin General Affair", type: "approve" },
+  REJECTED: { label: "Ditolak Admin General Affair", type: "reject" },
+};
 
 // --- Booking Ruang Meeting (sama pola dengan versi Pengiriman di atas, tanpa tahap KPU) ---
 
@@ -267,22 +209,17 @@ export function isBookingOriginRole(role: Role): boolean {
   return BOOKING_ORIGIN_ROLES.includes(role);
 }
 
-export function getBookingStatusLabelMap(lang: Language): Record<BookingStatus, string> {
-  const onApproval = w("word.onApproval", lang);
-  const rejected = w("word.rejected", lang);
-  const approval = approvalWord(lang);
-  return {
-    DRAFT: w("word.draft", lang),
-    SUBMITTED: `${onApproval}: ${approval} Departemen/Divisi`,
-    REJECTED_L1: `${rejected}: ${approval} Departemen/Divisi`,
-    APPROVED_L1: `${onApproval}: ${adminWord(lang)} ${generalAffairWord(lang)}`,
-    REJECTED_GA: `${rejected}: ${adminWord(lang)} ${generalAffairWord(lang)}`,
-    APPROVED_GA: `${onApproval}: ${approval} GA`,
-    REJECTED_GA_APPROVAL: `${rejected}: ${approval} GA`,
-    APPROVED_GA_APPROVAL: w("word.approved", lang),
-    CANCELLED: w("word.cancelled", lang),
-  };
-}
+export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+  REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+  APPROVED_L1: "On-Approval: Admin General Affair",
+  REJECTED_GA: "Rejected: Admin General Affair",
+  APPROVED_GA: "On-Approval: Approval GA",
+  REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+  APPROVED_GA_APPROVAL: "Approved",
+  CANCELLED: "Cancelled",
+};
 
 export const BOOKING_ON_APPROVAL_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
 export const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"];
@@ -307,18 +244,17 @@ export function bookingStatusBorderClass(status: BookingStatus): string {
   return "";
 }
 
-export function getBookingStatusLabel(status: BookingStatus, departemen: string | null | undefined, lang: Language): string {
-  const approval = approvalWord(lang);
-  if (status === "SUBMITTED") return `${w("word.onApproval", lang)}: ${approval} ${trackWord(departemen, lang)}`;
-  if (status === "REJECTED_L1") return `${w("word.rejected", lang)}: ${approval} ${trackWord(departemen, lang)}`;
-  return getBookingStatusLabelMap(lang)[status];
+export function getBookingStatusLabel(status: BookingStatus, departemen: string | null | undefined): string {
+  if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
+  if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;
+  return BOOKING_STATUS_LABEL[status];
 }
 
-export function bookingOriginActorLabel(item: BookingRuang, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function bookingOriginActorLabel(item: BookingRuang): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
 // A rejected booking is a dead end for everyone, including Admin/Approval GA - there is no
@@ -384,29 +320,27 @@ export const TIPE_BOOKING_LABELS: Record<TipeBooking, string> = {
   EXTERNAL: "External",
 };
 
-export function getRecurrenceFrequencyLabelMap(lang: Language): Record<RecurrenceFrequency, string> {
-  return {
-    DAILY: w("word.daily", lang),
-    WEEKLY: w("word.weekly", lang),
-    MONTHLY: w("word.monthly", lang),
-  };
-}
+export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
+  DAILY: "Harian",
+  WEEKLY: "Mingguan",
+  MONTHLY: "Bulanan",
+};
 
 export function bookingRoomsLabel(item: BookingRuang): string {
   return [item.namaRuang, ...item.additionalRooms].join(", ");
 }
 
-export function bookingRecurrenceLabel(item: BookingRuang, lang: Language): string | null {
+export function bookingRecurrenceLabel(item: BookingRuang): string | null {
   if (!item.seriesId || !item.recurrenceFrequency) return null;
-  const endText = item.recurrenceEndDate ? ` ${w("word.until", lang)} ${formatDate(item.recurrenceEndDate)}` : "";
-  return `${getRecurrenceFrequencyLabelMap(lang)[item.recurrenceFrequency]}${endText}`;
+  const endText = item.recurrenceEndDate ? ` s/d ${formatDate(item.recurrenceEndDate)}` : "";
+  return `${RECURRENCE_FREQUENCY_LABELS[item.recurrenceFrequency]}${endText}`;
 }
 
-export function kendaraanOriginActorLabel(item: BookingKendaraan, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function kendaraanOriginActorLabel(item: BookingKendaraan): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
 // Same rule as isBookingEditableByOrigin - mirrors the backend's
@@ -450,11 +384,11 @@ export function isKendaraanCancellableByOrigin(item: BookingKendaraan, me: Me): 
 // bawah, termasuk tahap KPU - tapi reject tetap dead end di setiap tier, sama seperti Room/
 // Vehicle Booking) ---
 
-export function atkOriginActorLabel(item: PermintaanAtk, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function atkOriginActorLabel(item: PermintaanAtk): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
 // Same rule as isBookingEditableByOrigin - mirrors the backend's
@@ -479,12 +413,10 @@ export function isAtkKpuActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
-export function getSumberPembelianLabelMap(lang: Language): Record<SumberPembelian, string> {
-  return {
-    KPU: w("sumberPembelian.KPU", lang),
-    PADI: w("sumberPembelian.PADI", lang),
-  };
-}
+export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
+  KPU: "KPU",
+  PADI: "PaDi (Eksternal)",
+};
 
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".
 export function atkItemsSummary(item: PermintaanAtk): string {
@@ -493,25 +425,21 @@ export function atkItemsSummary(item: PermintaanAtk): string {
 
 // --- Maintenance / Perbaikan Sarana (pola yang sama dengan Booking & ATK di atas) ---
 
-export function getKategoriKerusakanLabelMap(lang: Language): Record<KategoriKerusakan, string> {
-  return {
-    AC: w("kategoriKerusakan.AC", lang),
-    LISTRIK: w("kategoriKerusakan.LISTRIK", lang),
-    AIR: w("kategoriKerusakan.AIR", lang),
-    FURNITUR: w("kategoriKerusakan.FURNITUR", lang),
-    GEDUNG: w("kategoriKerusakan.GEDUNG", lang),
-    IT: w("kategoriKerusakan.IT", lang),
-    LAINNYA: w("kategoriKerusakan.LAINNYA", lang),
-  };
-}
+export const KATEGORI_KERUSAKAN_LABEL: Record<KategoriKerusakan, string> = {
+  AC: "AC / Pendingin",
+  LISTRIK: "Listrik",
+  AIR: "Air / Saluran",
+  FURNITUR: "Furnitur",
+  GEDUNG: "Gedung / Bangunan",
+  IT: "IT / Jaringan",
+  LAINNYA: "Lainnya",
+};
 
-export function getUrgensiLabelMap(lang: Language): Record<Urgensi, string> {
-  return {
-    RENDAH: w("urgensi.RENDAH", lang),
-    SEDANG: w("urgensi.SEDANG", lang),
-    TINGGI: w("urgensi.TINGGI", lang),
-  };
-}
+export const URGENSI_LABEL: Record<Urgensi, string> = {
+  RENDAH: "Rendah",
+  SEDANG: "Sedang",
+  TINGGI: "Tinggi",
+};
 
 // Kelas badge untuk tingkat urgensi - dipetakan ke badge status yang sudah ada di globals.css
 // supaya tidak perlu palet warna baru: tinggi = merah (rejected), sedang = oranye (on-approval),
@@ -522,11 +450,11 @@ export const URGENSI_BADGE_CLASS: Record<Urgensi, string> = {
   TINGGI: "badge-rejected",
 };
 
-export function saranaOriginActorLabel(item: PerbaikanSarana, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function saranaOriginActorLabel(item: PerbaikanSarana): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
 // Same rule as isBookingEditableByOrigin - mirrors the backend's
@@ -554,33 +482,29 @@ export function isSaranaExecutionActor(me: Me): boolean {
   return me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
-export function getExecutionStageLabelMap(lang: Language): Record<ExecutionStage, string> {
-  return {
-    MENUNGGU: w("executionStage.MENUNGGU", lang),
-    LOKASI_DICEK: w("executionStage.LOKASI_DICEK", lang),
-    GAMBAR_DIBUAT: w("executionStage.GAMBAR_DIBUAT", lang),
-    SELESAI: w("executionStage.SELESAI", lang),
-  };
-}
+export const EXECUTION_STAGE_LABEL: Record<ExecutionStage, string> = {
+  MENUNGGU: "Menunggu Eksekusi",
+  LOKASI_DICEK: "Lokasi Dicek",
+  GAMBAR_DIBUAT: "Gambar Dibuat",
+  SELESAI: "Selesai Dieksekusi",
+};
 
 // --- Archive / Permintaan Arsip (pola yang sama dengan Booking & ATK di atas) ---
 
-export function getArchiveKategoriLabelMap(lang: Language): Record<ArchiveKategori, string> {
-  return {
-    SOP: w("archiveKategori.SOP", lang),
-    SURAT: w("archiveKategori.SURAT", lang),
-    KONTRAK: w("archiveKategori.KONTRAK", lang),
-    LAPORAN: w("archiveKategori.LAPORAN", lang),
-    PANDUAN: w("archiveKategori.PANDUAN", lang),
-    LAINNYA: w("archiveKategori.LAINNYA", lang),
-  };
-}
+export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {
+  SOP: "SOP",
+  SURAT: "Surat",
+  KONTRAK: "Kontrak",
+  LAPORAN: "Laporan",
+  PANDUAN: "Panduan",
+  LAINNYA: "Lainnya",
+};
 
-export function arsipOriginActorLabel(item: PermintaanArsip, lang: Language): string {
-  if (item.createdByRole === "ADMIN_GA") return `${adminWord(lang)} ${generalAffairWord(lang)}`;
-  if (item.createdByRole === "APPROVAL_GA") return `${approvalWord(lang)} GA`;
-  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? approvalWord(lang) : adminWord(lang);
-  return `${tier} ${trackWord(item.departemen, lang)}`;
+export function arsipOriginActorLabel(item: PermintaanArsip): string {
+  if (item.createdByRole === "ADMIN_GA") return "Admin General Affair";
+  if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
+  const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
+  return `${tier} ${trackWord(item.departemen)}`;
 }
 
 // Same rule as isBookingEditableByOrigin - mirrors the backend's

@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
@@ -38,7 +37,6 @@ function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKen
 
 export default function VehicleBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
-  const { t } = useLanguage();
   const [form, setForm] = useState<BookingKendaraanCreatePayload>(emptyForm());
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
@@ -76,7 +74,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? `${t("word.admin")} ${t("word.generalAffair")}` : me.role === "APPROVAL_GA" ? `${t("word.approval")} ${t("word.generalAffair")}` : "");
+    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
 
@@ -103,7 +101,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
         jamMulai: form.isWholeDay ? null : form.jamMulai,
         jamSelesai: form.isWholeDay ? null : form.jamSelesai,
       });
-      showToast(t("vbk.toastVehicleBookingSavedDraft"));
+      showToast("Booking kendaraan berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -115,54 +113,54 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{t("vbk.formBookingKendaraanTitle")} {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Booking Kendaraan {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fk-nomor-pemesanan">{t("vbk.nomorPesananKendaraan")}</label>
+              <label htmlFor="fk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>
               <input type="text" id="fk-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
             {isGaActor && (
               <>
                 <div className="field">
-                  <label htmlFor="fk-divisi">{t("word.division")}</label>
+                  <label htmlFor="fk-divisi">Divisi</label>
                   <SearchableSelect
                     id="fk-divisi"
                     value={form.divisi || undefined}
                     onChange={(v) => setForm((f) => ({ ...f, divisi: v || undefined, departemen: undefined }))}
                     options={orgStructure?.divisi || []}
-                    placeholder={t("eks.pilihDivisi")}
+                    placeholder="Pilih Divisi"
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="fk-departemen">{t("word.department")}</label>
+                  <label htmlFor="fk-departemen">Departemen</label>
                   <SearchableSelect
                     id="fk-departemen"
                     disabled={!form.divisi}
                     value={form.departemen || undefined}
                     onChange={(v) => set("departemen", v || undefined)}
                     options={departemenOptions}
-                    placeholder={t("eks.pilihDepartemen")}
+                    placeholder="Pilih Departemen"
                   />
                 </div>
               </>
             )}
             <div className="field full">
-              <label htmlFor="fk-keperluan">{t("vbk.keperluan")}</label>
-              <input type="text" id="fk-keperluan" required placeholder={t("vbk.contohKunjungan")} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <label htmlFor="fk-keperluan">Keperluan</label>
+              <input type="text" id="fk-keperluan" required placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="fk-pic">{t("bk.pic")}</label>
-              <input type="text" id="fk-pic" required placeholder={t("vbk.namaPenanggungJawabPerjalanan")} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <label htmlFor="fk-pic">PIC</label>
+              <input type="text" id="fk-pic" required placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fk-tanggal">{t("common.date")}</label>
+              <label htmlFor="fk-tanggal">Tanggal</label>
               <input type="date" id="fk-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fk-penumpang">{t("vbk.jumlahPenumpang")}{selectedVehicle ? ` (${t("vbk.maksLabel")} ${selectedVehicle.kapasitas})` : ""}</label>
+              <label htmlFor="fk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -179,29 +177,29 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               />
             </div>
             <div className="field">
-              <label htmlFor="fk-jam-mulai">{t("bk.jamMulai")}</label>
+              <label htmlFor="fk-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="fk-jam-mulai"
                 disabled={form.isWholeDay}
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
               />
             </div>
             <div className="field">
-              <label htmlFor="fk-jam-selesai">{t("bk.jamSelesai")}</label>
+              <label htmlFor="fk-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="fk-jam-selesai"
                 disabled={form.isWholeDay}
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
               />
             </div>
             <div className="field full">
-              <label htmlFor="fk-sepanjang-hari">{t("bk.durasiOpsional")}</label>
+              <label htmlFor="fk-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="fk-sepanjang-hari"
@@ -214,11 +212,11 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                {t("bk.sepanjangHari")}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="fk-kendaraan">{t("vbk.kendaraan")}</label>
+              <label htmlFor="fk-kendaraan">Kendaraan</label>
               <SearchableSelect
                 id="fk-kendaraan"
                 value={form.namaKendaraan || undefined}
@@ -226,25 +224,25 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 options={vehicles.map((v) => v.nama)}
                 getLabel={(nama) => {
                   const v = vehicles.find((x) => x.nama === nama);
-                  return v ? `${v.nama} - ${v.platNomor} - ${t("vbk.supirLabel")}: ${v.supir}` : nama;
+                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
                 }}
-                placeholder={t("vbk.pilihKendaraan")}
+                placeholder="Pilih kendaraan"
               />
             </div>
             {selectedVehicle && (
               <div className="field full">
-                <label htmlFor="fk-supir">{t("vbk.supirLabel")}</label>
+                <label htmlFor="fk-supir">Supir</label>
                 <input type="text" id="fk-supir" disabled value={selectedVehicle.supir} />
               </div>
             )}
             <div className="field full">
-              <label htmlFor="fk-catatan">{t("common.notes")}</label>
-              <input type="text" id="fk-catatan" placeholder={t("bk.contohSegeraDiApprove")} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="fk-catatan">Catatan</label>
+              <input type="text" id="fk-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
           </div>
         </form>
       </div>

@@ -8,7 +8,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   canGaRescheduleKendaraan,
-  getBookingStatusLabelMap,
   isBookingOriginRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
@@ -17,7 +16,6 @@ import {
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraan, BookingStatus, VehicleOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -55,7 +53,6 @@ function VehicleBookingTransaksiPageInner() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { language, t } = useLanguage();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -177,10 +174,10 @@ function VehicleBookingTransaksiPageInner() {
   }
 
   function handleDelete(item: BookingKendaraan) {
-    confirm(t("vbk.confirmDeleteBooking"), async () => {
+    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
-        showToast(t("bk.toastBookingDeleted"));
+        showToast("Booking berhasil dihapus");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -218,84 +215,92 @@ function VehicleBookingTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-kendaraan-search">{t("bk.cariPesanan")}</label>
-            <input type="text" id="filter-kendaraan-search" placeholder={t("bk.noPesananPlaceholder")} value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-kendaraan-search">Cari Pesanan</label>
+            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
-            <label htmlFor="filter-kendaraan-bulan">{t("common.filterMonth")}</label>
+            <label htmlFor="filter-kendaraan-bulan">Filter Bulan</label>
             <input type="month" id="filter-kendaraan-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">{t("common.filter")}</label>
+            <label className="field-label-spacer">Filter</label>
             <button type="button" className="btn btn-secondary" id="filter-kendaraan-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              {t("common.allFilters")}
+              Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field">
-                  <label htmlFor="filter-kendaraan-tanggal">{t("bk.filterTanggal")}</label>
+                  <label htmlFor="filter-kendaraan-tanggal">Filter Tanggal</label>
                   <input type="date" id="filter-kendaraan-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-kendaraan-status">{t("common.status")}</label>
+                  <label htmlFor="filter-kendaraan-status">Status</label>
                   <SearchableSelect
                     id="filter-kendaraan-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
                     options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
-                    getLabel={(v) => (v === "REJECTED" ? t("word.rejected") : getBookingStatusLabelMap(language)[v as BookingStatus]) || v}
-                    clearLabel={t("common.allStatus")}
-                    placeholder={t("common.allStatus")}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                      CANCELLED: "Cancelled",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-kendaraan-vehicle">{t("vbk.kendaraan")}</label>
+                  <label htmlFor="filter-kendaraan-vehicle">Kendaraan</label>
                   <SearchableSelect
                     id="filter-kendaraan-vehicle"
                     value={filters.namaKendaraan}
                     onChange={(v) => updateFilter({ namaKendaraan: v })}
                     options={vehicles.map((v) => v.nama)}
-                    clearLabel={t("vbk.semuaKendaraan")}
-                    placeholder={t("vbk.semuaKendaraan")}
+                    clearLabel="Semua Kendaraan"
+                    placeholder="Semua Kendaraan"
                   />
                 </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-kendaraan-direktorat">{t("word.directorate")}</label>
+                      <label htmlFor="filter-kendaraan-direktorat">Direktorat</label>
                       <SearchableSelect
                         id="filter-kendaraan-direktorat"
                         value={filters.direktorat}
                         onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
                         options={orgStructure?.direktorat || []}
-                        clearLabel={t("common.allDirectorate")}
-                        placeholder={t("common.allDirectorate")}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-kendaraan-divisi">{t("word.division")}</label>
+                      <label htmlFor="filter-kendaraan-divisi">Divisi</label>
                       <SearchableSelect
                         id="filter-kendaraan-divisi"
                         value={filters.divisi}
                         onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
                         options={divisiOptions}
-                        clearLabel={t("common.allDivision")}
-                        placeholder={t("common.allDivision")}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-kendaraan-departemen">{t("word.department")}</label>
+                      <label htmlFor="filter-kendaraan-departemen">Departemen</label>
                       <SearchableSelect
                         id="filter-kendaraan-departemen"
                         value={filters.departemen}
                         onChange={(v) => updateFilter({ departemen: v })}
                         options={departemenOptions}
-                        clearLabel={t("common.allDepartment")}
-                        placeholder={t("common.allDepartment")}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
                       />
                     </div>
                   </>
@@ -304,12 +309,12 @@ function VehicleBookingTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>{t("bk.semuaPesanan")}</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
 
           <div className="toolbar-actions">
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + {t("nav.vehicleBooking")}
+                + Booking Kendaraan
               </button>
             )}
           </div>
@@ -319,17 +324,17 @@ function VehicleBookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>{t("common.rowNo")}</th><th>{t("bk.noPesananHeader")}</th><th>{t("bk.diajukanHeader")}</th><th>{t("vbk.keperluan")}</th><th>{t("bk.pic")}</th><th>{t("word.division")}</th><th>{t("word.department")}</th><th>{t("vbk.kendaraan")}</th><th>{t("vbk.jumlahPenumpang")}</th>
-                <th>{t("common.date")}</th><th>{t("bk.jamHeader")}</th><th>{t("common.notes")}</th><th>{t("common.status")}</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Keperluan</th><th>PIC</th><th>Divisi</th><th>Departemen</th><th>Kendaraan</th><th>Penumpang</th>
+                <th>Tanggal</th><th>Jam</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={13} className="table-empty">{t("common.loadingData")}</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
                 <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">{t("eks.noDataForFilter")}</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -355,7 +360,7 @@ function VehicleBookingTransaksiPageInner() {
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                            aria-label={t("common.chat")}
+                            aria-label="Chat"
                             onClick={() => setChatItem(item)}
                           >
                             <MessageSquare width="17" height="17" />
@@ -363,7 +368,7 @@ function VehicleBookingTransaksiPageInner() {
                               <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                             )}
                           </button>
-                          <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
                         </div>
@@ -379,19 +384,19 @@ function VehicleBookingTransaksiPageInner() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-kendaraan-limit">{t("common.show")}</label>
+              <label htmlFor="filter-kendaraan-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-kendaraan-limit"
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("bk.unitBooking")}`}
-                placeholder={`${filters.limit} ${t("bk.unitBooking")}`}
+                getLabel={(v) => `${v} booking`}
+                placeholder={`${filters.limit} booking`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {total} {t("bk.unitPesananCap")} · {t("common.page")} {filters.page} {t("common.ofTotal")} {totalPages}</span>
+            <span className="text-secondary">Total {total} Pesanan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (

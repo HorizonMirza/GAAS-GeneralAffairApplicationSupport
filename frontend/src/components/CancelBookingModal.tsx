@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
@@ -22,7 +21,6 @@ interface Props {
 // chain refusing a request) with its own fixed wording; Cancel is the origin/GA calling off a
 // request that was never refused by anyone.
 export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone }: Props) {
-  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
@@ -47,7 +45,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     try {
       if (targetType === "room") await api.cancelBooking(targetId, reasonValue);
       else await api.cancelKendaraanBooking(targetId, reasonValue);
-      showToast(t("bk.toastBookingCancelled"));
+      showToast("Booking dibatalkan");
       reset();
       onDone();
     } catch (err) {
@@ -59,14 +57,14 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>{t("bk.cancelBookingTitle")}</h3>
+          <h3>Cancel Booking</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="field">
-          <label htmlFor="cancel-reason-input">{t("bk.alasanOpsional")}</label>
+          <label htmlFor="cancel-reason-input">Alasan (opsional)</label>
           <textarea
             id="cancel-reason-input"
-            placeholder={t("bk.contohAcaraDitunda")}
+            placeholder="Contoh: Acara ditunda"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             onKeyDown={(e) => {
@@ -82,7 +80,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
             onClick={handleConfirm}
           >
-            {t("common.cancelBtn")}
+            Cancel
           </button>
         </div>
       </div>

@@ -1,12 +1,11 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
-import { useLanguage } from "@/lib/i18n/language-context";
 import ModalOverlay from "../ModalOverlay";
 
 interface ConfirmState {
   message: string;
-  confirmLabel?: string;
+  confirmLabel: string;
   onConfirm: () => void;
 }
 
@@ -17,16 +16,14 @@ interface ConfirmContextValue {
 const ConfirmContext = createContext<ConfirmContextValue>({ confirm: () => {} });
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
-  const { t } = useLanguage();
   const [state, setState] = useState<ConfirmState | null>(null);
 
-  const confirm = useCallback((message: string, onConfirm: () => void, confirmLabel?: string) => {
+  const confirm = useCallback((message: string, onConfirm: () => void, confirmLabel = "Delete") => {
     setState({ message, onConfirm, confirmLabel });
   }, []);
 
   const close = () => setState(null);
-  const confirmLabel = state?.confirmLabel ?? t("common.delete");
-  const isApprove = confirmLabel.toLowerCase().includes("approve") || confirmLabel.toLowerCase().includes("setujui");
+  const isApprove = state?.confirmLabel.toLowerCase().includes("approve");
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>
@@ -34,7 +31,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       <ModalOverlay open={!!state} onClose={close} className={`modal-overlay modal-overlay-centered ${state ? "" : "hidden"}`}>
         <div className="modal" style={{ maxWidth: state?.message.includes("\n") ? 420 : 380 }}>
           <div className="modal-header">
-            <h3>{t("common.confirmation")}</h3>
+            <h3>Konfirmasi</h3>
             <button type="button" className="modal-close" onClick={close}>&times;</button>
           </div>
           <p style={{ margin: 0, color: "var(--text-secondary)", whiteSpace: "pre-line" }}>{state?.message}</p>
@@ -49,7 +46,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 onConfirm?.();
               }}
             >
-              {confirmLabel}
+              {state?.confirmLabel ?? "Delete"}
             </button>
           </div>
         </div>

@@ -7,15 +7,14 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   bookingOriginActorLabel,
   bookingRecurrenceLabel,
-  getRecurrenceFrequencyLabelMap,
   isBookingEditableByOrigin,
   isBookingGaActionable,
   MAX_JUMLAH_PESERTA,
+  RECURRENCE_FREQUENCY_LABELS,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
@@ -59,7 +58,6 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
 }
 
 export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
-  const { language, t } = useLanguage();
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -104,9 +102,9 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
       const successCount = results.filter((r) => r.success).length;
       const failCount = results.length - successCount;
       if (failCount === 0) {
-        showToast(`${successCount} ${t("bk.jadwalBerhasilDigeserSuffix")} ${bulkShift} ${t("bk.hariUnit")}`);
+        showToast(`${successCount} jadwal berhasil digeser ${bulkShift} hari`);
       } else {
-        showToast(`${successCount} ${t("bk.jadwalBerhasilDigeserSuffix")}, ${failCount} ${t("bk.masihBentrokSuffix")}`, "error");
+        showToast(`${successCount} jadwal berhasil digeser, ${failCount} masih bentrok/tidak bisa digeser`, "error");
       }
       onClose();
       onSaved();
@@ -144,7 +142,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   async function handleSubmitDraft() {
     try {
       const { detail } = await api.submitBooking(item!.id);
-      showToast(detail || t("bk.toastBookingSubmitted"));
+      showToast(detail || "Booking berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -156,7 +154,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     onClose();
     try {
       await api.approveBookingL1(item!.id);
-      showToast(t("bk.toastApprovedToAdminGa"));
+      showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -167,7 +165,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     onClose();
     try {
       await api.approveBookingGa(item!.id);
-      showToast(t("bk.toastApprovedToApprovalGa"));
+      showToast("Booking berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -178,7 +176,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     onClose();
     try {
       const { detail } = await api.approveBookingGaApproval(item!.id);
-      showToast(detail || t("bk.toastBookingConfirmed"));
+      showToast(detail || "Booking berhasil dikonfirmasi");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -189,7 +187,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     e.preventDefault();
     try {
       await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
-      showToast(form!.isRecurring ? t("bk.toastRecurringUpdated") : t("bk.toastBookingUpdated"));
+      showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -201,29 +199,29 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? t("bk.formBookingRuangTitle") : t("bk.detailBookingRuangTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Booking Ruang Meeting" : "Detail Booking Ruang Meeting"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid form-grid-compact">
             <div className="field full">
-              <label htmlFor="bv-nomor-pemesanan">{t("bk.nomorPesananRuangan")}</label>
+              <label htmlFor="bv-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="bv-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="bv-nama-kegiatan">{t("bk.namaKegiatan")}</label>
+              <label htmlFor="bv-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="bv-pic">{t("bk.pic")}</label>
+              <label htmlFor="bv-pic">PIC</label>
               <input type="text" id="bv-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="bv-tanggal">{t("common.date")}</label>
+              <label htmlFor="bv-tanggal">Tanggal</label>
               <input type="date" id="bv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="bv-peserta">{t("bk.jumlahPeserta")}</label>
+              <label htmlFor="bv-peserta">Jumlah Peserta</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -240,29 +238,29 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               />
             </div>
             <div className="field">
-              <label htmlFor="bv-jam-mulai">{t("bk.jamMulai")}</label>
+              <label htmlFor="bv-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="bv-jam-mulai"
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
                 disabled={!isEdit || form.isWholeDay}
               />
             </div>
             <div className="field">
-              <label htmlFor="bv-jam-selesai">{t("bk.jamSelesai")}</label>
+              <label htmlFor="bv-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="bv-jam-selesai"
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
                 disabled={!isEdit || form.isWholeDay}
               />
             </div>
             <div className="field full">
-              <label htmlFor="bv-sepanjang-hari">{t("bk.durasiOpsional")}</label>
+              <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="bv-sepanjang-hari"
@@ -276,23 +274,23 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                {t("bk.sepanjangHari")}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="bv-ruang">{t("bk.ruangan")}</label>
+              <label htmlFor="bv-ruang">Ruangan</label>
               <SearchableSelect
                 id="bv-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder={t("bk.pilihRuang")}
+                placeholder="Pilih ruang"
                 disabled={!isEdit}
               />
             </div>
             {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
               <div className="field full">
-                <label htmlFor="bv-ruang-tambahan">{t("bk.ruanganTambahan")}</label>
+                <label htmlFor="bv-ruang-tambahan">Ruangan Tambahan</label>
                 <RoomMultiSelect
                   id="bv-ruang-tambahan"
                   rooms={rooms}
@@ -304,14 +302,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </div>
             )}
             <div className="field full">
-              <label htmlFor="bv-tipe">{t("bk.tipe")}</label>
+              <label htmlFor="bv-tipe">Tipe</label>
               <SearchableSelect
                 id="bv-tipe"
                 value={form.tipe}
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
                 options={Object.keys(TIPE_BOOKING_LABELS)}
                 getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
-                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : t("bk.pilihTipe")}
+                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
                 disabled={!isEdit}
               />
             </div>
@@ -322,7 +320,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             {isEdit ? (
               <>
                 <div className="field full">
-                  <label htmlFor="bv-booking-berulang">{t("bk.pengulanganOpsional")}</label>
+                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
                   <button
                     type="button"
                     id="bv-booking-berulang"
@@ -335,24 +333,24 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                       )}
                     </span>
-                    {t("bk.bookingBerulang")}
+                    Booking Berulang
                   </button>
                 </div>
                 {form.isRecurring && (
                   <>
                     <div className="field">
-                      <label htmlFor="bv-recurrence-frequency">{t("bk.frekuensi")}</label>
+                      <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
                       <SearchableSelect
                         id="bv-recurrence-frequency"
                         value={form.recurrenceFrequency || undefined}
                         onChange={(v) => set("recurrenceFrequency", v as RecurrenceFrequency)}
                         options={RECURRENCE_OPTIONS}
-                        getLabel={(v) => getRecurrenceFrequencyLabelMap(language)[v as RecurrenceFrequency] || v}
-                        placeholder={t("bk.pilihFrekuensi")}
+                        getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
+                        placeholder="Pilih frekuensi"
                       />
                     </div>
                     <div className="field">
-                      <label htmlFor="bv-recurrence-end">{t("bk.berulangSampaiTanggal")}</label>
+                      <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
                       <input
                         type="date"
                         id="bv-recurrence-end"
@@ -368,60 +366,60 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             ) : item.seriesId && (
               <>
                 <div className="field full">
-                  <label htmlFor="bv-booking-berulang">{t("bk.pengulanganOpsional")}</label>
+                  <label htmlFor="bv-booking-berulang">Pengulangan (Opsional)</label>
                   <button type="button" id="bv-booking-berulang" className="field-toggle field-toggle-active field-toggle-disabled" aria-pressed disabled>
                     <span className="field-toggle-box">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </span>
-                    {t("bk.bookingBerulang")}
+                    Booking Berulang
                   </button>
                 </div>
                 <div className="field">
-                  <label htmlFor="bv-recurrence-frequency">{t("bk.frekuensi")}</label>
+                  <label htmlFor="bv-recurrence-frequency">Frekuensi</label>
                   <SearchableSelect
                     id="bv-recurrence-frequency"
                     value={item.recurrenceFrequency || undefined}
                     onChange={() => {}}
                     options={RECURRENCE_OPTIONS}
-                    getLabel={(v) => getRecurrenceFrequencyLabelMap(language)[v as RecurrenceFrequency] || v}
-                    placeholder={t("bk.pilihFrekuensi")}
+                    getLabel={(v) => RECURRENCE_FREQUENCY_LABELS[v as RecurrenceFrequency] || v}
+                    placeholder="Pilih frekuensi"
                     disabled
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="bv-recurrence-end">{t("bk.berulangSampaiTanggal")}</label>
+                  <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
                   <input type="date" id="bv-recurrence-end" disabled value={item.recurrenceEndDate || ""} />
                 </div>
               </>
             )}
             <div className="field full">
-              <label htmlFor="bv-catatan">{t("common.notes")}</label>
-              <input type="text" id="bv-catatan" disabled={!isEdit} placeholder={isEdit ? t("bk.contohSegeraDiApprove") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="bv-catatan">Catatan</label>
+              <input type="text" id="bv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
-          {bookingRecurrenceLabel(item, language) && (
+          {bookingRecurrenceLabel(item) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 4 }}>
-              <strong>{t("bk.pengulanganColon")}</strong> {t("bk.approveRejectSeriesNote")}
+              <strong>Pengulangan:</strong> Approve / Reject berlaku untuk seluruh pemesanan pada seri ini.
             </div>
           )}
 
           {!isEdit && item.hasConflict && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12, color: "#d64545" }}>
-              <strong>{t("bk.bentrokColon")}</strong> {t("bk.bentrokNote")}
+              <strong>Bentrok:</strong> Jadwal ini bentrok dengan booking lain yang sudah Approved. Gunakan &quot;Updates&quot; pada menu aksi untuk memindahkan.
               {item.seriesId && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                  <span>{t("bk.atauGeserSemuaJadwal")}</span>
+                  <span>Atau geser semua jadwal bentrok di seri ini</span>
                   <input
                     type="number"
                     value={bulkShift}
                     onChange={(e) => setBulkShift(Number(e.target.value))}
                     style={{ width: 56 }}
-                    title={t("bk.jumlahHariTitle")}
+                    title="Jumlah hari (boleh negatif untuk mundur)"
                   />
-                  <span>{t("bk.hariUnit")}</span>
+                  <span>hari</span>
                   <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "4px 10px" }} disabled={bulkBusy} onClick={handleBulkReschedule}>
-                    {bulkBusy ? t("bk.memproses") : t("bk.geserSemua")}
+                    {bulkBusy ? "Memproses..." : "Geser Semua"}
                   </button>
                 </div>
               )}
@@ -430,41 +428,41 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>{t("bk.diajukanColon")}</strong> {formatDateTime(item.createdAt)}
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+              <strong>Catatan Penolakan:</strong> {item.rejectReason}
             </div>
           )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.submit")}</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Submit</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-l1", bookingOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-l1", bookingOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga", bookingOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga", bookingOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga-approval", bookingOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga-approval", bookingOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
           </div>
         </form>

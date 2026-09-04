@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { RejectTarget } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -49,7 +48,6 @@ const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu"];
 const GA_ORIGIN_COLLAPSIBLE: RejectType[] = ["ga-approval", "kpu"];
 
 export default function RejectModal({ open, targetId, targetType, originLabel, createdByRole, onClose, onDone }: Props) {
-  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const [target, setTarget] = useState<RejectTarget | "">("");
   const [error, setError] = useState("");
@@ -78,61 +76,60 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
     if (targetId == null || !targetType) return;
     const reasonValue = reason.trim() || null;
     if (needsTarget && !target) {
-      setError(t("reject.errChooseTarget"));
+      setError("Pilih tujuan pengembalian data terlebih dahulu.");
       return;
     }
     const effectiveTarget: RejectTarget | "" = skipChoice ? "ORIGIN" : target;
-    const adminGaLabel = `${t("word.admin")} ${t("word.generalAffair")}`;
     try {
-      let message = `${t("reject.dataReturnedTo")} ${originLabel}`;
+      let message = `Data ditolak, dikembalikan ke ${originLabel}`;
       if (targetType === "l1") {
         await api.rejectL1(targetId, reasonValue);
       } else if (targetType === "ga") {
         await api.rejectGa(targetId, reasonValue);
       } else if (targetType === "ga-approval") {
         await api.rejectGaApproval(targetId, reasonValue, effectiveTarget as RejectTarget);
-        message = effectiveTarget === "GA" ? `${t("reject.dataReturnedTo")} ${adminGaLabel}` : `${t("reject.dataReturnedTo")} ${originLabel}`;
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin General Affair" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "kpu") {
         await api.rejectKpu(targetId, reasonValue, effectiveTarget as RejectTarget);
-        message = effectiveTarget === "GA" ? `${t("reject.dataReturnedTo")} ${adminGaLabel}` : `${t("reject.dataReturnedTo")} ${originLabel}`;
+        message = effectiveTarget === "GA" ? "Data ditolak, dikembalikan ke Admin General Affair" : `Data ditolak, dikembalikan ke ${originLabel}`;
       } else if (targetType === "booking-l1") {
         await api.rejectBookingL1(targetId, reasonValue);
       } else if (targetType === "booking-ga") {
         await api.rejectBookingGa(targetId, reasonValue);
       } else if (targetType === "booking-ga-approval") {
         await api.rejectBookingGaApproval(targetId, reasonValue);
-        message = t("reject.bookingRejected");
+        message = "Booking ditolak";
       } else if (targetType === "kendaraan-l1") {
         await api.rejectKendaraanL1(targetId, reasonValue);
       } else if (targetType === "kendaraan-ga") {
         await api.rejectKendaraanGa(targetId, reasonValue);
       } else if (targetType === "kendaraan-ga-approval") {
         await api.rejectKendaraanGaApproval(targetId, reasonValue);
-        message = t("reject.bookingRejected");
+        message = "Booking ditolak";
       } else if (targetType === "atk-l1") {
         await api.rejectAtkL1(targetId, reasonValue);
       } else if (targetType === "atk-ga") {
         await api.rejectAtkGa(targetId, reasonValue);
       } else if (targetType === "atk-ga-approval") {
         await api.rejectAtkGaApproval(targetId, reasonValue);
-        message = t("reject.requestRejected");
+        message = "Permintaan ditolak";
       } else if (targetType === "atk-kpu") {
         await api.rejectAtkKpu(targetId, reasonValue);
-        message = t("reject.requestRejected");
+        message = "Permintaan ditolak";
       } else if (targetType === "sarana-l1") {
         await api.rejectSaranaL1(targetId, reasonValue);
       } else if (targetType === "sarana-ga") {
         await api.rejectSaranaGa(targetId, reasonValue);
       } else if (targetType === "sarana-ga-approval") {
         await api.rejectSaranaGaApproval(targetId, reasonValue);
-        message = t("reject.reportRejected");
+        message = "Laporan ditolak";
       } else if (targetType === "arsip-l1") {
         await api.rejectArsipL1(targetId, reasonValue);
       } else if (targetType === "arsip-ga") {
         await api.rejectArsipGa(targetId, reasonValue);
       } else {
         await api.rejectArsipGaApproval(targetId, reasonValue);
-        message = t("reject.archiveRequestRejected");
+        message = "Permintaan arsip ditolak";
       }
       showToast(message);
       reset();
@@ -146,29 +143,29 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>{t("reject.title")}</h3>
+          <h3>Reject Data</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         {needsTarget && (
           <div className="field">
-            <label>{t("reject.returnTo")}</label>
+            <label>Kembalikan data ke</label>
             <div className="reject-target-options">
               <label className={`reject-target-option ${target === "GA" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="GA" checked={target === "GA"} onChange={() => setTarget("GA")} />
-                <span>{t("word.admin")} {t("word.generalAffair")}</span>
+                <span>Admin General Affair</span>
               </label>
               <label className={`reject-target-option ${target === "ORIGIN" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="ORIGIN" checked={target === "ORIGIN"} onChange={() => setTarget("ORIGIN")} />
-                <span>{originLabel} {t("reject.creatorSuffix")}</span>
+                <span>{originLabel} (pembuat data)</span>
               </label>
             </div>
           </div>
         )}
         <div className="field">
-          <label htmlFor="reject-reason-input">{t("reject.reasonLabel")}</label>
+          <label htmlFor="reject-reason-input">Alasan (opsional)</label>
           <textarea
             id="reject-reason-input"
-            placeholder={t("reject.reasonPlaceholder")}
+            placeholder="Contoh: Barang fisik tidak ditemukan"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             onKeyDown={(e) => {
@@ -184,7 +181,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
             onClick={handleConfirm}
           >
-            {t("common.reject")}
+            Reject
           </button>
         </div>
       </div>

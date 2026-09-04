@@ -2,9 +2,6 @@
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { formatDateTime } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n/language-context";
-import type { Language } from "@/lib/i18n/language-context";
-import { translations } from "@/lib/i18n/translations";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 
 export type CalendarViewMode = "day" | "week" | "month" | "avail";
@@ -18,12 +15,11 @@ const MAX_VISIBLE_COLS_WEEK = 3;
 // rooms fit side by side), so a slot with several competing bookings gets capped tighter: 1 real
 // block + an overflow chip once there's more than one.
 const MAX_VISIBLE_COLS_AVAIL = 2;
-const MONTH_KEYS = ["month.0", "month.1", "month.2", "month.3", "month.4", "month.5", "month.6", "month.7", "month.8", "month.9", "month.10", "month.11"];
-const DAY_KEYS = ["day.0", "day.1", "day.2", "day.3", "day.4", "day.5", "day.6"];
-
-function tr(key: string, lang: Language): string {
-  return translations[lang][key] ?? key;
-}
+const MONTH_NAMES_SHORT = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -213,20 +209,20 @@ function buildDayPlan(dateEntries: BookingRuang[], maxCols?: number): Map<number
   return hourMap;
 }
 
-export function formatPeriodLabel(view: CalendarViewMode, refDate: string, lang: Language = "id"): string {
+export function formatPeriodLabel(view: CalendarViewMode, refDate: string): string {
   const d = new Date(refDate + "T00:00:00");
   if (view === "day") {
-    return `${tr(DAY_KEYS[d.getDay()], lang)}, ${d.getDate()} ${tr(MONTH_KEYS[d.getMonth()], lang)} ${d.getFullYear()}`;
+    return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
   }
   if (view === "week") {
     const mon = new Date(mondayOf(refDate) + "T00:00:00");
     const fri = new Date(addDays(mondayOf(refDate), 4) + "T00:00:00");
     if (mon.getMonth() === fri.getMonth()) {
-      return `${mon.getDate()} - ${fri.getDate()} ${tr(MONTH_KEYS[mon.getMonth()], lang)} ${mon.getFullYear()}`;
+      return `${mon.getDate()} - ${fri.getDate()} ${MONTH_NAMES_SHORT[mon.getMonth()]} ${mon.getFullYear()}`;
     }
-    return `${mon.getDate()} ${tr(MONTH_KEYS[mon.getMonth()], lang)} - ${fri.getDate()} ${tr(MONTH_KEYS[fri.getMonth()], lang)} ${fri.getFullYear()}`;
+    return `${mon.getDate()} ${MONTH_NAMES_SHORT[mon.getMonth()]} - ${fri.getDate()} ${MONTH_NAMES_SHORT[fri.getMonth()]} ${fri.getFullYear()}`;
   }
-  return `${tr(MONTH_KEYS[d.getMonth()], lang)} ${d.getFullYear()}`;
+  return `${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 interface DragState {
@@ -261,7 +257,6 @@ interface Props {
 }
 
 export default function RoomCalendarView({ view, refDate, entries, canCreate, onSlotSelect, onEntryMenuClick, onJumpToDay, rooms, onJumpToRoom }: Props) {
-  const { language, t } = useLanguage();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{ columnKey: string; start: number; end: number; additionalRooms?: string[] } | null>(null);
   const isDragging = drag !== null;
@@ -417,8 +412,8 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         <table className="data-table schedule-table">
           <thead>
             <tr>
-              <th className="schedule-time-col schedule-th-center">{t("bk.jamHeader")}</th>
-              <th className="schedule-th-center" ref={nowLineColRef}>{formatPeriodLabel("day", refDate, language)}</th>
+              <th className="schedule-time-col schedule-th-center">Jam</th>
+              <th className="schedule-th-center" ref={nowLineColRef}>{formatPeriodLabel("day", refDate)}</th>
             </tr>
           </thead>
           <tbody>
@@ -464,7 +459,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         <table className="data-table schedule-table">
           <thead>
             <tr>
-              <th className="schedule-time-col schedule-th-center">{t("bk.jamHeader")}</th>
+              <th className="schedule-time-col schedule-th-center">Jam</th>
               {weekDates.map((date) => {
                 const d = new Date(date + "T00:00:00");
                 const isToday = date === todayIso();
@@ -475,7 +470,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                     className={`schedule-week-head schedule-th-center${isToday ? " schedule-week-head-today" : ""}`}
                     onClick={() => onJumpToDay(date)}
                   >
-                    {t(DAY_KEYS[d.getDay()])} <span className="text-secondary">{String(d.getDate()).padStart(2, "0")}</span>
+                    {DAY_NAMES[d.getDay()]} <span className="text-secondary">{String(d.getDate()).padStart(2, "0")}</span>
                   </th>
                 );
               })}
@@ -530,7 +525,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
         <table className="data-table schedule-table">
           <thead>
             <tr>
-              <th className="schedule-time-col schedule-th-center">{t("bk.jamHeader")}</th>
+              <th className="schedule-time-col schedule-th-center">Jam</th>
               {roomList.map((r, idx) => (
                 <th
                   key={r.nama}
@@ -629,7 +624,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   return (
     <div className="month-grid">
       <div className="month-grid-weekdays">
-        {DAY_KEYS.slice(1).concat(DAY_KEYS[0]).map((k) => <span key={k}>{t(k)}</span>)}
+        {DAY_NAMES.slice(1).concat(DAY_NAMES[0]).map((n) => <span key={n}>{n}</span>)}
       </div>
       <div className="month-grid-body">
         {weeks.map((week, wi) => (
@@ -654,12 +649,12 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                         className={`month-event-chip ${scheduleCellStatusClass(entry.status)}`}
                         onClick={(e) => onEntryMenuClick(e, entry)}
                       >
-                        {entry.isWholeDay ? t("bk.sepanjangHari") : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}
+                        {entry.isWholeDay ? "Sepanjang Hari" : entry.jamMulai?.slice(0, 5)} {entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}
                       </button>
                     ))}
                     {dayEntries.length > 2 && (
                       <button type="button" className="month-event-more" onClick={() => onJumpToDay(c.iso)}>
-                        +{dayEntries.length - 2} {t("bk.lainnyaSuffix")}
+                        +{dayEntries.length - 2} lainnya
                       </button>
                     )}
                   </div>
@@ -674,10 +669,9 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
 }
 
 function ClosedNotice() {
-  const { t } = useLanguage();
   return (
     <div className="schedule-closed-notice">
-      {t("bk.closedNotice")}
+      Ruang Meeting tutup pada hari sabtu dan minggu. Ruang Meeting tersedia pada hari Senin - Jumat, 07:00 - 18:00.
     </div>
   );
 }
@@ -707,7 +701,6 @@ function DayCell({
   // uncontested booking never shows this line either way (see the colCount > 1 check below).
   hideMeta?: boolean;
 }) {
-  const { t } = useLanguage();
   if (!cell || cell.type === "skip") return null;
 
   if (cell.type === "empty") {
@@ -740,7 +733,7 @@ function DayCell({
               }}
               onClick={() => onJumpToDay(date)}
             >
-              +{item.entries.length} {t("bk.lainnyaSuffix")}
+              +{item.entries.length} lainnya
             </div>
           );
         }
@@ -754,7 +747,7 @@ function DayCell({
         const isShort = endHour - startHour <= 1;
         // No spaces around the dash - every character counts to keep the full range on one line
         // inside Mingguan's narrow, capped-width columns (see MAX_VISIBLE_COLS_WEEK).
-        const timeLabel = entry.isWholeDay ? t("bk.sepanjangHari") : `${entry.jamMulai?.slice(0, 5)}-${entry.jamSelesai?.slice(0, 5)}`;
+        const timeLabel = entry.isWholeDay ? "Sepanjang Hari" : `${entry.jamMulai?.slice(0, 5)}-${entry.jamSelesai?.slice(0, 5)}`;
         return (
           <div
             key={entry.id}
@@ -771,19 +764,19 @@ function DayCell({
               <div className="schedule-cell-title-oneline">
                 <span className="schedule-cell-title-inline">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</span>
                 {" · "}
-                {timeLabel}{entry.status === "DRAFT" ? ` · ${t("word.draft")}` : ""}
+                {timeLabel}{entry.status === "DRAFT" ? " · Draft" : ""}
               </div>
             ) : (
               <>
                 <div className="schedule-cell-title">{entry.namaKegiatan}{entry.hasConflict ? " ⚠" : ""}</div>
                 <div className="schedule-cell-time">
                   {timeLabel}
-                  {entry.status === "DRAFT" ? ` · ${t("word.draft")}` : ""}
+                  {entry.status === "DRAFT" ? " · Draft" : ""}
                 </div>
               </>
             )}
             {colCount > 1 && !hideMeta && entry.status !== "DRAFT" && (
-              <div className="schedule-cell-meta">{t("bk.diajukanColon")} {formatDateTime(entry.createdAt)}</div>
+              <div className="schedule-cell-meta">Diajukan: {formatDateTime(entry.createdAt)}</div>
             )}
           </div>
         );

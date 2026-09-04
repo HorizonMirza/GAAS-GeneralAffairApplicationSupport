@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import { SmokeyBackground } from "@/components/SmokeyBackground";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +32,7 @@ export default function LoginPage() {
     } catch (err) {
       const status = (err as { status?: number }).status;
       const message = (err as Error).message;
-      setError(status === 401 ? t("login.invalidCredentials") : message || t("login.failed"));
+      setError(status === 401 ? "Invalid username or password" : message || "Login failed");
       setPassword("");
     } finally {
       setSubmitting(false);
@@ -58,7 +56,7 @@ export default function LoginPage() {
 
         <div className="login-glass-card">
           <div className="login-brand">
-            <h1>{t("login.login")}</h1>
+            <h1>Login</h1>
           </div>
 
           <div className={`alert-error ${error ? "alert-error-visible" : ""}`}>
@@ -68,7 +66,7 @@ export default function LoginPage() {
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             <div className="alert-error-text">
-              <strong>{t("login.error")}</strong>
+              <strong>Error</strong>
               <span>{error}</span>
             </div>
           </div>
@@ -90,7 +88,7 @@ export default function LoginPage() {
               />
               <label htmlFor="username">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
-                {t("login.username")}
+                Username
               </label>
             </div>
 
@@ -109,12 +107,12 @@ export default function LoginPage() {
               />
               <label htmlFor="password">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                {t("login.password")}
+                Password
               </label>
               <button
                 type="button"
                 className="password-toggle"
-                aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword((v) => !v)}
               >
                 {showPassword ? (
@@ -126,17 +124,17 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop: 30 }}>
-              {submitting ? t("login.loggingIn") : t("login.login")}
+              {submitting ? "Logging in..." : "Login"}
             </button>
           </form>
 
-          <div className="login-divider"><span>{t("login.orContinueWith")}</span></div>
+          <div className="login-divider"><span>OR CONTINUE WITH</span></div>
 
           <button
             type="button"
             className="btn btn-azure"
             disabled
-            title={t("login.azureDisabledTitle")}
+            title="Login dengan Azure AD belum aktif - gunakan akun GAAS Anda untuk sementara"
           >
             <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true">
               <rect x="1" y="1" width="9" height="9" fill="#f25022" />
@@ -144,8 +142,8 @@ export default function LoginPage() {
               <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
               <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
             </svg>
-            {t("login.loginWithAzure")}
-            <span className="btn-azure-badge">{t("login.comingSoon")}</span>
+            Login with Azure
+            <span className="btn-azure-badge">Coming soon</span>
           </button>
         </div>
       </div>

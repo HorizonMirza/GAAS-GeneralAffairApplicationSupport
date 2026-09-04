@@ -1,18 +1,16 @@
 import { trackWord } from "@/lib/constants";
-import { useLanguage } from "@/lib/i18n/language-context";
-import type { Language } from "@/lib/i18n/language-context";
 import type { Pengiriman, RejectTarget, Role, Status } from "@/lib/types";
 
 const FLOW_DURATION = 1.8;
 
-function buildSteps(departemen: Pengiriman["departemen"], lang: Language, t: (key: string) => string) {
-  const track = trackWord(departemen, lang);
+function buildSteps(departemen: Pengiriman["departemen"]) {
+  const track = trackWord(departemen);
   return [
-    { label: `${t("word.admin")} ${track}` },
-    { label: `${t("word.approval")} ${track}` },
-    { label: `${t("word.admin")} ${t("word.generalAffair")}` },
-    { label: `${t("word.approval")} GA` },
-    { label: t("word.partner") },
+    { label: `Admin ${track}` },
+    { label: `Approval ${track}` },
+    { label: "Admin General Affair" },
+    { label: "Approval GA" },
+    { label: "Mitra" },
   ];
 }
 
@@ -77,12 +75,11 @@ export default function Stepper({
   rejectTarget?: Pengiriman["rejectTarget"];
   createdByRole?: Role;
 }) {
-  const { language, t } = useLanguage();
   const currentIdx = PROGRESS[status] ?? 0;
   const rejectAt = REJECTED_IDX[status];
   const originIdx = originIdxForRole(createdByRole);
   const rejectFrom = rejectAt != null ? rejectStartIdx(status, rejectTarget, originIdx) : null;
-  const steps = buildSteps(departemen, language, t);
+  const steps = buildSteps(departemen);
 
   return (
     <div className="stepper">

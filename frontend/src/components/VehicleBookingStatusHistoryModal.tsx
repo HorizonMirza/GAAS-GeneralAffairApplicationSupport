@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraanLog } from "@/lib/types";
 import ApprovalLog from "./ApprovalLog";
 import ModalOverlay from "./ModalOverlay";
@@ -14,7 +13,6 @@ interface Props {
 }
 
 export default function VehicleBookingStatusHistoryModal({ open, itemId, onClose }: Props) {
-  const { t } = useLanguage();
   const [logs, setLogs] = useState<BookingKendaraanLog[] | null>(null);
   const [error, setError] = useState("");
 
@@ -34,18 +32,18 @@ export default function VehicleBookingStatusHistoryModal({ open, itemId, onClose
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal">
         <div className="modal-header">
-          <h3>{t("history.title")}</h3>
+          <h3>Riwayat Approval</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <div style={{ marginTop: 16 }}>
           {error ? (
-            <p className="text-secondary" style={{ textAlign: "center", padding: "16px 0" }}>{t("history.loadFailed")}: {error}</p>
+            <p className="text-secondary" style={{ textAlign: "center", padding: "16px 0" }}>Gagal memuat riwayat: {error}</p>
           ) : (
             <ApprovalLog logs={logs} />
           )}
         </div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose}>{t("common.close")}</button>
+          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose}>Tutup</button>
         </div>
       </div>
     </ModalOverlay>

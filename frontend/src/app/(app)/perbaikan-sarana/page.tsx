@@ -1,5 +1,5 @@
 import ModulePlaceholder from "@/components/ModulePlaceholder";
 
 export default function PerbaikanSaranaPage() {
-  return <ModulePlaceholder moduleNameKey="common.modulePerbaikanSaranaPrasarana" />;
+  return <ModulePlaceholder moduleName="Perbaikan Sarana dan Prasarana" />;
 }

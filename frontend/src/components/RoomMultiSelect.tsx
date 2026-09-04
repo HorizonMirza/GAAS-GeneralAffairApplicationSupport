@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { useClickOutside } from "@/lib/useClickOutside";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { RoomOption } from "@/lib/types";
 
 interface Props {
@@ -22,13 +21,12 @@ interface Props {
 // as the toolbar's "Semua Filter" dropdown (.filter-dropdown-panel), so picking from a long room
 // list stays compact regardless of how many rooms are selected.
 export default function RoomMultiSelect({ id, rooms, excludeRoom, selected, onChange, disabled, readOnly }: Props) {
-  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([wrapRef], () => setOpen(false), open);
 
   const options = rooms.filter((r) => r.nama !== excludeRoom);
-  const summary = selected.length === 0 ? (readOnly ? t("bk.noRuanganTambahan") : t("bk.pilihRuanganTambahan")) : selected.join(", ");
+  const summary = selected.length === 0 ? (readOnly ? "Tidak ada ruangan tambahan" : "Pilih ruangan tambahan") : selected.join(", ");
 
   function toggle(nama: string) {
     onChange(selected.includes(nama) ? selected.filter((r) => r !== nama) : [...selected, nama]);
@@ -51,14 +49,14 @@ export default function RoomMultiSelect({ id, rooms, excludeRoom, selected, onCh
         <div className="room-multiselect-panel">
           {readOnly ? (
             selected.length === 0 ? (
-              <div className="text-secondary" style={{ fontSize: "0.85rem", padding: "8px 10px" }}>{t("bk.noRuanganTambahan")}</div>
+              <div className="text-secondary" style={{ fontSize: "0.85rem", padding: "8px 10px" }}>Tidak ada ruangan tambahan</div>
             ) : (
               selected.map((nama) => (
                 <div key={nama} className="room-multiselect-option" style={{ cursor: "default" }}>{nama}</div>
               ))
             )
           ) : options.length === 0 ? (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", padding: "8px 10px" }}>{t("bk.noRuanganLain")}</div>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", padding: "8px 10px" }}>Tidak ada ruangan lain</div>
           ) : (
             options.map((r) => (
               <label key={r.nama} className="room-multiselect-option">

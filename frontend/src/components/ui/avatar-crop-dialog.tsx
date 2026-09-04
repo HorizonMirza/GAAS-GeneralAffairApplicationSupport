@@ -4,9 +4,6 @@ import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useLanguage } from "@/lib/i18n/language-context";
-import { translations } from "@/lib/i18n/translations";
-import type { Language } from "@/lib/i18n/language-context";
 
 // The backend re-encodes every upload itself (resized to 512px, JPEG quality 85 - see
 // ProfileController.NormalizeImageAsync), so this crop step only needs to hand it clean pixels,
@@ -16,12 +13,11 @@ import type { Language } from "@/lib/i18n/language-context";
 // into an oversized PNG for no visual benefit.
 const CROP_OUTPUT_MAX = 1024;
 
-async function getCroppedBlob(imageSrc: string, area: Area, lang: Language): Promise<Blob> {
-  const t = (key: string) => translations[lang][key] ?? key;
+async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
   const image = new Image();
   await new Promise<void>((resolve, reject) => {
     image.onload = () => resolve();
-    image.onerror = () => reject(new Error(t("profile.errGagalMemuatGambar")));
+    image.onerror = () => reject(new Error("Gagal memuat gambar"));
     image.src = imageSrc;
   });
 
@@ -30,11 +26,11 @@ async function getCroppedBlob(imageSrc: string, area: Area, lang: Language): Pro
   canvas.width = outputSize;
   canvas.height = outputSize;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error(t("profile.errBrowserTidakMendukung"));
+  if (!ctx) throw new Error("Browser tidak mendukung pemrosesan gambar");
   ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, outputSize, outputSize);
 
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error(t("profile.errGagalMemprosesGambar")))), "image/png");
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Gagal memproses gambar"))), "image/png");
   });
 }
 
@@ -46,7 +42,6 @@ export interface AvatarCropDialogProps {
 }
 
 export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: AvatarCropDialogProps) {
-  const { language, t } = useLanguage();
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -60,7 +55,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
     if (!imageSrc || !croppedAreaPixels) return;
     setProcessing(true);
     try {
-      const blob = await getCroppedBlob(imageSrc, croppedAreaPixels, language);
+      const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
       onConfirm(blob);
     } catch {
       setProcessing(false);
@@ -73,7 +68,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
     <Dialog open={!!imageSrc} onOpenChange={(open) => !open && !busy && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("profile.sesuaikanFotoProfil")}</DialogTitle>
+          <DialogTitle>Sesuaikan Foto Profil</DialogTitle>
         </DialogHeader>
 
         {imageSrc && (
@@ -93,7 +88,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
         )}
 
         <div className="field">
-          <label htmlFor="avatar-crop-zoom">{t("profile.perbesar")}</label>
+          <label htmlFor="avatar-crop-zoom">Perbesar</label>
           <input
             id="avatar-crop-zoom"
             type="range"
@@ -113,7 +108,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
             disabled={busy || !croppedAreaPixels}
             onClick={handleConfirm}
           >
-            {busy ? t("common.saving") : t("common.save")}
+            {busy ? "Menyimpan..." : "Simpan"}
           </button>
         </DialogFooter>
       </DialogContent>

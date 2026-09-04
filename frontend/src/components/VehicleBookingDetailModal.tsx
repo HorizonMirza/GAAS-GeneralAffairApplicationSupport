@@ -11,7 +11,6 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
@@ -48,7 +47,6 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
 }
 
 export default function VehicleBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
-  const { language, t } = useLanguage();
   const [form, setForm] = useState<BookingKendaraanCreatePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
@@ -99,7 +97,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   async function handleSubmitDraft() {
     try {
       await api.submitKendaraanBooking(item!.id);
-      showToast(t("bk.toastBookingSubmitted"));
+      showToast("Booking berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -111,7 +109,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     onClose();
     try {
       await api.approveKendaraanL1(item!.id);
-      showToast(t("bk.toastApprovedToAdminGa"));
+      showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -122,7 +120,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     onClose();
     try {
       await api.approveKendaraanGa(item!.id);
-      showToast(t("bk.toastApprovedToApprovalGa"));
+      showToast("Booking berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -133,7 +131,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     onClose();
     try {
       await api.approveKendaraanGaApproval(item!.id);
-      showToast(t("bk.toastBookingConfirmed"));
+      showToast("Booking berhasil dikonfirmasi");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -144,7 +142,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     e.preventDefault();
     try {
       await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
-      showToast(t("bk.toastBookingUpdated"));
+      showToast("Booking berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -156,29 +154,29 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? t("vbk.formBookingKendaraanTitle") : t("vbk.detailBookingKendaraanTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Booking Kendaraan" : "Detail Booking Kendaraan"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="bk-nomor-pemesanan">{t("vbk.nomorPesananKendaraan")}</label>
+              <label htmlFor="bk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>
               <input type="text" id="bk-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="bk-keperluan">{t("vbk.keperluan")}</label>
+              <label htmlFor="bk-keperluan">Keperluan</label>
               <input type="text" id="bk-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="bk-pic">{t("bk.pic")}</label>
+              <label htmlFor="bk-pic">PIC</label>
               <input type="text" id="bk-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="bk-tanggal">{t("common.date")}</label>
+              <label htmlFor="bk-tanggal">Tanggal</label>
               <input type="date" id="bk-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="bk-penumpang">{t("vbk.jumlahPenumpang")}{selectedVehicle ? ` (${t("vbk.maksLabel")} ${selectedVehicle.kapasitas})` : ""}</label>
+              <label htmlFor="bk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -196,29 +194,29 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               />
             </div>
             <div className="field">
-              <label htmlFor="bk-jam-mulai">{t("bk.jamMulai")}</label>
+              <label htmlFor="bk-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="bk-jam-mulai"
                 disabled={!isEdit || form.isWholeDay}
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
               />
             </div>
             <div className="field">
-              <label htmlFor="bk-jam-selesai">{t("bk.jamSelesai")}</label>
+              <label htmlFor="bk-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="bk-jam-selesai"
                 disabled={!isEdit || form.isWholeDay}
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
               />
             </div>
             <div className="field full">
-              <label htmlFor="bk-sepanjang-hari">{t("bk.durasiOpsional")}</label>
+              <label htmlFor="bk-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="bk-sepanjang-hari"
@@ -232,11 +230,11 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                {t("bk.sepanjangHari")}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="bk-kendaraan">{t("vbk.kendaraan")}</label>
+              <label htmlFor="bk-kendaraan">Kendaraan</label>
               <SearchableSelect
                 id="bk-kendaraan"
                 disabled={!isEdit}
@@ -245,58 +243,58 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 options={vehicles.map((v) => v.nama)}
                 getLabel={(nama) => {
                   const v = vehicles.find((x) => x.nama === nama);
-                  return v ? `${v.nama} - ${v.platNomor} - ${t("vbk.supirLabel")}: ${v.supir}` : nama;
+                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
                 }}
-                placeholder={t("vbk.pilihKendaraan")}
+                placeholder="Pilih kendaraan"
               />
             </div>
             <div className="field full">
-              <label htmlFor="bk-supir">{t("vbk.supirLabel")}</label>
+              <label htmlFor="bk-supir">Supir</label>
               <input type="text" id="bk-supir" disabled value={selectedVehicle?.supir ?? item.supir ?? ""} />
             </div>
             <div className="field full">
-              <label htmlFor="bk-catatan">{t("common.notes")}</label>
-              <input type="text" id="bk-catatan" disabled={!isEdit} placeholder={isEdit ? t("bk.contohSegeraDiApprove") : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="bk-catatan">Catatan</label>
+              <input type="text" id="bk-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>{t("bk.diajukanColon")}</strong> {formatDateTime(item.createdAt)}
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
 
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+              <strong>Catatan Penolakan:</strong> {item.rejectReason}
             </div>
           )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>{t("common.submit")}</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Submit</button>
             )}
             {canL1Act && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-l1", kendaraanOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-l1", kendaraanOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
               </>
             )}
             {canGaAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga", kendaraanOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga", kendaraanOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
               </>
             )}
             {canGaApprovalAct && (
               <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga-approval", kendaraanOriginActorLabel(item, language)); }}>{t("common.reject")}</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>{t("common.approve")}</button>
+                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga-approval", kendaraanOriginActorLabel(item)); }}>Reject</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
+              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
             )}
           </div>
         </form>

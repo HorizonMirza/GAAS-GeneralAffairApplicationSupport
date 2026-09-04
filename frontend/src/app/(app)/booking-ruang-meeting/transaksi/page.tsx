@@ -9,7 +9,6 @@ import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
   canGaRescheduleBooking,
-  getBookingStatusLabelMap,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
@@ -20,7 +19,6 @@ import {
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -62,7 +60,6 @@ function BookingTransaksiPageInner() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { language, t } = useLanguage();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -209,12 +206,12 @@ function BookingTransaksiPageInner() {
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
-      ? t("bk.confirmDeleteRecurring")
-      : t("bk.confirmDeleteBooking");
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
+      : "Hapus booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);
-        showToast(t("bk.toastBookingDeleted"));
+        showToast("Booking berhasil dihapus");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -254,84 +251,92 @@ function BookingTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-search">{t("bk.cariPesanan")}</label>
-            <input type="text" id="filter-search" placeholder={t("bk.noPesananPlaceholder")} value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-search">Cari Pesanan</label>
+            <input type="text" id="filter-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
-            <label htmlFor="filter-bulan">{t("common.filterMonth")}</label>
+            <label htmlFor="filter-bulan">Filter Bulan</label>
             <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">{t("common.filter")}</label>
+            <label className="field-label-spacer">Filter</label>
             <button type="button" className="btn btn-secondary" id="filter-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              {t("common.allFilters")}
+              Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field">
-                  <label htmlFor="filter-tanggal">{t("bk.filterTanggal")}</label>
+                  <label htmlFor="filter-tanggal">Filter Tanggal</label>
                   <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-status">{t("common.status")}</label>
+                  <label htmlFor="filter-status">Status</label>
                   <SearchableSelect
                     id="filter-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
                     options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
-                    getLabel={(v) => (v === "REJECTED" ? t("word.rejected") : getBookingStatusLabelMap(language)[v as BookingStatus]) || v}
-                    clearLabel={t("common.allStatus")}
-                    placeholder={t("common.allStatus")}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                      CANCELLED: "Cancelled",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-ruang">{t("bk.ruangLabel")}</label>
+                  <label htmlFor="filter-ruang">Ruang</label>
                   <SearchableSelect
                     id="filter-ruang"
                     value={filters.namaRuang}
                     onChange={(v) => updateFilter({ namaRuang: v })}
                     options={rooms.map((r) => r.nama)}
-                    clearLabel={t("bk.semuaRuang")}
-                    placeholder={t("bk.semuaRuang")}
+                    clearLabel="Semua Ruang"
+                    placeholder="Semua Ruang"
                   />
                 </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-direktorat">{t("word.directorate")}</label>
+                      <label htmlFor="filter-direktorat">Direktorat</label>
                       <SearchableSelect
                         id="filter-direktorat"
                         value={filters.direktorat}
                         onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
                         options={orgStructure?.direktorat || []}
-                        clearLabel={t("common.allDirectorate")}
-                        placeholder={t("common.allDirectorate")}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-divisi">{t("word.division")}</label>
+                      <label htmlFor="filter-divisi">Divisi</label>
                       <SearchableSelect
                         id="filter-divisi"
                         value={filters.divisi}
                         onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
                         options={divisiOptions}
-                        clearLabel={t("common.allDivision")}
-                        placeholder={t("common.allDivision")}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
                       />
                     </div>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                      <label htmlFor="filter-departemen">{t("word.department")}</label>
+                      <label htmlFor="filter-departemen">Departemen</label>
                       <SearchableSelect
                         id="filter-departemen"
                         value={filters.departemen}
                         onChange={(v) => updateFilter({ departemen: v })}
                         options={departemenOptions}
-                        clearLabel={t("common.allDepartment")}
-                        placeholder={t("common.allDepartment")}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
                       />
                     </div>
                   </>
@@ -340,18 +345,18 @@ function BookingTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>{t("bk.semuaPesanan")}</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.bookingExportPdfUrl(currentExportParams()), "_blank")}>
-              ⬇ {t("common.downloadPdf")}
+              ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.bookingExportUrl(currentExportParams()), "_blank")}>
-              ⬇ {t("eks.downloadExcel")}
+              ⬇ Download Excel
             </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + {t("nav.roomBooking")}
+                + Booking Ruang Meeting
               </button>
             )}
           </div>
@@ -361,17 +366,17 @@ function BookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>{t("common.rowNo")}</th><th>{t("bk.noPesananHeader")}</th><th>{t("bk.diajukanHeader")}</th><th>{t("common.date")}</th><th>{t("bk.jamHeader")}</th><th>{t("bk.namaKegiatan")}</th><th>{t("bk.pic")}</th><th>{t("bk.ruangan")}</th><th>{t("word.division")}</th><th>{t("word.department")}</th>
-                <th>{t("bk.tipe")}</th><th>{t("bk.pesertaHeader")}</th><th>{t("common.notes")}</th><th>{t("common.status")}</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruangan</th><th>Divisi</th><th>Departemen</th>
+                <th>Tipe</th><th>Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">{t("common.loadingData")}</td></tr>
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
                 <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">{t("eks.noDataForFilter")}</td></tr>
+                <tr><td colSpan={14} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -394,12 +399,12 @@ function BookingTransaksiPageInner() {
                         <div className="status-cell">
                           <span className="badge-stack">
                             <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
-                            {item.hasConflict && <span className="badge badge-rejected">{t("bk.bentrokBadge")}</span>}
+                            {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                           </span>
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                            aria-label={t("common.chat")}
+                            aria-label="Chat"
                             onClick={() => setChatItem(item)}
                           >
                             <MessageSquare width="17" height="17" />
@@ -407,7 +412,7 @@ function BookingTransaksiPageInner() {
                               <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                             )}
                           </button>
-                          <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                           </button>
                         </div>
@@ -423,19 +428,19 @@ function BookingTransaksiPageInner() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-limit">{t("common.show")}</label>
+              <label htmlFor="filter-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-limit"
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("bk.unitBooking")}`}
-                placeholder={`${filters.limit} ${t("bk.unitBooking")}`}
+                getLabel={(v) => `${v} booking`}
+                placeholder={`${filters.limit} booking`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {total} {t("bk.unitPesananCap")} · {t("common.page")} {filters.page} {t("common.ofTotal")} {totalPages}</span>
+            <span className="text-secondary">Total {total} Pesanan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (
@@ -488,7 +493,7 @@ function BookingTransaksiPageInner() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.bookingPdfUrl(item.id), `${t("bk.buktiFilePrefix")}-Booking-${item.nomorPemesanan || item.id}.pdf`);
+            await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

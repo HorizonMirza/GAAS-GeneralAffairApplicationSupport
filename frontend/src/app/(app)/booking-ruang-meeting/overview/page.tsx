@@ -20,7 +20,6 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
 
@@ -149,7 +148,6 @@ export default function BookingOverviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { t } = useLanguage();
 
   const [items, setItems] = useState<BookingRuang[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -234,12 +232,12 @@ export default function BookingOverviewPage() {
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
-      ? t("bk.confirmDeleteRecurring")
-      : t("bk.confirmDeleteBooking");
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
+      : "Hapus booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);
-        showToast(t("bk.toastBookingDeleted"));
+        showToast("Booking berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -253,7 +251,7 @@ export default function BookingOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + {t("nav.roomBooking")}
+            + Booking Ruang Meeting
           </button>
         )}
       </div>
@@ -266,15 +264,15 @@ export default function BookingOverviewPage() {
               : isRoomFullyBookedToday(r.nama, todayEntries)
               ? "full"
               : "available";
-            const availLabel = availability === "closed" ? t("bk.badgeClose") : availability === "full" ? t("bk.badgeFull") : t("bk.badgeAvailable");
+            const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
             const availTitle =
               availability === "closed"
                 ? isWeekendToday
-                  ? t("bk.closeWeekend")
-                  : t("bk.closeAfterHours")
+                  ? "Close (akhir pekan)"
+                  : "Close (di luar jam operasional)"
                 : availability === "full"
-                ? t("bk.fullToday")
-                : t("bk.availableToday");
+                ? "Full hari ini"
+                : "Available hari ini";
             return (
               <button
                 type="button"
@@ -295,7 +293,7 @@ export default function BookingOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>{t("bk.pesananTerbaruSaya")}</h3>
+        <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
           <SearchableSelect
             id="overview-status-filter"
@@ -303,22 +301,22 @@ export default function BookingOverviewPage() {
             onChange={(v) => setStatusFilter(v as StatusFilter)}
             options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED", "CANCELLED"]}
             getLabel={(v) => ({
-              ALL: t("common.allStatus"),
-              DRAFT: t("word.draft"),
-              ON_APPROVAL: t("word.onApproval"),
-              APPROVED: t("word.approved"),
-              REJECTED: t("word.rejected"),
-              CANCELLED: t("word.cancelled"),
+              ALL: "Semua Status",
+              DRAFT: "Draft",
+              ON_APPROVAL: "On-Approval",
+              APPROVED: "Approved",
+              REJECTED: "Rejected",
+              CANCELLED: "Cancelled",
             } as Record<string, string>)[v] || v}
-            placeholder={t("common.allStatus")}
+            placeholder="Semua Status"
           />
         </div>
       </div>
 
       {busy ? (
-        <p className="text-secondary">{t("common.loadingData")}</p>
+        <p className="text-secondary">Memuat data...</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">{t("common.noDataPeriod")}</div>
+        <div className="card table-empty">Tidak ada data.</div>
       ) : (
         filteredItems.map((item) => {
           const borderClass = bookingStatusBorderClass(item.status);
@@ -340,12 +338,12 @@ export default function BookingOverviewPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="badge-stack">
                     <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
-                    {item.hasConflict && <span className="badge badge-rejected">{t("bk.bentrokBadge")}</span>}
+                    {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                   </span>
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                    aria-label={t("common.chat")}
+                    aria-label="Chat"
                     onClick={(e) => { e.stopPropagation(); setChatItem(item); }}
                   >
                     <MessageSquare width="17" height="17" />
@@ -353,7 +351,7 @@ export default function BookingOverviewPage() {
                       <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
+                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -361,7 +359,7 @@ export default function BookingOverviewPage() {
               <RoomBookingStepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
                 </div>
               )}
             </div>
@@ -410,7 +408,7 @@ export default function BookingOverviewPage() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.bookingPdfUrl(item.id), `${t("bk.buktiFilePrefix")}-Booking-${item.nomorPemesanan || item.id}.pdf`);
+            await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }
@@ -442,27 +440,27 @@ export default function BookingOverviewPage() {
         open={!!infoRoom}
         nama={infoRoom?.nama ?? null}
         kapasitas={infoRoom?.kapasitas ?? null}
-        extraDetails={infoRoom ? [{ label: t("bk.lantai"), value: infoRoom.lantai ?? "-" }] : []}
+        extraDetails={infoRoom ? [{ label: "Lantai", value: infoRoom.lantai ?? "-" }] : []}
         facilities={infoRoom ? infoRoom.fasilitas ?? [] : []}
         photoUrls={infoRoom ? roomPhotoUrls(infoRoom.nama) : []}
         availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
         availLabel={
           infoRoom
             ? closedToday
-              ? t("bk.badgeClose")
+              ? "Close"
               : isRoomFullyBookedToday(infoRoom.nama, todayEntries)
-              ? t("bk.badgeFull")
-              : t("bk.badgeAvailable")
+              ? "Full"
+              : "Available"
             : ""
         }
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
-        closedLabel={closedToday ? (isWeekendToday ? t("bk.tutupWeekend") : t("bk.tutupAfterHours")) : undefined}
+        closedLabel={closedToday ? (isWeekendToday ? "Tutup (akhir pekan)" : "Tutup (di luar jam operasional)") : undefined}
         fullyOpenLabel={
           infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
-            ? t("bk.tersedia")
+            ? "Tersedia"
             : undefined
         }
-        bookLabel={isOrigin ? t("bk.bookingLabel") : t("bk.lihatKalender")}
+        bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}
         onClose={() => setInfoRoom(null)}
         onBook={() => {
           if (!infoRoom) return;

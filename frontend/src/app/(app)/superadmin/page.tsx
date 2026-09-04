@@ -4,9 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, getBookingStatusLabelMap, getInvoiceStatusLabelMap, getStatusLabelMap, INVOICE_STATUS_CLASS } from "@/lib/constants";
+import { bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -62,7 +61,6 @@ export default function SuperAdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { language, t } = useLanguage();
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -282,27 +280,27 @@ export default function SuperAdminPage() {
   }
 
   function handleDelete(item: Pengiriman) {
-    confirm(t("sa.confirmDeleteDataPermanent"), async () => {
+    confirm("Yakin ingin menghapus data ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.deleteCompleted(item.id);
-        showToast(t("sa.toastDataDeletedPermanent"));
+        showToast("Data berhasil dihapus permanen");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
       }
-    }, t("sa.deletePermanent"));
+    }, "Delete Permanent");
   }
 
   function handleDeleteInvoice(inv: Invoice) {
-    confirm(t("sa.confirmDeleteInvoicePermanent"), async () => {
+    confirm("Yakin ingin menghapus invoice ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.deleteInvoice(inv.id);
-        showToast(t("sa.toastInvoiceDeletedPermanent"));
+        showToast("Invoice berhasil dihapus permanen");
         loadInvoices();
       } catch (err) {
         showToast((err as Error).message, "error");
       }
-    }, t("sa.deletePermanent"));
+    }, "Delete Permanent");
   }
 
   function updateBookingFilter(patch: Partial<BookingFilterState>) {
@@ -319,15 +317,15 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteBooking(item: BookingRuang) {
-    confirm(t("sa.confirmDeleteRoomBookingPermanent"), async () => {
+    confirm("Yakin ingin menghapus booking ruang meeting ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteBooking(item.id);
-        showToast(t("sa.toastBookingDeletedPermanent"));
+        showToast("Booking berhasil dihapus permanen");
         loadBookings();
       } catch (err) {
         showToast((err as Error).message, "error");
       }
-    }, t("sa.deletePermanent"));
+    }, "Delete Permanent");
   }
 
   function updateKendaraanFilter(patch: Partial<KendaraanFilterState>) {
@@ -344,15 +342,15 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteKendaraanBooking(item: BookingKendaraan) {
-    confirm(t("sa.confirmDeleteVehicleBookingPermanent"), async () => {
+    confirm("Yakin ingin menghapus booking kendaraan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteKendaraanBooking(item.id);
-        showToast(t("sa.toastBookingDeletedPermanent"));
+        showToast("Booking berhasil dihapus permanen");
         loadKendaraanBookings();
       } catch (err) {
         showToast((err as Error).message, "error");
       }
-    }, t("sa.deletePermanent"));
+    }, "Delete Permanent");
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
@@ -410,95 +408,106 @@ export default function SuperAdminPage() {
     <>
       <DashboardStats me={me} />
 
-      <h2 style={{ margin: "24px 0 12px" }}>{t("nav.expedition")}</h2>
+      <h2 style={{ margin: "24px 0 12px" }}>Expedition</h2>
 
       <div className="card">
         <div className="toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-search">{t("common.searchTransaction")}</label>
-            <input type="text" id="filter-search" placeholder={t("eks.noTransmittalPlaceholder")} value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-search">Cari Transaksi</label>
+            <input type="text" id="filter-search" placeholder="No Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-bulan">{t("common.filterMonth")}</label>
+            <label htmlFor="filter-bulan">Filter Bulan</label>
             <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">{t("common.filter")}</label>
+            <label className="field-label-spacer">Filter</label>
             <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              {t("common.allFilters")}
+              Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field">
-                  <label htmlFor="filter-status">{t("common.status")}</label>
+                  <label htmlFor="filter-status">Status</label>
                   <SearchableSelect
                     id="filter-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as Status | "" })}
                     options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL", "REJECTED_KPU", "COMPLETED"]}
-                    getLabel={(v) => getStatusLabelMap(language)[v as Status] || v}
-                    clearLabel={t("common.allStatus")}
-                    placeholder={t("common.allStatus")}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      REJECTED_GA: "Rejected: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      REJECTED_KPU: "Rejected: Mitra",
+                      COMPLETED: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-direktorat">{t("word.directorate")}</label>
+                  <label htmlFor="filter-direktorat">Direktorat</label>
                   <SearchableSelect
                     id="filter-direktorat"
                     value={filters.direktorat}
                     onChange={(v) => updateFilter({ direktorat: v, divisi: "", departemen: "" })}
                     options={orgStructure?.direktorat || []}
-                    clearLabel={t("common.allDirectorate")}
-                    placeholder={t("common.allDirectorate")}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-divisi">{t("word.division")}</label>
+                  <label htmlFor="filter-divisi">Divisi</label>
                   <SearchableSelect
                     id="filter-divisi"
                     value={filters.divisi}
                     onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
                     options={divisiOptions}
-                    clearLabel={t("common.allDivision")}
-                    placeholder={t("common.allDivision")}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-departemen">{t("word.department")}</label>
+                  <label htmlFor="filter-departemen">Departemen</label>
                   <SearchableSelect
                     id="filter-departemen"
                     value={filters.departemen}
                     onChange={(v) => updateFilter({ departemen: v })}
                     options={departemenOptions}
-                    clearLabel={t("common.allDepartment")}
-                    placeholder={t("common.allDepartment")}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
                   />
                 </div>
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>{t("sa.hapusFilter")}</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
         </div>
 
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>{t("common.rowNo")}</th><th>{t("eks.noTransmittalPlaceholder")}</th><th>{t("eks.thNoResi")}</th><th>{t("common.date")}</th><th>{t("eks.tujuan")}</th><th>{t("eks.thItem")}</th><th>{t("word.division")}</th><th>{t("word.department")}</th>
-                <th>{t("eks.thPengirim")}</th><th>{t("eks.thTelpPengirim")}</th><th>{t("eks.thPenerima")}</th><th>{t("eks.thTelpPenerima")}</th>
-                <th>{t("eks.kodeProgram")}</th><th>{t("eks.asuransi")}</th><th>{t("eks.thPacking")}</th><th>{t("common.notes")}</th>
-                <th>{t("eks.thBeratKg")}</th><th>{t("eks.hargaOngkosKirim")}</th><th>{t("common.total")}</th><th>{t("common.status")}</th><th>{t("common.aksi")}</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
+                <th>Pengirim</th><th>Telp. Pengirim</th><th>Penerima</th><th>Telp. Penerima</th>
+                <th>Kode Program</th><th>Asuransi</th><th>Packing</th><th>Catatan</th>
+                <th>Berat (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={21} className="table-empty">{t("common.loadingData")}</td></tr>
+                <tr><td colSpan={21} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
                 <tr><td colSpan={21} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={21} className="table-empty">{t("eks.noDataForFilter")}</td></tr>
+                <tr><td colSpan={21} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -525,7 +534,7 @@ export default function SuperAdminPage() {
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
                       <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDelete(item)}>{t("common.delete")}</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDelete(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -538,19 +547,19 @@ export default function SuperAdminPage() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-limit">{t("common.show")}</label>
+              <label htmlFor="filter-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-limit"
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("eks.unitTransaksi")}`}
-                placeholder={`${filters.limit} ${t("eks.unitTransaksi")}`}
+                getLabel={(v) => `${v} transaksi`}
+                placeholder={`${filters.limit} transaksi`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {total} {t("eks.unitTransaksiCap")} · {t("common.page")} {filters.page} {t("common.ofTotal")} {totalPages}</span>
+            <span className="text-secondary">Total {total} Transaksi · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (
@@ -564,12 +573,12 @@ export default function SuperAdminPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3>{t("sa.historyInvoicePembiayaan")}</h3>
+          <h3>History Invoice Pembiayaan</h3>
         </div>
 
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-            <label htmlFor="invoice-filter-bulan">{t("common.filterMonth")}</label>
+            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
             <input
               type="month"
               id="invoice-filter-bulan"
@@ -580,14 +589,14 @@ export default function SuperAdminPage() {
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <span className="field-label-spacer">{t("eks.semuaInvoice")}</span>
+            <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={{ width: "auto" }}
               onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
             >
-              {t("eks.semuaInvoice")}
+              Semua Invoice
             </button>
           </div>
         </div>
@@ -596,9 +605,9 @@ export default function SuperAdminPage() {
           {invoiceError ? (
             <p className="text-secondary">{invoiceError}</p>
           ) : invoices == null ? (
-            <p className="text-secondary">{t("eks.loadingInvoiceData")}</p>
+            <p className="text-secondary">Memuat data invoice...</p>
           ) : invoices.length === 0 ? (
-            <p className="text-secondary">{invoiceFilterBulan ? t("eks.noInvoiceForFilter") : t("eks.noInvoiceYet")}</p>
+            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
           ) : (
             invoices.map((inv) => (
               <div className="invoice-row" key={inv.id}>
@@ -607,15 +616,15 @@ export default function SuperAdminPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                   </div>
                   <div className="invoice-row-info">
-                    <div className="invoice-row-title">{t("nav.invoice")} {invoiceBulanLabel(inv.bulan)}</div>
-                    <div className="invoice-row-meta">{inv.originalFilename} · {t("sa.uploadedAtPrefix")} {formatDateTime(inv.uploadedAt)}</div>
-                    {inv.reviewedAt && <div className="invoice-row-meta">{t("sa.reviewedAtColon")} {formatDateTime(inv.reviewedAt)}</div>}
-                    {inv.catatan && <div className="invoice-row-note"><strong>{t("sa.catatanColon")}</strong> {inv.catatan}</div>}
+                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
+                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
                 <div className="invoice-row-actions">
-                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{getInvoiceStatusLabelMap(language)[inv.status] || inv.status}</span>
-                  <button type="button" className="row-menu-btn" aria-label={t("common.aksi")} onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -627,19 +636,19 @@ export default function SuperAdminPage() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="invoice-limit">{t("common.show")}</label>
+              <label htmlFor="invoice-limit">Tampilkan</label>
               <SearchableSelect
                 id="invoice-limit"
                 value={String(invoiceLimit)}
                 onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("eks.unitInvoice")}`}
-                placeholder={`${invoiceLimit} ${t("eks.unitInvoice")}`}
+                getLabel={(v) => `${v} invoice`}
+                placeholder={`${invoiceLimit} invoice`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {invoiceTotal} {t("eks.unitInvoice")} · {t("common.page")} {invoicePage} {t("common.ofTotal")} {invoiceTotalPages}</span>
+            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
               {invoicePageButtons.map((p) => (
@@ -651,80 +660,89 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>{t("nav.roomBooking")}</h2>
+      <h2 style={{ margin: "24px 0 12px" }}>Room Booking</h2>
 
       <div className="card">
         <div className="card-header">
-          <h3>{t("sa.roomBookingMeetingTitle")}</h3>
+          <h3>Room Booking Meeting</h3>
         </div>
         <div className="toolbar">
           <div className="field">
-            <label htmlFor="filter-booking-tanggal">{t("sa.filterTanggal")}</label>
+            <label htmlFor="filter-booking-tanggal">Filter Tanggal</label>
             <input type="date" id="filter-booking-tanggal" value={bookingFilters.tanggal} onChange={(e) => updateBookingFilter({ tanggal: e.target.value })} />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-status">{t("common.status")}</label>
+            <label htmlFor="filter-booking-status">Status</label>
             <SearchableSelect
               id="filter-booking-status"
               value={bookingFilters.status}
               onChange={(v) => updateBookingFilter({ status: v as BookingStatus | "" })}
               options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL"]}
-              getLabel={(v) => getBookingStatusLabelMap(language)[v as BookingStatus] || v}
-              clearLabel={t("common.allStatus")}
-              placeholder={t("common.allStatus")}
+              getLabel={(v) => ({
+                DRAFT: "Draft",
+                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+                APPROVED_L1: "On-Approval: Admin GA",
+                REJECTED_GA: "Rejected: Admin GA",
+                APPROVED_GA: "On-Approval: Approval GA",
+                REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+                APPROVED_GA_APPROVAL: "Approved",
+              } as Record<string, string>)[v] || v}
+              clearLabel="Semua Status"
+              placeholder="Semua Status"
             />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-ruang">{t("bk.ruangLabel")}</label>
+            <label htmlFor="filter-booking-ruang">Ruang</label>
             <SearchableSelect
               id="filter-booking-ruang"
               value={bookingFilters.namaRuang}
               onChange={(v) => updateBookingFilter({ namaRuang: v })}
               options={rooms.map((r) => r.nama)}
-              clearLabel={t("bk.semuaRuang")}
-              placeholder={t("bk.semuaRuang")}
+              clearLabel="Semua Ruang"
+              placeholder="Semua Ruang"
             />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-divisi">{t("word.division")}</label>
+            <label htmlFor="filter-booking-divisi">Divisi</label>
             <SearchableSelect
               id="filter-booking-divisi"
               value={bookingFilters.divisi}
               onChange={(v) => updateBookingFilter({ divisi: v, departemen: "" })}
               options={bookingDivisiOptions}
-              clearLabel={t("common.allDivision")}
-              placeholder={t("common.allDivision")}
+              clearLabel="Semua Divisi"
+              placeholder="Semua Divisi"
             />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-departemen">{t("word.department")}</label>
+            <label htmlFor="filter-booking-departemen">Departemen</label>
             <SearchableSelect
               id="filter-booking-departemen"
               value={bookingFilters.departemen}
               onChange={(v) => updateBookingFilter({ departemen: v })}
               options={bookingDepartemenOptions}
-              clearLabel={t("common.allDepartment")}
-              placeholder={t("common.allDepartment")}
+              clearLabel="Semua Departemen"
+              placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetBookingFilters}>{t("sa.hapusFilter")}</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetBookingFilters}>Hapus Filter</button>
         </div>
 
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>{t("common.rowNo")}</th><th>{t("sa.thNoPesanan")}</th><th>{t("bk.namaKegiatan")}</th><th>{t("bk.pic")}</th><th>{t("bk.ruangLabel")}</th><th>{t("sa.thPeserta")}</th>
-                <th>{t("common.date")}</th><th>{t("common.time")}</th><th>{t("bk.diajukanHeader")}</th><th>{t("word.division")}</th><th>{t("word.department")}</th><th>{t("common.status")}</th><th>{t("common.aksi")}</th>
+                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
+                <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={13} className="table-empty">{t("common.loadingData")}</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
                 <tr><td colSpan={13} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">{t("eks.noDataForFilter")}</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -744,11 +762,11 @@ export default function SuperAdminPage() {
                       <td>
                         <span className="badge-stack">
                           <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
-                          {item.hasConflict && <span className="badge badge-rejected">{t("sa.bentrok")}</span>}
+                          {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                         </span>
                       </td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteBooking(item)}>{t("common.delete")}</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteBooking(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -761,19 +779,19 @@ export default function SuperAdminPage() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="filter-booking-limit">{t("common.show")}</label>
+              <label htmlFor="filter-booking-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-booking-limit"
                 value={String(bookingFilters.limit)}
                 onChange={(v) => updateBookingFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("sa.unitBooking")}`}
-                placeholder={`${bookingFilters.limit} ${t("sa.unitBooking")}`}
+                getLabel={(v) => `${v} booking`}
+                placeholder={`${bookingFilters.limit} booking`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {bookingTotal} {t("sa.unitBooking")} · {t("common.page")} {bookingFilters.page} {t("common.ofTotal")} {bookingTotalPages}</span>
+            <span className="text-secondary">Total {bookingTotal} booking · Halaman {bookingFilters.page} dari {bookingTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={bookingFilters.page <= 1} onClick={() => goToBookingPage(bookingFilters.page - 1)}>‹</button>
               {bookingPageButtons.map((p) => (
@@ -787,12 +805,12 @@ export default function SuperAdminPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3>{t("sa.historyInvoicePembiayaan")}</h3>
+          <h3>History Invoice Pembiayaan</h3>
         </div>
 
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-            <label htmlFor="invoice-filter-bulan">{t("common.filterMonth")}</label>
+            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
             <input
               type="month"
               id="invoice-filter-bulan"
@@ -803,14 +821,14 @@ export default function SuperAdminPage() {
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <span className="field-label-spacer">{t("eks.semuaInvoice")}</span>
+            <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={{ width: "auto" }}
               onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
             >
-              {t("eks.semuaInvoice")}
+              Semua Invoice
             </button>
           </div>
         </div>
@@ -819,9 +837,9 @@ export default function SuperAdminPage() {
           {invoiceError ? (
             <p className="text-secondary">{invoiceError}</p>
           ) : invoices == null ? (
-            <p className="text-secondary">{t("eks.loadingInvoiceData")}</p>
+            <p className="text-secondary">Memuat data invoice...</p>
           ) : invoices.length === 0 ? (
-            <p className="text-secondary">{invoiceFilterBulan ? t("eks.noInvoiceForFilter") : t("eks.noInvoiceYet")}</p>
+            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
           ) : (
             invoices.map((inv) => (
               <div className="invoice-row" key={inv.id}>
@@ -830,15 +848,15 @@ export default function SuperAdminPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                   </div>
                   <div className="invoice-row-info">
-                    <div className="invoice-row-title">{t("nav.invoice")} {invoiceBulanLabel(inv.bulan)}</div>
-                    <div className="invoice-row-meta">{inv.originalFilename} · {t("sa.uploadedAtPrefix")} {formatDateTime(inv.uploadedAt)}</div>
-                    {inv.reviewedAt && <div className="invoice-row-meta">{t("sa.reviewedAtColon")} {formatDateTime(inv.reviewedAt)}</div>}
-                    {inv.catatan && <div className="invoice-row-note"><strong>{t("sa.catatanColon")}</strong> {inv.catatan}</div>}
+                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
+                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
                 <div className="invoice-row-actions">
-                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{getInvoiceStatusLabelMap(language)[inv.status] || inv.status}</span>
-                  <button type="button" className="row-menu-btn" aria-label={t("common.aksi")} onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -850,19 +868,19 @@ export default function SuperAdminPage() {
         <div className="pagination">
           <div className="pagination-left">
             <div className="field" style={{ marginBottom: 0 }}>
-              <label htmlFor="invoice-limit">{t("common.show")}</label>
+              <label htmlFor="invoice-limit">Tampilkan</label>
               <SearchableSelect
                 id="invoice-limit"
                 value={String(invoiceLimit)}
                 onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} ${t("eks.unitInvoice")}`}
-                placeholder={`${invoiceLimit} ${t("eks.unitInvoice")}`}
+                getLabel={(v) => `${v} invoice`}
+                placeholder={`${invoiceLimit} invoice`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">{t("common.total")} {invoiceTotal} {t("eks.unitInvoice")} · {t("common.page")} {invoicePage} {t("common.ofTotal")} {invoiceTotalPages}</span>
+            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
               {invoicePageButtons.map((p) => (

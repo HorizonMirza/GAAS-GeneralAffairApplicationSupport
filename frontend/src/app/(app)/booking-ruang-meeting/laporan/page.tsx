@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { RoomUtilizationItem } from "@/lib/types";
 
 const REPORT_ROLES = new Set(["ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"]);
@@ -30,7 +29,6 @@ function formatPercent(rate: number | null): string {
 export default function LaporanUtilisasiPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
-  const { t } = useLanguage();
 
   const [dateFrom, setDateFrom] = useState(defaultDateFrom());
   const [dateTo, setDateTo] = useState(defaultDateTo());
@@ -68,16 +66,16 @@ export default function LaporanUtilisasiPage() {
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-        <h3 className="welcome-heading">{t("bk.laporanUtilisasiTitle")}</h3>
+        <h3 className="welcome-heading">Laporan Utilisasi Ruangan</h3>
       </div>
 
       <div className="filter-dropdown-panel" style={{ position: "static", display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
         <div className="field" style={{ marginBottom: 0 }}>
-          <label htmlFor="laporan-dari">{t("bk.dariTanggal")}</label>
+          <label htmlFor="laporan-dari">Dari Tanggal</label>
           <input type="date" id="laporan-dari" value={dateFrom} max={dateTo} onChange={(e) => setDateFrom(e.target.value)} />
         </div>
         <div className="field" style={{ marginBottom: 0 }}>
-          <label htmlFor="laporan-sampai">{t("bk.sampaiTanggal")}</label>
+          <label htmlFor="laporan-sampai">Sampai Tanggal</label>
           <input type="date" id="laporan-sampai" value={dateTo} min={dateFrom} onChange={(e) => setDateTo(e.target.value)} />
         </div>
       </div>
@@ -85,15 +83,15 @@ export default function LaporanUtilisasiPage() {
       {error && <p className="text-secondary" style={{ color: "var(--badge-rejected-fg)" }}>{error}</p>}
 
       <div className="card" style={{ marginBottom: 24 }}>
-        <h4 style={{ margin: "0 0 14px" }}>{t("bk.jamSibukTitle")}</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Jam Sibuk (Approved, semua ruangan)</h4>
         {busy ? (
-          <p className="text-secondary">{t("common.loading")}</p>
+          <p className="text-secondary">Memuat...</p>
         ) : (
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
             {hourEntries.map(({ hour, count }) => (
               <div key={hour} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" }}>
                 <div
-                  title={`${String(hour).padStart(2, "0")}:00 - ${count} ${t("bk.unitBooking")}`}
+                  title={`${String(hour).padStart(2, "0")}:00 - ${count} booking`}
                   style={{
                     width: "100%",
                     minHeight: 2,
@@ -110,27 +108,27 @@ export default function LaporanUtilisasiPage() {
       </div>
 
       <div className="card">
-        <h4 style={{ margin: "0 0 14px" }}>{t("bk.perRuanganTitle")}</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Per Ruangan</h4>
         {busy ? (
-          <p className="text-secondary">{t("common.loading")}</p>
+          <p className="text-secondary">Memuat...</p>
         ) : (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>{t("bk.ruangan")}</th>
-                  <th>{t("bk.jamTerpakai")}</th>
+                  <th>Ruangan</th>
+                  <th>Jam Terpakai</th>
                   <th style={{ width: "30%" }}></th>
-                  <th>{t("word.approved")}</th>
-                  <th>{t("word.rejected")}</th>
-                  <th>{t("bk.tingkatPenolakan")}</th>
+                  <th>Approved</th>
+                  <th>Rejected</th>
+                  <th>Tingkat Penolakan</th>
                 </tr>
               </thead>
               <tbody>
                 {(rooms ?? []).map((r) => (
                   <tr key={r.namaRuang}>
                     <td>{r.namaRuang}</td>
-                    <td>{r.bookedHours} {t("bk.jamUnit")}</td>
+                    <td>{r.bookedHours} jam</td>
                     <td>
                       <div style={{ background: "var(--border-subtle)", borderRadius: 999, height: 8, overflow: "hidden" }}>
                         <div style={{ width: `${(r.bookedHours / maxBookedHours) * 100}%`, height: "100%", background: "var(--gradient-primary)" }} />

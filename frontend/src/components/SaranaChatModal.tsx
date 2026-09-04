@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ROLE_COLOR, getRoleShortLabelMap, bookingChatParticipantLabels } from "@/lib/constants";
+import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
 import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { ChatMessage, Me, Role } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 
@@ -72,12 +71,10 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
   const inputRef = useRef<HTMLInputElement>(null);
   const readNotified = useRef(false);
 
-  const { language, t } = useLanguage();
-  const roleShortLabel = getRoleShortLabelMap(language);
-  const myLabel = roleShortLabel[me.role];
+  const myLabel = ROLE_SHORT_LABEL[me.role];
   // Maintenance memakai rantai approval yang sama dengan Booking (tanpa KPU), jadi daftar peserta
   // chat Booking bisa dipakai ulang apa adanya.
-  const participantLabels = bookingChatParticipantLabels(departemen, language);
+  const participantLabels = bookingChatParticipantLabels(departemen);
   const mentionMatches =
     mentionQuery !== null
       ? participantLabels.filter((l) => l !== myLabel && l.toLowerCase().includes(mentionQuery.toLowerCase()))
@@ -207,11 +204,11 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
 
         <div className="chat-message-list" ref={listRef}>
           {messages === null && error ? (
-            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>{t("chat.loadFailed")}: {error}</p>
+            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Gagal memuat chat: {error}</p>
           ) : messages === null ? (
-            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>{t("chat.loading")}</p>
+            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Memuat chat...</p>
           ) : messages.length === 0 ? (
-            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>{t("chat.empty")}</p>
+            <p className="text-secondary" style={{ textAlign: "center", padding: "24px 0" }}>Belum ada pesan. Mulai percakapan di bawah.</p>
           ) : (
             messages.map((m, idx) => {
               const isMine = m.senderId === me.id;
@@ -235,7 +232,7 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
                     <div className={`chat-bubble ${isMine ? "chat-bubble-mine" : ""}`}>
                       {!isMine && isFirstInGroup && (
                         <div className="chat-bubble-sender" style={{ color: roleColor }}>
-                          {roleShortLabel[m.senderRole] || m.senderRole}
+                          {ROLE_SHORT_LABEL[m.senderRole] || m.senderRole}
                         </div>
                       )}
                       <div className="chat-bubble-text">{renderWithMentions(m.message, participantLabels)}</div>
@@ -267,12 +264,12 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
             <input
               ref={inputRef}
               type="text"
-              placeholder={t("chat.placeholder")}
+              placeholder="Tulis pesan..."
               value={draft}
               onChange={handleDraftChange}
               disabled={sending}
             />
-            <button type="submit" className="chat-send-btn" aria-label={t("chat.send")} disabled={sending || !draft.trim()}>
+            <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || !draft.trim()}>
               <SendIcon />
             </button>
           </form>

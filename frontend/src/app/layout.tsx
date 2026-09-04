@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./tailwind.css";
-import { LanguageProvider } from "@/lib/i18n/language-context";
 
 export const metadata: Metadata = {
   title: "Pendataan Pengiriman Barang Kantor",
@@ -14,12 +13,6 @@ const THEME_INIT_SCRIPT = `
   var saved = localStorage.getItem(STORAGE_KEY);
   var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-theme", saved || (prefersDark ? "dark" : "light"));
-
-  var LANG_KEY = "pengiriman-lang";
-  var savedLang = localStorage.getItem(LANG_KEY);
-  var lang = savedLang === "en" ? "en" : "id";
-  document.documentElement.setAttribute("data-lang", lang);
-  document.documentElement.lang = lang;
 })();
 `;
 
@@ -29,9 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body>
-        <LanguageProvider>{children}</LanguageProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export default function InvoiceActionModal({ open, invoiceId, type, onClose, onDone }: Props) {
-  const { t } = useLanguage();
   const [catatan, setCatatan] = useState("");
   const [error, setError] = useState("");
   const { showToast } = useToast();
@@ -41,10 +39,10 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
     try {
       if (type === "approve") {
         await api.approveInvoice(invoiceId, value);
-        showToast(t("eks.toastInvoiceApproved"));
+        showToast("Invoice disetujui");
       } else {
         await api.rejectInvoice(invoiceId, value);
-        showToast(t("eks.toastInvoiceRejected"));
+        showToast("Invoice ditolak");
       }
       reset();
       onDone();
@@ -57,14 +55,14 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>{type === "approve" ? t("eks.approveInvoiceTitle") : t("eks.rejectInvoiceTitle")}</h3>
+          <h3>{type === "approve" ? "Approve Invoice" : "Reject Invoice"}</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="field">
-          <label htmlFor="invoice-action-catatan">{t("eks.catatanOpsional")}</label>
+          <label htmlFor="invoice-action-catatan">Catatan (opsional)</label>
           <textarea
             id="invoice-action-catatan"
-            placeholder={t("eks.contohInvoiceSesuai")}
+            placeholder="Contoh: Invoice sudah sesuai"
             value={catatan}
             onChange={(e) => setCatatan(e.target.value)}
           />
@@ -77,7 +75,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
             style={{ width: "auto" }}
             onClick={handleConfirm}
           >
-            {type === "approve" ? t("common.approve") : t("common.reject")}
+            {type === "approve" ? "Approve" : "Reject"}
           </button>
         </div>
       </div>

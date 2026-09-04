@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang } from "@/lib/types";
 
-const MONTH_KEYS = ["month.0", "month.1", "month.2", "month.3", "month.4", "month.5", "month.6", "month.7", "month.8", "month.9", "month.10", "month.11"];
-const DAY_SHORT_KEYS = ["dayShort.mon", "dayShort.tue", "dayShort.wed", "dayShort.thu", "dayShort.fri", "dayShort.sat", "dayShort.sun"];
+const MONTH_NAMES = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -41,7 +43,6 @@ interface Props {
 }
 
 export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, entries: providedEntries }: Props) {
-  const { t } = useLanguage();
   const initial = new Date(selectedDate + "T00:00:00");
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -145,14 +146,14 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
   return (
     <div className="mini-calendar">
       <div className="mini-calendar-header">
-        <span className="mini-calendar-title">{t(MONTH_KEYS[viewMonth])} {viewYear}</span>
+        <span className="mini-calendar-title">{MONTH_NAMES[viewMonth]} {viewYear}</span>
         <div className="mini-calendar-nav">
-          <button type="button" onClick={prevMonth} aria-label={t("common.prevMonth")}>‹</button>
-          <button type="button" onClick={nextMonthNav} aria-label={t("common.nextMonth")}>›</button>
+          <button type="button" onClick={prevMonth} aria-label="Bulan sebelumnya">‹</button>
+          <button type="button" onClick={nextMonthNav} aria-label="Bulan berikutnya">›</button>
         </div>
       </div>
       <div className="mini-calendar-weekdays">
-        {DAY_SHORT_KEYS.map((k) => <span key={k}>{t(k)}</span>)}
+        {DAY_LABELS.map((d) => <span key={d}>{d}</span>)}
       </div>
       <div className="mini-calendar-grid">
         {cells.map((c) => {

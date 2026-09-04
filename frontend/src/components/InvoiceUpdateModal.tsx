@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
 import { useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { Invoice } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -17,7 +16,6 @@ interface Props {
 }
 
 export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Props) {
-  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,7 +36,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
 
   function handleFileChange(picked: File | null) {
     if (picked && picked.size > MAX_INVOICE_FILE_SIZE_BYTES) {
-      setError(t("common.fileTooLarge"));
+      setError("File terlalu besar, maksimal 10 MB");
       setFile(null);
       return;
     }
@@ -66,17 +64,17 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     e.preventDefault();
     setError("");
     if (!file || !item) {
-      setError(t("eks.errPilihFileInvoice"));
+      setError("Pilih file invoice yang baru.");
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
-      setError(t("common.fileTooLarge"));
+      setError("File terlalu besar, maksimal 10 MB");
       return;
     }
     setBusy(true);
     try {
       await api.updateInvoice(item.id, file);
-      showToast(isDraft ? t("eks.toastDraftUpdated") : t("eks.toastRevisiSaved"));
+      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Revisi invoice tersimpan sebagai draft, kirim kembali lewat Detail");
       setFile(null);
       onDone();
     } catch (err) {
@@ -90,12 +88,12 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }}>
         <div className="modal-header">
-          <h3>{t("eks.updateInvoiceTitle")}</h3>
+          <h3>Update Invoice</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="invoice-update-file">{t("eks.fileInvoiceBaru")}</label>
+            <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
             <div
               className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
               onDragOver={handleDragOver}
@@ -108,7 +106,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 {file ? (
                   <strong>{file.name}</strong>
                 ) : (
-                  <>{t("common.dragFileHere")} <span className="file-dropzone-link">{t("common.chooseFile")}</span></>
+                  <>Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span></>
                 )}
               </div>
               <input
@@ -119,11 +117,11 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
-            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>{t("common.maxSize10mb")}</div>
+            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>Maksimal 10 MB</div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>{t("common.save")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={busy}>Simpan</button>
           </div>
         </form>
       </div>

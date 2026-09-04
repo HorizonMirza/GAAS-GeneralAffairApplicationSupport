@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLanguage } from "@/lib/i18n/language-context";
 import ModalOverlay from "./ModalOverlay";
 
 export type RoomInfoAvailability = "available" | "full" | "closed";
@@ -40,7 +39,6 @@ interface Props {
 const SLIDE_INTERVAL_MS = 1600;
 
 function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: string[]; availability: RoomInfoAvailability; availLabel: string }) {
-  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const count = photoUrls.length;
 
@@ -61,7 +59,7 @@ function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: st
       <button
         type="button"
         className="room-info-slideshow"
-        aria-label={t("bk.fotoBerikutnya")}
+        aria-label="Foto berikutnya"
         onClick={() => setIndex((i) => (i + 1) % count)}
       >
         <div
@@ -100,7 +98,6 @@ export default function RoomInfoModal({
   onBook,
   bookLabel = "Booking",
 }: Props) {
-  const { t } = useLanguage();
   if (!open || nama == null) return null;
   return (
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
@@ -112,8 +109,8 @@ export default function RoomInfoModal({
         <PhotoSlideshow photoUrls={photoUrls} availability={availability} availLabel={availLabel} />
         {kapasitas != null && (
           <div className="room-info-row">
-            <span className="text-secondary">{t("bk.kapasitas")}</span>
-            <span>{kapasitas} {t("bk.orangUnit")}</span>
+            <span className="text-secondary">Kapasitas</span>
+            <span>{kapasitas} orang</span>
           </div>
         )}
         {extraDetails && extraDetails.map(({ label, value }) => (
@@ -124,7 +121,7 @@ export default function RoomInfoModal({
         ))}
         {facilities && facilities.length > 0 && (
           <div className="room-info-row room-info-row-stack">
-            <span className="text-secondary">{t("bk.fasilitas")}</span>
+            <span className="text-secondary">Fasilitas</span>
             <div className="room-info-slots">
               {facilities.map((f) => (
                 <span key={f} className="room-info-slot-chip">{f}</span>
@@ -133,7 +130,7 @@ export default function RoomInfoModal({
           </div>
         )}
         <div className="room-info-row room-info-row-stack">
-          <span className="text-secondary">{t("bk.jamTersediaHariIni")}</span>
+          <span className="text-secondary">Jam tersedia hari ini</span>
           {closedLabel ? (
             <span>{closedLabel}</span>
           ) : fullyOpenLabel ? (
@@ -145,11 +142,11 @@ export default function RoomInfoModal({
               ))}
             </div>
           ) : (
-            <span>{t("bk.penuhSepanjangHari")}</span>
+            <span>Penuh sepanjang hari</span>
           )}
         </div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>{t("common.close")}</button>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Tutup</button>
           <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={onBook}>{bookLabel}</button>
         </div>
       </div>

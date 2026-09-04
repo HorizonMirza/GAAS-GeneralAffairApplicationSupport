@@ -16,7 +16,6 @@ import {
   isBookingPdfAvailable,
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
@@ -62,7 +61,6 @@ function BookingCalendarPageInner() {
   const roomFromQuery = searchParams.get("ruang") || "";
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { t } = useLanguage();
 
   // Coming here with a room already picked (the info modal's Booking button) means someone wants
   // that room's actual schedule, not the cross-room availability grid - land on Harian instead of
@@ -215,12 +213,12 @@ function BookingCalendarPageInner() {
 
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
-      ? t("bk.confirmDeleteRecurring")
-      : t("bk.confirmDeleteBooking");
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
+      : "Hapus booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);
-        showToast(t("bk.toastBookingDeleted"));
+        showToast("Booking berhasil dihapus");
         if (view === "avail") loadAvail();
         else loadSchedule();
       } catch (err) {
@@ -240,11 +238,11 @@ function BookingCalendarPageInner() {
         <div className="calendar-sidebar" ref={sidebarRef}>
           {isOrigin && (
             <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={openCreateForm}>
-              + {t("nav.roomBooking")}
+              + Booking Ruang Meeting
             </button>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-room-select">{t("bk.ruangan")}</label>
+            <label htmlFor="calendar-room-select">Ruangan</label>
             <SearchableSelect
               id="calendar-room-select"
               value={view === "avail" ? ALL_ROOMS_VALUE : selectedRoom}
@@ -257,21 +255,21 @@ function BookingCalendarPageInner() {
                 }
               }}
               options={[ALL_ROOMS_VALUE, ...rooms.map((r) => r.nama)]}
-              getLabel={(v) => (v === ALL_ROOMS_VALUE ? t("bk.ketersediaanRuangan") : v)}
-              placeholder={t("bk.ketersediaanRuangan")}
+              getLabel={(v) => (v === ALL_ROOMS_VALUE ? "Ketersediaan Ruangan" : v)}
+              placeholder="Ketersediaan Ruangan"
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-date-input">{t("common.date")}</label>
+            <label htmlFor="calendar-date-input">Tanggal</label>
             <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-search-input">{t("bk.cariPesanan")}</label>
+            <label htmlFor="calendar-search-input">Cari Pesanan</label>
             <input
               type="text"
               id="calendar-search-input"
               className="calendar-search-input"
-              placeholder={t("bk.noPesananPlaceholder")}
+              placeholder="No Pesanan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -293,7 +291,7 @@ function BookingCalendarPageInner() {
         >
           <div className="calendar-topbar">
             <div className="calendar-topbar-left">
-              <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>{t("common.today")}</button>
+              <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={goToday}>Hari Ini</button>
               <div
                 className="calendar-nav-arrows"
                 style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}
@@ -301,7 +299,7 @@ function BookingCalendarPageInner() {
                 <button
                   className="page-btn"
                   onClick={goPrev}
-                  aria-label={t("bk.sebelumnya")}
+                  aria-label="Sebelumnya"
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -311,7 +309,7 @@ function BookingCalendarPageInner() {
                 <button
                   className="page-btn"
                   onClick={goNext}
-                  aria-label={t("bk.berikutnya")}
+                  aria-label="Berikutnya"
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -319,7 +317,7 @@ function BookingCalendarPageInner() {
                   </svg>
                 </button>
               </div>
-              <div className="calendar-topbar-room">{view === "avail" ? t("bk.ketersediaanRuangan") : selectedRoom}</div>
+              <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruangan" : selectedRoom}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="calendar-view-toggle">
@@ -330,7 +328,7 @@ function BookingCalendarPageInner() {
                     className={`calendar-view-btn${view === v ? " calendar-view-btn-active" : ""}`}
                     onClick={() => setView(v)}
                   >
-                    {v === "day" ? t("word.daily") : v === "week" ? t("word.weekly") : t("word.monthly")}
+                    {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
                   </button>
                 ))}
               </div>
@@ -340,14 +338,14 @@ function BookingCalendarPageInner() {
                   className={`calendar-view-btn${view === "avail" ? " calendar-view-btn-active" : ""}`}
                   onClick={() => setView("avail")}
                 >
-                  {t("bk.ketersediaan")}
+                  Ketersediaan
                 </button>
               </div>
             </div>
           </div>
 
           {(view === "avail" ? availBusy : scheduleBusy) ? (
-            <p className="text-secondary">{t("bk.memuatJadwal")}</p>
+            <p className="text-secondary">Memuat jadwal...</p>
           ) : (
             <RoomCalendarView
               view={view}
@@ -428,7 +426,7 @@ function BookingCalendarPageInner() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.bookingPdfUrl(item.id), `${t("bk.buktiFilePrefix")}-Booking-${item.nomorPemesanan || item.id}.pdf`);
+            await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

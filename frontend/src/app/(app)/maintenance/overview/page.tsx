@@ -9,16 +9,15 @@ import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
-  getExecutionStageLabelMap,
-  getKategoriKerusakanLabelMap,
-  getUrgensiLabelMap,
+  EXECUTION_STAGE_LABEL,
+  KATEGORI_KERUSAKAN_LABEL,
   URGENSI_BADGE_CLASS,
+  URGENSI_LABEL,
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n/language-context";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingStatus, PerbaikanSarana } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -49,7 +48,6 @@ export default function MaintenanceOverviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { language, t } = useLanguage();
 
   const [items, setItems] = useState<PerbaikanSarana[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -114,16 +112,16 @@ export default function MaintenanceOverviewPage() {
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? `${t("word.approval")} ${t("word.department")}`
+      ? "Approval Departemen"
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? `${t("word.approval")} ${t("word.division")}`
-      : `${t("word.approval")} ${t("word.department")}/${t("word.division")}`;
+      ? "Approval Divisi"
+      : "Approval Departemen/Divisi";
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm(t("mnt.confirmDeleteLaporan"), async () => {
+    confirm("Hapus laporan perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
-        showToast(t("mnt.toastLaporanDeleted"));
+        showToast("Laporan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -137,7 +135,7 @@ export default function MaintenanceOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            {t("mnt.tambahLaporan")}
+            + Laporan Perbaikan
           </button>
         )}
       </div>
@@ -145,15 +143,15 @@ export default function MaintenanceOverviewPage() {
       {stats && (
         <div className="stat-grid">
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">{t("word.admin")} {t("word.generalAffair")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">{t("word.approval")} {t("word.generalAffair")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">{t("word.approved")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.urgensiTinggiAktif}</div><div className="label">{t("mnt.urgensiTinggiBerjalan")}</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
+          <div className="stat-tile"><div className="value">{stats.urgensiTinggiAktif}</div><div className="label">Urgensi Tinggi Berjalan</div></div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>{t("mnt.laporanTerbaruSaya")}</h3>
+        <h3 style={{ margin: 0 }}>Laporan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
           <SearchableSelect
             id="overview-sarana-status-filter"
@@ -161,21 +159,21 @@ export default function MaintenanceOverviewPage() {
             onChange={(v) => setStatusFilter(v as StatusFilter)}
             options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
             getLabel={(v) => ({
-              ALL: t("common.allStatus"),
-              DRAFT: t("word.draft"),
-              ON_APPROVAL: t("word.onApproval"),
-              APPROVED: t("word.approved"),
-              REJECTED: t("word.rejected"),
+              ALL: "Semua Status",
+              DRAFT: "Draft",
+              ON_APPROVAL: "On-Approval",
+              APPROVED: "Approved",
+              REJECTED: "Rejected",
             } as Record<string, string>)[v] || v}
-            placeholder={t("common.allStatus")}
+            placeholder="Semua Status"
           />
         </div>
       </div>
 
       {busy ? (
-        <p className="text-secondary">{t("common.loadingData")}</p>
+        <p className="text-secondary">Memuat data...</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">{t("common.noDataPeriod")}</div>
+        <div className="card table-empty">Tidak ada data.</div>
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
@@ -190,19 +188,19 @@ export default function MaintenanceOverviewPage() {
                 <div className="card-header-title">
                   <strong>{item.lokasi} - {item.nomorPerbaikan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {getKategoriKerusakanLabelMap(language)[item.kategori]} · {truncateText(item.deskripsiKerusakan, 50)}
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {KATEGORI_KERUSAKAN_LABEL[item.kategori]} · {truncateText(item.deskripsiKerusakan, 50)}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className={`badge ${URGENSI_BADGE_CLASS[item.urgensi]}`}>{getUrgensiLabelMap(language)[item.urgensi]}</span>
+                  <span className={`badge ${URGENSI_BADGE_CLASS[item.urgensi]}`}>{URGENSI_LABEL[item.urgensi]}</span>
                   <BookingStatusBadge status={item.status} departemen={item.departemen} />
                   {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
-                    <span className="badge badge-pending">{getExecutionStageLabelMap(language)[item.executionStage]}</span>
+                    <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
                   )}
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                    aria-label={t("common.chat")}
+                    aria-label="Chat"
                     onClick={(e) => { e.stopPropagation(); setChatItem(item); }}
                   >
                     <MessageSquare width="17" height="17" />
@@ -210,7 +208,7 @@ export default function MaintenanceOverviewPage() {
                       <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
+                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); rowMenu.toggle(e, item.id, 180); }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -218,7 +216,7 @@ export default function MaintenanceOverviewPage() {
               <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
                 </div>
               )}
             </div>

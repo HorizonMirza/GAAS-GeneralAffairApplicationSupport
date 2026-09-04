@@ -1,5 +1,4 @@
 import { getStatusLabel } from "@/lib/constants";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { PermintaanAtk, Status } from "@/lib/types";
 
 interface Props {
@@ -12,8 +11,7 @@ interface Props {
 // anyone once a request is rejected). getStatusLabel/its underlying STATUS_LABEL already handle
 // the KPU tier (APPROVED_GA_APPROVAL = "On-Approval: KPU", COMPLETED = "Approved") correctly.
 export default function AtkStatusBadge({ status, departemen = null }: Props) {
-  const { language } = useLanguage();
-  const label = getStatusLabel(status, departemen, language);
+  const label = getStatusLabel(status, departemen);
   const cls = status.toLowerCase();
   return <span className={`badge badge-${cls}`}>{label}</span>;
 }

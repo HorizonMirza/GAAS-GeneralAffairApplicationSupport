@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -40,7 +39,6 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
 // Laid out identically to the full booking form so it reads as "the same form, most of it locked"
 // rather than a separate mini-form - only Tanggal/Jam/Durasi/Ruangan/Ruangan Tambahan are live.
 export default function RoomBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
-  const { t } = useLanguage();
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -85,7 +83,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
         jamMulai: form!.isWholeDay ? null : form!.jamMulai,
         jamSelesai: form!.isWholeDay ? null : form!.jamSelesai,
       });
-      showToast(t("bk.toastRescheduleSaved"));
+      showToast("Ruang/jadwal booking berhasil dipindahkan");
       onClose();
       onSaved();
     } catch (err) {
@@ -97,55 +95,55 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{t("bk.ubahRuangJadwalTitle")} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Ubah Ruang/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="rs-nomor-pemesanan">{t("bk.nomorPesananRuangan")}</label>
+              <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="rs-nama-kegiatan">{t("bk.namaKegiatan")}</label>
+              <label htmlFor="rs-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
             <div className="field full">
-              <label htmlFor="rs-pic">{t("bk.pic")}</label>
+              <label htmlFor="rs-pic">PIC</label>
               <input type="text" id="rs-pic" disabled value={item.pic || ""} />
             </div>
             <div className="field">
-              <label htmlFor="rs-tanggal">{t("common.date")}</label>
+              <label htmlFor="rs-tanggal">Tanggal</label>
               <input type="date" id="rs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="rs-peserta">{t("bk.jumlahPeserta")}</label>
+              <label htmlFor="rs-peserta">Jumlah Peserta</label>
               <input type="text" id="rs-peserta" disabled value={item.jumlahPeserta ? `${Math.min(item.jumlahPeserta, MAX_JUMLAH_PESERTA)}` : ""} />
             </div>
             <div className="field">
-              <label htmlFor="rs-jam-mulai">{t("bk.jamMulai")}</label>
+              <label htmlFor="rs-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="rs-jam-mulai"
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
                 disabled={form.isWholeDay}
               />
             </div>
             <div className="field">
-              <label htmlFor="rs-jam-selesai">{t("bk.jamSelesai")}</label>
+              <label htmlFor="rs-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="rs-jam-selesai"
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder={t("bk.pilihJam")}
+                placeholder="Pilih jam"
                 disabled={form.isWholeDay}
               />
             </div>
             <div className="field full">
-              <label htmlFor="rs-sepanjang-hari">{t("bk.durasiOpsional")}</label>
+              <label htmlFor="rs-sepanjang-hari">Durasi (Opsional)</label>
               <button
                 type="button"
                 id="rs-sepanjang-hari"
@@ -158,22 +156,22 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   )}
                 </span>
-                {t("bk.sepanjangHari")}
+                Sepanjang Hari
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="rs-ruang">{t("bk.ruangan")}</label>
+              <label htmlFor="rs-ruang">Ruangan</label>
               <SearchableSelect
                 id="rs-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder={t("bk.pilihRuang")}
+                placeholder="Pilih ruang"
               />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="rs-ruang-tambahan">{t("bk.ruanganTambahan")}</label>
+                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan</label>
                 <RoomMultiSelect
                   id="rs-ruang-tambahan"
                   rooms={rooms}
@@ -184,7 +182,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </div>
             )}
             <div className="field full">
-              <label htmlFor="rs-tipe">{t("bk.tipe")}</label>
+              <label htmlFor="rs-tipe">Tipe</label>
               <SearchableSelect
                 id="rs-tipe"
                 value={item.tipe}
@@ -196,13 +194,13 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               />
             </div>
             <div className="field full">
-              <label htmlFor="rs-catatan">{t("common.notes")}</label>
+              <label htmlFor="rs-catatan">Catatan</label>
               <input type="text" id="rs-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>{t("common.save")}</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
           </div>
         </form>
       </div>

@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n/language-context";
 
 // A menu row either navigates (href, rendered as a Link) or performs an action (onClick, rendered
 // as a button) - the theme toggle is the latter, Profile/Contact Person the former. `active`
@@ -74,7 +73,6 @@ const rowClass =
 // landmark element.
 export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSidebarProps>(
   ({ user, navItems, logoutItem, className }, ref) => {
-    const { t } = useLanguage();
     return (
       <motion.div
         ref={ref}
@@ -85,7 +83,7 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
         initial="hidden"
         animate="visible"
         variants={sidebarVariants}
-        aria-label={t("nav.accountMenu")}
+        aria-label="Menu akun"
       >
         {/* User info header */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 p-2">
@@ -114,7 +112,7 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
                   <div className={cn(rowClass, "cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground")}>
                     <span className="mr-3 h-5 w-5">{item.icon}</span>
                     <span>{item.label}</span>
-                    <span className="ml-auto text-xs font-normal">{t("nav.comingSoon")}</span>
+                    <span className="ml-auto text-xs font-normal">Segera hadir</span>
                   </div>
                 ) : item.href ? (
                   <Link href={item.href} className={cn(rowClass, item.active && "bg-accent text-accent-foreground")}>

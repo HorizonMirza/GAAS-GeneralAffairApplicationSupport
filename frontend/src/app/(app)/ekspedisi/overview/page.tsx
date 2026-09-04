@@ -9,7 +9,6 @@ import { useAuth } from "@/lib/auth-context";
 import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, isEditableByOrigin } from "@/lib/constants";
 import { currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import { useLanguage } from "@/lib/i18n/language-context";
 import type { Pengiriman } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
 
@@ -39,7 +38,6 @@ export default function OverviewPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
-  const { t } = useLanguage();
 
   const [items, setItems] = useState<Pengiriman[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -109,16 +107,16 @@ export default function OverviewPage() {
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"
-      ? `${t("word.approval")} ${t("word.department")}`
+      ? "Approval Departemen"
       : me.role === "ADMIN_DIVISI" || me.role === "APPROVAL_DIVISI"
-      ? `${t("word.approval")} ${t("word.division")}`
-      : `${t("word.approval")} ${t("word.department")}/${t("word.division")}`;
+      ? "Approval Divisi"
+      : "Approval Departemen/Divisi";
 
   function handleDelete(item: Pengiriman) {
-    confirm(t("eks.confirmDeleteData"), async () => {
+    confirm("Hapus data pengiriman ini secara permanen?", async () => {
       try {
         await api.deletePengiriman(item.id);
-        showToast(t("common.dataDeleted"));
+        showToast("Data berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -132,7 +130,7 @@ export default function OverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            {t("eks.inputDataBarang")}
+            + Input Data Barang
           </button>
         )}
       </div>
@@ -140,15 +138,15 @@ export default function OverviewPage() {
       {stats && (
         <div className="stat-grid">
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">{t("word.admin")} {t("word.generalAffair")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">{t("word.approval")} {t("word.generalAffair")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">{t("word.partner")}</div></div>
-          <div className="stat-tile"><div className="value">{stats.completed}</div><div className="label">{t("word.approved")}</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingKpu}</div><div className="label">Mitra</div></div>
+          <div className="stat-tile"><div className="value">{stats.completed}</div><div className="label">Approved</div></div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>{t("common.recentTransactions")}</h3>
+        <h3 style={{ margin: 0 }}>Transaksi Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
           <SearchableSelect
             id="overview-status-filter"
@@ -157,22 +155,22 @@ export default function OverviewPage() {
             options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
             getLabel={(v) =>
               ({
-                ALL: t("common.allStatus"),
-                DRAFT: t("word.draft"),
-                ON_APPROVAL: t("word.onApproval"),
-                APPROVED: t("word.approved"),
-                REJECTED: t("word.rejected"),
+                ALL: "Semua Status",
+                DRAFT: "Draft",
+                ON_APPROVAL: "On-Approval",
+                APPROVED: "Approved",
+                REJECTED: "Rejected",
               } as Record<string, string>)[v] || v
             }
-            placeholder={t("common.allStatus")}
+            placeholder="Semua Status"
           />
         </div>
       </div>
 
       {busy ? (
-        <p className="text-secondary">{t("common.loadingData")}</p>
+        <p className="text-secondary">Memuat data...</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">{t("common.noDataPeriod")}</div>
+        <div className="card table-empty">Tidak ada data.</div>
       ) : (
         filteredItems.map((item) => {
           const borderClass = cardStatusBorderClass(item.status);
@@ -190,7 +188,7 @@ export default function OverviewPage() {
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
-                    aria-label={t("common.chat")}
+                    aria-label="Chat"
                     onClick={() => setChatItem(item)}
                   >
                     <MessageSquare width="17" height="17" />
@@ -198,7 +196,7 @@ export default function OverviewPage() {
                       <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="card-icon-btn" aria-label={t("common.aksi")} onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
+                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 180)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
                 </div>
@@ -206,7 +204,7 @@ export default function OverviewPage() {
               <Stepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-                  <strong>{t("eks.catatanPenolakan")}</strong> {item.rejectReason}
+                  <strong>Catatan Penolakan:</strong> {item.rejectReason}
                 </div>
               )}
             </div>
