@@ -72,7 +72,6 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
         </div>
         <div className="error-text">{error}</div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Tutup</button>
           {canReview && (
             <>
               <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => onRequestAction(item.id, "reject")}>Reject</button>

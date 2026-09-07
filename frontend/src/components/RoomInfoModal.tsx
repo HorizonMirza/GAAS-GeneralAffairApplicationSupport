@@ -146,7 +146,6 @@ export default function RoomInfoModal({
           )}
         </div>
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Tutup</button>
           <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={onBook}>{bookLabel}</button>
         </div>
       </div>

@@ -42,9 +42,6 @@ export default function SaranaStatusHistoryModal({ open, itemId, onClose }: Prop
             <ApprovalLog logs={logs} />
           )}
         </div>
-        <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose}>Tutup</button>
-        </div>
       </div>
     </ModalOverlay>
   );

@@ -298,25 +298,17 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 </div>
               ))}
               {isEdit && form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
+                <button type="button" className="arsip-add-row-btn" onClick={addItemRow}>
                   + Tambah Arsip
                 </button>
               )}
             </div>
 
+            <div className="field full">
+              <label htmlFor="dr-catatan">Catatan</label>
+              <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+            </div>
           </div>
-
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
-
-          {item.rejectReason && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Catatan Penolakan:</strong> {item.rejectReason}
-            </div>
-          )}
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
@@ -346,10 +338,17 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             )}
           </div>
 
-          <div className="field full">
-            <label htmlFor="dr-catatan">Catatan</label>
-            <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
-          </div>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
+
+          {item.rejectReason && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Catatan Penolakan:</strong> {item.rejectReason}
+            </div>
+          )}
         </form>
       </div>
     </ModalOverlay>
