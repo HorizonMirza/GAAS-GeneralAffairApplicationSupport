@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
   ARCHIVE_KATEGORI_LABEL,
@@ -48,6 +48,7 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
 export default function ArsipDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
   const [error, setError] = useState("");
+  const [previewNomor, setPreviewNomor] = useState<string | null>(null);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -63,7 +64,32 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setPreviewNomor(null);
   }, [open, item]);
+
+  // Nomor Pemindahan Arsip is keyed to the request's month/year (see backend's Update, which
+  // regenerates it on save whenever Tanggal moves to a different month/year) - preview that same
+  // recalculation live while editing so the disabled Nomor field doesn't keep showing the old
+  // number as if the date change had no effect.
+  useEffect(() => {
+    if (!open || !item || mode !== "edit" || !form) {
+      setPreviewNomor(null);
+      return;
+    }
+    const [origY, origM] = item.tanggal.split("-");
+    const [curY, curM] = form.tanggal.split("-");
+    if (origY === curY && origM === curM) {
+      setPreviewNomor(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .nextArsipNomor(form.tanggal, item.divisi)
+      .then((r) => { if (!cancelled) setPreviewNomor(r.nomorArsip); })
+      .catch(() => { if (!cancelled) setPreviewNomor(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, item, mode, form?.tanggal]);
 
   if (!open || !item || !form) return null;
 
@@ -159,7 +185,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="dr-nomor-arsip">Nomor Pemindahan Arsip</label>
-              <input type="text" id="dr-nomor-arsip" disabled value={item.nomorArsip || ""} />
+              <input type="text" id="dr-nomor-arsip" disabled value={previewNomor || item.nomorArsip || ""} />
             </div>
             <div className="field">
               <label htmlFor="dr-tanggal">Tanggal</label>
@@ -177,25 +203,34 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 value={form.jumlahArsip ? String(form.jumlahArsip) : ""}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
+                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 30));
                 }}
               />
             </div>
             <div className="field">
               <label htmlFor="dr-nama-pic">Nama PIC</label>
-              <input type="text" id="dr-nama-pic" required disabled={!isEdit} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+              <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={30} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="dr-telepon-pic">No. Telepon PIC</label>
-              <input type="text" id="dr-telepon-pic" required disabled={!isEdit} value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="dr-telepon-pic"
+                required
+                disabled={!isEdit}
+                maxLength={15}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="dr-keperluan">Keperluan</label>
-              <input type="text" id="dr-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="dr-keperluan" required disabled={!isEdit} maxLength={30} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="dr-lokasi" required disabled={!isEdit} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+              <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={30} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 
             <div className="field full">
@@ -235,6 +270,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       id={`dr-nama-arsip-${idx}`}
                       required
                       disabled={!isEdit}
+                      maxLength={30}
                       placeholder="Nama arsip"
                       value={row.namaArsip}
                       onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
@@ -290,6 +326,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       id={`dr-satuan-${idx}`}
                       required
                       disabled={!isEdit}
+                      maxLength={30}
                       placeholder="Satuan"
                       value={row.satuan}
                       onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -306,9 +343,21 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
 
             <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="dr-catatan">Catatan</label>
-              <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="dr-catatan" disabled={!isEdit} maxLength={30} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
+
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
+
+          {item.rejectReason && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Catatan Penolakan:</strong> {item.rejectReason}
+            </div>
+          )}
 
           {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
@@ -337,18 +386,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
             )}
           </div>
-
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
-
-          {item.rejectReason && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Catatan Penolakan:</strong> {item.rejectReason}
-            </div>
-          )}
         </form>
       </div>
     </ModalOverlay>
