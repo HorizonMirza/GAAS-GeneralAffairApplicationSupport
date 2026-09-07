@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { KATEGORI_KERUSAKAN_LABEL, URGENSI_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
@@ -32,12 +33,15 @@ const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusa
 const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
 
 export default function SaranaFormModal({ open, me, onClose, onCreated }: Props) {
+  const { orgStructure } = useAuth();
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload>(emptyForm());
   const [error, setError] = useState("");
   const [nomorPerbaikan, setNomorPerbaikan] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
+
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
   useEffect(() => {
     if (open) {
@@ -49,12 +53,17 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextSaranaNomor(form.tanggal)
+      .nextSaranaNomor(form.tanggal, isGaActor ? form.divisi : undefined)
       .then((r) => setNomorPerbaikan(r.nomorPerbaikan))
       .catch(() => setNomorPerbaikan(""));
-  }, [open, form.tanggal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.tanggal, form.divisi]);
 
   if (!open) return null;
+
+  const departemenOptions = form.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
+    : [];
 
   const unitName =
     me.departemen ||
@@ -67,8 +76,20 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isGaActor) {
+      if (!form.divisi) {
+        setError("Divisi wajib dipilih");
+        return;
+      }
+      if (form.departemen === undefined) {
+        setError("Departemen wajib dipilih");
+        return;
+      }
+    }
     try {
-      await api.createSarana({ ...form, catatan: form.catatan || null });
+      // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
+      // undefined here (not sent at all) so the backend still records a null Departemen.
+      await api.createSarana({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
       showToast("Laporan perbaikan berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -90,6 +111,32 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               <label htmlFor="fs-nomor-perbaikan">Nomor Laporan Perbaikan</label>
               <input type="text" id="fs-nomor-perbaikan" disabled value={nomorPerbaikan} />
             </div>
+            {isGaActor && (
+              <>
+                <div className="field">
+                  <label htmlFor="fs-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="fs-divisi"
+                    value={form.divisi}
+                    onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
+                    options={orgStructure?.divisi || []}
+                    placeholder="Pilih Divisi"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="fs-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="fs-departemen"
+                    value={form.departemen}
+                    onChange={(next) => set("departemen", next)}
+                    options={departemenOptions}
+                    placeholder="Pilih Departemen"
+                    clearLabel="Kebutuhan Divisi"
+                    disabled={!form.divisi}
+                  />
+                </div>
+              </>
+            )}
             <div className="field">
               <label htmlFor="fs-tanggal">Tanggal Laporan</label>
               <input type="date" id="fs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />

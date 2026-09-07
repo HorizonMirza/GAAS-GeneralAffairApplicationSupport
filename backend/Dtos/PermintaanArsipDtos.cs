@@ -13,6 +13,11 @@ public class PermintaanArsipItemCreate
 
 public class PermintaanArsipCreate
 {
+    // Admin/Approval GA only: lets them request on behalf of any divisi/departemen instead of
+    // their own GA home unit (see PermintaanArsipController.EffectiveOwner) - ignored for every
+    // other role, and ignored for GA too when left blank.
+    public string? Divisi { get; set; }
+    public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
     public string NamaPic { get; set; } = null!;

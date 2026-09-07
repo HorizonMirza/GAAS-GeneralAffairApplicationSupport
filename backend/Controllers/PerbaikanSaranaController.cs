@@ -92,6 +92,17 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static string? EffectiveDepartemen(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
 
+    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+
+    // Same on-behalf allowance as PengirimanController - Admin/Approval GA can request a repair
+    // for any divisi/departemen (payload.Divisi/Departemen), not just their own GA home unit.
+    // Every other role always requests as itself; GA requesting with no Divisi chosen falls back
+    // to their own GA home unit, same as before this feature existed.
+    private static (string divisi, string? departemen) EffectiveOwner(User user, PerbaikanSaranaCreate payload) =>
+        IsGaActor(user) && !string.IsNullOrEmpty(payload.Divisi)
+            ? (payload.Divisi, payload.Departemen)
+            : (EffectiveDivisi(user), EffectiveDepartemen(user));
+
     // A rejected report is a dead end (no revision-and-resubmit path, same as the other modules) -
     // the only thing editable by its creator is a never-submitted DRAFT.
     private static bool IsEditableByOrigin(PerbaikanSarana item, User currentUser) =>
@@ -189,8 +200,18 @@ public class PerbaikanSaranaController : ApiControllerBase
         return ApplyBulanFilter(query, bulan);
     }
 
-    private static string? ValidatePayload(PerbaikanSaranaCreate payload)
+    private static string? ValidatePayload(PerbaikanSaranaCreate payload, bool isGaActor)
     {
+        // Only Admin/Approval GA can request on behalf of another unit - the field is silently
+        // ignored for every other role (see EffectiveOwner above), so it's only validated here
+        // when it could actually take effect.
+        if (isGaActor && !string.IsNullOrEmpty(payload.Divisi))
+        {
+            if (!OrgTree.AllDivisi.Contains(payload.Divisi))
+                return "Divisi tidak ditemukan";
+            if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
+                return "Departemen tidak ditemukan pada divisi tersebut";
+        }
         if (string.IsNullOrWhiteSpace(payload.Lokasi))
             return "Lokasi wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.DeskripsiKerusakan))
@@ -239,17 +260,19 @@ public class PerbaikanSaranaController : ApiControllerBase
         $"{seq:D4}.{OrgTree.GetKodeSatuanKerja(divisi)}.{tanggal:MM}.{tanggal:yyyy}";
 
     [HttpGet("next-nomor")]
-    public async Task<IActionResult> NextNomor([FromQuery] DateOnly? tanggal)
+    public async Task<IActionResult> NextNomor([FromQuery] DateOnly? tanggal, [FromQuery] string? divisi)
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        var divisi = EffectiveDivisi(user!);
-        if (string.IsNullOrEmpty(divisi))
+        var effectiveDivisi = IsGaActor(user!) && !string.IsNullOrEmpty(divisi) && OrgTree.AllDivisi.Contains(divisi)
+            ? divisi
+            : EffectiveDivisi(user!);
+        if (string.IsNullOrEmpty(effectiveDivisi))
             return Ok(new { nomorPerbaikan = "" });
 
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var seq = await PeekNextNomorSequenceAsync(divisi, effectiveTanggal.Year, effectiveTanggal.Month);
-        return Ok(new { nomorPerbaikan = BuildNomorPerbaikan(divisi, seq, effectiveTanggal) });
+        var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
+        return Ok(new { nomorPerbaikan = BuildNomorPerbaikan(effectiveDivisi, seq, effectiveTanggal) });
     }
 
     [HttpPost]
@@ -258,10 +281,10 @@ public class PerbaikanSaranaController : ApiControllerBase
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
 
-        var validationError = ValidatePayload(payload);
+        var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
-        var divisi = EffectiveDivisi(user!);
+        var (divisi, departemen) = EffectiveOwner(user!, payload);
         if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
@@ -271,7 +294,7 @@ public class PerbaikanSaranaController : ApiControllerBase
             CreatedByRole = user.Role,
             Status = BookingStatusEnum.DRAFT,
             Divisi = divisi,
-            Departemen = EffectiveDepartemen(user),
+            Departemen = departemen,
         };
         ApplyCreatePayload(item, payload);
 
@@ -297,7 +320,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        var validationError = ValidatePayload(payload);
+        var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
         if (item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month)

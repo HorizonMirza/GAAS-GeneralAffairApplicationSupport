@@ -11,6 +11,11 @@ public class PermintaanAtkItemCreate
 
 public class PermintaanAtkCreate
 {
+    // Admin/Approval GA only: lets them request on behalf of any divisi/departemen instead of
+    // their own GA home unit (see PermintaanAtkController.EffectiveOwner) - ignored for every
+    // other role, and ignored for GA too when left blank.
+    public string? Divisi { get; set; }
+    public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public string Keperluan { get; set; } = null!;
     public string? Catatan { get; set; }

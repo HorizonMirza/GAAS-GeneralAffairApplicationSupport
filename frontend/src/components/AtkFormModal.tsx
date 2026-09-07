@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 // Exact-match lookup only (typing something not in the catalog just stays free text) - used to
@@ -36,12 +38,15 @@ function emptyForm(): PermintaanAtkCreatePayload {
 const MAX_ITEM_ROWS = 30;
 
 export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
+  const { orgStructure } = useAuth();
   const [form, setForm] = useState<PermintaanAtkCreatePayload>(emptyForm());
   const [error, setError] = useState("");
   const [nomorPermintaan, setNomorPermintaan] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
+
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
   useEffect(() => {
     if (open) {
@@ -53,12 +58,17 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextAtkNomor(form.tanggal)
+      .nextAtkNomor(form.tanggal, isGaActor ? form.divisi : undefined)
       .then((r) => setNomorPermintaan(r.nomorPermintaan))
       .catch(() => setNomorPermintaan(""));
-  }, [open, form.tanggal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.tanggal, form.divisi]);
 
   if (!open) return null;
+
+  const departemenOptions = form.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
+    : [];
 
   const unitName =
     me.departemen ||
@@ -86,8 +96,20 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isGaActor) {
+      if (!form.divisi) {
+        setError("Divisi wajib dipilih");
+        return;
+      }
+      if (form.departemen === undefined) {
+        setError("Departemen wajib dipilih");
+        return;
+      }
+    }
     try {
-      await api.createAtk({ ...form, catatan: form.catatan || null });
+      // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
+      // undefined here (not sent at all) so the backend still records a null Departemen.
+      await api.createAtk({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
       showToast("Permintaan ATK berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -109,6 +131,32 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               <label htmlFor="fa-nomor-permintaan">Nomor Permintaan ATK</label>
               <input type="text" id="fa-nomor-permintaan" disabled value={nomorPermintaan} />
             </div>
+            {isGaActor && (
+              <>
+                <div className="field">
+                  <label htmlFor="fa-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="fa-divisi"
+                    value={form.divisi}
+                    onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
+                    options={orgStructure?.divisi || []}
+                    placeholder="Pilih Divisi"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="fa-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="fa-departemen"
+                    value={form.departemen}
+                    onChange={(next) => set("departemen", next)}
+                    options={departemenOptions}
+                    placeholder="Pilih Departemen"
+                    clearLabel="Kebutuhan Divisi"
+                    disabled={!form.divisi}
+                  />
+                </div>
+              </>
+            )}
             <div className="field">
               <label htmlFor="fa-tanggal">Tanggal Dibutuhkan</label>
               <input type="date" id="fa-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />

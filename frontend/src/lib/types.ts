@@ -483,6 +483,10 @@ export interface PermintaanArsipItemPayload {
 }
 
 export interface PermintaanArsipCreatePayload {
+  // Admin/Approval GA only: requests on behalf of another divisi/departemen instead of their own
+  // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
+  divisi?: string;
+  departemen?: string;
   tanggal: string;
   jumlahArsip: number;
   namaPic: string;
@@ -558,6 +562,10 @@ export interface PerbaikanSaranaLog {
 }
 
 export interface PerbaikanSaranaCreatePayload {
+  // Admin/Approval GA only: requests on behalf of another divisi/departemen instead of their own
+  // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
+  divisi?: string;
+  departemen?: string;
   tanggal: string;
   lokasi: string;
   kategori: KategoriKerusakan;
@@ -631,6 +639,10 @@ export interface PermintaanAtkItemPayload {
 }
 
 export interface PermintaanAtkCreatePayload {
+  // Admin/Approval GA only: requests on behalf of another divisi/departemen instead of their own
+  // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
+  divisi?: string;
+  departemen?: string;
   tanggal: string;
   keperluan: string;
   catatan: string | null;

@@ -490,8 +490,8 @@ export const api = {
   sendKendaraanChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
 
-  nextAtkNomor: (tanggal: string) =>
-    apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal } }),
+  nextAtkNomor: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal, divisi } }),
   listAtk: (params: ListAtkParams) =>
     apiRequest<PermintaanAtkListResponse>("/permintaan-atk", { params: atkListParams(params) }),
   getAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`),
@@ -527,8 +527,8 @@ export const api = {
   sendAtkChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/permintaan-atk/${id}/chat`, { method: "POST", body: { message } }),
 
-  nextSaranaNomor: (tanggal: string) =>
-    apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal } }),
+  nextSaranaNomor: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal, divisi } }),
   listSarana: (params: ListSaranaParams) =>
     apiRequest<PerbaikanSaranaListResponse>("/perbaikan-sarana", { params: saranaListParams(params) }),
   getSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`),
@@ -582,8 +582,8 @@ export const api = {
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi`, { method: "PATCH", body: { catatan } }),
   saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
 
-  nextArsipNomor: (tanggal: string) =>
-    apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal } }),
+  nextArsipNomor: (tanggal: string, divisi?: string) =>
+    apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal, divisi } }),
   listArsip: (params: ListArsipParams) =>
     apiRequest<PermintaanArsipListResponse>("/permintaan-arsip", { params: arsipListParams(params) }),
   getArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`),

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
@@ -46,12 +47,15 @@ const MAX_ITEM_ROWS = 30;
 type FormState = ReturnType<typeof emptyForm>;
 
 export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) {
+  const { orgStructure } = useAuth();
   const [form, setForm] = useState<FormState>(emptyForm());
   const [error, setError] = useState("");
   const [nomorArsip, setNomorArsip] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
+
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 
   useEffect(() => {
     if (open) {
@@ -63,12 +67,17 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextArsipNomor(form.tanggal)
+      .nextArsipNomor(form.tanggal, isGaActor ? form.divisi : undefined)
       .then((r) => setNomorArsip(r.nomorArsip))
       .catch(() => setNomorArsip(""));
-  }, [open, form.tanggal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.tanggal, form.divisi]);
 
   if (!open) return null;
+
+  const departemenOptions = form.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
+    : [];
 
   const unitName =
     me.departemen ||
@@ -97,13 +106,25 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (isGaActor) {
+      if (!form.divisi) {
+        setError("Divisi wajib dipilih");
+        return;
+      }
+      if (form.departemen === undefined) {
+        setError("Departemen wajib dipilih");
+        return;
+      }
+    }
     if (form.items.some((row) => !row.kategori)) {
       setError("Kategori wajib dipilih untuk semua arsip");
       return;
     }
     try {
       const items: PermintaanArsipItemPayload[] = form.items.map((row) => ({ ...row, kategori: row.kategori as ArchiveKategori }));
-      await api.createArsip({ ...form, items, catatan: form.catatan || null });
+      // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
+      // undefined here (not sent at all) so the backend still records a null Departemen.
+      await api.createArsip({ ...form, items, departemen: form.departemen || undefined, catatan: form.catatan || null });
       showToast("Permintaan pemindahan arsip berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -125,6 +146,32 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
               <label htmlFor="fr-nomor-arsip">Nomor Pemindahan Arsip</label>
               <input type="text" id="fr-nomor-arsip" disabled value={nomorArsip} />
             </div>
+            {isGaActor && (
+              <>
+                <div className="field">
+                  <label htmlFor="fr-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="fr-divisi"
+                    value={form.divisi}
+                    onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
+                    options={orgStructure?.divisi || []}
+                    placeholder="Pilih Divisi"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="fr-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="fr-departemen"
+                    value={form.departemen}
+                    onChange={(next) => set("departemen", next)}
+                    options={departemenOptions}
+                    placeholder="Pilih Departemen"
+                    clearLabel="Kebutuhan Divisi"
+                    disabled={!form.divisi}
+                  />
+                </div>
+              </>
+            )}
             <div className="field">
               <label htmlFor="fr-tanggal">Tanggal</label>
               <input type="date" id="fr-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />

@@ -4,6 +4,11 @@ namespace PengirimanApi.Dtos;
 
 public class PerbaikanSaranaCreate
 {
+    // Admin/Approval GA only: lets them request on behalf of any divisi/departemen instead of
+    // their own GA home unit (see PerbaikanSaranaController.EffectiveOwner) - ignored for every
+    // other role, and ignored for GA too when left blank.
+    public string? Divisi { get; set; }
+    public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public string Lokasi { get; set; } = null!;
     public KategoriKerusakanEnum Kategori { get; set; }
