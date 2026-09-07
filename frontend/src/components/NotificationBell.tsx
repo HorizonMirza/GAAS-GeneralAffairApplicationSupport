@@ -15,7 +15,7 @@ type Tab = "all" | "chat" | "activity";
 const TABS: { value: Tab; label: string }[] = [
   { value: "all", label: "All" },
   { value: "chat", label: "Chat" },
-  { value: "activity", label: "Transaksi" },
+  { value: "activity", label: "Transactions" },
 ];
 
 type Item =
@@ -92,7 +92,7 @@ export default function NotificationBell() {
       <button
         type="button"
         className="icon-btn notification-bell-trigger"
-        aria-label="Notifikasi"
+        aria-label="Notifications"
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -103,10 +103,10 @@ export default function NotificationBell() {
       {open && (
         <div className="notification-dropdown" onClick={(e) => e.stopPropagation()}>
           <div className="notification-dropdown-header">
-            <span>Notifikasi</span>
+            <span>Notifications</span>
             {unreadCount > 0 && (
               <button type="button" className="notification-mark-all" onClick={markAllRead}>
-                Tandai semua dibaca
+                Mark all as read
               </button>
             )}
           </div>
