@@ -53,7 +53,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
     question: "Ada kendala teknis atau butuh bantuan lain, harus hubungi siapa?",
     answer: "Buka halaman Contact Person untuk daftar PIC tiap modul, lengkap dengan nomor WhatsApp dan email yang bisa langsung dihubungi.",
   },
-];
+].sort((a, b) => b.question.length - a.question.length);
 
 export default function BantuanPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
