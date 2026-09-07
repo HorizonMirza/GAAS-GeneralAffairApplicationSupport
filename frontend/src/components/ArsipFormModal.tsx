@@ -19,14 +19,19 @@ interface Props {
   onCreated: () => void;
 }
 
-function emptyItem(): PermintaanArsipItemPayload {
-  return { namaArsip: "", kategori: "SOP", tahunArsip: "", jumlah: 1, satuan: "" };
+// Kategori starts unset (undefined) so SearchableSelect shows its placeholder instead of a
+// pre-picked value - handleSubmit validates every row has one chosen before submitting, the
+// same pattern RoomBookingFormModal uses for its own required-but-unset selects.
+type FormItem = Omit<PermintaanArsipItemPayload, "kategori"> & { kategori: ArchiveKategori | undefined };
+
+function emptyItem(): FormItem {
+  return { namaArsip: "", kategori: undefined, tahunArsip: "", jumlah: 1, satuan: "" };
 }
 
-function emptyForm(): PermintaanArsipCreatePayload {
+function emptyForm(): Omit<PermintaanArsipCreatePayload, "items"> & { items: FormItem[] } {
   return {
     tanggal: todayLocalDate(),
-    jumlahArsip: 0,
+    jumlahArsip: 1,
     namaPic: "",
     noTeleponPic: "",
     keperluan: "",
@@ -38,8 +43,10 @@ function emptyForm(): PermintaanArsipCreatePayload {
 
 const MAX_ITEM_ROWS = 30;
 
+type FormState = ReturnType<typeof emptyForm>;
+
 export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) {
-  const [form, setForm] = useState<PermintaanArsipCreatePayload>(emptyForm());
+  const [form, setForm] = useState<FormState>(emptyForm());
   const [error, setError] = useState("");
   const [nomorArsip, setNomorArsip] = useState("");
   const { showToast } = useToast();
@@ -68,11 +75,11 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
     me.divisi ||
     (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
-  function set<K extends keyof PermintaanArsipCreatePayload>(key: K, value: PermintaanArsipCreatePayload[K]) {
+  function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function setItem(index: number, patch: Partial<PermintaanArsipItemPayload>) {
+  function setItem(index: number, patch: Partial<FormItem>) {
     setForm((f) => ({
       ...f,
       items: f.items.map((row, i) => (i === index ? { ...row, ...patch } : row)),
@@ -89,8 +96,14 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    if (form.items.some((row) => !row.kategori)) {
+      setError("Kategori wajib dipilih untuk semua arsip");
+      return;
+    }
     try {
-      await api.createArsip({ ...form, catatan: form.catatan || null });
+      const items: PermintaanArsipItemPayload[] = form.items.map((row) => ({ ...row, kategori: row.kategori as ArchiveKategori }));
+      await api.createArsip({ ...form, items, catatan: form.catatan || null });
       showToast("Permintaan pemindahan arsip berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -124,7 +137,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 pattern="[0-9]*"
                 id="fr-jumlah-arsip"
                 required
-                placeholder="Total jumlah arsip yang diminta"
+                placeholder="Masukkan Angka"
                 value={form.jumlahArsip === 0 ? "" : String(form.jumlahArsip)}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
@@ -134,23 +147,23 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             </div>
             <div className="field">
               <label htmlFor="fr-nama-pic">Nama PIC</label>
-              <input type="text" id="fr-nama-pic" required placeholder="Nama penanggung jawab" value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+              <input type="text" id="fr-nama-pic" required value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
-              <input type="text" id="fr-telepon-pic" required placeholder="Contoh: 081234567890" value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
-            </div>
-            <div className="field full">
-              <label htmlFor="fr-keperluan">Keperluan</label>
-              <input type="text" id="fr-keperluan" required placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fr-telepon-pic" required value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="fr-lokasi" required placeholder="Contoh: Lemari Arsip Divisi, Lt. 3" value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+              <input type="text" id="fr-lokasi" required value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+            </div>
+            <div className="field full">
+              <label htmlFor="fr-keperluan">Tujuan</label>
+              <input type="text" id="fr-keperluan" required placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
-              <label>Daftar Arsip</label>
+              <label>Form Arsip</label>
               {form.items.map((row, idx) => (
                 <div
                   key={idx}
@@ -183,7 +196,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                       type="text"
                       id={`fr-nama-arsip-${idx}`}
                       required
-                      placeholder="Nama arsip (contoh: Kontrak Vendor 2018-2019)"
+                      placeholder="Contoh: Kontrak Vendor 2018 - 2019"
                       value={row.namaArsip}
                       onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
                     />
@@ -196,7 +209,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                       onChange={(v) => setItem(idx, { kategori: v as ArchiveKategori })}
                       options={KATEGORI_OPTIONS}
                       getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
-                      placeholder="Kategori"
+                      placeholder="Pilih Kategori"
                     />
                   </div>
                   <div>
@@ -213,28 +226,12 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                     />
                   </div>
                   <div>
-                    <label htmlFor={`fr-jumlah-${idx}`}>Jumlah</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      id={`fr-jumlah-${idx}`}
-                      required
-                      placeholder="Jumlah"
-                      value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                        setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                      }}
-                    />
-                  </div>
-                  <div>
                     <label htmlFor={`fr-satuan-${idx}`}>Satuan</label>
                     <input
                       type="text"
                       id={`fr-satuan-${idx}`}
                       required
-                      placeholder="Satuan (boks/bendel/berkas)"
+                      placeholder="Contoh: Berkas, Bendel, Box"
                       value={row.satuan}
                       onChange={(e) => setItem(idx, { satuan: e.target.value })}
                     />
@@ -242,7 +239,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 </div>
               ))}
               {form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
+                <button type="button" className="arsip-add-row-btn" onClick={addItemRow}>
                   + Tambah Arsip
                 </button>
               )}
