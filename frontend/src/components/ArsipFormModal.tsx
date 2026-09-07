@@ -185,7 +185,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 id="fr-jumlah-arsip"
                 required
                 placeholder="Masukkan Angka"
-                value={form.jumlahArsip === 0 ? "" : String(form.jumlahArsip)}
+                value={form.jumlahArsip ? String(form.jumlahArsip) : ""}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
                   set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
@@ -291,16 +291,16 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 </button>
               )}
             </div>
+
+            <div className="field full">
+              <label htmlFor="fr-catatan">Catatan</label>
+              <input type="text" id="fr-catatan" placeholder="Contoh: Sudah tidak dipakai sejak 2022" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+            </div>
           </div>
 
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
-          </div>
-
-          <div className="field full">
-            <label htmlFor="fr-catatan">Catatan</label>
-            <input type="text" id="fr-catatan" placeholder="Contoh: Sudah tidak dipakai sejak 2022" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
           </div>
         </form>
       </div>

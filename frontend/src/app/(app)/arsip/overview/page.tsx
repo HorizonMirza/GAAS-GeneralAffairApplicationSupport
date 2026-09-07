@@ -9,12 +9,11 @@ import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
-  arsipItemsSummary,
   isArsipDeletableByOrigin,
   isArsipEditableByOrigin,
   isBookingOriginRole,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
+import { currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingStatus, PermintaanArsip } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -182,7 +181,7 @@ export default function ArsipOverviewPage() {
                 <div className="card-header-title">
                   <strong>{item.keperluan} - {item.nomorArsip || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {truncateText(arsipItemsSummary(item), 60)}
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

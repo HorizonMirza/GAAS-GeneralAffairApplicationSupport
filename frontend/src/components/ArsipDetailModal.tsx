@@ -35,7 +35,7 @@ const MAX_ITEM_ROWS = 30;
 function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
   return {
     tanggal: item.tanggal,
-    jumlahArsip: item.jumlahArsip,
+    jumlahArsip: item.jumlahArsip || 0,
     namaPic: item.namaPic || "",
     noTeleponPic: item.noTeleponPic || "",
     keperluan: item.keperluan,
@@ -174,7 +174,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 id="dr-jumlah-arsip"
                 required
                 disabled={!isEdit}
-                value={form.jumlahArsip === 0 ? "" : String(form.jumlahArsip)}
+                value={form.jumlahArsip ? String(form.jumlahArsip) : ""}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
                   set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
@@ -304,13 +304,13 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               )}
             </div>
 
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="dr-catatan">Catatan</label>
               <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             {canSubmitDraft && (
               <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
