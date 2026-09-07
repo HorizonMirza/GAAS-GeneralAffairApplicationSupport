@@ -11,8 +11,8 @@
   --ice-100: #eef4ff;
   --white: #ffffff;
 
-  --gradient-primary: linear-gradient(135deg, var(--navy-900) 0%, var(--blue-600) 55%, var(--blue-400) 100%);
-  --gradient-primary-hover: linear-gradient(135deg, var(--navy-800) 0%, var(--blue-500) 55%, var(--blue-300) 100%);
+  --gradient-primary: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
+  --gradient-primary-hover: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-300) 100%);
 
   --glow-blue: 0 0 0 1px rgba(75, 141, 255, 0.25), 0 8px 28px rgba(20, 80, 201, 0.35), 0 0 40px rgba(75, 141, 255, 0.18);
   --glow-blue-strong: 0 0 0 1px rgba(75, 141, 255, 0.4), 0 12px 36px rgba(20, 80, 201, 0.45), 0 0 56px rgba(75, 141, 255, 0.3);
@@ -1695,7 +1695,7 @@ body.auth-ready .app-shell {
   gap: 16px;
   padding: 20px 22px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
+  background: var(--gradient-primary);
   color: #fff;
 }
 
