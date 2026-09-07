@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { itemVariants, sidebarVariants } from "./ui/menu";
 import { useClickOutside } from "@/lib/useClickOutside";
 
 // Rough upper bound on the panel's own height (search input + padding + the options list's own
@@ -119,9 +121,14 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       {open && !disabled && (
-        <div className={`searchable-select-panel${dropUp ? " searchable-select-panel-up" : ""}`}>
+        <motion.div
+          className={`searchable-select-panel${dropUp ? " searchable-select-panel-up" : ""}`}
+          initial="hidden"
+          animate="visible"
+          variants={sidebarVariants}
+        >
           {showSearch && (
-            <input
+            <motion.input
               ref={inputRef}
               type="text"
               className="searchable-select-search"
@@ -129,9 +136,10 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
+              variants={itemVariants}
             />
           )}
-          <div className="searchable-select-options">
+          <motion.div className="searchable-select-options" variants={itemVariants}>
             {clearLabel && (
               <div
                 className={`searchable-select-option searchable-select-clear${value === "" ? " searchable-select-option-active" : ""}`}
@@ -155,8 +163,8 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
                 </div>
               ))
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </div>
   );
