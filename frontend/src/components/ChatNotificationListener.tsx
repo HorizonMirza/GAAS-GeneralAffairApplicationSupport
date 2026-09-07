@@ -9,6 +9,9 @@ import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const DISMISS_AFTER_MS = 6000;
 const LEAVE_ANIM_MS = 300;
+// Caps how many banners can be visibly stacked at once - a burst of events (e.g. a recurring
+// booking's mass approval) drops the oldest immediately rather than growing the stack forever.
+const MAX_VISIBLE = 4;
 
 // Transaksi page per module - a chat notification's click adds ?chat=<itemId> so that page can
 // deep-link straight into the thread (see booking-ruang-meeting/transaksi's `chat` query param
@@ -29,35 +32,48 @@ function bannerHref(banner: BannerState): string {
 }
 
 // Always-mounted (rendered once from AppShell, for every authenticated page) WhatsApp-style
-// notification: brings the shared SignalR connection up as soon as someone's logged in (instead
-// of only when a chat modal happens to be open), and on every incoming chat message or workflow
-// event (new transaction submitted, approve/reject step) shows a top-center banner + plays a
-// sound - independent of which page, if any, is open. The two event kinds share this one banner
-// UI but get a different sound and a different click target (straight into the chat vs. the
-// plain Transaksi list).
+// notification stack: brings the shared SignalR connection up as soon as someone's logged in
+// (instead of only when a chat modal happens to be open), and on every incoming chat message or
+// workflow event (new transaction submitted, approve/reject step) pops a card onto a top-center
+// stack + plays a sound - independent of which page, if any, is open. Several cards can be
+// visible at once (each with its own auto-dismiss timer), newest on top, mirroring a real
+// notification feed instead of replacing one banner with the next.
 export default function ChatNotificationListener() {
   const { me } = useAuth();
   const router = useRouter();
-  const [banner, setBanner] = useState<BannerState | null>(null);
+  const [banners, setBanners] = useState<BannerState[]>([]);
   const idRef = useRef(0);
-  const timers = useRef<{ leave?: ReturnType<typeof setTimeout>; remove?: ReturnType<typeof setTimeout> }>({});
+  const timers = useRef<Map<number, { leave: ReturnType<typeof setTimeout>; remove?: ReturnType<typeof setTimeout> }>>(new Map());
 
-  const dismiss = useCallback(() => {
-    clearTimeout(timers.current.leave);
-    clearTimeout(timers.current.remove);
-    const id = idRef.current;
-    setBanner((current) => (current && current.id === id ? { ...current, leaving: true } : current));
-    timers.current.remove = setTimeout(() => {
-      setBanner((current) => (current && current.id === id ? null : current));
+  const dismiss = useCallback((id: number) => {
+    const entry = timers.current.get(id);
+    if (entry) clearTimeout(entry.leave);
+    clearTimeout(entry?.remove);
+    setBanners((current) => current.map((b) => (b.id === id ? { ...b, leaving: true } : b)));
+    const removeTimer = setTimeout(() => {
+      setBanners((current) => current.filter((b) => b.id !== id));
+      timers.current.delete(id);
     }, LEAVE_ANIM_MS);
+    timers.current.set(id, { leave: entry?.leave as ReturnType<typeof setTimeout>, remove: removeTimer });
   }, []);
 
   const show = useCallback((next: Omit<BannerState, "id" | "leaving">) => {
-    clearTimeout(timers.current.leave);
-    clearTimeout(timers.current.remove);
     const id = ++idRef.current;
-    setBanner({ ...next, id, leaving: false } as BannerState);
-    timers.current.leave = setTimeout(dismiss, DISMISS_AFTER_MS);
+    const leaveTimer = setTimeout(() => dismiss(id), DISMISS_AFTER_MS);
+    timers.current.set(id, { leave: leaveTimer });
+    setBanners((current) => {
+      const updated = [{ ...next, id, leaving: false } as BannerState, ...current];
+      if (updated.length <= MAX_VISIBLE) return updated;
+      // Drop the oldest overflow instantly (no exit animation) and clear its timers.
+      const overflow = updated.slice(MAX_VISIBLE);
+      overflow.forEach((b) => {
+        const entry = timers.current.get(b.id);
+        clearTimeout(entry?.leave);
+        clearTimeout(entry?.remove);
+        timers.current.delete(b.id);
+      });
+      return updated.slice(0, MAX_VISIBLE);
+    });
   }, [dismiss]);
 
   useEffect(() => {
@@ -74,43 +90,52 @@ export default function ChatNotificationListener() {
     return () => {
       unsubChat();
       unsubActivity();
-      clearTimeout(timers.current.leave);
-      clearTimeout(timers.current.remove);
+      timers.current.forEach((entry) => {
+        clearTimeout(entry.leave);
+        clearTimeout(entry.remove);
+      });
+      timers.current.clear();
     };
   }, [me, show]);
 
-  if (!banner) return null;
-
-  const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
-  const detail = banner.source === "chat" ? banner.preview : banner.message;
+  if (banners.length === 0) return null;
 
   return (
-    <button
-      type="button"
-      className={`chat-notification-banner${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
-      onClick={() => {
-        dismiss();
-        router.push(bannerHref(banner));
-      }}
-    >
-      <span className="chat-notification-avatar">{initials(actorNama)}</span>
-      <span className="chat-notification-body">
-        <span className="chat-notification-title">
-          <strong>{actorNama}</strong> · {banner.itemLabel}
-        </span>
-        <span className="chat-notification-preview">{detail}</span>
-      </span>
-      <span
-        className="chat-notification-close"
-        role="button"
-        aria-label="Tutup notifikasi"
-        onClick={(e) => {
-          e.stopPropagation();
-          dismiss();
-        }}
-      >
-        &times;
-      </span>
-    </button>
+    <div className="chat-notification-stack">
+      {banners.map((banner) => {
+        const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
+        const detail = banner.source === "chat" ? banner.preview : banner.message;
+        return (
+          <button
+            key={banner.id}
+            type="button"
+            className={`chat-notification-banner${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
+            onClick={() => {
+              dismiss(banner.id);
+              router.push(bannerHref(banner));
+            }}
+          >
+            <span className="chat-notification-avatar">{initials(actorNama)}</span>
+            <span className="chat-notification-body">
+              <span className="chat-notification-title">
+                <strong>{actorNama}</strong> · {banner.itemLabel}
+              </span>
+              <span className="chat-notification-preview">{detail}</span>
+            </span>
+            <span
+              className="chat-notification-close"
+              role="button"
+              aria-label="Tutup notifikasi"
+              onClick={(e) => {
+                e.stopPropagation();
+                dismiss(banner.id);
+              }}
+            >
+              &times;
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
