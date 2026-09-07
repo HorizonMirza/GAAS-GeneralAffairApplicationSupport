@@ -4612,3 +4612,71 @@ table.data-table {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
 }
+
+/* 404 page: always dark regardless of the light/dark toggle, same reasoning as .login-page -
+   this is a full-bleed brand moment, not a themed content page. */
+.notfound-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy-950);
+  padding: 24px;
+  isolation: isolate;
+}
+
+.notfound-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 480px;
+  text-align: center;
+}
+
+.notfound-code {
+  font-size: clamp(96px, 18vw, 160px);
+  font-weight: 800;
+  line-height: 1;
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.notfound-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #eef4ff;
+}
+
+.notfound-message {
+  margin: 0 0 8px;
+  color: rgba(238, 244, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.notfound-home-btn {
+  width: auto;
+  padding: 12px 28px;
+  text-decoration: none;
+}
+
+.notfound-clouds {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 100%;
+  height: 40vh;
+  min-height: 200px;
+  pointer-events: none;
+}
