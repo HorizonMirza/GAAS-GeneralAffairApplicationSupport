@@ -858,6 +858,9 @@ public class AppDbContext : DbContext
             e.Property(p => p.Id).HasColumnName("id");
             e.Property(p => p.NomorArsip).HasColumnName("nomor_arsip").HasMaxLength(50);
             e.Property(p => p.Tanggal).HasColumnName("tanggal");
+            e.Property(p => p.JumlahArsip).HasColumnName("jumlah_arsip");
+            e.Property(p => p.NamaPic).HasColumnName("nama_pic").HasMaxLength(255);
+            e.Property(p => p.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
             e.Property(p => p.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
             e.Property(p => p.LokasiPenyimpanan).HasColumnName("lokasi_penyimpanan").HasMaxLength(255).IsRequired();
             e.Property(p => p.Catatan).HasColumnName("catatan");
