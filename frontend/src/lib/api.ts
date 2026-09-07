@@ -35,9 +35,11 @@ import type {
   PerbaikanSaranaLog,
   PerbaikanSaranaStatsResponse,
   PermintaanArsip,
+  PermintaanArsipCatalogResponse,
   PermintaanArsipCreatePayload,
   PermintaanArsipListResponse,
   PermintaanArsipLog,
+  PermintaanArsipReportResponse,
   PermintaanArsipStatsResponse,
   PermintaanAtk,
   PermintaanAtkCreatePayload,
@@ -604,6 +606,22 @@ export const api = {
     apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/approve-ga-approval`, { method: "PATCH" }),
   rejectArsipGaApproval: (id: number, reason: string | null) =>
     apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
+  getArsipReport: (year: number) =>
+    apiRequest<PermintaanArsipReportResponse>("/permintaan-arsip/report", { params: { year } }),
+  getArsipCatalog: (params: ListArsipCatalogParams) =>
+    apiRequest<PermintaanArsipCatalogResponse>("/permintaan-arsip/catalog", { params: arsipCatalogParams(params) }),
+  arsipExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-arsip/export${query ? `?${query}` : ""}`;
+  },
+  arsipExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-arsip/export-pdf${query ? `?${query}` : ""}`;
+  },
   getArsipLogs: (id: number) => apiRequest<PermintaanArsipLog[]>(`/permintaan-arsip/${id}/logs`),
   getArsipChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-arsip/${id}/chat`),
   sendArsipChatMessage: (id: number, message: string) =>
@@ -631,6 +649,30 @@ function arsipListParams(p: ListArsipParams) {
     direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
+  };
+}
+
+export interface ListArsipCatalogParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  kategori?: ArchiveKategori | "";
+  tahun?: string;
+  divisi?: string;
+  departemen?: string;
+  direktorat?: string;
+}
+
+function arsipCatalogParams(p: ListArsipCatalogParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    search: p.search,
+    kategori: p.kategori,
+    tahun: p.tahun,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    direktorat: p.direktorat,
   };
 }
 

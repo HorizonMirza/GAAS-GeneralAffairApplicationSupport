@@ -149,6 +149,17 @@ function ArsipTransaksiPageInner() {
     setFilters((f) => ({ ...f, page }));
   }
 
+  function currentExportParams() {
+    return {
+      bulan: filters.bulan,
+      status: filters.status,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+      search: filters.search,
+    };
+  }
+
   function handleDelete(item: PermintaanArsip) {
     confirm("Hapus permintaan pemindahan arsip ini secara permanen?", async () => {
       try {
@@ -272,6 +283,12 @@ function ArsipTransaksiPageInner() {
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
 
           <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipExportPdfUrl(currentExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipExportUrl(currentExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
                 + Pemindahan Arsip

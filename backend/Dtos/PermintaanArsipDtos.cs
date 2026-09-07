@@ -100,3 +100,43 @@ public class PermintaanArsipStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
 }
+
+// Aggregate breakdown for the Report page - scoped to a single calendar year (the requester's
+// own visibility rules still apply, same as List/Stats) so the trend/breakdown numbers only ever
+// describe one year at a time instead of the dataset's entire lifetime.
+public class PermintaanArsipReportResponse
+{
+    public int Year { get; set; }
+    public int TotalPermintaan { get; set; }
+    // Sum of Item.Jumlah across every item belonging to a request that has finished the full
+    // approval chain (APPROVED_GA_APPROVAL) - "how many archive units actually changed hands to
+    // GA this year", as opposed to TotalPermintaan which counts tickets regardless of outcome.
+    public int TotalArsipDipindahkan { get; set; }
+    public Dictionary<string, int> CountByStatus { get; set; } = new();
+    public Dictionary<string, int> JumlahByKategori { get; set; } = new();
+    public Dictionary<string, int> CountByDivisi { get; set; } = new();
+    // 12 entries, index 0 = January, permintaan count per month within Year.
+    public List<int> CountByMonth { get; set; } = new();
+}
+
+public record PermintaanArsipCatalogItemOut(
+    int Id,
+    string NamaArsip,
+    ArchiveKategoriEnum Kategori,
+    string TahunArsip,
+    int Jumlah,
+    string Satuan,
+    string? NomorArsip,
+    string LokasiPenyimpanan,
+    string Divisi,
+    string? Departemen,
+    DateTime? ApprovedApprovalGaAt
+);
+
+public class PermintaanArsipCatalogResponse
+{
+    public List<PermintaanArsipCatalogItemOut> Items { get; set; } = new();
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int Limit { get; set; }
+}

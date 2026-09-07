@@ -509,6 +509,103 @@ public class PermintaanArsipController : ApiControllerBase
         });
     }
 
+    // Aggregate breakdown for the Report page, scoped to one calendar year at a time - reuses
+    // ApplyListFilters (no status/divisi/departemen/direktorat narrowing) so the same
+    // role-based visibility as List/Stats applies, then breaks the year's requests down several
+    // ways in memory (the item-level Jumlah sums need PermintaanArsipItem loaded anyway, and the
+    // request volume here is small enough that this is simpler and safer than several separate
+    // GroupBy queries against the database).
+    [HttpGet("report")]
+    public async Task<IActionResult> GetReport([FromQuery] int? year = null)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var targetYear = year ?? DateTime.UtcNow.Year;
+
+        var query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, null, null, null)
+            .Where(p => p.Tanggal.Year == targetYear);
+        var requests = await query.Include(p => p.Items).ToListAsync();
+
+        var approved = requests.Where(p => p.Status == BookingStatusEnum.APPROVED_GA_APPROVAL).ToList();
+        var approvedItems = approved.SelectMany(p => p.Items).ToList();
+
+        return Ok(new PermintaanArsipReportResponse
+        {
+            Year = targetYear,
+            TotalPermintaan = requests.Count,
+            TotalArsipDipindahkan = approvedItems.Sum(i => i.Jumlah),
+            CountByStatus = requests.GroupBy(p => p.Status).ToDictionary(g => g.Key.ToString(), g => g.Count()),
+            JumlahByKategori = approvedItems.GroupBy(i => i.Kategori).ToDictionary(g => g.Key.ToString(), g => g.Sum(i => i.Jumlah)),
+            CountByDivisi = requests.GroupBy(p => p.Divisi).ToDictionary(g => g.Key, g => g.Count()),
+            CountByMonth = Enumerable.Range(1, 12).Select(m => requests.Count(p => p.Tanggal.Month == m)).ToList(),
+        });
+    }
+
+    // Read-only registry of archive units that have fully cleared approval (APPROVED_GA_APPROVAL)
+    // - i.e. formally handed over to GA - flattened to one row per PermintaanArsipItem rather than
+    // one row per request, since "what's actually sitting in the inactive archive right now" is a
+    // per-object question, not a per-ticket one.
+    [HttpGet("catalog")]
+    public async Task<IActionResult> GetCatalog(
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? kategori = null,
+        [FromQuery] string? tahun = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery] string? direktorat = null)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        if (!AllowedLimits.Contains(limit))
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50,1000" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
+
+        ArchiveKategoriEnum? kategoriFilter = null;
+        if (!string.IsNullOrEmpty(kategori))
+        {
+            if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var parsedKategori))
+                return BadRequest(new { detail = "Kategori tidak valid" });
+            kategoriFilter = parsedKategori;
+        }
+
+        IQueryable<PermintaanArsip> requestQuery;
+        try
+        {
+            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var itemsQuery =
+            from p in requestQuery
+            from i in p.Items
+            select new { Request = p, Item = i };
+
+        if (kategoriFilter.HasValue) itemsQuery = itemsQuery.Where(x => x.Item.Kategori == kategoriFilter.Value);
+        if (!string.IsNullOrEmpty(tahun)) itemsQuery = itemsQuery.Where(x => x.Item.TahunArsip == tahun);
+        if (!string.IsNullOrEmpty(search)) itemsQuery = itemsQuery.Where(x => EF.Functions.ILike(x.Item.NamaArsip, $"%{search}%"));
+
+        var total = await itemsQuery.CountAsync();
+        var rows = await itemsQuery
+            .OrderByDescending(x => x.Request.ApprovedApprovalGaAt)
+            .ThenBy(x => x.Item.Id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Select(x => new PermintaanArsipCatalogItemOut(
+                x.Item.Id, x.Item.NamaArsip, x.Item.Kategori, x.Item.TahunArsip, x.Item.Jumlah, x.Item.Satuan,
+                x.Request.NomorArsip, x.Request.LokasiPenyimpanan, x.Request.Divisi, x.Request.Departemen, x.Request.ApprovedApprovalGaAt))
+            .ToListAsync();
+
+        return Ok(new PermintaanArsipCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
+    }
+
     private async Task<(User? user, PermintaanArsip? item, IActionResult? error)> RequireL1ActorAsync(int itemId)
     {
         var user = await CurrentUser.GetCurrentUserAsync();

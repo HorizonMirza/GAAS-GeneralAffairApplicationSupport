@@ -431,6 +431,37 @@ export interface PermintaanArsipStatsResponse {
   countsByStatus: Partial<Record<BookingStatus, number>>;
 }
 
+export interface PermintaanArsipReportResponse {
+  year: number;
+  totalPermintaan: number;
+  totalArsipDipindahkan: number;
+  countByStatus: Partial<Record<BookingStatus, number>>;
+  jumlahByKategori: Partial<Record<ArchiveKategori, number>>;
+  countByDivisi: Record<string, number>;
+  countByMonth: number[];
+}
+
+export interface PermintaanArsipCatalogItem {
+  id: number;
+  namaArsip: string;
+  kategori: ArchiveKategori;
+  tahunArsip: string;
+  jumlah: number;
+  satuan: string;
+  nomorArsip: string | null;
+  lokasiPenyimpanan: string;
+  divisi: string;
+  departemen: string | null;
+  approvedApprovalGaAt: string | null;
+}
+
+export interface PermintaanArsipCatalogResponse {
+  items: PermintaanArsipCatalogItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface PermintaanArsipLog {
   id: number;
   action: string;
