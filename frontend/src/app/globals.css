@@ -2049,8 +2049,8 @@ body.auth-ready .app-shell {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--blue-200);
-  color: var(--blue-600);
+  background: var(--gradient-primary);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
