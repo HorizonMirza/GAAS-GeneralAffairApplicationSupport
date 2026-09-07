@@ -1201,7 +1201,7 @@ public class BookingRuangController : ApiControllerBase
             var (confirmed, conflicted) = await FinalizeSeriesAsync(members, user, fromStatus: BookingStatusEnum.DRAFT);
             await _db.SaveChangesAsync();
             await _db.Entry(item).ReloadAsync();
-            await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "mengajukan booking ruang baru");
+            await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "Mengajukan Booking Ruang Baru");
             return Ok(new
             {
                 item = BookingRuangOut.From(item),
@@ -1216,7 +1216,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectTarget = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "mengajukan booking ruang baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "Mengajukan Booking Ruang Baru");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1450,7 +1450,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectReason = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "menyetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "Menyetujui (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1470,7 +1470,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedL1At = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "Ditolak (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1494,7 +1494,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectTarget = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menyetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1518,7 +1518,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedGaAt = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1660,7 +1660,7 @@ public class BookingRuangController : ApiControllerBase
         var totalConfirmed = members.Count(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
         var totalConflicted = members.Count(m => m.HasConflict);
 
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menyetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Approval GA)");
         return Ok(new
         {
             item = BookingRuangOut.From(item),
@@ -1714,7 +1714,7 @@ public class BookingRuangController : ApiControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         await _db.Entry(item).ReloadAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
