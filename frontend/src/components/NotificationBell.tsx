@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Bell } from "lucide-react";
 import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { itemVariants, sidebarVariants } from "./ui/menu";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const MAX_ITEMS = 20;
@@ -101,16 +103,22 @@ export default function NotificationBell() {
         {unreadCount > 0 && <span className="chat-count-badge notification-bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>}
       </button>
       {open && (
-        <div className="notification-dropdown" onClick={(e) => e.stopPropagation()}>
-          <div className="notification-dropdown-header">
+        <motion.div
+          className="notification-dropdown"
+          onClick={(e) => e.stopPropagation()}
+          initial="hidden"
+          animate="visible"
+          variants={sidebarVariants}
+        >
+          <motion.div variants={itemVariants} className="notification-dropdown-header">
             <span>Notifications</span>
             {unreadCount > 0 && (
               <button type="button" className="notification-mark-all" onClick={markAllRead}>
                 Mark all as read
               </button>
             )}
-          </div>
-          <div className="notification-dropdown-tabs">
+          </motion.div>
+          <motion.div variants={itemVariants} className="notification-dropdown-tabs">
             {TABS.map((t) => (
               <button
                 key={t.value}
@@ -121,16 +129,16 @@ export default function NotificationBell() {
                 {t.label}
               </button>
             ))}
-          </div>
+          </motion.div>
           {visibleItems.length === 0 ? (
-            <div className="notification-dropdown-empty">{emptyLabel}</div>
+            <motion.div variants={itemVariants} className="notification-dropdown-empty">{emptyLabel}</motion.div>
           ) : (
             <ul className="notification-dropdown-list">
               {visibleItems.map((item) => {
                 const actorNama = item.source === "chat" ? item.senderNama : item.actorNama;
                 const detail = item.source === "chat" ? `Chat: ${item.preview}` : item.message;
                 return (
-                  <li key={item.id}>
+                  <motion.li key={item.id} variants={itemVariants}>
                     <button
                       type="button"
                       className={`notification-item${item.read ? "" : " notification-item-unread"}`}
@@ -142,12 +150,12 @@ export default function NotificationBell() {
                       <span className="notification-item-preview">{detail}</span>
                       <span className="notification-item-time">{relativeTime(item.createdAt)}</span>
                     </button>
-                  </li>
+                  </motion.li>
                 );
               })}
             </ul>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   );

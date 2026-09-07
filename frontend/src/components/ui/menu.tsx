@@ -36,7 +36,9 @@ interface UserProfileSidebarProps {
   className?: string;
 }
 
-const sidebarVariants = {
+// Exported so other dropdown panels (e.g. NotificationBell) can share the exact same
+// open/stagger animation instead of re-declaring their own variant timings.
+export const sidebarVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -46,7 +48,7 @@ const sidebarVariants = {
   },
 };
 
-const itemVariants = {
+export const itemVariants = {
   hidden: { opacity: 0, x: -12 },
   visible: {
     opacity: 1,
