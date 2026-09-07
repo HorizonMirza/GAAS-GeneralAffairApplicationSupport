@@ -138,4 +138,5 @@ export const NOTIFICATION_TRANSAKSI_PATH: Record<ChatNotification["kind"], strin
   kendaraan: "/booking-kendaraan/transaksi",
   atk: "/office-supplies/transaksi",
   sarana: "/maintenance/transaksi",
+  arsip: "/arsip/transaksi",
 };

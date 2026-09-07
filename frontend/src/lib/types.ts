@@ -134,7 +134,7 @@ export interface ChatMessage {
 // can access - drives the global top-center notification banner + sound, independent of whether
 // the relevant chat thread (or that page at all) is open. `kind` matches chatHub.ts's ChatKind.
 export interface ChatNotification {
-  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana";
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
   itemId: number;
   itemLabel: string;
   senderNama: string;
@@ -147,7 +147,7 @@ export interface ChatNotification {
 // message. Type distinguishes the two cases the notification banner/sound treats differently.
 export interface ActivityNotification {
   type: "created" | "approval";
-  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana";
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
   itemId: number;
   itemLabel: string;
   actorNama: string;
