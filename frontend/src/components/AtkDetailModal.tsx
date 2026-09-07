@@ -331,7 +331,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
             )}
           </div>
         </form>

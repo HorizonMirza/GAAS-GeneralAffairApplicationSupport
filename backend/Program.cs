@@ -674,6 +674,12 @@ using (var scope = app.Services.CreateScope())
             last_read_at TIMESTAMP NOT NULL,
             UNIQUE (permintaan_arsip_id, user_id)
         )");
+    // Jumlah Arsip/Nama PIC/No. Telepon PIC added after this table was already in use elsewhere -
+    // nullable/defaulted so existing rows don't break; the frontend form and ValidatePayload
+    // require them for every request going forward.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS jumlah_arsip INT NOT NULL DEFAULT 0");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS nama_pic VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS no_telepon_pic VARCHAR(50)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_status ON permintaan_arsip (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_divisi ON permintaan_arsip (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_departemen ON permintaan_arsip (departemen)");

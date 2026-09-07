@@ -353,7 +353,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
             )}
           </div>
         </form>

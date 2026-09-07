@@ -14,6 +14,9 @@ public class PermintaanArsipItemCreate
 public class PermintaanArsipCreate
 {
     public DateOnly Tanggal { get; set; }
+    public int JumlahArsip { get; set; }
+    public string NamaPic { get; set; } = null!;
+    public string NoTeleponPic { get; set; } = null!;
     public string Keperluan { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? Catatan { get; set; }
@@ -36,6 +39,9 @@ public class PermintaanArsipOut
     public int Id { get; set; }
     public string? NomorArsip { get; set; }
     public DateOnly Tanggal { get; set; }
+    public int JumlahArsip { get; set; }
+    public string? NamaPic { get; set; }
+    public string? NoTeleponPic { get; set; }
     public string Keperluan { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? Catatan { get; set; }
@@ -64,6 +70,9 @@ public class PermintaanArsipOut
         Id = p.Id,
         NomorArsip = p.NomorArsip,
         Tanggal = p.Tanggal,
+        JumlahArsip = p.JumlahArsip,
+        NamaPic = p.NamaPic,
+        NoTeleponPic = p.NoTeleponPic,
         Keperluan = p.Keperluan,
         LokasiPenyimpanan = p.LokasiPenyimpanan,
         Catatan = p.Catatan,

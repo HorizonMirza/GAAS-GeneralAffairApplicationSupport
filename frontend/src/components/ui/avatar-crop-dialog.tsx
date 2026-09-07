@@ -103,12 +103,12 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
         <DialogFooter>
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-approve"
             style={{ width: "auto" }}
             disabled={busy || !croppedAreaPixels}
             onClick={handleConfirm}
           >
-            {busy ? "Menyimpan..." : "Simpan"}
+            {busy ? "Saving..." : "Save"}
           </button>
         </DialogFooter>
       </DialogContent>

@@ -11,6 +11,9 @@ public class PermintaanArsip
     public int Id { get; set; }
     public string? NomorArsip { get; set; }
     public DateOnly Tanggal { get; set; }
+    public int JumlahArsip { get; set; }
+    public string? NamaPic { get; set; }
+    public string? NoTeleponPic { get; set; }
     public string Keperluan { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? Catatan { get; set; }

@@ -340,7 +340,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
           </div>
         </form>
       </div>

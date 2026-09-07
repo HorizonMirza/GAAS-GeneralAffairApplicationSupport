@@ -158,6 +158,12 @@ public class PermintaanArsipController : ApiControllerBase
 
     private static string? ValidatePayload(PermintaanArsipCreate payload)
     {
+        if (payload.JumlahArsip <= 0)
+            return "Jumlah arsip wajib diisi lebih dari 0";
+        if (string.IsNullOrWhiteSpace(payload.NamaPic))
+            return "Nama PIC wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPic))
+            return "No. Telepon PIC wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
             return "Keperluan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan))
@@ -187,6 +193,9 @@ public class PermintaanArsipController : ApiControllerBase
     private void ApplyCreatePayload(PermintaanArsip item, PermintaanArsipCreate payload)
     {
         item.Tanggal = payload.Tanggal;
+        item.JumlahArsip = payload.JumlahArsip;
+        item.NamaPic = payload.NamaPic.Trim();
+        item.NoTeleponPic = payload.NoTeleponPic.Trim();
         item.Keperluan = payload.Keperluan.Trim();
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.Catatan = payload.Catatan;

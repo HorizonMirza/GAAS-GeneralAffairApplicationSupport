@@ -242,7 +242,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
           </div>
         </form>
       </div>

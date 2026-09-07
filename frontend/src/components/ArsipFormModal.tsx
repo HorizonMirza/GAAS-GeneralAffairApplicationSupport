@@ -26,6 +26,9 @@ function emptyItem(): PermintaanArsipItemPayload {
 function emptyForm(): PermintaanArsipCreatePayload {
   return {
     tanggal: todayLocalDate(),
+    jumlahArsip: 0,
+    namaPic: "",
+    noTeleponPic: "",
     keperluan: "",
     lokasiPenyimpanan: "",
     catatan: "",
@@ -106,7 +109,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fr-nomor-arsip">Nomor Permintaan Arsip</label>
+              <label htmlFor="fr-nomor-arsip">Nomor Pemindahan Arsip</label>
               <input type="text" id="fr-nomor-arsip" disabled value={nomorArsip} />
             </div>
             <div className="field">
@@ -114,6 +117,30 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
               <input type="date" id="fr-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
+              <label htmlFor="fr-jumlah-arsip">Jumlah Arsip</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="fr-jumlah-arsip"
+                required
+                placeholder="Total jumlah arsip yang diminta"
+                value={form.jumlahArsip === 0 ? "" : String(form.jumlahArsip)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
+                }}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-nama-pic">Nama PIC</label>
+              <input type="text" id="fr-nama-pic" required placeholder="Nama penanggung jawab" value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
+              <input type="text" id="fr-telepon-pic" required placeholder="Contoh: 081234567890" value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
+            </div>
+            <div className="field full">
               <label htmlFor="fr-keperluan">Keperluan</label>
               <input type="text" id="fr-keperluan" required placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
@@ -125,17 +152,44 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             <div className="field full">
               <label>Daftar Arsip</label>
               {form.items.map((row, idx) => (
-                <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
-                  <input
-                    type="text"
-                    aria-label={`Nama arsip ${idx + 1}`}
-                    required
-                    placeholder="Nama arsip (contoh: Kontrak Vendor 2018-2019)"
-                    style={{ flex: "3 1 180px", minWidth: 180 }}
-                    value={row.namaArsip}
-                    onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
-                  />
-                  <div style={{ flex: "1.5 1 130px", minWidth: 130 }}>
+                <div
+                  key={idx}
+                  style={{
+                    border: "1px solid var(--border-color, #e2e2e2)",
+                    borderRadius: 8,
+                    padding: 12,
+                    marginBottom: 10,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip #{idx + 1}</span>
+                    <button
+                      type="button"
+                      className="card-icon-btn"
+                      aria-label={`Hapus baris arsip ${idx + 1}`}
+                      disabled={form.items.length <= 1}
+                      style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
+                      onClick={() => removeItemRow(idx)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                  </div>
+                  <div>
+                    <label htmlFor={`fr-nama-arsip-${idx}`}>Nama Arsip</label>
+                    <input
+                      type="text"
+                      id={`fr-nama-arsip-${idx}`}
+                      required
+                      placeholder="Nama arsip (contoh: Kontrak Vendor 2018-2019)"
+                      value={row.namaArsip}
+                      onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`fr-kategori-${idx}`}>Kategori</label>
                     <SearchableSelect
                       id={`fr-kategori-${idx}`}
                       value={row.kategori}
@@ -145,50 +199,46 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                       placeholder="Kategori"
                     />
                   </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label={`Tahun arsip ${idx + 1}`}
-                    required
-                    placeholder="Tahun"
-                    style={{ flex: "1 1 80px", minWidth: 80 }}
-                    value={row.tahunArsip}
-                    onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label={`Jumlah arsip ${idx + 1}`}
-                    required
-                    placeholder="Jumlah"
-                    style={{ flex: "1 1 80px", minWidth: 80 }}
-                    value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                      setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    aria-label={`Satuan arsip ${idx + 1}`}
-                    required
-                    placeholder="Satuan (boks/bendel/berkas)"
-                    style={{ flex: "1.5 1 110px", minWidth: 110 }}
-                    value={row.satuan}
-                    onChange={(e) => setItem(idx, { satuan: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    className="card-icon-btn"
-                    aria-label={`Hapus baris arsip ${idx + 1}`}
-                    disabled={form.items.length <= 1}
-                    style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
-                    onClick={() => removeItemRow(idx)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  </button>
+                  <div>
+                    <label htmlFor={`fr-tahun-${idx}`}>Tahun</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id={`fr-tahun-${idx}`}
+                      required
+                      placeholder="Tahun"
+                      value={row.tahunArsip}
+                      onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`fr-jumlah-${idx}`}>Jumlah</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id={`fr-jumlah-${idx}`}
+                      required
+                      placeholder="Jumlah"
+                      value={row.jumlah === 0 ? "" : String(row.jumlah)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                        setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`fr-satuan-${idx}`}>Satuan</label>
+                    <input
+                      type="text"
+                      id={`fr-satuan-${idx}`}
+                      required
+                      placeholder="Satuan (boks/bendel/berkas)"
+                      value={row.satuan}
+                      onChange={(e) => setItem(idx, { satuan: e.target.value })}
+                    />
+                  </div>
                 </div>
               ))}
               {form.items.length < MAX_ITEM_ROWS && (
@@ -206,7 +256,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
           </div>
         </form>
       </div>

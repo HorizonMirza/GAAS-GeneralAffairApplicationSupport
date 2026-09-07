@@ -398,6 +398,9 @@ export interface PermintaanArsip {
   id: number;
   nomorArsip: string | null;
   tanggal: string;
+  jumlahArsip: number;
+  namaPic: string | null;
+  noTeleponPic: string | null;
   keperluan: string;
   lokasiPenyimpanan: string;
   catatan: string | null;
@@ -481,6 +484,9 @@ export interface PermintaanArsipItemPayload {
 
 export interface PermintaanArsipCreatePayload {
   tanggal: string;
+  jumlahArsip: number;
+  namaPic: string;
+  noTeleponPic: string;
   keperluan: string;
   lokasiPenyimpanan: string;
   catatan: string | null;

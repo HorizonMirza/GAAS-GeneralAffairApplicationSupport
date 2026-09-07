@@ -496,8 +496,8 @@ export default function ProfilePage() {
           </form>
 
           <DialogFooter>
-            <button type="submit" form="edit-profile-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingProfile}>
-              {savingProfile ? "Menyimpan..." : "Simpan"}
+            <button type="submit" form="edit-profile-form" className="btn btn-approve" style={{ width: "auto" }} disabled={savingProfile}>
+              {savingProfile ? "Saving..." : "Save"}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -515,13 +515,13 @@ export default function ProfilePage() {
                 <div className="settings-current-value">
                   <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
                   <div>
-                    <div className="settings-current-value-label">Saat ini</div>
+                    <div className="settings-current-value-label">Current</div>
                     <div className="settings-current-value-text">{currentValue[editingField] || "-"}</div>
                   </div>
                 </div>
 
                 <div className="field">
-                  <label htmlFor="field-draft">{FIELD_META[editingField].label} Baru</label>
+                  <label htmlFor="field-draft">New {FIELD_META[editingField].label}</label>
                   <div className="field-icon-wrap">
                     <span className="field-input-icon">{FIELD_META[editingField].icon}</span>
                     <input
@@ -539,7 +539,7 @@ export default function ProfilePage() {
                 <PasswordField
                   id="field-password"
                   label="Password"
-                  placeholder="Masukkan password saat ini"
+                  placeholder="Masukkan Password"
                   icon={<Lock width={15} height={15} />}
                   value={fieldPassword}
                   error={fieldPasswordError}
@@ -551,8 +551,8 @@ export default function ProfilePage() {
               </form>
 
               <DialogFooter>
-                <button type="submit" form="field-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingField}>
-                  {savingField ? "Menyimpan..." : "Simpan"}
+                <button type="submit" form="field-edit-form" className="btn btn-approve" style={{ width: "auto" }} disabled={savingField}>
+                  {savingField ? "Saving..." : "Save"}
                 </button>
               </DialogFooter>
             </>
@@ -569,7 +569,7 @@ export default function ProfilePage() {
           <form id="password-edit-form" onSubmit={handlePasswordSubmit} onKeyDown={focusNextFieldOnEnter}>
             <PasswordField
               id="current-password"
-              label="Password Saat Ini"
+              label="Current Password"
               placeholder="Min. 8 Karakter"
               icon={<Lock width={15} height={15} />}
               value={currentPassword}
@@ -581,7 +581,7 @@ export default function ProfilePage() {
             />
             <PasswordField
               id="new-password"
-              label="Password Baru"
+              label="New Password"
               placeholder="Min. 8 Karakter"
               minLength={8}
               icon={<Lock width={15} height={15} />}
@@ -598,8 +598,8 @@ export default function ProfilePage() {
             />
             <PasswordField
               id="confirm-password"
-              label="Konfirmasi Password Baru"
-              placeholder="Ulangi Password Baru"
+              label="Confirm New Password"
+              placeholder="Repeat New Password"
               minLength={8}
               icon={<Lock width={15} height={15} />}
               value={confirmPassword}
@@ -613,8 +613,8 @@ export default function ProfilePage() {
           </form>
 
           <DialogFooter>
-            <button type="submit" form="password-edit-form" className="btn btn-primary" style={{ width: "auto" }} disabled={savingPassword}>
-              {savingPassword ? "Menyimpan..." : "Simpan"}
+            <button type="submit" form="password-edit-form" className="btn btn-approve" style={{ width: "auto" }} disabled={savingPassword}>
+              {savingPassword ? "Saving..." : "Save"}
             </button>
           </DialogFooter>
         </DialogContent>

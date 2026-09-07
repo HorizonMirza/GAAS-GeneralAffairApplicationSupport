@@ -294,7 +294,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }}>Simpan</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
             )}
           </div>
         </form>
