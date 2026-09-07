@@ -194,7 +194,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             </div>
             <div className="field">
               <label htmlFor="fr-nama-pic">Nama PIC</label>
-              <input type="text" id="fr-nama-pic" required maxLength={30} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+              <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
@@ -210,11 +210,11 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             </div>
             <div className="field full">
               <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="fr-lokasi" required maxLength={30} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+              <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fr-keperluan">Tujuan</label>
-              <input type="text" id="fr-keperluan" required maxLength={30} placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fr-keperluan" required maxLength={150} placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
@@ -251,7 +251,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                       type="text"
                       id={`fr-nama-arsip-${idx}`}
                       required
-                      maxLength={30}
+                      maxLength={100}
                       placeholder="Contoh: Kontrak Vendor 2018 - 2019"
                       value={row.namaArsip}
                       onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
@@ -287,7 +287,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                       type="text"
                       id={`fr-satuan-${idx}`}
                       required
-                      maxLength={30}
+                      maxLength={50}
                       placeholder="Contoh: Berkas, Bendel, Box"
                       value={row.satuan}
                       onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -304,7 +304,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
 
             <div className="field full">
               <label htmlFor="fr-catatan">Catatan</label>
-              <input type="text" id="fr-catatan" maxLength={30} placeholder="Contoh: Sudah tidak dipakai sejak 2022" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fr-catatan" maxLength={255} placeholder="Contoh: Sudah tidak dipakai sejak 2022" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

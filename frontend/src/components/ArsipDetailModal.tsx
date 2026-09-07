@@ -209,7 +209,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="dr-nama-pic">Nama PIC</label>
-              <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={30} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+              <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="dr-telepon-pic">No. Telepon PIC</label>
@@ -226,11 +226,11 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             </div>
             <div className="field full">
               <label htmlFor="dr-keperluan">Keperluan</label>
-              <input type="text" id="dr-keperluan" required disabled={!isEdit} maxLength={30} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="dr-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={30} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+              <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 
             <div className="field full">
@@ -270,7 +270,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       id={`dr-nama-arsip-${idx}`}
                       required
                       disabled={!isEdit}
-                      maxLength={30}
+                      maxLength={100}
                       placeholder="Nama arsip"
                       value={row.namaArsip}
                       onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
@@ -326,7 +326,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       id={`dr-satuan-${idx}`}
                       required
                       disabled={!isEdit}
-                      maxLength={30}
+                      maxLength={50}
                       placeholder="Satuan"
                       value={row.satuan}
                       onChange={(e) => setItem(idx, { satuan: e.target.value })}
@@ -343,7 +343,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
 
             <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="dr-catatan">Catatan</label>
-              <input type="text" id="dr-catatan" disabled={!isEdit} maxLength={30} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="dr-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

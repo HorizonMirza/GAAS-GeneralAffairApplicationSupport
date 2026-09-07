@@ -69,6 +69,10 @@ export function currentYearMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+export function currentYear(): string {
+  return String(new Date().getFullYear());
+}
+
 // new Date().toISOString() gives the UTC date, which is a day behind local time in Indonesia
 // (UTC+7/+8/+9) for anything entered before roughly 7-9am - build the date string from local
 // getters instead so "today" in a form default always matches the user's actual calendar day.
