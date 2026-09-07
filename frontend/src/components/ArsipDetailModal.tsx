@@ -304,10 +304,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               )}
             </div>
 
-            <div className="field full">
-              <label htmlFor="dr-catatan">Catatan</label>
-              <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
-            </div>
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
@@ -348,6 +344,11 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             {isEdit && (
               <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
             )}
+          </div>
+
+          <div className="field full">
+            <label htmlFor="dr-catatan">Catatan</label>
+            <input type="text" id="dr-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Sudah tidak dipakai sejak 2022" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
           </div>
         </form>
       </div>
