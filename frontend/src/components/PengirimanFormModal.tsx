@@ -163,31 +163,47 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field">
               <label htmlFor="f-pengirim">Nama Pengirim</label>
-              <input type="text" id="f-pengirim" required value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
+              <input type="text" id="f-pengirim" required maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-telepon-pengirim">No. Telepon Pengirim</label>
-              <input type="text" id="f-telepon-pengirim" required value={form.noTeleponPengirim} onChange={(e) => set("noTeleponPengirim", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="f-telepon-pengirim"
+                required
+                maxLength={15}
+                value={form.noTeleponPengirim}
+                onChange={(e) => set("noTeleponPengirim", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="f-alamat-pengirim">Alamat Pengirim</label>
-              <textarea id="f-alamat-pengirim" required value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
+              <textarea id="f-alamat-pengirim" required maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-penerima">Nama Penerima</label>
-              <input type="text" id="f-penerima" required value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
+              <input type="text" id="f-penerima" required maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-telepon">No. Telepon Penerima</label>
-              <input type="text" id="f-telepon" required value={form.noTeleponPenerima} onChange={(e) => set("noTeleponPenerima", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="f-telepon"
+                required
+                maxLength={15}
+                value={form.noTeleponPenerima}
+                onChange={(e) => set("noTeleponPenerima", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="f-alamat">Alamat Penerima</label>
-              <textarea id="f-alamat" required value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
+              <textarea id="f-alamat" required maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="f-tujuan">Tujuan</label>
-              <input type="text" id="f-tujuan" required placeholder="Contoh: Pengiriman Invoice Tagihan" value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
+              <input type="text" id="f-tujuan" required maxLength={150} placeholder="Contoh: Pengiriman Invoice Tagihan" value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="f-kode-program">Kode Program</label>
@@ -215,7 +231,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field full">
               <label htmlFor="f-catatan">Catatan</label>
-              <input type="text" id="f-catatan" placeholder="Contoh: Request JNE Instant" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="f-catatan" maxLength={255} placeholder="Contoh: Request JNE Instant" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

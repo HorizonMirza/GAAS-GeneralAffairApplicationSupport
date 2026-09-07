@@ -234,31 +234,49 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-pengirim">Nama Pengirim</label>
-              <input type="text" id="pv-pengirim" required disabled={!isEdit} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
+              <input type="text" id="pv-pengirim" required disabled={!isEdit} maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="pv-telepon-pengirim">No. Telepon Pengirim</label>
-              <input type="text" id="pv-telepon-pengirim" required disabled={!isEdit} value={form.noTeleponPengirim} onChange={(e) => set("noTeleponPengirim", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="pv-telepon-pengirim"
+                required
+                disabled={!isEdit}
+                maxLength={15}
+                value={form.noTeleponPengirim}
+                onChange={(e) => set("noTeleponPengirim", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="pv-alamat-pengirim">Alamat Pengirim</label>
-              <textarea id="pv-alamat-pengirim" required disabled={!isEdit} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
+              <textarea id="pv-alamat-pengirim" required disabled={!isEdit} maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="pv-penerima">Nama Penerima</label>
-              <input type="text" id="pv-penerima" required disabled={!isEdit} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
+              <input type="text" id="pv-penerima" required disabled={!isEdit} maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="pv-telepon">No. Telepon Penerima</label>
-              <input type="text" id="pv-telepon" required disabled={!isEdit} value={form.noTeleponPenerima} onChange={(e) => set("noTeleponPenerima", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="pv-telepon"
+                required
+                disabled={!isEdit}
+                maxLength={15}
+                value={form.noTeleponPenerima}
+                onChange={(e) => set("noTeleponPenerima", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="pv-alamat">Alamat Penerima</label>
-              <textarea id="pv-alamat" required disabled={!isEdit} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
+              <textarea id="pv-alamat" required disabled={!isEdit} maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="pv-tujuan">Tujuan</label>
-              <input type="text" id="pv-tujuan" required disabled={!isEdit} value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
+              <input type="text" id="pv-tujuan" required disabled={!isEdit} maxLength={150} value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="pv-kode-program">Kode Program</label>
@@ -288,7 +306,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field full">
               <label htmlFor="pv-catatan">Catatan</label>
-              <input type="text" id="pv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

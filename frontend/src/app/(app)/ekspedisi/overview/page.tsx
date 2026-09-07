@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, cardStatusBorderClass, isEditableByOrigin } from "@/lib/constants";
-import { currentYearMonth, formatDate } from "@/lib/format";
+import { currentYear, currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -68,10 +68,11 @@ export default function OverviewPage() {
       // Not capped to a small page size - shows every transaction for the current bulan, so the
       // list can grow as large as the month's actual volume. bulan (not sejakBulan) scopes it
       // strictly to the current calendar month, so it resets on its own once the month rolls
-      // over, matching the stats tiles below.
+      // over. The stat tiles use the wider current-year window instead (no count cap, just a
+      // yearly reset) so they don't zero out every time the month rolls over like the list above.
       const [queue, statsResp] = await Promise.all([
         api.listPengiriman({ limit: 1000, page: 1, bulan }).then((r) => r.items),
-        api.getPengirimanStats(bulan),
+        api.getPengirimanStats(currentYear()),
       ]);
       const counts = statsResp.countsByStatus;
       setItems(queue);

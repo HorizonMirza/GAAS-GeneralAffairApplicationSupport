@@ -163,7 +163,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
             </div>
             <div className="field">
               <label htmlFor="fa-keperluan">Keperluan</label>
-              <input type="text" id="fa-keperluan" required placeholder="Contoh: Kebutuhan ATK bulanan tim" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fa-keperluan" required maxLength={150} placeholder="Contoh: Kebutuhan ATK bulanan tim" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
@@ -174,6 +174,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     type="text"
                     aria-label={`Nama barang ${idx + 1}`}
                     required
+                    maxLength={255}
                     list={ATK_CATALOG_DATALIST_ID}
                     placeholder="Nama barang (contoh: Pulpen)"
                     style={{ flex: "3 1 180px", minWidth: 180 }}
@@ -202,6 +203,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     type="text"
                     aria-label={`Satuan barang ${idx + 1}`}
                     required
+                    maxLength={50}
                     placeholder="Satuan (pcs/rim/box)"
                     style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
@@ -228,7 +230,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
             <div className="field full">
               <label htmlFor="fa-catatan">Catatan</label>
-              <input type="text" id="fa-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <datalist id={ATK_CATALOG_DATALIST_ID}>

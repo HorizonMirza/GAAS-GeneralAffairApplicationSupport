@@ -192,11 +192,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             )}
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
-              <input type="text" id="f-nama-kegiatan" required placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
+              <input type="text" id="f-nama-kegiatan" required maxLength={150} placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="f-pic">PIC</label>
-              <input type="text" id="f-pic" required placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="f-pic" required maxLength={50} placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
@@ -335,7 +335,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             )}
             <div className="field full">
               <label htmlFor="f-catatan">Catatan</label>
-              <input type="text" id="f-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="f-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

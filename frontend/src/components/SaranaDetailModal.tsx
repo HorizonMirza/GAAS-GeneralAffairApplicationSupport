@@ -203,7 +203,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field">
               <label htmlFor="ds-lokasi">Lokasi</label>
-              <input type="text" id="ds-lokasi" required disabled={!isEdit} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="ds-kategori">Kategori Kerusakan</label>
@@ -235,6 +235,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 id="ds-deskripsi"
                 required
                 disabled={!isEdit}
+                maxLength={255}
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
                 onKeyDown={(e) => {
@@ -244,7 +245,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field full">
               <label htmlFor="ds-catatan">Catatan</label>
-              <input type="text" id="ds-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

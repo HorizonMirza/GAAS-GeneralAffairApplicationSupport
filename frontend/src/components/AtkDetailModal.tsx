@@ -195,7 +195,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
             <div className="field">
               <label htmlFor="da-keperluan">Keperluan</label>
-              <input type="text" id="da-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="da-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
@@ -207,6 +207,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     aria-label={`Nama barang ${idx + 1}`}
                     required
                     disabled={!isEdit}
+                    maxLength={255}
                     list={ATK_CATALOG_DATALIST_ID}
                     placeholder="Nama barang"
                     style={{ flex: "3 1 180px", minWidth: 180 }}
@@ -237,6 +238,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     aria-label={`Satuan barang ${idx + 1}`}
                     required
                     disabled={!isEdit}
+                    maxLength={50}
                     placeholder="Satuan"
                     style={{ flex: "1.5 1 110px", minWidth: 110 }}
                     value={row.satuan}
@@ -265,7 +267,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label htmlFor="da-catatan">Catatan</label>
-              <input type="text" id="da-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="da-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

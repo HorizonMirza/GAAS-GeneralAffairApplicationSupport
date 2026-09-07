@@ -143,7 +143,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field">
               <label htmlFor="fs-lokasi">Lokasi</label>
-              <input type="text" id="fs-lokasi" required placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <input type="text" id="fs-lokasi" required maxLength={100} placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fs-kategori">Kategori Kerusakan</label>
@@ -172,6 +172,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               <textarea
                 id="fs-deskripsi"
                 required
+                maxLength={255}
                 placeholder="Contoh: AC tidak dingin dan mengeluarkan bunyi berisik sejak Senin pagi"
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
@@ -182,7 +183,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field full">
               <label htmlFor="fs-catatan">Catatan</label>
-              <input type="text" id="fs-catatan" placeholder="Contoh: Mohon diperbaiki sebelum rapat Jumat" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fs-catatan" maxLength={255} placeholder="Contoh: Mohon diperbaiki sebelum rapat Jumat" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

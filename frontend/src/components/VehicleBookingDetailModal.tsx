@@ -165,11 +165,11 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             </div>
             <div className="field full">
               <label htmlFor="bk-keperluan">Keperluan</label>
-              <input type="text" id="bk-keperluan" required disabled={!isEdit} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="bk-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="bk-pic">PIC</label>
-              <input type="text" id="bk-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="bk-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bk-tanggal">Tanggal</label>
@@ -254,7 +254,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             </div>
             <div className="field full">
               <label htmlFor="bk-catatan">Catatan</label>
-              <input type="text" id="bk-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

@@ -17,7 +17,7 @@ import {
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, truncateText } from "@/lib/format";
+import { currentYear, currentYearMonth, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingStatus, PerbaikanSarana } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -76,9 +76,11 @@ export default function MaintenanceOverviewPage() {
       const bulan = currentYearMonth();
       // Not capped to a small page size - shows every report for the current bulan, which resets
       // the list on its own once the month rolls over.
+      // The stat tiles use the wider current-year window instead (no count cap, just a yearly
+      // reset) so they don't zero out every time the month rolls over like the list above.
       const [queue, statsResp] = await Promise.all([
         api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
-        api.getSaranaStats(bulan),
+        api.getSaranaStats(currentYear()),
       ]);
       const counts = statsResp.countsByStatus;
       const count = (status: BookingStatus) => counts[status] ?? 0;

@@ -210,11 +210,11 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field full">
               <label htmlFor="bv-nama-kegiatan">Nama Kegiatan</label>
-              <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
+              <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} maxLength={150} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="bv-pic">PIC</label>
-              <input type="text" id="bv-pic" required disabled={!isEdit} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="bv-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>
@@ -394,7 +394,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             )}
             <div className="field full">
               <label htmlFor="bv-catatan">Catatan</label>
-              <input type="text" id="bv-catatan" disabled={!isEdit} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="bv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

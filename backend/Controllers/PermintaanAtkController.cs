@@ -107,12 +107,22 @@ public class PermintaanAtkController : ApiControllerBase
         });
     }
 
+    // Accepts either "YYYY-MM" (a specific month, used by the List/Report pages) or a bare
+    // "YYYY" (the whole year, used by GetStats so the dashboard tiles reset every year instead
+    // of carrying every request ever made) - both share this one filter since they're really the
+    // same "which Tanggal range" concept at two different granularities.
     private static IQueryable<PermintaanAtk> ApplyBulanFilter(IQueryable<PermintaanAtk> query, string? bulan)
     {
         if (string.IsNullOrEmpty(bulan)) return query;
         var parts = bulan.Split('-');
+        if (parts.Length == 1)
+        {
+            if (!int.TryParse(parts[0], out var yearOnly))
+                throw new ArgumentException("Format bulan harus YYYY atau YYYY-MM");
+            return query.Where(p => p.Tanggal.Year == yearOnly);
+        }
         if (parts.Length != 2 || !int.TryParse(parts[0], out var year) || !int.TryParse(parts[1], out var month))
-            throw new ArgumentException("Format bulan harus YYYY-MM");
+            throw new ArgumentException("Format bulan harus YYYY atau YYYY-MM");
         return query.Where(p => p.Tanggal.Year == year && p.Tanggal.Month == month);
     }
 

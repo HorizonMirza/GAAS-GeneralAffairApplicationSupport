@@ -149,11 +149,11 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             )}
             <div className="field full">
               <label htmlFor="fk-keperluan">Keperluan</label>
-              <input type="text" id="fk-keperluan" required placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fk-keperluan" required maxLength={150} placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fk-pic">PIC</label>
-              <input type="text" id="fk-pic" required placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="fk-pic" required maxLength={50} placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
@@ -237,7 +237,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             )}
             <div className="field full">
               <label htmlFor="fk-catatan">Catatan</label>
-              <input type="text" id="fk-catatan" placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fk-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>
