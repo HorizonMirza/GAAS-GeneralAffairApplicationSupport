@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ensureStarted, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
+import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
@@ -104,7 +104,7 @@ export default function ChatNotificationListener() {
     <div className="chat-notification-stack">
       {banners.map((banner) => {
         const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
-        const detail = banner.source === "chat" ? banner.preview : banner.message;
+        const detail = banner.source === "chat" ? `Chat: ${banner.preview}` : banner.message;
         return (
           <button
             key={banner.id}
@@ -118,7 +118,7 @@ export default function ChatNotificationListener() {
             <span className="chat-notification-avatar">{initials(actorNama)}</span>
             <span className="chat-notification-body">
               <span className="chat-notification-title">
-                <strong>{actorNama}</strong> · {banner.itemLabel}
+                <strong>{actorNama}</strong> - {NOTIFICATION_KIND_LABEL[banner.kind]}
               </span>
               <span className="chat-notification-preview">{detail}</span>
             </span>

@@ -140,3 +140,14 @@ export const NOTIFICATION_TRANSAKSI_PATH: Record<ChatNotification["kind"], strin
   sarana: "/maintenance/transaksi",
   arsip: "/arsip/transaksi",
 };
+
+// Module display name for a notification's "kind" - matches AppShell's sidebar nav labels
+// exactly, so the notification title reads the same name the user already sees in the menu.
+export const NOTIFICATION_KIND_LABEL: Record<ChatNotification["kind"], string> = {
+  pengiriman: "Expedition",
+  booking: "Room Booking",
+  kendaraan: "Vehicle Booking",
+  atk: "Office Supplies",
+  sarana: "Maintenance",
+  arsip: "Archive",
+};

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import { ensureStarted, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
+import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
@@ -104,7 +104,7 @@ export default function NotificationBell() {
             <ul className="notification-dropdown-list">
               {items.map((item) => {
                 const actorNama = item.source === "chat" ? item.senderNama : item.actorNama;
-                const detail = item.source === "chat" ? item.preview : item.message;
+                const detail = item.source === "chat" ? `Chat: ${item.preview}` : item.message;
                 return (
                   <li key={item.id}>
                     <button
@@ -113,7 +113,7 @@ export default function NotificationBell() {
                       onClick={() => openItem(item)}
                     >
                       <span className="notification-item-title">
-                        <strong>{actorNama}</strong> · {item.itemLabel}
+                        <strong>{actorNama}</strong> - {NOTIFICATION_KIND_LABEL[item.kind]}
                       </span>
                       <span className="notification-item-preview">{detail}</span>
                       <span className="notification-item-time">{relativeTime(item.createdAt)}</span>
