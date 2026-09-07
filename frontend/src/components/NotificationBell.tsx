@@ -10,6 +10,14 @@ import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const MAX_ITEMS = 20;
 
+type Tab = "all" | "chat" | "activity";
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "chat", label: "Chat" },
+  { value: "activity", label: "Transaksi" },
+];
+
 type Item =
   | ({ id: number; read: boolean; source: "chat" } & ChatNotification)
   | ({ id: number; read: boolean; source: "activity" } & ActivityNotification);
@@ -41,6 +49,7 @@ export default function NotificationBell() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("all");
   const idRef = useRef(0);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +73,9 @@ export default function NotificationBell() {
   if (!me) return null;
 
   const unreadCount = items.filter((item) => !item.read).length;
+  const visibleItems = tab === "all" ? items : items.filter((item) => item.source === tab);
+  const emptyLabel =
+    tab === "chat" ? "Belum ada chat baru" : tab === "activity" ? "Belum ada transaksi baru" : "Belum ada notifikasi baru";
 
   function openItem(item: Item) {
     setItems((current) => current.map((it) => (it.id === item.id ? { ...it, read: true } : it)));
@@ -98,11 +110,23 @@ export default function NotificationBell() {
               </button>
             )}
           </div>
-          {items.length === 0 ? (
-            <div className="notification-dropdown-empty">Belum ada notifikasi baru</div>
+          <div className="notification-dropdown-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                className={`notification-dropdown-tab${tab === t.value ? " notification-dropdown-tab-active" : ""}`}
+                onClick={() => setTab(t.value)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {visibleItems.length === 0 ? (
+            <div className="notification-dropdown-empty">{emptyLabel}</div>
           ) : (
             <ul className="notification-dropdown-list">
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const actorNama = item.source === "chat" ? item.senderNama : item.actorNama;
                 const detail = item.source === "chat" ? `Chat: ${item.preview}` : item.message;
                 return (

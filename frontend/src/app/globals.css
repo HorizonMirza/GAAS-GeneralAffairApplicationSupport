@@ -1115,6 +1115,43 @@ body.auth-ready .app-shell {
   text-decoration: underline;
 }
 
+.notification-dropdown-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.notification-dropdown-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.notification-dropdown-tab:hover {
+  color: var(--text-primary);
+}
+
+.notification-dropdown-tab-active {
+  color: var(--text-primary);
+}
+
+.notification-dropdown-tab-active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--blue-500);
+}
+
 .notification-dropdown-empty {
   padding: 28px 14px;
   text-align: center;
