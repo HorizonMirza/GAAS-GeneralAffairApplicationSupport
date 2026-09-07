@@ -70,11 +70,13 @@ function MaintenanceTransaksiPageInner() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PerbaikanSarana | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const tableReqIdRef = useRef(0);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   useEffect(() => {
@@ -93,6 +95,34 @@ function MaintenanceTransaksiPageInner() {
     router.replace("/maintenance/transaksi");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // A "Transactions" notification banner's click lands here with ?highlight=<itemId> - the item
+  // may be off-screen behind whatever filters/page are active, so filters are reset and the
+  // item's own nomor is dropped into the search box to guarantee it's the only row on page 1;
+  // once it's actually rendered, the scroll+flash effect below picks it up.
+  useEffect(() => {
+    const highlight = searchParams.get("highlight");
+    if (!highlight) return;
+    const id = Number(highlight);
+    api.getSarana(id).then((item) => {
+      setSearchInput(item.nomorPerbaikan || "");
+      setFilters({ ...defaultFilters(), search: item.nomorPerbaikan || "" });
+      setHighlightId(id);
+    }).catch(() => {});
+    router.replace("/maintenance/transaksi");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (highlightId == null) return;
+    if (!items.some((it) => it.id === highlightId)) return;
+    document.getElementById(`tx-row-${highlightId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(() => setHighlightId(null), 3000);
+    return () => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    };
+  }, [items, highlightId]);
 
   const loadTable = useCallback(async () => {
     const reqId = ++tableReqIdRef.current;
@@ -333,7 +363,7 @@ function MaintenanceTransaksiPageInner() {
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
                   return (
-                    <tr key={item.id}>
+                    <tr key={item.id} id={`tx-row-${item.id}`} className={item.id === highlightId ? "row-highlight-blink" : undefined}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorPerbaikan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>

@@ -1169,11 +1169,18 @@ body.auth-ready .app-shell {
   overflow-y: auto;
 }
 
+.notification-item-row {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
 .notification-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 9px 10px;
   border: none;
   border-radius: 8px;
@@ -1184,6 +1191,29 @@ body.auth-ready .app-shell {
 
 .notification-item:hover {
   background: var(--bg-surface-alt);
+}
+
+.notification-item-delete {
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.notification-item-delete:hover {
+  opacity: 1;
+  background: var(--bg-surface-alt);
+  color: var(--badge-rejected-bg);
 }
 
 /* A subtle dot on the title line, not a full-row highlight - the row already carries a lot of
@@ -2594,6 +2624,14 @@ table.data-table {
 }
 
 .data-table tbody tr:hover { background: var(--bg-surface-alt); }
+
+/* Jumping here from a "Transactions" notification click - flashes the row a few times so the
+   reader can find it in the list, then settles back to normal. */
+@keyframes row-highlight-blink {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(245, 158, 11, 0.28); }
+}
+.data-table tbody tr.row-highlight-blink { animation: row-highlight-blink 1s ease-in-out 3; }
 
 /* The calendar/Ketersediaan grid (Harian/Mingguan/Bulanan/Ketersediaan) reuses .data-table for its
    header row, but its headers are day names and room names, not table-column labels - all caps

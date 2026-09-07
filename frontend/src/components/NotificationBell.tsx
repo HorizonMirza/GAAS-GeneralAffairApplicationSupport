@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -11,6 +11,11 @@ import { itemVariants, sidebarVariants } from "./ui/menu";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const MAX_ITEMS = 20;
+// Persisted client-side (there's no backend notification inbox) so the history survives a
+// reload, and swept both on load and periodically so an item never lingers past a day.
+const STORAGE_KEY = "gaas_notification_bell_items_v1";
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
 
 type Tab = "all" | "chat" | "activity";
 
@@ -21,12 +26,28 @@ const TABS: { value: Tab; label: string }[] = [
 ];
 
 type Item =
-  | ({ id: number; read: boolean; source: "chat" } & ChatNotification)
-  | ({ id: number; read: boolean; source: "activity" } & ActivityNotification);
+  | ({ key: string; read: boolean; source: "chat" } & ChatNotification)
+  | ({ key: string; read: boolean; source: "activity" } & ActivityNotification);
 
 function itemHref(item: Item): string {
   const base = NOTIFICATION_TRANSAKSI_PATH[item.kind];
-  return item.source === "chat" ? `${base}?chat=${item.itemId}` : base;
+  return item.source === "chat" ? `${base}?chat=${item.itemId}` : `${base}?highlight=${item.itemId}`;
+}
+
+function isFresh(item: Item): boolean {
+  return Date.now() - new Date(item.createdAt).getTime() < MAX_AGE_MS;
+}
+
+function loadStoredItems(): Item[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Item[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isFresh).slice(0, MAX_ITEMS);
+  } catch {
+    return [];
+  }
 }
 
 // Coarse relative label ("5 menit lalu") - this history is session-only and never more than a
@@ -43,22 +64,53 @@ function relativeTime(iso: string): string {
 // Bell dropdown fed by the same SignalR stream as ChatNotificationListener's toast banner
 // (ReceiveChatNotification/ReceiveActivityNotification - SignalR supports multiple independent
 // "on" handlers per event, so both components subscribing separately is fine). The toast is the
-// "just happened" alert; this is a short history of what arrived since the tab was opened. It's
-// deliberately session-only (resets on reload) - there's no backend notification inbox to hydrate
-// from, so this stays a lightweight accumulator instead of pretending to be a durable one.
+// "just happened" alert; this is a short history of what arrived recently. There's no backend
+// notification inbox, so the history is persisted to localStorage (survives a reload) and each
+// item self-expires after MAX_AGE_MS - swept on load and on an interval, not just when a new
+// notification happens to arrive.
 export default function NotificationBell() {
   const { me } = useAuth();
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("all");
-  const idRef = useRef(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // Guards the persist effect so it doesn't immediately overwrite localStorage with the initial
+  // empty array before the load effect below has a chance to populate it from storage.
+  const skipNextPersistRef = useRef(true);
 
   useClickOutside([wrapRef], () => setOpen(false), open);
 
-  const push = useCallback((next: Omit<Item, "id" | "read">) => {
-    setItems((current) => [{ ...next, id: ++idRef.current, read: false } as Item, ...current].slice(0, MAX_ITEMS));
+  useEffect(() => {
+    setItems(loadStoredItems());
+  }, []);
+
+  useEffect(() => {
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // Best-effort - private browsing / storage-full shouldn't break the dropdown itself.
+    }
+  }, [items]);
+
+  useEffect(() => {
+    const sweep = setInterval(() => {
+      setItems((current) => current.filter(isFresh));
+    }, SWEEP_INTERVAL_MS);
+    return () => clearInterval(sweep);
+  }, []);
+
+  const push = useCallback((next: Omit<Item, "key" | "read">) => {
+    const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setItems((current) => [{ ...next, key, read: false } as Item, ...current].slice(0, MAX_ITEMS));
+  }, []);
+
+  const removeItem = useCallback((key: string) => {
+    setItems((current) => current.filter((it) => it.key !== key));
   }, []);
 
   useEffect(() => {
@@ -80,7 +132,7 @@ export default function NotificationBell() {
     tab === "chat" ? "Belum ada chat baru" : tab === "activity" ? "Belum ada transaksi baru" : "Belum ada notifikasi baru";
 
   function openItem(item: Item) {
-    setItems((current) => current.map((it) => (it.id === item.id ? { ...it, read: true } : it)));
+    setItems((current) => current.map((it) => (it.key === item.key ? { ...it, read: true } : it)));
     setOpen(false);
     router.push(itemHref(item));
   }
@@ -138,7 +190,7 @@ export default function NotificationBell() {
                 const actorNama = item.source === "chat" ? item.senderNama : item.actorNama;
                 const detail = item.source === "chat" ? `Chat: ${item.preview}` : item.message;
                 return (
-                  <motion.li key={item.id} variants={itemVariants}>
+                  <motion.li key={item.key} variants={itemVariants} className="notification-item-row">
                     <button
                       type="button"
                       className={`notification-item${item.read ? "" : " notification-item-unread"}`}
@@ -149,6 +201,17 @@ export default function NotificationBell() {
                       </span>
                       <span className="notification-item-preview">{detail}</span>
                       <span className="notification-item-time">{relativeTime(item.createdAt)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="notification-item-delete"
+                      aria-label="Hapus notifikasi"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeItem(item.key);
+                      }}
+                    >
+                      <X width={14} height={14} />
                     </button>
                   </motion.li>
                 );

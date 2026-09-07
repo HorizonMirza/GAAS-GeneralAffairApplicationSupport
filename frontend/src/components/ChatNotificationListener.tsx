@@ -15,8 +15,8 @@ const MAX_VISIBLE = 4;
 
 // Transaksi page per module - a chat notification's click adds ?chat=<itemId> so that page can
 // deep-link straight into the thread (see booking-ruang-meeting/transaksi's `chat` query param
-// handling); an activity notification just lands on the plain list, no item-specific handling
-// needed to satisfy "go to the transaction".
+// handling); an activity notification adds ?highlight=<itemId> so that page can scroll to and
+// briefly flash the row it refers to (see each Transaksi page's `highlight` query param handling).
 
 type BannerState =
   | ({ id: number; leaving: boolean; source: "chat" } & ChatNotification)
@@ -28,7 +28,7 @@ function initials(name: string): string {
 
 function bannerHref(banner: BannerState): string {
   const base = NOTIFICATION_TRANSAKSI_PATH[banner.kind];
-  return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : base;
+  return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : `${base}?highlight=${banner.itemId}`;
 }
 
 // Always-mounted (rendered once from AppShell, for every authenticated page) WhatsApp-style
