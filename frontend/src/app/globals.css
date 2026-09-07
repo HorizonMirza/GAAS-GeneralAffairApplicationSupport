@@ -3227,7 +3227,8 @@ table.data-table {
 
 .toolbar > .btn,
 .filter-dropdown-wrap #filter-toggle,
-.filter-dropdown-wrap #filter-kendaraan-toggle {
+.filter-dropdown-wrap #filter-kendaraan-toggle,
+.filter-dropdown-wrap #filter-arsip-toggle {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
@@ -4156,7 +4157,8 @@ table.data-table {
     justify-content: center;
   }
   .filter-dropdown-wrap #filter-toggle,
-  .filter-dropdown-wrap #filter-kendaraan-toggle {
+  .filter-dropdown-wrap #filter-kendaraan-toggle,
+  .filter-dropdown-wrap #filter-arsip-toggle {
     width: 100% !important;
     height: 100%;
   }
@@ -4580,6 +4582,19 @@ table.data-table {
   background: var(--bg-surface);
   border-color: var(--blue-400);
   color: var(--blue-500);
+}
+
+/* Delete-type card-icon-btn (e.g. removing an arsip row) - red at rest, same convention as
+   .row-menu-item-danger, so a destructive action reads as destructive without hovering first. */
+.card-icon-btn-danger {
+  border-color: rgba(214, 69, 69, 0.4);
+  color: #d64545;
+}
+
+.card-icon-btn-danger:hover {
+  background: rgba(214, 69, 69, 0.1);
+  border-color: #d64545;
+  color: #d64545;
 }
 
 .chat-count-badge {

@@ -181,7 +181,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                     <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip #{idx + 1}</span>
                     <button
                       type="button"
-                      className="card-icon-btn"
+                      className="card-icon-btn card-icon-btn-danger"
                       aria-label={`Hapus baris arsip ${idx + 1}`}
                       disabled={form.items.length <= 1}
                       style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
