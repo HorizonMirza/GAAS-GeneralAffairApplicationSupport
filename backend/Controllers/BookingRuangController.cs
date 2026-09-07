@@ -1461,7 +1461,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedL1At = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "menolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "ditolak (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1509,7 +1509,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedGaAt = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "ditolak (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1705,7 +1705,7 @@ public class BookingRuangController : ApiControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         await _db.Entry(item).ReloadAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "menolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "ditolak (Approval GA)");
         return Ok(BookingRuangOut.From(item));
     }
 

@@ -161,7 +161,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             </div>
           </div>
         )}
-        <div className="field">
+        <div className="field" style={{ marginBottom: 6 }}>
           <label htmlFor="reject-reason-input">Alasan (opsional)</label>
           <textarea
             id="reject-reason-input"
@@ -173,7 +173,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             }}
           />
         </div>
-        <div className="error-text">{error}</div>
+        {error && <div className="error-text">{error}</div>}
         <div className="modal-actions">
           <button
             type="button"

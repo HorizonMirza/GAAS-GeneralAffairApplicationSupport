@@ -233,7 +233,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label>Daftar Arsip</label>
               {form.items.map((row, idx) => (
                 <div
@@ -297,7 +297,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                       id={`dr-tahun-${idx}`}
                       required
                       disabled={!isEdit}
-                      placeholder="Tahun"
+                      placeholder="Contoh: 2018"
                       value={row.tahunArsip}
                       onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
                     />

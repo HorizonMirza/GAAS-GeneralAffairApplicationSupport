@@ -7,7 +7,7 @@ import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/
 import { useAuth } from "@/lib/auth-context";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
-const DISMISS_AFTER_MS = 6000;
+const DISMISS_AFTER_MS = 10000;
 const LEAVE_ANIM_MS = 300;
 // Caps how many banners can be visibly stacked at once - a burst of events (e.g. a recurring
 // booking's mass approval) drops the oldest immediately rather than growing the stack forever.
