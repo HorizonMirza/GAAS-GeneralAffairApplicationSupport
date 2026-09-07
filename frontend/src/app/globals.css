@@ -13,6 +13,9 @@
 
   --gradient-primary: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
   --gradient-primary-hover: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-300) 100%);
+  /* Original darker navy-to-blue gradient, kept only for the sidebar and cover banners (they
+     stay as they were before --gradient-primary was brightened everywhere else). */
+  --gradient-navy: linear-gradient(135deg, var(--navy-900) 0%, var(--blue-600) 55%, var(--blue-400) 100%);
 
   --glow-blue: 0 0 0 1px rgba(75, 141, 255, 0.25), 0 8px 28px rgba(20, 80, 201, 0.35), 0 0 40px rgba(75, 141, 255, 0.18);
   --glow-blue-strong: 0 0 0 1px rgba(75, 141, 255, 0.4), 0 12px 36px rgba(20, 80, 201, 0.45), 0 0 56px rgba(75, 141, 255, 0.3);
@@ -706,7 +709,7 @@ body.auth-ready .app-shell {
 .sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--bg-header);
+  background: var(--gradient-navy);
   color: #fff;
   padding: 24px 18px;
   display: flex;
@@ -1760,7 +1763,7 @@ body.auth-ready .app-shell {
 
 .profile-hero-banner {
   height: 140px;
-  background: var(--gradient-primary);
+  background: var(--gradient-navy);
   position: relative;
   overflow: hidden;
 }
@@ -1933,7 +1936,7 @@ body.auth-ready .app-shell {
   height: 110px;
   border-radius: 10px;
   overflow: hidden;
-  background: var(--gradient-primary);
+  background: var(--gradient-navy);
 }
 
 .edit-profile-cover-img {
