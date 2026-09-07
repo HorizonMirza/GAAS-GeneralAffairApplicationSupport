@@ -3798,17 +3798,22 @@ table.data-table {
   position: fixed;
   bottom: 24px;
   right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--glow-blue-strong);
-  border-radius: 12px;
-  padding: 14px 20px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px rgba(15, 40, 90, 0.14);
+  border-radius: 999px;
+  padding: 12px 22px 12px 16px;
   font-size: 0.9rem;
   font-weight: 600;
   z-index: 300;
   max-width: 340px;
   animation: toast-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.toast svg { flex-shrink: 0; }
 
 .toast.toast-out {
   animation: toast-out 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
@@ -3828,8 +3833,8 @@ table.data-table {
   .toast, .toast.toast-out { animation: none; }
 }
 
-.toast.error { border-color: #d64545; color: #d64545; }
-.toast.success { border-color: #0f9d58; color: #0f9d58; }
+.toast.error { color: #d64545; }
+.toast.success { color: #0f9d58; }
 
 /* ---------- Global chat notification banner (WhatsApp-style, top-center) ---------- */
 .chat-notification-banner {

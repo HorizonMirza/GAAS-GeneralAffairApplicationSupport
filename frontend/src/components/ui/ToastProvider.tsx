@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 type ToastType = "success" | "error";
 
@@ -35,7 +36,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toast && <div className={`toast ${toast.type} ${toast.leaving ? "toast-out" : ""}`}>{toast.message}</div>}
+      {toast && (
+        <div className={`toast ${toast.type} ${toast.leaving ? "toast-out" : ""}`}>
+          {toast.type === "success" ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+          <span>{toast.message}</span>
+        </div>
+      )}
     </ToastContext.Provider>
   );
 }
