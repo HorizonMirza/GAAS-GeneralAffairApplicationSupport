@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
@@ -13,6 +13,7 @@ import {
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
+  isKendaraanPdfAvailable,
   canGaRescheduleKendaraan,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
@@ -370,6 +371,17 @@ export default function VehicleBookingOverviewPage() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        pdfUrl={rowMenu.menuItem && isKendaraanPdfAvailable(rowMenu.menuItem) ? api.kendaraanPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
       />
 
       {me && (
@@ -484,7 +496,6 @@ export default function VehicleBookingOverviewPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.namaKendaraan} - ${chatItem.nomorPemesanan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={() => load({ silent: true })}

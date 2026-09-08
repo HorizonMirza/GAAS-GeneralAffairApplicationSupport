@@ -184,7 +184,8 @@ public class PengirimanController : ApiControllerBase
         string? nomorTransmittal,
         string? bulan,
         string? sejakBulan = null,
-        bool onlyRejected = false)
+        bool onlyRejected = false,
+        DateOnly? tanggal = null)
     {
         // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
         // barang unit mereka (siapapun yang membuatnya), kecuali draft orang lain yang belum
@@ -225,6 +226,7 @@ public class PengirimanController : ApiControllerBase
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
         if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => EF.Functions.ILike(p.NomorTransmittal, $"%{nomorTransmittal}%"));
+        if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
@@ -481,7 +483,8 @@ public class PengirimanController : ApiControllerBase
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
         [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal = null,
-        [FromQuery] string? sejakBulan = null)
+        [FromQuery] string? sejakBulan = null,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -506,7 +509,7 @@ public class PengirimanController : ApiControllerBase
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal);
         }
         catch (ArgumentException ex)
         {

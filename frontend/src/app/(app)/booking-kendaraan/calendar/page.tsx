@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -12,6 +12,7 @@ import {
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
+  isKendaraanPdfAvailable,
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, VehicleOption } from "@/lib/types";
@@ -429,6 +430,17 @@ function VehicleCalendarPageInner() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        pdfUrl={rowMenu.menuItem && isKendaraanPdfAvailable(rowMenu.menuItem) ? api.kendaraanPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
       />
 
       {me && (
@@ -491,7 +503,6 @@ function VehicleCalendarPageInner() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.namaKendaraan} - ${chatItem.nomorPemesanan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={() => reloadAll({ silent: true })}

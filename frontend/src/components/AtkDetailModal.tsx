@@ -51,6 +51,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   const [form, setForm] = useState<PermintaanAtkCreatePayload | null>(null);
   const [sumberPembelian, setSumberPembelian] = useState<SumberPembelian | "">("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -106,6 +107,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
       setError("Sumber pembelian wajib dipilih");
       return;
     }
+    setBusy(true);
     try {
       await api.submitAtk(item!.id, submitNeedsSumberPembelian ? (sumberPembelian as SumberPembelian) : null);
       showToast("Permintaan berhasil dikirim untuk approval");
@@ -113,6 +115,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -166,6 +169,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
       showToast("Permintaan berhasil diperbarui");
@@ -173,6 +177,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -306,7 +311,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
             )}
             {canL1Act && (
               <>
@@ -333,7 +338,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

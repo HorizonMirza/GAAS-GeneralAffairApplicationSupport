@@ -445,13 +445,15 @@ export default function SuperAdminPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const pageStart = Math.max(1, Math.min(filters.page, totalPages - 1));
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
   const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
   const invoiceTotalPages = Math.max(1, Math.ceil(invoiceTotal / invoiceLimit));
-  const invoicePageStart = Math.max(1, Math.min(invoicePage, invoiceTotalPages - 1));
+  const invoicePageStart = Math.min(Math.max(1, invoicePage), invoiceTotalPages);
   const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 1);
   const invoicePageButtons: number[] = [];
   for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
@@ -472,7 +474,7 @@ export default function SuperAdminPage() {
       : orgStructure?.departemen || [];
 
   const bookingTotalPages = Math.max(1, Math.ceil(bookingTotal / bookingFilters.limit));
-  const bookingPageStart = Math.max(1, Math.min(bookingFilters.page, bookingTotalPages - 1));
+  const bookingPageStart = Math.min(Math.max(1, bookingFilters.page), bookingTotalPages);
   const bookingPageEnd = Math.min(bookingTotalPages, bookingPageStart + 1);
   const bookingPageButtons: number[] = [];
   for (let p = bookingPageStart; p <= bookingPageEnd; p++) bookingPageButtons.push(p);
@@ -484,7 +486,7 @@ export default function SuperAdminPage() {
   const bookingDepartemenOptions = bookingSelectedDivisiNode ? bookingSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
   const kendaraanTotalPages = Math.max(1, Math.ceil(kendaraanTotal / kendaraanFilters.limit));
-  const kendaraanPageStart = Math.max(1, Math.min(kendaraanFilters.page, kendaraanTotalPages - 1));
+  const kendaraanPageStart = Math.min(Math.max(1, kendaraanFilters.page), kendaraanTotalPages);
   const kendaraanPageEnd = Math.min(kendaraanTotalPages, kendaraanPageStart + 1);
   const kendaraanPageButtons: number[] = [];
   for (let p = kendaraanPageStart; p <= kendaraanPageEnd; p++) kendaraanPageButtons.push(p);
@@ -496,7 +498,7 @@ export default function SuperAdminPage() {
   const kendaraanDepartemenOptions = kendaraanSelectedDivisiNode ? kendaraanSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
   const arsipTotalPages = Math.max(1, Math.ceil(arsipTotal / arsipFilters.limit));
-  const arsipPageStart = Math.max(1, Math.min(arsipFilters.page, arsipTotalPages - 1));
+  const arsipPageStart = Math.min(Math.max(1, arsipFilters.page), arsipTotalPages);
   const arsipPageEnd = Math.min(arsipTotalPages, arsipPageStart + 1);
   const arsipPageButtons: number[] = [];
   for (let p = arsipPageStart; p <= arsipPageEnd; p++) arsipPageButtons.push(p);

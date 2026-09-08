@@ -23,6 +23,7 @@ interface Props {
 export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   useAutofocusFirstField(containerRef, `${open}-${targetId}-${targetType}`);
@@ -32,6 +33,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
   function reset() {
     setReason("");
     setError("");
+    setBusy(false);
   }
 
   function handleClose() {
@@ -42,6 +44,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
   async function handleConfirm() {
     if (targetId == null || !targetType) return;
     const reasonValue = reason.trim() || null;
+    setBusy(true);
     try {
       if (targetType === "room") await api.cancelBooking(targetId, reasonValue);
       else await api.cancelKendaraanBooking(targetId, reasonValue);
@@ -50,6 +53,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
       onDone();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -79,6 +83,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             className="btn btn-danger"
             style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
             onClick={handleConfirm}
+            disabled={busy}
           >
             Cancel
           </button>

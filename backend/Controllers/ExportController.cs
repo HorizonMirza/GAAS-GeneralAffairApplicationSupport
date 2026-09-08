@@ -99,10 +99,11 @@ public class ExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
+        if (tanggal.HasValue) parts.Add(tanggal.Value.ToString("yyyy-MM-dd"));
         if (statusFilter.HasValue)
         {
             var key = statusFilter.Value.ToString();
@@ -116,9 +117,9 @@ public class ExportController : ApiControllerBase
         return "mutasi-pengiriman-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal)
+    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
-        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected);
+        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal);
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
 
@@ -139,7 +140,8 @@ public class ExportController : ApiControllerBase
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
-        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -148,7 +150,7 @@ public class ExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
+        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
 
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Mutasi Pengiriman");
@@ -242,7 +244,7 @@ public class ExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -253,7 +255,8 @@ public class ExportController : ApiControllerBase
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
-        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal)
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -262,9 +265,9 @@ public class ExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
+        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
         decimal grandTotal = rows.Where(r => r.Total.HasValue).Sum(r => r.Total!.Value);
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

@@ -42,6 +42,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}`);
@@ -77,6 +78,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.rescheduleBooking(item!.id, {
         ...form!,
@@ -88,6 +90,8 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -200,7 +204,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

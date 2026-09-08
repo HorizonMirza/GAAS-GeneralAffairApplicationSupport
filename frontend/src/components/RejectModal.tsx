@@ -51,6 +51,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
   const [reason, setReason] = useState("");
   const [target, setTarget] = useState<RejectTarget | "">("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   useAutofocusFirstField(containerRef, `${open}-${targetId}-${targetType}`);
@@ -65,6 +66,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
     setReason("");
     setTarget("");
     setError("");
+    setBusy(false);
   }
 
   function handleClose() {
@@ -80,6 +82,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
       return;
     }
     const effectiveTarget: RejectTarget | "" = skipChoice ? "ORIGIN" : target;
+    setBusy(true);
     try {
       let message = `Data ditolak, dikembalikan ke ${originLabel}`;
       if (targetType === "l1") {
@@ -136,6 +139,8 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
       onDone();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -180,6 +185,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             className="btn btn-danger"
             style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
             onClick={handleConfirm}
+            disabled={busy}
           >
             Reject
           </button>

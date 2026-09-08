@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 interface FilterState {
   page: number;
   limit: number;
+  tanggal: string;
   bulan: string;
   status: Status | "REJECTED" | "";
   divisi: string;
@@ -39,7 +40,7 @@ interface FilterState {
 }
 
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, bulan: "", status: "", divisi: "", departemen: "", direktorat: "", search: "" };
+  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", search: "" };
 }
 
 function OfficeSuppliesTransaksiPageInner() {
@@ -118,6 +119,7 @@ function OfficeSuppliesTransaksiPageInner() {
       const result = await api.listAtk({
         page: filters.page,
         limit: filters.limit,
+        tanggal: filters.tanggal,
         bulan: filters.bulan,
         status: filters.status,
         divisi: filters.divisi,
@@ -173,6 +175,18 @@ function OfficeSuppliesTransaksiPageInner() {
     setFilters((f) => ({ ...f, page }));
   }
 
+  function currentExportParams() {
+    return {
+      bulan: filters.bulan,
+      tanggal: filters.tanggal,
+      status: filters.status,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+      search: filters.search,
+    };
+  }
+
   function handleDelete(item: PermintaanAtk) {
     confirm("Hapus permintaan ATK ini secara permanen?", async () => {
       try {
@@ -186,10 +200,10 @@ function OfficeSuppliesTransaksiPageInner() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const PAGE_WINDOW = 2;
-  let pageStart = Math.max(1, filters.page - 1);
-  const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
-  pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
+  const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
@@ -221,7 +235,7 @@ function OfficeSuppliesTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-atk-bulan">Filter Bulan</label>
-            <input type="month" id="filter-atk-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
+            <input type="month" id="filter-atk-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -233,7 +247,11 @@ function OfficeSuppliesTransaksiPageInner() {
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
-                <div className="field" style={{ marginBottom: 0 }}>
+                <div className="field">
+                  <label htmlFor="filter-atk-tanggal">Filter Tanggal</label>
+                  <input type="date" id="filter-atk-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-atk-status">Status</label>
                   <SearchableSelect
                     id="filter-atk-status"
@@ -297,6 +315,12 @@ function OfficeSuppliesTransaksiPageInner() {
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
 
           <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.atkExportPdfUrl(currentExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.atkExportUrl(currentExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
                 + Permintaan ATK

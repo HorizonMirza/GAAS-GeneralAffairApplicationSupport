@@ -19,6 +19,7 @@ interface Props {
 
 export default function InvoiceDetailModal({ open, item, me, onClose, onRequestAction, onSubmitted }: Props) {
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
 
   if (!open || !item) return null;
@@ -28,12 +29,14 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
 
   async function handleSubmitDraft() {
     if (!item) return;
+    setBusy(true);
     try {
       await api.submitInvoice(item.id);
       showToast("Invoice berhasil dikirim untuk approval");
       onSubmitted();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -79,7 +82,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
             </>
           )}
           {canSubmitDraft && (
-            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
           )}
         </div>
       </div>

@@ -50,6 +50,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   const [form, setForm] = useState<BookingKendaraanCreatePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -95,6 +96,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   }
 
   async function handleSubmitDraft() {
+    setBusy(true);
     try {
       await api.submitKendaraanBooking(item!.id);
       showToast("Booking berhasil dikirim untuk approval");
@@ -102,6 +104,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -140,6 +143,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
       showToast("Booking berhasil diperbarui");
@@ -147,6 +151,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -273,7 +278,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Submit</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
             )}
             {canL1Act && (
               <>
@@ -294,7 +299,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

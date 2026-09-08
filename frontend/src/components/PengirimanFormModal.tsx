@@ -39,6 +39,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
   const { orgStructure } = useAuth();
   const [form, setForm] = useState<PengirimanCreatePayload>(emptyForm());
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [nomorTransmittal, setNomorTransmittal] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -89,6 +90,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
         return;
       }
     }
+    setBusy(true);
     try {
       // "" (the explicit "Kebutuhan Divisi ini" choice) means no specific Departemen - translated
       // to undefined here (not sent at all) so the backend still records a null Departemen, same
@@ -99,6 +101,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
       onCreated();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -236,7 +240,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

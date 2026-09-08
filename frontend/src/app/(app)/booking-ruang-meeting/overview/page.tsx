@@ -520,7 +520,6 @@ export default function BookingOverviewPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${bookingRoomsLabel(chatItem)} - ${chatItem.nomorPemesanan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={() => load({ silent: true })}

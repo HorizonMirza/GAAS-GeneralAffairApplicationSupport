@@ -34,6 +34,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
   const [form, setForm] = useState<BookingKendaraanReschedulePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}`);
@@ -65,6 +66,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.rescheduleKendaraanBooking(item!.id, {
         ...form!,
@@ -76,6 +78,8 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -172,7 +176,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

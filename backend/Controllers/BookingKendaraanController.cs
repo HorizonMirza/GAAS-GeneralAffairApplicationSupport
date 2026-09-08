@@ -972,4 +972,22 @@ public class BookingKendaraanController : ApiControllerBase
 
         return Ok(logs);
     }
+
+    // Proof-of-booking, only ever available once a booking has actually won its vehicle+slot for
+    // real - mirrors BookingRuangController.DownloadBuktiPdf.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.BookingKendaraans.Include(b => b.Pembuat).FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingKendaraan(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Bukti booking hanya tersedia untuk booking yang sudah Approved" });
+
+        var bytes = VehiclePdfService.Generate(item);
+        return File(bytes, "application/pdf", $"Bukti-Booking-Kendaraan-{item.NomorPemesanan}.pdf");
+    }
 }

@@ -165,7 +165,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         string? direktorat = null,
         string? bulan = null,
         string? search = null,
-        bool onlyRejected = false)
+        bool onlyRejected = false,
+        DateOnly? tanggal = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -206,6 +207,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         // ingat tempatnya ("Ruang Bromo") daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
             query = query.Where(p => (p.NomorPerbaikan != null && EF.Functions.ILike(p.NomorPerbaikan, $"%{search}%")) || EF.Functions.ILike(p.Lokasi, $"%{search}%"));
+        if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -420,7 +422,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
         [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -456,7 +459,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, urgensiFilter, direktorat, bulan, search, onlyRejected);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, urgensiFilter, direktorat, bulan, search, onlyRejected, tanggal);
         }
         catch (ArgumentException ex)
         {

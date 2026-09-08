@@ -245,12 +245,10 @@ function BookingTransaksiPageInner() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  // Window of up to 2 page numbers, re-anchored after clamping to totalPages so the last page
-  // still shows a full 2-button window (e.g. totalPages=5, page=5 -> [4,5], not just [5]).
-  const PAGE_WINDOW = 2;
-  let pageStart = Math.max(1, filters.page - 1);
-  const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
-  pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
+  const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
@@ -588,7 +586,6 @@ function BookingTransaksiPageInner() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaKegiatan} - ${bookingRoomsLabel(chatItem)} - ${chatItem.nomorPemesanan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={() => loadTable({ silent: true })}

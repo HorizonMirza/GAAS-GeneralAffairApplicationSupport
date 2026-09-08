@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_SHORT_LABEL, bookingChatParticipantLabels } from "@/lib/constants";
 import { joinChat, leaveChat, onChatMessage } from "@/lib/chatHub";
 import { formatTime } from "@/lib/format";
-import type { ChatMessage, Me, Role } from "@/lib/types";
+import type { ChatMessage, Me } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 
 interface Props {
@@ -13,7 +13,6 @@ interface Props {
   itemId: number | null;
   itemLabel: string;
   departemen: string | null;
-  createdByRole?: Role | null;
   me: Me;
   onClose: () => void;
   onRead: () => void;
@@ -60,7 +59,7 @@ function SendIcon() {
   );
 }
 
-export default function VehicleBookingChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
+export default function VehicleBookingChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState("");

@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   canGaRescheduleKendaraan,
@@ -12,6 +12,7 @@ import {
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
+  isKendaraanPdfAvailable,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -198,6 +199,19 @@ function VehicleBookingTransaksiPageInner() {
     setFilters((f) => ({ ...f, page }));
   }
 
+  function currentExportParams() {
+    return {
+      bulan: filters.bulan,
+      tanggal: filters.tanggal,
+      status: filters.status,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+      nama_kendaraan: filters.namaKendaraan,
+      search: filters.search,
+    };
+  }
+
   function handleDelete(item: BookingKendaraan) {
     confirm("Hapus booking kendaraan ini secara permanen?", async () => {
       try {
@@ -211,10 +225,10 @@ function VehicleBookingTransaksiPageInner() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const PAGE_WINDOW = 2;
-  let pageStart = Math.max(1, filters.page - 1);
-  const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
-  pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
+  const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
@@ -337,6 +351,12 @@ function VehicleBookingTransaksiPageInner() {
           <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
 
           <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.kendaraanExportPdfUrl(currentExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.kendaraanExportUrl(currentExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
                 + Booking Kendaraan
@@ -468,6 +488,17 @@ function VehicleBookingTransaksiPageInner() {
           rowMenu.close();
           if (item) handleDelete(item);
         }}
+        pdfUrl={rowMenu.menuItem && isKendaraanPdfAvailable(rowMenu.menuItem) ? api.kendaraanPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
       />
 
       {me && (
@@ -522,7 +553,6 @@ function VehicleBookingTransaksiPageInner() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.namaKendaraan} - ${chatItem.nomorPemesanan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={() => loadTable({ silent: true })}

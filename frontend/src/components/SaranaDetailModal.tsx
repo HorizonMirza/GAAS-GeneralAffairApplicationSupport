@@ -48,6 +48,7 @@ function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
 export default function SaranaDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload | null>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [execNote, setExecNote] = useState("");
   const [gambarFile, setGambarFile] = useState<File | null>(null);
   const { showToast } = useToast();
@@ -85,6 +86,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   }
 
   async function handleSubmitDraft() {
+    setBusy(true);
     try {
       await api.submitSarana(item!.id);
       showToast("Laporan berhasil dikirim untuk approval");
@@ -92,6 +94,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -174,6 +177,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updateSarana(item!.id, { ...form!, catatan: form!.catatan || null });
       showToast("Laporan berhasil diperbarui");
@@ -181,6 +185,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -333,7 +338,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
             )}
             {canL1Act && (
               <>
@@ -354,7 +359,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

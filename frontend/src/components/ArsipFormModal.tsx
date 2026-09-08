@@ -51,6 +51,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   const [form, setForm] = useState<FormState>(emptyForm());
   const [openItemIdx, setOpenItemIdx] = useState<number | null>(0);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [nomorArsip, setNomorArsip] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -127,6 +128,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
       setError("Kategori wajib dipilih untuk semua arsip");
       return;
     }
+    setBusy(true);
     try {
       const items: PermintaanArsipItemPayload[] = form.items.map((row) => ({ ...row, kategori: row.kategori as ArchiveKategori }));
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
@@ -137,6 +139,8 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
       onCreated();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -326,7 +330,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
 
           {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

@@ -48,6 +48,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -126,6 +127,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         return;
       }
     }
+    setBusy(true);
     try {
       const created = await api.createBooking({
         ...form,
@@ -148,6 +150,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
       onCreated();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -340,7 +344,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

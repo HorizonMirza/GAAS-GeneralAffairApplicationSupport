@@ -17,6 +17,7 @@ interface Props {
 export default function InvoiceActionModal({ open, invoiceId, type, onClose, onDone }: Props) {
   const [catatan, setCatatan] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   useAutofocusFirstField(containerRef, `${open}-${invoiceId}-${type}`);
@@ -26,6 +27,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
   function reset() {
     setCatatan("");
     setError("");
+    setBusy(false);
   }
 
   function handleClose() {
@@ -36,6 +38,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
   async function handleConfirm() {
     if (invoiceId == null || !type) return;
     const value = catatan.trim() || null;
+    setBusy(true);
     try {
       if (type === "approve") {
         await api.approveInvoice(invoiceId, value);
@@ -48,6 +51,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
       onDone();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -74,6 +78,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
             className={type === "approve" ? "btn btn-confirm-approve" : "btn btn-confirm-danger"}
             style={{ width: "auto" }}
             onClick={handleConfirm}
+            disabled={busy}
           >
             {type === "approve" ? "Approve" : "Reject"}
           </button>

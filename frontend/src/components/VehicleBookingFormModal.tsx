@@ -40,6 +40,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const [form, setForm] = useState<BookingKendaraanCreatePayload>(emptyForm());
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [nomorPemesanan, setNomorPemesanan] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -93,6 +94,17 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isGaActor) {
+      if (!form.divisi) {
+        setError("Divisi wajib dipilih");
+        return;
+      }
+      if (form.departemen === undefined) {
+        setError("Departemen wajib dipilih");
+        return;
+      }
+    }
+    setBusy(true);
     try {
       await api.createKendaraanBooking({
         ...form,
@@ -106,6 +118,8 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
       onCreated();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -242,7 +256,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
           </div>
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

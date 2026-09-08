@@ -49,6 +49,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
   const [openItemIdx, setOpenItemIdx] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [previewNomor, setPreviewNomor] = useState<string | null>(null);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -126,6 +127,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
   }
 
   async function handleSubmitDraft() {
+    setBusy(true);
     try {
       await api.submitArsip(item!.id);
       showToast("Permintaan berhasil dikirim untuk approval");
@@ -133,6 +135,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -171,6 +174,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updateArsip(item!.id, { ...form!, catatan: form!.catatan || null });
       showToast("Permintaan berhasil diperbarui");
@@ -178,6 +182,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -378,7 +383,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
           {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
             )}
             {canL1Act && (
               <>
@@ -399,7 +404,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

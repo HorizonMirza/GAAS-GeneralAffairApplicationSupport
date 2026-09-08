@@ -294,6 +294,11 @@ export function isBookingPdfAvailable(item: BookingRuang): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
+// Same rule as isBookingPdfAvailable, for Vehicle Booking's own proof-of-booking PDF.
+export function isKendaraanPdfAvailable(item: BookingKendaraan): boolean {
+  return item.status === "APPROVED_GA_APPROVAL";
+}
+
 // Whoever created it, or Admin/Approval GA regardless of who created it, can cancel a booking
 // that's still on-approval or already Approved - but only up until its own start time. Mirrors
 // the backend's BookingRuangController.IsCancellableByOrigin/IsPastCancelDeadline exactly.

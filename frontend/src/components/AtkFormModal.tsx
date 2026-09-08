@@ -41,6 +41,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
   const [form, setForm] = useState<PermintaanAtkCreatePayload>(emptyForm());
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [nomorPermintaan, setNomorPermintaan] = useState("");
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -106,6 +107,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
         return;
       }
     }
+    setBusy(true);
     try {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
@@ -115,6 +117,8 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
       onCreated();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -241,7 +245,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
         </form>
       </div>

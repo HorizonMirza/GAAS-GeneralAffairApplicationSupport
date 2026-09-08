@@ -25,6 +25,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 interface FilterState {
   page: number;
   limit: number;
+  tanggal: string;
   bulan: string;
   search: string;
   // "REJECTED" is a synthetic value (not a real Status) meaning "any of the 4 reject-stage
@@ -35,7 +36,7 @@ interface FilterState {
   direktorat: string;
 }
 
-const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
+const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
 
 function TransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
@@ -123,6 +124,7 @@ function TransaksiPageInner() {
       const result = await api.listPengiriman({
         page: filters.page,
         limit: filters.limit,
+        tanggal: filters.tanggal,
         bulan: filters.bulan,
         nomorTransmittal: filters.search,
         status: filters.status,
@@ -187,6 +189,7 @@ function TransaksiPageInner() {
   function currentExportParams() {
     return {
       bulan: filters.bulan,
+      tanggal: filters.tanggal,
       status: filters.status,
       divisi: filters.divisi,
       departemen: filters.departemen,
@@ -208,7 +211,9 @@ function TransaksiPageInner() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const pageStart = Math.max(1, Math.min(filters.page, totalPages - 1));
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
   const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
@@ -249,7 +254,7 @@ function TransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
+            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -262,6 +267,10 @@ function TransaksiPageInner() {
             {filterOpen && (
               <div className="filter-dropdown-panel">
                 <div className="field">
+                  <label htmlFor="filter-tanggal">Filter Tanggal</label>
+                  <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-status">Status</label>
                   <SearchableSelect
                     id="filter-status"

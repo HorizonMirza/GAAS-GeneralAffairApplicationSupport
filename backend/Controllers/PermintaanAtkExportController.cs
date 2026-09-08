@@ -11,35 +11,31 @@ using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
-// PDF/Excel export for the Archive Transaction table - same shape as ExportController
-// (Pengiriman) and BookingRuangExportController, minus a grand-total footer since archive
-// requests carry no monetary value. One row per request (not per PermintaanArsipItem); the
-// "Daftar Arsip" column flattens a request's items into one summary string, matching how the
-// on-screen table already displays them (see arsipItemsSummary on the frontend).
-[Route("api/permintaan-arsip")]
-public class ArsipExportController : ApiControllerBase
+// Same "Download PDF"/"Download Excel" toolbar as Ekspedisi's ExportController and
+// ArsipExportController, applied to Office Supplies (ATK)'s Transaksi list. One row per request
+// (not per PermintaanAtkItem); the "Daftar Barang" column flattens a request's items into one
+// summary string, matching how the on-screen table already displays them (see atkItemsSummary on
+// the frontend).
+[Route("api/permintaan-atk")]
+public class PermintaanAtkExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
 
     private static readonly (string Field, string Label)[] Columns =
     {
-        ("nomor_arsip", "No Permintaan"),
+        ("nomor_permintaan", "No Permintaan"),
         ("diajukan", "Diajukan"),
-        ("jumlah_arsip", "Jumlah Arsip"),
-        ("nama_pic", "Nama PIC"),
-        ("no_telepon_pic", "No. Telepon PIC"),
+        ("tanggal", "Tanggal Dibutuhkan"),
         ("keperluan", "Keperluan"),
-        ("daftar_arsip", "Daftar Arsip"),
+        ("daftar_barang", "Daftar Barang"),
         ("jumlah_jenis", "Jumlah Jenis"),
-        ("lokasi_penyimpanan", "Lokasi Penyimpanan"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
-        ("tanggal", "Tanggal"),
         ("catatan", "Catatan"),
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 45, 38, 24, 45, 40, 55, 95, 20, 55, 40, 40, 28, 45, 55 };
+    private static readonly float[] PdfColWidths = { 40, 34, 26, 45, 90, 20, 40, 40, 55, 45 };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -50,31 +46,29 @@ public class ArsipExportController : ApiControllerBase
         ["REJECTED_GA"] = "Rejected: Admin General Affair",
         ["APPROVED_GA"] = "On-Approval: Approval GA",
         ["REJECTED_GA_APPROVAL"] = "Rejected: Approval GA",
-        ["APPROVED_GA_APPROVAL"] = "Approved",
+        ["APPROVED_GA_APPROVAL"] = "On-Approval: Mitra",
+        ["REJECTED_KPU"] = "Rejected: Mitra",
+        ["COMPLETED"] = "Approved",
     };
 
-    public ArsipExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public PermintaanAtkExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
     {
         _db = db;
     }
 
-    private static string ArsipListSummary(PermintaanArsip row) =>
-        string.Join(", ", row.Items.Select(i => $"{i.NamaArsip} ({i.Jumlah} {i.Satuan})"));
+    private static string AtkListSummary(PermintaanAtk row) =>
+        string.Join(", ", row.Items.Select(i => $"{i.NamaBarang} ({i.Jumlah} {i.Satuan})"));
 
-    private static object? GetFieldValue(PermintaanArsip row, string field) => field switch
+    private static object? GetFieldValue(PermintaanAtk row, string field) => field switch
     {
-        "nomor_arsip" => row.NomorArsip,
+        "nomor_permintaan" => row.NomorPermintaan,
         "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-        "jumlah_arsip" => row.JumlahArsip,
-        "nama_pic" => row.NamaPic,
-        "no_telepon_pic" => row.NoTeleponPic,
+        "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "keperluan" => row.Keperluan,
-        "daftar_arsip" => ArsipListSummary(row),
+        "daftar_barang" => AtkListSummary(row),
         "jumlah_jenis" => row.Items.Count,
-        "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
-        "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "catatan" => row.Catatan,
         "status" => StatusLabel.GetValueOrDefault(row.Status.ToString(), row.Status.ToString()),
         _ => null,
@@ -86,7 +80,7 @@ public class ArsipExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -101,19 +95,19 @@ public class ArsipExportController : ApiControllerBase
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
         if (!string.IsNullOrEmpty(search)) parts.Add($"cari-{Slugify(search)}");
-        return "permintaan-arsip-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
+        return "permintaan-atk-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private static (BookingStatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    private static (StatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
     {
         if (string.IsNullOrEmpty(status)) return (null, false);
         if (status == "REJECTED") return (null, true);
-        return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false) : null;
+        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false) : null;
     }
 
-    private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
     {
-        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
+        var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
         return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 
@@ -127,14 +121,14 @@ public class ArsipExportController : ApiControllerBase
         [FromQuery] string? search,
         [FromQuery] DateOnly? tanggal = null)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        List<PermintaanArsip> rows;
+        List<PermintaanAtk> rows;
         try
         {
             rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
@@ -145,7 +139,7 @@ public class ArsipExportController : ApiControllerBase
         }
 
         using var wb = new XLWorkbook();
-        var ws = wb.Worksheets.Add("Permintaan Arsip");
+        var ws = wb.Worksheets.Add("Permintaan ATK");
 
         var header = new List<string> { "No" };
         header.AddRange(Columns.Select(c => c.Label));
@@ -208,14 +202,14 @@ public class ArsipExportController : ApiControllerBase
         [FromQuery] string? search,
         [FromQuery] DateOnly? tanggal = null)
     {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        List<PermintaanArsip> rows;
+        List<PermintaanAtk> rows;
         try
         {
             rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);

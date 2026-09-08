@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Download, FileText, ListChecks, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
@@ -57,9 +58,20 @@ export default function RowMenuDropdown({
   onCancel,
   canCancel,
 }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!position) return;
+    // Move focus into the menu once it opens, so a keyboard user who activated the "Aksi"
+    // button with Enter/Space can immediately Tab through the menu items instead of Tab
+    // continuing past the trigger into whatever comes next on the page.
+    containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [position]);
+
   if (!position) return null;
   return (
     <motion.div
+      ref={containerRef}
       className="row-menu-dropdown"
       style={{ top: position.top, left: position.left }}
       onClick={(e) => e.stopPropagation()}

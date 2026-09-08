@@ -61,6 +61,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [bulkShift, setBulkShift] = useState(7);
   const [bulkBusy, setBulkBusy] = useState(false);
   const { showToast } = useToast();
@@ -140,6 +141,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   }
 
   async function handleSubmitDraft() {
+    setBusy(true);
     try {
       const { detail } = await api.submitBooking(item!.id);
       showToast(detail || "Booking berhasil dikirim untuk approval");
@@ -147,6 +149,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -185,6 +188,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
       showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
@@ -192,6 +196,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -441,7 +446,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Submit</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
             )}
             {canL1Act && (
               <>
@@ -462,7 +467,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

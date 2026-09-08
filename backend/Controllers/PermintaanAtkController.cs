@@ -136,7 +136,8 @@ public class PermintaanAtkController : ApiControllerBase
         string? direktorat = null,
         string? bulan = null,
         string? search = null,
-        bool onlyRejected = false)
+        bool onlyRejected = false,
+        DateOnly? tanggal = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -173,6 +174,7 @@ public class PermintaanAtkController : ApiControllerBase
         }
         if (!string.IsNullOrEmpty(search))
             query = query.Where(p => p.NomorPermintaan != null && EF.Functions.ILike(p.NomorPermintaan, $"%{search}%"));
+        if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -411,7 +413,8 @@ public class PermintaanAtkController : ApiControllerBase
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
         [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -433,7 +436,7 @@ public class PermintaanAtkController : ApiControllerBase
         IQueryable<PermintaanAtk> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected);
+            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
         }
         catch (ArgumentException ex)
         {

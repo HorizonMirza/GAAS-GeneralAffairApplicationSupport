@@ -94,10 +94,10 @@ export default function ArsipKatalogPage() {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
-  const PAGE_WINDOW = 2;
-  let pageStart = Math.max(1, filters.page - 1);
-  const pageEnd = Math.min(totalPages, pageStart + PAGE_WINDOW - 1);
-  pageStart = Math.max(1, pageEnd - PAGE_WINDOW + 1);
+  // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
+  // last page shows just itself instead of always padding in the page before it too.
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
+  const pageEnd = Math.min(totalPages, pageStart + 1);
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 

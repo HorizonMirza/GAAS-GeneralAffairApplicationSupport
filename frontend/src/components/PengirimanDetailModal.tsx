@@ -47,6 +47,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const [kSubtotal, setKSubtotal] = useState("");
   const [kTotal, setKTotal] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -118,6 +119,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   }
 
   async function handleSubmitDraft() {
+    setBusy(true);
     try {
       await api.submitPengiriman(item!.id);
       showToast("Data berhasil dikirim untuk approval");
@@ -125,6 +127,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -171,6 +174,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Harga Asuransi, dan Harga Ongkos Kirim." : "Lengkapi No Resi, Berat, dan Harga Ongkos Kirim.");
       return;
     }
+    setBusy(true);
     try {
       await api.approveKpu(item!.id, {
         noResi,
@@ -184,11 +188,13 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
     try {
       await api.updatePengiriman(item!.id, { ...form!, catatan: form!.catatan || null });
       showToast("Data berhasil diperbarui");
@@ -196,6 +202,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       onSaved();
     } catch (err) {
       setError((err as Error).message);
+      setBusy(false);
     }
   }
 
@@ -355,7 +362,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft}>Approve</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
             )}
             {canL1Act && (
               <>
@@ -378,11 +385,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             {canKpuAct && (
               <>
                 <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item), item.createdByRole); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove}>Approve</button>
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove} disabled={busy}>Approve</button>
               </>
             )}
             {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Save</button>
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
         </form>

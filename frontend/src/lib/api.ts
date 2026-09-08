@@ -169,6 +169,7 @@ export interface ListPengirimanParams {
   divisi?: string;
   departemen?: string;
   direktorat?: string;
+  tanggal?: string;
 }
 
 function listParams(p: ListPengirimanParams) {
@@ -182,6 +183,7 @@ function listParams(p: ListPengirimanParams) {
     divisi: p.divisi,
     departemen: p.departemen,
     direktorat: p.direktorat,
+    tanggal: p.tanggal,
   };
 }
 
@@ -492,6 +494,19 @@ export const api = {
   getKendaraanChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/booking-kendaraan/${id}/chat`),
   sendKendaraanChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
+  kendaraanPdfUrl: (id: number) => `${API_BASE}/booking-kendaraan/${id}/pdf`,
+  kendaraanExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/booking-kendaraan/export${query ? `?${query}` : ""}`;
+  },
+  kendaraanExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/booking-kendaraan/export-pdf${query ? `?${query}` : ""}`;
+  },
 
   nextAtkNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal, divisi } }),
@@ -529,6 +544,18 @@ export const api = {
   getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),
   sendAtkChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/permintaan-atk/${id}/chat`, { method: "POST", body: { message } }),
+  atkExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-atk/export${query ? `?${query}` : ""}`;
+  },
+  atkExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-atk/export-pdf${query ? `?${query}` : ""}`;
+  },
 
   nextSaranaNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal, divisi } }),
@@ -558,6 +585,18 @@ export const api = {
   getSaranaChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/perbaikan-sarana/${id}/chat`),
   sendSaranaChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/perbaikan-sarana/${id}/chat`, { method: "POST", body: { message } }),
+  saranaExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/perbaikan-sarana/export${query ? `?${query}` : ""}`;
+  },
+  saranaExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/perbaikan-sarana/export-pdf${query ? `?${query}` : ""}`;
+  },
   cekLokasiSarana: (id: number, catatan: string | null) =>
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/cek-lokasi`, { method: "PATCH", body: { catatan } }),
   uploadGambarSarana: async (id: number, file: File, catatan: string | null) => {
@@ -638,6 +677,7 @@ export interface ListArsipParams {
   direktorat?: string;
   bulan?: string;
   search?: string;
+  tanggal?: string;
 }
 
 function arsipListParams(p: ListArsipParams) {
@@ -650,6 +690,7 @@ function arsipListParams(p: ListArsipParams) {
     direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
+    tanggal: p.tanggal,
   };
 }
 
@@ -688,6 +729,7 @@ export interface ListSaranaParams {
   direktorat?: string;
   bulan?: string;
   search?: string;
+  tanggal?: string;
 }
 
 function saranaListParams(p: ListSaranaParams) {
@@ -702,6 +744,7 @@ function saranaListParams(p: ListSaranaParams) {
     direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
+    tanggal: p.tanggal,
   };
 }
 
@@ -714,6 +757,7 @@ export interface ListAtkParams {
   direktorat?: string;
   bulan?: string;
   search?: string;
+  tanggal?: string;
 }
 
 function atkListParams(p: ListAtkParams) {
@@ -726,6 +770,7 @@ function atkListParams(p: ListAtkParams) {
     direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
+    tanggal: p.tanggal,
   };
 }
 
