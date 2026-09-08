@@ -1104,7 +1104,7 @@ body.auth-ready .app-shell {
   color: var(--text-primary);
 }
 
-.notification-mark-all {
+.notification-clear-all {
   border: none;
   background: transparent;
   color: var(--text-primary);
@@ -1114,29 +1114,7 @@ body.auth-ready .app-shell {
   white-space: nowrap;
 }
 
-.notification-mark-all:hover {
-  text-decoration: underline;
-}
-
-.notification-dropdown-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.notification-clear-all {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.76rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
 .notification-clear-all:hover {
-  color: var(--badge-rejected-bg);
   text-decoration: underline;
 }
 

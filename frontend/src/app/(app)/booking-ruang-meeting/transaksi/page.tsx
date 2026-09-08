@@ -114,19 +114,14 @@ function BookingTransaksiPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // A "Transactions" notification banner's click lands here with ?highlight=<itemId> - the item
-  // may be off-screen behind whatever filters/page are active, so filters are reset and the
-  // item's own nomor is dropped into the search box to guarantee it's the only row on page 1;
-  // once it's actually rendered, the scroll+flash effect below picks it up.
+  // A "Transactions" notification banner's click lands here with ?highlight=<itemId> - filters
+  // are reset so the full list is visible (not narrowed to just this one row) and the scroll+flash
+  // effect below picks the row out once it's actually rendered.
   useEffect(() => {
     const highlight = searchParams.get("highlight");
     if (!highlight) return;
-    const id = Number(highlight);
-    api.getBooking(id).then((item) => {
-      setSearchInput(item.nomorPemesanan || "");
-      setFilters({ ...defaultFilters(), search: item.nomorPemesanan || "" });
-      setHighlightId(id);
-    }).catch(() => {});
+    setFilters(defaultFilters());
+    setHighlightId(Number(highlight));
     router.replace("/booking-ruang-meeting/transaksi");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

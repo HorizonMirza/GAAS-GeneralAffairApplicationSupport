@@ -137,10 +137,6 @@ export default function NotificationBell() {
     router.push(itemHref(item));
   }
 
-  function markAllRead() {
-    setItems((current) => current.map((it) => ({ ...it, read: true })));
-  }
-
   function clearAll() {
     setItems([]);
   }
@@ -168,18 +164,11 @@ export default function NotificationBell() {
         >
           <motion.div variants={itemVariants} className="notification-dropdown-header">
             <span>Notifications</span>
-            <span className="notification-dropdown-header-actions">
-              {unreadCount > 0 && (
-                <button type="button" className="notification-mark-all" onClick={markAllRead}>
-                  Mark all as read
-                </button>
-              )}
-              {items.length > 0 && (
-                <button type="button" className="notification-clear-all" onClick={clearAll}>
-                  Clear all
-                </button>
-              )}
-            </span>
+            {items.length > 0 && (
+              <button type="button" className="notification-clear-all" onClick={clearAll}>
+                Clear all
+              </button>
+            )}
           </motion.div>
           <motion.div variants={itemVariants} className="notification-dropdown-tabs">
             {TABS.map((t) => (
