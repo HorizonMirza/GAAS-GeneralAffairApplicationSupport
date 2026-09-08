@@ -9,7 +9,7 @@ using PengirimanApi.Services;
 namespace PengirimanApi.Controllers;
 
 // The one global setting in the app: which sound plays for chat notifications vs. workflow
-// (transaction/approval) notifications, chosen by Superadmin from a fixed list of 10 presets
+// (transaction/approval) notifications, chosen by Superadmin from a fixed list of 20 presets
 // (see frontend/src/lib/notificationSound.ts's SOUND_PRESETS - this list must stay in sync with
 // that one). There is no per-user override; every logged-in user reads the same singleton row.
 [Route("api/notification-settings")]
@@ -18,6 +18,7 @@ public class NotificationSettingsController : ApiControllerBase
     private static readonly HashSet<string> ValidSoundIds = new()
     {
         "ding", "pop", "bell", "marimba", "chime", "alert", "soft", "digital", "harp", "pulse",
+        "xylophone", "arpeggio", "buzz", "whistle", "knock", "sparkle", "drop", "beep", "coin", "zen",
     };
 
     private readonly AppDbContext _db;

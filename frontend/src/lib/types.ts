@@ -441,16 +441,6 @@ export interface PermintaanArsipStatsResponse {
   countsByStatus: Partial<Record<BookingStatus, number>>;
 }
 
-export interface PermintaanArsipReportResponse {
-  year: number;
-  totalPermintaan: number;
-  totalArsipDipindahkan: number;
-  countByStatus: Partial<Record<BookingStatus, number>>;
-  jumlahByKategori: Partial<Record<ArchiveKategori, number>>;
-  countByDivisi: Record<string, number>;
-  countByMonth: number[];
-}
-
 export interface PermintaanArsipCatalogItem {
   id: number;
   namaArsip: string;

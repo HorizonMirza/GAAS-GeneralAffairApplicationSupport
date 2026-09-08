@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { arsipItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, RoomOption, Status, VehicleOption } from "@/lib/types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, PermintaanArsip, RoomOption, Status, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
@@ -43,6 +43,18 @@ interface KendaraanFilterState {
 }
 
 const EMPTY_KENDARAAN_FILTERS: KendaraanFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaKendaraan: "" };
+
+interface ArsipFilterState {
+  page: number;
+  limit: number;
+  bulan: string;
+  search: string;
+  status: BookingStatus | "REJECTED" | "";
+  divisi: string;
+  departemen: string;
+}
+
+const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "" };
 
 interface FilterState {
   page: number;
@@ -93,6 +105,13 @@ export default function SuperAdminPage() {
   const [kendaraanError, setKendaraanError] = useState("");
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
 
+  const [arsipFilters, setArsipFilters] = useState<ArsipFilterState>(EMPTY_ARSIP_FILTERS);
+  const [arsipSearchInput, setArsipSearchInput] = useState("");
+  const [arsipItems, setArsipItems] = useState<PermintaanArsip[]>([]);
+  const [arsipTotal, setArsipTotal] = useState(0);
+  const [arsipBusy, setArsipBusy] = useState(true);
+  const [arsipError, setArsipError] = useState("");
+
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -102,6 +121,8 @@ export default function SuperAdminPage() {
   const invoiceReqIdRef = useRef(0);
   const bookingReqIdRef = useRef(0);
   const kendaraanReqIdRef = useRef(0);
+  const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const arsipReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   // Some browsers restore a previously-typed value into these inputs on page reload without
@@ -234,6 +255,37 @@ export default function SuperAdminPage() {
     }
   }, [kendaraanFilters]);
 
+  const loadArsip = useCallback(async () => {
+    const reqId = ++arsipReqIdRef.current;
+    setArsipBusy(true);
+    setArsipError("");
+    try {
+      const result = await api.listArsip({
+        page: arsipFilters.page,
+        limit: arsipFilters.limit,
+        bulan: arsipFilters.bulan,
+        status: arsipFilters.status,
+        divisi: arsipFilters.divisi,
+        departemen: arsipFilters.departemen,
+        search: arsipFilters.search,
+      });
+      if (reqId !== arsipReqIdRef.current) return;
+      const arsipItemsResult = result?.items ?? [];
+      const arsipTotalResult = result?.total ?? 0;
+      if (arsipItemsResult.length === 0 && arsipTotalResult > 0 && arsipFilters.page > 1) {
+        setArsipFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setArsipItems(arsipItemsResult);
+      setArsipTotal(arsipTotalResult);
+    } catch (err) {
+      if (reqId !== arsipReqIdRef.current) return;
+      setArsipError((err as Error).message);
+    } finally {
+      if (reqId === arsipReqIdRef.current) setArsipBusy(false);
+    }
+  }, [arsipFilters]);
+
   useEffect(() => {
     loadTable();
   }, [loadTable]);
@@ -245,6 +297,10 @@ export default function SuperAdminPage() {
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+  useEffect(() => {
+    loadArsip();
+  }, [loadArsip]);
 
   useEffect(() => {
     loadKendaraanBookings();
@@ -354,6 +410,40 @@ export default function SuperAdminPage() {
     }, "Delete Permanent");
   }
 
+  function updateArsipFilter(patch: Partial<ArsipFilterState>) {
+    setArsipFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function handleArsipSearchChange(value: string) {
+    setArsipSearchInput(value);
+    if (arsipSearchDebounce.current) clearTimeout(arsipSearchDebounce.current);
+    arsipSearchDebounce.current = setTimeout(() => {
+      updateArsipFilter({ search: value.trim() });
+    }, 350);
+  }
+
+  function resetArsipFilters() {
+    setArsipSearchInput("");
+    setArsipFilters(EMPTY_ARSIP_FILTERS);
+  }
+
+  function goToArsipPage(page: number) {
+    if (page < 1) return;
+    setArsipFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDeleteArsip(item: PermintaanArsip) {
+    confirm("Yakin ingin menghapus pemindahan arsip ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.superAdminDeleteArsip(item.id);
+        showToast("Data berhasil dihapus permanen");
+        loadArsip();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   const pageStart = Math.max(1, Math.min(filters.page, totalPages - 1));
   const pageEnd = Math.min(totalPages, pageStart + 1);
@@ -404,6 +494,18 @@ export default function SuperAdminPage() {
     ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === kendaraanFilters.divisi)
     : null;
   const kendaraanDepartemenOptions = kendaraanSelectedDivisiNode ? kendaraanSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+
+  const arsipTotalPages = Math.max(1, Math.ceil(arsipTotal / arsipFilters.limit));
+  const arsipPageStart = Math.max(1, Math.min(arsipFilters.page, arsipTotalPages - 1));
+  const arsipPageEnd = Math.min(arsipTotalPages, arsipPageStart + 1);
+  const arsipPageButtons: number[] = [];
+  for (let p = arsipPageStart; p <= arsipPageEnd; p++) arsipPageButtons.push(p);
+
+  const arsipDivisiOptions = orgStructure?.divisi || [];
+  const arsipSelectedDivisiNode = arsipFilters.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === arsipFilters.divisi)
+    : null;
+  const arsipDepartemenOptions = arsipSelectedDivisiNode ? arsipSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
   return (
     <>
@@ -890,6 +992,135 @@ export default function SuperAdminPage() {
                 <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
               ))}
               <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>Archive</h2>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Pemindahan Arsip</h3>
+        </div>
+        <div className="toolbar">
+          <div className="field">
+            <label htmlFor="filter-arsip-search">Cari Pemindahan</label>
+            <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
+            <input type="month" id="filter-arsip-bulan" autoComplete="off" value={arsipFilters.bulan} onChange={(e) => updateArsipFilter({ bulan: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-arsip-status">Status</label>
+            <SearchableSelect
+              id="filter-arsip-status"
+              value={arsipFilters.status}
+              onChange={(v) => updateArsipFilter({ status: v as BookingStatus | "REJECTED" | "" })}
+              options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+              getLabel={(v) => ({
+                DRAFT: "Draft",
+                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                APPROVED_L1: "On-Approval: Admin General Affair",
+                APPROVED_GA: "On-Approval: Approval GA",
+                REJECTED: "Rejected",
+                APPROVED_GA_APPROVAL: "Approved",
+              } as Record<string, string>)[v] || v}
+              clearLabel="Semua Status"
+              placeholder="Semua Status"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-arsip-divisi">Divisi</label>
+            <SearchableSelect
+              id="filter-arsip-divisi"
+              value={arsipFilters.divisi}
+              onChange={(v) => updateArsipFilter({ divisi: v, departemen: "" })}
+              options={arsipDivisiOptions}
+              clearLabel="Semua Divisi"
+              placeholder="Semua Divisi"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-arsip-departemen">Departemen</label>
+            <SearchableSelect
+              id="filter-arsip-departemen"
+              value={arsipFilters.departemen}
+              onChange={(v) => updateArsipFilter({ departemen: v })}
+              options={arsipDepartemenOptions}
+              clearLabel="Semua Departemen"
+              placeholder="Semua Departemen"
+            />
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetArsipFilters}>Hapus Filter</button>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Keperluan</th><th>Daftar Arsip</th><th>Jumlah Jenis</th>
+                <th>Lokasi Penyimpanan</th><th>Divisi</th><th>Departemen</th><th>Tanggal</th><th>Status</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arsipBusy ? (
+                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+              ) : arsipError ? (
+                <tr><td colSpan={12} className="table-empty">{arsipError}</td></tr>
+              ) : arsipItems.length === 0 ? (
+                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+              ) : (
+                arsipItems.map((item, index) => {
+                  const rowNumber = (arsipFilters.page - 1) * arsipFilters.limit + index + 1;
+                  const arsipList = arsipItemsSummary(item);
+                  return (
+                    <tr key={item.id}>
+                      <td>{rowNumber}</td>
+                      <td>{item.nomorArsip || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
+                      <td title={arsipList}>{truncateText(arsipList, 35)}</td>
+                      <td>{item.items.length}</td>
+                      <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteArsip(item)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-arsip-limit">Tampilkan</label>
+              <SearchableSelect
+                id="filter-arsip-limit"
+                value={String(arsipFilters.limit)}
+                onChange={(v) => updateArsipFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} permintaan`}
+                placeholder={`${arsipFilters.limit} permintaan`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {arsipTotal} permintaan · Halaman {arsipFilters.page} dari {arsipTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={arsipFilters.page <= 1} onClick={() => goToArsipPage(arsipFilters.page - 1)}>‹</button>
+              {arsipPageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === arsipFilters.page ? "active" : ""}`} onClick={() => goToArsipPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={arsipFilters.page >= arsipTotalPages} onClick={() => goToArsipPage(arsipFilters.page + 1)}>›</button>
             </div>
           </div>
         </div>

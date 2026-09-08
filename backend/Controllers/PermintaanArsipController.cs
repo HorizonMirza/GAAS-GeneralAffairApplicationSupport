@@ -551,39 +551,6 @@ public class PermintaanArsipController : ApiControllerBase
         });
     }
 
-    // Aggregate breakdown for the Report page, scoped to one calendar year at a time - reuses
-    // ApplyListFilters (no status/divisi/departemen/direktorat narrowing) so the same
-    // role-based visibility as List/Stats applies, then breaks the year's requests down several
-    // ways in memory (the item-level Jumlah sums need PermintaanArsipItem loaded anyway, and the
-    // request volume here is small enough that this is simpler and safer than several separate
-    // GroupBy queries against the database).
-    [HttpGet("report")]
-    public async Task<IActionResult> GetReport([FromQuery] int? year = null)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var targetYear = year ?? DateTime.UtcNow.Year;
-
-        var query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, null, null, null)
-            .Where(p => p.Tanggal.Year == targetYear);
-        var requests = await query.Include(p => p.Items).ToListAsync();
-
-        var approved = requests.Where(p => p.Status == BookingStatusEnum.APPROVED_GA_APPROVAL).ToList();
-        var approvedItems = approved.SelectMany(p => p.Items).ToList();
-
-        return Ok(new PermintaanArsipReportResponse
-        {
-            Year = targetYear,
-            TotalPermintaan = requests.Count,
-            TotalArsipDipindahkan = approvedItems.Sum(i => i.Jumlah),
-            CountByStatus = requests.GroupBy(p => p.Status).ToDictionary(g => g.Key.ToString(), g => g.Count()),
-            JumlahByKategori = approvedItems.GroupBy(i => i.Kategori).ToDictionary(g => g.Key.ToString(), g => g.Sum(i => i.Jumlah)),
-            CountByDivisi = requests.GroupBy(p => p.Divisi).ToDictionary(g => g.Key, g => g.Count()),
-            CountByMonth = Enumerable.Range(1, 12).Select(m => requests.Count(p => p.Tanggal.Month == m)).ToList(),
-        });
-    }
-
     // Read-only registry of archive units that have fully cleared approval (APPROVED_GA_APPROVAL)
     // - i.e. formally handed over to GA - flattened to one row per PermintaanArsipItem rather than
     // one row per request, since "what's actually sitting in the inactive archive right now" is a

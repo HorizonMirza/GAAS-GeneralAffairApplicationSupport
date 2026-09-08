@@ -40,7 +40,6 @@ import type {
   PermintaanArsipCreatePayload,
   PermintaanArsipListResponse,
   PermintaanArsipLog,
-  PermintaanArsipReportResponse,
   PermintaanArsipStatsResponse,
   PermintaanAtk,
   PermintaanAtkCreatePayload,
@@ -610,8 +609,6 @@ export const api = {
     apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/approve-ga-approval`, { method: "PATCH" }),
   rejectArsipGaApproval: (id: number, reason: string | null) =>
     apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
-  getArsipReport: (year: number) =>
-    apiRequest<PermintaanArsipReportResponse>("/permintaan-arsip/report", { params: { year } }),
   getArsipCatalog: (params: ListArsipCatalogParams) =>
     apiRequest<PermintaanArsipCatalogResponse>("/permintaan-arsip/catalog", { params: arsipCatalogParams(params) }),
   arsipExportUrl: (params: Record<string, string | undefined | null>) => {

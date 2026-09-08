@@ -32,7 +32,7 @@ export interface SoundPreset {
   play: (context: AudioContext, now: number) => void;
 }
 
-// The fixed list of 10 sound choices Superadmin can assign to each notification type (see
+// The fixed list of 20 sound choices Superadmin can assign to each notification type (see
 // NotificationSettingsController - its ValidSoundIds must stay in sync with these keys). Ids are
 // stored as plain strings in the DB/localStorage so adding a preset later never needs a migration.
 export const SOUND_PRESETS: Record<string, SoundPreset> = {
@@ -105,6 +105,77 @@ export const SOUND_PRESETS: Record<string, SoundPreset> = {
     label: "Pulse",
     play: (c, now) => {
       tone(c, 220, now, 0.2, 0.2, "sawtooth");
+    },
+  },
+  xylophone: {
+    label: "Xylophone",
+    play: (c, now) => {
+      tone(c, 1046.5, now, 0.09, 0.17, "triangle");
+      tone(c, 1318.5, now + 0.07, 0.09, 0.16, "triangle");
+      tone(c, 1567.98, now + 0.14, 0.11, 0.16, "triangle");
+    },
+  },
+  arpeggio: {
+    label: "Arpeggio",
+    play: (c, now) => {
+      tone(c, 440, now, 0.1, 0.14);
+      tone(c, 554.37, now + 0.09, 0.1, 0.14);
+      tone(c, 659.25, now + 0.18, 0.1, 0.14);
+      tone(c, 880, now + 0.27, 0.14, 0.15);
+    },
+  },
+  buzz: {
+    label: "Buzz",
+    play: (c, now) => {
+      tone(c, 150, now, 0.16, 0.15, "square");
+    },
+  },
+  whistle: {
+    label: "Whistle",
+    play: (c, now) => {
+      tone(c, 1760, now, 0.1, 0.12);
+      tone(c, 2093, now + 0.08, 0.14, 0.12);
+    },
+  },
+  knock: {
+    label: "Knock",
+    play: (c, now) => {
+      tone(c, 196, now, 0.1, 0.2, "triangle");
+      tone(c, 196, now + 0.14, 0.1, 0.2, "triangle");
+    },
+  },
+  sparkle: {
+    label: "Sparkle",
+    play: (c, now) => {
+      tone(c, 2093, now, 0.06, 0.1);
+      tone(c, 2349.32, now + 0.05, 0.06, 0.1);
+      tone(c, 2637.02, now + 0.1, 0.08, 0.1);
+    },
+  },
+  drop: {
+    label: "Drop",
+    play: (c, now) => {
+      tone(c, 440, now, 0.1, 0.16, "sawtooth");
+      tone(c, 220, now + 0.08, 0.18, 0.16, "sawtooth");
+    },
+  },
+  beep: {
+    label: "Beep",
+    play: (c, now) => {
+      tone(c, 600, now, 0.12, 0.15, "square");
+    },
+  },
+  coin: {
+    label: "Coin",
+    play: (c, now) => {
+      tone(c, 988, now, 0.08, 0.15, "square");
+      tone(c, 1976, now + 0.07, 0.18, 0.13, "square");
+    },
+  },
+  zen: {
+    label: "Zen",
+    play: (c, now) => {
+      tone(c, 261.63, now, 0.45, 0.13, "sine");
     },
   },
 };
