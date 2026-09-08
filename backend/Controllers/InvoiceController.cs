@@ -31,6 +31,20 @@ public class InvoiceController : ApiControllerBase
         Directory.CreateDirectory(_uploadDir);
     }
 
+    // file.ContentType is just the multipart Content-Type header the client chose to send - not
+    // sniffed from the actual bytes, so it's trivial to spoof (e.g. via curl/Postman) into
+    // labeling any other file "application/pdf" and having it accepted and later served back
+    // with that same Content-Type. Every real PDF starts with the literal 5-byte signature
+    // "%PDF-", so checking that too (same idea as ProfileController's photo upload actually
+    // decoding the image) catches a file that merely claims to be a PDF.
+    private static async Task<bool> LooksLikePdfAsync(IFormFile file)
+    {
+        var header = new byte[5];
+        await using var stream = file.OpenReadStream();
+        var read = await stream.ReadAsync(header.AsMemory(0, header.Length));
+        return read == header.Length && System.Text.Encoding.ASCII.GetString(header) == "%PDF-";
+    }
+
     private static void AddLog(Invoice item, string action, User actor, string? reason = null, string? filePath = null, string? originalFilename = null)
     {
         item.Logs.Add(new InvoiceLog
@@ -63,7 +77,7 @@ public class InvoiceController : ApiControllerBase
         if (alreadyExists)
             return StatusCode(400, new { detail = "Invoice untuk bulan ini sudah pernah dikirim. Gunakan Updates untuk merevisi." });
 
-        if (file.ContentType != "application/pdf")
+        if (file.ContentType != "application/pdf" || !await LooksLikePdfAsync(file))
             return StatusCode(400, new { detail = "File invoice harus berformat PDF" });
 
         var storedFilename = $"{Guid.NewGuid():N}.pdf";
@@ -141,7 +155,7 @@ public class InvoiceController : ApiControllerBase
         if (item.Status != InvoiceStatusEnum.REJECTED && item.Status != InvoiceStatusEnum.DRAFT)
             return StatusCode(403, new { detail = "Invoice hanya bisa diupdate saat status Draft atau Rejected" });
 
-        if (file.ContentType != "application/pdf")
+        if (file.ContentType != "application/pdf" || !await LooksLikePdfAsync(file))
             return StatusCode(400, new { detail = "File invoice harus berformat PDF" });
 
         var storedFilename = $"{Guid.NewGuid():N}.pdf";

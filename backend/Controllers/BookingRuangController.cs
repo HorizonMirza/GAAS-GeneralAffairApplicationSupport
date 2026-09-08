@@ -1196,10 +1196,12 @@ public class BookingRuangController : ApiControllerBase
             // FinalizeSeriesAsync): a conflicted occurrence doesn't block its siblings, it's just
             // left behind (still DRAFT here, since it never got the chance to become SUBMITTED)
             // flagged for a manual Reschedule instead.
+            await using var transaction = await _db.Database.BeginTransactionAsync();
             var members = await SeriesMembersAsync(item);
             foreach (var member in members) AddLog(member, "SUBMITTED", user);
             var (confirmed, conflicted) = await FinalizeSeriesAsync(members, user, fromStatus: BookingStatusEnum.DRAFT);
             await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
             await _db.Entry(item).ReloadAsync();
             await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "booking", item.Id, ItemLabel(item), user.Nama, "Mengajukan Booking Ruang Baru");
             return Ok(new
@@ -1595,6 +1597,11 @@ public class BookingRuangController : ApiControllerBase
     // conflicted), not the whole series - a member already finalized by an earlier call is
     // skipped here (its status won't match fromStatus), so callers can log just the delta
     // instead of re-logging every already-terminal member on each subsequent call.
+    // Callers MUST already have an explicit transaction open (see ApproveGaApproval/Submit) -
+    // the per-room locks taken below are scoped to that transaction and only close the
+    // check-then-act race between the conflict check and the claim UPDATE for as long as it
+    // stays open. Called without one, each lock releases right after its own statement and
+    // gives no protection at all.
     private async Task<(List<BookingRuang> confirmed, List<BookingRuang> conflicted)> FinalizeSeriesAsync(List<BookingRuang> members, User actor, BookingStatusEnum fromStatus)
     {
         var confirmed = new List<BookingRuang>();
@@ -1602,6 +1609,15 @@ public class BookingRuangController : ApiControllerBase
         foreach (var member in members)
         {
             var roomList = RoomList(member);
+
+            // Serializes concurrent final-approval attempts against the same room+date, so the
+            // conflict check right below and the claim that follows can't be interleaved by
+            // another request finalizing a clashing booking for one of these rooms (see BE-2
+            // audit finding) - sorted so two calls locking an overlapping room set always
+            // acquire them in the same order and can't deadlock each other.
+            foreach (var room in roomList.OrderBy(r => r, StringComparer.Ordinal))
+                await LockResourceAsync(_db, $"ruang|{room}|{member.Tanggal:yyyy-MM-dd}");
+
             var conflict = await FindConflictAsync(roomList, member.Tanggal, member.IsWholeDay, member.JamMulai, member.JamSelesai, member.Id);
             if (conflict != null)
             {

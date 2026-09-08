@@ -71,6 +71,8 @@ public class PerbaikanSaranaChatController : ApiControllerBase
         var text = payload.Message?.Trim();
         if (string.IsNullOrEmpty(text))
             return BadRequest(new { detail = "Pesan tidak boleh kosong" });
+        if (text.Length > ChatLimits.MaxMessageLength)
+            return BadRequest(new { detail = $"Pesan maksimal {ChatLimits.MaxMessageLength} karakter" });
 
         var message = new PerbaikanSaranaChatMessage
         {

@@ -80,6 +80,17 @@ public abstract class ApiControllerBase : ControllerBase
         }
     }
 
+    // Serializes concurrent DB work for one logical resource (e.g. "ruang|Serbaguna|2026-09-08")
+    // for the lifetime of the CURRENT transaction - pg_advisory_xact_lock blocks a second caller
+    // locking the same key until this transaction commits or rolls back, and releases
+    // automatically at that point (no explicit unlock needed). Only closes a check-then-act race
+    // ("read whether a conflict exists, then write a confirming status") when the caller has
+    // already opened an explicit transaction spanning both the check and the write - called
+    // without one, the lock is released right after this single statement and gives no
+    // protection at all, since Npgsql auto-commits a statement that isn't inside a BEGIN.
+    protected static async Task LockResourceAsync(DbContext db, string resourceKey) =>
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({resourceKey}, 0))");
+
     protected async Task<(User? user, IActionResult? error)> RequireRoleAsync(params RoleEnum[] roles)
     {
         var user = await CurrentUser.GetCurrentUserAsync();

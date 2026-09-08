@@ -635,10 +635,32 @@ public class BookingKendaraanController : ApiControllerBase
 
         if (nextStatus == BookingStatusEnum.APPROVED_GA_APPROVAL)
         {
+            // Approval GA submitting their own booking skips straight to the terminal status,
+            // same as reaching it via ApproveGaApproval - so it needs the exact same
+            // lock-then-atomically-claim treatment against the same race (see BE-1 audit finding).
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            await LockResourceAsync(_db, $"kendaraan|{item.NamaKendaraan}|{item.Tanggal:yyyy-MM-dd}");
+
             var conflict = await FindConflictAsync(item.NamaKendaraan, item.Tanggal, item.IsWholeDay, item.JamMulai, item.JamSelesai, item.Id);
             if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
-            item.ApprovedByApprovalGa = user.Id;
-            item.ApprovedApprovalGaAt = DateTime.UtcNow;
+
+            var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE booking_kendaraan SET
+                    status = 'APPROVED_GA_APPROVAL',
+                    approved_by_approval_ga = {user.Id},
+                    approved_approval_ga_at = {DateTime.UtcNow},
+                    reject_reason = NULL,
+                    updated_at = {DateTime.UtcNow}
+                WHERE id = {item.Id} AND status = {BookingStatusEnum.DRAFT.ToString()}");
+            if (claimed == 0)
+                return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
+
+            await _db.Entry(item).ReloadAsync();
+            AddLog(item, "SUBMITTED", user);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "kendaraan", item.Id, ItemLabel(item), user.Nama, "Mengajukan Booking Kendaraan Baru");
+            return Ok(BookingKendaraanOut.From(item));
         }
 
         item.Status = nextStatus;
@@ -863,16 +885,37 @@ public class BookingKendaraanController : ApiControllerBase
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // Serializes concurrent final-approval attempts for the same vehicle+date, so the
+        // conflict check below and the claim right after it can't be interleaved by another
+        // request finalizing a clashing booking for this vehicle - without it, two competing
+        // bookings could each pass the conflict check (neither sees the other as confirmed yet)
+        // and both end up APPROVED_GA_APPROVAL. Released automatically once this transaction ends.
+        await LockResourceAsync(_db, $"kendaraan|{item.NamaKendaraan}|{item.Tanggal:yyyy-MM-dd}");
+
         var conflict = await FindConflictAsync(item.NamaKendaraan, item.Tanggal, item.IsWholeDay, item.JamMulai, item.JamSelesai, item.Id);
         if (conflict != null) return BadRequest(new { detail = ConflictMessage(conflict) });
 
-        item.Status = BookingStatusEnum.APPROVED_GA_APPROVAL;
-        item.ApprovedByApprovalGa = user!.Id;
-        item.ApprovedApprovalGaAt = DateTime.UtcNow;
-        item.RejectReason = null;
+        // Guarded UPDATE (not a plain EF SaveChanges) so a second request that raced past the
+        // NotFound/status checks above still can't double-claim this row once the lock above
+        // releases it - claimed == 0 means another action already moved the status on.
+        var claimed = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE booking_kendaraan SET
+                status = 'APPROVED_GA_APPROVAL',
+                approved_by_approval_ga = {user!.Id},
+                approved_approval_ga_at = {DateTime.UtcNow},
+                reject_reason = NULL,
+                updated_at = {DateTime.UtcNow}
+            WHERE id = {item.Id} AND status = {BookingStatusEnum.APPROVED_GA.ToString()}");
+        if (claimed == 0)
+            return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
+
+        await _db.Entry(item).ReloadAsync();
         AddLog(item, "APPROVED_GA_APPROVAL", user);
-        var saveError = await TrySaveChangesAsync(_db);
-        if (saveError != null) return saveError;
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Disetujui (Approval GA)");
         return Ok(BookingKendaraanOut.From(item));
     }

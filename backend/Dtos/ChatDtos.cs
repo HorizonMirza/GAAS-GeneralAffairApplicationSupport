@@ -13,6 +13,14 @@ public record ChatMessageOut(
 
 public record SendChatMessageRequest(string Message);
 
+// Generous for a workplace chat thread (several paragraphs) while still ruling out a
+// multi-megabyte payload being written to the DB and fanned out to every connected client over
+// SignalR on every single send - enforced identically in all 6 chat controllers.
+public static class ChatLimits
+{
+    public const int MaxMessageLength = 2000;
+}
+
 // Pushed to every recipient's personal SignalR group (ChatHub.UserGroup), app-wide, in addition
 // to the thread's own group - lets the frontend show a WhatsApp-style banner/sound even when the
 // relevant chat thread (or that page at all) isn't open. Kind matches frontend/src/lib/chatHub.ts's
