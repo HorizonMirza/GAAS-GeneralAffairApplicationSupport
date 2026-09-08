@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import type { ActivityNotification, ChatMessage, ChatNotification } from "./types";
+import type { ActivityNotification, ChatMessage, ChatNotification, NotificationSoundSettings } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 // The hub is mapped at the app root (Program.cs: app.MapHub<ChatHub>("/hubs/chat")), not under
@@ -127,6 +127,15 @@ export function onActivityNotification(handler: (notification: ActivityNotificat
   const conn = getConnection();
   conn.on("ReceiveActivityNotification", handler);
   return () => conn.off("ReceiveActivityNotification", handler);
+}
+
+// Pushed to every connection (not scoped to a recipient list, unlike the two above) right after
+// Superadmin saves a new chat/activity sound choice in NotificationSettingsController.Update -
+// lets every already-open tab pick up the change immediately instead of only after a reload.
+export function onNotificationSettingsChanged(handler: (settings: NotificationSoundSettings) => void): () => void {
+  const conn = getConnection();
+  conn.on("ReceiveNotificationSettingsChanged", handler);
+  return () => conn.off("ReceiveNotificationSettingsChanged", handler);
 }
 
 // Where a ChatNotification/ActivityNotification's "kind" lands when clicked - shared by the topbar

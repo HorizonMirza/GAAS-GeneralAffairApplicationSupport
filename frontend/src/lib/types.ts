@@ -155,6 +155,13 @@ export interface ActivityNotification {
   createdAt: string;
 }
 
+// Global sound choice for each notification type (see NotificationSettingsController) - GET by
+// any logged-in user, PUT by Superadmin only.
+export interface NotificationSoundSettings {
+  chatSoundId: string;
+  activitySoundId: string;
+}
+
 export interface PengirimanListResponse {
   items: Pengiriman[];
   total: number;

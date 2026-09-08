@@ -44,6 +44,7 @@ public class AppDbContext : DbContext
     public DbSet<PermintaanArsipChatMessage> PermintaanArsipChatMessages => Set<PermintaanArsipChatMessage>();
     public DbSet<PermintaanArsipChatRead> PermintaanArsipChatReads => Set<PermintaanArsipChatRead>();
     public DbSet<ArsipCounter> ArsipCounters => Set<ArsipCounter>();
+    public DbSet<NotificationSoundSettings> NotificationSoundSettings => Set<NotificationSoundSettings>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1047,6 +1048,16 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<NotificationSoundSettings>(e =>
+        {
+            e.ToTable("notification_sound_settings");
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasColumnName("id");
+            e.Property(s => s.ChatSoundId).HasColumnName("chat_sound_id").HasMaxLength(30).IsRequired();
+            e.Property(s => s.ActivitySoundId).HasColumnName("activity_sound_id").HasMaxLength(30).IsRequired();
+            e.Property(s => s.UpdatedAt).HasColumnName("updated_at");
         });
     }
 }

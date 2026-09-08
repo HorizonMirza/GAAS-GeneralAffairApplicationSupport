@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
-import { playActivityNotificationSound, playChatNotificationSound } from "@/lib/notificationSound";
+import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification, onNotificationSettingsChanged } from "@/lib/chatHub";
+import { playActivityNotificationSound, playChatNotificationSound, setNotificationSoundIds } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const DISMISS_AFTER_MS = 10000;
@@ -79,6 +80,11 @@ export default function ChatNotificationListener() {
   useEffect(() => {
     if (!me) return;
     ensureStarted().catch(() => {});
+    // Fetched once here (this component is always mounted for every logged-in page, see the
+    // module comment above) rather than at every playChatNotificationSound() call - the setting
+    // rarely changes, and the live push below keeps an already-open tab in sync regardless.
+    api.getNotificationSoundSettings().then(setNotificationSoundIds).catch(() => {});
+    const unsubSettings = onNotificationSettingsChanged(setNotificationSoundIds);
     const unsubChat = onChatNotification((notification) => {
       playChatNotificationSound();
       show({ source: "chat", ...notification });
@@ -88,6 +94,7 @@ export default function ChatNotificationListener() {
       show({ source: "activity", ...notification });
     });
     return () => {
+      unsubSettings();
       unsubChat();
       unsubActivity();
       timers.current.forEach((entry) => {

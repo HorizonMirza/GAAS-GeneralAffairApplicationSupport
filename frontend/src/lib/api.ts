@@ -23,6 +23,7 @@ import type {
   InvoiceListResponse,
   InvoiceLog,
   Me,
+  NotificationSoundSettings,
   OrgStructure,
   Pengiriman,
   PengirimanCreatePayload,
@@ -195,6 +196,9 @@ export const api = {
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
   me: () => apiRequest<Me>("/me"),
   orgStructure: () => apiRequest<OrgStructure>("/org-structure"),
+  getNotificationSoundSettings: () => apiRequest<NotificationSoundSettings>("/notification-settings"),
+  updateNotificationSoundSettings: (payload: NotificationSoundSettings) =>
+    apiRequest<NotificationSoundSettings>("/notification-settings", { method: "PUT", body: payload }),
   changePassword: (currentPassword: string, newPassword: string) =>
     apiRequest("/profile/password", {
       method: "PUT",

@@ -690,6 +690,23 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
 
+    // Notification sound settings - a single singleton row (id=1) Superadmin edits from the
+    // Superadmin page; every other user only ever reads it (see NotificationSettingsController).
+    // Defaults match the sounds that were hardcoded before this setting existed ("ding" for chat,
+    // "pop" for activity/transaction), so upgrading an existing deployment changes nothing until
+    // Superadmin actually picks something else.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS notification_sound_settings (
+            id INT PRIMARY KEY,
+            chat_sound_id VARCHAR(30) NOT NULL,
+            activity_sound_id VARCHAR(30) NOT NULL,
+            updated_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        INSERT INTO notification_sound_settings (id, chat_sound_id, activity_sound_id, updated_at)
+        VALUES (1, 'ding', 'pop', NOW())
+        ON CONFLICT (id) DO NOTHING");
+
     // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
     // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
     // restart, instead of silently requiring the seed command to be run by hand. Insert-if-

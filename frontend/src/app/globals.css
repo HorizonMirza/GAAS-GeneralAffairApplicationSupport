@@ -1275,6 +1275,20 @@ body.auth-ready .app-shell {
 
 .card + .card { margin-top: 20px; }
 
+.notification-sound-settings-card { max-width: 560px; }
+
+.notification-sound-settings-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.notification-sound-preview-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .placeholder-card {
   display: flex;
   flex-direction: column;

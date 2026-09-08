@@ -15,6 +15,7 @@ import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
+import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -407,6 +408,8 @@ export default function SuperAdminPage() {
   return (
     <>
       <DashboardStats me={me} />
+
+      <NotificationSoundSettingsCard />
 
       <h2 style={{ margin: "24px 0 12px" }}>Expedition</h2>
 

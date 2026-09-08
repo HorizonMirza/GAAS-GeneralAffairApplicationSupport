@@ -41,3 +41,11 @@ public record ActivityNotificationOut(
     string Message,
     DateTime CreatedAt
 );
+
+// The global sound choice for each notification type (see NotificationSettingsController) -
+// GET by any logged-in user, PUT by Superadmin only. Pushed to every connection on
+// "ReceiveNotificationSettingsChanged" right after a successful PUT, so an already-open tab
+// picks up the new sound without needing a reload.
+public record NotificationSoundSettingsOut(string ChatSoundId, string ActivitySoundId);
+
+public record UpdateNotificationSoundSettingsRequest(string ChatSoundId, string ActivitySoundId);
