@@ -47,7 +47,7 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
 
 export default function ArsipDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
-  const [openItemIdx, setOpenItemIdx] = useState<number | null>(0);
+  const [openItemIdx, setOpenItemIdx] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [previewNomor, setPreviewNomor] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -64,7 +64,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
   useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
-    setOpenItemIdx(0);
+    setOpenItemIdx(null);
     setError("");
     setPreviewNomor(null);
   }, [open, item]);

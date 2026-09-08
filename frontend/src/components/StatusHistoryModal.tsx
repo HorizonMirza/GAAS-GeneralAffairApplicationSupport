@@ -32,7 +32,7 @@ export default function StatusHistoryModal({ open, itemId, onClose }: Props) {
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
       <div className="modal">
         <div className="modal-header">
-          <h3>Riwayat Approval</h3>
+          <h3>History Approval</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <div style={{ marginTop: 16 }}>
