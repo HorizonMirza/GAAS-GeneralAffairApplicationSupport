@@ -695,6 +695,66 @@ body {
   margin-top: 6px;
 }
 
+/* ---------- Password strength meter (replaces the old Confirm Password field) ---------- */
+.password-strength {
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+.password-strength-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.password-strength-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 300ms ease, background 300ms ease;
+}
+
+.password-strength-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.password-requirement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.password-requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.password-requirement-item svg {
+  flex-shrink: 0;
+}
+
+.password-requirement-item.met {
+  color: #10b981;
+}
+
+.password-requirement-item:not(.met) svg {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
 /* ---------- App shell ---------- */
 .app-shell {
   min-height: 100vh;
@@ -2072,6 +2132,31 @@ body.auth-ready .app-shell {
   border-radius: 10px;
   overflow: hidden;
   background: #111;
+}
+
+/* Deliberately the exact same box as .edit-profile-avatar (left/bottom/width/height) so the
+   trigger button still centers on the avatar circle, but without that element's overflow:hidden
+   - see the JSX comment above this wrapper for why it has to be a sibling, not a child. */
+.photo-action-menu-wrap {
+  position: absolute;
+  left: 16px;
+  bottom: -28px;
+  width: 72px;
+  height: 72px;
+}
+
+.photo-action-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 170px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card), 0 12px 28px rgba(15, 40, 90, 0.18);
+  padding: 6px;
+  z-index: 70;
 }
 
 .field input[type="range"] {

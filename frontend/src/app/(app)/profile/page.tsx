@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
+import { useClickOutside } from "@/lib/useClickOutside";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
-import { Camera, Lock, Palette, Pencil, X } from "lucide-react";
+import { Camera, Eye, Lock, Palette, Pencil, Trash2, Upload, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, matches ProfileController's UploadPhoto limit
@@ -41,6 +42,25 @@ const FIELD_META: Record<AccountField, { label: string; type: string; placeholde
   },
 };
 
+// Same animated grow-in banner the login page uses for "Invalid username or password" (see
+// .alert-error/.alert-error-visible in globals.css) - always mounted so the max-height transition
+// actually has something to animate between, instead of the div popping in already fully open.
+function ErrorAlert({ id, message }: { id?: string; message?: string }) {
+  return (
+    <div id={id} className={`alert-error ${message ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
+      <svg className="alert-error-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <div className="alert-error-text">
+        <strong>Error</strong>
+        <span>{message}</span>
+      </div>
+    </div>
+  );
+}
+
 function PasswordField({
   id,
   label,
@@ -63,7 +83,7 @@ function PasswordField({
   icon?: React.ReactNode;
 }) {
   const [show, setShow] = useState(false);
-  const errorId = error ? `${id}-error` : undefined;
+  const errorId = `${id}-error`;
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -88,33 +108,86 @@ function PasswordField({
           )}
         </button>
       </div>
-      {error && <div className="field-error-text" id={errorId} aria-live="polite">{error}</div>}
+      <ErrorAlert id={errorId} message={error} />
       {!error && hint && <div className="field-hint-text">{hint}</div>}
     </div>
   );
 }
 
-type PasswordErrors = { currentPassword?: string; newPassword?: string; confirmPassword?: string; general?: string };
+type PasswordErrors = { currentPassword?: string; newPassword?: string; general?: string };
 
 function validateCurrentPassword(value: string): string | undefined {
   if (!value.trim()) return "Password saat ini wajib diisi";
   return undefined;
 }
 
-function validateNewPassword(value: string, currentPassword: string): string | undefined {
-  if (!value.trim()) return "Password baru wajib diisi";
-  if (value.length < 8) return "Password minimal 8 karakter";
-  if (!/(?=.*[a-z])/.test(value)) return "Password harus mengandung huruf kecil";
-  if (!/(?=.*[A-Z])/.test(value)) return "Password harus mengandung huruf besar";
-  if (!/(?=.*\d)/.test(value)) return "Password harus mengandung angka";
-  if (value === currentPassword) return "Password baru harus berbeda dari password saat ini";
-  return undefined;
+// Drives both the live checklist below and the actual submit-time validation, so the two can
+// never drift apart (e.g. the checklist showing all-green while submit still rejects it).
+const PASSWORD_REQUIREMENTS = [
+  { regex: /.{8,}/, text: "Minimal 8 karakter" },
+  { regex: /[0-9]/, text: "Minimal 1 angka" },
+  { regex: /[a-z]/, text: "Minimal 1 huruf kecil" },
+  { regex: /[A-Z]/, text: "Minimal 1 huruf besar" },
+  { regex: /[^A-Za-z0-9]/, text: "Minimal 1 karakter spesial" },
+] as const;
+
+type StrengthScore = 0 | 1 | 2 | 3 | 4 | 5;
+
+const STRENGTH_COLOR: Record<StrengthScore, string> = {
+  0: "var(--border-subtle)",
+  1: "#ef4444",
+  2: "#f97316",
+  3: "#f59e0b",
+  4: "#b45309",
+  5: "#10b981",
+};
+
+const STRENGTH_TEXT: Record<StrengthScore, string> = {
+  0: "Masukkan password",
+  1: "Password lemah",
+  2: "Password sedang",
+  3: "Password kuat",
+  4: "Password sangat kuat",
+  5: "Password sangat kuat",
+};
+
+function passwordRequirementResults(password: string) {
+  return PASSWORD_REQUIREMENTS.map((r) => ({ met: r.regex.test(password), text: r.text }));
 }
 
-function validateConfirmPassword(value: string, newPassword: string): string | undefined {
-  if (!value.trim()) return "Konfirmasi password wajib diisi";
-  if (value !== newPassword) return "Konfirmasi password tidak cocok";
-  return undefined;
+function passwordMeetsAllRequirements(password: string): boolean {
+  return PASSWORD_REQUIREMENTS.every((r) => r.regex.test(password));
+}
+
+// Replaces the old "Confirm New Password" field - a live checklist + strength bar catches typos
+// immediately (as soon as a requirement is met, its row turns green) instead of only after a
+// second, separately-typed field fails to match on submit.
+function PasswordStrengthMeter({ password }: { password: string }) {
+  const results = passwordRequirementResults(password);
+  const score = results.filter((r) => r.met).length as StrengthScore;
+  return (
+    <div className="password-strength">
+      <div className="password-strength-track" role="progressbar" aria-valuenow={score} aria-valuemin={0} aria-valuemax={5}>
+        <div className="password-strength-fill" style={{ width: `${(score / 5) * 100}%`, background: STRENGTH_COLOR[score] }} />
+      </div>
+      <p className="password-strength-label">
+        <span>Syarat password:</span>
+        <span style={{ color: STRENGTH_COLOR[score] }}>{STRENGTH_TEXT[score]}</span>
+      </p>
+      <ul className="password-requirement-list" aria-label="Syarat password">
+        {results.map((r) => (
+          <li key={r.text} className={`password-requirement-item${r.met ? " met" : ""}`}>
+            {r.met ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            )}
+            <span>{r.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export default function ProfilePage() {
@@ -140,6 +213,14 @@ export default function ProfilePage() {
   // namaDraft, instead of writing straight to the server on every click).
   const [stagedPhotoBlob, setStagedPhotoBlob] = useState<Blob | null>(null);
   const [stagedPhotoPreviewUrl, setStagedPhotoPreviewUrl] = useState<string | null>(null);
+  const [stagedRemovePhoto, setStagedRemovePhoto] = useState(false);
+
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const photoMenuRef = useRef<HTMLDivElement>(null);
+  const [viewPhotoOpen, setViewPhotoOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
 
   const [coverVersion, setCoverVersion] = useState(0);
   const [showCoverPresets, setShowCoverPresets] = useState(false);
@@ -149,9 +230,37 @@ export default function ProfilePage() {
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
   const [savingPassword, setSavingPassword] = useState(false);
+
+  useClickOutside([photoMenuRef], () => setPhotoMenuOpen(false), photoMenuOpen);
+
+  // Starts/stops the webcam stream as the "Take Photo" dialog opens/closes - never left running
+  // in the background once the dialog is dismissed, cancelled, or a frame has been captured.
+  useEffect(() => {
+    if (!cameraOpen) return;
+    let cancelled = false;
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "user" } })
+      .then((stream) => {
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        cameraStreamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      })
+      .catch(() => {
+        showToast("Tidak bisa mengakses kamera", "error");
+        setCameraOpen(false);
+      });
+    return () => {
+      cancelled = true;
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+      cameraStreamRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
 
   if (!me) return null;
 
@@ -169,17 +278,24 @@ export default function ProfilePage() {
     if (stagedPhotoPreviewUrl) URL.revokeObjectURL(stagedPhotoPreviewUrl);
     setStagedPhotoBlob(null);
     setStagedPhotoPreviewUrl(null);
+    setStagedRemovePhoto(false);
   }
 
   function openEditProfile() {
     setNamaDraft(me!.nama);
     setShowCoverPresets(false);
+    setPhotoMenuOpen(false);
     resetCoverAndPhotoStaging();
     setEditOpen(true);
   }
 
   function closeEditProfile(open: boolean) {
-    if (!open) resetCoverAndPhotoStaging();
+    if (!open) {
+      resetCoverAndPhotoStaging();
+      setPhotoMenuOpen(false);
+      setViewPhotoOpen(false);
+      setCameraOpen(false);
+    }
     setEditOpen(open);
   }
 
@@ -195,6 +311,9 @@ export default function ProfilePage() {
       });
       if (stagedPhotoBlob) {
         await api.uploadProfilePhoto(new File([stagedPhotoBlob], "profile-photo.png", { type: "image/png" }));
+        setPhotoVersion(Date.now());
+      } else if (stagedRemovePhoto) {
+        await api.deletePhoto();
         setPhotoVersion(Date.now());
       }
       if (stagedCoverPreset !== null) {
@@ -226,7 +345,6 @@ export default function ProfilePage() {
   function openPasswordForm() {
     setCurrentPassword("");
     setNewPassword("");
-    setConfirmPassword("");
     setPasswordErrors({});
     setEditingField(null);
     setPasswordFormOpen(true);
@@ -236,7 +354,6 @@ export default function ProfilePage() {
     setPasswordFormOpen(false);
     setCurrentPassword("");
     setNewPassword("");
-    setConfirmPassword("");
     setPasswordErrors({});
   }
 
@@ -296,7 +413,57 @@ export default function ProfilePage() {
     if (stagedPhotoPreviewUrl) URL.revokeObjectURL(stagedPhotoPreviewUrl);
     setStagedPhotoBlob(blob);
     setStagedPhotoPreviewUrl(URL.createObjectURL(blob));
+    setStagedRemovePhoto(false);
     closePhotoCrop();
+  }
+
+  function handleViewPhoto() {
+    setPhotoMenuOpen(false);
+    setViewPhotoOpen(true);
+  }
+
+  function handleTakePhotoClick() {
+    setPhotoMenuOpen(false);
+    setCameraOpen(true);
+  }
+
+  function handleUploadPhotoClick() {
+    setPhotoMenuOpen(false);
+    photoInputRef.current?.click();
+  }
+
+  // "Remove Photo" means back to the default placeholder icon - discards whatever new photo was
+  // just staged (if any) AND marks the actual saved photo for deletion, so either way the avatar
+  // ends up at its default the moment Save commits.
+  function handleRemovePhoto() {
+    if (stagedPhotoPreviewUrl) URL.revokeObjectURL(stagedPhotoPreviewUrl);
+    setStagedPhotoBlob(null);
+    setStagedPhotoPreviewUrl(null);
+    setStagedRemovePhoto(true);
+    setPhotoMenuOpen(false);
+  }
+
+  function closeCameraDialog() {
+    setCameraOpen(false);
+  }
+
+  // Crops the live video down to a centered square (matching what AvatarCropDialog expects) and
+  // feeds it through the exact same pendingPhotoSrc -> crop -> stage pipeline as a file upload,
+  // so "Take Photo" gets the same zoom/reposition step before it's staged.
+  function captureFromCamera() {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) return;
+    const size = Math.min(video.videoWidth, video.videoHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const sx = (video.videoWidth - size) / 2;
+    const sy = (video.videoHeight - size) / 2;
+    ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+    setPendingPhotoSrc(canvas.toDataURL("image/png"));
+    closeCameraDialog();
   }
 
   function handleCoverPresetPick(key: string) {
@@ -313,10 +480,13 @@ export default function ProfilePage() {
     e.preventDefault();
 
     const currentPasswordError = validateCurrentPassword(currentPassword);
-    const newPasswordError = validateNewPassword(newPassword, currentPassword);
-    const confirmPasswordError = validateConfirmPassword(confirmPassword, newPassword);
-    if (currentPasswordError || newPasswordError || confirmPasswordError) {
-      setPasswordErrors({ currentPassword: currentPasswordError, newPassword: newPasswordError, confirmPassword: confirmPasswordError });
+    let newPasswordError: string | undefined;
+    if (!newPassword.trim()) newPasswordError = "Password baru wajib diisi";
+    else if (!passwordMeetsAllRequirements(newPassword)) newPasswordError = "Password baru belum memenuhi semua syarat di atas";
+    else if (newPassword === currentPassword) newPasswordError = "Password baru harus berbeda dari password saat ini";
+
+    if (currentPasswordError || newPasswordError) {
+      setPasswordErrors({ currentPassword: currentPasswordError, newPassword: newPasswordError });
       return;
     }
 
@@ -327,7 +497,6 @@ export default function ProfilePage() {
       showToast("Password berhasil diubah");
       setCurrentPassword("");
       setNewPassword("");
-      setConfirmPassword("");
       setPasswordFormOpen(false);
     } catch (err) {
       setPasswordErrors({ general: (err as Error).message });
@@ -350,6 +519,9 @@ export default function ProfilePage() {
     !editHasCoverPhoto && editCoverPreset
       ? { background: COVER_PRESETS.find((p) => p.key === editCoverPreset)?.gradient }
       : undefined;
+
+  const editHasPhoto = stagedRemovePhoto ? false : me.hasPhoto;
+  const viewPhotoSrc = stagedPhotoPreviewUrl || (editHasPhoto ? api.profilePhotoUrl(photoVersion || undefined) : undefined);
 
   return (
     <>
@@ -467,20 +639,50 @@ export default function ProfilePage() {
             <div className="edit-profile-avatar">
               {stagedPhotoPreviewUrl ? (
                 <img src={stagedPhotoPreviewUrl} alt="Foto profil" />
-              ) : me.hasPhoto ? (
+              ) : editHasPhoto ? (
                 <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
               ) : (
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
               )}
+            </div>
+            {/* Sibling of .edit-profile-avatar (not nested inside it) so this dropdown isn't
+                clipped by the avatar circle's own overflow:hidden - positioned with the exact
+                same left/bottom/width/height so the trigger button still lands centered on the
+                circle. */}
+            <div className="photo-action-menu-wrap" ref={photoMenuRef}>
               <button
                 type="button"
                 className="edit-profile-icon-btn edit-profile-avatar-edit-btn"
                 aria-label="Ganti foto profil"
                 disabled={savingProfile}
-                onClick={() => photoInputRef.current?.click()}
+                onClick={() => setPhotoMenuOpen((v) => !v)}
               >
                 <Camera width={16} height={16} />
               </button>
+              {photoMenuOpen && (
+                <div className="photo-action-menu">
+                  {(stagedPhotoPreviewUrl || editHasPhoto) && (
+                    <button type="button" className="row-menu-item" onClick={handleViewPhoto}>
+                      <Eye width={16} height={16} />
+                      View Photo
+                    </button>
+                  )}
+                  <button type="button" className="row-menu-item" onClick={handleTakePhotoClick}>
+                    <Camera width={16} height={16} />
+                    Take Photo
+                  </button>
+                  <button type="button" className="row-menu-item" onClick={handleUploadPhotoClick}>
+                    <Upload width={16} height={16} />
+                    Upload Photo
+                  </button>
+                  {(stagedPhotoPreviewUrl || editHasPhoto) && (
+                    <button type="button" className="row-menu-item row-menu-item-danger" onClick={handleRemovePhoto}>
+                      <Trash2 width={16} height={16} />
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+              )}
               <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
             </div>
           </div>
@@ -610,29 +812,15 @@ export default function ProfilePage() {
               icon={<Lock width={15} height={15} />}
               value={newPassword}
               error={passwordErrors.newPassword}
-              hint="Minimal 8 karakter, kombinasi huruf besar, huruf kecil, dan angka"
               onChange={(v) => {
                 setNewPassword(v);
-                if (passwordErrors.newPassword) setPasswordErrors((prev) => ({ ...prev, newPassword: validateNewPassword(v, currentPassword) }));
-                if (passwordErrors.confirmPassword && confirmPassword) {
-                  setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(confirmPassword, v) }));
+                if (passwordErrors.newPassword && passwordMeetsAllRequirements(v) && v !== currentPassword) {
+                  setPasswordErrors((prev) => ({ ...prev, newPassword: undefined }));
                 }
               }}
             />
-            <PasswordField
-              id="confirm-password"
-              label="Confirm New Password"
-              placeholder="Repeat New Password"
-              minLength={8}
-              icon={<Lock width={15} height={15} />}
-              value={confirmPassword}
-              error={passwordErrors.confirmPassword}
-              onChange={(v) => {
-                setConfirmPassword(v);
-                if (passwordErrors.confirmPassword) setPasswordErrors((prev) => ({ ...prev, confirmPassword: validateConfirmPassword(v, newPassword) }));
-              }}
-            />
-            {passwordErrors.general && <div className="error-text">{passwordErrors.general}</div>}
+            <PasswordStrengthMeter password={newPassword} />
+            <ErrorAlert message={passwordErrors.general} />
           </form>
 
           <DialogFooter>
@@ -644,6 +832,29 @@ export default function ProfilePage() {
       </Dialog>
 
       <AvatarCropDialog imageSrc={pendingPhotoSrc} onCancel={closePhotoCrop} onConfirm={handlePhotoCropConfirm} />
+
+      <Dialog open={viewPhotoOpen} onOpenChange={setViewPhotoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Foto Profil</DialogTitle>
+          </DialogHeader>
+          {viewPhotoSrc && <img src={viewPhotoSrc} alt="Foto profil" style={{ width: "100%", borderRadius: 12 }} />}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cameraOpen} onOpenChange={(open) => { if (!open) closeCameraDialog(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Take Photo</DialogTitle>
+          </DialogHeader>
+          <video ref={videoRef} autoPlay playsInline muted className="avatar-crop-area" style={{ borderRadius: 12, objectFit: "cover" }} />
+          <DialogFooter>
+            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={captureFromCamera}>
+              Ambil Foto
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

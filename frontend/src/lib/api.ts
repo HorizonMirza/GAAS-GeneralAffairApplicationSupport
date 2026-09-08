@@ -236,6 +236,7 @@ export const api = {
   // previous photo's, so the browser would keep showing its cached copy) without recomputing a
   // new value - and therefore a new <img src> - on every render.
   profilePhotoUrl: (v?: number) => (v ? `${API_BASE}/profile/photo?v=${v}` : `${API_BASE}/profile/photo`),
+  deletePhoto: () => apiRequest<Me>("/profile/photo", { method: "DELETE" }),
   updateCoverPreset: (preset: string) =>
     apiRequest<Me>("/profile/cover-preset", { method: "PUT", body: { preset } }),
   uploadCoverPhoto: async (file: File) => {

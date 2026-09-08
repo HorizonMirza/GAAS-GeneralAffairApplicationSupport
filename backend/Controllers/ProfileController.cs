@@ -236,6 +236,25 @@ public class ProfileController : ApiControllerBase
         return File(bytes, user.PhotoContentType ?? "application/octet-stream");
     }
 
+    [HttpDelete("photo")]
+    public async Task<IActionResult> DeletePhoto()
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var oldPath = user!.PhotoPath != null ? Path.Combine(_uploadDir, user.PhotoPath) : null;
+
+        user.PhotoPath = null;
+        user.PhotoContentType = null;
+        user.PhotoOriginalFilename = null;
+        await _db.SaveChangesAsync();
+
+        if (oldPath != null && System.IO.File.Exists(oldPath))
+            System.IO.File.Delete(oldPath);
+
+        return Ok(MeResponse.From(user));
+    }
+
     [HttpPut("cover-preset")]
     public async Task<IActionResult> UpdateCoverPreset([FromBody] UpdateCoverPresetRequest payload)
     {

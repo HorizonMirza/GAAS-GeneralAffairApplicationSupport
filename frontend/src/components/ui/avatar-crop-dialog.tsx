@@ -57,7 +57,10 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
     try {
       const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
       onConfirm(blob);
-    } catch {
+    } finally {
+      // Always clear, not just on the catch path - this component is never unmounted (only
+      // `open` toggles via imageSrc), so a success path that left this true would carry the
+      // "Saving..." disabled state into the next time this dialog opens for a different photo.
       setProcessing(false);
     }
   }
