@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification, onNotificationSettingsChanged } from "@/lib/chatHub";
+import { openGlobalChat } from "@/lib/globalChat";
 import { playActivityNotificationSound, playChatNotificationSound, setNotificationSoundIds } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -119,7 +120,14 @@ export default function ChatNotificationListener() {
             className={`chat-notification-banner${banner.source === "activity" ? " chat-notification-banner-activity" : ""}${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
             onClick={() => {
               dismiss(banner.id);
-              router.push(bannerHref(banner));
+              // Same split as NotificationBell.openItem: a chat banner opens its thread on top of
+              // the current page (GlobalChatModal) instead of navigating away, since there's
+              // nothing about "read a chat message" that requires leaving where you already are.
+              if (banner.source === "chat") {
+                openGlobalChat(banner.kind, banner.itemId);
+              } else {
+                router.push(bannerHref(banner));
+              }
             }}
           >
             <span className={`chat-notification-avatar${banner.source === "activity" ? " chat-notification-avatar-activity" : ""}`}>{initials(actorNama)}</span>

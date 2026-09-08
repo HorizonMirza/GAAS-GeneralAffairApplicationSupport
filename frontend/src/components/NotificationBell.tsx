@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Bell, X } from "lucide-react";
 import { ensureStarted, NOTIFICATION_KIND_LABEL, NOTIFICATION_TRANSAKSI_PATH, onActivityNotification, onChatNotification } from "@/lib/chatHub";
+import { openGlobalChat } from "@/lib/globalChat";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { itemVariants, sidebarVariants } from "./ui/menu";
@@ -134,7 +135,16 @@ export default function NotificationBell() {
   function openItem(item: Item) {
     setItems((current) => current.map((it) => (it.key === item.key ? { ...it, read: true } : it)));
     setOpen(false);
-    router.push(itemHref(item));
+    // A chat notification opens its thread directly over whatever page is currently open
+    // (GlobalChatModal, mounted in AppShell) instead of navigating to that module's Transaction
+    // page first - the page you were on stays the page you were on. An activity notification
+    // (a new transaction, an approve/reject step) has no such standalone view, so it still
+    // navigates to the Transaction page and highlights the row there.
+    if (item.source === "chat") {
+      openGlobalChat(item.kind, item.itemId);
+    } else {
+      router.push(itemHref(item));
+    }
   }
 
   function clearAll() {
