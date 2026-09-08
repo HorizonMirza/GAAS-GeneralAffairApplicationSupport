@@ -4785,3 +4785,85 @@ table.data-table {
   border-color: var(--blue-500);
   background: rgba(75, 141, 255, 0.12);
 }
+
+/* Archive item card (Form Arsip / Daftar Arsip rows) - collapses to just its header when there's
+   more than one row, so a request with many archives doesn't turn into a long scroll of fully
+   expanded field groups. A single row always renders expanded since there's nothing to save
+   space on and no other row to distinguish it from. */
+.arsip-item-card {
+  border: 1px solid var(--border-color, #e2e2e2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.arsip-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.arsip-item-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.arsip-item-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arsip-item-chevron {
+  flex-shrink: 0;
+  transition: transform 220ms ease;
+}
+
+.arsip-item-toggle[aria-expanded="true"] .arsip-item-chevron {
+  transform: rotate(180deg);
+}
+
+/* Same grid-template-rows 0fr->1fr trick as .faq-item-answer - animates open/close without
+   measuring JS height and collapses to a true 0px instead of clipping at a fixed max-height.
+   overflow:hidden only applies while collapsed - left on while open it would also clip the
+   Kategori SearchableSelect's absolutely-positioned option panel, which overflows below this
+   box's own auto-fit height, silently sinking every click on an option behind the next item
+   card in the list underneath it. */
+.arsip-item-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms ease;
+  overflow: hidden;
+}
+
+.arsip-item-body-open {
+  grid-template-rows: 1fr;
+  overflow: visible;
+}
+
+.arsip-item-body-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arsip-item-body-open .arsip-item-body-inner {
+  overflow: visible;
+}
+
+.arsip-item-body-open .arsip-item-body-inner {
+  padding-top: 8px;
+}
