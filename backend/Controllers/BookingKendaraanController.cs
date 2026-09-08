@@ -47,6 +47,14 @@ public class BookingKendaraanController : ApiControllerBase
         BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
     };
 
+    // Every stage before the terminal APPROVED_GA_APPROVAL - used by AutoRejectLosingCompetitorsAsync
+    // to find still-pending bookings for the same vehicle+slot once one of them wins, mirroring
+    // Room Booking's own PendingStatuses/AutoRejectLosingCompetitorsAsync exactly.
+    private static readonly BookingStatusEnum[] PendingStatuses =
+    {
+        BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
+    };
+
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
 
@@ -295,6 +303,39 @@ public class BookingKendaraanController : ApiControllerBase
         conflict.IsWholeDay
             ? $"{conflict.NamaKendaraan} sudah dipesan Sepanjang Hari pada tanggal {conflict.Tanggal:dd/MM/yyyy}"
             : $"{conflict.NamaKendaraan} sudah dipesan pada jam {conflict.JamMulai:HH:mm}-{conflict.JamSelesai:HH:mm} di tanggal {conflict.Tanggal:dd/MM/yyyy}";
+
+    // Mirrors Room Booking's AutoRejectLosingCompetitorsAsync: once a booking wins final Approval
+    // GA sign-off, every other still-pending (SUBMITTED/APPROVED_L1/APPROVED_GA) booking for the
+    // same vehicle+date that overlaps its time slot is a dead loser - it can never be confirmed
+    // now that the vehicle is taken, so it's rejected automatically instead of being left to sit
+    // on-approval until someone manually notices and rejects it. Caller must already have an
+    // explicit transaction + advisory lock open (see ApproveGaApproval/Submit) so this can't race
+    // a competing booking's own finalization.
+    private async Task AutoRejectLosingCompetitorsAsync(BookingKendaraan winner, User actor)
+    {
+        var candidates = await _db.BookingKendaraans.Where(b =>
+            b.Tanggal == winner.Tanggal && b.NamaKendaraan == winner.NamaKendaraan
+            && b.Id != winner.Id && PendingStatuses.Contains(b.Status)).ToListAsync();
+
+        var losers = candidates.Where(b =>
+            winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
+
+        const string reason = "Kendaraan sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama";
+        foreach (var loser in losers)
+        {
+            var affected = await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE booking_kendaraan SET
+                    status = 'REJECTED_GA_APPROVAL',
+                    reject_reason = {reason},
+                    approved_by_l1 = NULL, approved_l1_at = NULL,
+                    approved_by_ga = NULL, approved_ga_at = NULL,
+                    approved_by_approval_ga = NULL, approved_approval_ga_at = NULL,
+                    updated_at = {DateTime.UtcNow}
+                WHERE id = {loser.Id} AND status = {loser.Status.ToString()}");
+            if (affected > 0)
+                AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
+        }
+    }
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
     {
@@ -657,6 +698,7 @@ public class BookingKendaraanController : ApiControllerBase
 
             await _db.Entry(item).ReloadAsync();
             AddLog(item, "SUBMITTED", user);
+            await AutoRejectLosingCompetitorsAsync(item, user);
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
             await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "kendaraan", item.Id, ItemLabel(item), user.Nama, "Mengajukan Booking Kendaraan Baru");
@@ -912,7 +954,8 @@ public class BookingKendaraanController : ApiControllerBase
             return StatusCode(409, new { detail = "Data sudah diproses oleh aksi lain, silakan refresh" });
 
         await _db.Entry(item).ReloadAsync();
-        AddLog(item, "APPROVED_GA_APPROVAL", user);
+        AddLog(item, "APPROVED_GA_APPROVAL", user!);
+        await AutoRejectLosingCompetitorsAsync(item, user!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
