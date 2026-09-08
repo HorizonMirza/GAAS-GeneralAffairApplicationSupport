@@ -264,7 +264,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                     {isEdit && (
                       <button
                         type="button"
-                        className="card-icon-btn"
+                        className="card-icon-btn card-icon-btn-danger"
                         aria-label={`Hapus baris arsip ${idx + 1}`}
                         disabled={form.items.length <= 1}
                         style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}

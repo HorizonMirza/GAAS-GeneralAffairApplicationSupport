@@ -211,7 +211,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                   />
                   <button
                     type="button"
-                    className="card-icon-btn"
+                    className="card-icon-btn card-icon-btn-danger"
                     aria-label={`Hapus baris barang ${idx + 1}`}
                     disabled={form.items.length <= 1}
                     style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
