@@ -256,10 +256,10 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                         onClick={() => setOpenItemIdx(isOpen ? null : idx)}
                       >
                         <svg className="arsip-item-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        <span>Arsip #{idx + 1}{row.namaArsip ? ` – ${row.namaArsip}` : ""}</span>
+                        <span>Arsip {idx + 1}{row.namaArsip ? `: ${row.namaArsip}` : ""}</span>
                       </button>
                     ) : (
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip #{idx + 1}</span>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip {idx + 1}</span>
                     )}
                     {isEdit && (
                       <button
