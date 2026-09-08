@@ -538,6 +538,7 @@ body {
   gap: 10px;
   max-height: 0;
   opacity: 0;
+  margin-top: 0;
   margin-bottom: 0;
   padding: 0 14px;
   border-radius: 10px;
@@ -546,12 +547,15 @@ body {
   color: #b42318;
   overflow: hidden;
   transition: max-height 250ms ease, opacity 200ms ease-in 50ms,
-    margin-bottom 250ms ease, padding 250ms ease, border-color 250ms ease;
+    margin-top 250ms ease, margin-bottom 250ms ease, padding 250ms ease, border-color 250ms ease;
 }
 
+/* A bit of breathing room above so the banner doesn't read as touching the field right above it
+   (see PasswordField, which renders this immediately after the input wrapper). */
 .alert-error.alert-error-visible {
   max-height: 90px;
   opacity: 1;
+  margin-top: 10px;
   margin-bottom: 18px;
   padding: 12px 14px;
   border-color: #f3b9b9;

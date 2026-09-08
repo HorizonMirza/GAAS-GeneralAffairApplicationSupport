@@ -124,8 +124,8 @@ function validateCurrentPassword(value: string): string | undefined {
 // Drives both the live checklist below and the actual submit-time validation, so the two can
 // never drift apart (e.g. the checklist showing all-green while submit still rejects it).
 const PASSWORD_REQUIREMENTS = [
-  { regex: /.{8,}/, text: "Minimal 8 karakter" },
   { regex: /[0-9]/, text: "Minimal 1 angka" },
+  { regex: /.{8,}/, text: "Minimal 8 karakter" },
   { regex: /[a-z]/, text: "Minimal 1 huruf kecil" },
   { regex: /[A-Z]/, text: "Minimal 1 huruf besar" },
   { regex: /[^A-Za-z0-9]/, text: "Minimal 1 karakter spesial" },
@@ -143,7 +143,7 @@ const STRENGTH_COLOR: Record<StrengthScore, string> = {
 };
 
 const STRENGTH_TEXT: Record<StrengthScore, string> = {
-  0: "Masukkan password",
+  0: "",
   1: "Password lemah",
   2: "Password sedang",
   3: "Password kuat",
@@ -836,7 +836,7 @@ export default function ProfilePage() {
       <Dialog open={viewPhotoOpen} onOpenChange={setViewPhotoOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Foto Profil</DialogTitle>
+            <DialogTitle>Photo Profile</DialogTitle>
           </DialogHeader>
           {viewPhotoSrc && <img src={viewPhotoSrc} alt="Foto profil" style={{ width: "100%", borderRadius: 12 }} />}
         </DialogContent>
@@ -850,7 +850,7 @@ export default function ProfilePage() {
           <video ref={videoRef} autoPlay playsInline muted className="avatar-crop-area" style={{ borderRadius: 12, objectFit: "cover" }} />
           <DialogFooter>
             <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={captureFromCamera}>
-              Ambil Foto
+              Take Photo
             </button>
           </DialogFooter>
         </DialogContent>

@@ -71,7 +71,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
     <Dialog open={!!imageSrc} onOpenChange={(open) => !open && !busy && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Sesuaikan Foto Profil</DialogTitle>
+          <DialogTitle>Adjust Profile Photo</DialogTitle>
         </DialogHeader>
 
         {imageSrc && (
@@ -91,7 +91,7 @@ export function AvatarCropDialog({ imageSrc, onCancel, onConfirm, saving }: Avat
         )}
 
         <div className="field">
-          <label htmlFor="avatar-crop-zoom">Perbesar</label>
+          <label htmlFor="avatar-crop-zoom">Zoom</label>
           <input
             id="avatar-crop-zoom"
             type="range"
