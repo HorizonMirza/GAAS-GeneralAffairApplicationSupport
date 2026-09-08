@@ -151,7 +151,7 @@ export default function OfficeSuppliesOverviewPage() {
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
-        <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: "auto" }}>
+        <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
             id="overview-atk-status-filter"
             value={statusFilter}
