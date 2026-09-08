@@ -157,7 +157,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     onClose();
     try {
       await api.approveBookingL1(item!.id);
-      showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Booking berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

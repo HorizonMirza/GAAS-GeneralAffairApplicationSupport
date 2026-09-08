@@ -75,7 +75,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
 

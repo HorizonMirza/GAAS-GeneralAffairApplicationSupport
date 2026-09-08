@@ -135,7 +135,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     onClose();
     try {
       await api.approveL1(item!.id);
-      showToast("Data berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Data berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

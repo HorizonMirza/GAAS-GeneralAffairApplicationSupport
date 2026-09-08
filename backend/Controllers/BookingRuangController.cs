@@ -1414,7 +1414,7 @@ public class BookingRuangController : ApiControllerBase
         RoleEnum.APPROVAL_DEPARTEMEN => "Approval Departemen",
         RoleEnum.ADMIN_DIVISI => "Admin Divisi",
         RoleEnum.APPROVAL_DIVISI => "Approval Divisi",
-        RoleEnum.ADMIN_GA => "Admin General Affair",
+        RoleEnum.ADMIN_GA => "Admin GA",
         RoleEnum.APPROVAL_GA => "Approval GA",
         _ => null,
     };

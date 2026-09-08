@@ -261,7 +261,7 @@ function OfficeSuppliesTransaksiPageInner() {
                     getLabel={(v) => ({
                       DRAFT: "Draft",
                       SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin General Affair",
+                      APPROVED_L1: "On-Approval: Admin GA",
                       APPROVED_GA: "On-Approval: Approval GA",
                       REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "On-Approval: Mitra",

@@ -112,7 +112,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     onClose();
     try {
       await api.approveKendaraanL1(item!.id);
-      showToast("Booking berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Booking berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

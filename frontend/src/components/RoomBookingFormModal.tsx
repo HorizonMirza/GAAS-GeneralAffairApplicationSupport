@@ -83,7 +83,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));

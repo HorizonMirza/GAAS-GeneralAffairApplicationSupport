@@ -12,12 +12,12 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Bagaimana alur dan tingkatan approval untuk setiap pengajuan?",
     answer:
-      "Setiap pengajuan yang sudah diajukan (bukan Draft) berjalan berurutan lewat beberapa tingkat: Approval Departemen/Divisi (atasan langsung pemohon), lalu Admin General Affair, lalu Approval GA. Untuk modul yang melibatkan vendor seperti Expedition dan Office Supplies, ada tahap tambahan persetujuan Mitra setelah Approval GA sebelum pengajuan resmi selesai. Kalau salah satu tingkat menolak, pengajuan langsung berhenti berstatus Rejected di tingkat itu dan tidak lanjut ke tingkat berikutnya.",
+      "Setiap pengajuan yang sudah diajukan (bukan Draft) berjalan berurutan lewat beberapa tingkat: Approval Departemen/Divisi (atasan langsung pemohon), lalu Admin GA, lalu Approval GA. Untuk modul yang melibatkan vendor seperti Expedition dan Office Supplies, ada tahap tambahan persetujuan Mitra setelah Approval GA sebelum pengajuan resmi selesai. Kalau salah satu tingkat menolak, pengajuan langsung berhenti berstatus Rejected di tingkat itu dan tidak lanjut ke tingkat berikutnya.",
   },
   {
     question: "Apa arti setiap status pengajuan yang saya lihat?",
     answer:
-      "Draft berarti data belum diajukan dan masih bebas diedit atau dihapus. On-Approval (dengan keterangan tingkat yang sedang memproses, misalnya \"On-Approval: Admin General Affair\") berarti sedang menunggu persetujuan di tingkat tersebut. Rejected berarti ditolak pada tingkat yang tertulis di statusnya dan pengajuan itu dianggap selesai/gagal. Approved berarti pengajuan sudah lolos semua tingkat approval dan resmi disetujui.",
+      "Draft berarti data belum diajukan dan masih bebas diedit atau dihapus. On-Approval (dengan keterangan tingkat yang sedang memproses, misalnya \"On-Approval: Admin GA\") berarti sedang menunggu persetujuan di tingkat tersebut. Rejected berarti ditolak pada tingkat yang tertulis di statusnya dan pengajuan itu dianggap selesai/gagal. Approved berarti pengajuan sudah lolos semua tingkat approval dan resmi disetujui.",
   },
   {
     question: "Di mana saya bisa melihat riwayat pengajuan saya?",
@@ -37,7 +37,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Bagaimana cara berkomunikasi dengan approver terkait pengajuan saya?",
     answer:
-      "Buka detail pengajuan yang ingin didiskusikan, lalu klik ikon chat di dalamnya. Semua pihak yang terlibat di alur approval pengajuan tersebut (Admin/Approval Departemen atau Divisi, Admin General Affair, Approval GA, dan Mitra kalau ada) bisa membaca dan membalas di percakapan yang sama, jadi tidak perlu koordinasi terpisah lewat WhatsApp atau email untuk hal-hal teknis pengajuan.",
+      "Buka detail pengajuan yang ingin didiskusikan, lalu klik ikon chat di dalamnya. Semua pihak yang terlibat di alur approval pengajuan tersebut (Admin/Approval Departemen atau Divisi, Admin GA, Approval GA, dan Mitra kalau ada) bisa membaca dan membalas di percakapan yang sama, jadi tidak perlu koordinasi terpisah lewat WhatsApp atau email untuk hal-hal teknis pengajuan.",
   },
   {
     question: "Apa saja modul yang tersedia di aplikasi ini dan fungsinya masing-masing?",

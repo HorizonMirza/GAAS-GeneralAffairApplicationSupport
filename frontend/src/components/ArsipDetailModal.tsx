@@ -143,7 +143,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Permintaan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

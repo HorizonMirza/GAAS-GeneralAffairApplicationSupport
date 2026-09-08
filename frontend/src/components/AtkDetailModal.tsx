@@ -123,7 +123,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Permintaan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");

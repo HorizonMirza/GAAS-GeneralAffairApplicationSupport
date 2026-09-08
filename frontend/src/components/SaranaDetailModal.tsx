@@ -102,7 +102,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaL1(item!.id);
-      showToast("Laporan berhasil di-approve, diteruskan ke Admin General Affair");
+      showToast("Laporan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
