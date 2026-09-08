@@ -3286,9 +3286,7 @@ table.data-table {
 }
 
 .toolbar > .btn,
-.filter-dropdown-wrap #filter-toggle,
-.filter-dropdown-wrap #filter-kendaraan-toggle,
-.filter-dropdown-wrap #filter-arsip-toggle {
+.filter-dropdown-wrap button[id$="-toggle"] {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
@@ -4226,9 +4224,7 @@ table.data-table {
     align-self: stretch !important;
     justify-content: center;
   }
-  .filter-dropdown-wrap #filter-toggle,
-  .filter-dropdown-wrap #filter-kendaraan-toggle,
-  .filter-dropdown-wrap #filter-arsip-toggle {
+  .filter-dropdown-wrap button[id$="-toggle"] {
     width: 100% !important;
     height: 100%;
   }
