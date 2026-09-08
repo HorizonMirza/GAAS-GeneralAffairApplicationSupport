@@ -95,7 +95,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/arsip/overview" },
       { label: "Transaction", href: "/arsip/transaksi" },
-      { label: "Catalog", href: "/arsip/katalog" },
+      { label: "Inventory", href: "/arsip/katalog" },
       { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
