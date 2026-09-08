@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
   bookingRoomsLabel,
+  buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -410,6 +411,17 @@ function BookingCalendarPageInner() {
           if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
+        onDuplicate={
+          isOrigin
+            ? () => {
+                const item = rowMenu.menuItem;
+                rowMenu.close();
+                if (!item) return;
+                setFormInitial(buildRoomBookingDuplicateInitial(item));
+                setFormOpen(true);
+              }
+            : undefined
+        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -449,7 +461,7 @@ function BookingCalendarPageInner() {
           open={formOpen}
           me={me}
           initial={formInitial}
-          onClose={() => setFormOpen(false)}
+          onClose={() => { setFormOpen(false); setFormInitial(undefined); }}
           onCreated={reload}
         />
       )}

@@ -8,6 +8,7 @@ import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
+  buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -19,7 +20,7 @@ import {
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
-import type { BookingRuang, BookingStatus, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -71,6 +72,7 @@ function BookingTransaksiPageInner() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
@@ -500,6 +502,17 @@ function BookingTransaksiPageInner() {
           if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
+        onDuplicate={
+          isOrigin
+            ? () => {
+                const item = rowMenu.menuItem;
+                rowMenu.close();
+                if (!item) return;
+                setFormInitial(buildRoomBookingDuplicateInitial(item));
+                setFormOpen(true);
+              }
+            : undefined
+        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -535,7 +548,13 @@ function BookingTransaksiPageInner() {
       />
 
       {me && (
-        <RoomBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />
+        <RoomBookingFormModal
+          open={formOpen}
+          me={me}
+          initial={formInitial}
+          onClose={() => { setFormOpen(false); setFormInitial(undefined); }}
+          onCreated={loadTable}
+        />
       )}
 
       <RoomBookingDetailModal

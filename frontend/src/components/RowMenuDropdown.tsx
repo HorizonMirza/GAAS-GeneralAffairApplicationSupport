@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Download, FileText, ListChecks, MessageSquare } from "lucide-react";
+import { Copy, Download, FileText, ListChecks, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 
@@ -27,6 +27,9 @@ interface Props {
   onUpdates: () => void;
   onStatus: () => void;
   onDelete: () => void;
+  // Room Booking only for now - opens the create form pre-filled from this row instead of blank.
+  // Presence alone gates whether the item renders, same pattern as pdfUrl/icsUrl below.
+  onDuplicate?: () => void;
   // Presence alone gates whether the item renders; the actual download (and any access-denied
   // toast) is driven entirely by onPdfClick/onIcsClick - see downloadFile in lib/api.ts.
   pdfUrl?: string;
@@ -51,6 +54,7 @@ export default function RowMenuDropdown({
   onUpdates,
   onStatus,
   onDelete,
+  onDuplicate,
   pdfUrl,
   onPdfClick,
   icsUrl,
@@ -96,6 +100,14 @@ export default function RowMenuDropdown({
           Detail
         </button>
       </motion.div>
+      {onDuplicate && (
+        <motion.div variants={itemVariants}>
+          <button type="button" className="row-menu-item" onClick={onDuplicate}>
+            <Copy width={16} height={16} />
+            Duplikat
+          </button>
+        </motion.div>
+      )}
       {canEditDelete && (
         <motion.div variants={itemVariants}>
           <button type="button" className="row-menu-item" onClick={onUpdates}>
