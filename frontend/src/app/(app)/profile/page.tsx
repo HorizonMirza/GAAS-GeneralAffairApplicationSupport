@@ -499,7 +499,14 @@ export default function ProfilePage() {
       setNewPassword("");
       setPasswordFormOpen(false);
     } catch (err) {
-      setPasswordErrors({ general: (err as Error).message });
+      const message = (err as Error).message;
+      // "Password saat ini salah" is about the Current Password field specifically, so it
+      // renders under that field instead of the generic banner at the bottom of the dialog.
+      if (message.includes("saat ini")) {
+        setPasswordErrors({ currentPassword: message });
+      } else {
+        setPasswordErrors({ general: message });
+      }
     } finally {
       setSavingPassword(false);
     }

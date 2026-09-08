@@ -312,7 +312,7 @@ function ArsipTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pemindahan</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipExportPdfUrl(currentExportParams()), "_blank")}>
@@ -333,17 +333,18 @@ function ArsipTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Keperluan</th><th>Daftar Arsip</th><th>Jumlah Jenis</th>
-                <th>Lokasi Penyimpanan</th><th>Divisi</th><th>Departemen</th><th>Tanggal</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
+                <th>PIC</th><th>No. Telp PIC</th><th>Daftar Arsip</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
+                <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={12} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -353,13 +354,16 @@ function ArsipTransaksiPageInner() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
+                      <td>{item.jumlahArsip}</td>
+                      <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
                       <td title={arsipList}>{truncateText(arsipList, 35)}</td>
                       <td>{item.items.length}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{formatDate(item.tanggal)}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">

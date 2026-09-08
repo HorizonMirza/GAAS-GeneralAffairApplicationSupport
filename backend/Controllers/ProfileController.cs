@@ -121,8 +121,15 @@ public class ProfileController : ApiControllerBase
         if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user!.PasswordHash))
             return StatusCode(400, new { detail = "Password saat ini salah" });
 
-        if (string.IsNullOrEmpty(payload.NewPassword) || payload.NewPassword.Length < 8)
-            return StatusCode(400, new { detail = "Password baru minimal 8 karakter" });
+        // Mirrors the frontend's live checklist (PASSWORD_REQUIREMENTS in profile/page.tsx) so a
+        // request that bypasses the UI can't set a weaker password than what the form allows.
+        if (string.IsNullOrEmpty(payload.NewPassword) ||
+            payload.NewPassword.Length < 8 ||
+            !System.Text.RegularExpressions.Regex.IsMatch(payload.NewPassword, "[0-9]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(payload.NewPassword, "[a-z]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(payload.NewPassword, "[A-Z]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(payload.NewPassword, "[^A-Za-z0-9]"))
+            return StatusCode(400, new { detail = "Password baru belum memenuhi syarat (minimal 8 karakter, 1 angka, 1 huruf kecil, 1 huruf besar, 1 karakter spesial)" });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
         user.PasswordChangedAt = DateTime.UtcNow;
