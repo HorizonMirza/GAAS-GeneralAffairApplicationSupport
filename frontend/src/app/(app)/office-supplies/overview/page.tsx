@@ -10,6 +10,7 @@ import {
   ON_APPROVAL_STATUSES,
   REJECTED_STATUSES,
   atkItemsSummary,
+  cardStatusBorderClass,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
   isBookingOriginRole,
@@ -175,9 +176,10 @@ export default function OfficeSuppliesOverviewPage() {
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
+          const borderClass = cardStatusBorderClass(item.status);
           return (
             <div
-              className="card item-row-card"
+              className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
               style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
               onClick={isDraft ? () => setDetail({ item, mode: "view" }) : undefined}
               key={item.id}

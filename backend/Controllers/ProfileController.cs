@@ -41,7 +41,7 @@ public class ProfileController : ApiControllerBase
     // class name client-side.
     private static readonly HashSet<string> AllowedCoverPresets = new(StringComparer.Ordinal)
     {
-        "navy", "ocean", "teal", "emerald", "gold", "sunset", "rose", "purple", "slate",
+        "navy", "ocean", "teal", "emerald", "gold", "sunset", "rose", "purple", "slate", "indigo",
     };
 
     private readonly AppDbContext _db;

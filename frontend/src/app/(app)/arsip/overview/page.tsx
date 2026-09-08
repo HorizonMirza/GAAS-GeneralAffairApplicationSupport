@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
+  bookingStatusBorderClass,
   isArsipDeletableByOrigin,
   isArsipEditableByOrigin,
   isBookingOriginRole,
@@ -172,9 +173,10 @@ export default function ArsipOverviewPage() {
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
+          const borderClass = bookingStatusBorderClass(item.status);
           return (
             <div
-              className="card item-row-card"
+              className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
               style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
               onClick={isDraft ? () => setDetail({ item, mode: "view" }) : undefined}
               key={item.id}

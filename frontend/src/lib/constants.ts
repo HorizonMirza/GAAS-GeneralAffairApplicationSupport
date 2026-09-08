@@ -604,4 +604,5 @@ export const COVER_PRESETS: CoverPreset[] = [
   { key: "rose", label: "Rose", gradient: "linear-gradient(135deg, #4c0519 0%, #be123c 55%, #fb7185 100%)" },
   { key: "purple", label: "Purple", gradient: "linear-gradient(135deg, #3b0764 0%, #7e22ce 55%, #c084fc 100%)" },
   { key: "slate", label: "Slate", gradient: "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)" },
+  { key: "indigo", label: "Indigo", gradient: "linear-gradient(135deg, #1e1b4b 0%, #4f46e5 55%, #a5b4fc 100%)" },
 ];

@@ -13,6 +13,7 @@ import {
   KATEGORI_KERUSAKAN_LABEL,
   URGENSI_BADGE_CLASS,
   URGENSI_LABEL,
+  bookingStatusBorderClass,
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
@@ -179,9 +180,10 @@ export default function MaintenanceOverviewPage() {
       ) : (
         filteredItems.map((item) => {
           const isDraft = item.status === "DRAFT";
+          const borderClass = bookingStatusBorderClass(item.status);
           return (
             <div
-              className="card item-row-card"
+              className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
               style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
               onClick={isDraft ? () => setDetail({ item, mode: "view" }) : undefined}
               key={item.id}

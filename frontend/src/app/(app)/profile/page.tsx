@@ -132,14 +132,19 @@ export default function ProfilePage() {
   const [savingField, setSavingField] = useState(false);
 
   const [photoVersion, setPhotoVersion] = useState(0);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [pendingPhotoSrc, setPendingPhotoSrc] = useState<string | null>(null);
+  // Staged locally until the outer "Save" (handleProfileSubmit) commits it - picking a color or
+  // cropping a new photo should only preview inside this dialog, not take effect for real until
+  // the whole Edit Profile form is submitted (matches how Account Name already behaves via
+  // namaDraft, instead of writing straight to the server on every click).
+  const [stagedPhotoBlob, setStagedPhotoBlob] = useState<Blob | null>(null);
+  const [stagedPhotoPreviewUrl, setStagedPhotoPreviewUrl] = useState<string | null>(null);
 
   const [coverVersion, setCoverVersion] = useState(0);
-  const [removingCover, setRemovingCover] = useState(false);
-  const [savingCoverPreset, setSavingCoverPreset] = useState<string | null>(null);
   const [showCoverPresets, setShowCoverPresets] = useState(false);
+  const [stagedCoverPreset, setStagedCoverPreset] = useState<string | null>(null);
+  const [stagedRemoveCover, setStagedRemoveCover] = useState(false);
 
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -156,10 +161,26 @@ export default function ProfilePage() {
     email: me.email ?? "",
   };
 
+  // Discards any staged (unsaved) cover/photo change - called both when the dialog closes
+  // without saving and after a successful save has committed them for real.
+  function resetCoverAndPhotoStaging() {
+    setStagedCoverPreset(null);
+    setStagedRemoveCover(false);
+    if (stagedPhotoPreviewUrl) URL.revokeObjectURL(stagedPhotoPreviewUrl);
+    setStagedPhotoBlob(null);
+    setStagedPhotoPreviewUrl(null);
+  }
+
   function openEditProfile() {
     setNamaDraft(me!.nama);
     setShowCoverPresets(false);
+    resetCoverAndPhotoStaging();
     setEditOpen(true);
+  }
+
+  function closeEditProfile(open: boolean) {
+    if (!open) resetCoverAndPhotoStaging();
+    setEditOpen(open);
   }
 
   async function handleProfileSubmit(e: React.FormEvent) {
@@ -172,7 +193,19 @@ export default function ProfilePage() {
         noHp: me!.noHp,
         email: me!.email,
       });
+      if (stagedPhotoBlob) {
+        await api.uploadProfilePhoto(new File([stagedPhotoBlob], "profile-photo.png", { type: "image/png" }));
+        setPhotoVersion(Date.now());
+      }
+      if (stagedCoverPreset !== null) {
+        await api.updateCoverPreset(stagedCoverPreset);
+        setCoverVersion(Date.now());
+      } else if (stagedRemoveCover) {
+        await api.deleteCoverPhoto();
+        setCoverVersion(Date.now());
+      }
       await refresh();
+      resetCoverAndPhotoStaging();
       setEditOpen(false);
       showToast("Profil berhasil diperbarui");
     } catch (err) {
@@ -257,45 +290,23 @@ export default function ProfilePage() {
     setPendingPhotoSrc(null);
   }
 
-  async function handlePhotoCropConfirm(blob: Blob) {
-    setUploadingPhoto(true);
-    try {
-      await api.uploadProfilePhoto(new File([blob], "profile-photo.png", { type: "image/png" }));
-      await refresh();
-      setPhotoVersion(Date.now());
-      showToast("Foto profil berhasil diubah");
-      closePhotoCrop();
-    } catch (err) {
-      showToast((err as Error).message || "Gagal mengunggah foto", "error");
-    } finally {
-      setUploadingPhoto(false);
-    }
+  // Only crops locally and stages the result for preview - the actual upload happens once,
+  // together with the rest of the form, when handleProfileSubmit runs (see its comment above).
+  function handlePhotoCropConfirm(blob: Blob) {
+    if (stagedPhotoPreviewUrl) URL.revokeObjectURL(stagedPhotoPreviewUrl);
+    setStagedPhotoBlob(blob);
+    setStagedPhotoPreviewUrl(URL.createObjectURL(blob));
+    closePhotoCrop();
   }
 
-  async function handleCoverPresetPick(key: string) {
-    setSavingCoverPreset(key);
-    try {
-      await api.updateCoverPreset(key);
-      await refresh();
-      showToast("Background berhasil diubah");
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setSavingCoverPreset(null);
-    }
+  function handleCoverPresetPick(key: string) {
+    setStagedCoverPreset(key);
+    setStagedRemoveCover(false);
   }
 
-  async function handleRemoveCoverPhoto() {
-    setRemovingCover(true);
-    try {
-      await api.deleteCoverPhoto();
-      await refresh();
-      showToast("Foto background dihapus");
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setRemovingCover(false);
-    }
+  function handleRemoveCoverPhoto() {
+    setStagedRemoveCover(true);
+    setStagedCoverPreset(null);
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -328,6 +339,16 @@ export default function ProfilePage() {
   const bannerStyle =
     !me.hasCoverPhoto && me.coverPreset
       ? { background: COVER_PRESETS.find((p) => p.key === me.coverPreset)?.gradient }
+      : undefined;
+
+  // The Edit Profile dialog previews staged (not-yet-saved) cover changes; the hero banner above
+  // (outside the dialog) intentionally keeps using the server-truth bannerStyle/me.hasCoverPhoto
+  // instead, so an unsaved pick never leaks onto the page behind the dialog.
+  const editHasCoverPhoto = stagedCoverPreset !== null || stagedRemoveCover ? false : me.hasCoverPhoto;
+  const editCoverPreset = stagedCoverPreset ?? me.coverPreset;
+  const editCoverBannerStyle =
+    !editHasCoverPhoto && editCoverPreset
+      ? { background: COVER_PRESETS.find((p) => p.key === editCoverPreset)?.gradient }
       : undefined;
 
   return (
@@ -410,15 +431,15 @@ export default function ProfilePage() {
           </div>
       </div>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={closeEditProfile}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
 
           <div className="edit-profile-cover-wrap">
-            <div className="edit-profile-cover" style={bannerStyle}>
-              {me.hasCoverPhoto && (
+            <div className="edit-profile-cover" style={editCoverBannerStyle}>
+              {editHasCoverPhoto && (
                 <img className="edit-profile-cover-img" src={api.coverPhotoUrl(coverVersion || undefined)} alt="" />
               )}
               <div className="edit-profile-cover-actions">
@@ -430,12 +451,12 @@ export default function ProfilePage() {
                 >
                   <Palette width={16} height={16} />
                 </button>
-                {me.hasCoverPhoto && (
+                {editHasCoverPhoto && (
                   <button
                     type="button"
                     className="edit-profile-icon-btn"
                     aria-label="Hapus foto background"
-                    disabled={removingCover}
+                    disabled={savingProfile}
                     onClick={handleRemoveCoverPhoto}
                   >
                     <X width={16} height={16} />
@@ -444,7 +465,9 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="edit-profile-avatar">
-              {me.hasPhoto ? (
+              {stagedPhotoPreviewUrl ? (
+                <img src={stagedPhotoPreviewUrl} alt="Foto profil" />
+              ) : me.hasPhoto ? (
                 <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
               ) : (
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
@@ -453,7 +476,7 @@ export default function ProfilePage() {
                 type="button"
                 className="edit-profile-icon-btn edit-profile-avatar-edit-btn"
                 aria-label="Ganti foto profil"
-                disabled={uploadingPhoto}
+                disabled={savingProfile}
                 onClick={() => photoInputRef.current?.click()}
               >
                 <Camera width={16} height={16} />
@@ -482,11 +505,11 @@ export default function ProfilePage() {
                     <button
                       key={p.key}
                       type="button"
-                      className={`cover-preset-swatch ${!me.hasCoverPhoto && me.coverPreset === p.key ? "active" : ""}`}
+                      className={`cover-preset-swatch ${!editHasCoverPhoto && editCoverPreset === p.key ? "active" : ""}`}
                       style={{ background: p.gradient }}
                       title={p.label}
                       aria-label={p.label}
-                      disabled={savingCoverPreset !== null}
+                      disabled={savingProfile}
                       onClick={() => handleCoverPresetPick(p.key)}
                     />
                   ))}
@@ -620,7 +643,7 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      <AvatarCropDialog imageSrc={pendingPhotoSrc} onCancel={closePhotoCrop} onConfirm={handlePhotoCropConfirm} saving={uploadingPhoto} />
+      <AvatarCropDialog imageSrc={pendingPhotoSrc} onCancel={closePhotoCrop} onConfirm={handlePhotoCropConfirm} />
     </>
   );
 }
