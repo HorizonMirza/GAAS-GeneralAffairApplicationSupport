@@ -1450,7 +1450,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectReason = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "Menyetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "Disetujui (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1494,7 +1494,7 @@ public class BookingRuangController : ApiControllerBase
             member.RejectTarget = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Disetujui (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1660,7 +1660,7 @@ public class BookingRuangController : ApiControllerBase
         var totalConfirmed = members.Count(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
         var totalConflicted = members.Count(m => m.HasConflict);
 
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
         return Ok(new
         {
             item = BookingRuangOut.From(item),

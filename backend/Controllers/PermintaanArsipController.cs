@@ -680,7 +680,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval Departemen/Divisi)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -721,7 +721,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Disetujui (Admin GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -765,7 +765,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Menyetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 

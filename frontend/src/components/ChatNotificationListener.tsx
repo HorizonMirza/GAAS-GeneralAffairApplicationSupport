@@ -116,13 +116,13 @@ export default function ChatNotificationListener() {
           <button
             key={banner.id}
             type="button"
-            className={`chat-notification-banner${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
+            className={`chat-notification-banner${banner.source === "activity" ? " chat-notification-banner-activity" : ""}${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
             onClick={() => {
               dismiss(banner.id);
               router.push(bannerHref(banner));
             }}
           >
-            <span className="chat-notification-avatar">{initials(actorNama)}</span>
+            <span className={`chat-notification-avatar${banner.source === "activity" ? " chat-notification-avatar-activity" : ""}`}>{initials(actorNama)}</span>
             <span className="chat-notification-body">
               <span className="chat-notification-title">
                 <strong>{actorNama}</strong> - {NOTIFICATION_KIND_LABEL[banner.kind]}

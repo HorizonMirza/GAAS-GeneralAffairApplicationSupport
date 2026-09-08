@@ -1118,6 +1118,28 @@ body.auth-ready .app-shell {
   text-decoration: underline;
 }
 
+.notification-dropdown-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.notification-clear-all {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.76rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.notification-clear-all:hover {
+  color: var(--badge-rejected-bg);
+  text-decoration: underline;
+}
+
 .notification-dropdown-tabs {
   display: flex;
   gap: 4px;
@@ -1217,7 +1239,10 @@ body.auth-ready .app-shell {
 }
 
 /* A subtle dot on the title line, not a full-row highlight - the row already carries a lot of
-   text, and the mark-all-read affordance is what clears this, not a per-item click alone. */
+   text, and the mark-all-read affordance is what clears this, not a per-item click alone. Color
+   matches the notification's source, same convention as the top-center banner's avatar/glow
+   (see .chat-notification-banner-activity/-chat below): blue for a chat message, green for a
+   transaction/approval event. */
 .notification-item-unread .notification-item-title::before {
   content: "";
   display: inline-block;
@@ -1225,8 +1250,12 @@ body.auth-ready .app-shell {
   height: 6px;
   margin-right: 6px;
   border-radius: 50%;
-  background: var(--badge-rejected-bg);
+  background: var(--blue-500);
   vertical-align: middle;
+}
+
+.notification-item-unread.notification-item-activity .notification-item-title::before {
+  background: var(--green-500);
 }
 
 .notification-item-title {
@@ -2640,10 +2669,11 @@ table.data-table {
 .data-table tbody tr:hover { background: var(--bg-surface-alt); }
 
 /* Jumping here from a "Transactions" notification click - flashes the row a few times so the
-   reader can find it in the list, then settles back to normal. */
+   reader can find it in the list, then settles back to normal. Blue to match that notification's
+   own accent color (see .notification-item-source-activity/-chat below). */
 @keyframes row-highlight-blink {
   0%, 100% { background-color: transparent; }
-  50% { background-color: rgba(245, 158, 11, 0.28); }
+  50% { background-color: rgba(28, 109, 255, 0.22); }
 }
 .data-table tbody tr.row-highlight-blink { animation: row-highlight-blink 1s ease-in-out 3; }
 
@@ -3959,6 +3989,12 @@ table.data-table {
   animation: chat-notification-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* A transaction/approval event gets a green glow instead of the default blue - lets the two
+   notification kinds read apart at a glance, same convention as the bell dropdown's unread dot. */
+.chat-notification-banner-activity {
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.4), 0 12px 36px rgba(10, 138, 74, 0.4), 0 0 56px rgba(52, 209, 94, 0.28);
+}
+
 .chat-notification-banner-leaving {
   animation: chat-notification-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
@@ -3975,6 +4011,10 @@ table.data-table {
   justify-content: center;
   font-weight: 700;
   font-size: 0.95rem;
+}
+
+.chat-notification-avatar-activity {
+  background: linear-gradient(135deg, var(--green-600) 0%, var(--green-400) 100%);
 }
 
 .chat-notification-body {

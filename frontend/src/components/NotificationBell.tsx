@@ -141,6 +141,10 @@ export default function NotificationBell() {
     setItems((current) => current.map((it) => ({ ...it, read: true })));
   }
 
+  function clearAll() {
+    setItems([]);
+  }
+
   return (
     <div className="notification-bell" ref={wrapRef}>
       <button
@@ -164,11 +168,18 @@ export default function NotificationBell() {
         >
           <motion.div variants={itemVariants} className="notification-dropdown-header">
             <span>Notifications</span>
-            {unreadCount > 0 && (
-              <button type="button" className="notification-mark-all" onClick={markAllRead}>
-                Mark all as read
-              </button>
-            )}
+            <span className="notification-dropdown-header-actions">
+              {unreadCount > 0 && (
+                <button type="button" className="notification-mark-all" onClick={markAllRead}>
+                  Mark all as read
+                </button>
+              )}
+              {items.length > 0 && (
+                <button type="button" className="notification-clear-all" onClick={clearAll}>
+                  Clear all
+                </button>
+              )}
+            </span>
           </motion.div>
           <motion.div variants={itemVariants} className="notification-dropdown-tabs">
             {TABS.map((t) => (
@@ -193,7 +204,7 @@ export default function NotificationBell() {
                   <motion.li key={item.key} variants={itemVariants} className="notification-item-row">
                     <button
                       type="button"
-                      className={`notification-item${item.read ? "" : " notification-item-unread"}`}
+                      className={`notification-item${item.read ? "" : " notification-item-unread"}${item.source === "activity" ? " notification-item-activity" : ""}`}
                       onClick={() => openItem(item)}
                     >
                       <span className="notification-item-title">
