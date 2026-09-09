@@ -1083,7 +1083,7 @@ export default function SuperAdminPage() {
                       <td>{item.nomorArsip || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
-                      <td title={arsipList}>{truncateText(arsipList, 35)}</td>
+                      <td title={arsipList}>{truncateText(arsipList, 45)}</td>
                       <td>{item.items.length}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
