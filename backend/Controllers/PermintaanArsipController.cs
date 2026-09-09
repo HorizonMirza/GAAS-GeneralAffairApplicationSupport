@@ -575,10 +575,11 @@ public class PermintaanArsipController : ApiControllerBase
         [FromQuery] int limit = 10,
         [FromQuery] string? search = null,
         [FromQuery] string? kategori = null,
-        [FromQuery] string? tahun = null,
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
-        [FromQuery] string? direktorat = null)
+        [FromQuery] string? direktorat = null,
+        [FromQuery] string? bulan = null,
+        [FromQuery] DateOnly? tanggal = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -599,7 +600,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> requestQuery;
         try
         {
-            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat);
+            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, null, false, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -612,7 +613,6 @@ public class PermintaanArsipController : ApiControllerBase
             select new { Request = p, Item = i };
 
         if (kategoriFilter.HasValue) itemsQuery = itemsQuery.Where(x => x.Item.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(tahun)) itemsQuery = itemsQuery.Where(x => x.Item.TahunArsip == tahun);
         if (!string.IsNullOrEmpty(search)) itemsQuery = itemsQuery.Where(x => EF.Functions.ILike(x.Item.NamaArsip, $"%{search}%"));
 
         var total = await itemsQuery.CountAsync();

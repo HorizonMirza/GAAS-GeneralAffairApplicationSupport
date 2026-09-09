@@ -714,10 +714,11 @@ export interface ListArsipCatalogParams {
   limit?: number;
   search?: string;
   kategori?: ArchiveKategori | "";
-  tahun?: string;
   divisi?: string;
   departemen?: string;
   direktorat?: string;
+  bulan?: string;
+  tanggal?: string;
 }
 
 function arsipCatalogParams(p: ListArsipCatalogParams) {
@@ -726,10 +727,11 @@ function arsipCatalogParams(p: ListArsipCatalogParams) {
     limit: p.limit,
     search: p.search,
     kategori: p.kategori,
-    tahun: p.tahun,
     divisi: p.divisi,
     departemen: p.departemen,
     direktorat: p.direktorat,
+    bulan: p.bulan,
+    tanggal: p.tanggal,
   };
 }
 

@@ -17,14 +17,15 @@ interface FilterState {
   limit: number;
   search: string;
   kategori: ArchiveKategori | "";
-  tahun: string;
   divisi: string;
   departemen: string;
   direktorat: string;
+  bulan: string;
+  tanggal: string;
 }
 
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, search: "", kategori: "", tahun: "", divisi: "", departemen: "", direktorat: "" };
+  return { page: 1, limit: 10, search: "", kategori: "", divisi: "", departemen: "", direktorat: "", bulan: "", tanggal: "" };
 }
 
 export default function ArsipKatalogPage() {
@@ -92,10 +93,11 @@ export default function ArsipKatalogPage() {
     return {
       search: filters.search,
       kategori: filters.kategori,
-      tahun: filters.tahun,
       divisi: filters.divisi,
       departemen: filters.departemen,
       direktorat: filters.direktorat,
+      bulan: filters.bulan,
+      tanggal: filters.tanggal,
     };
   }
 
@@ -140,8 +142,8 @@ export default function ArsipKatalogPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="filter-katalog-tahun">Tahun Arsip</label>
-          <input type="text" id="filter-katalog-tahun" inputMode="numeric" placeholder="2020" value={filters.tahun} onChange={(e) => updateFilter({ tahun: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
+          <label htmlFor="filter-katalog-bulan">Filter Bulan</label>
+          <input type="month" id="filter-katalog-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
         </div>
 
         <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -153,7 +155,11 @@ export default function ArsipKatalogPage() {
           </button>
           {filterOpen && (
             <div className="filter-dropdown-panel">
-              <div className="field" style={{ marginBottom: 0 }}>
+              <div className="field">
+                <label htmlFor="filter-katalog-tanggal">Filter Tanggal</label>
+                <input type="date" id="filter-katalog-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                 <label htmlFor="filter-katalog-kategori">Kategori</label>
                 <SearchableSelect
                   id="filter-katalog-kategori"
@@ -223,7 +229,7 @@ export default function ArsipKatalogPage() {
           <thead>
             <tr>
               <th>No</th><th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
-              <th>No Pemindahan</th><th>Tujuan</th><th>Nama PIC</th><th>Telp. PIC</th><th>Lokasi Penyimpanan</th>
+              <th>No Pemindahan</th><th>Tujuan</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Lokasi Penyimpanan Saat Ini</th>
               <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Tanggal Disetujui</th>
             </tr>
           </thead>

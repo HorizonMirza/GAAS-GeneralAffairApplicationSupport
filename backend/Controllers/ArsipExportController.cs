@@ -13,9 +13,8 @@ namespace PengirimanApi.Controllers;
 
 // PDF/Excel export for the Archive Transaction table - same shape as ExportController
 // (Pengiriman) and BookingRuangExportController, minus a grand-total footer since archive
-// requests carry no monetary value. One row per request (not per PermintaanArsipItem); the
-// "Daftar Arsip" column flattens a request's items into one summary string, matching how the
-// on-screen table already displays them (see arsipItemsSummary on the frontend).
+// requests carry no monetary value. One row per request (not per PermintaanArsipItem) - column
+// set mirrors the on-screen Transaction table.
 [Route("api/permintaan-arsip")]
 public class ArsipExportController : ApiControllerBase
 {
@@ -23,15 +22,13 @@ public class ArsipExportController : ApiControllerBase
 
     private static readonly (string Field, string Label)[] Columns =
     {
-        ("nomor_arsip", "No Permintaan"),
-        ("diajukan", "Diajukan"),
+        ("nomor_arsip", "No Pemindahan"),
         ("jumlah_arsip", "Jumlah Arsip"),
         ("nama_pic", "Nama PIC"),
         ("no_telepon_pic", "No. Telepon PIC"),
-        ("keperluan", "Keperluan"),
-        ("daftar_arsip", "Daftar Arsip"),
+        ("keperluan", "Tujuan"),
         ("jumlah_jenis", "Jumlah Jenis"),
-        ("lokasi_penyimpanan", "Lokasi Penyimpanan"),
+        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
         ("tanggal", "Tanggal"),
@@ -39,7 +36,7 @@ public class ArsipExportController : ApiControllerBase
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 45, 38, 24, 45, 40, 55, 95, 20, 55, 40, 40, 28, 45, 55 };
+    private static readonly float[] PdfColWidths = { 45, 24, 45, 40, 55, 20, 55, 40, 40, 28, 45, 55 };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -58,18 +55,13 @@ public class ArsipExportController : ApiControllerBase
         _db = db;
     }
 
-    private static string ArsipListSummary(PermintaanArsip row) =>
-        string.Join(", ", row.Items.Select(i => $"{i.NamaArsip} ({i.Jumlah} {i.Satuan})"));
-
     private static object? GetFieldValue(PermintaanArsip row, string field) => field switch
     {
         "nomor_arsip" => row.NomorArsip,
-        "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         "jumlah_arsip" => row.JumlahArsip,
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
         "keperluan" => row.Keperluan,
-        "daftar_arsip" => ArsipListSummary(row),
         "jumlah_jenis" => row.Items.Count,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,

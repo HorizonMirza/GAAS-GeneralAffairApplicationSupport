@@ -38,18 +38,18 @@ public class ArsipKatalogExportController : ApiControllerBase
         ("tahun", "Tahun"),
         ("jumlah", "Jumlah"),
         ("satuan", "Satuan"),
-        ("nomor_arsip", "No Permintaan"),
-        ("nama_pic", "Nama PIC"),
-        ("no_telepon_pic", "Telp PIC"),
+        ("nomor_arsip", "No Pemindahan"),
         ("keperluan", "Tujuan"),
-        ("lokasi_penyimpanan", "Lokasi Penyimpanan"),
+        ("nama_pic", "Nama PIC"),
+        ("no_telepon_pic", "No. Telepon PIC"),
+        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
         ("catatan", "Catatan"),
         ("tanggal_disetujui", "Tanggal Disetujui"),
     };
 
-    private static readonly float[] PdfColWidths = { 70, 30, 24, 24, 30, 45, 45, 40, 55, 55, 40, 40, 55, 40 };
+    private static readonly float[] PdfColWidths = { 70, 30, 24, 24, 30, 45, 55, 45, 40, 55, 40, 40, 55, 40 };
 
     public ArsipKatalogExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
     {
@@ -81,11 +81,12 @@ public class ArsipKatalogExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? search, string? kategori, string? tahun, string? divisi, string? departemen, string? direktorat)
+    private static string BuildFilename(string? search, string? kategori, string? divisi, string? departemen, string? direktorat, string? bulan, DateOnly? tanggal)
     {
         var parts = new List<string>();
+        if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
+        if (tanggal.HasValue) parts.Add(tanggal.Value.ToString("yyyy-MM-dd"));
         if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(KategoriLabel.TryGetValue(Enum.TryParse<ArchiveKategoriEnum>(kategori, out var k) ? k : ArchiveKategoriEnum.LAINNYA, out var label) ? label : kategori));
-        if (!string.IsNullOrEmpty(tahun)) parts.Add(tahun);
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -94,7 +95,7 @@ public class ArsipKatalogExportController : ApiControllerBase
     }
 
     private async Task<List<PermintaanArsipCatalogItemOut>> ExportRowsAsync(
-        User currentUser, string? search, string? kategori, string? tahun, string? divisi, string? departemen, string? direktorat)
+        User currentUser, string? search, string? kategori, string? divisi, string? departemen, string? direktorat, string? bulan, DateOnly? tanggal)
     {
         ArchiveKategoriEnum? kategoriFilter = null;
         if (!string.IsNullOrEmpty(kategori))
@@ -105,7 +106,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         }
 
         var requestQuery = PermintaanArsipController.ApplyListFilters(
-            _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat);
+            _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, null, false, tanggal);
 
         var itemsQuery =
             from p in requestQuery
@@ -113,7 +114,6 @@ public class ArsipKatalogExportController : ApiControllerBase
             select new { Request = p, Item = i };
 
         if (kategoriFilter.HasValue) itemsQuery = itemsQuery.Where(x => x.Item.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(tahun)) itemsQuery = itemsQuery.Where(x => x.Item.TahunArsip == tahun);
         if (!string.IsNullOrEmpty(search)) itemsQuery = itemsQuery.Where(x => EF.Functions.ILike(x.Item.NamaArsip, $"%{search}%"));
 
         return await itemsQuery
@@ -131,10 +131,11 @@ public class ArsipKatalogExportController : ApiControllerBase
     public async Task<IActionResult> ExportExcel(
         [FromQuery] string? search,
         [FromQuery] string? kategori,
-        [FromQuery] string? tahun,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
-        [FromQuery] string? direktorat)
+        [FromQuery] string? direktorat,
+        [FromQuery] string? bulan,
+        [FromQuery] DateOnly? tanggal)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -142,7 +143,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         List<PermintaanArsipCatalogItemOut> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, search, kategori, tahun, divisi, departemen, direktorat);
+            rows = await ExportRowsAsync(user!, search, kategori, divisi, departemen, direktorat, bulan, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -199,7 +200,7 @@ public class ArsipKatalogExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(search, kategori, tahun, divisi, departemen, direktorat) + ".xlsx";
+        var filename = BuildFilename(search, kategori, divisi, departemen, direktorat, bulan, tanggal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -207,10 +208,11 @@ public class ArsipKatalogExportController : ApiControllerBase
     public async Task<IActionResult> ExportPdf(
         [FromQuery] string? search,
         [FromQuery] string? kategori,
-        [FromQuery] string? tahun,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
-        [FromQuery] string? direktorat)
+        [FromQuery] string? direktorat,
+        [FromQuery] string? bulan,
+        [FromQuery] DateOnly? tanggal)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -218,14 +220,14 @@ public class ArsipKatalogExportController : ApiControllerBase
         List<PermintaanArsipCatalogItemOut> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, search, kategori, tahun, divisi, departemen, direktorat);
+            rows = await ExportRowsAsync(user!, search, kategori, divisi, departemen, direktorat, bulan, tanggal);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
 
-        var baseFilename = BuildFilename(search, kategori, tahun, divisi, departemen, direktorat);
+        var baseFilename = BuildFilename(search, kategori, divisi, departemen, direktorat, bulan, tanggal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";
