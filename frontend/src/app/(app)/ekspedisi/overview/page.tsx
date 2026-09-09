@@ -171,7 +171,7 @@ export default function OverviewPage() {
       {busy ? (
         <p className="text-secondary">Memuat data...</p>
       ) : filteredItems.length === 0 ? (
-        <div className="card table-empty">Tidak ada data.</div>
+        <div className="card table-empty">Tidak Ada Data</div>
       ) : (
         filteredItems.map((item) => {
           const borderClass = cardStatusBorderClass(item.status);

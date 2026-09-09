@@ -100,7 +100,7 @@ public class ProfileController : ApiControllerBase
             if (string.IsNullOrEmpty(payload.CurrentPassword))
                 return StatusCode(400, new { detail = "Password saat ini wajib diisi untuk mengubah username, email, atau nomor telepon" });
             if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user.PasswordHash))
-                return StatusCode(400, new { detail = "Password saat ini salah" });
+                return StatusCode(400, new { detail = "Password ini salah" });
         }
 
         user.Nama = nama;
@@ -119,7 +119,7 @@ public class ProfileController : ApiControllerBase
         if (error != null) return error;
 
         if (!BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, user!.PasswordHash))
-            return StatusCode(400, new { detail = "Password saat ini salah" });
+            return StatusCode(400, new { detail = "Password ini salah" });
 
         // Mirrors the frontend's live checklist (PASSWORD_REQUIREMENTS in profile/page.tsx) so a
         // request that bypasses the UI can't set a weaker password than what the form allows.

@@ -239,7 +239,7 @@ export default function ArsipKatalogPage() {
             ) : error ? (
               <tr><td colSpan={15} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={15} className="table-empty">Belum ada arsip yang resmi dipindahkan untuk filter ini.</td></tr>
+              <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>

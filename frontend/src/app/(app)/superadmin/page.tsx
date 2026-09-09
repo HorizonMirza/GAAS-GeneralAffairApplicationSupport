@@ -614,7 +614,7 @@ export default function SuperAdminPage() {
               ) : tableError ? (
                 <tr><td colSpan={21} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={21} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={21} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -849,7 +849,7 @@ export default function SuperAdminPage() {
               ) : bookingError ? (
                 <tr><td colSpan={13} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -1072,7 +1072,7 @@ export default function SuperAdminPage() {
               ) : arsipError ? (
                 <tr><td colSpan={12} className="table-empty">{arsipError}</td></tr>
               ) : arsipItems.length === 0 ? (
-                <tr><td colSpan={12} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 arsipItems.map((item, index) => {
                   const rowNumber = (arsipFilters.page - 1) * arsipFilters.limit + index + 1;

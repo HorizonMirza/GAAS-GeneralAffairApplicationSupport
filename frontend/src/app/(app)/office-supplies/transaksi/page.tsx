@@ -346,7 +346,7 @@ function OfficeSuppliesTransaksiPageInner() {
               ) : tableError ? (
                 <tr><td colSpan={11} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;

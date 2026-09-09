@@ -482,7 +482,7 @@ export default function ProfilePage() {
     const currentPasswordError = validateCurrentPassword(currentPassword);
     let newPasswordError: string | undefined;
     if (!newPassword.trim()) newPasswordError = "Password baru wajib diisi";
-    else if (!passwordMeetsAllRequirements(newPassword)) newPasswordError = "Password baru belum memenuhi semua syarat di atas";
+    else if (!passwordMeetsAllRequirements(newPassword)) newPasswordError = "Password baru belum memenuhi semua syarat di bawah";
     else if (newPassword === currentPassword) newPasswordError = "Password baru harus berbeda dari password saat ini";
 
     if (currentPasswordError || newPasswordError) {
@@ -500,9 +500,9 @@ export default function ProfilePage() {
       setPasswordFormOpen(false);
     } catch (err) {
       const message = (err as Error).message;
-      // "Password saat ini salah" is about the Current Password field specifically, so it
+      // "Password ini salah" is about the Current Password field specifically, so it
       // renders under that field instead of the generic banner at the bottom of the dialog.
-      if (message.includes("saat ini")) {
+      if (message.includes("ini salah")) {
         setPasswordErrors({ currentPassword: message });
       } else {
         setPasswordErrors({ general: message });
