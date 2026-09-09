@@ -685,6 +685,7 @@ export interface ListArsipParams {
   page?: number;
   limit?: number;
   status?: BookingStatus | "REJECTED" | "";
+  kategori?: ArchiveKategori | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;
@@ -698,6 +699,7 @@ function arsipListParams(p: ListArsipParams) {
     page: p.page,
     limit: p.limit,
     status: p.status,
+    kategori: p.kategori,
     divisi: p.divisi,
     departemen: p.departemen,
     direktorat: p.direktorat,

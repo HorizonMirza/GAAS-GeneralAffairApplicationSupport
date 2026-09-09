@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, isBookingOriginRole } from "@/lib/constants";
 import { formatDate, truncateText } from "@/lib/format";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { ArchiveKategori, PermintaanArsipCatalogItem } from "@/lib/types";
@@ -112,7 +112,9 @@ export default function ArsipKatalogPage() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const showOrgFilters = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+  // Matches Transaction's filter panel (isBookingOriginRole) instead of GA-only - a Departemen/
+  // Divisi user filtering their own approved archive by unit is just as valid a use case.
+  const showOrgFilters = isBookingOriginRole(me.role);
 
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
   const divisiOptions = selectedDirektoratNode
@@ -139,7 +141,7 @@ export default function ArsipKatalogPage() {
 
         <div className="field">
           <label htmlFor="filter-katalog-tahun">Tahun Arsip</label>
-          <input type="text" id="filter-katalog-tahun" inputMode="numeric" placeholder="Contoh: 2020" value={filters.tahun} onChange={(e) => updateFilter({ tahun: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
+          <input type="text" id="filter-katalog-tahun" inputMode="numeric" placeholder="2020" value={filters.tahun} onChange={(e) => updateFilter({ tahun: e.target.value.replace(/\D/g, "").slice(0, 4) })} />
         </div>
 
         <div className="filter-dropdown-wrap" ref={filterWrapRef}>

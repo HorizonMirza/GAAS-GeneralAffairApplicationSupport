@@ -137,7 +137,8 @@ public class PermintaanArsipController : ApiControllerBase
         string? bulan = null,
         string? search = null,
         bool onlyRejected = false,
-        DateOnly? tanggal = null)
+        DateOnly? tanggal = null,
+        string? kategori = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -175,6 +176,15 @@ public class PermintaanArsipController : ApiControllerBase
         if (!string.IsNullOrEmpty(search))
             query = query.Where(p => p.NomorArsip != null && EF.Functions.ILike(p.NomorArsip, $"%{search}%"));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
+        if (!string.IsNullOrEmpty(kategori))
+        {
+            if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var kategoriEnum))
+                throw new ArgumentException("Kategori tidak valid");
+            // A request can hold several items of different kategori (see PermintaanArsipItem) -
+            // this matches a request that contains at least one item of the filtered kategori,
+            // same "any item matches" semantics as the Inventory/Katalog filter.
+            query = query.Where(p => p.Items.Any(i => i.Kategori == kategoriEnum));
+        }
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -422,7 +432,8 @@ public class PermintaanArsipController : ApiControllerBase
         [FromQuery] string? direktorat = null,
         [FromQuery] string? bulan = null,
         [FromQuery] string? search = null,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? kategori = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -444,7 +455,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
+            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
         }
         catch (ArgumentException ex)
         {

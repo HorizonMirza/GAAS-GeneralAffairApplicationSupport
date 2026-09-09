@@ -86,7 +86,7 @@ public class ArsipExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -97,6 +97,7 @@ public class ArsipExportController : ApiControllerBase
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
         else if (onlyRejected) parts.Add("rejected");
+        if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(kategori));
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -111,9 +112,9 @@ public class ArsipExportController : ApiControllerBase
         return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false) : null;
     }
 
-    private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
-        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
+        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
         return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 
@@ -125,7 +126,8 @@ public class ArsipExportController : ApiControllerBase
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
         [FromQuery] string? search,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? kategori = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -137,7 +139,7 @@ public class ArsipExportController : ApiControllerBase
         List<PermintaanArsip> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
         }
         catch (ArgumentException ex)
         {
@@ -194,7 +196,7 @@ public class ArsipExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -206,7 +208,8 @@ public class ArsipExportController : ApiControllerBase
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
         [FromQuery] string? search,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? kategori = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -218,14 +221,14 @@ public class ArsipExportController : ApiControllerBase
         List<PermintaanArsip> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
 
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";
