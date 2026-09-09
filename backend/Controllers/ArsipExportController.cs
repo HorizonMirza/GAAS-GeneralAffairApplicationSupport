@@ -113,7 +113,7 @@ public class ArsipExportController : ApiControllerBase
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
         if (!string.IsNullOrEmpty(search)) parts.Add($"cari-{Slugify(search)}");
-        return "permintaan-arsip-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
+        return "pemindahan-arsip-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
     private static (BookingStatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
@@ -158,7 +158,7 @@ public class ArsipExportController : ApiControllerBase
         }
 
         using var wb = new XLWorkbook();
-        var ws = wb.Worksheets.Add("Permintaan Arsip");
+        var ws = wb.Worksheets.Add("Pemindahan Arsip");
 
         var header = new List<string> { "No" };
         header.AddRange(Columns.Select(c => c.Label));

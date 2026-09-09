@@ -118,7 +118,7 @@ export default function ArsipOverviewPage() {
     confirm("Hapus pemindahan arsip ini secara permanen?", async () => {
       try {
         await api.deleteArsip(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pemindahan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");

@@ -1115,7 +1115,7 @@ export default function SuperAdminPage() {
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {arsipTotal} permintaan · Halaman {arsipFilters.page} dari {arsipTotalPages}</span>
+            <span className="text-secondary">Total {arsipTotal} pemindahan · Halaman {arsipFilters.page} dari {arsipTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={arsipFilters.page <= 1} onClick={() => goToArsipPage(arsipFilters.page - 1)}>‹</button>
               {arsipPageButtons.map((p) => (

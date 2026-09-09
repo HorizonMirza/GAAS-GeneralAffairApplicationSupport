@@ -110,7 +110,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     setBusy(true);
     try {
       await api.submitArsip(item!.id);
-      showToast("Permintaan berhasil dikirim untuk approval");
+      showToast("Pemindahan berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -123,7 +123,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin GA");
+      showToast("Pemindahan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -134,7 +134,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipGa(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast("Pemindahan berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -145,7 +145,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipGaApproval(item!.id);
-      showToast("Permintaan pemindahan arsip berhasil disetujui");
+      showToast("Pemindahan arsip berhasil disetujui");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -157,7 +157,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     setBusy(true);
     try {
       await api.updateArsip(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Permintaan berhasil diperbarui");
+      showToast("Pemindahan berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -170,7 +170,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Permintaan Pemindahan Arsip" : "Detail Permintaan Pemindahan Arsip"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Pemindahan Arsip" : "Detail Pemindahan Arsip"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>

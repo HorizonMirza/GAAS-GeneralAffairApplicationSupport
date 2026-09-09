@@ -398,7 +398,7 @@ public class PermintaanArsipController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "arsip", item.Id, ItemLabel(item), user.Nama, "Mengajukan Permintaan Pemindahan Arsip Baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "arsip", item.Id, ItemLabel(item), user.Nama, "Mengajukan Pemindahan Arsip Baru");
         return Ok(PermintaanArsipOut.From(item));
     }
 

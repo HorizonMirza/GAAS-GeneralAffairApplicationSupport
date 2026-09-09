@@ -112,7 +112,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
         departemen: form.departemen || undefined,
         catatan: form.catatan || null,
       });
-      showToast("Permintaan pemindahan arsip berhasil disimpan sebagai Draft");
+      showToast("Pemindahan arsip berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -126,7 +126,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan Pemindahan Arsip {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Pemindahan Arsip {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>

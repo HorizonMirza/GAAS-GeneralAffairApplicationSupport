@@ -195,7 +195,7 @@ function ArsipTransaksiPageInner() {
     confirm("Hapus pemindahan arsip ini secara permanen?", async () => {
       try {
         await api.deleteArsip(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pemindahan berhasil dihapus");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -426,7 +426,7 @@ function ArsipTransaksiPageInner() {
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} Permintaan · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">Total {total} Pemindahan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (

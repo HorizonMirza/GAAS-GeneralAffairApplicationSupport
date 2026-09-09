@@ -42,7 +42,7 @@ public class PermintaanArsipChatController : ApiControllerBase
         if (error != null) return error;
 
         var item = await _db.PermintaanArsips.FindAsync(permintaanArsipId);
-        if (item == null) return NotFound(new { detail = "Permintaan tidak ditemukan" });
+        if (item == null) return NotFound(new { detail = "Pemindahan tidak ditemukan" });
         if (!CanAccessPermintaanArsip(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var messages = await _db.PermintaanArsipChatMessages
@@ -65,7 +65,7 @@ public class PermintaanArsipChatController : ApiControllerBase
         if (error != null) return error;
 
         var item = await _db.PermintaanArsips.FindAsync(permintaanArsipId);
-        if (item == null) return NotFound(new { detail = "Permintaan tidak ditemukan" });
+        if (item == null) return NotFound(new { detail = "Pemindahan tidak ditemukan" });
         if (!CanAccessPermintaanArsip(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var text = payload.Message?.Trim();

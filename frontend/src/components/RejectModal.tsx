@@ -132,7 +132,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectArsipGa(targetId, reasonValue);
       } else {
         await api.rejectArsipGaApproval(targetId, reasonValue);
-        message = "Permintaan arsip ditolak";
+        message = "Pemindahan arsip ditolak";
       }
       showToast(message);
       reset();
