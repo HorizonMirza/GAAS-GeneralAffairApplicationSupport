@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
-import { ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL_FULL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -222,7 +222,7 @@ function AccountMenu() {
         </span>
         <span className="account-info">
           <span className="name">{me.nama}</span>
-          <span className="role">{ROLE_LABEL[me.role] || me.role}</span>
+          <span className="role">{ROLE_LABEL_FULL[me.role] || me.role}</span>
         </span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
@@ -240,7 +240,7 @@ function AccountMenu() {
           <UserProfileSidebar
             user={{
               name: me.nama,
-              subtitle: ROLE_LABEL[me.role] || me.role,
+              subtitle: ROLE_LABEL_FULL[me.role] || me.role,
               avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
             }}
             navItems={navItems}

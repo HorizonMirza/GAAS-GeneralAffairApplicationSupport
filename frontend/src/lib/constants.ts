@@ -76,6 +76,15 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
+// Unabbreviated role name for the topbar account chip specifically (AppShell's trigger + account
+// dropdown) - everywhere else (approval stepper, tables, chat mentions, PDF/Excel export labels)
+// deliberately uses the shorter "Admin GA" from ROLE_LABEL to match "Approval GA", but the
+// account chip is meant to show the role's full real name.
+export const ROLE_LABEL_FULL: Record<Role, string> = {
+  ...ROLE_LABEL,
+  ADMIN_GA: "Admin General Affair",
+};
+
 // Short form matching the chat participant list wording ("Approval GA" not "Approval General
 // Affair"), used for the sender pill on chat bubbles.
 export const ROLE_SHORT_LABEL: Record<Role, string> = {
