@@ -223,7 +223,7 @@ export default function ArsipKatalogPage() {
           <thead>
             <tr>
               <th>No</th><th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
-              <th>No Permintaan</th><th>Nama PIC</th><th>Telp PIC</th><th>Tujuan</th><th>Lokasi Penyimpanan</th>
+              <th>No Pemindahan</th><th>Tujuan</th><th>Nama PIC</th><th>Telp. PIC</th><th>Lokasi Penyimpanan</th>
               <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Tanggal Disetujui</th>
             </tr>
           </thead>
@@ -244,9 +244,9 @@ export default function ArsipKatalogPage() {
                   <td>{item.jumlah}</td>
                   <td>{item.satuan}</td>
                   <td>{item.nomorArsip || "-"}</td>
+                  <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                   <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                   <td>{item.noTeleponPic || "-"}</td>
-                  <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                   <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                   <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                   <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>

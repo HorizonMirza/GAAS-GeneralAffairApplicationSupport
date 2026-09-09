@@ -224,7 +224,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="dr-telepon-pic">No. Telepon PIC</label>
+              <label htmlFor="dr-telepon-pic">Telp. PIC</label>
               <input
                 type="text"
                 inputMode="tel"
@@ -237,11 +237,11 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               />
             </div>
             <div className="field full">
-              <label htmlFor="dr-keperluan">Keperluan</label>
+              <label htmlFor="dr-keperluan">Tujuan</label>
               <input type="text" id="dr-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <label htmlFor="dr-lokasi">Lokasi Penyimpanan</label>
               <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 

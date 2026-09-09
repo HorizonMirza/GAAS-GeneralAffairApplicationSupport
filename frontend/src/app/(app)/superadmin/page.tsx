@@ -1062,7 +1062,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Keperluan</th><th>Daftar Arsip</th><th>Jumlah Jenis</th>
+                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tujuan</th><th>Daftar Arsip</th><th>Jumlah Jenis</th>
                 <th>Lokasi Penyimpanan</th><th>Divisi</th><th>Departemen</th><th>Tanggal</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>

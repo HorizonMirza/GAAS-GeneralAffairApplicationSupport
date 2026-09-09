@@ -349,7 +349,7 @@ function ArsipTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
-                <th>Nama PIC</th><th>Telp PIC</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
+                <th>Nama PIC</th><th>Telp. PIC</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan</th>
                 <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>

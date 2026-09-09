@@ -208,7 +208,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
               <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
+              <label htmlFor="fr-telepon-pic">Telp. PIC</label>
               <input
                 type="text"
                 inputMode="tel"
@@ -220,7 +220,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
               />
             </div>
             <div className="field full">
-              <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <label htmlFor="fr-lokasi">Lokasi Penyimpanan</label>
               <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
             <div className="field full">
