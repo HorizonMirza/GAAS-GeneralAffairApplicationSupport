@@ -663,6 +663,18 @@ export const api = {
     ).toString();
     return `${API_BASE}/permintaan-arsip/export-pdf${query ? `?${query}` : ""}`;
   },
+  arsipKatalogExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-arsip/catalog/export${query ? `?${query}` : ""}`;
+  },
+  arsipKatalogExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/permintaan-arsip/catalog/export-pdf${query ? `?${query}` : ""}`;
+  },
   getArsipLogs: (id: number) => apiRequest<PermintaanArsipLog[]>(`/permintaan-arsip/${id}/logs`),
   getArsipChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-arsip/${id}/chat`),
   sendArsipChatMessage: (id: number, message: string) =>

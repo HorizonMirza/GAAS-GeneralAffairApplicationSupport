@@ -449,9 +449,13 @@ export interface PermintaanArsipCatalogItem {
   jumlah: number;
   satuan: string;
   nomorArsip: string | null;
+  namaPic: string | null;
+  noTeleponPic: string | null;
+  keperluan: string;
   lokasiPenyimpanan: string;
   divisi: string;
   departemen: string | null;
+  catatan: string | null;
   approvedApprovalGaAt: string | null;
 }
 

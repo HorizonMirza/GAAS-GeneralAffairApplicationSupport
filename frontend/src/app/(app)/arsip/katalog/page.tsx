@@ -88,6 +88,17 @@ export default function ArsipKatalogPage() {
     setFilters(defaultFilters());
   }
 
+  function currentExportParams() {
+    return {
+      search: filters.search,
+      kategori: filters.kategori,
+      tahun: filters.tahun,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+    };
+  }
+
   function goToPage(page: number) {
     if (page < 1) return;
     setFilters((f) => ({ ...f, page }));
@@ -194,6 +205,15 @@ export default function ArsipKatalogPage() {
         </div>
 
         <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Arsip</button>
+
+        <div className="toolbar-actions">
+          <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipKatalogExportPdfUrl(currentExportParams()), "_blank")}>
+            ⬇ Download PDF
+          </button>
+          <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipKatalogExportUrl(currentExportParams()), "_blank")}>
+            ⬇ Download Excel
+          </button>
+        </div>
       </div>
 
       <div className="table-wrap">
@@ -201,16 +221,17 @@ export default function ArsipKatalogPage() {
           <thead>
             <tr>
               <th>No</th><th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
-              <th>No Permintaan</th><th>Lokasi Penyimpanan</th><th>Divisi</th><th>Departemen</th><th>Tanggal Disetujui</th>
+              <th>No Permintaan</th><th>Nama PIC</th><th>Telp PIC</th><th>Tujuan</th><th>Lokasi Penyimpanan</th>
+              <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Tanggal Disetujui</th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={11} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={15} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={11} className="table-empty">Belum ada arsip yang resmi dipindahkan untuk filter ini.</td></tr>
+              <tr><td colSpan={15} className="table-empty">Belum ada arsip yang resmi dipindahkan untuk filter ini.</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>
@@ -221,9 +242,13 @@ export default function ArsipKatalogPage() {
                   <td>{item.jumlah}</td>
                   <td>{item.satuan}</td>
                   <td>{item.nomorArsip || "-"}</td>
+                  <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
+                  <td>{item.noTeleponPic || "-"}</td>
+                  <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                   <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                   <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                   <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                  <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                   <td>{item.approvedApprovalGaAt ? formatDate(item.approvedApprovalGaAt) : "-"}</td>
                 </tr>
               ))

@@ -123,9 +123,13 @@ public record PermintaanArsipCatalogItemOut(
     int Jumlah,
     string Satuan,
     string? NomorArsip,
+    string? NamaPic,
+    string? NoTeleponPic,
+    string Keperluan,
     string LokasiPenyimpanan,
     string Divisi,
     string? Departemen,
+    string? Catatan,
     DateTime? ApprovedApprovalGaAt
 );
 

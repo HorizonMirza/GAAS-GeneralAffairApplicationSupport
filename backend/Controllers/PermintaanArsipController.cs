@@ -612,7 +612,9 @@ public class PermintaanArsipController : ApiControllerBase
             .Take(limit)
             .Select(x => new PermintaanArsipCatalogItemOut(
                 x.Item.Id, x.Item.NamaArsip, x.Item.Kategori, x.Item.TahunArsip, x.Item.Jumlah, x.Item.Satuan,
-                x.Request.NomorArsip, x.Request.LokasiPenyimpanan, x.Request.Divisi, x.Request.Departemen, x.Request.ApprovedApprovalGaAt))
+                x.Request.NomorArsip, x.Request.NamaPic, x.Request.NoTeleponPic, x.Request.Keperluan,
+                x.Request.LokasiPenyimpanan, x.Request.Divisi, x.Request.Departemen, x.Request.Catatan,
+                x.Request.ApprovedApprovalGaAt))
             .ToListAsync();
 
         return Ok(new PermintaanArsipCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
