@@ -169,7 +169,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
         ) : (
           <div className="stat-grid">
             <div className="stat-tile"><div className="value">{pengiriman.waitingL1}</div><div className="label">{l1Label}</div></div>
-            <div className="stat-tile"><div className="value">{pengiriman.waitingGa}</div><div className="label">Admin GA</div></div>
+            <div className="stat-tile"><div className="value">{pengiriman.waitingGa}</div><div className="label">Admin General Affair</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.waitingKpu}</div><div className="label">Mitra</div></div>
             <div className="stat-tile"><div className="value">{pengiriman.completed}</div><div className="label">Approved</div></div>
@@ -188,7 +188,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{booking.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin GA</div></div>
+              <div className="stat-tile"><div className="value">{booking.waitingGa}</div><div className="label">Admin General Affair</div></div>
               <div className="stat-tile"><div className="value">{booking.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{booking.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{booking.rejected}</div><div className="label">Rejected</div></div>
@@ -208,7 +208,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{kendaraan.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{kendaraan.waitingGa}</div><div className="label">Admin GA</div></div>
+              <div className="stat-tile"><div className="value">{kendaraan.waitingGa}</div><div className="label">Admin General Affair</div></div>
               <div className="stat-tile"><div className="value">{kendaraan.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{kendaraan.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{kendaraan.rejected}</div><div className="label">Rejected</div></div>
@@ -228,7 +228,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{atk.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{atk.waitingGa}</div><div className="label">Admin GA</div></div>
+              <div className="stat-tile"><div className="value">{atk.waitingGa}</div><div className="label">Admin General Affair</div></div>
               <div className="stat-tile"><div className="value">{atk.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{atk.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{atk.rejected}</div><div className="label">Rejected</div></div>
@@ -248,7 +248,7 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
           ) : (
             <div className="stat-grid">
               <div className="stat-tile"><div className="value">{sarana.waitingL1}</div><div className="label">{l1Label}</div></div>
-              <div className="stat-tile"><div className="value">{sarana.waitingGa}</div><div className="label">Admin GA</div></div>
+              <div className="stat-tile"><div className="value">{sarana.waitingGa}</div><div className="label">Admin General Affair</div></div>
               <div className="stat-tile"><div className="value">{sarana.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{sarana.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{sarana.rejected}</div><div className="label">Rejected</div></div>

@@ -146,7 +146,7 @@ export default function MaintenanceOverviewPage() {
       {stats && (
         <div className="stat-grid">
           <div className="stat-tile"><div className="value">{stats.waitingL1}</div><div className="label">{waitingL1Label}</div></div>
-          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin GA</div></div>
+          <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
           <div className="stat-tile"><div className="value">{stats.urgensiTinggiAktif}</div><div className="label">Urgensi Tinggi Berjalan</div></div>

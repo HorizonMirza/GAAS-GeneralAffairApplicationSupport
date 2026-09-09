@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  arsipItemsSummary,
   isArsipDeletableByOrigin,
   isArsipEditableByOrigin,
   isBookingOriginRole,
@@ -334,21 +333,20 @@ function ArsipTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
-                <th>Nama PIC</th><th>Telp PIC</th><th>Daftar Arsip</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
+                <th>Nama PIC</th><th>Telp PIC</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
                 <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
-                  const arsipList = arsipItemsSummary(item);
                   return (
                     <tr key={item.id} id={`tx-row-${item.id}`} className={item.id === highlightId ? "row-highlight-blink" : undefined}>
                       <td>{rowNumber}</td>
@@ -358,7 +356,6 @@ function ArsipTransaksiPageInner() {
                       <td>{item.jumlahArsip}</td>
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
-                      <td title={arsipList}>{truncateText(arsipList, 45)}</td>
                       <td>{item.items.length}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
