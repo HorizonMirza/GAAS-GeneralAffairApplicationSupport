@@ -369,7 +369,7 @@ function MaintenanceTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Laporan</th><th>Dilaporkan</th><th>Lokasi</th><th>Kategori</th><th>Urgensi</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Urgensi</th><th>Deskripsi Kerusakan</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Laporan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
