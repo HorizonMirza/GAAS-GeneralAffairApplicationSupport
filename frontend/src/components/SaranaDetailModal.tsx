@@ -280,15 +280,18 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               )}
               {canExecute && item.executionStage === "MENUNGGU" && (
                 <>
-                  <textarea
-                    placeholder="Catatan hasil cek lokasi (opsional)"
-                    value={execNote}
-                    onChange={(e) => setExecNote(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.stopPropagation();
-                    }}
-                    style={{ marginBottom: 8 }}
-                  />
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label htmlFor="ds-exec-note-cek">Catatan Hasil Cek Lokasi</label>
+                    <textarea
+                      id="ds-exec-note-cek"
+                      placeholder="Opsional"
+                      value={execNote}
+                      onChange={(e) => setExecNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.stopPropagation();
+                      }}
+                    />
+                  </div>
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleCekLokasi}>
                     Tandai Lokasi Sudah Dicek
                   </button>
@@ -296,21 +299,27 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               )}
               {canExecute && item.executionStage === "LOKASI_DICEK" && (
                 <>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={(e) => setGambarFile(e.target.files?.[0] || null)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <textarea
-                    placeholder="Catatan gambar rencana perbaikan (opsional)"
-                    value={execNote}
-                    onChange={(e) => setExecNote(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.stopPropagation();
-                    }}
-                    style={{ marginBottom: 8 }}
-                  />
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label htmlFor="ds-exec-gambar">Gambar Rencana Perbaikan</label>
+                    <input
+                      type="file"
+                      id="ds-exec-gambar"
+                      accept="image/jpeg,image/png"
+                      onChange={(e) => setGambarFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label htmlFor="ds-exec-note-gambar">Catatan Gambar Rencana Perbaikan</label>
+                    <textarea
+                      id="ds-exec-note-gambar"
+                      placeholder="Opsional"
+                      value={execNote}
+                      onChange={(e) => setExecNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.stopPropagation();
+                      }}
+                    />
+                  </div>
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleUploadGambar}>
                     Unggah Gambar
                   </button>
@@ -318,15 +327,18 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               )}
               {canExecute && item.executionStage === "GAMBAR_DIBUAT" && (
                 <>
-                  <textarea
-                    placeholder="Catatan hasil eksekusi (opsional)"
-                    value={execNote}
-                    onChange={(e) => setExecNote(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.stopPropagation();
-                    }}
-                    style={{ marginBottom: 8 }}
-                  />
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label htmlFor="ds-exec-note-selesai">Catatan Hasil Eksekusi</label>
+                    <textarea
+                      id="ds-exec-note-selesai"
+                      placeholder="Opsional"
+                      value={execNote}
+                      onChange={(e) => setExecNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.stopPropagation();
+                      }}
+                    />
+                  </div>
                   <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleEksekusi}>
                     Tandai Selesai Dieksekusi
                   </button>

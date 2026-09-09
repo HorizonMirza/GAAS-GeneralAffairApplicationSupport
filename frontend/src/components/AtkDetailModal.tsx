@@ -205,66 +205,74 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label>Daftar Barang</label>
-              {form.items.map((row, idx) => (
-                <div key={idx} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
-                  <input
-                    type="text"
-                    aria-label={`Nama barang ${idx + 1}`}
-                    required
-                    disabled={!isEdit}
-                    maxLength={255}
-                    list={ATK_CATALOG_DATALIST_ID}
-                    placeholder="Nama barang"
-                    style={{ flex: "3 1 180px", minWidth: 180 }}
-                    value={row.namaBarang}
-                    onChange={(e) => {
-                      const namaBarang = e.target.value;
-                      const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
-                      setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    aria-label={`Jumlah barang ${idx + 1}`}
-                    required
-                    disabled={!isEdit}
-                    placeholder="Jumlah"
-                    style={{ flex: "1 1 80px", minWidth: 80 }}
-                    value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                      setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    aria-label={`Satuan barang ${idx + 1}`}
-                    required
-                    disabled={!isEdit}
-                    maxLength={50}
-                    placeholder="Satuan"
-                    style={{ flex: "1.5 1 110px", minWidth: 110 }}
-                    value={row.satuan}
-                    onChange={(e) => setItem(idx, { satuan: e.target.value })}
-                  />
-                  {isEdit && (
-                    <button
-                      type="button"
-                      className="card-icon-btn card-icon-btn-danger"
-                      aria-label={`Hapus baris barang ${idx + 1}`}
-                      disabled={form.items.length <= 1}
-                      style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
-                      onClick={() => removeItemRow(idx)}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                  )}
+              <div className="item-row-list">
+                <div className="item-row-header">
+                  <span className="item-row-col-lg">Nama Barang</span>
+                  <span className="item-row-col-sm">Jumlah</span>
+                  <span className="item-row-col-md">Satuan</span>
+                  {isEdit && <span className="item-row-col-spacer" />}
                 </div>
-              ))}
+                {form.items.map((row, idx) => (
+                  <div key={idx} className="item-row">
+                    <input
+                      type="text"
+                      className="item-row-col-lg"
+                      aria-label={`Nama barang ${idx + 1}`}
+                      required
+                      disabled={!isEdit}
+                      maxLength={255}
+                      list={ATK_CATALOG_DATALIST_ID}
+                      placeholder="Nama barang"
+                      value={row.namaBarang}
+                      onChange={(e) => {
+                        const namaBarang = e.target.value;
+                        const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
+                        setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
+                      }}
+                    />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="item-row-col-sm"
+                      aria-label={`Jumlah barang ${idx + 1}`}
+                      required
+                      disabled={!isEdit}
+                      placeholder="Jumlah"
+                      value={row.jumlah === 0 ? "" : String(row.jumlah)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                        setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="item-row-col-md"
+                      aria-label={`Satuan barang ${idx + 1}`}
+                      required
+                      disabled={!isEdit}
+                      maxLength={50}
+                      placeholder="Satuan"
+                      value={row.satuan}
+                      onChange={(e) => setItem(idx, { satuan: e.target.value })}
+                    />
+                    {isEdit && (
+                      <button
+                        type="button"
+                        className="card-icon-btn card-icon-btn-danger item-row-col-spacer"
+                        aria-label={`Hapus baris barang ${idx + 1}`}
+                        disabled={form.items.length <= 1}
+                        style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
+                        onClick={() => removeItemRow(idx)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
               {isEdit && form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={addItemRow}>
+                <button type="button" className="btn btn-secondary" style={{ width: "auto", marginTop: 8 }} onClick={addItemRow}>
                   + Tambah Barang
                 </button>
               )}

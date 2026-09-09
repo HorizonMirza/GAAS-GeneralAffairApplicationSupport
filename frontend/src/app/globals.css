@@ -4752,6 +4752,59 @@ table.data-table {
   color: #d64545;
 }
 
+/* Multi-item rows (ATK "Daftar Barang", etc.) - gives the raw per-row inputs the same
+   padding/border/radius as every other .field input instead of rendering as unstyled native
+   inputs, and a one-time column header instead of repeating a label on every row. */
+.item-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-row-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 2px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.item-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.item-row input.item-row-col-lg,
+.item-row input.item-row-col-md,
+.item-row input.item-row-col-sm {
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.item-row input.item-row-col-lg:focus,
+.item-row input.item-row-col-md:focus,
+.item-row input.item-row-col-sm:focus {
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
+}
+
+.item-row input:disabled {
+  opacity: 0.7;
+}
+
+.item-row-col-lg { flex: 3 1 180px; min-width: 180px; }
+.item-row-col-md { flex: 1.5 1 110px; min-width: 110px; }
+.item-row-col-sm { flex: 1 1 80px; min-width: 80px; }
+.item-row-col-spacer { flex: 0 0 30px; width: 30px; }
+
 .chat-count-badge {
   position: absolute;
   top: -6px;
