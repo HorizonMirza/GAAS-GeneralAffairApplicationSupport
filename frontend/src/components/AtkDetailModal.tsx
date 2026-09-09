@@ -199,7 +199,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               <input type="date" id="da-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="da-keperluan">Keperluan</label>
+              <label htmlFor="da-keperluan">Tujuan</label>
               <input type="text" id="da-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 

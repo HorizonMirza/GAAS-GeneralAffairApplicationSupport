@@ -164,7 +164,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="rs-ruang">Ruangan</label>
+              <label htmlFor="rs-ruang">Ruang</label>
               <SearchableSelect
                 id="rs-ruang"
                 value={form.namaRuang || undefined}
@@ -175,7 +175,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan</label>
+                <label htmlFor="rs-ruang-tambahan">Ruang Tambahan (Opsional)</label>
                 <RoomMultiSelect
                   id="rs-ruang-tambahan"
                   rooms={rooms}

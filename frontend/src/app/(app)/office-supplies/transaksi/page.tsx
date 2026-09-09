@@ -257,14 +257,14 @@ function OfficeSuppliesTransaksiPageInner() {
                     id="filter-atk-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "COMPLETED"]}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "REJECTED", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
                       SUBMITTED: "On-Approval: Approval Departemen/Divisi",
                       APPROVED_L1: "On-Approval: Admin GA",
                       APPROVED_GA: "On-Approval: Approval GA",
-                      REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}
                     clearLabel="Semua Status"
@@ -333,7 +333,7 @@ function OfficeSuppliesTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Keperluan</th><th>Daftar Barang</th><th>Jumlah Jenis</th>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Dibutuhkan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
@@ -404,7 +404,7 @@ function OfficeSuppliesTransaksiPageInner() {
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} permintaan · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">Total {total} Permintaan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (

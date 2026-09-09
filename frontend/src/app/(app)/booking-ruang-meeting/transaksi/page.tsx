@@ -391,7 +391,7 @@ function BookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruangan</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Divisi</th><th>Departemen</th>
                 <th>Tipe</th><th>Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
@@ -459,8 +459,8 @@ function BookingTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} booking`}
-                placeholder={`${filters.limit} booking`}
+                getLabel={(v) => `${v} pesanan`}
+                placeholder={`${filters.limit} pesanan`}
               />
             </div>
           </div>

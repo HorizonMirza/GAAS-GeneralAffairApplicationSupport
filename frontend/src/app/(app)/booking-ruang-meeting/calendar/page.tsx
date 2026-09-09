@@ -243,7 +243,7 @@ function BookingCalendarPageInner() {
             </button>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-room-select">Ruangan</label>
+            <label htmlFor="calendar-room-select">Ruang</label>
             <SearchableSelect
               id="calendar-room-select"
               value={view === "avail" ? ALL_ROOMS_VALUE : selectedRoom}
@@ -256,8 +256,8 @@ function BookingCalendarPageInner() {
                 }
               }}
               options={[ALL_ROOMS_VALUE, ...rooms.map((r) => r.nama)]}
-              getLabel={(v) => (v === ALL_ROOMS_VALUE ? "Ketersediaan Ruangan" : v)}
-              placeholder="Ketersediaan Ruangan"
+              getLabel={(v) => (v === ALL_ROOMS_VALUE ? "Ketersediaan Ruang" : v)}
+              placeholder="Ketersediaan Ruang"
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
@@ -318,7 +318,7 @@ function BookingCalendarPageInner() {
                   </svg>
                 </button>
               </div>
-              <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruangan" : selectedRoom}</div>
+              <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruang" : selectedRoom}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="calendar-view-toggle">

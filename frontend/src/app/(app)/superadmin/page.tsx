@@ -603,7 +603,7 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
-                <th>Pengirim</th><th>Telp. Pengirim</th><th>Penerima</th><th>Telp. Penerima</th>
+                <th>Pengirim</th><th>No. Telepon Pengirim</th><th>Penerima</th><th>No. Telepon Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Packing</th><th>Catatan</th>
                 <th>Berat (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>

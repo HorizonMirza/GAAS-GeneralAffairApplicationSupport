@@ -66,7 +66,7 @@ export default function LaporanUtilisasiPage() {
   return (
     <>
       <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-        <h3 className="welcome-heading">Laporan Utilisasi Ruangan</h3>
+        <h3 className="welcome-heading">Laporan Utilisasi Ruang</h3>
       </div>
 
       <div className="filter-dropdown-panel" style={{ position: "static", display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
@@ -83,7 +83,7 @@ export default function LaporanUtilisasiPage() {
       {error && <p className="text-secondary" style={{ color: "var(--badge-rejected-fg)" }}>{error}</p>}
 
       <div className="card" style={{ marginBottom: 24 }}>
-        <h4 style={{ margin: "0 0 14px" }}>Jam Sibuk (Approved, semua ruangan)</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Jam Sibuk (Approved, semua ruang)</h4>
         {busy ? (
           <p className="text-secondary">Memuat...</p>
         ) : (
@@ -108,7 +108,7 @@ export default function LaporanUtilisasiPage() {
       </div>
 
       <div className="card">
-        <h4 style={{ margin: "0 0 14px" }}>Per Ruangan</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Per Ruang</h4>
         {busy ? (
           <p className="text-secondary">Memuat...</p>
         ) : (
@@ -116,7 +116,7 @@ export default function LaporanUtilisasiPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Ruangan</th>
+                  <th>Ruang</th>
                   <th>Jam Terpakai</th>
                   <th style={{ width: "30%" }}></th>
                   <th>Approved</th>

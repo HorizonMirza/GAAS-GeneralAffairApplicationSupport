@@ -166,7 +166,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               <input type="date" id="fa-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fa-keperluan">Keperluan</label>
+              <label htmlFor="fa-keperluan">Tujuan</label>
               <input type="text" id="fa-keperluan" required maxLength={150} placeholder="Contoh: Kebutuhan ATK bulanan tim" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 

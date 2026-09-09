@@ -262,7 +262,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="f-ruang">Ruangan</label>
+              <label htmlFor="f-ruang">Ruang</label>
               <SearchableSelect
                 id="f-ruang"
                 value={form.namaRuang || undefined}
@@ -273,7 +273,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="f-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
+                <label htmlFor="f-ruang-tambahan">Ruang Tambahan (Opsional)</label>
                 <RoomMultiSelect
                   id="f-ruang-tambahan"
                   rooms={rooms}
