@@ -12,7 +12,7 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { ArchiveKategori, Me, PermintaanArsip, PermintaanArsipCreatePayload, PermintaanArsipItemPayload } from "@/lib/types";
+import type { ArchiveKategori, Me, PermintaanArsip, PermintaanArsipCreatePayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
@@ -30,8 +30,6 @@ interface Props {
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
 }
 
-const MAX_ITEM_ROWS = 30;
-
 function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
   return {
     tanggal: item.tanggal,
@@ -41,13 +39,16 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
     keperluan: item.keperluan,
     lokasiPenyimpanan: item.lokasiPenyimpanan,
     catatan: item.catatan || "",
-    items: item.items.map((i) => ({ namaArsip: i.namaArsip, kategori: i.kategori, tahunArsip: i.tahunArsip, jumlah: i.jumlah, satuan: i.satuan })),
+    namaArsip: item.namaArsip,
+    kategori: item.kategori,
+    tahunArsip: item.tahunArsip,
+    jumlah: item.jumlah,
+    satuan: item.satuan,
   };
 }
 
 export default function ArsipDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
-  const [openItemIdx, setOpenItemIdx] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [previewNomor, setPreviewNomor] = useState<string | null>(null);
@@ -65,7 +66,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
   useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
-    setOpenItemIdx(null);
     setError("");
     setPreviewNomor(null);
   }, [open, item]);
@@ -104,26 +104,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
 
   function set<K extends keyof PermintaanArsipCreatePayload>(key: K, value: PermintaanArsipCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
-  }
-
-  function setItem(index: number, patch: Partial<PermintaanArsipItemPayload>) {
-    setForm((f) => (f ? { ...f, items: f.items.map((row, i) => (i === index ? { ...row, ...patch } : row)) } : f));
-  }
-
-  function addItemRow() {
-    if (!form || form.items.length >= MAX_ITEM_ROWS) return;
-    const newIndex = form.items.length;
-    setForm((f) => {
-      if (!f || f.items.length >= MAX_ITEM_ROWS) return f;
-      return { ...f, items: [...f.items, { namaArsip: "", kategori: "SOP", tahunArsip: "", jumlah: 1, satuan: "" }] };
-    });
-    setOpenItemIdx(newIndex);
-  }
-
-  function removeItemRow(index: number) {
-    if (!form || form.items.length <= 1) return;
-    setForm((f) => (f && f.items.length > 1 ? { ...f, items: f.items.filter((_, i) => i !== index) } : f));
-    setOpenItemIdx((cur) => (cur === null ? cur : index === cur ? null : index < cur ? cur - 1 : cur));
   }
 
   async function handleSubmitDraft() {
@@ -215,7 +195,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 value={form.jumlahArsip ? String(form.jumlahArsip) : ""}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 30));
+                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
                 }}
               />
             </div>
@@ -245,121 +225,74 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
               <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
 
-            <div className="field full" style={{ marginBottom: 6 }}>
-              <label>Daftar Arsip</label>
-              {form.items.map((row, idx) => {
-                const multiple = form.items.length > 1;
-                const isOpen = !multiple || openItemIdx === idx;
-                return (
-                <div key={idx} className="arsip-item-card">
-                  <div className="arsip-item-header">
-                    {multiple ? (
-                      <button
-                        type="button"
-                        className="arsip-item-toggle"
-                        aria-expanded={isOpen}
-                        onClick={() => setOpenItemIdx(isOpen ? null : idx)}
-                      >
-                        <svg className="arsip-item-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        <span>Arsip {idx + 1}{row.namaArsip ? `: ${row.namaArsip}` : ""}</span>
-                      </button>
-                    ) : (
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip {idx + 1}</span>
-                    )}
-                    {isEdit && (
-                      <button
-                        type="button"
-                        className="card-icon-btn card-icon-btn-danger"
-                        aria-label={`Hapus baris arsip ${idx + 1}`}
-                        disabled={form.items.length <= 1}
-                        style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
-                        onClick={() => removeItemRow(idx)}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                      </button>
-                    )}
-                  </div>
-                  <div className={`arsip-item-body${isOpen ? " arsip-item-body-open" : ""}`}>
-                    <div className="arsip-item-body-inner">
-                      <div>
-                        <label htmlFor={`dr-nama-arsip-${idx}`}>Nama Arsip</label>
-                        <input
-                          type="text"
-                          id={`dr-nama-arsip-${idx}`}
-                          required
-                          disabled={!isEdit}
-                          maxLength={100}
-                          placeholder="Nama arsip"
-                          value={row.namaArsip}
-                          onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`dr-kategori-${idx}`}>Kategori</label>
-                        <SearchableSelect
-                          id={`dr-kategori-${idx}`}
-                          disabled={!isEdit}
-                          value={row.kategori}
-                          onChange={(v) => setItem(idx, { kategori: v as ArchiveKategori })}
-                          options={KATEGORI_OPTIONS}
-                          getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
-                          placeholder="Kategori"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`dr-tahun-${idx}`}>Tahun</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          id={`dr-tahun-${idx}`}
-                          required
-                          disabled={!isEdit}
-                          placeholder="Contoh: 2018"
-                          value={row.tahunArsip}
-                          onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`dr-jumlah-${idx}`}>Jumlah</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          id={`dr-jumlah-${idx}`}
-                          required
-                          disabled={!isEdit}
-                          placeholder="Jumlah"
-                          value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                          onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                            setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`dr-satuan-${idx}`}>Satuan</label>
-                        <input
-                          type="text"
-                          id={`dr-satuan-${idx}`}
-                          required
-                          disabled={!isEdit}
-                          maxLength={50}
-                          placeholder="Satuan"
-                          value={row.satuan}
-                          onChange={(e) => setItem(idx, { satuan: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                );
-              })}
-              {isEdit && form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="arsip-add-row-btn" onClick={addItemRow}>
-                  + Tambah Arsip
-                </button>
-              )}
+            <div className="field full">
+              <label htmlFor="dr-nama-arsip">Nama Arsip</label>
+              <input
+                type="text"
+                id="dr-nama-arsip"
+                required
+                disabled={!isEdit}
+                maxLength={100}
+                placeholder="Nama arsip"
+                value={form.namaArsip}
+                onChange={(e) => set("namaArsip", e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="dr-kategori">Kategori</label>
+              <SearchableSelect
+                id="dr-kategori"
+                disabled={!isEdit}
+                value={form.kategori}
+                onChange={(v) => set("kategori", v as ArchiveKategori)}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                placeholder="Kategori"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="dr-tahun">Tahun</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="dr-tahun"
+                required
+                disabled={!isEdit}
+                placeholder="Contoh: 2018"
+                value={form.tahunArsip}
+                onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="dr-jumlah">Jumlah</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="dr-jumlah"
+                required
+                disabled={!isEdit}
+                placeholder="Jumlah"
+                value={form.jumlah === 0 ? "" : String(form.jumlah)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlah", digits === "" ? 0 : Math.min(Number(digits), 9999));
+                }}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="dr-satuan">Satuan</label>
+              <input
+                type="text"
+                id="dr-satuan"
+                required
+                disabled={!isEdit}
+                maxLength={50}
+                placeholder="Satuan"
+                value={form.satuan}
+                onChange={(e) => set("satuan", e.target.value)}
+              />
             </div>
 
             <div className="field full" style={{ marginBottom: 6 }}>

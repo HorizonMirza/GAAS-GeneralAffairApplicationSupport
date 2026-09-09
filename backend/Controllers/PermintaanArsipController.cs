@@ -13,8 +13,8 @@ namespace PengirimanApi.Controllers;
 // dipakai dipindahkan dari status aktif (dipegang unit sendiri) ke inaktif (dipegang Admin/
 // Approval GA) - begitu disetujui final, arsipnya dianggap resmi berpindah. Alur approval sama
 // dengan Room/Vehicle Booking dan Permintaan ATK (Departemen/Divisi -> Admin GA -> Approval GA,
-// tanpa tahap KPU), reject adalah dead end (tidak ada revisi-dan-kirim-ulang). Satu permintaan
-// bisa berisi banyak arsip (lihat PermintaanArsipItem).
+// tanpa tahap KPU), reject adalah dead end (tidak ada revisi-dan-kirim-ulang). Satu permintaan =
+// satu arsip.
 [Route("api/permintaan-arsip")]
 public class PermintaanArsipController : ApiControllerBase
 {
@@ -22,7 +22,6 @@ public class PermintaanArsipController : ApiControllerBase
     // PengirimanController for the full rationale) - 5/10/20/50 stay for the paginated
     // Transaksi table's page-size dropdown.
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50, 1000 };
-    private const int MaxItemRows = 30;
     private const int MaxJumlahPerItem = 9999;
 
     private static readonly RoleEnum[] OriginRoles =
@@ -180,10 +179,7 @@ public class PermintaanArsipController : ApiControllerBase
         {
             if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var kategoriEnum))
                 throw new ArgumentException("Kategori tidak valid");
-            // A request can hold several items of different kategori (see PermintaanArsipItem) -
-            // this matches a request that contains at least one item of the filtered kategori,
-            // same "any item matches" semantics as the Inventory/Katalog filter.
-            query = query.Where(p => p.Items.Any(i => i.Kategori == kategoriEnum));
+            query = query.Where(p => p.Kategori == kategoriEnum);
         }
 
         return ApplyBulanFilter(query, bulan);
@@ -211,29 +207,22 @@ public class PermintaanArsipController : ApiControllerBase
             return "Keperluan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan))
             return "Lokasi penyimpanan wajib diisi";
-        if (payload.Items.Count == 0)
-            return "Minimal satu arsip harus diisi";
-        if (payload.Items.Count > MaxItemRows)
-            return $"Maksimal {MaxItemRows} baris arsip per permintaan";
-        foreach (var item in payload.Items)
-        {
-            if (string.IsNullOrWhiteSpace(item.NamaArsip))
-                return "Nama arsip wajib diisi pada setiap baris";
-            if (!Enum.IsDefined(typeof(ArchiveKategoriEnum), item.Kategori))
-                return "Kategori arsip tidak valid";
-            if (string.IsNullOrWhiteSpace(item.TahunArsip))
-                return "Tahun arsip wajib diisi pada setiap baris";
-            if (item.Jumlah <= 0)
-                return "Jumlah setiap arsip harus lebih dari 0";
-            if (item.Jumlah > MaxJumlahPerItem)
-                return $"Jumlah setiap arsip maksimal {MaxJumlahPerItem}";
-            if (string.IsNullOrWhiteSpace(item.Satuan))
-                return "Satuan wajib diisi pada setiap baris (contoh: boks, bendel, berkas)";
-        }
+        if (string.IsNullOrWhiteSpace(payload.NamaArsip))
+            return "Nama arsip wajib diisi";
+        if (!Enum.IsDefined(typeof(ArchiveKategoriEnum), payload.Kategori))
+            return "Kategori arsip tidak valid";
+        if (string.IsNullOrWhiteSpace(payload.TahunArsip))
+            return "Tahun arsip wajib diisi";
+        if (payload.Jumlah <= 0)
+            return "Jumlah arsip harus lebih dari 0";
+        if (payload.Jumlah > MaxJumlahPerItem)
+            return $"Jumlah arsip maksimal {MaxJumlahPerItem}";
+        if (string.IsNullOrWhiteSpace(payload.Satuan))
+            return "Satuan wajib diisi (contoh: boks, bendel, berkas)";
         return null;
     }
 
-    private void ApplyCreatePayload(PermintaanArsip item, PermintaanArsipCreate payload)
+    private static void ApplyCreatePayload(PermintaanArsip item, PermintaanArsipCreate payload)
     {
         item.Tanggal = payload.Tanggal;
         item.JumlahArsip = payload.JumlahArsip;
@@ -242,20 +231,11 @@ public class PermintaanArsipController : ApiControllerBase
         item.Keperluan = payload.Keperluan.Trim();
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.Catatan = payload.Catatan;
-        // Replace-all: the form always sends the complete item list, so on update the old rows
-        // are dropped and rewritten rather than diffed.
-        item.Items.Clear();
-        foreach (var row in payload.Items)
-        {
-            item.Items.Add(new PermintaanArsipItem
-            {
-                NamaArsip = row.NamaArsip.Trim(),
-                Kategori = row.Kategori,
-                TahunArsip = row.TahunArsip.Trim(),
-                Jumlah = row.Jumlah,
-                Satuan = row.Satuan.Trim(),
-            });
-        }
+        item.NamaArsip = payload.NamaArsip.Trim();
+        item.Kategori = payload.Kategori;
+        item.TahunArsip = payload.TahunArsip.Trim();
+        item.Jumlah = payload.Jumlah;
+        item.Satuan = payload.Satuan.Trim();
     }
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
@@ -338,7 +318,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
@@ -393,7 +373,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (item.Status != BookingStatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
@@ -464,7 +444,6 @@ public class PermintaanArsipController : ApiControllerBase
 
         var total = await query.CountAsync();
         var items = await query
-            .Include(p => p.Items)
             .OrderByDescending(p => p.CreatedAt)
             .ThenByDescending(p => p.Id)
             .Skip((page - 1) * limit)
@@ -531,7 +510,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessPermintaanArsip(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
@@ -566,9 +545,8 @@ public class PermintaanArsipController : ApiControllerBase
     }
 
     // Read-only registry of archive units that have fully cleared approval (APPROVED_GA_APPROVAL)
-    // - i.e. formally handed over to GA - flattened to one row per PermintaanArsipItem rather than
-    // one row per request, since "what's actually sitting in the inactive archive right now" is a
-    // per-object question, not a per-ticket one.
+    // - i.e. formally handed over to GA - "what's actually sitting in the inactive archive right
+    // now", as opposed to List() above which tracks every request regardless of outcome.
     [HttpGet("catalog")]
     public async Task<IActionResult> GetCatalog(
         [FromQuery] int page = 1,
@@ -607,25 +585,21 @@ public class PermintaanArsipController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        var itemsQuery =
-            from p in requestQuery
-            from i in p.Items
-            select new { Request = p, Item = i };
+        if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
+        if (!string.IsNullOrEmpty(search)) requestQuery = requestQuery.Where(p => EF.Functions.ILike(p.NamaArsip, $"%{search}%"));
 
-        if (kategoriFilter.HasValue) itemsQuery = itemsQuery.Where(x => x.Item.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(search)) itemsQuery = itemsQuery.Where(x => EF.Functions.ILike(x.Item.NamaArsip, $"%{search}%"));
-
-        var total = await itemsQuery.CountAsync();
-        var rows = await itemsQuery
-            .OrderByDescending(x => x.Request.ApprovedApprovalGaAt)
-            .ThenBy(x => x.Item.Id)
+        var total = await requestQuery.CountAsync();
+        var rows = await requestQuery
+            .OrderByDescending(p => p.ApprovedApprovalGaAt)
+            .ThenBy(p => p.Id)
             .Skip((page - 1) * limit)
             .Take(limit)
-            .Select(x => new PermintaanArsipCatalogItemOut(
-                x.Item.Id, x.Item.NamaArsip, x.Item.Kategori, x.Item.TahunArsip, x.Item.Jumlah, x.Item.Satuan,
-                x.Request.NomorArsip, x.Request.NamaPic, x.Request.NoTeleponPic, x.Request.Keperluan,
-                x.Request.LokasiPenyimpanan, x.Request.Divisi, x.Request.Departemen, x.Request.Catatan,
-                x.Request.ApprovedApprovalGaAt))
+            .Select(p => new PermintaanArsipCatalogItemOut(
+                p.Id, p.NomorArsip, p.Tanggal, p.Keperluan, p.JumlahArsip,
+                p.NamaArsip, p.Kategori, p.TahunArsip, p.Jumlah, p.Satuan,
+                p.NamaPic, p.NoTeleponPic, p.LokasiPenyimpanan,
+                p.Divisi, p.Departemen, p.Catatan,
+                p.ApprovedApprovalGaAt))
             .ToListAsync();
 
         return Ok(new PermintaanArsipCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
@@ -638,7 +612,7 @@ public class PermintaanArsipController : ApiControllerBase
         if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
             return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
 
         var ok = item.Departemen != null
@@ -692,7 +666,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
@@ -714,7 +688,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });
@@ -736,7 +710,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
@@ -758,7 +732,7 @@ public class PermintaanArsipController : ApiControllerBase
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
-        var item = await _db.PermintaanArsips.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat ditolak pada status ini" });

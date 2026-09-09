@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { ArchiveKategori, Me, PermintaanArsipCreatePayload, PermintaanArsipItemPayload } from "@/lib/types";
+import type { ArchiveKategori, Me, PermintaanArsipCreatePayload } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -21,15 +21,9 @@ interface Props {
 }
 
 // Kategori starts unset (undefined) so SearchableSelect shows its placeholder instead of a
-// pre-picked value - handleSubmit validates every row has one chosen before submitting, the
-// same pattern RoomBookingFormModal uses for its own required-but-unset selects.
-type FormItem = Omit<PermintaanArsipItemPayload, "kategori"> & { kategori: ArchiveKategori | undefined };
-
-function emptyItem(): FormItem {
-  return { namaArsip: "", kategori: undefined, tahunArsip: "", jumlah: 1, satuan: "" };
-}
-
-function emptyForm(): Omit<PermintaanArsipCreatePayload, "items"> & { items: FormItem[] } {
+// pre-picked value - handleSubmit validates one is chosen before submitting, the same pattern
+// RoomBookingFormModal uses for its own required-but-unset selects.
+function emptyForm(): Omit<PermintaanArsipCreatePayload, "kategori"> & { kategori: ArchiveKategori | undefined } {
   return {
     tanggal: todayLocalDate(),
     jumlahArsip: 1,
@@ -38,18 +32,19 @@ function emptyForm(): Omit<PermintaanArsipCreatePayload, "items"> & { items: For
     keperluan: "",
     lokasiPenyimpanan: "",
     catatan: "",
-    items: [emptyItem()],
+    namaArsip: "",
+    kategori: undefined,
+    tahunArsip: "",
+    jumlah: 1,
+    satuan: "",
   };
 }
-
-const MAX_ITEM_ROWS = 30;
 
 type FormState = ReturnType<typeof emptyForm>;
 
 export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
   const [form, setForm] = useState<FormState>(emptyForm());
-  const [openItemIdx, setOpenItemIdx] = useState<number | null>(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nomorArsip, setNomorArsip] = useState("");
@@ -62,7 +57,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   useEffect(() => {
     if (open) {
       setForm(emptyForm());
-      setOpenItemIdx(0);
       setError("");
     }
   }, [open]);
@@ -91,26 +85,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function setItem(index: number, patch: Partial<FormItem>) {
-    setForm((f) => ({
-      ...f,
-      items: f.items.map((row, i) => (i === index ? { ...row, ...patch } : row)),
-    }));
-  }
-
-  function addItemRow() {
-    if (form.items.length >= MAX_ITEM_ROWS) return;
-    const newIndex = form.items.length;
-    setForm((f) => (f.items.length >= MAX_ITEM_ROWS ? f : { ...f, items: [...f.items, emptyItem()] }));
-    setOpenItemIdx(newIndex);
-  }
-
-  function removeItemRow(index: number) {
-    if (form.items.length <= 1) return;
-    setForm((f) => (f.items.length <= 1 ? f : { ...f, items: f.items.filter((_, i) => i !== index) }));
-    setOpenItemIdx((cur) => (cur === null ? cur : index === cur ? null : index < cur ? cur - 1 : cur));
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -124,16 +98,20 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
         return;
       }
     }
-    if (form.items.some((row) => !row.kategori)) {
-      setError("Kategori wajib dipilih untuk semua arsip");
+    if (!form.kategori) {
+      setError("Kategori wajib dipilih");
       return;
     }
     setBusy(true);
     try {
-      const items: PermintaanArsipItemPayload[] = form.items.map((row) => ({ ...row, kategori: row.kategori as ArchiveKategori }));
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
-      await api.createArsip({ ...form, items, departemen: form.departemen || undefined, catatan: form.catatan || null });
+      await api.createArsip({
+        ...form,
+        kategori: form.kategori,
+        departemen: form.departemen || undefined,
+        catatan: form.catatan || null,
+      });
       showToast("Permintaan pemindahan arsip berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -199,7 +177,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 value={form.jumlahArsip ? String(form.jumlahArsip) : ""}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 30));
+                  set("jumlahArsip", digits === "" ? 0 : Math.min(Number(digits), 9999));
                 }}
               />
             </div>
@@ -229,97 +207,68 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             </div>
 
             <div className="field full">
-              <label>Form Arsip</label>
-              {form.items.map((row, idx) => {
-                const multiple = form.items.length > 1;
-                const isOpen = !multiple || openItemIdx === idx;
-                return (
-                <div key={idx} className="arsip-item-card">
-                  <div className="arsip-item-header">
-                    {multiple ? (
-                      <button
-                        type="button"
-                        className="arsip-item-toggle"
-                        aria-expanded={isOpen}
-                        onClick={() => setOpenItemIdx(isOpen ? null : idx)}
-                      >
-                        <svg className="arsip-item-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        <span>Arsip {idx + 1}{row.namaArsip ? `: ${row.namaArsip}` : ""}</span>
-                      </button>
-                    ) : (
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>Arsip {idx + 1}</span>
-                    )}
-                    <button
-                      type="button"
-                      className="card-icon-btn card-icon-btn-danger"
-                      aria-label={`Hapus baris arsip ${idx + 1}`}
-                      disabled={form.items.length <= 1}
-                      style={{ flexShrink: 0, opacity: form.items.length <= 1 ? 0.4 : 1 }}
-                      onClick={() => removeItemRow(idx)}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                  </div>
-                  <div className={`arsip-item-body${isOpen ? " arsip-item-body-open" : ""}`}>
-                    <div className="arsip-item-body-inner">
-                      <div>
-                        <label htmlFor={`fr-nama-arsip-${idx}`}>Nama Arsip</label>
-                        <input
-                          type="text"
-                          id={`fr-nama-arsip-${idx}`}
-                          required
-                          maxLength={100}
-                          placeholder="Contoh: Kontrak Vendor 2018 - 2019"
-                          value={row.namaArsip}
-                          onChange={(e) => setItem(idx, { namaArsip: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`fr-kategori-${idx}`}>Kategori</label>
-                        <SearchableSelect
-                          id={`fr-kategori-${idx}`}
-                          value={row.kategori}
-                          onChange={(v) => setItem(idx, { kategori: v as ArchiveKategori })}
-                          options={KATEGORI_OPTIONS}
-                          getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
-                          placeholder="Pilih Kategori"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`fr-tahun-${idx}`}>Tahun</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          id={`fr-tahun-${idx}`}
-                          required
-                          placeholder="Contoh: 2018"
-                          value={row.tahunArsip}
-                          onChange={(e) => setItem(idx, { tahunArsip: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`fr-satuan-${idx}`}>Satuan</label>
-                        <input
-                          type="text"
-                          id={`fr-satuan-${idx}`}
-                          required
-                          maxLength={50}
-                          placeholder="Contoh: Berkas, Bendel, Box"
-                          value={row.satuan}
-                          onChange={(e) => setItem(idx, { satuan: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                );
-              })}
-              {form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="arsip-add-row-btn" onClick={addItemRow}>
-                  + Tambah Arsip
-                </button>
-              )}
+              <label htmlFor="fr-nama-arsip">Nama Arsip</label>
+              <input
+                type="text"
+                id="fr-nama-arsip"
+                required
+                maxLength={100}
+                placeholder="Contoh: Kontrak Vendor 2018 - 2019"
+                value={form.namaArsip}
+                onChange={(e) => set("namaArsip", e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-kategori">Kategori</label>
+              <SearchableSelect
+                id="fr-kategori"
+                value={form.kategori}
+                onChange={(v) => set("kategori", v as ArchiveKategori)}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                placeholder="Pilih Kategori"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-tahun">Tahun</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="fr-tahun"
+                required
+                placeholder="Contoh: 2018"
+                value={form.tahunArsip}
+                onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-jumlah">Jumlah</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="fr-jumlah"
+                required
+                placeholder="Masukkan Angka"
+                value={form.jumlah ? String(form.jumlah) : ""}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  set("jumlah", digits === "" ? 0 : Math.min(Number(digits), 9999));
+                }}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-satuan">Satuan</label>
+              <input
+                type="text"
+                id="fr-satuan"
+                required
+                maxLength={50}
+                placeholder="Contoh: Berkas, Bendel, Box"
+                value={form.satuan}
+                onChange={(e) => set("satuan", e.target.value)}
+              />
             </div>
 
             <div className="field full">

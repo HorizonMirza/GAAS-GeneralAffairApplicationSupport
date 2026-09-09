@@ -13,30 +13,45 @@ namespace PengirimanApi.Controllers;
 
 // PDF/Excel export for the Archive Transaction table - same shape as ExportController
 // (Pengiriman) and BookingRuangExportController, minus a grand-total footer since archive
-// requests carry no monetary value. One row per request (not per PermintaanArsipItem) - column
-// set mirrors the on-screen Transaction table.
+// requests carry no monetary value. One row per request - column set mirrors the on-screen
+// Transaction table (same columns as the Inventory/Katalog export, plus Status instead of
+// Tanggal Disetujui, since Transaction tracks every request regardless of outcome).
 [Route("api/permintaan-arsip")]
 public class ArsipExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
 
+    private static readonly Dictionary<ArchiveKategoriEnum, string> KategoriLabel = new()
+    {
+        [ArchiveKategoriEnum.SOP] = "SOP",
+        [ArchiveKategoriEnum.SURAT] = "Surat",
+        [ArchiveKategoriEnum.KONTRAK] = "Kontrak",
+        [ArchiveKategoriEnum.LAPORAN] = "Laporan",
+        [ArchiveKategoriEnum.PANDUAN] = "Panduan",
+        [ArchiveKategoriEnum.LAINNYA] = "Lainnya",
+    };
+
     private static readonly (string Field, string Label)[] Columns =
     {
         ("nomor_arsip", "No Pemindahan"),
+        ("tanggal", "Tanggal"),
+        ("keperluan", "Tujuan"),
         ("jumlah_arsip", "Jumlah Arsip"),
+        ("nama_arsip", "Nama Arsip"),
+        ("kategori", "Kategori"),
+        ("tahun_arsip", "Tahun"),
+        ("jumlah", "Jumlah"),
+        ("satuan", "Satuan"),
         ("nama_pic", "Nama PIC"),
         ("no_telepon_pic", "No. Telepon PIC"),
-        ("keperluan", "Tujuan"),
-        ("jumlah_jenis", "Jumlah Jenis"),
         ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
-        ("tanggal", "Tanggal"),
         ("catatan", "Catatan"),
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 45, 24, 45, 40, 55, 20, 55, 40, 40, 28, 45, 55 };
+    private static readonly float[] PdfColWidths = { 45, 28, 55, 30, 70, 30, 24, 24, 30, 45, 40, 55, 40, 40, 55, 55 };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -62,7 +77,11 @@ public class ArsipExportController : ApiControllerBase
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
         "keperluan" => row.Keperluan,
-        "jumlah_jenis" => row.Items.Count,
+        "nama_arsip" => row.NamaArsip,
+        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
+        "tahun_arsip" => row.TahunArsip,
+        "jumlah" => row.Jumlah,
+        "satuan" => row.Satuan,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
@@ -107,7 +126,7 @@ public class ArsipExportController : ApiControllerBase
     private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
         var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
-        return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
+        return await query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 
     [HttpGet("export")]

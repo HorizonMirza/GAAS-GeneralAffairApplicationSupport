@@ -2,15 +2,6 @@ using PengirimanApi.Models;
 
 namespace PengirimanApi.Dtos;
 
-public class PermintaanArsipItemCreate
-{
-    public string NamaArsip { get; set; } = null!;
-    public ArchiveKategoriEnum Kategori { get; set; }
-    public string TahunArsip { get; set; } = null!;
-    public int Jumlah { get; set; }
-    public string Satuan { get; set; } = null!;
-}
-
 public class PermintaanArsipCreate
 {
     // Admin/Approval GA only: lets them request on behalf of any divisi/departemen instead of
@@ -25,10 +16,12 @@ public class PermintaanArsipCreate
     public string Keperluan { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? Catatan { get; set; }
-    public List<PermintaanArsipItemCreate> Items { get; set; } = new();
+    public string NamaArsip { get; set; } = null!;
+    public ArchiveKategoriEnum Kategori { get; set; }
+    public string TahunArsip { get; set; } = null!;
+    public int Jumlah { get; set; }
+    public string Satuan { get; set; } = null!;
 }
-
-public record PermintaanArsipItemOut(int Id, string NamaArsip, ArchiveKategoriEnum Kategori, string TahunArsip, int Jumlah, string Satuan);
 
 public record PermintaanArsipLogOut(
     int Id,
@@ -50,7 +43,11 @@ public class PermintaanArsipOut
     public string Keperluan { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? Catatan { get; set; }
-    public List<PermintaanArsipItemOut> Items { get; set; } = new();
+    public string NamaArsip { get; set; } = null!;
+    public ArchiveKategoriEnum Kategori { get; set; }
+    public string TahunArsip { get; set; } = null!;
+    public int Jumlah { get; set; }
+    public string Satuan { get; set; } = null!;
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
     public BookingStatusEnum Status { get; set; }
@@ -68,8 +65,6 @@ public class PermintaanArsipOut
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
-    // Callers must have loaded/included p.Items before mapping (see PermintaanArsipController's
-    // Include(p => p.Items) call sites) - EF lazy loading is not enabled in this project.
     public static PermintaanArsipOut From(PermintaanArsip p) => new()
     {
         Id = p.Id,
@@ -81,10 +76,11 @@ public class PermintaanArsipOut
         Keperluan = p.Keperluan,
         LokasiPenyimpanan = p.LokasiPenyimpanan,
         Catatan = p.Catatan,
-        Items = p.Items
-            .OrderBy(i => i.Id)
-            .Select(i => new PermintaanArsipItemOut(i.Id, i.NamaArsip, i.Kategori, i.TahunArsip, i.Jumlah, i.Satuan))
-            .ToList(),
+        NamaArsip = p.NamaArsip,
+        Kategori = p.Kategori,
+        TahunArsip = p.TahunArsip,
+        Jumlah = p.Jumlah,
+        Satuan = p.Satuan,
         Divisi = p.Divisi,
         Departemen = p.Departemen,
         Status = p.Status,
@@ -117,15 +113,17 @@ public class PermintaanArsipStatsResponse
 
 public record PermintaanArsipCatalogItemOut(
     int Id,
+    string? NomorArsip,
+    DateOnly Tanggal,
+    string Keperluan,
+    int JumlahArsip,
     string NamaArsip,
     ArchiveKategoriEnum Kategori,
     string TahunArsip,
     int Jumlah,
     string Satuan,
-    string? NomorArsip,
     string? NamaPic,
     string? NoTeleponPic,
-    string Keperluan,
     string LokasiPenyimpanan,
     string Divisi,
     string? Departemen,

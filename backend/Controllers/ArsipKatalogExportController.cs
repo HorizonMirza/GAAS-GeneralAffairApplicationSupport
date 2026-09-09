@@ -12,10 +12,10 @@ using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
-// PDF/Excel export for the Archive Inventory (Katalog) table - one row per PermintaanArsipItem
-// (not per request, unlike ArsipExportController), scoped to only fully-approved requests exactly
-// like PermintaanArsipController.GetCatalog - see that method for why (this IS the "what's
-// actually sitting in the inactive archive right now" view, not a workflow/approval-status list).
+// PDF/Excel export for the Archive Inventory (Katalog) table - scoped to only fully-approved
+// requests exactly like PermintaanArsipController.GetCatalog - see that method for why (this IS
+// the "what's actually sitting in the inactive archive right now" view, not a workflow/
+// approval-status list like ArsipExportController).
 [Route("api/permintaan-arsip/catalog")]
 public class ArsipKatalogExportController : ApiControllerBase
 {
@@ -33,13 +33,15 @@ public class ArsipKatalogExportController : ApiControllerBase
 
     private static readonly (string Field, string Label)[] Columns =
     {
+        ("nomor_arsip", "No Pemindahan"),
+        ("tanggal", "Tanggal"),
+        ("keperluan", "Tujuan"),
+        ("jumlah_arsip", "Jumlah Arsip"),
         ("nama_arsip", "Nama Arsip"),
         ("kategori", "Kategori"),
         ("tahun", "Tahun"),
         ("jumlah", "Jumlah"),
         ("satuan", "Satuan"),
-        ("nomor_arsip", "No Pemindahan"),
-        ("keperluan", "Tujuan"),
         ("nama_pic", "Nama PIC"),
         ("no_telepon_pic", "No. Telepon PIC"),
         ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
@@ -49,7 +51,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         ("tanggal_disetujui", "Tanggal Disetujui"),
     };
 
-    private static readonly float[] PdfColWidths = { 70, 30, 24, 24, 30, 45, 55, 45, 40, 55, 40, 40, 55, 40 };
+    private static readonly float[] PdfColWidths = { 45, 28, 55, 30, 70, 30, 24, 24, 30, 45, 40, 55, 40, 40, 55, 40 };
 
     public ArsipKatalogExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
     {
@@ -58,15 +60,17 @@ public class ArsipKatalogExportController : ApiControllerBase
 
     private static object? GetFieldValue(PermintaanArsipCatalogItemOut row, string field) => field switch
     {
+        "nomor_arsip" => row.NomorArsip,
+        "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
+        "keperluan" => row.Keperluan,
+        "jumlah_arsip" => row.JumlahArsip,
         "nama_arsip" => row.NamaArsip,
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
         "tahun" => row.TahunArsip,
         "jumlah" => row.Jumlah,
         "satuan" => row.Satuan,
-        "nomor_arsip" => row.NomorArsip,
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
-        "keperluan" => row.Keperluan,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
@@ -108,22 +112,18 @@ public class ArsipKatalogExportController : ApiControllerBase
         var requestQuery = PermintaanArsipController.ApplyListFilters(
             _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, null, false, tanggal);
 
-        var itemsQuery =
-            from p in requestQuery
-            from i in p.Items
-            select new { Request = p, Item = i };
+        if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
+        if (!string.IsNullOrEmpty(search)) requestQuery = requestQuery.Where(p => EF.Functions.ILike(p.NamaArsip, $"%{search}%"));
 
-        if (kategoriFilter.HasValue) itemsQuery = itemsQuery.Where(x => x.Item.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(search)) itemsQuery = itemsQuery.Where(x => EF.Functions.ILike(x.Item.NamaArsip, $"%{search}%"));
-
-        return await itemsQuery
-            .OrderByDescending(x => x.Request.ApprovedApprovalGaAt)
-            .ThenBy(x => x.Item.Id)
-            .Select(x => new PermintaanArsipCatalogItemOut(
-                x.Item.Id, x.Item.NamaArsip, x.Item.Kategori, x.Item.TahunArsip, x.Item.Jumlah, x.Item.Satuan,
-                x.Request.NomorArsip, x.Request.NamaPic, x.Request.NoTeleponPic, x.Request.Keperluan,
-                x.Request.LokasiPenyimpanan, x.Request.Divisi, x.Request.Departemen, x.Request.Catatan,
-                x.Request.ApprovedApprovalGaAt))
+        return await requestQuery
+            .OrderByDescending(p => p.ApprovedApprovalGaAt)
+            .ThenBy(p => p.Id)
+            .Select(p => new PermintaanArsipCatalogItemOut(
+                p.Id, p.NomorArsip, p.Tanggal, p.Keperluan, p.JumlahArsip,
+                p.NamaArsip, p.Kategori, p.TahunArsip, p.Jumlah, p.Satuan,
+                p.NamaPic, p.NoTeleponPic, p.LokasiPenyimpanan,
+                p.Divisi, p.Departemen, p.Catatan,
+                p.ApprovedApprovalGaAt))
             .ToListAsync();
     }
 

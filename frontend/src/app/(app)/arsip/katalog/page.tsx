@@ -228,29 +228,32 @@ export default function ArsipKatalogPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th><th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
-              <th>No Pemindahan</th><th>Tujuan</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Lokasi Penyimpanan Saat Ini</th>
+              <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
+              <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
+              <th>Nama PIC</th><th>No. Telepon PIC</th><th>Lokasi Penyimpanan Saat Ini</th>
               <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Tanggal Disetujui</th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={15} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={17} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>
                   <td>{(filters.page - 1) * filters.limit + index + 1}</td>
+                  <td>{item.nomorArsip || "-"}</td>
+                  <td>{formatDate(item.tanggal)}</td>
+                  <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
+                  <td>{item.jumlahArsip}</td>
                   <td title={item.namaArsip}>{truncateText(item.namaArsip, 30)}</td>
                   <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
                   <td>{item.tahunArsip}</td>
                   <td>{item.jumlah}</td>
                   <td>{item.satuan}</td>
-                  <td>{item.nomorArsip || "-"}</td>
-                  <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                   <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                   <td>{item.noTeleponPic || "-"}</td>
                   <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>

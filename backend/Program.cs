@@ -680,6 +680,14 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS jumlah_arsip INT NOT NULL DEFAULT 0");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS nama_pic VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS no_telepon_pic VARCHAR(50)");
+    // One request = one arsip now (used to be one-to-many via permintaan_arsip_items, which is
+    // left in place unused rather than dropped, matching this migration path's non-destructive
+    // convention elsewhere) - these columns carry what used to live on that child row directly.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS nama_arsip VARCHAR(255) NOT NULL DEFAULT ''");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS kategori VARCHAR(50) NOT NULL DEFAULT 'LAINNYA'");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS tahun_arsip VARCHAR(20) NOT NULL DEFAULT ''");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS jumlah INT NOT NULL DEFAULT 0");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS satuan VARCHAR(50) NOT NULL DEFAULT ''");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_status ON permintaan_arsip (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_divisi ON permintaan_arsip (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_departemen ON permintaan_arsip (departemen)");

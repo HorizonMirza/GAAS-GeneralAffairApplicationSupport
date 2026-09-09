@@ -349,17 +349,18 @@ function ArsipTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
-                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
+                <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Lokasi Penyimpanan Saat Ini</th>
                 <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={17} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -370,9 +371,13 @@ function ArsipTransaksiPageInner() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td>{item.jumlahArsip}</td>
+                      <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>
+                      <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                      <td>{item.tahunArsip}</td>
+                      <td>{item.jumlah}</td>
+                      <td>{item.satuan}</td>
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
-                      <td>{item.items.length}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>

@@ -39,7 +39,6 @@ public class AppDbContext : DbContext
     public DbSet<PerbaikanSaranaChatRead> PerbaikanSaranaChatReads => Set<PerbaikanSaranaChatRead>();
     public DbSet<SaranaCounter> SaranaCounters => Set<SaranaCounter>();
     public DbSet<PermintaanArsip> PermintaanArsips => Set<PermintaanArsip>();
-    public DbSet<PermintaanArsipItem> PermintaanArsipItems => Set<PermintaanArsipItem>();
     public DbSet<PermintaanArsipLog> PermintaanArsipLogs => Set<PermintaanArsipLog>();
     public DbSet<PermintaanArsipChatMessage> PermintaanArsipChatMessages => Set<PermintaanArsipChatMessage>();
     public DbSet<PermintaanArsipChatRead> PermintaanArsipChatReads => Set<PermintaanArsipChatRead>();
@@ -866,6 +865,12 @@ public class AppDbContext : DbContext
             e.Property(p => p.LokasiPenyimpanan).HasColumnName("lokasi_penyimpanan").HasMaxLength(255).IsRequired();
             e.Property(p => p.Catatan).HasColumnName("catatan");
 
+            e.Property(p => p.NamaArsip).HasColumnName("nama_arsip").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.TahunArsip).HasColumnName("tahun_arsip").HasMaxLength(20).IsRequired();
+            e.Property(p => p.Jumlah).HasColumnName("jumlah");
+            e.Property(p => p.Satuan).HasColumnName("satuan").HasMaxLength(50).IsRequired();
+
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
@@ -893,24 +898,6 @@ public class AppDbContext : DbContext
             e.HasIndex(p => p.Divisi).HasDatabaseName("ix_permintaan_arsip_divisi");
             e.HasIndex(p => p.Departemen).HasDatabaseName("ix_permintaan_arsip_departemen");
             e.HasIndex(p => p.Tanggal).HasDatabaseName("ix_permintaan_arsip_tanggal");
-        });
-
-        modelBuilder.Entity<PermintaanArsipItem>(e =>
-        {
-            e.ToTable("permintaan_arsip_items");
-            e.HasKey(i => i.Id);
-            e.Property(i => i.Id).HasColumnName("id");
-            e.Property(i => i.PermintaanArsipId).HasColumnName("permintaan_arsip_id");
-            e.Property(i => i.NamaArsip).HasColumnName("nama_arsip").HasMaxLength(255).IsRequired();
-            e.Property(i => i.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
-            e.Property(i => i.TahunArsip).HasColumnName("tahun_arsip").HasMaxLength(20).IsRequired();
-            e.Property(i => i.Jumlah).HasColumnName("jumlah");
-            e.Property(i => i.Satuan).HasColumnName("satuan").HasMaxLength(50).IsRequired();
-
-            e.HasOne(i => i.PermintaanArsip)
-                .WithMany(p => p.Items)
-                .HasForeignKey(i => i.PermintaanArsipId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PermintaanArsipLog>(e =>

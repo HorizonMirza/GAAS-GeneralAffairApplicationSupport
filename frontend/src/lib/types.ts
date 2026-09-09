@@ -392,15 +392,6 @@ export interface BookingRuangActionResult {
 
 export type ArchiveKategori = "SOP" | "SURAT" | "KONTRAK" | "LAPORAN" | "PANDUAN" | "LAINNYA";
 
-export interface PermintaanArsipItem {
-  id: number;
-  namaArsip: string;
-  kategori: ArchiveKategori;
-  tahunArsip: string;
-  jumlah: number;
-  satuan: string;
-}
-
 export interface PermintaanArsip {
   id: number;
   nomorArsip: string | null;
@@ -411,7 +402,11 @@ export interface PermintaanArsip {
   keperluan: string;
   lokasiPenyimpanan: string;
   catatan: string | null;
-  items: PermintaanArsipItem[];
+  namaArsip: string;
+  kategori: ArchiveKategori;
+  tahunArsip: string;
+  jumlah: number;
+  satuan: string;
   divisi: string;
   departemen: string | null;
   status: BookingStatus;
@@ -443,15 +438,17 @@ export interface PermintaanArsipStatsResponse {
 
 export interface PermintaanArsipCatalogItem {
   id: number;
+  nomorArsip: string | null;
+  tanggal: string;
+  keperluan: string;
+  jumlahArsip: number;
   namaArsip: string;
   kategori: ArchiveKategori;
   tahunArsip: string;
   jumlah: number;
   satuan: string;
-  nomorArsip: string | null;
   namaPic: string | null;
   noTeleponPic: string | null;
-  keperluan: string;
   lokasiPenyimpanan: string;
   divisi: string;
   departemen: string | null;
@@ -475,14 +472,6 @@ export interface PermintaanArsipLog {
   createdAt: string;
 }
 
-export interface PermintaanArsipItemPayload {
-  namaArsip: string;
-  kategori: ArchiveKategori;
-  tahunArsip: string;
-  jumlah: number;
-  satuan: string;
-}
-
 export interface PermintaanArsipCreatePayload {
   // Admin/Approval GA only: requests on behalf of another divisi/departemen instead of their own
   // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
@@ -495,7 +484,11 @@ export interface PermintaanArsipCreatePayload {
   keperluan: string;
   lokasiPenyimpanan: string;
   catatan: string | null;
-  items: PermintaanArsipItemPayload[];
+  namaArsip: string;
+  kategori: ArchiveKategori;
+  tahunArsip: string;
+  jumlah: number;
+  satuan: string;
 }
 
 // --- Maintenance (Perbaikan Sarana) ---
