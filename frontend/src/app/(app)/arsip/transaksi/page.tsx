@@ -12,7 +12,7 @@ import {
   isArsipEditableByOrigin,
   isBookingOriginRole,
 } from "@/lib/constants";
-import { formatDate, formatDateTime, truncateText } from "@/lib/format";
+import { formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingStatus, PermintaanArsip } from "@/lib/types";
@@ -333,18 +333,18 @@ function ArsipTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
-                <th>PIC</th><th>No. Telp PIC</th><th>Daftar Arsip</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
+                <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
+                <th>Nama PIC</th><th>Telp PIC</th><th>Daftar Arsip</th><th>Jumlah Jenis</th><th>Lokasi Penyimpanan Saat Ini</th>
                 <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={15} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
+                <tr><td colSpan={14} className="table-empty">Tidak ada data untuk filter ini.</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -353,7 +353,6 @@ function ArsipTransaksiPageInner() {
                     <tr key={item.id} id={`tx-row-${item.id}`} className={item.id === highlightId ? "row-highlight-blink" : undefined}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
-                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td>{item.jumlahArsip}</td>
