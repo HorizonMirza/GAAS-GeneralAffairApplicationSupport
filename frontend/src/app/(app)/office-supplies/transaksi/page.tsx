@@ -207,7 +207,10 @@ function OfficeSuppliesTransaksiPageInner() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const showOrgFilters = isBookingOriginRole(me.role);
+  // KPU (Mitra) also approves/rejects ATK requests as the final stage (see PermintaanAtkController's
+  // approve-kpu/reject-kpu), same as in Ekspedisi, so it needs the org filters too even though it's
+  // not an "origin" role that can create requests (isOrigin below stays without KPU).
+  const showOrgFilters = isBookingOriginRole(me.role) || me.role === "KPU";
 
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
   const divisiOptions = selectedDirektoratNode
