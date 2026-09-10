@@ -27,16 +27,13 @@ function emptyForm(): Omit<PermintaanArsipCreatePayload, "kategori"> & { kategor
   return {
     tanggal: todayLocalDate(),
     jumlahArsip: 1,
-    namaPic: "",
-    noTeleponPic: "",
-    keperluan: "",
-    lokasiPenyimpanan: "",
-    catatan: "",
     namaArsip: "",
     kategori: undefined,
     tahunArsip: "",
-    jumlah: 1,
-    satuan: "",
+    lokasiPenyimpanan: "",
+    namaPic: "",
+    noTeleponPic: "",
+    catatan: "",
   };
 }
 
@@ -181,31 +178,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 }}
               />
             </div>
-            <div className="field">
-              <label htmlFor="fr-nama-pic">Nama PIC</label>
-              <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
-              <input
-                type="text"
-                inputMode="tel"
-                id="fr-telepon-pic"
-                required
-                maxLength={15}
-                value={form.noTeleponPic}
-                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
-              />
-            </div>
-            <div className="field full">
-              <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
-            </div>
-            <div className="field full">
-              <label htmlFor="fr-keperluan">Tujuan</label>
-              <input type="text" id="fr-keperluan" required maxLength={150} placeholder="Contoh: Pemindahan arsip kontrak lama" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
-            </div>
-
             <div className="field full">
               <label htmlFor="fr-nama-arsip">Nama Arsip</label>
               <input
@@ -242,35 +214,26 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
               />
             </div>
-            <div className="field">
-              <label htmlFor="fr-jumlah">Jumlah</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                id="fr-jumlah"
-                required
-                placeholder="Masukkan Angka"
-                value={form.jumlah ? String(form.jumlah) : ""}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlah", digits === "" ? 0 : Math.min(Number(digits), 9999));
-                }}
-              />
+            <div className="field full">
+              <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="fr-satuan">Satuan</label>
+              <label htmlFor="fr-nama-pic">Nama PIC</label>
+              <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
               <input
                 type="text"
-                id="fr-satuan"
+                inputMode="tel"
+                id="fr-telepon-pic"
                 required
-                maxLength={50}
-                placeholder="Contoh: Berkas, Bendel, Box"
-                value={form.satuan}
-                onChange={(e) => set("satuan", e.target.value)}
+                maxLength={15}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
               />
             </div>
-
             <div className="field full">
               <label htmlFor="fr-catatan">Catatan</label>
               <input type="text" id="fr-catatan" maxLength={255} placeholder="Contoh: Sudah tidak dipakai sejak 2022" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

@@ -397,16 +397,13 @@ export interface PermintaanArsip {
   nomorArsip: string | null;
   tanggal: string;
   jumlahArsip: number;
-  namaPic: string | null;
-  noTeleponPic: string | null;
-  keperluan: string;
-  lokasiPenyimpanan: string;
-  catatan: string | null;
   namaArsip: string;
   kategori: ArchiveKategori;
   tahunArsip: string;
-  jumlah: number;
-  satuan: string;
+  lokasiPenyimpanan: string;
+  namaPic: string | null;
+  noTeleponPic: string | null;
+  catatan: string | null;
   divisi: string;
   departemen: string | null;
   status: BookingStatus;
@@ -440,16 +437,13 @@ export interface PermintaanArsipCatalogItem {
   id: number;
   nomorArsip: string | null;
   tanggal: string;
-  keperluan: string;
   jumlahArsip: number;
   namaArsip: string;
   kategori: ArchiveKategori;
   tahunArsip: string;
-  jumlah: number;
-  satuan: string;
+  lokasiPenyimpanan: string;
   namaPic: string | null;
   noTeleponPic: string | null;
-  lokasiPenyimpanan: string;
   divisi: string;
   departemen: string | null;
   catatan: string | null;
@@ -479,16 +473,13 @@ export interface PermintaanArsipCreatePayload {
   departemen?: string;
   tanggal: string;
   jumlahArsip: number;
-  namaPic: string;
-  noTeleponPic: string;
-  keperluan: string;
-  lokasiPenyimpanan: string;
-  catatan: string | null;
   namaArsip: string;
   kategori: ArchiveKategori;
   tahunArsip: string;
-  jumlah: number;
-  satuan: string;
+  lokasiPenyimpanan: string;
+  namaPic: string;
+  noTeleponPic: string;
+  catatan: string | null;
 }
 
 // --- Maintenance (Perbaikan Sarana) ---

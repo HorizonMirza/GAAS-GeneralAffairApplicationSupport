@@ -85,7 +85,7 @@ export default function MonthFilterPicker({ id, value, onChange, placeholder = "
       </button>
       {open && (
         <motion.div
-          className={`filter-picker-panel${dropUp ? " filter-picker-panel-up" : ""}`}
+          className={`filter-picker-panel filter-picker-panel-month${dropUp ? " filter-picker-panel-up" : ""}`}
           initial="hidden"
           animate="visible"
           variants={sidebarVariants}

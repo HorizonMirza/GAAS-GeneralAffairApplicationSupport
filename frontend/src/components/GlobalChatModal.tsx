@@ -85,7 +85,7 @@ export default function GlobalChatModal() {
           setResolved({
             kind,
             itemId,
-            itemLabel: `${item.keperluan} - ${item.nomorArsip || "-"}`,
+            itemLabel: `${item.namaArsip} - ${item.nomorArsip || "-"}`,
             departemen: item.departemen ?? null,
             createdByRole: item.createdByRole,
           });

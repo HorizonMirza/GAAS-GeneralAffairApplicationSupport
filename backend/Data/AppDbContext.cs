@@ -859,17 +859,13 @@ public class AppDbContext : DbContext
             e.Property(p => p.NomorArsip).HasColumnName("nomor_arsip").HasMaxLength(50);
             e.Property(p => p.Tanggal).HasColumnName("tanggal");
             e.Property(p => p.JumlahArsip).HasColumnName("jumlah_arsip");
-            e.Property(p => p.NamaPic).HasColumnName("nama_pic").HasMaxLength(255);
-            e.Property(p => p.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
-            e.Property(p => p.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
-            e.Property(p => p.LokasiPenyimpanan).HasColumnName("lokasi_penyimpanan").HasMaxLength(255).IsRequired();
-            e.Property(p => p.Catatan).HasColumnName("catatan");
-
             e.Property(p => p.NamaArsip).HasColumnName("nama_arsip").HasMaxLength(255).IsRequired();
             e.Property(p => p.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.TahunArsip).HasColumnName("tahun_arsip").HasMaxLength(20).IsRequired();
-            e.Property(p => p.Jumlah).HasColumnName("jumlah");
-            e.Property(p => p.Satuan).HasColumnName("satuan").HasMaxLength(50).IsRequired();
+            e.Property(p => p.LokasiPenyimpanan).HasColumnName("lokasi_penyimpanan").HasMaxLength(255).IsRequired();
+            e.Property(p => p.NamaPic).HasColumnName("nama_pic").HasMaxLength(255);
+            e.Property(p => p.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
+            e.Property(p => p.Catatan).HasColumnName("catatan");
 
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);

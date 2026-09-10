@@ -1047,17 +1047,17 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tujuan</th><th>Daftar Arsip</th>
+                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Daftar Arsip</th>
                 <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th><th>Tanggal</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {arsipBusy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={10} className="table-empty">Memuat data...</td></tr>
               ) : arsipError ? (
-                <tr><td colSpan={11} className="table-empty">{arsipError}</td></tr>
+                <tr><td colSpan={10} className="table-empty">{arsipError}</td></tr>
               ) : arsipItems.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={10} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 arsipItems.map((item, index) => {
                   const rowNumber = (arsipFilters.page - 1) * arsipFilters.limit + index + 1;
@@ -1067,7 +1067,6 @@ export default function SuperAdminPage() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
-                      <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={arsipList}>{truncateText(arsipList, 45)}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>

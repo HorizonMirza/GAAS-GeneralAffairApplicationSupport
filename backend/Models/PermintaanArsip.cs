@@ -14,17 +14,13 @@ public class PermintaanArsip
     public string? NomorArsip { get; set; }
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
-    public string? NamaPic { get; set; }
-    public string? NoTeleponPic { get; set; }
-    public string Keperluan { get; set; } = null!;
-    public string LokasiPenyimpanan { get; set; } = null!;
-    public string? Catatan { get; set; }
-
     public string NamaArsip { get; set; } = null!;
     public ArchiveKategoriEnum Kategori { get; set; }
     public string TahunArsip { get; set; } = null!;
-    public int Jumlah { get; set; }
-    public string Satuan { get; set; } = null!;
+    public string LokasiPenyimpanan { get; set; } = null!;
+    public string? NamaPic { get; set; }
+    public string? NoTeleponPic { get; set; }
+    public string? Catatan { get; set; }
 
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }

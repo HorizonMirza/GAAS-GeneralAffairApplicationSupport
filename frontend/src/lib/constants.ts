@@ -567,9 +567,9 @@ export function isArsipGaActionable(item: PermintaanArsip): boolean {
   return item.status === "APPROVED_L1";
 }
 
-// Ringkasan arsip untuk sel tabel/kartu: "Kontrak Vendor 2018-2019 - Kontrak, 2018 (5 boks)".
+// Ringkasan arsip untuk sel tabel/kartu: "Kontrak Vendor 2018-2019 - Kontrak, 2018 (5 arsip)".
 export function arsipItemsSummary(item: PermintaanArsip): string {
-  return `${item.namaArsip} - ${ARCHIVE_KATEGORI_LABEL[item.kategori]}, ${item.tahunArsip} (${item.jumlah} ${item.satuan})`;
+  return `${item.namaArsip} - ${ARCHIVE_KATEGORI_LABEL[item.kategori]}, ${item.tahunArsip} (${item.jumlahArsip} arsip)`;
 }
 
 // --- Contact Person (halaman /contact-person, lihat app/(app)/contact-person/page.tsx) ---

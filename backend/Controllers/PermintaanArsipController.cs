@@ -22,7 +22,6 @@ public class PermintaanArsipController : ApiControllerBase
     // PengirimanController for the full rationale) - 5/10/20/50 stay for the paginated
     // Transaksi table's page-size dropdown.
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50, 1000 };
-    private const int MaxJumlahPerItem = 9999;
 
     private static readonly RoleEnum[] OriginRoles =
     {
@@ -51,8 +50,8 @@ public class PermintaanArsipController : ApiControllerBase
     }
 
     // Label shown in the "transaksi baru"/"proses approval" notification banner - same
-    // Keperluan+Nomor convention as BookingRuangController's ItemLabel.
-    private static string ItemLabel(PermintaanArsip item) => $"{item.Keperluan} - {item.NomorArsip ?? "#" + item.Id}";
+    // NamaArsip+Nomor convention as BookingRuangController's ItemLabel.
+    private static string ItemLabel(PermintaanArsip item) => $"{item.NamaArsip} - {item.NomorArsip ?? "#" + item.Id}";
 
     // Every recipient of a workflow notification for this request: everyone CanAccessPermintaanArsip
     // already lets see it, minus the actor who just triggered the event.
@@ -203,8 +202,6 @@ public class PermintaanArsipController : ApiControllerBase
             return "Nama PIC wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NoTeleponPic))
             return "No. Telepon PIC wajib diisi";
-        if (string.IsNullOrWhiteSpace(payload.Keperluan))
-            return "Keperluan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan))
             return "Lokasi penyimpanan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaArsip))
@@ -213,12 +210,6 @@ public class PermintaanArsipController : ApiControllerBase
             return "Kategori arsip tidak valid";
         if (string.IsNullOrWhiteSpace(payload.TahunArsip))
             return "Tahun arsip wajib diisi";
-        if (payload.Jumlah <= 0)
-            return "Jumlah arsip harus lebih dari 0";
-        if (payload.Jumlah > MaxJumlahPerItem)
-            return $"Jumlah arsip maksimal {MaxJumlahPerItem}";
-        if (string.IsNullOrWhiteSpace(payload.Satuan))
-            return "Satuan wajib diisi (contoh: boks, bendel, berkas)";
         return null;
     }
 
@@ -228,14 +219,11 @@ public class PermintaanArsipController : ApiControllerBase
         item.JumlahArsip = payload.JumlahArsip;
         item.NamaPic = payload.NamaPic.Trim();
         item.NoTeleponPic = payload.NoTeleponPic.Trim();
-        item.Keperluan = payload.Keperluan.Trim();
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.Catatan = payload.Catatan;
         item.NamaArsip = payload.NamaArsip.Trim();
         item.Kategori = payload.Kategori;
         item.TahunArsip = payload.TahunArsip.Trim();
-        item.Jumlah = payload.Jumlah;
-        item.Satuan = payload.Satuan.Trim();
     }
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
@@ -595,9 +583,9 @@ public class PermintaanArsipController : ApiControllerBase
             .Skip((page - 1) * limit)
             .Take(limit)
             .Select(p => new PermintaanArsipCatalogItemOut(
-                p.Id, p.NomorArsip, p.Tanggal, p.Keperluan, p.JumlahArsip,
-                p.NamaArsip, p.Kategori, p.TahunArsip, p.Jumlah, p.Satuan,
-                p.NamaPic, p.NoTeleponPic, p.LokasiPenyimpanan,
+                p.Id, p.NomorArsip, p.Tanggal, p.JumlahArsip,
+                p.NamaArsip, p.Kategori, p.TahunArsip, p.LokasiPenyimpanan,
+                p.NamaPic, p.NoTeleponPic,
                 p.Divisi, p.Departemen, p.Catatan,
                 p.ApprovedApprovalGaAt))
             .ToListAsync();

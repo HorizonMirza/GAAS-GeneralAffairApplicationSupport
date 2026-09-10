@@ -11,16 +11,13 @@ public class PermintaanArsipCreate
     public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
-    public string NamaPic { get; set; } = null!;
-    public string NoTeleponPic { get; set; } = null!;
-    public string Keperluan { get; set; } = null!;
-    public string LokasiPenyimpanan { get; set; } = null!;
-    public string? Catatan { get; set; }
     public string NamaArsip { get; set; } = null!;
     public ArchiveKategoriEnum Kategori { get; set; }
     public string TahunArsip { get; set; } = null!;
-    public int Jumlah { get; set; }
-    public string Satuan { get; set; } = null!;
+    public string LokasiPenyimpanan { get; set; } = null!;
+    public string NamaPic { get; set; } = null!;
+    public string NoTeleponPic { get; set; } = null!;
+    public string? Catatan { get; set; }
 }
 
 public record PermintaanArsipLogOut(
@@ -38,16 +35,13 @@ public class PermintaanArsipOut
     public string? NomorArsip { get; set; }
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
-    public string? NamaPic { get; set; }
-    public string? NoTeleponPic { get; set; }
-    public string Keperluan { get; set; } = null!;
-    public string LokasiPenyimpanan { get; set; } = null!;
-    public string? Catatan { get; set; }
     public string NamaArsip { get; set; } = null!;
     public ArchiveKategoriEnum Kategori { get; set; }
     public string TahunArsip { get; set; } = null!;
-    public int Jumlah { get; set; }
-    public string Satuan { get; set; } = null!;
+    public string LokasiPenyimpanan { get; set; } = null!;
+    public string? NamaPic { get; set; }
+    public string? NoTeleponPic { get; set; }
+    public string? Catatan { get; set; }
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
     public BookingStatusEnum Status { get; set; }
@@ -71,16 +65,13 @@ public class PermintaanArsipOut
         NomorArsip = p.NomorArsip,
         Tanggal = p.Tanggal,
         JumlahArsip = p.JumlahArsip,
-        NamaPic = p.NamaPic,
-        NoTeleponPic = p.NoTeleponPic,
-        Keperluan = p.Keperluan,
-        LokasiPenyimpanan = p.LokasiPenyimpanan,
-        Catatan = p.Catatan,
         NamaArsip = p.NamaArsip,
         Kategori = p.Kategori,
         TahunArsip = p.TahunArsip,
-        Jumlah = p.Jumlah,
-        Satuan = p.Satuan,
+        LokasiPenyimpanan = p.LokasiPenyimpanan,
+        NamaPic = p.NamaPic,
+        NoTeleponPic = p.NoTeleponPic,
+        Catatan = p.Catatan,
         Divisi = p.Divisi,
         Departemen = p.Departemen,
         Status = p.Status,
@@ -115,16 +106,13 @@ public record PermintaanArsipCatalogItemOut(
     int Id,
     string? NomorArsip,
     DateOnly Tanggal,
-    string Keperluan,
     int JumlahArsip,
     string NamaArsip,
     ArchiveKategoriEnum Kategori,
     string TahunArsip,
-    int Jumlah,
-    string Satuan,
+    string LokasiPenyimpanan,
     string? NamaPic,
     string? NoTeleponPic,
-    string LokasiPenyimpanan,
     string Divisi,
     string? Departemen,
     string? Catatan,

@@ -688,6 +688,11 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS tahun_arsip VARCHAR(20) NOT NULL DEFAULT ''");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS jumlah INT NOT NULL DEFAULT 0");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS satuan VARCHAR(50) NOT NULL DEFAULT ''");
+    // Tujuan (Keperluan), Jumlah, Satuan removed from the model entirely (Jumlah Arsip already
+    // covers quantity, destination is always archive relocation) - columns stay in place per this
+    // migration path's non-destructive convention, but keperluan's NOT NULL (with no default) has
+    // to be relaxed since EF no longer sends it on INSERT.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ALTER COLUMN keperluan DROP NOT NULL");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_status ON permintaan_arsip (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_divisi ON permintaan_arsip (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_departemen ON permintaan_arsip (departemen)");

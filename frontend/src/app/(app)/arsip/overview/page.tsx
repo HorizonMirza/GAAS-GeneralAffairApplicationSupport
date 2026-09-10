@@ -183,7 +183,7 @@ export default function ArsipOverviewPage() {
             >
               <div className="card-header">
                 <div className="card-header-title">
-                  <strong>{item.keperluan} - {item.nomorArsip || "-"}</strong>
+                  <strong>{item.namaArsip} - {item.nomorArsip || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
                     {formatDate(item.tanggal)} · {item.departemen || item.divisi}
                   </div>
@@ -277,7 +277,7 @@ export default function ArsipOverviewPage() {
         <ArsipChatModal
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
-          itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.nomorArsip || "-"}` : ""}
+          itemLabel={chatItem ? `${chatItem.namaArsip} - ${chatItem.nomorArsip || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}

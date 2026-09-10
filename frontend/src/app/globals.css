@@ -3862,6 +3862,15 @@ table.data-table {
   bottom: calc(100% + 6px);
 }
 
+/* MonthFilterPicker's own field is often much narrower than "Filter Tanggal" (that one usually
+   sits inside the wider "Semua Filter" panel) - stretching the month grid down to match that
+   narrow trigger width crushed it into 3 tiny columns. Keep this one at its own comfortable
+   fixed width instead of matching the trigger, same as before the trigger-width alignment pass. */
+.filter-picker-panel-month {
+  right: auto;
+  width: max-content;
+}
+
 .month-picker-year-nav {
   display: flex;
   align-items: center;
@@ -3887,7 +3896,7 @@ table.data-table {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  width: 100%;
+  width: 200px;
 }
 
 .month-picker-cell {
@@ -3907,6 +3916,43 @@ table.data-table {
   background: var(--blue-500);
   color: #fff;
   font-weight: 600;
+}
+
+.period-picker-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-surface-alt);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 10px;
+}
+.period-picker-tab {
+  flex: 1;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.period-picker-tab:hover { color: var(--text-primary); }
+.period-picker-tab-active,
+.period-picker-tab-active:hover {
+  background: var(--bg-surface);
+  color: var(--blue-500);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.year-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 200px;
+  max-height: 190px;
+  overflow-y: auto;
 }
 
 .filter-picker-footer {

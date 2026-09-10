@@ -35,23 +35,20 @@ public class ArsipKatalogExportController : ApiControllerBase
     {
         ("nomor_arsip", "No Pemindahan"),
         ("tanggal", "Tanggal"),
-        ("keperluan", "Tujuan"),
-        ("jumlah_arsip", "Jumlah Arsip"),
+        ("jumlah_arsip", "Jumlah"),
         ("nama_arsip", "Nama Arsip"),
         ("kategori", "Kategori"),
         ("tahun", "Tahun"),
-        ("jumlah", "Jumlah"),
-        ("satuan", "Satuan"),
+        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
         ("nama_pic", "Nama PIC"),
         ("no_telepon_pic", "No. Telepon PIC"),
-        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
+        ("catatan", "Catatan"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
-        ("catatan", "Catatan"),
         ("tanggal_disetujui", "Tanggal Disetujui"),
     };
 
-    private static readonly float[] PdfColWidths = { 45, 28, 55, 30, 70, 30, 24, 24, 30, 45, 40, 55, 40, 40, 55, 40 };
+    private static readonly float[] PdfColWidths = { 45, 28, 30, 70, 30, 24, 55, 45, 40, 55, 40, 40, 40 };
 
     public ArsipKatalogExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
     {
@@ -62,13 +59,10 @@ public class ArsipKatalogExportController : ApiControllerBase
     {
         "nomor_arsip" => row.NomorArsip,
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
-        "keperluan" => row.Keperluan,
         "jumlah_arsip" => row.JumlahArsip,
         "nama_arsip" => row.NamaArsip,
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
         "tahun" => row.TahunArsip,
-        "jumlah" => row.Jumlah,
-        "satuan" => row.Satuan,
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
@@ -119,9 +113,9 @@ public class ArsipKatalogExportController : ApiControllerBase
             .OrderByDescending(p => p.ApprovedApprovalGaAt)
             .ThenBy(p => p.Id)
             .Select(p => new PermintaanArsipCatalogItemOut(
-                p.Id, p.NomorArsip, p.Tanggal, p.Keperluan, p.JumlahArsip,
-                p.NamaArsip, p.Kategori, p.TahunArsip, p.Jumlah, p.Satuan,
-                p.NamaPic, p.NoTeleponPic, p.LokasiPenyimpanan,
+                p.Id, p.NomorArsip, p.Tanggal, p.JumlahArsip,
+                p.NamaArsip, p.Kategori, p.TahunArsip, p.LokasiPenyimpanan,
+                p.NamaPic, p.NoTeleponPic,
                 p.Divisi, p.Departemen, p.Catatan,
                 p.ApprovedApprovalGaAt))
             .ToListAsync();

@@ -34,16 +34,13 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
   return {
     tanggal: item.tanggal,
     jumlahArsip: item.jumlahArsip || 0,
-    namaPic: item.namaPic || "",
-    noTeleponPic: item.noTeleponPic || "",
-    keperluan: item.keperluan,
-    lokasiPenyimpanan: item.lokasiPenyimpanan,
-    catatan: item.catatan || "",
     namaArsip: item.namaArsip,
     kategori: item.kategori,
     tahunArsip: item.tahunArsip,
-    jumlah: item.jumlah,
-    satuan: item.satuan,
+    lokasiPenyimpanan: item.lokasiPenyimpanan,
+    namaPic: item.namaPic || "",
+    noTeleponPic: item.noTeleponPic || "",
+    catatan: item.catatan || "",
   };
 }
 
@@ -199,32 +196,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 }}
               />
             </div>
-            <div className="field">
-              <label htmlFor="dr-nama-pic">Nama PIC</label>
-              <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="dr-telepon-pic">No. Telepon PIC</label>
-              <input
-                type="text"
-                inputMode="tel"
-                id="dr-telepon-pic"
-                required
-                disabled={!isEdit}
-                maxLength={15}
-                value={form.noTeleponPic}
-                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
-              />
-            </div>
-            <div className="field full">
-              <label htmlFor="dr-keperluan">Tujuan</label>
-              <input type="text" id="dr-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
-            </div>
-            <div className="field full">
-              <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
-            </div>
-
             <div className="field full">
               <label htmlFor="dr-nama-arsip">Nama Arsip</label>
               <input
@@ -264,34 +235,25 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
               />
             </div>
-            <div className="field">
-              <label htmlFor="dr-jumlah">Jumlah</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                id="dr-jumlah"
-                required
-                disabled={!isEdit}
-                placeholder="Jumlah"
-                value={form.jumlah === 0 ? "" : String(form.jumlah)}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  set("jumlah", digits === "" ? 0 : Math.min(Number(digits), 9999));
-                }}
-              />
+            <div className="field full">
+              <label htmlFor="dr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <input type="text" id="dr-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="dr-satuan">Satuan</label>
+              <label htmlFor="dr-nama-pic">Nama PIC</label>
+              <input type="text" id="dr-nama-pic" required disabled={!isEdit} maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="dr-telepon-pic">No. Telepon PIC</label>
               <input
                 type="text"
-                id="dr-satuan"
+                inputMode="tel"
+                id="dr-telepon-pic"
                 required
                 disabled={!isEdit}
-                maxLength={50}
-                placeholder="Satuan"
-                value={form.satuan}
-                onChange={(e) => set("satuan", e.target.value)}
+                maxLength={15}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
               />
             </div>
 

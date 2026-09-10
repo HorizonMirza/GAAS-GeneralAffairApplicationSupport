@@ -19,8 +19,7 @@ import type { ArchiveKategori, BookingStatus, PermintaanArsip } from "@/lib/type
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SearchableSelect from "@/components/SearchableSelect";
-import MonthFilterPicker from "@/components/MonthFilterPicker";
-import DateFilterPicker from "@/components/DateFilterPicker";
+import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import ArsipFormModal from "@/components/ArsipFormModal";
 import ArsipDetailModal from "@/components/ArsipDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -241,7 +240,7 @@ function ArsipTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
-            <MonthFilterPicker id="filter-arsip-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
+            <PeriodFilterPicker id="filter-arsip-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -253,11 +252,7 @@ function ArsipTransaksiPageInner() {
             </button>
             {filterOpen && (
               <div className="filter-dropdown-panel">
-                <div className="field">
-                  <label htmlFor="filter-arsip-tanggal">Filter Tanggal</label>
-                  <DateFilterPicker id="filter-arsip-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
-                </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
                   <label htmlFor="filter-arsip-status">Status</label>
                   <SearchableSelect
                     id="filter-arsip-status"
@@ -350,19 +345,19 @@ function ArsipTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Arsip</th>
-                <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th><th>Jumlah</th><th>Satuan</th>
-                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Lokasi Penyimpanan Saat Ini</th>
-                <th>Divisi</th><th>Departemen</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Jumlah</th>
+                <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
+                <th>Lokasi Penyimpanan Saat Ini</th><th>Nama PIC</th><th>No. Telepon PIC</th>
+                <th>Catatan</th><th>Divisi</th><th>Departemen</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={17} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -371,19 +366,16 @@ function ArsipTransaksiPageInner() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
                       <td>{formatDate(item.tanggal)}</td>
-                      <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td>{item.jumlahArsip}</td>
                       <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>
                       <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
                       <td>{item.tahunArsip}</td>
-                      <td>{item.jumlah}</td>
-                      <td>{item.satuan}</td>
+                      <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
-                      <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
@@ -498,7 +490,7 @@ function ArsipTransaksiPageInner() {
         <ArsipChatModal
           open={!!chatItem}
           itemId={chatItem?.id ?? null}
-          itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.nomorArsip || "-"}` : ""}
+          itemLabel={chatItem ? `${chatItem.namaArsip} - ${chatItem.nomorArsip || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}

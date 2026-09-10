@@ -92,7 +92,7 @@ public class PermintaanArsipChatController : ApiControllerBase
             recipientIds.Where(u => CanAccessPermintaanArsip(u, item)).Select(u => u.Id),
             "arsip",
             permintaanArsipId,
-            $"{item.Keperluan} - {item.NomorArsip ?? "#" + permintaanArsipId}",
+            $"{item.NamaArsip} - {item.NomorArsip ?? "#" + permintaanArsipId}",
             user.Nama,
             text);
 

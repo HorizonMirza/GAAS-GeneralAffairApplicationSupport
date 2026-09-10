@@ -35,23 +35,20 @@ public class ArsipExportController : ApiControllerBase
     {
         ("nomor_arsip", "No Pemindahan"),
         ("tanggal", "Tanggal"),
-        ("keperluan", "Tujuan"),
-        ("jumlah_arsip", "Jumlah Arsip"),
+        ("jumlah_arsip", "Jumlah"),
         ("nama_arsip", "Nama Arsip"),
         ("kategori", "Kategori"),
         ("tahun_arsip", "Tahun"),
-        ("jumlah", "Jumlah"),
-        ("satuan", "Satuan"),
+        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
         ("nama_pic", "Nama PIC"),
         ("no_telepon_pic", "No. Telepon PIC"),
-        ("lokasi_penyimpanan", "Lokasi Penyimpanan Saat Ini"),
+        ("catatan", "Catatan"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
-        ("catatan", "Catatan"),
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 45, 28, 55, 30, 70, 30, 24, 24, 30, 45, 40, 55, 40, 40, 55, 55 };
+    private static readonly float[] PdfColWidths = { 45, 28, 30, 70, 30, 24, 55, 45, 40, 55, 40, 40, 55 };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -76,12 +73,9 @@ public class ArsipExportController : ApiControllerBase
         "jumlah_arsip" => row.JumlahArsip,
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
-        "keperluan" => row.Keperluan,
         "nama_arsip" => row.NamaArsip,
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
         "tahun_arsip" => row.TahunArsip,
-        "jumlah" => row.Jumlah,
-        "satuan" => row.Satuan,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
