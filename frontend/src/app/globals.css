@@ -3522,6 +3522,16 @@ table.data-table {
   user-select: none;
 }
 
+/* Same sizing/spacing as .field label, but a real caption (e.g. "Filter Lainnya" above the
+   "Semua Filter" toggle) instead of an invisible alignment spacer. */
+.filter-dropdown-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
 .filter-dropdown-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -4674,7 +4684,7 @@ table.data-table {
     width: 100% !important;
     height: 100%;
   }
-  .filter-dropdown-wrap .field-label-spacer {
+  .filter-dropdown-wrap .filter-dropdown-label {
     display: none;
   }
   .toolbar-actions {

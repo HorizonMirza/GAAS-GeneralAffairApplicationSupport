@@ -521,7 +521,7 @@ export default function SuperAdminPage() {
             <MonthFilterPicker id="filter-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v })} />
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">Filter</label>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               Semua Filter
@@ -995,7 +995,7 @@ export default function SuperAdminPage() {
         <div className="toolbar">
           <div className="field">
             <label htmlFor="filter-arsip-search">Cari Arsip</label>
-            <input type="text" id="filter-arsip-search" placeholder="No Pemindahan / Nama Arsip / Lokasi / PIC" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
+            <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="filter-arsip-bulan">Filter Bulan</label>

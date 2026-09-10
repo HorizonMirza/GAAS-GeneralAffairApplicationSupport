@@ -245,7 +245,7 @@ function OfficeSuppliesTransaksiPageInner() {
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-            <label className="field-label-spacer">Filter</label>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn btn-secondary" id="filter-atk-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               Semua Filter
