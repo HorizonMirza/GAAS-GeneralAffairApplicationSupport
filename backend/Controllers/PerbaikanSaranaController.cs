@@ -196,10 +196,15 @@ public class PerbaikanSaranaController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
-        // Pencarian menjangkau nomor DAN lokasi - saat melaporkan kerusakan, orang lebih sering
-        // ingat tempatnya ("Ruang Bromo") daripada nomor dokumennya.
+        // Menjangkau nomor, lokasi, nama pelapor, dan deskripsi kerusakan - saat melaporkan
+        // kerusakan, orang lebih sering ingat tempatnya ("Ruang Bromo") atau siapa yang melapor
+        // daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(p => (p.NomorPerbaikan != null && EF.Functions.ILike(p.NomorPerbaikan, $"%{search}%")) || EF.Functions.ILike(p.Lokasi, $"%{search}%"));
+            query = query.Where(p =>
+                (p.NomorPerbaikan != null && EF.Functions.ILike(p.NomorPerbaikan, $"%{search}%")) ||
+                EF.Functions.ILike(p.Lokasi, $"%{search}%") ||
+                EF.Functions.ILike(p.NamaPelapor, $"%{search}%") ||
+                EF.Functions.ILike(p.DeskripsiKerusakan, $"%{search}%"));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         return ApplyBulanFilter(query, bulan);

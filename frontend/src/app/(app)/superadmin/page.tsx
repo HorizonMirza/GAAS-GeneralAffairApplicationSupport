@@ -4,14 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { arsipItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { arsipItemsSummary, atkItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_KERUSAKAN_LABEL, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, PermintaanArsip, RoomOption, Status, VehicleOption } from "@/lib/types";
+import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
+import AtkStatusBadge from "@/components/AtkStatusBadge";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
@@ -58,6 +59,34 @@ interface ArsipFilterState {
 }
 
 const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "" };
+
+interface AtkFilterState {
+  page: number;
+  limit: number;
+  bulan: string;
+  search: string;
+  status: Status | "REJECTED" | "";
+  divisi: string;
+  departemen: string;
+  direktorat: string;
+  sumberPembelian: SumberPembelian | "";
+}
+
+const EMPTY_ATK_FILTERS: AtkFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "", sumberPembelian: "" };
+
+interface SaranaFilterState {
+  page: number;
+  limit: number;
+  bulan: string;
+  search: string;
+  status: BookingStatus | "REJECTED" | "";
+  kategori: KategoriKerusakan | "";
+  divisi: string;
+  departemen: string;
+  direktorat: string;
+}
+
+const EMPTY_SARANA_FILTERS: SaranaFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "" };
 
 interface FilterState {
   page: number;
@@ -116,16 +145,42 @@ export default function SuperAdminPage() {
   const [arsipBusy, setArsipBusy] = useState(true);
   const [arsipError, setArsipError] = useState("");
 
+  const [atkFilters, setAtkFilters] = useState<AtkFilterState>(EMPTY_ATK_FILTERS);
+  const [atkSearchInput, setAtkSearchInput] = useState("");
+  const [atkItems, setAtkItems] = useState<PermintaanAtk[]>([]);
+  const [atkTotal, setAtkTotal] = useState(0);
+  const [atkBusy, setAtkBusy] = useState(true);
+  const [atkError, setAtkError] = useState("");
+
+  const [saranaFilters, setSaranaFilters] = useState<SaranaFilterState>(EMPTY_SARANA_FILTERS);
+  const [saranaSearchInput, setSaranaSearchInput] = useState("");
+  const [saranaItems, setSaranaItems] = useState<PerbaikanSarana[]>([]);
+  const [saranaTotal, setSaranaTotal] = useState(0);
+  const [saranaBusy, setSaranaBusy] = useState(true);
+  const [saranaError, setSaranaError] = useState("");
+
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
+  const atkFilterWrapRef = useRef<HTMLDivElement>(null);
+  const saranaFilterWrapRef = useRef<HTMLDivElement>(null);
+  const [atkFilterOpen, setAtkFilterOpen] = useState(false);
+  const [saranaFilterOpen, setSaranaFilterOpen] = useState(false);
+  useExclusivePanel(atkFilterOpen, () => setAtkFilterOpen(false));
+  useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
   const tableReqIdRef = useRef(0);
   const invoiceReqIdRef = useRef(0);
   const bookingReqIdRef = useRef(0);
   const kendaraanReqIdRef = useRef(0);
   const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arsipReqIdRef = useRef(0);
+  const atkSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const atkReqIdRef = useRef(0);
+  const saranaSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saranaReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+  useClickOutside([atkFilterWrapRef], () => setAtkFilterOpen(false), atkFilterOpen);
+  useClickOutside([saranaFilterWrapRef], () => setSaranaFilterOpen(false), saranaFilterOpen);
 
   useEffect(() => {
     if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
@@ -279,6 +334,72 @@ export default function SuperAdminPage() {
     }
   }, [arsipFilters]);
 
+  const loadAtk = useCallback(async () => {
+    const reqId = ++atkReqIdRef.current;
+    setAtkBusy(true);
+    setAtkError("");
+    try {
+      const result = await api.listAtk({
+        page: atkFilters.page,
+        limit: atkFilters.limit,
+        bulan: atkFilters.bulan,
+        status: atkFilters.status,
+        divisi: atkFilters.divisi,
+        departemen: atkFilters.departemen,
+        direktorat: atkFilters.direktorat,
+        search: atkFilters.search,
+        sumberPembelian: atkFilters.sumberPembelian,
+      });
+      if (reqId !== atkReqIdRef.current) return;
+      const atkItemsResult = result?.items ?? [];
+      const atkTotalResult = result?.total ?? 0;
+      if (atkItemsResult.length === 0 && atkTotalResult > 0 && atkFilters.page > 1) {
+        setAtkFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setAtkItems(atkItemsResult);
+      setAtkTotal(atkTotalResult);
+    } catch (err) {
+      if (reqId !== atkReqIdRef.current) return;
+      setAtkError((err as Error).message);
+    } finally {
+      if (reqId === atkReqIdRef.current) setAtkBusy(false);
+    }
+  }, [atkFilters]);
+
+  const loadSarana = useCallback(async () => {
+    const reqId = ++saranaReqIdRef.current;
+    setSaranaBusy(true);
+    setSaranaError("");
+    try {
+      const result = await api.listSarana({
+        page: saranaFilters.page,
+        limit: saranaFilters.limit,
+        bulan: saranaFilters.bulan,
+        status: saranaFilters.status,
+        kategori: saranaFilters.kategori,
+        divisi: saranaFilters.divisi,
+        departemen: saranaFilters.departemen,
+        direktorat: saranaFilters.direktorat,
+        search: saranaFilters.search,
+      });
+      if (reqId !== saranaReqIdRef.current) return;
+      const saranaItemsResult = result?.items ?? [];
+      const saranaTotalResult = result?.total ?? 0;
+      if (saranaItemsResult.length === 0 && saranaTotalResult > 0 && saranaFilters.page > 1) {
+        setSaranaFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setSaranaItems(saranaItemsResult);
+      setSaranaTotal(saranaTotalResult);
+    } catch (err) {
+      if (reqId !== saranaReqIdRef.current) return;
+      setSaranaError((err as Error).message);
+    } finally {
+      if (reqId === saranaReqIdRef.current) setSaranaBusy(false);
+    }
+  }, [saranaFilters]);
+
   useEffect(() => {
     loadTable();
   }, [loadTable]);
@@ -294,6 +415,14 @@ export default function SuperAdminPage() {
   useEffect(() => {
     loadArsip();
   }, [loadArsip]);
+
+  useEffect(() => {
+    loadAtk();
+  }, [loadAtk]);
+
+  useEffect(() => {
+    loadSarana();
+  }, [loadSarana]);
 
   useEffect(() => {
     loadKendaraanBookings();
@@ -437,6 +566,74 @@ export default function SuperAdminPage() {
     }, "Delete Permanent");
   }
 
+  function updateAtkFilter(patch: Partial<AtkFilterState>) {
+    setAtkFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function handleAtkSearchChange(value: string) {
+    setAtkSearchInput(value);
+    if (atkSearchDebounce.current) clearTimeout(atkSearchDebounce.current);
+    atkSearchDebounce.current = setTimeout(() => {
+      updateAtkFilter({ search: value.trim() });
+    }, 350);
+  }
+
+  function resetAtkFilters() {
+    setAtkSearchInput("");
+    setAtkFilters(EMPTY_ATK_FILTERS);
+  }
+
+  function goToAtkPage(page: number) {
+    if (page < 1) return;
+    setAtkFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDeleteAtk(item: PermintaanAtk) {
+    confirm("Yakin ingin menghapus permintaan ATK ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.superAdminDeleteAtk(item.id);
+        showToast("Data berhasil dihapus permanen");
+        loadAtk();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
+  function updateSaranaFilter(patch: Partial<SaranaFilterState>) {
+    setSaranaFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function handleSaranaSearchChange(value: string) {
+    setSaranaSearchInput(value);
+    if (saranaSearchDebounce.current) clearTimeout(saranaSearchDebounce.current);
+    saranaSearchDebounce.current = setTimeout(() => {
+      updateSaranaFilter({ search: value.trim() });
+    }, 350);
+  }
+
+  function resetSaranaFilters() {
+    setSaranaSearchInput("");
+    setSaranaFilters(EMPTY_SARANA_FILTERS);
+  }
+
+  function goToSaranaPage(page: number) {
+    if (page < 1) return;
+    setSaranaFilters((f) => ({ ...f, page }));
+  }
+
+  function handleDeleteSarana(item: PerbaikanSarana) {
+    confirm("Yakin ingin menghapus laporan perbaikan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.superAdminDeleteSarana(item.id);
+        showToast("Data berhasil dihapus permanen");
+        loadSarana();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   // Anchored at the current page (not a fixed 2-wide window pulled back from the end), so the
   // last page shows just itself instead of always padding in the page before it too.
@@ -501,6 +698,50 @@ export default function SuperAdminPage() {
     ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === arsipFilters.divisi)
     : null;
   const arsipDepartemenOptions = arsipSelectedDivisiNode ? arsipSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+
+  const atkTotalPages = Math.max(1, Math.ceil(atkTotal / atkFilters.limit));
+  const atkPageStart = Math.min(Math.max(1, atkFilters.page), atkTotalPages);
+  const atkPageEnd = Math.min(atkTotalPages, atkPageStart + 1);
+  const atkPageButtons: number[] = [];
+  for (let p = atkPageStart; p <= atkPageEnd; p++) atkPageButtons.push(p);
+
+  const atkSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === atkFilters.direktorat) || null;
+  const atkDivisiOptions = atkSelectedDirektoratNode
+    ? atkSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
+  const atkSelectedDivisiNode = atkFilters.divisi
+    ? (atkSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === atkFilters.divisi
+      )
+    : null;
+  const atkDepartemenOptions = atkSelectedDivisiNode
+    ? atkSelectedDivisiNode.departemen
+    : atkSelectedDirektoratNode
+      ? atkSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
+
+  const saranaTotalPages = Math.max(1, Math.ceil(saranaTotal / saranaFilters.limit));
+  const saranaPageStart = Math.min(Math.max(1, saranaFilters.page), saranaTotalPages);
+  const saranaPageEnd = Math.min(saranaTotalPages, saranaPageStart + 1);
+  const saranaPageButtons: number[] = [];
+  for (let p = saranaPageStart; p <= saranaPageEnd; p++) saranaPageButtons.push(p);
+
+  const saranaSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === saranaFilters.direktorat) || null;
+  const saranaDivisiOptions = saranaSelectedDirektoratNode
+    ? saranaSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
+  const saranaSelectedDivisiNode = saranaFilters.divisi
+    ? (saranaSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === saranaFilters.divisi
+      )
+    : null;
+  const saranaDepartemenOptions = saranaSelectedDivisiNode
+    ? saranaSelectedDivisiNode.departemen
+    : saranaSelectedDirektoratNode
+      ? saranaSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
+
+  const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
 
   return (
     <>
@@ -1107,6 +1348,341 @@ export default function SuperAdminPage() {
                 <button key={p} className={`page-btn ${p === arsipFilters.page ? "active" : ""}`} onClick={() => goToArsipPage(p)}>{p}</button>
               ))}
               <button className="page-btn" disabled={arsipFilters.page >= arsipTotalPages} onClick={() => goToArsipPage(arsipFilters.page + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>Office Supplies</h2>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Permintaan ATK</h3>
+        </div>
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
+            <label htmlFor="filter-atk-search">Cari Permintaan</label>
+            <input type="text" id="filter-atk-search" placeholder="No Permintaan" value={atkSearchInput} onChange={(e) => handleAtkSearchChange(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-atk-bulan">Filter Bulan</label>
+            <MonthFilterPicker id="filter-atk-bulan" value={atkFilters.bulan} onChange={(v) => updateAtkFilter({ bulan: v })} />
+          </div>
+          <div className="filter-dropdown-wrap" ref={atkFilterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-atk-toggle" style={{ width: "auto" }} onClick={() => setAtkFilterOpen((v) => !v)}>
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            {atkFilterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="filter-atk-status">Status</label>
+                  <SearchableSelect
+                    id="filter-atk-status"
+                    value={atkFilters.status}
+                    onChange={(v) => updateAtkFilter({ status: v as Status | "REJECTED" | "" })}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "REJECTED", "COMPLETED"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      REJECTED: "Rejected",
+                      COMPLETED: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-atk-sumber">Sumber Pembelian</label>
+                  <SearchableSelect
+                    id="filter-atk-sumber"
+                    value={atkFilters.sumberPembelian}
+                    onChange={(v) => updateAtkFilter({ sumberPembelian: v as SumberPembelian | "" })}
+                    options={["KPU", "PADI"]}
+                    getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian] || v}
+                    clearLabel="Semua Sumber"
+                    placeholder="Semua Sumber"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-atk-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="filter-atk-direktorat"
+                    value={atkFilters.direktorat}
+                    onChange={(v) => updateAtkFilter({ direktorat: v, divisi: "", departemen: "" })}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-atk-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="filter-atk-divisi"
+                    value={atkFilters.divisi}
+                    onChange={(v) => updateAtkFilter({ divisi: v, departemen: "" })}
+                    options={atkDivisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-atk-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="filter-atk-departemen"
+                    value={atkFilters.departemen}
+                    onChange={(v) => updateAtkFilter({ departemen: v })}
+                    options={atkDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetAtkFilters}>Hapus Filter</button>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th>
+                <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
+                <th>Divisi</th><th>Departemen</th><th>Sumber Pembelian</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {atkBusy ? (
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+              ) : atkError ? (
+                <tr><td colSpan={16} className="table-empty">{atkError}</td></tr>
+              ) : atkItems.length === 0 ? (
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+              ) : (
+                atkItems.map((item, index) => {
+                  const rowNumber = (atkFilters.page - 1) * atkFilters.limit + index + 1;
+                  const barang = atkItemsSummary(item);
+                  const totalKuantitas = item.items.reduce((sum, i) => sum + i.jumlah, 0);
+                  return (
+                    <tr key={item.id}>
+                      <td>{rowNumber}</td>
+                      <td>{item.nomorPermintaan || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
+                      <td>{item.noTeleponPemohon}</td>
+                      <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
+                      <td title={barang}>{truncateText(barang, 35)}</td>
+                      <td>{item.items.length}</td>
+                      <td>{totalKuantitas}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                      <td><AtkStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteAtk(item)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-atk-limit">Tampilkan</label>
+              <SearchableSelect
+                id="filter-atk-limit"
+                value={String(atkFilters.limit)}
+                onChange={(v) => updateAtkFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} permintaan`}
+                placeholder={`${atkFilters.limit} permintaan`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {atkTotal} Permintaan · Halaman {atkFilters.page} dari {atkTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={atkFilters.page <= 1} onClick={() => goToAtkPage(atkFilters.page - 1)}>‹</button>
+              {atkPageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === atkFilters.page ? "active" : ""}`} onClick={() => goToAtkPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={atkFilters.page >= atkTotalPages} onClick={() => goToAtkPage(atkFilters.page + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>Maintenance</h2>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Laporan Perbaikan Sarana</h3>
+        </div>
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
+            <label htmlFor="filter-sarana-search">Cari Laporan</label>
+            <input type="text" id="filter-sarana-search" placeholder="No Laporan" value={saranaSearchInput} onChange={(e) => handleSaranaSearchChange(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-sarana-bulan">Filter Bulan</label>
+            <MonthFilterPicker id="filter-sarana-bulan" value={saranaFilters.bulan} onChange={(v) => updateSaranaFilter({ bulan: v })} />
+          </div>
+          <div className="filter-dropdown-wrap" ref={saranaFilterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-toggle" style={{ width: "auto" }} onClick={() => setSaranaFilterOpen((v) => !v)}>
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            {saranaFilterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="filter-sarana-status">Status</label>
+                  <SearchableSelect
+                    id="filter-sarana-status"
+                    value={saranaFilters.status}
+                    onChange={(v) => updateSaranaFilter({ status: v as BookingStatus | "REJECTED" | "" })}
+                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                      APPROVED_L1: "On-Approval: Admin GA",
+                      APPROVED_GA: "On-Approval: Approval GA",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-sarana-kategori">Kategori Kerusakan</label>
+                  <SearchableSelect
+                    id="filter-sarana-kategori"
+                    value={saranaFilters.kategori}
+                    onChange={(v) => updateSaranaFilter({ kategori: v as KategoriKerusakan | "" })}
+                    options={KATEGORI_OPTIONS}
+                    getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                    clearLabel="Semua Kategori"
+                    placeholder="Semua Kategori"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-sarana-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="filter-sarana-direktorat"
+                    value={saranaFilters.direktorat}
+                    onChange={(v) => updateSaranaFilter({ direktorat: v, divisi: "", departemen: "" })}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-sarana-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="filter-sarana-divisi"
+                    value={saranaFilters.divisi}
+                    onChange={(v) => updateSaranaFilter({ divisi: v, departemen: "" })}
+                    options={saranaDivisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-sarana-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="filter-sarana-departemen"
+                    value={saranaFilters.departemen}
+                    onChange={(v) => updateSaranaFilter({ departemen: v })}
+                    options={saranaDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetSaranaFilters}>Hapus Filter</button>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
+                <th>Divisi</th><th>Departemen</th><th>Tanggal Laporan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {saranaBusy ? (
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+              ) : saranaError ? (
+                <tr><td colSpan={14} className="table-empty">{saranaError}</td></tr>
+              ) : saranaItems.length === 0 ? (
+                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+              ) : (
+                saranaItems.map((item, index) => {
+                  const rowNumber = (saranaFilters.page - 1) * saranaFilters.limit + index + 1;
+                  return (
+                    <tr key={item.id}>
+                      <td>{rowNumber}</td>
+                      <td>{item.nomorPerbaikan || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
+                      <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                      <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
+                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
+                      <td>{item.noTeleponPelapor}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteSarana(item)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-sarana-limit">Tampilkan</label>
+              <SearchableSelect
+                id="filter-sarana-limit"
+                value={String(saranaFilters.limit)}
+                onChange={(v) => updateSaranaFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} laporan`}
+                placeholder={`${saranaFilters.limit} laporan`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {saranaTotal} Laporan · Halaman {saranaFilters.page} dari {saranaTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={saranaFilters.page <= 1} onClick={() => goToSaranaPage(saranaFilters.page - 1)}>‹</button>
+              {saranaPageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === saranaFilters.page ? "active" : ""}`} onClick={() => goToSaranaPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={saranaFilters.page >= saranaTotalPages} onClick={() => goToSaranaPage(saranaFilters.page + 1)}>›</button>
             </div>
           </div>
         </div>
