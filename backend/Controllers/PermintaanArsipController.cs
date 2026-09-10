@@ -171,8 +171,14 @@ public class PermintaanArsipController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
+        // Menjangkau nomor pemindahan, nama arsip, lokasi penyimpanan, dan nama PIC - orang lebih
+        // sering ingat salah satu dari empat itu daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(p => p.NomorArsip != null && EF.Functions.ILike(p.NomorArsip, $"%{search}%"));
+            query = query.Where(p =>
+                (p.NomorArsip != null && EF.Functions.ILike(p.NomorArsip, $"%{search}%")) ||
+                EF.Functions.ILike(p.NamaArsip, $"%{search}%") ||
+                EF.Functions.ILike(p.LokasiPenyimpanan, $"%{search}%") ||
+                (p.NamaPic != null && EF.Functions.ILike(p.NamaPic, $"%{search}%")));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
         if (!string.IsNullOrEmpty(kategori))
         {
