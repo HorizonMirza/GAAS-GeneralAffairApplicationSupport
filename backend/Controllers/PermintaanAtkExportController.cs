@@ -27,15 +27,25 @@ public class PermintaanAtkExportController : ApiControllerBase
         ("diajukan", "Diajukan"),
         ("tanggal", "Tanggal Dibutuhkan"),
         ("keperluan", "Keperluan"),
+        ("nama_pemohon", "Nama Pemohon"),
+        ("no_telepon_pemohon", "No. Telepon Pemohon"),
         ("daftar_barang", "Daftar Barang"),
         ("jumlah_jenis", "Jumlah Jenis"),
+        ("total_kuantitas", "Total Kuantitas"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
+        ("sumber_pembelian", "Sumber Pembelian"),
         ("catatan", "Catatan"),
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 40, 34, 26, 45, 90, 20, 40, 40, 55, 45 };
+    private static readonly float[] PdfColWidths = { 40, 34, 26, 45, 40, 32, 90, 20, 24, 40, 40, 30, 55, 45 };
+
+    private static readonly Dictionary<string, string> SumberPembelianLabel = new()
+    {
+        ["KPU"] = "KPU",
+        ["PADI"] = "PaDi (Eksternal)",
+    };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -65,10 +75,14 @@ public class PermintaanAtkExportController : ApiControllerBase
         "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "keperluan" => row.Keperluan,
+        "nama_pemohon" => row.NamaPemohon,
+        "no_telepon_pemohon" => row.NoTeleponPemohon,
         "daftar_barang" => AtkListSummary(row),
         "jumlah_jenis" => row.Items.Count,
+        "total_kuantitas" => row.Items.Sum(i => i.Jumlah),
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
+        "sumber_pembelian" => row.SumberPembelian == null ? "-" : SumberPembelianLabel.GetValueOrDefault(row.SumberPembelian.Value.ToString(), row.SumberPembelian.Value.ToString()),
         "catatan" => row.Catatan,
         "status" => StatusLabel.GetValueOrDefault(row.Status.ToString(), row.Status.ToString()),
         _ => null,
@@ -105,9 +119,15 @@ public class PermintaanAtkExportController : ApiControllerBase
         return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false) : null;
     }
 
-    private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private static (SumberPembelianEnum? value, bool ok) ParseSumberPembelianFilter(string? sumberPembelian)
     {
-        var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
+        if (string.IsNullOrEmpty(sumberPembelian)) return (null, true);
+        return Enum.TryParse<SumberPembelianEnum>(sumberPembelian, out var parsed) ? (parsed, true) : (null, false);
+    }
+
+    private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, SumberPembelianEnum? sumberPembelian = null)
+    {
+        var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelian);
         return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 
@@ -119,7 +139,8 @@ public class PermintaanAtkExportController : ApiControllerBase
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
         [FromQuery] string? search,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? sumberPembelian = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -128,10 +149,13 @@ public class PermintaanAtkExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
+        var (sumberPembelianFilter, sumberOk) = ParseSumberPembelianFilter(sumberPembelian);
+        if (!sumberOk) return BadRequest(new { detail = "Sumber pembelian tidak valid" });
+
         List<PermintaanAtk> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
         }
         catch (ArgumentException ex)
         {
@@ -200,7 +224,8 @@ public class PermintaanAtkExportController : ApiControllerBase
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
         [FromQuery] string? search,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? sumberPembelian = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -209,10 +234,13 @@ public class PermintaanAtkExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
+        var (sumberPembelianFilter, sumberOk) = ParseSumberPembelianFilter(sumberPembelian);
+        if (!sumberOk) return BadRequest(new { detail = "Sumber pembelian tidak valid" });
+
         List<PermintaanAtk> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
         }
         catch (ArgumentException ex)
         {

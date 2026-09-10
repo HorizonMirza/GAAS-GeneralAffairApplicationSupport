@@ -14,6 +14,8 @@ public class PermintaanAtk
 
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
+    public string NamaPemohon { get; set; } = null!;
+    public string NoTeleponPemohon { get; set; } = null!;
 
     public StatusEnum Status { get; set; } = StatusEnum.DRAFT;
     public string? RejectReason { get; set; }

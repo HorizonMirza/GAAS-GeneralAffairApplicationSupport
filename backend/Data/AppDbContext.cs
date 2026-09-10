@@ -605,6 +605,8 @@ public class AppDbContext : DbContext
 
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
+            e.Property(p => p.NamaPemohon).HasColumnName("nama_pemohon").HasMaxLength(255).IsRequired();
+            e.Property(p => p.NoTeleponPemohon).HasColumnName("no_telepon_pemohon").HasMaxLength(50).IsRequired();
 
             e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");

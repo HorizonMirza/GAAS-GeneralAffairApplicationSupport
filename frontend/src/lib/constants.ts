@@ -521,6 +521,12 @@ export function isSaranaPdfAvailable(item: PerbaikanSarana): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
+// Same idea as isSaranaPdfAvailable, but gated on COMPLETED (not APPROVED_GA_APPROVAL) since ATK
+// has one more tier after Approval GA - the request is only truly final once Mitra signs off.
+export function isAtkPdfAvailable(item: PermintaanAtk): boolean {
+  return item.status === "COMPLETED";
+}
+
 // --- Archive / Permintaan Arsip (pola yang sama dengan Booking & ATK di atas) ---
 
 export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {

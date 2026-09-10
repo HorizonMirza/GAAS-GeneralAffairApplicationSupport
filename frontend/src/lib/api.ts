@@ -542,6 +542,7 @@ export const api = {
   rejectAtkKpu: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-kpu`, { method: "PATCH", body: { reason } }),
   getAtkLogs: (id: number) => apiRequest<PermintaanAtkLog[]>(`/permintaan-atk/${id}/logs`),
+  atkPdfUrl: (id: number) => `${API_BASE}/permintaan-atk/${id}/pdf`,
   getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),
   sendAtkChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/permintaan-atk/${id}/chat`, { method: "POST", body: { message } }),
@@ -827,6 +828,7 @@ export interface ListAtkParams {
   bulan?: string;
   search?: string;
   tanggal?: string;
+  sumberPembelian?: SumberPembelian | "";
 }
 
 function atkListParams(p: ListAtkParams) {
@@ -840,6 +842,7 @@ function atkListParams(p: ListAtkParams) {
     bulan: p.bulan,
     search: p.search,
     tanggal: p.tanggal,
+    sumberPembelian: p.sumberPembelian,
   };
 }
 

@@ -4,19 +4,21 @@ import { MessageSquare } from "lucide-react";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
+  isAtkPdfAvailable,
   isBookingOriginRole,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
-import type { PermintaanAtk, Status } from "@/lib/types";
+import type { PermintaanAtk, Status, SumberPembelian } from "@/lib/types";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -39,10 +41,11 @@ interface FilterState {
   departemen: string;
   direktorat: string;
   search: string;
+  sumberPembelian: SumberPembelian | "";
 }
 
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", search: "" };
+  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", search: "", sumberPembelian: "" };
 }
 
 function OfficeSuppliesTransaksiPageInner() {
@@ -129,6 +132,7 @@ function OfficeSuppliesTransaksiPageInner() {
         departemen: filters.departemen,
         direktorat: filters.direktorat,
         search: filters.search,
+        sumberPembelian: filters.sumberPembelian,
       });
       if (reqId !== tableReqIdRef.current) return;
       const resultItems = result?.items ?? [];
@@ -187,6 +191,7 @@ function OfficeSuppliesTransaksiPageInner() {
       departemen: filters.departemen,
       direktorat: filters.direktorat,
       search: filters.search,
+      sumberPembelian: filters.sumberPembelian,
     };
   }
 
@@ -272,6 +277,18 @@ function OfficeSuppliesTransaksiPageInner() {
                     placeholder="Semua Status"
                   />
                 </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-atk-sumber">Sumber Pembelian</label>
+                  <SearchableSelect
+                    id="filter-atk-sumber"
+                    value={filters.sumberPembelian}
+                    onChange={(v) => updateFilter({ sumberPembelian: v as SumberPembelian | "" })}
+                    options={["KPU", "PADI"]}
+                    getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian] || v}
+                    clearLabel="Semua Sumber"
+                    placeholder="Semua Sumber"
+                  />
+                </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -334,32 +351,38 @@ function OfficeSuppliesTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Dibutuhkan</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th>
+                <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
+                <th>Divisi</th><th>Departemen</th><th>Sumber Pembelian</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={11} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
                   const barang = atkItemsSummary(item);
+                  const totalKuantitas = item.items.reduce((sum, i) => sum + i.jumlah, 0);
                   return (
                     <tr key={item.id} id={`tx-row-${item.id}`} className={item.id === highlightId ? "row-highlight-blink" : undefined}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorPermintaan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
+                      <td>{item.noTeleponPemohon}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
                       <td>{item.items.length}</td>
+                      <td>{totalKuantitas}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{formatDate(item.tanggal)}</td>
+                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">
@@ -440,6 +463,17 @@ function OfficeSuppliesTransaksiPageInner() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isAtkPdfAvailable(rowMenu.menuItem) ? api.atkPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-ATK-${item.nomorPermintaan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

@@ -31,6 +31,8 @@ function emptyForm(): PermintaanAtkCreatePayload {
   return {
     tanggal: todayLocalDate(),
     keperluan: "",
+    namaPemohon: "",
+    noTeleponPemohon: "",
     catatan: "",
     items: [emptyItem()],
   };
@@ -165,6 +167,14 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
             <div className="field">
               <label htmlFor="fa-tanggal">Tanggal Dibutuhkan</label>
               <DateFilterPicker id="fa-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
+            </div>
+            <div className="field">
+              <label htmlFor="fa-nama-pemohon">Nama Pemohon</label>
+              <input type="text" id="fa-nama-pemohon" required maxLength={255} placeholder="Nama yang mengajukan permintaan" value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fa-no-telepon-pemohon">No. Telepon Pemohon</label>
+              <input type="text" id="fa-no-telepon-pemohon" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fa-keperluan">Tujuan</label>

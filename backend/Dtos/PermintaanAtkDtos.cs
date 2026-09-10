@@ -18,6 +18,8 @@ public class PermintaanAtkCreate
     public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
     public string Keperluan { get; set; } = null!;
+    public string NamaPemohon { get; set; } = null!;
+    public string NoTeleponPemohon { get; set; } = null!;
     public string? Catatan { get; set; }
     public List<PermintaanAtkItemCreate> Items { get; set; } = new();
 }
@@ -43,6 +45,8 @@ public class PermintaanAtkOut
     public List<PermintaanAtkItemOut> Items { get; set; } = new();
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
+    public string NamaPemohon { get; set; } = null!;
+    public string NoTeleponPemohon { get; set; } = null!;
     public StatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
     public SumberPembelianEnum? SumberPembelian { get; set; }
@@ -76,6 +80,8 @@ public class PermintaanAtkOut
             .ToList(),
         Divisi = p.Divisi,
         Departemen = p.Departemen,
+        NamaPemohon = p.NamaPemohon,
+        NoTeleponPemohon = p.NoTeleponPemohon,
         Status = p.Status,
         RejectReason = p.RejectReason,
         SumberPembelian = p.SumberPembelian,

@@ -585,6 +585,8 @@ export interface PermintaanAtk {
   items: PermintaanAtkItem[];
   divisi: string;
   departemen: string | null;
+  namaPemohon: string;
+  noTeleponPemohon: string;
   status: Status;
   rejectReason: string | null;
   sumberPembelian: SumberPembelian | null;
@@ -637,6 +639,8 @@ export interface PermintaanAtkCreatePayload {
   departemen?: string;
   tanggal: string;
   keperluan: string;
+  namaPemohon: string;
+  noTeleponPemohon: string;
   catatan: string | null;
   items: PermintaanAtkItemPayload[];
 }

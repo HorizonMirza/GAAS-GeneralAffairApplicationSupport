@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   ON_APPROVAL_STATUSES,
@@ -13,6 +13,7 @@ import {
   cardStatusBorderClass,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
+  isAtkPdfAvailable,
   isBookingOriginRole,
 } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatDate, truncateText } from "@/lib/format";
@@ -243,6 +244,17 @@ export default function OfficeSuppliesOverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isAtkPdfAvailable(rowMenu.menuItem) ? api.atkPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-ATK-${item.nomorPermintaan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

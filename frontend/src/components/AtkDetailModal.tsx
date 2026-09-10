@@ -43,6 +43,8 @@ function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
   return {
     tanggal: item.tanggal,
     keperluan: item.keperluan,
+    namaPemohon: item.namaPemohon,
+    noTeleponPemohon: item.noTeleponPemohon,
     catatan: item.catatan || "",
     items: item.items.map((i) => ({ namaBarang: i.namaBarang, jumlah: i.jumlah, satuan: i.satuan })),
   };
@@ -199,6 +201,14 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             <div className="field">
               <label htmlFor="da-tanggal">Tanggal Dibutuhkan</label>
               <DateFilterPicker id="da-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
+            </div>
+            <div className="field">
+              <label htmlFor="da-nama-pemohon">Nama Pemohon</label>
+              <input type="text" id="da-nama-pemohon" required disabled={!isEdit} maxLength={255} value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="da-no-telepon-pemohon">No. Telepon Pemohon</label>
+              <input type="text" id="da-no-telepon-pemohon" required disabled={!isEdit} maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="da-keperluan">Tujuan</label>

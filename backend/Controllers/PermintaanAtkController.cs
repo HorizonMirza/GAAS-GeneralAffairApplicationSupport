@@ -137,7 +137,8 @@ public class PermintaanAtkController : ApiControllerBase
         string? bulan = null,
         string? search = null,
         bool onlyRejected = false,
-        DateOnly? tanggal = null)
+        DateOnly? tanggal = null,
+        SumberPembelianEnum? sumberPembelian = null)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -172,9 +173,16 @@ public class PermintaanAtkController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
+        // Menjangkau nomor permintaan, tujuan, nama pemohon, dan nama barang - orang lebih sering
+        // ingat salah satu dari empat itu daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(p => p.NomorPermintaan != null && EF.Functions.ILike(p.NomorPermintaan, $"%{search}%"));
+            query = query.Where(p =>
+                (p.NomorPermintaan != null && EF.Functions.ILike(p.NomorPermintaan, $"%{search}%")) ||
+                EF.Functions.ILike(p.Keperluan, $"%{search}%") ||
+                EF.Functions.ILike(p.NamaPemohon, $"%{search}%") ||
+                p.Items.Any(i => EF.Functions.ILike(i.NamaBarang, $"%{search}%")));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
+        if (sumberPembelian.HasValue) query = query.Where(p => p.SumberPembelian == sumberPembelian.Value);
 
         return ApplyBulanFilter(query, bulan);
     }
@@ -193,6 +201,10 @@ public class PermintaanAtkController : ApiControllerBase
         }
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
             return "Keperluan wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NamaPemohon))
+            return "Nama pemohon wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPemohon))
+            return "No. Telepon pemohon wajib diisi";
         if (payload.Items.Count == 0)
             return "Minimal satu barang harus diisi";
         if (payload.Items.Count > MaxItemRows)
@@ -215,6 +227,8 @@ public class PermintaanAtkController : ApiControllerBase
     {
         item.Tanggal = payload.Tanggal;
         item.Keperluan = payload.Keperluan.Trim();
+        item.NamaPemohon = payload.NamaPemohon.Trim();
+        item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
         item.Catatan = payload.Catatan;
         // Replace-all: the form always sends the complete item list, so on update the old rows
         // are dropped and rewritten rather than diffed.
@@ -414,7 +428,8 @@ public class PermintaanAtkController : ApiControllerBase
         [FromQuery] string? direktorat = null,
         [FromQuery] string? bulan = null,
         [FromQuery] string? search = null,
-        [FromQuery] DateOnly? tanggal = null)
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? sumberPembelian = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -433,10 +448,18 @@ public class PermintaanAtkController : ApiControllerBase
             else return BadRequest(new { detail = "Status tidak valid" });
         }
 
+        SumberPembelianEnum? sumberPembelianFilter = null;
+        if (!string.IsNullOrEmpty(sumberPembelian))
+        {
+            if (!Enum.TryParse<SumberPembelianEnum>(sumberPembelian, out var parsedSumber))
+                return BadRequest(new { detail = "Sumber pembelian tidak valid" });
+            sumberPembelianFilter = parsedSumber;
+        }
+
         IQueryable<PermintaanAtk> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal);
+            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter);
         }
         catch (ArgumentException ex)
         {
@@ -766,5 +789,26 @@ public class PermintaanAtkController : ApiControllerBase
             .ToListAsync();
 
         return Ok(logs);
+    }
+
+    // Proof-of-request certificate, only ever available once a request has actually won its final
+    // Mitra sign-off - mirrors PerbaikanSaranaController.DownloadBuktiPdf.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPermintaanAtk(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != StatusEnum.COMPLETED)
+            return StatusCode(403, new { detail = "Bukti permintaan hanya tersedia untuk permintaan yang sudah Approved" });
+
+        var actorNames = item.ApprovedByKpu.HasValue
+            ? await _db.Users.Where(u => u.Id == item.ApprovedByKpu.Value).ToDictionaryAsync(u => u.Id, u => u.Nama)
+            : new Dictionary<int, string>();
+        var bytes = AtkPdfService.Generate(item, actorNames);
+        return File(bytes, "application/pdf", $"Bukti-Permintaan-ATK-{item.NomorPermintaan}.pdf");
     }
 }
