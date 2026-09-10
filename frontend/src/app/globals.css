@@ -1282,9 +1282,10 @@ body.auth-ready .app-shell {
 
 /* A subtle dot on the title line, not a full-row highlight - the row already carries a lot of
    text, and the mark-all-read affordance is what clears this, not a per-item click alone. Color
-   matches the notification's source, same convention as the top-center banner's avatar/glow
-   (see .chat-notification-banner-activity/-chat below): blue for a chat message, green for a
-   transaction/approval event. */
+   matches the notification's kind, same convention as the top-center banner (see
+   .chat-notification-banner-progress/-approved/-rejected below): blue for a chat message,
+   orange while a transaction is still moving through approval, green once it's finally
+   approved, red once it's rejected. */
 .notification-item-unread .notification-item-title::before {
   content: "";
   display: inline-block;
@@ -1296,8 +1297,16 @@ body.auth-ready .app-shell {
   vertical-align: middle;
 }
 
-.notification-item-unread.notification-item-activity .notification-item-title::before {
-  background: var(--green-500);
+.notification-item-unread.notification-item-progress .notification-item-title::before {
+  background: var(--badge-submitted-bg);
+}
+
+.notification-item-unread.notification-item-approved .notification-item-title::before {
+  background: var(--badge-completed-bg);
+}
+
+.notification-item-unread.notification-item-rejected .notification-item-title::before {
+  background: var(--badge-rejected-bg);
 }
 
 .notification-item-title {
@@ -4372,7 +4381,8 @@ table.data-table {
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  box-shadow: var(--glow-blue-strong);
+  border-left: 4px solid var(--blue-500);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   border-radius: 14px;
   padding: 12px 14px;
   font-family: inherit;
@@ -4382,10 +4392,21 @@ table.data-table {
   animation: chat-notification-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* A transaction/approval event gets a green glow instead of the default blue - lets the two
-   notification kinds read apart at a glance, same convention as the bell dropdown's unread dot. */
-.chat-notification-banner-activity {
-  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.4), 0 12px 36px rgba(10, 138, 74, 0.4), 0 0 56px rgba(52, 209, 94, 0.28);
+/* Flat left-border accent, no glow - just enough color to read the kind at a glance. Chat stays
+   the default blue above; a transaction/approval event picks one of three: orange while still
+   moving through the approval chain (just created, or approved at a non-final tier), green once
+   it reaches the final approved status, red once rejected at any tier. Same convention as the
+   bell dropdown's unread dot. */
+.chat-notification-banner-progress {
+  border-left-color: var(--badge-submitted-bg);
+}
+
+.chat-notification-banner-approved {
+  border-left-color: var(--badge-completed-bg);
+}
+
+.chat-notification-banner-rejected {
+  border-left-color: var(--badge-rejected-bg);
 }
 
 .chat-notification-banner-leaving {
@@ -4406,8 +4427,16 @@ table.data-table {
   font-size: 0.95rem;
 }
 
-.chat-notification-avatar-activity {
-  background: linear-gradient(135deg, var(--green-600) 0%, var(--green-400) 100%);
+.chat-notification-avatar-progress {
+  background: var(--badge-submitted-bg);
+}
+
+.chat-notification-avatar-approved {
+  background: var(--badge-completed-bg);
+}
+
+.chat-notification-avatar-rejected {
+  background: var(--badge-rejected-bg);
 }
 
 .chat-notification-body {

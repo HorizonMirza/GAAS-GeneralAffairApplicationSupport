@@ -1472,7 +1472,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedL1At = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "rejected", "booking", item!.Id, ItemLabel(item!), user.Nama, "Ditolak (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
 
@@ -1520,7 +1520,7 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedGaAt = null;
         });
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
 
@@ -1676,7 +1676,7 @@ public class BookingRuangController : ApiControllerBase
         var totalConfirmed = members.Count(m => m.Status == BookingStatusEnum.APPROVED_GA_APPROVAL);
         var totalConflicted = members.Count(m => m.HasConflict);
 
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "booking", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
         return Ok(new
         {
             item = BookingRuangOut.From(item),
@@ -1730,7 +1730,7 @@ public class BookingRuangController : ApiControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         await _db.Entry(item).ReloadAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "booking", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
         return Ok(BookingRuangOut.From(item));
     }
 

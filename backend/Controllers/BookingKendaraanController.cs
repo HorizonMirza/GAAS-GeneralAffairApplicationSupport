@@ -868,7 +868,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Approval Departemen/Divisi)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -912,7 +912,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Admin GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -959,7 +959,7 @@ public class BookingKendaraanController : ApiControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Disetujui (Approval GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 
@@ -981,7 +981,7 @@ public class BookingKendaraanController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "kendaraan", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Approval GA)");
         return Ok(BookingKendaraanOut.From(item));
     }
 

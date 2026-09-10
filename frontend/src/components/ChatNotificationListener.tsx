@@ -28,6 +28,21 @@ function initials(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
 }
 
+// Orange while still moving through the approval chain (just created, or approved at a
+// non-final tier), green once it reaches the final approved status, red once rejected at any
+// tier - chat notifications (source "chat") stay their own blue and never reach this.
+function activityColorClass(type: ActivityNotification["type"]): string {
+  if (type === "approved") return " chat-notification-banner-approved";
+  if (type === "rejected") return " chat-notification-banner-rejected";
+  return " chat-notification-banner-progress";
+}
+
+function activityAvatarColorClass(type: ActivityNotification["type"]): string {
+  if (type === "approved") return " chat-notification-avatar-approved";
+  if (type === "rejected") return " chat-notification-avatar-rejected";
+  return " chat-notification-avatar-progress";
+}
+
 function bannerHref(banner: BannerState): string {
   const base = NOTIFICATION_TRANSAKSI_PATH[banner.kind];
   return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : `${base}?highlight=${banner.itemId}`;
@@ -117,7 +132,7 @@ export default function ChatNotificationListener() {
           <button
             key={banner.id}
             type="button"
-            className={`chat-notification-banner${banner.source === "activity" ? " chat-notification-banner-activity" : ""}${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
+            className={`chat-notification-banner${banner.source === "activity" ? activityColorClass(banner.type) : ""}${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
             onClick={() => {
               dismiss(banner.id);
               // Same split as NotificationBell.openItem: a chat banner opens its thread on top of
@@ -130,7 +145,7 @@ export default function ChatNotificationListener() {
               }
             }}
           >
-            <span className={`chat-notification-avatar${banner.source === "activity" ? " chat-notification-avatar-activity" : ""}`}>{initials(actorNama)}</span>
+            <span className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}>{initials(actorNama)}</span>
             <span className="chat-notification-body">
               <span className="chat-notification-title">
                 <strong>{actorNama}</strong> - {NOTIFICATION_KIND_LABEL[banner.kind]}

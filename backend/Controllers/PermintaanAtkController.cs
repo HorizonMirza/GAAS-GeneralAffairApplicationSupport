@@ -597,7 +597,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval Departemen/Divisi)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -644,7 +644,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -688,7 +688,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "atk", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -710,7 +710,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "APPROVED_KPU", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user.Nama, "Disetujui (Mitra)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "atk", item.Id, ItemLabel(item), user.Nama, "Disetujui (Mitra)");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -732,7 +732,7 @@ public class PermintaanAtkController : ApiControllerBase
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "atk", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Mitra)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "atk", item.Id, ItemLabel(item), user!.Nama, "Ditolak (Mitra)");
         return Ok(PermintaanAtkOut.From(item));
     }
 

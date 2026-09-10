@@ -144,9 +144,10 @@ export interface ChatNotification {
 
 // Pushed the same way as ChatNotification (ChatHub.UserGroup) but on "ReceiveActivityNotification"
 // instead - a workflow event (a new transaction submitted, or an approve/reject step), not a chat
-// message. Type distinguishes the two cases the notification banner/sound treats differently.
+// message. Type distinguishes the color/urgency the notification banner shows: "created"/"approval"
+// (still in progress, orange), "approved" (final tier reached, green), "rejected" (red).
 export interface ActivityNotification {
-  type: "created" | "approval";
+  type: "created" | "approval" | "approved" | "rejected";
   kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
   itemId: number;
   itemLabel: string;

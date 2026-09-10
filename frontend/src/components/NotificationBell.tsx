@@ -199,11 +199,19 @@ export default function NotificationBell() {
               {visibleItems.map((item) => {
                 const actorNama = item.source === "chat" ? item.senderNama : item.actorNama;
                 const detail = item.source === "chat" ? `Chat: ${item.preview}` : item.message;
+                const activityColorClass =
+                  item.source === "activity"
+                    ? item.type === "approved"
+                      ? " notification-item-approved"
+                      : item.type === "rejected"
+                      ? " notification-item-rejected"
+                      : " notification-item-progress"
+                    : "";
                 return (
                   <motion.li key={item.key} variants={itemVariants} className="notification-item-row">
                     <button
                       type="button"
-                      className={`notification-item${item.read ? "" : " notification-item-unread"}${item.source === "activity" ? " notification-item-activity" : ""}`}
+                      className={`notification-item${item.read ? "" : " notification-item-unread"}${activityColorClass}`}
                       onClick={() => openItem(item)}
                     >
                       <span className="notification-item-title">

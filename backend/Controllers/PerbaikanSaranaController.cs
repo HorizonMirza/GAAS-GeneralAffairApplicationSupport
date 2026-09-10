@@ -622,7 +622,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval Departemen/Divisi)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -666,7 +666,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Admin GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -688,7 +688,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "sarana", item.Id, ItemLabel(item), user.Nama, "Disetujui (Approval GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -710,7 +710,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Nama, "Ditolak (Approval GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
