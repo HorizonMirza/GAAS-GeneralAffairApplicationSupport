@@ -15,6 +15,7 @@ import {
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { PermintaanAtk, Status } from "@/lib/types";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -58,6 +59,7 @@ function OfficeSuppliesTransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" } | null>(null);
@@ -238,7 +240,7 @@ function OfficeSuppliesTransaksiPageInner() {
           </div>
 
           <div className="field">
-            <label htmlFor="filter-atk-bulan">Filter Bulan</label>
+            <label htmlFor="filter-atk-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-atk-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ARCHIVE_KATEGORI_LABEL, isBookingOriginRole } from "@/lib/constants";
 import { formatDate, truncateText } from "@/lib/format";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { ArchiveKategori, PermintaanArsipCatalogItem } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
@@ -40,6 +41,7 @@ export default function ArsipKatalogPage() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -143,7 +145,7 @@ export default function ArsipKatalogPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="filter-katalog-bulan">Filter Bulan</label>
+          <label htmlFor="filter-katalog-bulan">Filter Periode</label>
           <PeriodFilterPicker id="filter-katalog-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
         </div>
 

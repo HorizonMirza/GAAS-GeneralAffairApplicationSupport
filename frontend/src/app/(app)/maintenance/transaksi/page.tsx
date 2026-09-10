@@ -18,6 +18,7 @@ import {
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { BookingStatus, KategoriKerusakan, PerbaikanSarana, Urgensi } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -66,6 +67,7 @@ function MaintenanceTransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: PerbaikanSarana; mode: "view" | "edit" } | null>(null);
@@ -248,7 +250,7 @@ function MaintenanceTransaksiPageInner() {
           </div>
 
           <div className="field">
-            <label htmlFor="filter-sarana-bulan">Filter Bulan</label>
+            <label htmlFor="filter-sarana-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-sarana-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 

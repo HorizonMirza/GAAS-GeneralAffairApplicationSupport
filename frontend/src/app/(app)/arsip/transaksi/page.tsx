@@ -15,6 +15,7 @@ import {
 import { formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { ArchiveKategori, BookingStatus, PermintaanArsip } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -59,6 +60,7 @@ function ArsipTransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: PermintaanArsip; mode: "view" | "edit" } | null>(null);
@@ -234,12 +236,12 @@ function ArsipTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-arsip-search">Cari Pemindahan</label>
+            <label htmlFor="filter-arsip-search">Cari Nomor Pemindahan</label>
             <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
-            <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
+            <label htmlFor="filter-arsip-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-arsip-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 
@@ -324,7 +326,7 @@ function ArsipTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pemindahan</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Arsip</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipExportPdfUrl(currentExportParams()), "_blank")}>

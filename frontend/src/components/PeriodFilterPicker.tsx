@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { todayLocalDate } from "@/lib/format";
 
 const PANEL_HEIGHT_ESTIMATE = 420;
@@ -61,14 +62,15 @@ function detectMode(bulan: string, tanggal: string): Mode {
 // Merges what used to be two separate fields (Filter Bulan via MonthFilterPicker, Filter Tanggal
 // via DateFilterPicker) into one picker with three explicit modes - search by a specific date,
 // by month only, or by year only - since both underlying filters were always mutually exclusive
-// anyway. Sits at "Filter Bulan"; the standalone DateFilterPicker is retired everywhere this
+// anyway. Sits at "Filter Periode"; the standalone DateFilterPicker is retired everywhere this
 // pairing existed.
-export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, onChangeTanggal, placeholder = "Semua Bulan" }: Props) {
+export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, onChangeTanggal, placeholder = "Semua Periode" }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const [mode, setMode] = useState<Mode>(() => detectMode(bulan, tanggal));
   const wrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([wrapRef], () => setOpen(false), open);
+  useExclusivePanel(open, () => setOpen(false));
 
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);

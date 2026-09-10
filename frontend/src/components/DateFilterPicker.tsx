@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { todayLocalDate } from "@/lib/format";
 
 const PANEL_HEIGHT_ESTIMATE = 380;
@@ -64,6 +65,7 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
   useClickOutside([wrapRef], () => setOpen(false), open);
   useClickOutside([monthSelectRef], () => setMonthDropdownOpen(false), monthDropdownOpen);
   useClickOutside([yearSelectRef], () => setYearDropdownOpen(false), yearDropdownOpen);
+  useExclusivePanel(open, () => setOpen(false));
 
   // The year list runs 26 rows deep (see yearRange) - jump straight to the current selection
   // instead of leaving whoever opens it to scroll and hunt for it themselves.

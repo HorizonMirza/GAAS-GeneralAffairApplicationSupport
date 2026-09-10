@@ -20,6 +20,7 @@ import {
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -70,6 +71,7 @@ function BookingTransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -273,7 +275,7 @@ function BookingTransaksiPageInner() {
           </div>
 
           <div className="field">
-            <label htmlFor="filter-bulan">Filter Bulan</label>
+            <label htmlFor="filter-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 

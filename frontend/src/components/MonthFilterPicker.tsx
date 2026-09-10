@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 
 // Rough upper bound on the panel's own height (year nav + 4-row month grid) - same estimate
 // pattern as SearchableSelect's PANEL_HEIGHT_ESTIMATE, decided before paint so the panel never
@@ -38,6 +39,7 @@ export default function MonthFilterPicker({ id, value, onChange, placeholder = "
   const [dropUp, setDropUp] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([wrapRef], () => setOpen(false), open);
+  useExclusivePanel(open, () => setOpen(false));
 
   const [selectedYear, selectedMonthIdx] = value
     ? [Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1]

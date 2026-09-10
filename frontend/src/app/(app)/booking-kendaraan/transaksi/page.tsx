@@ -17,6 +17,7 @@ import {
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { BookingKendaraan, BookingStatus, VehicleOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -63,6 +64,7 @@ function VehicleBookingTransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -254,7 +256,7 @@ function VehicleBookingTransaksiPageInner() {
           </div>
 
           <div className="field">
-            <label htmlFor="filter-kendaraan-bulan">Filter Bulan</label>
+            <label htmlFor="filter-kendaraan-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-kendaraan-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 

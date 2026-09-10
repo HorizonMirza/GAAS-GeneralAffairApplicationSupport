@@ -10,6 +10,7 @@ import { isEditableByOrigin } from "@/lib/constants";
 import { formatCurrency, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import type { Pengiriman, Status } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -54,6 +55,7 @@ function TransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
@@ -245,7 +247,7 @@ function TransaksiPageInner() {
           </div>
 
           <div className="field">
-            <label htmlFor="filter-bulan">Filter Bulan</label>
+            <label htmlFor="filter-bulan">Filter Periode</label>
             <PeriodFilterPicker id="filter-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
 

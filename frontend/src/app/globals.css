@@ -3338,13 +3338,20 @@ table.data-table {
 }
 
 .toolbar #filter-bulan,
-.toolbar #filter-kendaraan-bulan {
+.toolbar #filter-kendaraan-bulan,
+.toolbar #filter-arsip-bulan,
+.toolbar #filter-katalog-bulan,
+.toolbar #filter-atk-bulan,
+.toolbar #filter-sarana-bulan {
   max-width: 130px;
 }
 
 /* Ekspedisi Transaksi and Room Booking's Booking page share this treatment: Cari
    Transaksi/Pesanan and Filter Bulan sized to match the Semua Transaksi/Pesanan button next to
-   them, scoped here so it doesn't affect the plain .toolbar-search-field still used by Super Admin. */
+   them, scoped here so it doesn't affect the plain .toolbar-search-field still used by Super Admin.
+   The same fixed width now also covers every other PeriodFilterPicker trigger (Archive's two
+   tables, ATK, Maintenance) - they all sit in an identical transactions-page-toolbar and were
+   missing from this list, which is why only Ekspedisi/Booking Kendaraan matched it before. */
 .transactions-page-toolbar .toolbar-search-field {
   flex: 0 0 auto;
   width: 160px;
@@ -3352,7 +3359,11 @@ table.data-table {
 }
 
 .toolbar.transactions-page-toolbar #filter-bulan,
-.toolbar.transactions-page-toolbar #filter-kendaraan-bulan {
+.toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
+.toolbar.transactions-page-toolbar #filter-arsip-bulan,
+.toolbar.transactions-page-toolbar #filter-katalog-bulan,
+.toolbar.transactions-page-toolbar #filter-atk-bulan,
+.toolbar.transactions-page-toolbar #filter-sarana-bulan {
   max-width: none;
   width: 160px;
 }
@@ -3363,6 +3374,10 @@ table.data-table {
 .transactions-page-toolbar .toolbar-search-field input,
 .toolbar.transactions-page-toolbar #filter-bulan,
 .toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
+.toolbar.transactions-page-toolbar #filter-arsip-bulan,
+.toolbar.transactions-page-toolbar #filter-katalog-bulan,
+.toolbar.transactions-page-toolbar #filter-atk-bulan,
+.toolbar.transactions-page-toolbar #filter-sarana-bulan,
 .transactions-page-toolbar > .btn {
   height: 38px;
   box-sizing: border-box;
@@ -3869,6 +3884,11 @@ table.data-table {
 .filter-picker-panel-month {
   right: auto;
   width: max-content;
+  /* Without a definite width, the Tanggal tab's 7-column day grid (grid-template-columns:
+     repeat(7, 1fr)) has nothing to resolve its fr tracks against and collapses to a cramped
+     sliver - this floor keeps every tab (Tanggal/Bulan/Tahun) at the same comfortable size
+     regardless of which one happens to be active when the panel's own width is measured. */
+  min-width: 240px;
 }
 
 .month-picker-year-nav {

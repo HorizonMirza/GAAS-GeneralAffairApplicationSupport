@@ -8,6 +8,7 @@ import { arsipItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STA
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, Pengiriman, PermintaanArsip, RoomOption, Status, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
@@ -84,6 +85,7 @@ export default function SuperAdminPage() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
@@ -992,7 +994,7 @@ export default function SuperAdminPage() {
         </div>
         <div className="toolbar">
           <div className="field">
-            <label htmlFor="filter-arsip-search">Cari Pemindahan</label>
+            <label htmlFor="filter-arsip-search">Cari Nomor Pemindahan</label>
             <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
           </div>
           <div className="field">
