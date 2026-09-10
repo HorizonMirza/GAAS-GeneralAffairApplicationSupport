@@ -179,6 +179,26 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 }}
               />
             </div>
+            <div className="field">
+              <label htmlFor="fr-nama-pic">Nama PIC</label>
+              <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
+              <input
+                type="text"
+                inputMode="tel"
+                id="fr-telepon-pic"
+                required
+                maxLength={15}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
+            </div>
+            <div className="field full">
+              <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
+            </div>
             <div className="field full">
               <label htmlFor="fr-nama-arsip">Nama Arsip</label>
               <input
@@ -213,26 +233,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 placeholder="Contoh: 2018"
                 value={form.tahunArsip}
                 onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
-              />
-            </div>
-            <div className="field full">
-              <label htmlFor="fr-lokasi">Lokasi Penyimpanan Saat Ini</label>
-              <input type="text" id="fr-lokasi" required maxLength={100} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="fr-nama-pic">Nama PIC</label>
-              <input type="text" id="fr-nama-pic" required maxLength={50} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="fr-telepon-pic">No. Telepon PIC</label>
-              <input
-                type="text"
-                inputMode="tel"
-                id="fr-telepon-pic"
-                required
-                maxLength={15}
-                value={form.noTeleponPic}
-                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
               />
             </div>
             <div className="field full">

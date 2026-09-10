@@ -241,7 +241,7 @@ function MaintenanceTransaksiPageInner() {
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-sarana-search">Cari Laporan</label>
-            <input type="text" id="filter-sarana-search" placeholder="No Laporan / Lokasi" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <input type="text" id="filter-sarana-search" placeholder="No Laporan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
