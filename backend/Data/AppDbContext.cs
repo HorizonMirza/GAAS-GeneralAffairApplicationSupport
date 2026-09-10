@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<PerbaikanSaranaLog> PerbaikanSaranaLogs => Set<PerbaikanSaranaLog>();
     public DbSet<PerbaikanSaranaChatMessage> PerbaikanSaranaChatMessages => Set<PerbaikanSaranaChatMessage>();
     public DbSet<PerbaikanSaranaChatRead> PerbaikanSaranaChatReads => Set<PerbaikanSaranaChatRead>();
+    public DbSet<PerbaikanSaranaFotoKerusakan> PerbaikanSaranaFotoKerusakans => Set<PerbaikanSaranaFotoKerusakan>();
     public DbSet<SaranaCounter> SaranaCounters => Set<SaranaCounter>();
     public DbSet<PermintaanArsip> PermintaanArsips => Set<PermintaanArsip>();
     public DbSet<PermintaanArsipLog> PermintaanArsipLogs => Set<PermintaanArsipLog>();
@@ -733,14 +734,10 @@ public class AppDbContext : DbContext
             e.Property(p => p.Tanggal).HasColumnName("tanggal");
             e.Property(p => p.Lokasi).HasColumnName("lokasi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
-            e.Property(p => p.Urgensi).HasColumnName("urgensi").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.DeskripsiKerusakan).HasColumnName("deskripsi_kerusakan").IsRequired();
             e.Property(p => p.Catatan).HasColumnName("catatan");
             e.Property(p => p.NamaPelapor).HasColumnName("nama_pelapor").HasMaxLength(255).IsRequired();
             e.Property(p => p.NoTeleponPelapor).HasColumnName("no_telepon_pelapor").HasMaxLength(50).IsRequired();
-            e.Property(p => p.FotoKerusakanFilePath).HasColumnName("foto_kerusakan_file_path").HasMaxLength(255);
-            e.Property(p => p.FotoKerusakanOriginalFilename).HasColumnName("foto_kerusakan_original_filename").HasMaxLength(255);
-            e.Property(p => p.FotoKerusakanContentType).HasColumnName("foto_kerusakan_content_type").HasMaxLength(100);
 
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
@@ -805,6 +802,23 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PerbaikanSaranaFotoKerusakan>(e =>
+        {
+            e.ToTable("perbaikan_sarana_foto_kerusakan");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Id).HasColumnName("id");
+            e.Property(f => f.PerbaikanSaranaId).HasColumnName("perbaikan_sarana_id");
+            e.Property(f => f.FilePath).HasColumnName("file_path").HasMaxLength(255).IsRequired();
+            e.Property(f => f.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();
+            e.Property(f => f.ContentType).HasColumnName("content_type").HasMaxLength(100).IsRequired();
+            e.Property(f => f.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(f => f.PerbaikanSarana)
+                .WithMany(p => p.FotoKerusakan)
+                .HasForeignKey(f => f.PerbaikanSaranaId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SaranaCounter>(e =>

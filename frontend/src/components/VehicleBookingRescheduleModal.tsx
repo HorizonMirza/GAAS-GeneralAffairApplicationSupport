@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -106,7 +107,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
             </div>
             <div className="field">
               <label htmlFor="rk-tanggal">Tanggal</label>
-              <input type="date" id="rk-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="rk-penumpang">Jumlah Penumpang</label>

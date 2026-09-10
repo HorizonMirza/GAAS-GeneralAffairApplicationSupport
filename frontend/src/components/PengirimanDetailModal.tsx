@@ -6,6 +6,7 @@ import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable
 import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import { useToast } from "./ui/ToastProvider";
@@ -221,7 +222,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-tanggal">Tanggal</label>
-              <input type="date" id="pv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="pv-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="pv-jumlah-item">Jumlah Barang</label>

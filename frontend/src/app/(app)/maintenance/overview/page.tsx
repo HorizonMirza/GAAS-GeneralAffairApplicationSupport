@@ -11,8 +11,6 @@ import {
   BOOKING_REJECTED_STATUSES,
   EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
-  URGENSI_BADGE_CLASS,
-  URGENSI_LABEL,
   bookingStatusBorderClass,
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
@@ -42,7 +40,6 @@ interface Stats {
   waitingGa: number;
   waitingGaApproval: number;
   approved: number;
-  urgensiTinggiAktif: number;
   // Breakdown eksekusi fisik yang masih berjalan (di antara yang sudah Approved) - SELESAI tidak
   // disertakan karena sudah terwakili oleh tile "Approved" di atas.
   execMenunggu: number;
@@ -89,8 +86,7 @@ export default function MaintenanceOverviewPage() {
       // Gambar -> Selesai) can still be running weeks later once the month rolls over - without
       // this second fetch, such a report would silently vanish from this screen the moment the
       // calendar month changes even though GA still has work to do on it. Merged by id (a report
-      // can legitimately appear in both queries) and re-sorted with the same ordering the backend
-      // itself uses (Urgensi TINGGI first, then newest).
+      // can legitimately appear in both queries) and re-sorted newest-first.
       const [queue, activeExecuting, statsResp] = await Promise.all([
         api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
         api.listSarana({ limit: 1000, page: 1, status: "APPROVED_GA_APPROVAL" }).then((r) => r.items.filter((i) => i.executionStage !== "SELESAI")),
@@ -99,10 +95,9 @@ export default function MaintenanceOverviewPage() {
       const merged = new Map<number, PerbaikanSarana>();
       for (const item of queue) merged.set(item.id, item);
       for (const item of activeExecuting) merged.set(item.id, item);
-      const combined = Array.from(merged.values()).sort((a, b) => {
-        if ((a.urgensi === "TINGGI") !== (b.urgensi === "TINGGI")) return a.urgensi === "TINGGI" ? -1 : 1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+      const combined = Array.from(merged.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
       const counts = statsResp.countsByStatus;
       const count = (status: BookingStatus) => counts[status] ?? 0;
       const execCounts = statsResp.executionStageCounts;
@@ -112,7 +107,6 @@ export default function MaintenanceOverviewPage() {
         waitingGa: count("APPROVED_L1"),
         waitingGaApproval: count("APPROVED_GA"),
         approved: count("APPROVED_GA_APPROVAL"),
-        urgensiTinggiAktif: statsResp.urgensiTinggiAktif,
         execMenunggu: execCounts.MENUNGGU ?? 0,
         execLokasiDicek: execCounts.LOKASI_DICEK ?? 0,
         execGambarDibuat: execCounts.GAMBAR_DIBUAT ?? 0,
@@ -173,7 +167,6 @@ export default function MaintenanceOverviewPage() {
           <div className="stat-tile"><div className="value">{stats.waitingGa}</div><div className="label">Admin General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
-          <div className="stat-tile"><div className="value">{stats.urgensiTinggiAktif}</div><div className="label">Urgensi Tinggi Berjalan</div></div>
         </div>
       )}
 
@@ -231,7 +224,6 @@ export default function MaintenanceOverviewPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className={`badge ${URGENSI_BADGE_CLASS[item.urgensi]}`}>{URGENSI_LABEL[item.urgensi]}</span>
                   <BookingStatusBadge status={item.status} departemen={item.departemen} />
                   {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
                     <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>

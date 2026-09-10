@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
 import SearchableSelect from "./SearchableSelect";
@@ -118,7 +119,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal</label>
-              <input type="date" id="rs-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="rs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="rs-peserta">Jumlah Peserta</label>

@@ -7,6 +7,7 @@ import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveKategori, Me, PermintaanArsipCreatePayload } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -160,7 +161,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
             )}
             <div className="field">
               <label htmlFor="fr-tanggal">Tanggal</label>
-              <input type="date" id="fr-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="fr-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="fr-jumlah-arsip">Jumlah Arsip</label>

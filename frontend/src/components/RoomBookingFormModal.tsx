@@ -7,6 +7,7 @@ import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
 import SearchableSelect from "./SearchableSelect";
@@ -204,7 +205,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
-              <input type="date" id="f-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>
@@ -326,13 +327,12 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 </div>
                 <div className="field">
                   <label htmlFor="f-recurrence-end">Berulang Sampai Tanggal</label>
-                  <input
-                    type="date"
+                  <DateFilterPicker
                     id="f-recurrence-end"
-                    required
-                    min={form.tanggal}
+                    clearable={false}
+                    minDate={form.tanggal}
                     value={form.recurrenceEndDate || ""}
-                    onChange={(e) => set("recurrenceEndDate", e.target.value)}
+                    onChange={(v) => set("recurrenceEndDate", v)}
                   />
                 </div>
               </>

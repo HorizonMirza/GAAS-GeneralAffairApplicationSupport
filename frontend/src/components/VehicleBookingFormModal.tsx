@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
@@ -171,7 +172,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
-              <input type="date" id="fk-tanggal" required value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="fk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>

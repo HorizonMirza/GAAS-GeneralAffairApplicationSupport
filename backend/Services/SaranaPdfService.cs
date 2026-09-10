@@ -29,13 +29,6 @@ public static class SaranaPdfService
         ["LAINNYA"] = "Lainnya",
     };
 
-    private static readonly Dictionary<string, string> UrgensiLabel = new()
-    {
-        ["RENDAH"] = "Rendah",
-        ["SEDANG"] = "Sedang",
-        ["TINGGI"] = "Tinggi",
-    };
-
     // Matches frontend's EXECUTION_STAGE_LABEL (lib/constants.ts) word-for-word.
     private static readonly Dictionary<string, string> ExecutionStageLabel = new()
     {
@@ -141,20 +134,17 @@ public static class SaranaPdfService
                 c.ConstantColumn(26);
                 c.RelativeColumn(2.4f);
                 c.RelativeColumn(1.6f);
-                c.RelativeColumn(1.2f);
-                c.RelativeColumn(3.2f);
+                c.RelativeColumn(3.6f);
             });
 
             table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignCenter().AlignMiddle().Padding(5).Text("NO").Bold().FontSize(9);
             table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignMiddle().Padding(5).Text("LOKASI").Bold().FontSize(9);
             table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignMiddle().Padding(5).Text("KATEGORI").Bold().FontSize(9);
-            table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignMiddle().Padding(5).Text("URGENSI").Bold().FontSize(9);
             table.Cell().Border(1).BorderColor(BorderColor).Background(HeaderBg).AlignMiddle().Padding(5).Text("DESKRIPSI KERUSAKAN").Bold().FontSize(9);
 
             table.Cell().Border(1).BorderColor(BorderColor).AlignCenter().Padding(5).Text("1").FontSize(9.5f);
             table.Cell().Border(1).BorderColor(BorderColor).Padding(5).Text(item.Lokasi).FontSize(9.5f);
             table.Cell().Border(1).BorderColor(BorderColor).Padding(5).Text(KategoriLabel.GetValueOrDefault(item.Kategori.ToString(), item.Kategori.ToString())).FontSize(9.5f);
-            table.Cell().Border(1).BorderColor(BorderColor).Padding(5).Text(UrgensiLabel.GetValueOrDefault(item.Urgensi.ToString(), item.Urgensi.ToString())).FontSize(9.5f);
             table.Cell().Border(1).BorderColor(BorderColor).Padding(5).Text(item.DeskripsiKerusakan).FontSize(9.5f);
         });
     }

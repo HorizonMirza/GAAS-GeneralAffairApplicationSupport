@@ -12,7 +12,6 @@ public class PerbaikanSaranaCreate
     public DateOnly Tanggal { get; set; }
     public string Lokasi { get; set; } = null!;
     public KategoriKerusakanEnum Kategori { get; set; }
-    public UrgensiEnum Urgensi { get; set; }
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
     public string NamaPelapor { get; set; } = null!;
@@ -28,6 +27,8 @@ public record PerbaikanSaranaLogOut(
     DateTime CreatedAt
 );
 
+public record PerbaikanSaranaFotoKerusakanOut(int Id, string OriginalFilename);
+
 public class PerbaikanSaranaOut
 {
     public int Id { get; set; }
@@ -35,12 +36,10 @@ public class PerbaikanSaranaOut
     public DateOnly Tanggal { get; set; }
     public string Lokasi { get; set; } = null!;
     public KategoriKerusakanEnum Kategori { get; set; }
-    public UrgensiEnum Urgensi { get; set; }
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
     public string NamaPelapor { get; set; } = null!;
     public string NoTeleponPelapor { get; set; } = null!;
-    public string? FotoKerusakanOriginalFilename { get; set; }
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
     public BookingStatusEnum Status { get; set; }
@@ -74,12 +73,10 @@ public class PerbaikanSaranaOut
         Tanggal = p.Tanggal,
         Lokasi = p.Lokasi,
         Kategori = p.Kategori,
-        Urgensi = p.Urgensi,
         DeskripsiKerusakan = p.DeskripsiKerusakan,
         Catatan = p.Catatan,
         NamaPelapor = p.NamaPelapor,
         NoTeleponPelapor = p.NoTeleponPelapor,
-        FotoKerusakanOriginalFilename = p.FotoKerusakanOriginalFilename,
         Divisi = p.Divisi,
         Departemen = p.Departemen,
         Status = p.Status,
@@ -121,9 +118,6 @@ public class PerbaikanSaranaListResponse
 public class PerbaikanSaranaStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
-    // Maintenance-specific: how many still-open (belum selesai final) reports are marked TINGGI,
-    // surfaced as its own Overview tile so urgent damage doesn't get lost in the status counts.
-    public int UrgensiTinggiAktif { get; set; }
     // Breakdown of ExecutionStage across only the Approved-final reports, so GA can see its
     // physical-execution workload (how many awaiting a site check, how many mid-plan, etc.)
     // without having to open and manually count the Transaksi table.

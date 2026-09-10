@@ -26,7 +26,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("tanggal", "Tanggal Laporan"),
         ("lokasi", "Lokasi"),
         ("kategori", "Kategori"),
-        ("urgensi", "Urgensi"),
         ("deskripsi", "Deskripsi Kerusakan"),
         ("nama_pelapor", "Nama Pelapor"),
         ("no_telepon_pelapor", "No. Telepon Pelapor"),
@@ -43,7 +42,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("selesai_pada", "Selesai Pada"),
     };
 
-    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 24, 65, 40, 40, 40, 40, 55, 45, 45, 40, 40, 40, 40, 40, 40 };
+    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 65, 40, 40, 40, 40, 55, 45, 45, 40, 40, 40, 40, 40, 40 };
 
     // Matches frontend's EXECUTION_STAGE_LABEL (lib/constants.ts) word-for-word.
     private static readonly Dictionary<string, string> ExecutionStageLabel = new()
@@ -77,13 +76,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ["LAINNYA"] = "Lainnya",
     };
 
-    private static readonly Dictionary<string, string> UrgensiLabel = new()
-    {
-        ["RENDAH"] = "Rendah",
-        ["SEDANG"] = "Sedang",
-        ["TINGGI"] = "Tinggi",
-    };
-
     public PerbaikanSaranaExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
     {
         _db = db;
@@ -96,7 +88,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "lokasi" => row.Lokasi,
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori.ToString(), row.Kategori.ToString()),
-        "urgensi" => UrgensiLabel.GetValueOrDefault(row.Urgensi.ToString(), row.Urgensi.ToString()),
         "deskripsi" => row.DeskripsiKerusakan,
         "nama_pelapor" => row.NamaPelapor,
         "no_telepon_pelapor" => row.NoTeleponPelapor,
@@ -159,11 +150,10 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false) : null;
     }
 
-    private List<PerbaikanSarana> ExportRows(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? kategori, string? urgensi, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private List<PerbaikanSarana> ExportRows(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? kategori, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
     {
         KategoriKerusakanEnum? kategoriFilter = !string.IsNullOrEmpty(kategori) && Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori) ? parsedKategori : null;
-        UrgensiEnum? urgensiFilter = !string.IsNullOrEmpty(urgensi) && Enum.TryParse<UrgensiEnum>(urgensi, out var parsedUrgensi) ? parsedUrgensi : null;
-        var query = PerbaikanSaranaController.ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), currentUser, statusFilter, divisi, departemen, kategoriFilter, urgensiFilter, direktorat, bulan, search, onlyRejected, tanggal);
+        var query = PerbaikanSaranaController.ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), currentUser, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal);
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
 
@@ -172,7 +162,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         [FromQuery] string? bulan,
         [FromQuery] string? status,
         [FromQuery] string? kategori,
-        [FromQuery] string? urgensi,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
@@ -189,7 +178,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         List<PerbaikanSarana> rows;
         try
         {
-            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, kategori, urgensi, divisi, departemen, direktorat, search, tanggal);
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, kategori, divisi, departemen, direktorat, search, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -268,7 +257,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         [FromQuery] string? bulan,
         [FromQuery] string? status,
         [FromQuery] string? kategori,
-        [FromQuery] string? urgensi,
         [FromQuery] string? divisi,
         [FromQuery] string? departemen,
         [FromQuery] string? direktorat,
@@ -285,7 +273,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         List<PerbaikanSarana> rows;
         try
         {
-            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, kategori, urgensi, divisi, departemen, direktorat, search, tanggal);
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, kategori, divisi, departemen, direktorat, search, tanggal);
         }
         catch (ArgumentException ex)
         {

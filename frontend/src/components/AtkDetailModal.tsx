@@ -15,6 +15,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload, SumberPembelian } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
@@ -196,7 +197,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
             <div className="field">
               <label htmlFor="da-tanggal">Tanggal Dibutuhkan</label>
-              <input type="date" id="da-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="da-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="da-keperluan">Tujuan</label>

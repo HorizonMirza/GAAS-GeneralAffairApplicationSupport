@@ -45,6 +45,17 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  // Read-only display mode (Detail modal's non-edit view) - same convention as
+  // SearchableSelect's disabled prop: trigger becomes an inert <button disabled>, panel never opens.
+  disabled?: boolean;
+  // Required form fields (e.g. Tanggal Laporan) hide the "Hapus" link so the picker can't be
+  // cleared back to empty - defaults to true (filter-picker behavior, unchanged for every
+  // existing caller).
+  clearable?: boolean;
+  // "YYYY-MM-DD" floor (e.g. Room Booking's "Berulang Sampai Tanggal" can't precede the booking's
+  // own Tanggal) - days before it render muted and can't be picked, same treatment as an
+  // out-of-month day.
+  minDate?: string;
 }
 
 // Replaces the plain <input type="date"> used for every "Filter Tanggal" across the app - same
@@ -53,7 +64,7 @@ interface Props {
 // jumping to a distant month or year doesn't take a long click-through, then a day grid below
 // reuses this app's existing MiniMonthCalendar day-cell styling (weekday header, muted outside-
 // month days, today/selected circle) for visual consistency with the rest of the app.
-export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal" }: Props) {
+export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal", disabled, clearable = true, minDate }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
@@ -137,12 +148,13 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
         id={id}
         className="filter-picker-trigger"
         aria-expanded={open}
+        disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
         <span className={value ? "" : "searchable-select-placeholder"}>{value ? formatIso(value) : placeholder}</span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
-      {open && (
+      {open && !disabled && (
         <motion.div
           className={`filter-picker-panel${dropUp ? " filter-picker-panel-up" : ""}`}
           initial="hidden"
@@ -207,12 +219,13 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
             {cells.map((c) => {
               const isToday = c.iso === today;
               const isSelected = c.iso === value;
+              const isBeforeMin = !!minDate && c.iso < minDate;
               const cls = ["mini-calendar-day"];
-              if (c.muted) cls.push("mini-calendar-day-muted");
+              if (c.muted || isBeforeMin) cls.push("mini-calendar-day-muted");
               if (isSelected) cls.push("mini-calendar-day-selected");
               else if (isToday) cls.push("mini-calendar-day-today");
               return (
-                <button key={c.iso} type="button" className={cls.join(" ")} onClick={() => selectDay(c.iso)}>
+                <button key={c.iso} type="button" className={cls.join(" ")} disabled={isBeforeMin} onClick={() => selectDay(c.iso)}>
                   <span className="mini-calendar-day-circle">
                     <span className="mini-calendar-day-num">{c.day}</span>
                   </span>
@@ -222,7 +235,7 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
           </motion.div>
           <motion.div className="filter-picker-footer" variants={itemVariants}>
             <button type="button" className="filter-picker-link" onClick={() => selectDay(today)}>Hari Ini</button>
-            {value && (
+            {clearable && value && (
               <button
                 type="button"
                 className="filter-picker-link"

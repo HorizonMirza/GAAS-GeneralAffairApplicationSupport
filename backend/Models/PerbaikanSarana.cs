@@ -12,18 +12,10 @@ public class PerbaikanSarana
     public DateOnly Tanggal { get; set; }
     public string Lokasi { get; set; } = null!;
     public KategoriKerusakanEnum Kategori { get; set; }
-    public UrgensiEnum Urgensi { get; set; }
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
     public string NamaPelapor { get; set; } = null!;
     public string NoTeleponPelapor { get; set; } = null!;
-
-    // Foto kondisi kerusakan - diunggah pelapor sendiri (opsional) supaya approver/GA bisa menilai
-    // tanpa perlu cek lokasi fisik dulu. Terpisah dari GambarFilePath di bawah, yang justru foto
-    // rencana perbaikan buatan GA setelah disetujui final.
-    public string? FotoKerusakanFilePath { get; set; }
-    public string? FotoKerusakanOriginalFilename { get; set; }
-    public string? FotoKerusakanContentType { get; set; }
 
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
@@ -62,4 +54,6 @@ public class PerbaikanSarana
 
     public User Pembuat { get; set; } = null!;
     public ICollection<PerbaikanSaranaLog> Logs { get; set; } = new List<PerbaikanSaranaLog>();
+    // Wajib minimal 1, maksimal 5 - lihat PerbaikanSaranaFotoKerusakan.
+    public ICollection<PerbaikanSaranaFotoKerusakan> FotoKerusakan { get; set; } = new List<PerbaikanSaranaFotoKerusakan>();
 }

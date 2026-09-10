@@ -97,13 +97,6 @@ public enum KategoriKerusakanEnum
     LAINNYA,
 }
 
-public enum UrgensiEnum
-{
-    RENDAH,
-    SEDANG,
-    TINGGI,
-}
-
 // Maintenance: tahap eksekusi fisik setelah laporan disetujui final (APPROVED_GA_APPROVAL) -
 // Admin GA/Approval GA menandai progresnya berurutan (lihat PerbaikanSaranaController.CekLokasi/
 // UploadGambar/Eksekusi), dicatat di PerbaikanSaranaLogs supaya riwayatnya terlihat jelas.

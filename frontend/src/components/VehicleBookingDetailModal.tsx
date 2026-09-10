@@ -12,6 +12,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import type { RejectType } from "./RejectModal";
@@ -178,7 +179,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             </div>
             <div className="field">
               <label htmlFor="bk-tanggal">Tanggal</label>
-              <input type="date" id="bk-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="bk-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="bk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>

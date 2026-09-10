@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking, Urgensi } from "./types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -475,21 +475,6 @@ export const KATEGORI_KERUSAKAN_LABEL: Record<KategoriKerusakan, string> = {
   GEDUNG: "Gedung / Bangunan",
   IT: "IT / Jaringan",
   LAINNYA: "Lainnya",
-};
-
-export const URGENSI_LABEL: Record<Urgensi, string> = {
-  RENDAH: "Rendah",
-  SEDANG: "Sedang",
-  TINGGI: "Tinggi",
-};
-
-// Kelas badge untuk tingkat urgensi - dipetakan ke badge status yang sudah ada di globals.css
-// supaya tidak perlu palet warna baru: tinggi = merah (rejected), sedang = oranye (on-approval),
-// rendah = abu-abu (draft).
-export const URGENSI_BADGE_CLASS: Record<Urgensi, string> = {
-  RENDAH: "badge-draft",
-  SEDANG: "badge-pending",
-  TINGGI: "badge-rejected",
 };
 
 export function saranaOriginActorLabel(item: PerbaikanSarana): string {

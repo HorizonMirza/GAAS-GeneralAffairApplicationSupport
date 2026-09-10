@@ -609,6 +609,20 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_file_path VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_original_filename VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_content_type VARCHAR(100)");
+    // Urgensi dihapus dari fitur (form/detail/stats) - kolom lama dibiarkan ada (non-destruktif)
+    // tapi NOT NULL-nya harus dilepas dulu, kalau tidak INSERT laporan baru (yang sudah tidak
+    // pernah mengisi kolom ini lagi) akan gagal karena constraint, persis kasus yang sama dengan
+    // migrasi keperluan di Archive.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ALTER COLUMN urgensi DROP NOT NULL");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS perbaikan_sarana_foto_kerusakan (
+            id SERIAL PRIMARY KEY,
+            perbaikan_sarana_id INT NOT NULL REFERENCES perbaikan_sarana(id) ON DELETE CASCADE,
+            file_path VARCHAR(255) NOT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            content_type VARCHAR(100) NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_status ON perbaikan_sarana (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_divisi ON perbaikan_sarana (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");

@@ -7,7 +7,6 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
-  URGENSI_LABEL,
   isSaranaEditableByOrigin,
   isSaranaExecutionActor,
   isSaranaGaActionable,
@@ -15,8 +14,10 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePayload, Urgensi } from "@/lib/types";
+import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePayload, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
+import PhotoDropUploader from "./PhotoDropUploader";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
 import { useConfirm } from "./ui/ConfirmProvider";
@@ -33,14 +34,13 @@ interface Props {
 }
 
 const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
+const MAX_FOTO_KERUSAKAN = 5;
 
 function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
   return {
     tanggal: item.tanggal,
     lokasi: item.lokasi,
     kategori: item.kategori,
-    urgensi: item.urgensi,
     deskripsiKerusakan: item.deskripsiKerusakan,
     catatan: item.catatan || "",
     namaPelapor: item.namaPelapor,
@@ -55,6 +55,9 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const [execNote, setExecNote] = useState("");
   const [gambarFile, setGambarFile] = useState<File | null>(null);
   const [fotoSelesaiFile, setFotoSelesaiFile] = useState<File | null>(null);
+  const [fotoKerusakan, setFotoKerusakan] = useState<PerbaikanSaranaFotoKerusakan[]>([]);
+  const [newFotoFiles, setNewFotoFiles] = useState<File[]>([]);
+  const [fotoBusy, setFotoBusy] = useState(false);
   const { showToast } = useToast();
   const confirm = useConfirm();
   const formRef = useRef<HTMLFormElement>(null);
@@ -74,6 +77,8 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setExecNote("");
     setGambarFile(null);
     setFotoSelesaiFile(null);
+    setNewFotoFiles([]);
+    api.listFotoKerusakanSarana(item.id).then(setFotoKerusakan).catch(() => setFotoKerusakan([]));
   }, [open, item]);
 
   if (!open || !item || !form) return null;
@@ -216,6 +221,37 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     }
   }
 
+  async function handleAddFoto() {
+    if (newFotoFiles.length === 0) return;
+    setFotoBusy(true);
+    try {
+      await api.uploadFotoKerusakanSarana(item!.id, newFotoFiles);
+      const list = await api.listFotoKerusakanSarana(item!.id);
+      setFotoKerusakan(list);
+      setNewFotoFiles([]);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setFotoBusy(false);
+    }
+  }
+
+  function handleRemoveFoto(fotoId: number) {
+    confirm(
+      "Hapus foto kerusakan ini?",
+      async () => {
+        try {
+          await api.deleteFotoKerusakanSarana(item!.id, fotoId);
+          const list = await api.listFotoKerusakanSarana(item!.id);
+          setFotoKerusakan(list);
+        } catch (err) {
+          showToast((err as Error).message, "error");
+        }
+      },
+      "Hapus"
+    );
+  }
+
   return (
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
@@ -231,19 +267,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field">
               <label htmlFor="ds-tanggal">Tanggal Laporan</label>
-              <input type="date" id="ds-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="ds-lokasi">Lokasi</label>
-              <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="ds-nama-pelapor">Nama Pelapor</label>
-              <input type="text" id="ds-nama-pelapor" required disabled={!isEdit} maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="ds-no-telepon-pelapor">No. Telepon Pelapor</label>
-              <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
+              <DateFilterPicker id="ds-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="ds-kategori">Kategori Kerusakan</label>
@@ -258,16 +282,16 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               />
             </div>
             <div className="field">
-              <label htmlFor="ds-urgensi">Tingkat Urgensi</label>
-              <SearchableSelect
-                id="ds-urgensi"
-                disabled={!isEdit}
-                value={form.urgensi}
-                onChange={(v) => set("urgensi", v as Urgensi)}
-                options={URGENSI_OPTIONS}
-                getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
-                placeholder="Pilih urgensi"
-              />
+              <label htmlFor="ds-lokasi">Lokasi</label>
+              <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="ds-nama-pelapor">Nama Pelapor</label>
+              <input type="text" id="ds-nama-pelapor" required disabled={!isEdit} maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="ds-no-telepon-pelapor">No. Telepon Pelapor</label>
+              <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="ds-deskripsi">Deskripsi Kerusakan</label>
@@ -283,16 +307,45 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 }}
               />
             </div>
-            {item.fotoKerusakanOriginalFilename && (
-              <div className="field full">
-                <label>Foto Kerusakan</label>
-                <div>
-                  <a href={api.saranaFotoKerusakanUrl(item.id)} target="_blank" rel="noopener noreferrer">
-                    Lihat Foto Kerusakan
-                  </a>
+            <div className="field full">
+              <label>Foto Kerusakan</label>
+              {fotoKerusakan.length > 0 && (
+                <div className="photo-drop-list">
+                  {fotoKerusakan.map((foto, index) => (
+                    <div className="photo-drop-item" key={foto.id}>
+                      <div className="photo-drop-item-thumb">
+                        <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
+                      </div>
+                      <div className="photo-drop-item-info">
+                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                          Foto {index + 1} &middot; {foto.originalFilename}
+                        </a>
+                      </div>
+                      {isEdit && (
+                        <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => handleRemoveFoto(foto.id)}>
+                          &times;
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
+              {isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
+                <div style={{ marginTop: 8 }}>
+                  <PhotoDropUploader
+                    id="ds-foto-kerusakan-add"
+                    files={newFotoFiles}
+                    onChange={setNewFotoFiles}
+                    maxFiles={MAX_FOTO_KERUSAKAN - fotoKerusakan.length}
+                  />
+                  {newFotoFiles.length > 0 && (
+                    <button type="button" className="btn btn-approve" style={{ width: "auto", marginTop: 8 }} disabled={fotoBusy} onClick={handleAddFoto}>
+                      Tambah Foto
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="field full">
               <label htmlFor="ds-catatan">Catatan</label>
               <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

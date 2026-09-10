@@ -16,6 +16,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -223,7 +224,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>
-              <input type="date" id="bv-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="bv-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="bv-peserta">Jumlah Peserta</label>
@@ -356,13 +357,12 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                     </div>
                     <div className="field">
                       <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
-                      <input
-                        type="date"
+                      <DateFilterPicker
                         id="bv-recurrence-end"
-                        required
-                        min={form.tanggal}
+                        clearable={false}
+                        minDate={form.tanggal}
                         value={form.recurrenceEndDate || ""}
-                        onChange={(e) => set("recurrenceEndDate", e.target.value)}
+                        onChange={(v) => set("recurrenceEndDate", v)}
                       />
                     </div>
                   </>
@@ -393,7 +393,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 </div>
                 <div className="field">
                   <label htmlFor="bv-recurrence-end">Berulang Sampai Tanggal</label>
-                  <input type="date" id="bv-recurrence-end" disabled value={item.recurrenceEndDate || ""} />
+                  <DateFilterPicker id="bv-recurrence-end" disabled clearable={false} value={item.recurrenceEndDate || ""} onChange={() => {}} />
                 </div>
               </>
             )}

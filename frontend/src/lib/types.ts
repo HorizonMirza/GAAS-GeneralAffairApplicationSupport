@@ -487,7 +487,10 @@ export interface PermintaanArsipCreatePayload {
 
 export type KategoriKerusakan = "AC" | "LISTRIK" | "AIR" | "FURNITUR" | "GEDUNG" | "IT" | "LAINNYA";
 
-export type Urgensi = "RENDAH" | "SEDANG" | "TINGGI";
+export interface PerbaikanSaranaFotoKerusakan {
+  id: number;
+  originalFilename: string;
+}
 
 export interface PerbaikanSarana {
   id: number;
@@ -495,12 +498,10 @@ export interface PerbaikanSarana {
   tanggal: string;
   lokasi: string;
   kategori: KategoriKerusakan;
-  urgensi: Urgensi;
   deskripsiKerusakan: string;
   catatan: string | null;
   namaPelapor: string;
   noTeleponPelapor: string;
-  fotoKerusakanOriginalFilename: string | null;
   divisi: string;
   departemen: string | null;
   status: BookingStatus;
@@ -537,8 +538,6 @@ export interface PerbaikanSaranaListResponse {
 
 export interface PerbaikanSaranaStatsResponse {
   countsByStatus: Partial<Record<BookingStatus, number>>;
-  // Jumlah laporan urgensi TINGGI yang masih berjalan (sudah dikirim, belum selesai/ditolak).
-  urgensiTinggiAktif: number;
   // Breakdown ExecutionStage, hanya di antara laporan yang sudah Approved final.
   executionStageCounts: Partial<Record<ExecutionStage, number>>;
 }
@@ -560,7 +559,6 @@ export interface PerbaikanSaranaCreatePayload {
   tanggal: string;
   lokasi: string;
   kategori: KategoriKerusakan;
-  urgensi: Urgensi;
   deskripsiKerusakan: string;
   catatan: string | null;
   namaPelapor: string;

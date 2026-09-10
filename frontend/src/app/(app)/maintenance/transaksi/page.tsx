@@ -9,8 +9,6 @@ import { useAuth } from "@/lib/auth-context";
 import {
   EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
-  URGENSI_BADGE_CLASS,
-  URGENSI_LABEL,
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
@@ -20,7 +18,7 @@ import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
-import type { BookingStatus, KategoriKerusakan, PerbaikanSarana, Urgensi } from "@/lib/types";
+import type { BookingStatus, KategoriKerusakan, PerbaikanSarana } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SaranaFormModal from "@/components/SaranaFormModal";
@@ -40,7 +38,6 @@ interface FilterState {
   bulan: string;
   status: BookingStatus | "REJECTED" | "";
   kategori: KategoriKerusakan | "";
-  urgensi: Urgensi | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -48,11 +45,10 @@ interface FilterState {
 }
 
 function defaultFilters(): FilterState {
-  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", kategori: "", urgensi: "", divisi: "", departemen: "", direktorat: "", search: "" };
+  return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "", search: "" };
 }
 
 const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
 
 function MaintenanceTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
@@ -136,7 +132,6 @@ function MaintenanceTransaksiPageInner() {
         bulan: filters.bulan,
         status: filters.status,
         kategori: filters.kategori,
-        urgensi: filters.urgensi,
         divisi: filters.divisi,
         departemen: filters.departemen,
         direktorat: filters.direktorat,
@@ -196,7 +191,6 @@ function MaintenanceTransaksiPageInner() {
       tanggal: filters.tanggal,
       status: filters.status,
       kategori: filters.kategori,
-      urgensi: filters.urgensi,
       divisi: filters.divisi,
       departemen: filters.departemen,
       direktorat: filters.direktorat,
@@ -295,18 +289,6 @@ function MaintenanceTransaksiPageInner() {
                     placeholder="Semua Kategori"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-sarana-urgensi">Tingkat Urgensi</label>
-                  <SearchableSelect
-                    id="filter-sarana-urgensi"
-                    value={filters.urgensi}
-                    onChange={(v) => updateFilter({ urgensi: v as Urgensi | "" })}
-                    options={URGENSI_OPTIONS}
-                    getLabel={(v) => URGENSI_LABEL[v as Urgensi] || v}
-                    clearLabel="Semua Urgensi"
-                    placeholder="Semua Urgensi"
-                  />
-                </div>
                 {showOrgFilters && (
                   <>
                     <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -369,18 +351,18 @@ function MaintenanceTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Urgensi</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
                 <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Laporan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -391,9 +373,6 @@ function MaintenanceTransaksiPageInner() {
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
                       <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
-                      <td>
-                        <span className={`badge ${URGENSI_BADGE_CLASS[item.urgensi]}`}>{URGENSI_LABEL[item.urgensi]}</span>
-                      </td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
                       <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
                       <td>{item.noTeleponPelapor}</td>

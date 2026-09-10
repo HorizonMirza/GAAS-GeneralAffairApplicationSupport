@@ -39,13 +39,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
     };
 
-    // "Masih berjalan": sudah dikirim tapi belum selesai final dan belum ditolak - dipakai untuk
-    // hitungan Urgensi Tinggi di GetStats.
-    private static readonly BookingStatusEnum[] InFlightStatuses =
-    {
-        BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
-    };
-
     // Only real image formats - this is specifically a photo of the repair plan/site, not a
     // general-purpose document upload like Archive's.
     private static readonly Dictionary<string, string> AllowedGambarExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -55,6 +48,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         [".png"] = "image/png",
     };
     private const long MaxGambarFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+    private const int MinFotoKerusakan = 1;
+    private const int MaxFotoKerusakan = 5;
 
     private static readonly RoleEnum[] ExecutionRoles = { RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA };
 
@@ -161,7 +156,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         string? divisi,
         string? departemen,
         KategoriKerusakanEnum? kategori = null,
-        UrgensiEnum? urgensi = null,
         string? direktorat = null,
         string? bulan = null,
         string? search = null,
@@ -190,7 +184,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
         if (kategori.HasValue) query = query.Where(p => p.Kategori == kategori.Value);
-        if (urgensi.HasValue) query = query.Where(p => p.Urgensi == urgensi.Value);
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -232,8 +225,6 @@ public class PerbaikanSaranaController : ApiControllerBase
             return $"Deskripsi kerusakan maksimal {MaxDeskripsiLength} karakter";
         if (!Enum.IsDefined(typeof(KategoriKerusakanEnum), payload.Kategori))
             return "Kategori kerusakan tidak valid";
-        if (!Enum.IsDefined(typeof(UrgensiEnum), payload.Urgensi))
-            return "Tingkat urgensi tidak valid";
         if (string.IsNullOrWhiteSpace(payload.NamaPelapor))
             return "Nama pelapor wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NoTeleponPelapor))
@@ -246,7 +237,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         item.Tanggal = payload.Tanggal;
         item.Lokasi = payload.Lokasi.Trim();
         item.Kategori = payload.Kategori;
-        item.Urgensi = payload.Urgensi;
         item.DeskripsiKerusakan = payload.DeskripsiKerusakan.Trim();
         item.Catatan = payload.Catatan;
         item.NamaPelapor = payload.NamaPelapor.Trim();
@@ -393,6 +383,10 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (item.Status != BookingStatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
 
+        var fotoCount = await _db.PerbaikanSaranaFotoKerusakans.CountAsync(f => f.PerbaikanSaranaId == item.Id);
+        if (fotoCount < MinFotoKerusakan)
+            return BadRequest(new { detail = "Foto kerusakan wajib diunggah sebelum mengirim laporan" });
+
         // Whichever tier the submitter's own role would normally sit at gets skipped, same
         // convention as the other modules.
         var nextStatus = user!.Role switch
@@ -423,7 +417,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         [FromQuery] int limit = 10,
         [FromQuery(Name = "status")] string? status = null,
         [FromQuery] string? kategori = null,
-        [FromQuery] string? urgensi = null,
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery] string? direktorat = null,
@@ -455,17 +448,10 @@ public class PerbaikanSaranaController : ApiControllerBase
             else return BadRequest(new { detail = "Kategori tidak valid" });
         }
 
-        UrgensiEnum? urgensiFilter = null;
-        if (!string.IsNullOrEmpty(urgensi))
-        {
-            if (Enum.TryParse<UrgensiEnum>(urgensi, out var parsedUrgensi)) urgensiFilter = parsedUrgensi;
-            else return BadRequest(new { detail = "Urgensi tidak valid" });
-        }
-
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, urgensiFilter, direktorat, bulan, search, onlyRejected, tanggal);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -474,10 +460,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         var total = await query.CountAsync();
         var items = await query
-            // Urgensi TINGGI naik ke atas dulu, baru urut terbaru - laporan darurat tidak boleh
-            // tenggelam di halaman kedua hanya karena dilaporkan lebih dahulu.
-            .OrderByDescending(p => p.Urgensi == UrgensiEnum.TINGGI)
-            .ThenByDescending(p => p.CreatedAt)
+            .OrderByDescending(p => p.CreatedAt)
             .ThenByDescending(p => p.Id)
             .Skip((page - 1) * limit)
             .Take(limit)
@@ -559,7 +542,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, null, null, null, null, null, null, bulan);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, null, null, null, null, null, bulan);
         }
         catch (ArgumentException ex)
         {
@@ -570,9 +553,6 @@ public class PerbaikanSaranaController : ApiControllerBase
             .GroupBy(p => p.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync();
-
-        var urgensiTinggiAktif = await query
-            .CountAsync(p => p.Urgensi == UrgensiEnum.TINGGI && InFlightStatuses.Contains(p.Status));
 
         // Breakdown eksekusi fisik (Cek Lokasi -> Buat Gambar -> Selesai) hanya berarti untuk
         // laporan yang sudah disetujui final - laporan lain semuanya masih di ExecutionStage
@@ -587,7 +567,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(new PerbaikanSaranaStatsResponse
         {
             CountsByStatus = counts.ToDictionary(c => c.Status.ToString(), c => c.Count),
-            UrgensiTinggiAktif = urgensiTinggiAktif,
             ExecutionStageCounts = executionCounts.ToDictionary(c => c.Stage.ToString(), c => c.Count),
         });
     }
@@ -839,11 +818,13 @@ public class PerbaikanSaranaController : ApiControllerBase
         return File(bytes, item.GambarContentType ?? "application/octet-stream");
     }
 
-    // Foto kondisi kerusakan (before) - opsional, diunggah pelapor sendiri lewat form Draft supaya
-    // approver bisa menilai tanpa cek lokasi fisik dulu. Sama seperti field lain di form ini, cuma
-    // bisa diubah/diganti selagi laporan masih Draft (lihat IsEditableByOrigin).
+    // Foto kondisi kerusakan (before) - wajib minimal 1, maksimal 5, diunggah pelapor sendiri lewat
+    // form Draft supaya approver bisa menilai tanpa cek lokasi fisik dulu. Bisa ditambah/dihapus
+    // satu per satu selagi laporan masih Draft (lihat IsEditableByOrigin) - endpoint ini menambah
+    // ke daftar yang sudah ada, bukan menggantikannya, jadi form pertama kali (semua file dalam
+    // satu panggilan) dan penambahan susulan sama-sama lewat jalur yang sama.
     [HttpPost("{itemId:int}/foto-kerusakan")]
-    public async Task<IActionResult> UploadFotoKerusakan(int itemId, [FromForm] IFormFile? file)
+    public async Task<IActionResult> UploadFotoKerusakan(int itemId, [FromForm] List<IFormFile> files)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
@@ -853,18 +834,34 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
 
-        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
-        if (!fileOk) return BadRequest(new { detail = fileError });
+        if (files.Count == 0)
+            return BadRequest(new { detail = "Minimal 1 foto kerusakan wajib diunggah" });
 
-        item.FotoKerusakanFilePath = await StoreImageFileAsync(file!);
-        item.FotoKerusakanOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? item.FotoKerusakanFilePath : file.FileName;
-        item.FotoKerusakanContentType = contentType!;
+        var existingCount = await _db.PerbaikanSaranaFotoKerusakans.CountAsync(f => f.PerbaikanSaranaId == itemId);
+        if (existingCount + files.Count > MaxFotoKerusakan)
+            return BadRequest(new { detail = $"Maksimal {MaxFotoKerusakan} foto kerusakan per laporan" });
+
+        foreach (var file in files)
+        {
+            var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
+            if (!fileOk) return BadRequest(new { detail = fileError });
+
+            var storedFilename = await StoreImageFileAsync(file);
+            _db.PerbaikanSaranaFotoKerusakans.Add(new PerbaikanSaranaFotoKerusakan
+            {
+                PerbaikanSaranaId = itemId,
+                FilePath = storedFilename,
+                OriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName,
+                ContentType = contentType!,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
         await _db.SaveChangesAsync();
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
     [HttpGet("{itemId:int}/foto-kerusakan")]
-    public async Task<IActionResult> DownloadFotoKerusakan(int itemId)
+    public async Task<IActionResult> ListFotoKerusakan(int itemId)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -872,16 +869,59 @@ public class PerbaikanSaranaController : ApiControllerBase
         var item = await _db.PerbaikanSaranas.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.FotoKerusakanFilePath == null) return NotFound(new { detail = "Belum ada foto kerusakan untuk laporan ini" });
 
-        var path = Path.Combine(_uploadDir, item.FotoKerusakanFilePath);
+        var photos = await _db.PerbaikanSaranaFotoKerusakans
+            .Where(f => f.PerbaikanSaranaId == itemId)
+            .OrderBy(f => f.Id)
+            .Select(f => new PerbaikanSaranaFotoKerusakanOut(f.Id, f.OriginalFilename))
+            .ToListAsync();
+        return Ok(photos);
+    }
+
+    [HttpGet("{itemId:int}/foto-kerusakan/{fotoId:int}")]
+    public async Task<IActionResult> DownloadFotoKerusakan(int itemId, int fotoId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        var foto = await _db.PerbaikanSaranaFotoKerusakans.FirstOrDefaultAsync(f => f.Id == fotoId && f.PerbaikanSaranaId == itemId);
+        if (foto == null) return NotFound(new { detail = "Foto tidak ditemukan" });
+
+        var path = Path.Combine(_uploadDir, foto.FilePath);
         if (!System.IO.File.Exists(path))
             return NotFound(new { detail = "File foto tidak ditemukan di server" });
 
         var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        var cd = new ContentDisposition { Inline = true, FileName = item.FotoKerusakanOriginalFilename ?? item.FotoKerusakanFilePath };
+        var cd = new ContentDisposition { Inline = true, FileName = foto.OriginalFilename };
         Response.Headers["Content-Disposition"] = cd.ToString();
-        return File(bytes, item.FotoKerusakanContentType ?? "application/octet-stream");
+        return File(bytes, foto.ContentType);
+    }
+
+    [HttpDelete("{itemId:int}/foto-kerusakan/{fotoId:int}")]
+    public async Task<IActionResult> DeleteFotoKerusakan(int itemId, int fotoId)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsEditableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
+
+        var foto = await _db.PerbaikanSaranaFotoKerusakans.FirstOrDefaultAsync(f => f.Id == fotoId && f.PerbaikanSaranaId == itemId);
+        if (foto == null) return NotFound(new { detail = "Foto tidak ditemukan" });
+
+        var remaining = await _db.PerbaikanSaranaFotoKerusakans.CountAsync(f => f.PerbaikanSaranaId == itemId);
+        if (remaining <= MinFotoKerusakan)
+            return BadRequest(new { detail = $"Minimal {MinFotoKerusakan} foto kerusakan harus tetap ada" });
+
+        _db.PerbaikanSaranaFotoKerusakans.Remove(foto);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     [HttpPatch("{itemId:int}/eksekusi")]

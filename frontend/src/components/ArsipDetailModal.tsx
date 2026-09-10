@@ -13,6 +13,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveKategori, Me, PermintaanArsip, PermintaanArsipCreatePayload } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
@@ -178,7 +179,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="dr-tanggal">Tanggal</label>
-              <input type="date" id="dr-tanggal" required disabled={!isEdit} value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} />
+              <DateFilterPicker id="dr-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="dr-jumlah-arsip">Jumlah Arsip</label>

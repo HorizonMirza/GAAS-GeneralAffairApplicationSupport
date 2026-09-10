@@ -19,7 +19,6 @@ import type {
   ChatMessage,
   Invoice,
   KategoriKerusakan,
-  Urgensi,
   InvoiceListResponse,
   InvoiceLog,
   Me,
@@ -32,6 +31,7 @@ import type {
   PengirimanStatsResponse,
   PerbaikanSarana,
   PerbaikanSaranaCreatePayload,
+  PerbaikanSaranaFotoKerusakan,
   PerbaikanSaranaListResponse,
   PerbaikanSaranaLog,
   PerbaikanSaranaStatsResponse,
@@ -621,9 +621,11 @@ export const api = {
     }
     return response.json() as Promise<PerbaikanSarana>;
   },
-  uploadFotoKerusakanSarana: async (id: number, file: File) => {
+  // Wajib minimal 1, maksimal 5 foto per laporan - lihat PerbaikanSaranaController.
+  // UploadFotoKerusakan. Menambah ke daftar yang sudah ada, bukan menggantikan.
+  uploadFotoKerusakanSarana: async (id: number, files: File[]) => {
     const formData = new FormData();
-    formData.append("file", file);
+    for (const file of files) formData.append("files", file);
     const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan`, {
       method: "POST",
       credentials: "include",
@@ -641,7 +643,11 @@ export const api = {
     }
     return response.json() as Promise<PerbaikanSarana>;
   },
-  saranaFotoKerusakanUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan`,
+  listFotoKerusakanSarana: (id: number) =>
+    apiRequest<PerbaikanSaranaFotoKerusakan[]>(`/perbaikan-sarana/${id}/foto-kerusakan`),
+  deleteFotoKerusakanSarana: (id: number, fotoId: number) =>
+    apiRequest(`/perbaikan-sarana/${id}/foto-kerusakan/${fotoId}`, { method: "DELETE" }),
+  saranaFotoKerusakanUrl: (id: number, fotoId: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan/${fotoId}`,
   saranaFotoSelesaiUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-selesai`,
   // file opsional - foto hasil (after) dilampirkan bersamaan dengan menandai eksekusi selesai,
   // makanya ini multipart (bukan JSON polos seperti cekLokasiSarana) meski file-nya boleh kosong.
@@ -788,7 +794,6 @@ export interface ListSaranaParams {
   limit?: number;
   status?: BookingStatus | "REJECTED" | "";
   kategori?: KategoriKerusakan | "";
-  urgensi?: Urgensi | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;
@@ -803,7 +808,6 @@ function saranaListParams(p: ListSaranaParams) {
     limit: p.limit,
     status: p.status,
     kategori: p.kategori,
-    urgensi: p.urgensi,
     divisi: p.divisi,
     departemen: p.departemen,
     direktorat: p.direktorat,
