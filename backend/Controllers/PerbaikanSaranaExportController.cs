@@ -27,13 +27,15 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("kategori", "Kategori"),
         ("urgensi", "Urgensi"),
         ("deskripsi", "Deskripsi Kerusakan"),
+        ("nama_pelapor", "Nama Pelapor"),
+        ("no_telepon_pelapor", "No. Telepon Pelapor"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
         ("catatan", "Catatan"),
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 24, 65, 40, 40, 55, 45 };
+    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 24, 65, 40, 40, 40, 40, 55, 45 };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
@@ -79,6 +81,8 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori.ToString(), row.Kategori.ToString()),
         "urgensi" => UrgensiLabel.GetValueOrDefault(row.Urgensi.ToString(), row.Urgensi.ToString()),
         "deskripsi" => row.DeskripsiKerusakan,
+        "nama_pelapor" => row.NamaPelapor,
+        "no_telepon_pelapor" => row.NoTeleponPelapor,
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
         "catatan" => row.Catatan,

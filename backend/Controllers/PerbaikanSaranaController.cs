@@ -234,6 +234,10 @@ public class PerbaikanSaranaController : ApiControllerBase
             return "Kategori kerusakan tidak valid";
         if (!Enum.IsDefined(typeof(UrgensiEnum), payload.Urgensi))
             return "Tingkat urgensi tidak valid";
+        if (string.IsNullOrWhiteSpace(payload.NamaPelapor))
+            return "Nama pelapor wajib diisi";
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPelapor))
+            return "No. Telepon pelapor wajib diisi";
         return null;
     }
 
@@ -245,6 +249,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         item.Urgensi = payload.Urgensi;
         item.DeskripsiKerusakan = payload.DeskripsiKerusakan.Trim();
         item.Catatan = payload.Catatan;
+        item.NamaPelapor = payload.NamaPelapor.Trim();
+        item.NoTeleponPelapor = payload.NoTeleponPelapor.Trim();
     }
 
     private async Task<int> PeekNextNomorSequenceAsync(string divisi, int year, int month)
@@ -746,16 +752,28 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
-    private static (bool ok, string? contentType, string? error) ValidateGambarFile(IFormFile? file)
+    // required=true (rencana perbaikan) rejects a missing file; required=false (foto kerusakan/
+    // foto selesai, keduanya opsional) treats a missing file as "nothing to store" rather than an
+    // error - contentType comes back null in that case as the signal to skip storing anything.
+    private static (bool ok, string? contentType, string? error) ValidateImageFile(IFormFile? file, bool required)
     {
         if (file == null || file.Length == 0)
-            return (false, null, "Gambar wajib diunggah");
+            return required ? (false, null, "Gambar wajib diunggah") : (true, null, null);
         if (file.Length > MaxGambarFileSizeBytes)
             return (false, null, $"Ukuran file maksimal {MaxGambarFileSizeBytes / 1024 / 1024} MB");
         var ext = Path.GetExtension(file.FileName);
         if (string.IsNullOrEmpty(ext) || !AllowedGambarExtensions.TryGetValue(ext, out var contentType))
             return (false, null, "Format gambar tidak didukung. Gunakan JPG atau PNG.");
         return (true, contentType, null);
+    }
+
+    private async Task<string> StoreImageFileAsync(IFormFile file)
+    {
+        var storedFilename = $"{Guid.NewGuid():N}{Path.GetExtension(file.FileName)}";
+        var destPath = Path.Combine(_uploadDir, storedFilename);
+        using var stream = System.IO.File.Create(destPath);
+        await file.CopyToAsync(stream);
+        return storedFilename;
     }
 
     [HttpPost("{itemId:int}/gambar")]
@@ -771,15 +789,10 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (item.ExecutionStage != ExecutionStageEnum.LOKASI_DICEK)
             return StatusCode(403, new { detail = "Lokasi harus dicek terlebih dahulu" });
 
-        var (fileOk, contentType, fileError) = ValidateGambarFile(file);
+        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
         if (!fileOk) return BadRequest(new { detail = fileError });
 
-        var storedFilename = $"{Guid.NewGuid():N}{Path.GetExtension(file!.FileName)}";
-        var destPath = Path.Combine(_uploadDir, storedFilename);
-        using (var stream = System.IO.File.Create(destPath))
-        {
-            await file.CopyToAsync(stream);
-        }
+        var storedFilename = await StoreImageFileAsync(file!);
 
         item.ExecutionStage = ExecutionStageEnum.GAMBAR_DIBUAT;
         item.GambarDibuatBy = user!.Id;
@@ -815,8 +828,53 @@ public class PerbaikanSaranaController : ApiControllerBase
         return File(bytes, item.GambarContentType ?? "application/octet-stream");
     }
 
+    // Foto kondisi kerusakan (before) - opsional, diunggah pelapor sendiri lewat form Draft supaya
+    // approver bisa menilai tanpa cek lokasi fisik dulu. Sama seperti field lain di form ini, cuma
+    // bisa diubah/diganti selagi laporan masih Draft (lihat IsEditableByOrigin).
+    [HttpPost("{itemId:int}/foto-kerusakan")]
+    public async Task<IActionResult> UploadFotoKerusakan(int itemId, [FromForm] IFormFile? file)
+    {
+        var (user, roleError) = await RequireRoleAsync(OriginRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsEditableByOrigin(item, user!))
+            return StatusCode(403, new { detail = "Data tidak dapat diubah pada tahap ini" });
+
+        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
+        if (!fileOk) return BadRequest(new { detail = fileError });
+
+        item.FotoKerusakanFilePath = await StoreImageFileAsync(file!);
+        item.FotoKerusakanOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? item.FotoKerusakanFilePath : file.FileName;
+        item.FotoKerusakanContentType = contentType!;
+        await _db.SaveChangesAsync();
+        return Ok(PerbaikanSaranaOut.From(item));
+    }
+
+    [HttpGet("{itemId:int}/foto-kerusakan")]
+    public async Task<IActionResult> DownloadFotoKerusakan(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.FotoKerusakanFilePath == null) return NotFound(new { detail = "Belum ada foto kerusakan untuk laporan ini" });
+
+        var path = Path.Combine(_uploadDir, item.FotoKerusakanFilePath);
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { detail = "File foto tidak ditemukan di server" });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var cd = new ContentDisposition { Inline = true, FileName = item.FotoKerusakanOriginalFilename ?? item.FotoKerusakanFilePath };
+        Response.Headers["Content-Disposition"] = cd.ToString();
+        return File(bytes, item.FotoKerusakanContentType ?? "application/octet-stream");
+    }
+
     [HttpPatch("{itemId:int}/eksekusi")]
-    public async Task<IActionResult> Eksekusi(int itemId, [FromBody] ExecutionStageRequest payload)
+    public async Task<IActionResult> Eksekusi(int itemId, [FromForm] string? catatan, [FromForm] IFormFile? file)
     {
         var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
         if (roleError != null) return roleError;
@@ -828,14 +886,46 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (item.ExecutionStage != ExecutionStageEnum.GAMBAR_DIBUAT)
             return StatusCode(403, new { detail = "Gambar rencana perbaikan harus dibuat terlebih dahulu" });
 
+        // Foto hasil (after) opsional - kalau dilampirkan, tetap dijalankan lewat validasi gambar
+        // yang sama supaya tidak ada celah format/ukuran file yang berbeda dari upload lain.
+        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: false);
+        if (!fileOk) return BadRequest(new { detail = fileError });
+        if (contentType != null)
+        {
+            item.FotoSelesaiFilePath = await StoreImageFileAsync(file!);
+            item.FotoSelesaiOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? item.FotoSelesaiFilePath : file.FileName;
+            item.FotoSelesaiContentType = contentType;
+        }
+
         item.ExecutionStage = ExecutionStageEnum.SELESAI;
         item.SelesaiBy = user!.Id;
         item.SelesaiAt = DateTime.UtcNow;
-        AddLog(item, "SELESAI", user, payload.Catatan);
+        AddLog(item, "SELESAI", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Menyelesaikan Eksekusi Perbaikan");
         return Ok(PerbaikanSaranaOut.From(item));
+    }
+
+    [HttpGet("{itemId:int}/foto-selesai")]
+    public async Task<IActionResult> DownloadFotoSelesai(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.FotoSelesaiFilePath == null) return NotFound(new { detail = "Belum ada foto hasil perbaikan untuk laporan ini" });
+
+        var path = Path.Combine(_uploadDir, item.FotoSelesaiFilePath);
+        if (!System.IO.File.Exists(path))
+            return NotFound(new { detail = "File foto tidak ditemukan di server" });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var cd = new ContentDisposition { Inline = true, FileName = item.FotoSelesaiOriginalFilename ?? item.FotoSelesaiFilePath };
+        Response.Headers["Content-Disposition"] = cd.ToString();
+        return File(bytes, item.FotoSelesaiContentType ?? "application/octet-stream");
     }
 
     private static string? MentionLabelForRole(RoleEnum role) => role switch

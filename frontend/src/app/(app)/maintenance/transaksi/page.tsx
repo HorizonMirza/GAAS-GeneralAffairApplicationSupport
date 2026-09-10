@@ -369,16 +369,17 @@ function MaintenanceTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Urgensi</th><th>Deskripsi Kerusakan</th>
+                <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Laporan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={12} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -393,6 +394,8 @@ function MaintenanceTransaksiPageInner() {
                         <span className={`badge ${URGENSI_BADGE_CLASS[item.urgensi]}`}>{URGENSI_LABEL[item.urgensi]}</span>
                       </td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
+                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
+                      <td>{item.noTeleponPelapor}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>{formatDate(item.tanggal)}</td>

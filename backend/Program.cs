@@ -597,6 +597,18 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_content_type VARCHAR(100)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_by INT REFERENCES users(id)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_at TIMESTAMP");
+    // Nama/No Telepon Pelapor + foto kerusakan (before, diunggah pelapor) dan foto selesai (after,
+    // diunggah GA saat eksekusi) - ditambahkan setelah tabel ini sudah dipakai, jadi nullable/
+    // defaulted supaya baris lama tidak rusak; form dan ValidatePayload mewajibkan Nama/No Telepon
+    // Pelapor untuk laporan baru ke depannya, sementara foto-fotonya tetap opsional.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS nama_pelapor VARCHAR(255) NOT NULL DEFAULT ''");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS no_telepon_pelapor VARCHAR(50) NOT NULL DEFAULT ''");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_file_path VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_original_filename VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_content_type VARCHAR(100)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_file_path VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_original_filename VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_content_type VARCHAR(100)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_status ON perbaikan_sarana (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_divisi ON perbaikan_sarana (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_perbaikan_sarana_departemen ON perbaikan_sarana (departemen)");

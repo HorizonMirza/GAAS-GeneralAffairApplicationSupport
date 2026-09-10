@@ -42,6 +42,8 @@ function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
     urgensi: item.urgensi,
     deskripsiKerusakan: item.deskripsiKerusakan,
     catatan: item.catatan || "",
+    namaPelapor: item.namaPelapor,
+    noTeleponPelapor: item.noTeleponPelapor,
   };
 }
 
@@ -51,6 +53,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const [busy, setBusy] = useState(false);
   const [execNote, setExecNote] = useState("");
   const [gambarFile, setGambarFile] = useState<File | null>(null);
+  const [fotoSelesaiFile, setFotoSelesaiFile] = useState<File | null>(null);
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
@@ -68,6 +71,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setError("");
     setExecNote("");
     setGambarFile(null);
+    setFotoSelesaiFile(null);
   }, [open, item]);
 
   if (!open || !item || !form) return null;
@@ -165,9 +169,10 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   async function handleEksekusi() {
     const note = execNote.trim() || null;
+    const file = fotoSelesaiFile;
     onClose();
     try {
-      await api.eksekusiSarana(item!.id, note);
+      await api.eksekusiSarana(item!.id, note, file);
       showToast("Eksekusi perbaikan ditandai selesai");
       onSaved();
     } catch (err) {
@@ -208,7 +213,15 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field">
               <label htmlFor="ds-lokasi">Lokasi</label>
-              <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={100} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="ds-nama-pelapor">Nama Pelapor</label>
+              <input type="text" id="ds-nama-pelapor" required disabled={!isEdit} maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="ds-no-telepon-pelapor">No. Telepon Pelapor</label>
+              <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="ds-kategori">Kategori Kerusakan</label>
@@ -240,7 +253,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 id="ds-deskripsi"
                 required
                 disabled={!isEdit}
-                maxLength={255}
+                maxLength={2000}
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
                 onKeyDown={(e) => {
@@ -248,6 +261,16 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 }}
               />
             </div>
+            {item.fotoKerusakanOriginalFilename && (
+              <div className="field full">
+                <label>Foto Kerusakan</label>
+                <div>
+                  <a href={api.saranaFotoKerusakanUrl(item.id)} target="_blank" rel="noopener noreferrer">
+                    Lihat Foto Kerusakan
+                  </a>
+                </div>
+              </div>
+            )}
             <div className="field full">
               <label htmlFor="ds-catatan">Catatan</label>
               <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
@@ -275,6 +298,13 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 <div style={{ marginBottom: 8 }}>
                   <a href={api.saranaGambarUrl(item.id)} target="_blank" rel="noopener noreferrer">
                     Lihat Gambar Rencana Perbaikan
+                  </a>
+                </div>
+              )}
+              {item.fotoSelesaiOriginalFilename && (
+                <div style={{ marginBottom: 8 }}>
+                  <a href={api.saranaFotoSelesaiUrl(item.id)} target="_blank" rel="noopener noreferrer">
+                    Lihat Foto Hasil Perbaikan
                   </a>
                 </div>
               )}
@@ -327,6 +357,15 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               )}
               {canExecute && item.executionStage === "GAMBAR_DIBUAT" && (
                 <>
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label htmlFor="ds-exec-foto-selesai">Foto Hasil Perbaikan (opsional)</label>
+                    <input
+                      type="file"
+                      id="ds-exec-foto-selesai"
+                      accept="image/jpeg,image/png"
+                      onChange={(e) => setFotoSelesaiFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
                   <div className="field" style={{ marginBottom: 8 }}>
                     <label htmlFor="ds-exec-note-selesai">Catatan Hasil Eksekusi</label>
                     <textarea

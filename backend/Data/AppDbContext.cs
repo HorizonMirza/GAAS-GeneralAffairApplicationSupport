@@ -736,6 +736,11 @@ public class AppDbContext : DbContext
             e.Property(p => p.Urgensi).HasColumnName("urgensi").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.DeskripsiKerusakan).HasColumnName("deskripsi_kerusakan").IsRequired();
             e.Property(p => p.Catatan).HasColumnName("catatan");
+            e.Property(p => p.NamaPelapor).HasColumnName("nama_pelapor").HasMaxLength(255).IsRequired();
+            e.Property(p => p.NoTeleponPelapor).HasColumnName("no_telepon_pelapor").HasMaxLength(50).IsRequired();
+            e.Property(p => p.FotoKerusakanFilePath).HasColumnName("foto_kerusakan_file_path").HasMaxLength(255);
+            e.Property(p => p.FotoKerusakanOriginalFilename).HasColumnName("foto_kerusakan_original_filename").HasMaxLength(255);
+            e.Property(p => p.FotoKerusakanContentType).HasColumnName("foto_kerusakan_content_type").HasMaxLength(100);
 
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
@@ -765,6 +770,9 @@ public class AppDbContext : DbContext
             e.Property(p => p.GambarContentType).HasColumnName("gambar_content_type").HasMaxLength(100);
             e.Property(p => p.SelesaiBy).HasColumnName("selesai_by");
             e.Property(p => p.SelesaiAt).HasColumnName("selesai_at");
+            e.Property(p => p.FotoSelesaiFilePath).HasColumnName("foto_selesai_file_path").HasMaxLength(255);
+            e.Property(p => p.FotoSelesaiOriginalFilename).HasColumnName("foto_selesai_original_filename").HasMaxLength(255);
+            e.Property(p => p.FotoSelesaiContentType).HasColumnName("foto_selesai_content_type").HasMaxLength(100);
 
             e.HasOne(p => p.Pembuat)
                 .WithMany()

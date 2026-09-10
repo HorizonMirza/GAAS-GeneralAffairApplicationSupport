@@ -18,7 +18,7 @@ interface Props {
   onCreated: () => void;
 }
 
-function emptyForm(): PerbaikanSaranaCreatePayload {
+function emptyForm(me: Me): PerbaikanSaranaCreatePayload {
   return {
     tanggal: todayLocalDate(),
     lokasi: "",
@@ -26,6 +26,10 @@ function emptyForm(): PerbaikanSaranaCreatePayload {
     urgensi: "SEDANG",
     deskripsiKerusakan: "",
     catatan: "",
+    // Default ke identitas pelapor sendiri (kasus paling umum) - tetap bisa diubah kalau
+    // melaporkan atas nama orang lain.
+    namaPelapor: me.nama,
+    noTeleponPelapor: me.noHp || "",
   };
 }
 
@@ -34,7 +38,8 @@ const URGENSI_OPTIONS = Object.keys(URGENSI_LABEL) as Urgensi[];
 
 export default function SaranaFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
-  const [form, setForm] = useState<PerbaikanSaranaCreatePayload>(emptyForm());
+  const [form, setForm] = useState<PerbaikanSaranaCreatePayload>(emptyForm(me));
+  const [fotoKerusakanFile, setFotoKerusakanFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nomorPerbaikan, setNomorPerbaikan] = useState("");
@@ -46,7 +51,8 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
 
   useEffect(() => {
     if (open) {
-      setForm(emptyForm());
+      setForm(emptyForm(me));
+      setFotoKerusakanFile(null);
       setError("");
     }
   }, [open]);
@@ -91,7 +97,10 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     try {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
-      await api.createSarana({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
+      const created = await api.createSarana({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
+      if (fotoKerusakanFile) {
+        await api.uploadFotoKerusakanSarana(created.id, fotoKerusakanFile);
+      }
       showToast("Laporan perbaikan berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -147,7 +156,15 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field">
               <label htmlFor="fs-lokasi">Lokasi</label>
-              <input type="text" id="fs-lokasi" required maxLength={100} placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <input type="text" id="fs-lokasi" required maxLength={255} placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fs-nama-pelapor">Nama Pelapor</label>
+              <input type="text" id="fs-nama-pelapor" required maxLength={255} placeholder="Nama yang melaporkan kerusakan" value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fs-no-telepon-pelapor">No. Telepon Pelapor</label>
+              <input type="text" id="fs-no-telepon-pelapor" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fs-kategori">Kategori Kerusakan</label>
@@ -176,13 +193,22 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               <textarea
                 id="fs-deskripsi"
                 required
-                maxLength={255}
+                maxLength={2000}
                 placeholder="Contoh: AC tidak dingin dan mengeluarkan bunyi berisik sejak Senin pagi"
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.stopPropagation();
                 }}
+              />
+            </div>
+            <div className="field full">
+              <label htmlFor="fs-foto-kerusakan">Foto Kerusakan (opsional)</label>
+              <input
+                type="file"
+                id="fs-foto-kerusakan"
+                accept="image/jpeg,image/png"
+                onChange={(e) => setFotoKerusakanFile(e.target.files?.[0] || null)}
               />
             </div>
             <div className="field full">

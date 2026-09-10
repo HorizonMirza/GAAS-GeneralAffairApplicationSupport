@@ -15,6 +15,8 @@ public class PerbaikanSaranaCreate
     public UrgensiEnum Urgensi { get; set; }
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
+    public string NamaPelapor { get; set; } = null!;
+    public string NoTeleponPelapor { get; set; } = null!;
 }
 
 public record PerbaikanSaranaLogOut(
@@ -36,6 +38,9 @@ public class PerbaikanSaranaOut
     public UrgensiEnum Urgensi { get; set; }
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
+    public string NamaPelapor { get; set; } = null!;
+    public string NoTeleponPelapor { get; set; } = null!;
+    public string? FotoKerusakanOriginalFilename { get; set; }
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
     public BookingStatusEnum Status { get; set; }
@@ -58,6 +63,7 @@ public class PerbaikanSaranaOut
     public string? GambarOriginalFilename { get; set; }
     public int? SelesaiBy { get; set; }
     public DateTime? SelesaiAt { get; set; }
+    public string? FotoSelesaiOriginalFilename { get; set; }
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
@@ -71,6 +77,9 @@ public class PerbaikanSaranaOut
         Urgensi = p.Urgensi,
         DeskripsiKerusakan = p.DeskripsiKerusakan,
         Catatan = p.Catatan,
+        NamaPelapor = p.NamaPelapor,
+        NoTeleponPelapor = p.NoTeleponPelapor,
+        FotoKerusakanOriginalFilename = p.FotoKerusakanOriginalFilename,
         Divisi = p.Divisi,
         Departemen = p.Departemen,
         Status = p.Status,
@@ -93,6 +102,7 @@ public class PerbaikanSaranaOut
         GambarOriginalFilename = p.GambarOriginalFilename,
         SelesaiBy = p.SelesaiBy,
         SelesaiAt = p.SelesaiAt,
+        FotoSelesaiOriginalFilename = p.FotoSelesaiOriginalFilename,
     };
 }
 

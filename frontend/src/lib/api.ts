@@ -621,8 +621,51 @@ export const api = {
     }
     return response.json() as Promise<PerbaikanSarana>;
   },
-  eksekusiSarana: (id: number, catatan: string | null) =>
-    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi`, { method: "PATCH", body: { catatan } }),
+  uploadFotoKerusakanSarana: async (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah foto kerusakan";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json() as Promise<PerbaikanSarana>;
+  },
+  saranaFotoKerusakanUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan`,
+  saranaFotoSelesaiUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-selesai`,
+  // file opsional - foto hasil (after) dilampirkan bersamaan dengan menandai eksekusi selesai,
+  // makanya ini multipart (bukan JSON polos seperti cekLokasiSarana) meski file-nya boleh kosong.
+  eksekusiSarana: async (id: number, catatan: string | null, file: File | null) => {
+    const formData = new FormData();
+    if (catatan) formData.append("catatan", catatan);
+    if (file) formData.append("file", file);
+    const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/eksekusi`, {
+      method: "PATCH",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal menyelesaikan eksekusi";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json() as Promise<PerbaikanSarana>;
+  },
   saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
 
   nextArsipNomor: (tanggal: string, divisi?: string) =>

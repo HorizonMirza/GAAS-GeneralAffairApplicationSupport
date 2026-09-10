@@ -498,6 +498,9 @@ export interface PerbaikanSarana {
   urgensi: Urgensi;
   deskripsiKerusakan: string;
   catatan: string | null;
+  namaPelapor: string;
+  noTeleponPelapor: string;
+  fotoKerusakanOriginalFilename: string | null;
   divisi: string;
   departemen: string | null;
   status: BookingStatus;
@@ -520,6 +523,7 @@ export interface PerbaikanSarana {
   gambarOriginalFilename: string | null;
   selesaiBy: number | null;
   selesaiAt: string | null;
+  fotoSelesaiOriginalFilename: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }
@@ -557,6 +561,8 @@ export interface PerbaikanSaranaCreatePayload {
   urgensi: Urgensi;
   deskripsiKerusakan: string;
   catatan: string | null;
+  namaPelapor: string;
+  noTeleponPelapor: string;
 }
 
 // --- Office Supplies (Permintaan ATK) ---
