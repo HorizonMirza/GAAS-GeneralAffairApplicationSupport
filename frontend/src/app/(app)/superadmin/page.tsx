@@ -994,7 +994,7 @@ export default function SuperAdminPage() {
         </div>
         <div className="toolbar">
           <div className="field">
-            <label htmlFor="filter-arsip-search">Cari Nomor Pemindahan</label>
+            <label htmlFor="filter-arsip-search">Cari No Pemindahan</label>
             <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
           </div>
           <div className="field">

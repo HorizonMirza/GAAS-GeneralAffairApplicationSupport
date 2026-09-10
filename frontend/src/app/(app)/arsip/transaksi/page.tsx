@@ -236,7 +236,7 @@ function ArsipTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-arsip-search">Cari Nomor Pemindahan</label>
+            <label htmlFor="filter-arsip-search">Cari No Pemindahan</label>
             <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
