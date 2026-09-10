@@ -1094,8 +1094,8 @@ export default function SuperAdminPage() {
                 value={String(arsipFilters.limit)}
                 onChange={(v) => updateArsipFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${arsipFilters.limit} permintaan`}
+                getLabel={(v) => `${v} pemindahan`}
+                placeholder={`${arsipFilters.limit} pemindahan`}
               />
             </div>
           </div>

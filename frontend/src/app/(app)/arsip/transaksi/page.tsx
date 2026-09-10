@@ -415,8 +415,8 @@ function ArsipTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${filters.limit} permintaan`}
+                getLabel={(v) => `${v} pemindahan`}
+                placeholder={`${filters.limit} pemindahan`}
               />
             </div>
           </div>
