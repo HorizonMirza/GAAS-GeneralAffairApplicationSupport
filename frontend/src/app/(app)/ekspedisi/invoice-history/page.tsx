@@ -17,6 +17,7 @@ import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
 
 // Invoice pembiayaan history is only relevant to the 3 roles that ever touch it: Admin GA
 // uploads, Approval GA reviews, KPU is the final approver.
@@ -45,7 +46,6 @@ export default function InvoiceHistoryPage() {
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
 
   const invoiceRowMenu = useRowMenu(invoices ?? []);
-  const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
   const invoiceReqIdRef = useRef(0);
   const invoiceSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,14 +57,6 @@ export default function InvoiceHistoryPage() {
       setInvoicePage(1);
     }, 350);
   }
-
-  // Some browsers restore a previously-typed value into this input on page reload without
-  // firing onChange, leaving it visually filled while React's state (the actual source of
-  // truth for the API call) stays empty. Force the DOM back in sync with state on mount.
-  useEffect(() => {
-    if (invoiceBulanInputRef.current) invoiceBulanInputRef.current.value = invoiceFilterBulan;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!loading && me && !INVOICE_HISTORY_ROLES.includes(me.role)) router.replace("/ekspedisi/overview");
@@ -145,13 +137,10 @@ export default function InvoiceHistoryPage() {
           </div>
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <input
-              type="month"
+            <MonthFilterPicker
               id="invoice-filter-bulan"
-              autoComplete="off"
-              ref={invoiceBulanInputRef}
               value={invoiceFilterBulan}
-              onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
+              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
             />
           </div>
           {invoiceUploaders.length > 1 && (

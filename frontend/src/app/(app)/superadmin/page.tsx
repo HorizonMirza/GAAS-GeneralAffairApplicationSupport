@@ -17,6 +17,8 @@ import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -115,8 +117,6 @@ export default function SuperAdminPage() {
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
-  const filterBulanInputRef = useRef<HTMLInputElement>(null);
-  const invoiceBulanInputRef = useRef<HTMLInputElement>(null);
   const tableReqIdRef = useRef(0);
   const invoiceReqIdRef = useRef(0);
   const bookingReqIdRef = useRef(0);
@@ -124,15 +124,6 @@ export default function SuperAdminPage() {
   const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arsipReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-
-  // Some browsers restore a previously-typed value into these inputs on page reload without
-  // firing onChange, leaving them visually filled while React's state (the actual source of
-  // truth for the API call) stays empty. Force the DOM back in sync with state on mount.
-  useEffect(() => {
-    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
-    if (invoiceBulanInputRef.current) invoiceBulanInputRef.current.value = invoiceFilterBulan;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
@@ -525,7 +516,7 @@ export default function SuperAdminPage() {
           </div>
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value })} />
+            <MonthFilterPicker id="filter-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v })} />
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
             <label className="field-label-spacer">Filter</label>
@@ -686,13 +677,10 @@ export default function SuperAdminPage() {
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <input
-              type="month"
+            <MonthFilterPicker
               id="invoice-filter-bulan"
-              autoComplete="off"
-              ref={invoiceBulanInputRef}
               value={invoiceFilterBulan}
-              onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
+              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
@@ -776,7 +764,7 @@ export default function SuperAdminPage() {
         <div className="toolbar">
           <div className="field">
             <label htmlFor="filter-booking-tanggal">Filter Tanggal</label>
-            <input type="date" id="filter-booking-tanggal" value={bookingFilters.tanggal} onChange={(e) => updateBookingFilter({ tanggal: e.target.value })} />
+            <DateFilterPicker id="filter-booking-tanggal" value={bookingFilters.tanggal} onChange={(v) => updateBookingFilter({ tanggal: v })} />
           </div>
           <div className="field">
             <label htmlFor="filter-booking-status">Status</label>
@@ -918,13 +906,10 @@ export default function SuperAdminPage() {
         <div className="invoice-toolbar-slim">
           <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <input
-              type="month"
+            <MonthFilterPicker
               id="invoice-filter-bulan"
-              autoComplete="off"
-              ref={invoiceBulanInputRef}
               value={invoiceFilterBulan}
-              onChange={(e) => { setInvoiceFilterBulan(e.target.value); setInvoicePage(1); }}
+              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
             />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
@@ -1012,7 +997,7 @@ export default function SuperAdminPage() {
           </div>
           <div className="field">
             <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
-            <input type="month" id="filter-arsip-bulan" autoComplete="off" value={arsipFilters.bulan} onChange={(e) => updateArsipFilter({ bulan: e.target.value })} />
+            <MonthFilterPicker id="filter-arsip-bulan" value={arsipFilters.bulan} onChange={(v) => updateArsipFilter({ bulan: v })} />
           </div>
           <div className="field">
             <label htmlFor="filter-arsip-status">Status</label>

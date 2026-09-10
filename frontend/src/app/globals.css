@@ -3797,6 +3797,153 @@ table.data-table {
 .searchable-select-panel .searchable-select-option:hover { background: var(--bg-surface-alt); }
 .searchable-select-panel .searchable-select-option-active { background: rgba(75, 141, 255, 0.12); font-weight: 600; }
 
+/* MonthFilterPicker / DateFilterPicker - custom "Filter Bulan"/"Filter Tanggal" replacements for
+   the plain <input type="month"|"date"> used everywhere: the native control's popup is the OS/
+   browser's own UI and cannot be restyled, so these draw the calendar themselves. Trigger reuses
+   .searchable-select-trigger's exact look (padding/border/radius/placeholder) for visual parity
+   with every other field, and the panel reuses .searchable-select-panel's positioning. */
+.filter-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.filter-picker-trigger {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.filter-picker-trigger svg { flex-shrink: 0; color: var(--text-secondary); }
+.filter-picker-trigger:hover { border-color: var(--blue-300); }
+.filter-picker-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
+.filter-picker-trigger:focus {
+  outline: none;
+  border-color: var(--blue-400);
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
+}
+
+.filter-picker-trigger > span:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-picker-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card), 0 12px 28px rgba(15, 40, 90, 0.18);
+  padding: 12px;
+  z-index: 30;
+}
+
+.filter-picker-panel-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.month-picker-year-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.month-picker-year-nav button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+.month-picker-year-nav button:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
+
+.month-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 200px;
+}
+
+.month-picker-cell {
+  padding: 9px 4px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--bg-surface-alt);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.month-picker-cell:hover { border-color: var(--blue-300); }
+.month-picker-cell-selected,
+.month-picker-cell-selected:hover {
+  background: var(--blue-500);
+  color: #fff;
+  font-weight: 600;
+}
+
+.filter-picker-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.filter-picker-clear {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--blue-500);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.filter-picker-clear:hover { color: var(--blue-400); }
+
+.filter-picker-link {
+  border: none;
+  background: transparent;
+  color: var(--blue-500);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.filter-picker-link:hover { color: var(--blue-400); }
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

@@ -20,6 +20,8 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import type { BookingKendaraan, BookingStatus, VehicleOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
@@ -76,15 +78,9 @@ function VehicleBookingTransaksiPageInner() {
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
-  const filterBulanInputRef = useRef<HTMLInputElement>(null);
   const tableReqIdRef = useRef(0);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-
-  useEffect(() => {
-    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -260,7 +256,7 @@ function VehicleBookingTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-kendaraan-bulan">Filter Bulan</label>
-            <input type="month" id="filter-kendaraan-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <MonthFilterPicker id="filter-kendaraan-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -274,7 +270,7 @@ function VehicleBookingTransaksiPageInner() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-kendaraan-tanggal">Filter Tanggal</label>
-                  <input type="date" id="filter-kendaraan-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                  <DateFilterPicker id="filter-kendaraan-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-kendaraan-status">Status</label>

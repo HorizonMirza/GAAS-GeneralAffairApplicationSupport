@@ -147,7 +147,7 @@ export default function ArsipOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Pemindahan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>Pemindahan Arsip Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
             id="overview-arsip-status-filter"

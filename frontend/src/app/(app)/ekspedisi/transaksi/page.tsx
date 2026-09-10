@@ -21,6 +21,8 @@ import ChatModal from "@/components/ChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 
 interface FilterState {
   page: number;
@@ -64,18 +66,9 @@ function TransaksiPageInner() {
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
-  const filterBulanInputRef = useRef<HTMLInputElement>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tableReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-
-  // Some browsers restore a previously-typed value into this input on page reload without
-  // firing onChange, leaving it visually filled while React's state (the actual source of
-  // truth for the API call) stays empty. Force the DOM back in sync with state on mount.
-  useEffect(() => {
-    if (filterBulanInputRef.current) filterBulanInputRef.current.value = filters.bulan;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
@@ -254,7 +247,7 @@ function TransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-bulan">Filter Bulan</label>
-            <input type="month" id="filter-bulan" autoComplete="off" ref={filterBulanInputRef} value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <MonthFilterPicker id="filter-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -268,7 +261,7 @@ function TransaksiPageInner() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-tanggal">Filter Tanggal</label>
-                  <input type="date" id="filter-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                  <DateFilterPicker id="filter-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-status">Status</label>

@@ -19,6 +19,8 @@ import type { PermintaanAtk, Status } from "@/lib/types";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -238,7 +240,7 @@ function OfficeSuppliesTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-atk-bulan">Filter Bulan</label>
-            <input type="month" id="filter-atk-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <MonthFilterPicker id="filter-atk-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -252,7 +254,7 @@ function OfficeSuppliesTransaksiPageInner() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-atk-tanggal">Filter Tanggal</label>
-                  <input type="date" id="filter-atk-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                  <DateFilterPicker id="filter-atk-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-atk-status">Status</label>

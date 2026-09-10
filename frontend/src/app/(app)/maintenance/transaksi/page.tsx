@@ -27,6 +27,8 @@ import RejectModal, { type RejectType } from "@/components/RejectModal";
 import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
 import SaranaChatModal from "@/components/SaranaChatModal";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -248,7 +250,7 @@ function MaintenanceTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-sarana-bulan">Filter Bulan</label>
-            <input type="month" id="filter-sarana-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <MonthFilterPicker id="filter-sarana-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -262,7 +264,7 @@ function MaintenanceTransaksiPageInner() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-sarana-tanggal">Filter Tanggal</label>
-                  <input type="date" id="filter-sarana-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                  <DateFilterPicker id="filter-sarana-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-sarana-status">Status</label>

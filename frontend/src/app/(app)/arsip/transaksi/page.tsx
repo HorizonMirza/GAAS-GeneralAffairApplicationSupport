@@ -19,6 +19,8 @@ import type { ArchiveKategori, BookingStatus, PermintaanArsip } from "@/lib/type
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import ArsipFormModal from "@/components/ArsipFormModal";
 import ArsipDetailModal from "@/components/ArsipDetailModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
@@ -239,7 +241,7 @@ function ArsipTransaksiPageInner() {
 
           <div className="field">
             <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
-            <input type="month" id="filter-arsip-bulan" autoComplete="off" value={filters.bulan} onChange={(e) => updateFilter({ bulan: e.target.value, tanggal: "" })} />
+            <MonthFilterPicker id="filter-arsip-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v, tanggal: "" })} />
           </div>
 
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
@@ -253,7 +255,7 @@ function ArsipTransaksiPageInner() {
               <div className="filter-dropdown-panel">
                 <div className="field">
                   <label htmlFor="filter-arsip-tanggal">Filter Tanggal</label>
-                  <input type="date" id="filter-arsip-tanggal" value={filters.tanggal} onChange={(e) => updateFilter({ tanggal: e.target.value, bulan: "" })} />
+                  <DateFilterPicker id="filter-arsip-tanggal" value={filters.tanggal} onChange={(v) => updateFilter({ tanggal: v, bulan: "" })} />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="filter-arsip-status">Status</label>
