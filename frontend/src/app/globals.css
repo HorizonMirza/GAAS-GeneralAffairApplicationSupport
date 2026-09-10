@@ -3451,13 +3451,14 @@ table.data-table {
 }
 
 .toolbar .field input,
-.toolbar .field select {
+.toolbar .field select,
+.toolbar .field .filter-picker-trigger {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
 
 .toolbar > .btn,
-.filter-dropdown-wrap button[id$="-toggle"] {
+.filter-dropdown-wrap .filter-dropdown-toggle {
   padding: 8px 12px;
   font-size: 0.85rem;
 }
@@ -4694,7 +4695,7 @@ table.data-table {
     align-self: stretch !important;
     justify-content: center;
   }
-  .filter-dropdown-wrap button[id$="-toggle"] {
+  .filter-dropdown-wrap .filter-dropdown-toggle {
     width: 100% !important;
     height: 100%;
   }
