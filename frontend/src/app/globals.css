@@ -634,6 +634,20 @@ body {
   border-color: var(--blue-400);
 }
 
+/* "Semua Filter" toggle - matches PeriodFilterPicker's trigger (.filter-picker-trigger) look:
+   muted secondary text at normal weight instead of .btn-secondary's bold primary text, so the two
+   toolbar triggers read as the same kind of control. */
+.filter-dropdown-toggle {
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-weight: 400;
+}
+
+.filter-dropdown-toggle:hover:not(:disabled) {
+  border-color: var(--blue-300);
+}
+
 .btn-approve {
   background: #0f9d58;
   color: #fff;
