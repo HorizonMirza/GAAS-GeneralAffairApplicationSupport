@@ -14,13 +14,7 @@ export const STATUS_LABEL: Record<Status, string> = {
   COMPLETED: "Approved",
 };
 
-// KPU keeps its original role word here specifically - "Mitra" (ROLE_LABEL_FULL's rename of the
-// KPU role) reads fine everywhere else (approval labels, chat, exports) since those describe the
-// role from someone else's point of view, but greeting the KPU user themselves as "Good Morning,
-// Mitra" reads like being addressed by a job classification rather than the role they actually
-// know themselves by.
 export function greetingName(me: Me): string {
-  if (me.role === "KPU") return "KPU";
   return ROLE_LABEL_FULL[me.role] || me.role;
 }
 
