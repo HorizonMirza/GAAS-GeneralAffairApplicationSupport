@@ -67,6 +67,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBusy(false);
     api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
   }, [open, item]);
 

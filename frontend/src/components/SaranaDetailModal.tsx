@@ -74,6 +74,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBusy(false);
     setExecNote("");
     setGambarFile(null);
     setFotoSelesaiFile(null);

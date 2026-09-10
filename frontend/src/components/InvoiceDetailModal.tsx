@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { INVOICE_STATUS_LABEL } from "@/lib/constants";
 import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
@@ -21,6 +21,16 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
+
+  // This modal instance stays mounted across different invoices (only `open`/`item` change), so
+  // without this, a `busy` left `true` by an earlier successful submit (see handleSubmitDraft's
+  // catch-only reset below) would leave the Approve button permanently disabled the next time a
+  // different invoice is opened.
+  useEffect(() => {
+    if (!open || !item) return;
+    setError("");
+    setBusy(false);
+  }, [open, item]);
 
   if (!open || !item) return null;
 

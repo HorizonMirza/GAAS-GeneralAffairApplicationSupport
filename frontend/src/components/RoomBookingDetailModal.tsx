@@ -80,6 +80,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBusy(false);
     setBulkShift(7);
     api.listRooms().then(setRooms).catch(() => setRooms([]));
   }, [open, item]);

@@ -65,6 +65,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBusy(false);
     setPreviewNomor(null);
   }, [open, item]);
 

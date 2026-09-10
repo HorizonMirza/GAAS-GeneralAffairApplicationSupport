@@ -69,6 +69,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     setForm(toFormFields(item));
     setSumberPembelian("");
     setError("");
+    setBusy(false);
   }, [open, item]);
 
   if (!open || !item || !form) return null;

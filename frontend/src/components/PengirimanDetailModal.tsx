@@ -65,6 +65,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    setBusy(false);
     setKResi(item.noResi || "");
     setKBerat(item.beratBarangKg != null ? String(item.beratBarangKg).replace(".", ",") : "");
     setKAsuransi(item.asuransiHarga ? formatThousandSeparator(String(Math.round(item.asuransiHarga))) : "");
