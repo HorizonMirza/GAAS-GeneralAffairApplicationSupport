@@ -539,6 +539,8 @@ export interface PerbaikanSaranaStatsResponse {
   countsByStatus: Partial<Record<BookingStatus, number>>;
   // Jumlah laporan urgensi TINGGI yang masih berjalan (sudah dikirim, belum selesai/ditolak).
   urgensiTinggiAktif: number;
+  // Breakdown ExecutionStage, hanya di antara laporan yang sudah Approved final.
+  executionStageCounts: Partial<Record<ExecutionStage, number>>;
 }
 
 export interface PerbaikanSaranaLog {

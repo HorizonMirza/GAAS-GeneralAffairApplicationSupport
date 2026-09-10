@@ -531,6 +531,11 @@ export const EXECUTION_STAGE_LABEL: Record<ExecutionStage, string> = {
   SELESAI: "Selesai Dieksekusi",
 };
 
+// Same rule as isKendaraanPdfAvailable, for Maintenance's own proof-of-report PDF.
+export function isSaranaPdfAvailable(item: PerbaikanSarana): boolean {
+  return item.status === "APPROVED_GA_APPROVAL";
+}
+
 // --- Archive / Permintaan Arsip (pola yang sama dengan Booking & ATK di atas) ---
 
 export const ARCHIVE_KATEGORI_LABEL: Record<ArchiveKategori, string> = {

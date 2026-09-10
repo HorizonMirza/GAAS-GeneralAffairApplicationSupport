@@ -574,10 +574,21 @@ public class PerbaikanSaranaController : ApiControllerBase
         var urgensiTinggiAktif = await query
             .CountAsync(p => p.Urgensi == UrgensiEnum.TINGGI && InFlightStatuses.Contains(p.Status));
 
+        // Breakdown eksekusi fisik (Cek Lokasi -> Buat Gambar -> Selesai) hanya berarti untuk
+        // laporan yang sudah disetujui final - laporan lain semuanya masih di ExecutionStage
+        // default MENUNGGU meski belum pernah masuk tahap eksekusi sama sekali, jadi harus difilter
+        // by Status dulu supaya tidak salah dihitung sebagai "menunggu eksekusi".
+        var executionCounts = await query
+            .Where(p => p.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
+            .GroupBy(p => p.ExecutionStage)
+            .Select(g => new { Stage = g.Key, Count = g.Count() })
+            .ToListAsync();
+
         return Ok(new PerbaikanSaranaStatsResponse
         {
             CountsByStatus = counts.ToDictionary(c => c.Status.ToString(), c => c.Count),
             UrgensiTinggiAktif = urgensiTinggiAktif,
+            ExecutionStageCounts = executionCounts.ToDictionary(c => c.Stage.ToString(), c => c.Count),
         });
     }
 
@@ -926,6 +937,86 @@ public class PerbaikanSaranaController : ApiControllerBase
         var cd = new ContentDisposition { Inline = true, FileName = item.FotoSelesaiOriginalFilename ?? item.FotoSelesaiFilePath };
         Response.Headers["Content-Disposition"] = cd.ToString();
         return File(bytes, item.FotoSelesaiContentType ?? "application/octet-stream");
+    }
+
+    // Proof-of-report certificate, only ever available once a report has actually won its final
+    // Approval GA sign-off - mirrors BookingKendaraanController.DownloadBuktiPdf.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Bukti laporan hanya tersedia untuk laporan yang sudah Approved" });
+
+        var actorNames = await ResolveActorNamesAsync(item);
+        var bytes = SaranaPdfService.Generate(item, actorNames);
+        return File(bytes, "application/pdf", $"Bukti-Laporan-Perbaikan-{item.NomorPerbaikan}.pdf");
+    }
+
+    private async Task<Dictionary<int, string>> ResolveActorNamesAsync(PerbaikanSarana item)
+    {
+        var actorIds = new[] { item.ApprovedByApprovalGa, item.LokasiDicekBy, item.GambarDibuatBy, item.SelesaiBy }
+            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        return actorIds.Count > 0
+            ? await _db.Users.Where(u => actorIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Nama)
+            : new Dictionary<int, string>();
+    }
+
+    // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
+    // dan membersihkan field milik tahap yang dibatalkan itu (foto/gambar yang sudah di-upload
+    // dibiarkan sebagai file yatim di disk, sama seperti konvensi re-upload di UploadGambar/
+    // UploadFotoKerusakan yang juga tidak menghapus file lama). Status approval (APPROVED_GA_
+    // APPROVAL) tidak ikut berubah - ini murni koreksi eksekusi fisik, bukan alur approval.
+    [HttpPatch("{itemId:int}/eksekusi/reset")]
+    public async Task<IActionResult> ResetEksekusi(int itemId, [FromBody] ExecutionStageRequest? payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsApprovedFinal(item))
+            return StatusCode(403, new { detail = "Data belum disetujui final" });
+
+        var fromStage = item.ExecutionStage;
+        switch (fromStage)
+        {
+            case ExecutionStageEnum.LOKASI_DICEK:
+                item.ExecutionStage = ExecutionStageEnum.MENUNGGU;
+                item.LokasiDicekBy = null;
+                item.LokasiDicekAt = null;
+                break;
+            case ExecutionStageEnum.GAMBAR_DIBUAT:
+                item.ExecutionStage = ExecutionStageEnum.LOKASI_DICEK;
+                item.GambarDibuatBy = null;
+                item.GambarDibuatAt = null;
+                item.GambarFilePath = null;
+                item.GambarOriginalFilename = null;
+                item.GambarContentType = null;
+                break;
+            case ExecutionStageEnum.SELESAI:
+                item.ExecutionStage = ExecutionStageEnum.GAMBAR_DIBUAT;
+                item.SelesaiBy = null;
+                item.SelesaiAt = null;
+                item.FotoSelesaiFilePath = null;
+                item.FotoSelesaiOriginalFilename = null;
+                item.FotoSelesaiContentType = null;
+                break;
+            default:
+                return StatusCode(403, new { detail = "Belum ada tahap eksekusi untuk dibatalkan" });
+        }
+
+        var catatan = string.IsNullOrWhiteSpace(payload?.Catatan) ? null : payload!.Catatan!.Trim();
+        AddLog(item, "EKSEKUSI_DIBATALKAN", user!, $"Dibatalkan dari tahap {fromStage}" + (catatan != null ? $": {catatan}" : ""));
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Nama, "Membatalkan Tahap Eksekusi Terakhir");
+        return Ok(PerbaikanSaranaOut.From(item));
     }
 
     private static string? MentionLabelForRole(RoleEnum role) => role switch

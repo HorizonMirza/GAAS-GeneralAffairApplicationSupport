@@ -124,4 +124,8 @@ public class PerbaikanSaranaStatsResponse
     // Maintenance-specific: how many still-open (belum selesai final) reports are marked TINGGI,
     // surfaced as its own Overview tile so urgent damage doesn't get lost in the status counts.
     public int UrgensiTinggiAktif { get; set; }
+    // Breakdown of ExecutionStage across only the Approved-final reports, so GA can see its
+    // physical-execution workload (how many awaiting a site check, how many mid-plan, etc.)
+    // without having to open and manually count the Transaksi table.
+    public Dictionary<string, int> ExecutionStageCounts { get; set; } = new();
 }

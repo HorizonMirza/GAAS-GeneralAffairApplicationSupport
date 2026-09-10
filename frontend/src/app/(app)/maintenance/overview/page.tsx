@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
@@ -17,6 +17,7 @@ import {
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
+  isSaranaPdfAvailable,
 } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -42,6 +43,11 @@ interface Stats {
   waitingGaApproval: number;
   approved: number;
   urgensiTinggiAktif: number;
+  // Breakdown eksekusi fisik yang masih berjalan (di antara yang sudah Approved) - SELESAI tidak
+  // disertakan karena sudah terwakili oleh tile "Approved" di atas.
+  execMenunggu: number;
+  execLokasiDicek: number;
+  execGambarDibuat: number;
 }
 
 export default function MaintenanceOverviewPage() {
@@ -79,19 +85,37 @@ export default function MaintenanceOverviewPage() {
       // the list on its own once the month rolls over.
       // The stat tiles use the wider current-year window instead (no count cap, just a yearly
       // reset) so they don't zero out every time the month rolls over like the list above.
-      const [queue, statsResp] = await Promise.all([
+      // A report's approval can land in one bulan but its physical execution (Cek Lokasi -> Buat
+      // Gambar -> Selesai) can still be running weeks later once the month rolls over - without
+      // this second fetch, such a report would silently vanish from this screen the moment the
+      // calendar month changes even though GA still has work to do on it. Merged by id (a report
+      // can legitimately appear in both queries) and re-sorted with the same ordering the backend
+      // itself uses (Urgensi TINGGI first, then newest).
+      const [queue, activeExecuting, statsResp] = await Promise.all([
         api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.listSarana({ limit: 1000, page: 1, status: "APPROVED_GA_APPROVAL" }).then((r) => r.items.filter((i) => i.executionStage !== "SELESAI")),
         api.getSaranaStats(currentYear()),
       ]);
+      const merged = new Map<number, PerbaikanSarana>();
+      for (const item of queue) merged.set(item.id, item);
+      for (const item of activeExecuting) merged.set(item.id, item);
+      const combined = Array.from(merged.values()).sort((a, b) => {
+        if ((a.urgensi === "TINGGI") !== (b.urgensi === "TINGGI")) return a.urgensi === "TINGGI" ? -1 : 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
       const counts = statsResp.countsByStatus;
       const count = (status: BookingStatus) => counts[status] ?? 0;
-      setItems(queue);
+      const execCounts = statsResp.executionStageCounts;
+      setItems(combined);
       setStats({
         waitingL1: count("SUBMITTED"),
         waitingGa: count("APPROVED_L1"),
         waitingGaApproval: count("APPROVED_GA"),
         approved: count("APPROVED_GA_APPROVAL"),
         urgensiTinggiAktif: statsResp.urgensiTinggiAktif,
+        execMenunggu: execCounts.MENUNGGU ?? 0,
+        execLokasiDicek: execCounts.LOKASI_DICEK ?? 0,
+        execGambarDibuat: execCounts.GAMBAR_DIBUAT ?? 0,
       });
     } finally {
       setBusy(false);
@@ -150,6 +174,17 @@ export default function MaintenanceOverviewPage() {
           <div className="stat-tile"><div className="value">{stats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
           <div className="stat-tile"><div className="value">{stats.approved}</div><div className="label">Approved</div></div>
           <div className="stat-tile"><div className="value">{stats.urgensiTinggiAktif}</div><div className="label">Urgensi Tinggi Berjalan</div></div>
+        </div>
+      )}
+
+      {stats && (stats.execMenunggu > 0 || stats.execLokasiDicek > 0 || stats.execGambarDibuat > 0) && (
+        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+          <strong>Eksekusi Fisik Berjalan:</strong>{" "}
+          {[
+            stats.execMenunggu > 0 ? `${stats.execMenunggu} Menunggu Mulai` : null,
+            stats.execLokasiDicek > 0 ? `${stats.execLokasiDicek} Lokasi Dicek` : null,
+            stats.execGambarDibuat > 0 ? `${stats.execGambarDibuat} Gambar Dibuat` : null,
+          ].filter(Boolean).join(" · ")}
         </div>
       )}
 
@@ -251,6 +286,17 @@ export default function MaintenanceOverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isSaranaPdfAvailable(rowMenu.menuItem) ? api.saranaPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Laporan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

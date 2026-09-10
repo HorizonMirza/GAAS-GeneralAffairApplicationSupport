@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   EXECUTION_STAGE_LABEL,
@@ -14,6 +14,7 @@ import {
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
+  isSaranaPdfAvailable,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -482,6 +483,17 @@ function MaintenanceTransaksiPageInner() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isSaranaPdfAvailable(rowMenu.menuItem) ? api.saranaPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Laporan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

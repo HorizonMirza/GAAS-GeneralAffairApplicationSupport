@@ -667,6 +667,11 @@ export const api = {
     return response.json() as Promise<PerbaikanSarana>;
   },
   saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
+  saranaPdfUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/pdf`,
+  // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
+  // (lihat PerbaikanSaranaController.ResetEksekusi). Status approval tidak ikut berubah.
+  resetEksekusiSarana: (id: number, catatan: string | null) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi/reset`, { method: "PATCH", body: { catatan } }),
 
   nextArsipNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal, divisi } }),

@@ -19,6 +19,7 @@ import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePaylo
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
+import { useConfirm } from "./ui/ConfirmProvider";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -55,6 +56,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const [gambarFile, setGambarFile] = useState<File | null>(null);
   const [fotoSelesaiFile, setFotoSelesaiFile] = useState<File | null>(null);
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
@@ -180,6 +182,26 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     }
   }
 
+  // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
+  // (lihat PerbaikanSaranaController.ResetEksekusi). Confirm dulu karena foto/catatan tahap yang
+  // dibatalkan itu hilang begitu backend memprosesnya.
+  function handleResetEksekusi() {
+    confirm(
+      "Batalkan tahap eksekusi terakhir? Foto/catatan pada tahap ini akan hilang dan tahap akan mundur satu langkah.",
+      async () => {
+        onClose();
+        try {
+          await api.resetEksekusiSarana(item!.id, null);
+          showToast("Tahap eksekusi terakhir dibatalkan");
+          onSaved();
+        } catch (err) {
+          showToast((err as Error).message, "error");
+        }
+      },
+      "Batalkan"
+    );
+  }
+
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -291,8 +313,20 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
           {item.status === "APPROVED_GA_APPROVAL" && (
             <div className="card" style={{ padding: 14, marginBottom: 12 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                Eksekusi Perbaikan: {EXECUTION_STAGE_LABEL[item.executionStage]}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ fontWeight: 600 }}>
+                  Eksekusi Perbaikan: {EXECUTION_STAGE_LABEL[item.executionStage]}
+                </div>
+                {canExecute && item.executionStage !== "MENUNGGU" && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    style={{ width: "auto", fontSize: "0.75rem", padding: "4px 10px" }}
+                    onClick={handleResetEksekusi}
+                  >
+                    Batalkan Tahap Terakhir
+                  </button>
+                )}
               </div>
               {item.gambarOriginalFilename && (
                 <div style={{ marginBottom: 8 }}>
