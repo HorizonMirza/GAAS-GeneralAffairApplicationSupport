@@ -92,7 +92,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
             </>
           )}
           {canSubmitDraft && (
-            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Approve</button>
+            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
           )}
         </div>
       </div>
