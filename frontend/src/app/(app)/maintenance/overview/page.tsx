@@ -156,7 +156,7 @@ export default function MaintenanceOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Permintaan Perbaikan
+            + Ajukan Perbaikan
           </button>
         )}
       </div>
@@ -182,7 +182,7 @@ export default function MaintenanceOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>Pengajuan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
             id="overview-sarana-status-filter"

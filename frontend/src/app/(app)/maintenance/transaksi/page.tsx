@@ -340,7 +340,7 @@ function MaintenanceTransaksiPageInner() {
             </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + Permintaan Perbaikan
+                + Ajukan Perbaikan
               </button>
             )}
           </div>
