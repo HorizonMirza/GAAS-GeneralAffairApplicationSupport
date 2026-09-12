@@ -123,3 +123,9 @@ public record ApproveGaAtkRequest(SumberPembelianEnum? SumberPembelian);
 // own draft skips past the normal ApproveGa/ApproveGaApproval endpoints entirely, so this is the
 // only place left to still capture SumberPembelian for that path.
 public record SubmitAtkRequest(SumberPembelianEnum? SumberPembelian);
+
+// Admin/Approval GA's narrow correction tool (see PermintaanAtkController.Koreksi): fixes
+// administrative typos in the requester's own contact details without touching what's actually
+// being requested (Keperluan/Items/Tanggal stay the origin creator's own, same principle as
+// Room/Vehicle Booking's Reschedule leaving Nama Kegiatan/Keperluan/PIC untouched).
+public record KoreksiAtkRequest(string NamaPemohon, string NoTeleponPemohon, string? Catatan);

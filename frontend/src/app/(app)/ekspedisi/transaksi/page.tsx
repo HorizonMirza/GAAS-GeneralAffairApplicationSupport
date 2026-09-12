@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { isEditableByOrigin } from "@/lib/constants";
+import { canGaKoreksiPengiriman, isEditableByOrigin } from "@/lib/constants";
 import { formatCurrency, formatDate, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -16,6 +16,7 @@ import StatusBadge from "@/components/StatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import PengirimanFormModal from "@/components/PengirimanFormModal";
 import PengirimanDetailModal from "@/components/PengirimanDetailModal";
+import PengirimanKoreksiModal from "@/components/PengirimanKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
 import ChatModal from "@/components/ChatModal";
@@ -63,6 +64,7 @@ function TransaksiPageInner() {
   const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
   const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<Pengiriman | null>(null);
 
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -439,7 +441,10 @@ function TransaksiPageInner() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me))
+        }
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -448,7 +453,9 @@ function TransaksiPageInner() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaKoreksiPengiriman(item, me)) setKoreksiTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -496,6 +503,13 @@ function TransaksiPageInner() {
           setRejectTarget(null);
           loadTable();
         }}
+      />
+
+      <PengirimanKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
+        onSaved={loadTable}
       />
 
       <StatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />

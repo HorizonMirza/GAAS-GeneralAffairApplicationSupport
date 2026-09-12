@@ -343,6 +343,38 @@ public class PermintaanAtkController : ApiControllerBase
         return Ok(PermintaanAtkOut.From(item));
     }
 
+    // Same in-flight window as Room/Vehicle Booking's IsGaReschedulable - still correctable up to
+    // the last tier before it's finally approved, closed off once Rejected or Completed.
+    private static bool IsGaKoreksiable(PermintaanAtk item) => item.Status is
+        StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA;
+
+    // Admin/Approval GA's narrow correction tool: fix a typo in the requester's own contact
+    // details (or Catatan) without touching what's actually being requested - Keperluan, Items
+    // and Tanggal stay the origin creator's own, same principle as Reschedule leaving Nama
+    // Kegiatan/PIC untouched in Room Booking.
+    [HttpPatch("{itemId:int}/koreksi")]
+    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiAtkRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaKoreksiable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+
+        if (string.IsNullOrWhiteSpace(payload.NamaPemohon)) return BadRequest(new { detail = "Nama pemohon wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPemohon)) return BadRequest(new { detail = "No. telepon pemohon wajib diisi" });
+
+        item.NamaPemohon = payload.NamaPemohon.Trim();
+        item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
+        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
+        AddLog(item, "CORRECTED", user!, $"Nama/No. Telepon Pemohon dikoreksi menjadi {item.NamaPemohon} / {item.NoTeleponPemohon}");
+
+        await _db.SaveChangesAsync();
+        return Ok(PermintaanAtkOut.From(item));
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {

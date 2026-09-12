@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   ARCHIVE_KATEGORI_LABEL,
+  canGaKoreksiArsip,
   isArsipDeletableByOrigin,
   isArsipEditableByOrigin,
   isBookingOriginRole,
@@ -23,6 +24,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import ArsipFormModal from "@/components/ArsipFormModal";
 import ArsipDetailModal from "@/components/ArsipDetailModal";
+import ArsipKoreksiModal from "@/components/ArsipKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import ArsipStatusHistoryModal from "@/components/ArsipStatusHistoryModal";
 import ArsipChatModal from "@/components/ArsipChatModal";
@@ -68,6 +70,7 @@ function ArsipTransaksiPageInner() {
   const [chatItem, setChatItem] = useState<PermintaanArsip | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<PermintaanArsip | null>(null);
 
   const rowMenu = useRowMenu(items);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -435,7 +438,10 @@ function ArsipTransaksiPageInner() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isArsipEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isArsipEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiArsip(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isArsipDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -445,7 +451,9 @@ function ArsipTransaksiPageInner() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item && isOrigin && isArsipEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isArsipEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaKoreksiArsip(item, me)) setKoreksiTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -483,6 +491,13 @@ function ArsipTransaksiPageInner() {
           setRejectTarget(null);
           loadTable();
         }}
+      />
+
+      <ArsipKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
+        onSaved={loadTable}
       />
 
       <ArsipStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />

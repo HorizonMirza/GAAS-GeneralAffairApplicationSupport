@@ -19,6 +19,10 @@ import type {
   ChatMessage,
   Invoice,
   KategoriKerusakan,
+  KoreksiArsipPayload,
+  KoreksiAtkPayload,
+  KoreksiPengirimanPayload,
+  KoreksiSaranaPayload,
   InvoiceListResponse,
   InvoiceLog,
   Me,
@@ -271,6 +275,8 @@ export const api = {
     apiRequest("/pengiriman", { method: "POST", body: payload }),
   updatePengiriman: (id: number, payload: PengirimanCreatePayload) =>
     apiRequest(`/pengiriman/${id}`, { method: "PUT", body: payload }),
+  koreksiPengiriman: (id: number, payload: KoreksiPengirimanPayload) =>
+    apiRequest<Pengiriman>(`/pengiriman/${id}/koreksi`, { method: "PATCH", body: payload }),
   deletePengiriman: (id: number) => apiRequest(`/pengiriman/${id}`, { method: "DELETE" }),
   deleteCompleted: (id: number) => apiRequest(`/pengiriman/${id}/super-admin`, { method: "DELETE" }),
   submitPengiriman: (id: number) => apiRequest(`/pengiriman/${id}/submit`, { method: "PATCH" }),
@@ -520,6 +526,8 @@ export const api = {
     apiRequest<PermintaanAtk>("/permintaan-atk", { method: "POST", body: payload }),
   updateAtk: (id: number, payload: PermintaanAtkCreatePayload) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`, { method: "PUT", body: payload }),
+  koreksiAtk: (id: number, payload: KoreksiAtkPayload) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/koreksi`, { method: "PATCH", body: payload }),
   deleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}`, { method: "DELETE" }),
   superAdminDeleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}/super-admin`, { method: "DELETE" }),
   // sumberPembelian is only actually required by the backend when Submit's own self-skip logic
@@ -570,6 +578,8 @@ export const api = {
     apiRequest<PerbaikanSarana>("/perbaikan-sarana", { method: "POST", body: payload }),
   updateSarana: (id: number, payload: PerbaikanSaranaCreatePayload) =>
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`, { method: "PUT", body: payload }),
+  koreksiSarana: (id: number, payload: KoreksiSaranaPayload) =>
+    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/koreksi`, { method: "PATCH", body: payload }),
   deleteSarana: (id: number) => apiRequest(`/perbaikan-sarana/${id}`, { method: "DELETE" }),
   superAdminDeleteSarana: (id: number) => apiRequest(`/perbaikan-sarana/${id}/super-admin`, { method: "DELETE" }),
   submitSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/submit`, { method: "PATCH" }),
@@ -691,6 +701,8 @@ export const api = {
     apiRequest<PermintaanArsip>("/permintaan-arsip", { method: "POST", body: payload }),
   updateArsip: (id: number, payload: PermintaanArsipCreatePayload) =>
     apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`, { method: "PUT", body: payload }),
+  koreksiArsip: (id: number, payload: KoreksiArsipPayload) =>
+    apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/koreksi`, { method: "PATCH", body: payload }),
   deleteArsip: (id: number) => apiRequest(`/permintaan-arsip/${id}`, { method: "DELETE" }),
   superAdminDeleteArsip: (id: number) => apiRequest(`/permintaan-arsip/${id}/super-admin`, { method: "DELETE" }),
   submitArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}/submit`, { method: "PATCH" }),

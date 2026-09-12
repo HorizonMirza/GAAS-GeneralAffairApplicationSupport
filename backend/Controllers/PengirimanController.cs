@@ -412,6 +412,40 @@ public class PengirimanController : ApiControllerBase
         return Ok(PengirimanOut.From(item));
     }
 
+    private static bool IsGaKoreksiable(Pengiriman item) => item.Status is
+        StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA;
+
+    [HttpPatch("{itemId:int}/koreksi")]
+    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiPengirimanRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FindAsync(itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaKoreksiable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+
+        if (string.IsNullOrWhiteSpace(payload.NamaPengirim)) return BadRequest(new { detail = "Nama pengirim wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPengirim)) return BadRequest(new { detail = "No. telepon pengirim wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.AlamatPengirim)) return BadRequest(new { detail = "Alamat pengirim wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NamaPenerima)) return BadRequest(new { detail = "Nama penerima wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.AlamatPenerima)) return BadRequest(new { detail = "Alamat penerima wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPenerima)) return BadRequest(new { detail = "No. telepon penerima wajib diisi" });
+
+        item.NamaPengirim = payload.NamaPengirim.Trim();
+        item.NoTeleponPengirim = payload.NoTeleponPengirim.Trim();
+        item.AlamatPengirim = payload.AlamatPengirim.Trim();
+        item.NamaPenerima = payload.NamaPenerima.Trim();
+        item.AlamatPenerima = payload.AlamatPenerima.Trim();
+        item.NoTeleponPenerima = payload.NoTeleponPenerima.Trim();
+        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
+        AddLog(item, "CORRECTED", user!, $"Data pengirim/penerima dikoreksi menjadi {item.NamaPengirim} / {item.NamaPenerima}");
+
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {

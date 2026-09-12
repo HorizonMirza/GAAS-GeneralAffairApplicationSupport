@@ -35,6 +35,16 @@ public class ApproveKpuRequest
     public decimal Total { get; set; }
 }
 
+public record KoreksiPengirimanRequest(
+    string NamaPengirim,
+    string NoTeleponPengirim,
+    string AlamatPengirim,
+    string NamaPenerima,
+    string AlamatPenerima,
+    string NoTeleponPenerima,
+    string? Catatan
+);
+
 public record RejectRequest(string? Reason);
 
 public record RejectWithTargetRequest(string? Reason, RejectTargetEnum Target);

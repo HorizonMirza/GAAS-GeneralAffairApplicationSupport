@@ -331,6 +331,34 @@ public class PermintaanArsipController : ApiControllerBase
         return Ok(PermintaanArsipOut.From(item));
     }
 
+    private static bool IsGaKoreksiable(PermintaanArsip item) => item.Status is
+        BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
+
+    [HttpPatch("{itemId:int}/koreksi")]
+    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiArsipRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaKoreksiable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+
+        if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan)) return BadRequest(new { detail = "Lokasi penyimpanan wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NamaPic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC wajib diisi" });
+
+        item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
+        item.NamaPic = payload.NamaPic.Trim();
+        item.NoTeleponPic = payload.NoTeleponPic.Trim();
+        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
+        AddLog(item, "CORRECTED", user!, $"Lokasi/PIC dikoreksi menjadi {item.LokasiPenyimpanan} / {item.NamaPic}");
+
+        await _db.SaveChangesAsync();
+        return Ok(PermintaanArsipOut.From(item));
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {

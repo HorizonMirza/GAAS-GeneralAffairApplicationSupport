@@ -211,6 +211,16 @@ export interface PengirimanCreatePayload {
   catatan: string | null;
 }
 
+export interface KoreksiPengirimanPayload {
+  namaPengirim: string;
+  noTeleponPengirim: string;
+  alamatPengirim: string;
+  namaPenerima: string;
+  alamatPenerima: string;
+  noTeleponPenerima: string;
+  catatan: string | null;
+}
+
 export interface ApproveKpuPayload {
   noResi: string;
   beratBarangKg: number;
@@ -483,6 +493,13 @@ export interface PermintaanArsipCreatePayload {
   catatan: string | null;
 }
 
+export interface KoreksiArsipPayload {
+  lokasiPenyimpanan: string;
+  namaPic: string;
+  noTeleponPic: string;
+  catatan: string | null;
+}
+
 // --- Maintenance (Perbaikan Sarana) ---
 // Alur approval-nya sama dengan Booking/ATK (BookingStatus, berakhir di APPROVED_GA_APPROVAL).
 
@@ -566,6 +583,14 @@ export interface PerbaikanSaranaCreatePayload {
   noTeleponPelapor: string;
 }
 
+// Admin/Approval GA's narrow correction payload - see PerbaikanSaranaController.Koreksi.
+export interface KoreksiSaranaPayload {
+  namaPelapor: string;
+  noTeleponPelapor: string;
+  lokasi: string;
+  catatan: string | null;
+}
+
 // --- Office Supplies (Permintaan ATK) ---
 // Alur approval-nya memakai BookingStatus (berakhir di APPROVED_GA_APPROVAL, tanpa tahap KPU).
 
@@ -643,6 +668,13 @@ export interface PermintaanAtkCreatePayload {
   noTeleponPemohon: string;
   catatan: string | null;
   items: PermintaanAtkItemPayload[];
+}
+
+// Admin/Approval GA's narrow correction payload - see PermintaanAtkController.Koreksi.
+export interface KoreksiAtkPayload {
+  namaPemohon: string;
+  noTeleponPemohon: string;
+  catatan: string | null;
 }
 
 export interface VehicleOption {

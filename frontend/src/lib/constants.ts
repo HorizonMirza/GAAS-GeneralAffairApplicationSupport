@@ -143,6 +143,7 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   APPROVED_KPU: { label: "Disetujui Mitra & Resi Diterbitkan", type: "approve" },
   REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
+  CORRECTED: { label: "Data Dikoreksi oleh GA", type: "neutral" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
   LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
   GAMBAR_DIBUAT: { label: "Gambar Rencana Perbaikan Dibuat", type: "neutral" },
@@ -166,6 +167,16 @@ export function isGaActionable(item: Pengiriman): boolean {
   if (item.status === "APPROVED_L1") return true;
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") return item.rejectTarget === "GA";
   return false;
+}
+
+// Admin/Approval GA's typo-correction tool - mirrors the backend's
+// PengirimanController.IsGaKoreksiable.
+export function isPengirimanGaKoreksiable(item: Pengiriman): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+}
+
+export function canGaKoreksiPengiriman(item: Pengiriman, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isPengirimanGaKoreksiable(item);
 }
 
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
@@ -455,6 +466,18 @@ export function isAtkKpuActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
+// Admin/Approval GA's narrow correction right: while still in flight (not yet finally approved,
+// not rejected), they can fix a typo in the requester's Nama/No. Telepon Pemohon or Catatan -
+// Keperluan/Items/Tanggal stay the origin creator's own. Mirrors
+// PermintaanAtkController.IsGaKoreksiable.
+export function isAtkGaKoreksiable(item: PermintaanAtk): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+}
+
+export function canGaKoreksiAtk(item: PermintaanAtk, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isAtkGaKoreksiable(item);
+}
+
 export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
   KPU: "KPU",
   PADI: "PaDi (Eksternal)",
@@ -501,6 +524,18 @@ export function isSaranaDeletableByOrigin(item: PerbaikanSarana, me: Me): boolea
 
 export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
   return item.status === "APPROVED_L1";
+}
+
+// Admin/Approval GA's narrow correction right: while still in flight (not yet finally approved,
+// not rejected), they can fix a typo in the reporter's Nama/No. Telepon Pelapor, Lokasi, or
+// Catatan - Kategori/DeskripsiKerusakan/FotoKerusakan stay the origin creator's own. Mirrors
+// PerbaikanSaranaController.IsGaKoreksiable.
+export function isSaranaGaKoreksiable(item: PerbaikanSarana): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+}
+
+export function canGaKoreksiSarana(item: PerbaikanSarana, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isSaranaGaKoreksiable(item);
 }
 
 // Eksekusi fisik (Cek Lokasi -> Buat Gambar -> Eksekusi) hanya berjalan setelah disetujui final -
@@ -558,6 +593,16 @@ export function isArsipDeletableByOrigin(item: PermintaanArsip, me: Me): boolean
   if (isArsipEditableByOrigin(item, me)) return true;
   if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+}
+
+// Admin/Approval GA's typo-correction tool - mirrors the backend's
+// PermintaanArsipController.IsGaKoreksiable.
+export function isArsipGaKoreksiable(item: PermintaanArsip): boolean {
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+}
+
+export function canGaKoreksiArsip(item: PermintaanArsip, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isArsipGaKoreksiable(item);
 }
 
 export function isArsipGaActionable(item: PermintaanArsip): boolean {

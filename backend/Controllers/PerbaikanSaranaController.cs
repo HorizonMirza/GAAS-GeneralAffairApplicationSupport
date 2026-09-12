@@ -347,6 +347,40 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
+    // Same in-flight window as Room/Vehicle Booking's IsGaReschedulable - still correctable up to
+    // the last tier before it's finally approved, closed off once Rejected or Approved final.
+    private static bool IsGaKoreksiable(PerbaikanSarana item) => item.Status is
+        BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
+
+    // Admin/Approval GA's narrow correction tool: fix a typo in the reporter's contact details or
+    // physical location without touching the report itself - Kategori, DeskripsiKerusakan and
+    // FotoKerusakan stay the origin creator's own, same principle as Reschedule leaving Nama
+    // Kegiatan/PIC untouched in Room Booking.
+    [HttpPatch("{itemId:int}/koreksi")]
+    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiSaranaRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaKoreksiable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+
+        if (string.IsNullOrWhiteSpace(payload.NamaPelapor)) return BadRequest(new { detail = "Nama pelapor wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.NoTeleponPelapor)) return BadRequest(new { detail = "No. telepon pelapor wajib diisi" });
+        if (string.IsNullOrWhiteSpace(payload.Lokasi)) return BadRequest(new { detail = "Lokasi wajib diisi" });
+
+        item.NamaPelapor = payload.NamaPelapor.Trim();
+        item.NoTeleponPelapor = payload.NoTeleponPelapor.Trim();
+        item.Lokasi = payload.Lokasi.Trim();
+        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
+        AddLog(item, "CORRECTED", user!, $"Data pelapor/lokasi dikoreksi menjadi {item.NamaPelapor} / {item.NoTeleponPelapor} / {item.Lokasi}");
+
+        await _db.SaveChangesAsync();
+        return Ok(PerbaikanSaranaOut.From(item));
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {

@@ -12,6 +12,7 @@ import {
   EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
   bookingStatusBorderClass,
+  canGaKoreksiSarana,
   isBookingOriginRole,
   isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
@@ -26,6 +27,7 @@ import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SaranaFormModal from "@/components/SaranaFormModal";
 import SaranaDetailModal from "@/components/SaranaDetailModal";
+import SaranaKoreksiModal from "@/components/SaranaKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
 import SaranaChatModal from "@/components/SaranaChatModal";
@@ -63,6 +65,7 @@ export default function MaintenanceOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PerbaikanSarana | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<PerbaikanSarana | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -257,7 +260,10 @@ export default function MaintenanceOverviewPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiSarana(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isSaranaDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -267,7 +273,9 @@ export default function MaintenanceOverviewPage() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item && isOrigin && isSaranaEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isSaranaEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaKoreksiSarana(item, me)) setKoreksiTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -307,6 +315,13 @@ export default function MaintenanceOverviewPage() {
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
+
+      <SaranaKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
+        onSaved={load}
+      />
 
       <RejectModal
         open={!!rejectTarget}

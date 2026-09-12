@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
+  canGaKoreksiAtk,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
   isAtkPdfAvailable,
@@ -25,6 +26,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
+import AtkKoreksiModal from "@/components/AtkKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
 import AtkChatModal from "@/components/AtkChatModal";
@@ -66,6 +68,7 @@ function OfficeSuppliesTransaksiPageInner() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" } | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<PermintaanAtk | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PermintaanAtk | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -442,7 +445,10 @@ function OfficeSuppliesTransaksiPageInner() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiAtk(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isAtkDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -452,7 +458,9 @@ function OfficeSuppliesTransaksiPageInner() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item && isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaKoreksiAtk(item, me)) setKoreksiTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -489,6 +497,13 @@ function OfficeSuppliesTransaksiPageInner() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+      />
+
+      <AtkKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
+        onSaved={loadTable}
       />
 
       <RejectModal

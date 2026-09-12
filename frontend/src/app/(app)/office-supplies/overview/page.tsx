@@ -10,6 +10,7 @@ import {
   ON_APPROVAL_STATUSES,
   REJECTED_STATUSES,
   atkItemsSummary,
+  canGaKoreksiAtk,
   cardStatusBorderClass,
   isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
@@ -25,6 +26,7 @@ import AtkStepper from "@/components/AtkStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
+import AtkKoreksiModal from "@/components/AtkKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
 import AtkChatModal from "@/components/AtkChatModal";
@@ -58,6 +60,7 @@ export default function OfficeSuppliesOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PermintaanAtk | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<PermintaanAtk | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -223,7 +226,10 @@ export default function OfficeSuppliesOverviewPage() {
 
       <RowMenuDropdown
         position={rowMenu.position}
-        canEditDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
+        canEditDelete={
+          !!rowMenu.menuItem &&
+          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiAtk(rowMenu.menuItem, me))
+        }
         canDelete={!!rowMenu.menuItem && isOrigin && isAtkDeletableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
@@ -233,7 +239,9 @@ export default function OfficeSuppliesOverviewPage() {
         onUpdates={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
-          if (item && isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          if (!item) return;
+          if (isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
+          else if (canGaKoreksiAtk(item, me)) setKoreksiTarget(item);
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -273,6 +281,13 @@ export default function OfficeSuppliesOverviewPage() {
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
+
+      <AtkKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
+        onSaved={load}
+      />
 
       <RejectModal
         open={!!rejectTarget}
