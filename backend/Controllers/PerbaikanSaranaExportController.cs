@@ -21,9 +21,9 @@ public class PerbaikanSaranaExportController : ApiControllerBase
 
     private static readonly (string Field, string Label)[] Columns =
     {
-        ("nomor_perbaikan", "No Permintaan"),
+        ("nomor_perbaikan", "No Pengajuan"),
         ("diajukan", "Diajukan"),
-        ("tanggal", "Tanggal Permintaan"),
+        ("tanggal", "Tanggal Pengajuan"),
         ("lokasi", "Lokasi"),
         ("kategori", "Kategori"),
         ("deskripsi", "Deskripsi Kerusakan"),

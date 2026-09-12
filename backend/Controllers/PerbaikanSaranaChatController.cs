@@ -42,7 +42,7 @@ public class PerbaikanSaranaChatController : ApiControllerBase
         if (error != null) return error;
 
         var item = await _db.PerbaikanSaranas.FindAsync(perbaikanSaranaId);
-        if (item == null) return NotFound(new { detail = "Permintaan tidak ditemukan" });
+        if (item == null) return NotFound(new { detail = "Pengajuan tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var messages = await _db.PerbaikanSaranaChatMessages
@@ -65,7 +65,7 @@ public class PerbaikanSaranaChatController : ApiControllerBase
         if (error != null) return error;
 
         var item = await _db.PerbaikanSaranas.FindAsync(perbaikanSaranaId);
-        if (item == null) return NotFound(new { detail = "Permintaan tidak ditemukan" });
+        if (item == null) return NotFound(new { detail = "Pengajuan tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
 
         var text = payload.Message?.Trim();

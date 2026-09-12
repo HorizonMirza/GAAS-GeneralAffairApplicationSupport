@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { KATEGORI_KERUSAKAN_LABEL } from "@/lib/constants";
+import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KategoriKerusakan, Me, PerbaikanSaranaCreatePayload } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -19,11 +20,15 @@ interface Props {
   onCreated: () => void;
 }
 
-function emptyForm(): PerbaikanSaranaCreatePayload {
+// kategori starts unselected (unlike the payload's required KategoriKerusakan) so the field
+// shows the "Pilih Kategori" placeholder instead of defaulting to the first option.
+type SaranaFormState = Omit<PerbaikanSaranaCreatePayload, "kategori"> & { kategori?: KategoriKerusakan };
+
+function emptyForm(): SaranaFormState {
   return {
-    tanggal: "",
+    tanggal: todayLocalDate(),
     lokasi: "",
-    kategori: "AC",
+    kategori: undefined,
     deskripsiKerusakan: "",
     catatan: "",
     namaPelapor: "",
@@ -35,7 +40,7 @@ const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusa
 
 export default function SaranaFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
-  const [form, setForm] = useState<PerbaikanSaranaCreatePayload>(emptyForm());
+  const [form, setForm] = useState<SaranaFormState>(emptyForm());
   const [fotoKerusakanFiles, setFotoKerusakanFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -74,7 +79,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     me.divisi ||
     (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
-  function set<K extends keyof PerbaikanSaranaCreatePayload>(key: K, value: PerbaikanSaranaCreatePayload[K]) {
+  function set<K extends keyof SaranaFormState>(key: K, value: SaranaFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -90,6 +95,10 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
         return;
       }
     }
+    if (!form.kategori) {
+      setError("Kategori kerusakan wajib dipilih");
+      return;
+    }
     if (fotoKerusakanFiles.length === 0) {
       setError("Foto kerusakan wajib diunggah (minimal 1 foto)");
       return;
@@ -98,9 +107,9 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     try {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
-      const created = await api.createSarana({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
+      const created = await api.createSarana({ ...form, kategori: form.kategori, departemen: form.departemen || undefined, catatan: form.catatan || null });
       await api.uploadFotoKerusakanSarana(created.id, fotoKerusakanFiles);
-      showToast("Permintaan perbaikan berhasil disimpan sebagai Draft");
+      showToast("Pengajuan perbaikan berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -114,13 +123,13 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan Perbaikan {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Pengajuan Perbaikan {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fs-nomor-perbaikan">Nomor Permintaan Perbaikan</label>
+              <label htmlFor="fs-nomor-perbaikan">Nomor Pengajuan Perbaikan</label>
               <input type="text" id="fs-nomor-perbaikan" disabled value={nomorPerbaikan} />
             </div>
             {isGaActor && (
@@ -150,7 +159,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               </>
             )}
             <div className="field">
-              <label htmlFor="fs-tanggal">Tanggal Permintaan</label>
+              <label htmlFor="fs-tanggal">Tanggal Pengajuan</label>
               <DateFilterPicker id="fs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
@@ -161,20 +170,20 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
                 onChange={(v) => set("kategori", v as KategoriKerusakan)}
                 options={KATEGORI_OPTIONS}
                 getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
-                placeholder="Pilih kategori"
+                placeholder="Pilih Kategori"
               />
             </div>
-            <div className="field">
+            <div className="field full">
               <label htmlFor="fs-lokasi">Lokasi</label>
-              <input type="text" id="fs-lokasi" required maxLength={255} placeholder="Contoh: Lantai 3 - Ruang Meeting Bromo" value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
+              <input type="text" id="fs-lokasi" required maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fs-nama-pelapor">Nama Pelapor</label>
-              <input type="text" id="fs-nama-pelapor" required maxLength={255} placeholder="Nama yang melaporkan kerusakan" value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
+              <input type="text" id="fs-nama-pelapor" required maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fs-no-telepon-pelapor">No. Telepon Pelapor</label>
-              <input type="text" id="fs-no-telepon-pelapor" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
+              <input type="text" id="fs-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fs-deskripsi">Deskripsi Kerusakan</label>
@@ -182,7 +191,6 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
                 id="fs-deskripsi"
                 required
                 maxLength={2000}
-                placeholder="Contoh: AC tidak dingin dan mengeluarkan bunyi berisik sejak Senin pagi"
                 value={form.deskripsiKerusakan}
                 onChange={(e) => set("deskripsiKerusakan", e.target.value)}
                 onKeyDown={(e) => {
@@ -196,7 +204,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field full">
               <label htmlFor="fs-catatan">Catatan</label>
-              <input type="text" id="fs-catatan" maxLength={255} placeholder="Contoh: Mohon diperbaiki sebelum rapat Jumat" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fs-catatan" maxLength={255} placeholder="Contoh: Mohon segera ditindaklanjuti" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

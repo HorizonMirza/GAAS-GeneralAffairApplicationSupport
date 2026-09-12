@@ -75,14 +75,14 @@ public static class SaranaPdfService
                             .Text("APPROVED").FontColor(ApprovedGreen).Bold().FontSize(11);
                     });
 
-                    col.Item().PaddingTop(8).AlignCenter().Text("BUKTI PERMINTAAN PERBAIKAN SARANA").Bold().FontSize(15);
+                    col.Item().PaddingTop(8).AlignCenter().Text("BUKTI PENGAJUAN PERBAIKAN SARANA").Bold().FontSize(15);
                     col.Item().AlignCenter().Text(txt =>
                     {
-                        txt.Span("No. Permintaan: ").FontSize(10.5f);
+                        txt.Span("No. Pengajuan: ").FontSize(10.5f);
                         txt.Span(item.NomorPerbaikan ?? "-").FontSize(10.5f).Bold();
                     });
 
-                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Permintaan", item.Tanggal.ToString("dd MMMM yyyy")));
+                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Pengajuan", item.Tanggal.ToString("dd MMMM yyyy")));
                     col.Item().Element(c => InfoRow(c, "Kepada", "Approval General Affair"));
                     col.Item().Element(c => InfoRow(c, "Dari", $"{item.NamaPelapor} - {DivisiLabel(item)}"));
                     col.Item().Element(c => InfoRow(c, "No. Telepon Pelapor", item.NoTeleponPelapor));
@@ -98,7 +98,7 @@ public static class SaranaPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa permintaan perbaikan di atas telah disetujui secara final. Nomor permintaan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima pekerjaan."
+                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa pengajuan perbaikan di atas telah disetujui secara final. Nomor pengajuan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima pekerjaan."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

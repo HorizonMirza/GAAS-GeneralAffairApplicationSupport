@@ -199,10 +199,10 @@ function MaintenanceTransaksiPageInner() {
   }
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus permintaan perbaikan ini secara permanen?", async () => {
+    confirm("Hapus pengajuan perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pengajuan berhasil dihapus");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -240,8 +240,8 @@ function MaintenanceTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-sarana-search">Cari Permintaan</label>
-            <input type="text" id="filter-sarana-search" placeholder="No Permintaan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-sarana-search">Cari Pengajuan</label>
+            <input type="text" id="filter-sarana-search" placeholder="No Pengajuan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
@@ -329,7 +329,7 @@ function MaintenanceTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pengajuan</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.saranaExportPdfUrl(currentExportParams()), "_blank")}>
@@ -350,9 +350,9 @@ function MaintenanceTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
                 <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Permintaan</th><th>Catatan</th><th>Status</th>
+                <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -420,13 +420,13 @@ function MaintenanceTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${filters.limit} permintaan`}
+                getLabel={(v) => `${v} pengajuan`}
+                placeholder={`${filters.limit} pengajuan`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} Permintaan · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">Total {total} Pengajuan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (
@@ -468,7 +468,7 @@ function MaintenanceTransaksiPageInner() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Permintaan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Pengajuan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

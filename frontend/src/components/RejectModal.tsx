@@ -125,7 +125,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
         await api.rejectSaranaGa(targetId, reasonValue);
       } else if (targetType === "sarana-ga-approval") {
         await api.rejectSaranaGaApproval(targetId, reasonValue);
-        message = "Permintaan ditolak";
+        message = "Pengajuan ditolak";
       } else if (targetType === "arsip-l1") {
         await api.rejectArsipL1(targetId, reasonValue);
       } else if (targetType === "arsip-ga") {

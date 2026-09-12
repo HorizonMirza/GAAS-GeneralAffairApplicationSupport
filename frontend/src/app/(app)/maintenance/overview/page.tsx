@@ -139,10 +139,10 @@ export default function MaintenanceOverviewPage() {
       : "Approval Departemen/Divisi";
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus permintaan perbaikan ini secara permanen?", async () => {
+    confirm("Hapus pengajuan perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pengajuan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -285,7 +285,7 @@ export default function MaintenanceOverviewPage() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Permintaan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Pengajuan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

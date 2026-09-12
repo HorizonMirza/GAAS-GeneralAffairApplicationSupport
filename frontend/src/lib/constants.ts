@@ -467,13 +467,14 @@ export function atkItemsSummary(item: PermintaanAtk): string {
 
 // --- Maintenance / Perbaikan Sarana (pola yang sama dengan Booking & ATK di atas) ---
 
+// Order is longest label to shortest (a deliberate display choice, not alphabetical/enum order).
 export const KATEGORI_KERUSAKAN_LABEL: Record<KategoriKerusakan, string> = {
-  AC: "AC / Pendingin",
-  LISTRIK: "Listrik",
-  AIR: "Air / Saluran",
+  AC: "Pendingin Ruangan",
   FURNITUR: "Furnitur",
-  GEDUNG: "Gedung / Bangunan",
-  IT: "IT / Jaringan",
+  GEDUNG: "Bangunan",
+  IT: "Jaringan",
+  LISTRIK: "Listrik",
+  AIR: "Saluran",
   LAINNYA: "Lainnya",
 };
 
