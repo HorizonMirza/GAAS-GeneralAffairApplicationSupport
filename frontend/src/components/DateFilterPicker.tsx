@@ -48,7 +48,7 @@ interface Props {
   // Read-only display mode (Detail modal's non-edit view) - same convention as
   // SearchableSelect's disabled prop: trigger becomes an inert <button disabled>, panel never opens.
   disabled?: boolean;
-  // Required form fields (e.g. Tanggal Laporan) hide the "Hapus" link so the picker can't be
+  // Required form fields (e.g. Tanggal Permintaan) hide the "Hapus" link so the picker can't be
   // cleared back to empty - defaults to true (filter-picker behavior, unchanged for every
   // existing caller).
   clearable?: boolean;

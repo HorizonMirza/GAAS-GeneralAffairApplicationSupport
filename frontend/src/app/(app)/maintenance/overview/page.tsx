@@ -139,10 +139,10 @@ export default function MaintenanceOverviewPage() {
       : "Approval Departemen/Divisi";
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus laporan perbaikan ini secara permanen?", async () => {
+    confirm("Hapus permintaan perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
-        showToast("Laporan berhasil dihapus");
+        showToast("Permintaan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -156,7 +156,7 @@ export default function MaintenanceOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Laporan Perbaikan
+            + Permintaan Perbaikan
           </button>
         )}
       </div>
@@ -182,7 +182,7 @@ export default function MaintenanceOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Laporan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
             id="overview-sarana-status-filter"
@@ -285,7 +285,7 @@ export default function MaintenanceOverviewPage() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Laporan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+            await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Permintaan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

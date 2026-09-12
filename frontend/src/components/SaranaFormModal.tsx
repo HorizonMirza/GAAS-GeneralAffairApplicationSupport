@@ -100,7 +100,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
       // undefined here (not sent at all) so the backend still records a null Departemen.
       const created = await api.createSarana({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
       await api.uploadFotoKerusakanSarana(created.id, fotoKerusakanFiles);
-      showToast("Laporan perbaikan berhasil disimpan sebagai Draft");
+      showToast("Permintaan perbaikan berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -114,13 +114,13 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Laporan Perbaikan {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Permintaan Perbaikan {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fs-nomor-perbaikan">Nomor Laporan Perbaikan</label>
+              <label htmlFor="fs-nomor-perbaikan">Nomor Permintaan Perbaikan</label>
               <input type="text" id="fs-nomor-perbaikan" disabled value={nomorPerbaikan} />
             </div>
             {isGaActor && (
@@ -150,7 +150,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               </>
             )}
             <div className="field">
-              <label htmlFor="fs-tanggal">Tanggal Laporan</label>
+              <label htmlFor="fs-tanggal">Tanggal Permintaan</label>
               <DateFilterPicker id="fs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">

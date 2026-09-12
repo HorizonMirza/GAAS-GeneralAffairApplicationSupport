@@ -390,7 +390,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         var fotoCount = await _db.PerbaikanSaranaFotoKerusakans.CountAsync(f => f.PerbaikanSaranaId == item.Id);
         if (fotoCount < MinFotoKerusakan)
-            return BadRequest(new { detail = "Foto kerusakan wajib diunggah sebelum mengirim laporan" });
+            return BadRequest(new { detail = "Foto kerusakan wajib diunggah sebelum mengirim permintaan" });
 
         // Whichever tier the submitter's own role would normally sit at gets skipped, same
         // convention as the other modules.
@@ -811,7 +811,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         var item = await _db.PerbaikanSaranas.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.GambarFilePath == null) return NotFound(new { detail = "Belum ada gambar untuk laporan ini" });
+        if (item.GambarFilePath == null) return NotFound(new { detail = "Belum ada gambar untuk permintaan ini" });
 
         var path = Path.Combine(_uploadDir, item.GambarFilePath);
         if (!System.IO.File.Exists(path))
@@ -844,7 +844,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         var existingCount = await _db.PerbaikanSaranaFotoKerusakans.CountAsync(f => f.PerbaikanSaranaId == itemId);
         if (existingCount + files.Count > MaxFotoKerusakan)
-            return BadRequest(new { detail = $"Maksimal {MaxFotoKerusakan} foto kerusakan per laporan" });
+            return BadRequest(new { detail = $"Maksimal {MaxFotoKerusakan} foto kerusakan per permintaan" });
 
         foreach (var file in files)
         {
@@ -972,7 +972,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         var item = await _db.PerbaikanSaranas.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.FotoSelesaiFilePath == null) return NotFound(new { detail = "Belum ada foto hasil perbaikan untuk laporan ini" });
+        if (item.FotoSelesaiFilePath == null) return NotFound(new { detail = "Belum ada foto hasil perbaikan untuk permintaan ini" });
 
         var path = Path.Combine(_uploadDir, item.FotoSelesaiFilePath);
         if (!System.IO.File.Exists(path))
@@ -996,11 +996,11 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
         if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)
-            return StatusCode(403, new { detail = "Bukti laporan hanya tersedia untuk laporan yang sudah Approved" });
+            return StatusCode(403, new { detail = "Bukti permintaan hanya tersedia untuk permintaan yang sudah Approved" });
 
         var actorNames = await ResolveActorNamesAsync(item);
         var bytes = SaranaPdfService.Generate(item, actorNames);
-        return File(bytes, "application/pdf", $"Bukti-Laporan-Perbaikan-{item.NomorPerbaikan}.pdf");
+        return File(bytes, "application/pdf", $"Bukti-Permintaan-Perbaikan-{item.NomorPerbaikan}.pdf");
     }
 
     private async Task<Dictionary<int, string>> ResolveActorNamesAsync(PerbaikanSarana item)

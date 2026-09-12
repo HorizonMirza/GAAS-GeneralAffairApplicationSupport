@@ -623,7 +623,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteSarana(item: PerbaikanSarana) {
-    confirm("Yakin ingin menghapus laporan perbaikan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus permintaan perbaikan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteSarana(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -1527,12 +1527,12 @@ export default function SuperAdminPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3>Laporan Perbaikan Sarana</h3>
+          <h3>Permintaan Perbaikan Sarana</h3>
         </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-sarana-search">Cari Laporan</label>
-            <input type="text" id="filter-sarana-search" placeholder="No Laporan" value={saranaSearchInput} onChange={(e) => handleSaranaSearchChange(e.target.value)} />
+            <label htmlFor="filter-sarana-search">Cari Permintaan</label>
+            <input type="text" id="filter-sarana-search" placeholder="No Permintaan" value={saranaSearchInput} onChange={(e) => handleSaranaSearchChange(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="filter-sarana-bulan">Filter Bulan</label>
@@ -1620,9 +1620,9 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Laporan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
                 <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Laporan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Divisi</th><th>Departemen</th><th>Tanggal Permintaan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -1670,13 +1670,13 @@ export default function SuperAdminPage() {
                 value={String(saranaFilters.limit)}
                 onChange={(v) => updateSaranaFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} laporan`}
-                placeholder={`${saranaFilters.limit} laporan`}
+                getLabel={(v) => `${v} permintaan`}
+                placeholder={`${saranaFilters.limit} permintaan`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {saranaTotal} Laporan · Halaman {saranaFilters.page} dari {saranaTotalPages}</span>
+            <span className="text-secondary">Total {saranaTotal} Permintaan · Halaman {saranaFilters.page} dari {saranaTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={saranaFilters.page <= 1} onClick={() => goToSaranaPage(saranaFilters.page - 1)}>‹</button>
               {saranaPageButtons.map((p) => (

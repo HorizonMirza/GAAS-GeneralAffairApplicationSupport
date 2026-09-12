@@ -101,7 +101,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setBusy(true);
     try {
       await api.submitSarana(item!.id);
-      showToast("Laporan berhasil dikirim untuk approval");
+      showToast("Permintaan berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -114,7 +114,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaL1(item!.id);
-      showToast("Laporan berhasil di-approve, diteruskan ke Admin GA");
+      showToast("Permintaan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -125,7 +125,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaGa(item!.id);
-      showToast("Laporan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -136,7 +136,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     onClose();
     try {
       await api.approveSaranaGaApproval(item!.id);
-      showToast("Laporan perbaikan berhasil disetujui");
+      showToast("Permintaan perbaikan berhasil disetujui");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -213,7 +213,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setBusy(true);
     try {
       await api.updateSarana(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Laporan berhasil diperbarui");
+      showToast("Permintaan berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -257,17 +257,17 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Laporan Perbaikan" : "Detail Laporan Perbaikan"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Permintaan Perbaikan" : "Detail Permintaan Perbaikan"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ds-nomor-perbaikan">Nomor Laporan Perbaikan</label>
+              <label htmlFor="ds-nomor-perbaikan">Nomor Permintaan Perbaikan</label>
               <input type="text" id="ds-nomor-perbaikan" disabled value={item.nomorPerbaikan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="ds-tanggal">Tanggal Laporan</label>
+              <label htmlFor="ds-tanggal">Tanggal Permintaan</label>
               <DateFilterPicker id="ds-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
