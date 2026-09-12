@@ -39,7 +39,7 @@ export default function VehicleBookingStatusHistoryModal({ open, itemId, onClose
           {error ? (
             <p className="text-secondary" style={{ textAlign: "center", padding: "16px 0" }}>Gagal memuat riwayat: {error}</p>
           ) : (
-            <ApprovalLog logs={logs} />
+            <ApprovalLog logs={logs} kind="kendaraan" />
           )}
         </div>
       </div>
