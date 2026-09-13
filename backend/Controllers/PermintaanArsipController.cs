@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -334,6 +335,11 @@ public class PermintaanArsipController : ApiControllerBase
     private static bool IsGaKoreksiable(PermintaanArsip item) => item.Status is
         BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
 
+    // Accepts any real phone number without guessing a regional format, but still catches
+    // obviously-wrong values (empty, letters, a couple of stray digits).
+    private static bool IsValidPhone(string phone) =>
+        Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
+
     [HttpPatch("{itemId:int}/koreksi")]
     public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiArsipRequest payload)
     {
@@ -347,7 +353,7 @@ public class PermintaanArsipController : ApiControllerBase
 
         if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan)) return BadRequest(new { detail = "Lokasi penyimpanan wajib diisi" });
         if (string.IsNullOrWhiteSpace(payload.NamaPic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC tidak valid" });
 
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.NamaPic = payload.NamaPic.Trim();

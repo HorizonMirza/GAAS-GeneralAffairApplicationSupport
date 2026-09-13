@@ -1,4 +1,5 @@
 using System.Net.Mime;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -352,6 +353,11 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static bool IsGaKoreksiable(PerbaikanSarana item) => item.Status is
         BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
 
+    // Accepts any real phone number without guessing a regional format, but still catches
+    // obviously-wrong values (empty, letters, a couple of stray digits).
+    private static bool IsValidPhone(string phone) =>
+        Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
+
     // Admin/Approval GA's narrow correction tool: fix a typo in the reporter's contact details or
     // physical location without touching the report itself - Kategori, DeskripsiKerusakan and
     // FotoKerusakan stay the origin creator's own, same principle as Reschedule leaving Nama
@@ -368,7 +374,7 @@ public class PerbaikanSaranaController : ApiControllerBase
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
 
         if (string.IsNullOrWhiteSpace(payload.NamaPelapor)) return BadRequest(new { detail = "Nama pelapor wajib diisi" });
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPelapor)) return BadRequest(new { detail = "No. telepon pelapor wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPelapor)) return BadRequest(new { detail = "No. telepon pelapor tidak valid" });
         if (string.IsNullOrWhiteSpace(payload.Lokasi)) return BadRequest(new { detail = "Lokasi wajib diisi" });
 
         item.NamaPelapor = payload.NamaPelapor.Trim();

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -348,6 +349,11 @@ public class PermintaanAtkController : ApiControllerBase
     private static bool IsGaKoreksiable(PermintaanAtk item) => item.Status is
         StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA;
 
+    // Accepts any real phone number without guessing a regional format, but still catches
+    // obviously-wrong values (empty, letters, a couple of stray digits).
+    private static bool IsValidPhone(string phone) =>
+        Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
+
     // Admin/Approval GA's narrow correction tool: fix a typo in the requester's own contact
     // details (or Catatan) without touching what's actually being requested - Keperluan, Items
     // and Tanggal stay the origin creator's own, same principle as Reschedule leaving Nama
@@ -364,7 +370,7 @@ public class PermintaanAtkController : ApiControllerBase
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
 
         if (string.IsNullOrWhiteSpace(payload.NamaPemohon)) return BadRequest(new { detail = "Nama pemohon wajib diisi" });
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPemohon)) return BadRequest(new { detail = "No. telepon pemohon wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPemohon)) return BadRequest(new { detail = "No. telepon pemohon tidak valid" });
 
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();

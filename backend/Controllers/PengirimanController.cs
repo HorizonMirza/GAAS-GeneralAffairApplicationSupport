@@ -427,11 +427,11 @@ public class PengirimanController : ApiControllerBase
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
 
         if (string.IsNullOrWhiteSpace(payload.NamaPengirim)) return BadRequest(new { detail = "Nama pengirim wajib diisi" });
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPengirim)) return BadRequest(new { detail = "No. telepon pengirim wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPengirim)) return BadRequest(new { detail = "No. telepon pengirim tidak valid" });
         if (string.IsNullOrWhiteSpace(payload.AlamatPengirim)) return BadRequest(new { detail = "Alamat pengirim wajib diisi" });
         if (string.IsNullOrWhiteSpace(payload.NamaPenerima)) return BadRequest(new { detail = "Nama penerima wajib diisi" });
         if (string.IsNullOrWhiteSpace(payload.AlamatPenerima)) return BadRequest(new { detail = "Alamat penerima wajib diisi" });
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPenerima)) return BadRequest(new { detail = "No. telepon penerima wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPenerima)) return BadRequest(new { detail = "No. telepon penerima tidak valid" });
 
         item.NamaPengirim = payload.NamaPengirim.Trim();
         item.NoTeleponPengirim = payload.NoTeleponPengirim.Trim();
