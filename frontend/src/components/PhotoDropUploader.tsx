@@ -51,26 +51,25 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
       >
         <UploadCloud width={32} height={32} />
         <div className="photo-drop-title">
-          {atLimit ? <>Sudah {maxFiles} foto (maksimal)</> : <>Pilih foto atau Drag and Drop disini.</>}
+          {atLimit ? <>Max {maxFiles} Foto</> : <>Pilih foto atau Drag and Drop disini.</>}
         </div>
-        <div className="photo-drop-caption">
-          Format JPG dan PNG, Max {maxFiles} Foto
-        </div>
+        {!atLimit && (
+          <div className="photo-drop-caption">
+            Format JPG dan PNG, Max {maxFiles} Foto
+          </div>
+        )}
         {!disabled && !atLimit && (
-          <>
-            <button type="button" className="btn btn-secondary photo-drop-browse">Pilih File</button>
-            <input
-              id={id}
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple
-              className="file-dropzone-input"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
-                e.target.value = "";
-              }}
-            />
-          </>
+          <input
+            id={id}
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            className="file-dropzone-input"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
         )}
       </div>
 

@@ -58,7 +58,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const [fotoSelesaiFile, setFotoSelesaiFile] = useState<File | null>(null);
   const [fotoKerusakan, setFotoKerusakan] = useState<PerbaikanSaranaFotoKerusakan[]>([]);
   const [newFotoFiles, setNewFotoFiles] = useState<File[]>([]);
-  const [fotoBusy, setFotoBusy] = useState(false);
+  const [removedFotoIds, setRemovedFotoIds] = useState<number[]>([]);
   const { showToast } = useToast();
   const confirm = useConfirm();
   const formRef = useRef<HTMLFormElement>(null);
@@ -80,10 +80,15 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setGambarFile(null);
     setFotoSelesaiFile(null);
     setNewFotoFiles([]);
+    setRemovedFotoIds([]);
     api.listFotoKerusakanSarana(item.id).then(setFotoKerusakan).catch(() => setFotoKerusakan([]));
   }, [open, item]);
 
   if (!open || !item || !form) return null;
+
+  // Foto yang di-stage untuk dihapus disembunyikan dari tampilan tapi baru benar-benar dihapus di
+  // server saat Save ditekan (lihat handleUpdateSubmit) - lihat komentar di handleRemoveFoto.
+  const visibleFotoKerusakan = fotoKerusakan.filter((f) => !removedFotoIds.includes(f.id));
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isSaranaEditableByOrigin(item, me);
@@ -211,9 +216,19 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (visibleFotoKerusakan.length + newFotoFiles.length === 0) {
+      setError("Foto kerusakan wajib diunggah (minimal 1 foto)");
+      return;
+    }
     setBusy(true);
     try {
       await api.updateSarana(item!.id, { ...form!, catatan: form!.catatan || null });
+      for (const fotoId of removedFotoIds) {
+        await api.deleteFotoKerusakanSarana(item!.id, fotoId);
+      }
+      if (newFotoFiles.length > 0) {
+        await api.uploadFotoKerusakanSarana(item!.id, newFotoFiles);
+      }
       showToast("Pengajuan berhasil diperbarui");
       onClose();
       onSaved();
@@ -223,35 +238,11 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     }
   }
 
-  async function handleAddFoto() {
-    if (newFotoFiles.length === 0) return;
-    setFotoBusy(true);
-    try {
-      await api.uploadFotoKerusakanSarana(item!.id, newFotoFiles);
-      const list = await api.listFotoKerusakanSarana(item!.id);
-      setFotoKerusakan(list);
-      setNewFotoFiles([]);
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setFotoBusy(false);
-    }
-  }
-
+  // Hapus/tambah foto di sini hanya menandai perubahan secara lokal (state), bukan langsung
+  // memanggil API - baru benar-benar diterapkan ke server saat tombol Save utama ditekan (lihat
+  // handleUpdateSubmit), supaya menutup modal tanpa Save tidak mengubah apa pun.
   function handleRemoveFoto(fotoId: number) {
-    confirm(
-      "Hapus foto kerusakan ini?",
-      async () => {
-        try {
-          await api.deleteFotoKerusakanSarana(item!.id, fotoId);
-          const list = await api.listFotoKerusakanSarana(item!.id);
-          setFotoKerusakan(list);
-        } catch (err) {
-          showToast((err as Error).message, "error");
-        }
-      },
-      "Hapus"
-    );
+    setRemovedFotoIds((ids) => [...ids, fotoId]);
   }
 
   return (
@@ -311,18 +302,18 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field full">
               <label>Foto Kerusakan</label>
-              {(fotoKerusakan.length > 0 || (isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN)) && (
+              {(visibleFotoKerusakan.length > 0 || (isEdit && visibleFotoKerusakan.length < MAX_FOTO_KERUSAKAN)) && (
               <div className="photo-drop-uploader">
-                {fotoKerusakan.length > 0 && (
+                {visibleFotoKerusakan.length > 0 && (
                   <div className="photo-drop-list">
-                    {fotoKerusakan.map((foto, index) => (
+                    {visibleFotoKerusakan.map((foto) => (
                       <div className="photo-drop-item" key={foto.id}>
                         <div className="photo-drop-item-thumb">
                           <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
                         </div>
                         <div className="photo-drop-item-info">
                           <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
-                            Foto {index + 1} &middot; {foto.originalFilename}
+                            {foto.originalFilename}
                           </a>
                         </div>
                         <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
@@ -335,20 +326,15 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     ))}
                   </div>
                 )}
-                {isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
+                {isEdit && visibleFotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
                   <PhotoDropUploader
                     id="ds-foto-kerusakan-add"
                     files={newFotoFiles}
                     onChange={setNewFotoFiles}
-                    maxFiles={MAX_FOTO_KERUSAKAN - fotoKerusakan.length}
+                    maxFiles={MAX_FOTO_KERUSAKAN - visibleFotoKerusakan.length}
                   />
                 )}
               </div>
-              )}
-              {isEdit && newFotoFiles.length > 0 && (
-                <button type="button" className="btn btn-approve" style={{ width: "auto", marginTop: 8 }} disabled={fotoBusy} onClick={handleAddFoto}>
-                  Tambah Foto
-                </button>
               )}
             </div>
             <div className="field full">
