@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { CheckCircle2, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
@@ -310,46 +311,49 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field full">
               <label>Foto Kerusakan</label>
-              {fotoKerusakan.length > 0 && (
-                <div className="photo-drop-list">
-                  {fotoKerusakan.map((foto, index) => (
-                    <div className="photo-drop-item" key={foto.id}>
-                      <div className="photo-drop-item-thumb">
-                        <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
+              {(fotoKerusakan.length > 0 || (isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN)) && (
+              <div className="photo-drop-uploader">
+                {fotoKerusakan.length > 0 && (
+                  <div className="photo-drop-list">
+                    {fotoKerusakan.map((foto, index) => (
+                      <div className="photo-drop-item" key={foto.id}>
+                        <div className="photo-drop-item-thumb">
+                          <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
+                        </div>
+                        <div className="photo-drop-item-info">
+                          <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                            Foto {index + 1} &middot; {foto.originalFilename}
+                          </a>
+                        </div>
+                        <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                        {isEdit && (
+                          <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => handleRemoveFoto(foto.id)}>
+                            <Trash2 width={14} height={14} />
+                          </button>
+                        )}
                       </div>
-                      <div className="photo-drop-item-info">
-                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
-                          Foto {index + 1} &middot; {foto.originalFilename}
-                        </a>
-                      </div>
-                      {isEdit && (
-                        <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => handleRemoveFoto(foto.id)}>
-                          &times;
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
-                <div style={{ marginTop: 8 }}>
+                    ))}
+                  </div>
+                )}
+                {isEdit && fotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
                   <PhotoDropUploader
                     id="ds-foto-kerusakan-add"
                     files={newFotoFiles}
                     onChange={setNewFotoFiles}
                     maxFiles={MAX_FOTO_KERUSAKAN - fotoKerusakan.length}
                   />
-                  {newFotoFiles.length > 0 && (
-                    <button type="button" className="btn btn-approve" style={{ width: "auto", marginTop: 8 }} disabled={fotoBusy} onClick={handleAddFoto}>
-                      Tambah Foto
-                    </button>
-                  )}
-                </div>
+                )}
+              </div>
+              )}
+              {isEdit && newFotoFiles.length > 0 && (
+                <button type="button" className="btn btn-approve" style={{ width: "auto", marginTop: 8 }} disabled={fotoBusy} onClick={handleAddFoto}>
+                  Tambah Foto
+                </button>
               )}
             </div>
             <div className="field full">
               <label htmlFor="ds-catatan">Catatan</label>
-              <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon diperbaiki sebelum rapat Jumat" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

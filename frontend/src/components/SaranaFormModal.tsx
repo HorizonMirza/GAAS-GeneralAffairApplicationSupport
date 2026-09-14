@@ -200,11 +200,13 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field full">
               <label htmlFor="fs-foto-kerusakan">Foto Kerusakan</label>
-              <PhotoDropUploader id="fs-foto-kerusakan" files={fotoKerusakanFiles} onChange={setFotoKerusakanFiles} maxFiles={5} />
+              <div className="photo-drop-uploader">
+                <PhotoDropUploader id="fs-foto-kerusakan" files={fotoKerusakanFiles} onChange={setFotoKerusakanFiles} maxFiles={5} />
+              </div>
             </div>
             <div className="field full">
               <label htmlFor="fs-catatan">Catatan</label>
-              <input type="text" id="fs-catatan" maxLength={255} placeholder="Mohon Segera diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fs-catatan" maxLength={255} placeholder="Contoh: Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           <div className="error-text">{error}</div>

@@ -2684,10 +2684,13 @@ body.auth-ready .app-shell {
 .photo-drop-caption { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
 .photo-drop-browse { pointer-events: none; padding: 8px 18px; font-size: 0.85rem; margin-top: 2px; }
 
-.photo-drop-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.photo-drop-list { display: flex; flex-direction: column; gap: 14px; }
+
+/* A list right after the dropzone (newly picked files), or a dropzone right after an existing
+   list ("add more" in SaranaDetailModal's edit mode), gets a divider - a bare list with nothing
+   above it (e.g. the view-only file list, or the dropzone as the box's first child) does not. */
+.file-dropzone + .photo-drop-list,
+.photo-drop-list + .file-dropzone {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--border-subtle);

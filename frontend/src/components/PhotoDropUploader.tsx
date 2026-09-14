@@ -36,7 +36,7 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
   const atLimit = files.length >= maxFiles;
 
   return (
-    <div className="photo-drop-uploader">
+    <>
       <div
         className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
         onDragOver={(e) => { e.preventDefault(); if (!disabled && !atLimit) setDragging(true); }}
@@ -51,10 +51,10 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
       >
         <UploadCloud width={32} height={32} />
         <div className="photo-drop-title">
-          {atLimit ? <>Sudah {maxFiles} foto (maksimal)</> : <>Pilih foto atau tarik &amp; lepas di sini</>}
+          {atLimit ? <>Sudah {maxFiles} foto (maksimal)</> : <>Pilih foto atau Drag and Drop disini.</>}
         </div>
         <div className="photo-drop-caption">
-          Format JPG/PNG &middot; minimal 1, maksimal {maxFiles} foto
+          Format JPG dan PNG, Max {maxFiles} Foto
         </div>
         {!disabled && !atLimit && (
           <>
@@ -95,6 +95,6 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }
