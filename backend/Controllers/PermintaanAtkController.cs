@@ -87,13 +87,6 @@ public class PermintaanAtkController : ApiControllerBase
     private static bool IsEditableByOrigin(PermintaanAtk item, User currentUser) =>
         (item.Status == StatusEnum.DRAFT || RejectedStatuses.Contains(item.Status)) && item.CreatedBy == currentUser.Id;
 
-    private static bool IsDeletableByOrigin(PermintaanAtk item, User currentUser)
-    {
-        if (IsEditableByOrigin(item, currentUser)) return true;
-        if (!RejectedStatuses.Contains(item.Status)) return false;
-        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
-    }
-
     private static bool IsL1Actionable(PermintaanAtk item) => item.Status == StatusEnum.SUBMITTED;
     private static bool IsGaActionable(PermintaanAtk item) => item.Status == StatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(PermintaanAtk item) => item.Status == StatusEnum.APPROVED_GA;
@@ -410,7 +403,7 @@ public class PermintaanAtkController : ApiControllerBase
 
         var item = await _db.PermintaanAtks.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsDeletableByOrigin(item, user!))
+        if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
         _db.PermintaanAtks.Remove(item);

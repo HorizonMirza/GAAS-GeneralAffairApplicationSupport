@@ -86,13 +86,6 @@ public class PermintaanArsipController : ApiControllerBase
     private static bool IsEditableByOrigin(PermintaanArsip item, User currentUser) =>
         (item.Status == BookingStatusEnum.DRAFT || RejectedStatuses.Contains(item.Status)) && item.CreatedBy == currentUser.Id;
 
-    private static bool IsDeletableByOrigin(PermintaanArsip item, User currentUser)
-    {
-        if (IsEditableByOrigin(item, currentUser)) return true;
-        if (!RejectedStatuses.Contains(item.Status)) return false;
-        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
-    }
-
     private static bool IsL1Actionable(PermintaanArsip item) => item.Status == BookingStatusEnum.SUBMITTED;
     private static bool IsGaActionable(PermintaanArsip item) => item.Status == BookingStatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(PermintaanArsip item) => item.Status == BookingStatusEnum.APPROVED_GA;
@@ -388,7 +381,7 @@ public class PermintaanArsipController : ApiControllerBase
 
         var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsDeletableByOrigin(item, user!))
+        if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
         _db.PermintaanArsips.Remove(item);

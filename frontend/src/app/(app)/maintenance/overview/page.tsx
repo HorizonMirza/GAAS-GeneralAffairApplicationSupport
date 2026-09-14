@@ -14,7 +14,6 @@ import {
   bookingStatusBorderClass,
   canGaKoreksiSarana,
   isBookingOriginRole,
-  isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
   isSaranaPdfAvailable,
 } from "@/lib/constants";
@@ -264,7 +263,7 @@ export default function MaintenanceOverviewPage() {
           !!rowMenu.menuItem &&
           ((isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiSarana(rowMenu.menuItem, me))
         }
-        canDelete={!!rowMenu.menuItem && isOrigin && isSaranaDeletableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

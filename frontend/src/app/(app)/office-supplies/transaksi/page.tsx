@@ -10,7 +10,6 @@ import {
   SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
   canGaKoreksiAtk,
-  isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
   isAtkPdfAvailable,
   isBookingOriginRole,
@@ -449,7 +448,7 @@ function OfficeSuppliesTransaksiPageInner() {
           !!rowMenu.menuItem &&
           ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiAtk(rowMenu.menuItem, me))
         }
-        canDelete={!!rowMenu.menuItem && isOrigin && isAtkDeletableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

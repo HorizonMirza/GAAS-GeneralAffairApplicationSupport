@@ -11,7 +11,6 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingStatusBorderClass,
   canGaKoreksiArsip,
-  isArsipDeletableByOrigin,
   isArsipEditableByOrigin,
   isBookingOriginRole,
 } from "@/lib/constants";
@@ -226,7 +225,7 @@ export default function ArsipOverviewPage() {
           !!rowMenu.menuItem &&
           ((isOrigin && isArsipEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiArsip(rowMenu.menuItem, me))
         }
-        canDelete={!!rowMenu.menuItem && isOrigin && isArsipDeletableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isArsipEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

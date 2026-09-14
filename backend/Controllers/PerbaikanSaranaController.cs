@@ -106,13 +106,6 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static bool IsEditableByOrigin(PerbaikanSarana item, User currentUser) =>
         (item.Status == BookingStatusEnum.DRAFT || RejectedStatuses.Contains(item.Status)) && item.CreatedBy == currentUser.Id;
 
-    private static bool IsDeletableByOrigin(PerbaikanSarana item, User currentUser)
-    {
-        if (IsEditableByOrigin(item, currentUser)) return true;
-        if (!RejectedStatuses.Contains(item.Status)) return false;
-        return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
-    }
-
     private static bool IsL1Actionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.SUBMITTED;
     private static bool IsGaActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_GA;
@@ -410,7 +403,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsDeletableByOrigin(item, user!))
+        if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
         _db.PerbaikanSaranas.Remove(item);

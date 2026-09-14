@@ -11,7 +11,6 @@ import {
   KATEGORI_KERUSAKAN_LABEL,
   canGaKoreksiSarana,
   isBookingOriginRole,
-  isSaranaDeletableByOrigin,
   isSaranaEditableByOrigin,
   isSaranaPdfAvailable,
 } from "@/lib/constants";
@@ -447,7 +446,7 @@ function MaintenanceTransaksiPageInner() {
           !!rowMenu.menuItem &&
           ((isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiSarana(rowMenu.menuItem, me))
         }
-        canDelete={!!rowMenu.menuItem && isOrigin && isSaranaDeletableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isSaranaEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

@@ -12,7 +12,6 @@ import {
   atkItemsSummary,
   canGaKoreksiAtk,
   cardStatusBorderClass,
-  isAtkDeletableByOrigin,
   isAtkEditableByOrigin,
   isAtkPdfAvailable,
   isBookingOriginRole,
@@ -230,7 +229,7 @@ export default function OfficeSuppliesOverviewPage() {
           !!rowMenu.menuItem &&
           ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiAtk(rowMenu.menuItem, me))
         }
-        canDelete={!!rowMenu.menuItem && isOrigin && isAtkDeletableByOrigin(rowMenu.menuItem, me)}
+        canDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

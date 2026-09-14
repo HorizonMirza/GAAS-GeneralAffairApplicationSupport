@@ -462,14 +462,6 @@ export function isAtkEditableByOrigin(item: PermintaanAtk, me: Me): boolean {
   return (item.status === "DRAFT" || REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
-// Same rule as isBookingDeletableByOrigin - mirrors the backend's
-// PermintaanAtkController.IsDeletableByOrigin exactly.
-export function isAtkDeletableByOrigin(item: PermintaanAtk, me: Me): boolean {
-  if (isAtkEditableByOrigin(item, me)) return true;
-  if (!REJECTED_STATUSES.includes(item.status)) return false;
-  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
-}
-
 export function isAtkGaActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_L1";
 }
@@ -524,14 +516,6 @@ export function saranaOriginActorLabel(item: PerbaikanSarana): string {
 // isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isSaranaEditableByOrigin(item: PerbaikanSarana, me: Me): boolean {
   return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
-}
-
-// Same rule as isBookingDeletableByOrigin - mirrors the backend's
-// PerbaikanSaranaController.IsDeletableByOrigin exactly.
-export function isSaranaDeletableByOrigin(item: PerbaikanSarana, me: Me): boolean {
-  if (isSaranaEditableByOrigin(item, me)) return true;
-  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
-  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
 export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
@@ -597,14 +581,6 @@ export function arsipOriginActorLabel(item: PermintaanArsip): string {
 // isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isArsipEditableByOrigin(item: PermintaanArsip, me: Me): boolean {
   return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
-}
-
-// Same rule as isBookingDeletableByOrigin - mirrors the backend's
-// PermintaanArsipController.IsDeletableByOrigin exactly.
-export function isArsipDeletableByOrigin(item: PermintaanArsip, me: Me): boolean {
-  if (isArsipEditableByOrigin(item, me)) return true;
-  if (!BOOKING_REJECTED_STATUSES.includes(item.status)) return false;
-  return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
 // Admin/Approval GA's typo-correction tool - mirrors the backend's
