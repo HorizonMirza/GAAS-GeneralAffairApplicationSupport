@@ -2673,6 +2673,10 @@ body.auth-ready .app-shell {
   cursor: pointer;
 }
 
+.photo-drop-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
+.photo-drop-caption { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
+.photo-drop-browse { pointer-events: none; padding: 8px 18px; font-size: 0.85rem; margin-top: 2px; }
+
 .photo-drop-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 
 .photo-drop-item {
@@ -2699,6 +2703,8 @@ body.auth-ready .app-shell {
 .photo-drop-item-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
 .photo-drop-item-name { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .photo-drop-item-size { font-size: 0.75rem; color: var(--text-secondary); }
+
+.photo-drop-item-check { flex-shrink: 0; color: var(--green-400); }
 
 .photo-drop-item-remove {
   display: inline-flex;

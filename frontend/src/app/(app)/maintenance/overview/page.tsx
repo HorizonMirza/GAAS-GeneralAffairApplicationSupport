@@ -10,14 +10,13 @@ import {
   BOOKING_ON_APPROVAL_STATUSES,
   BOOKING_REJECTED_STATUSES,
   EXECUTION_STAGE_LABEL,
-  KATEGORI_KERUSAKAN_LABEL,
   bookingStatusBorderClass,
   canGaKoreksiSarana,
   isBookingOriginRole,
   isSaranaEditableByOrigin,
   isSaranaPdfAvailable,
 } from "@/lib/constants";
-import { currentYear, currentYearMonth, formatDate, truncateText } from "@/lib/format";
+import { currentYear, currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingStatus, PerbaikanSarana } from "@/lib/types";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -209,20 +208,18 @@ export default function MaintenanceOverviewPage() {
         <div className="card table-empty">Tidak Ada Data</div>
       ) : (
         filteredItems.map((item) => {
-          const isDraft = item.status === "DRAFT";
           const borderClass = bookingStatusBorderClass(item.status);
           return (
             <div
               className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
-              style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
-              onClick={isDraft ? () => setDetail({ item, mode: "view" }) : undefined}
+              style={{ marginBottom: 14 }}
               key={item.id}
             >
               <div className="card-header">
                 <div className="card-header-title">
                   <strong>{item.lokasi} - {item.nomorPerbaikan || "-"}</strong>
                   <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi} · {KATEGORI_KERUSAKAN_LABEL[item.kategori]} · {truncateText(item.deskripsiKerusakan, 50)}
+                    {formatDate(item.tanggal)} · {item.departemen || item.divisi}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

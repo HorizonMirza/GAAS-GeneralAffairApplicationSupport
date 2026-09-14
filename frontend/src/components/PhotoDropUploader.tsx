@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, XIcon } from "lucide-react";
+import { CheckCircle2, Trash2, UploadCloud } from "lucide-react";
 
 interface Props {
   id: string;
@@ -49,30 +49,29 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
           if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
         }}
       >
-        <ImageIcon width={30} height={30} />
-        <div className="file-dropzone-text">
-          {atLimit ? (
-            <>Sudah {maxFiles} foto (maksimal)</>
-          ) : (
-            <>Tarik foto ke sini atau <span className="file-dropzone-link">pilih foto</span></>
-          )}
+        <UploadCloud width={32} height={32} />
+        <div className="photo-drop-title">
+          {atLimit ? <>Sudah {maxFiles} foto (maksimal)</> : <>Pilih foto atau tarik &amp; lepas di sini</>}
+        </div>
+        <div className="photo-drop-caption">
+          Format JPG/PNG &middot; minimal 1, maksimal {maxFiles} foto
         </div>
         {!disabled && !atLimit && (
-          <input
-            id={id}
-            type="file"
-            accept="image/jpeg,image/png"
-            multiple
-            className="file-dropzone-input"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
+          <>
+            <button type="button" className="btn btn-secondary photo-drop-browse">Pilih File</button>
+            <input
+              id={id}
+              type="file"
+              accept="image/jpeg,image/png"
+              multiple
+              className="file-dropzone-input"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </>
         )}
-      </div>
-      <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>
-        Minimal 1, maksimal {maxFiles} foto &middot; JPG/PNG
       </div>
 
       {files.length > 0 && (
@@ -86,9 +85,10 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
                 <span className="photo-drop-item-name">{file.name}</span>
                 <span className="photo-drop-item-size">{formatBytes(file.size)}</span>
               </div>
+              <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
               {!disabled && (
                 <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => removeFile(index)}>
-                  <XIcon width={14} height={14} />
+                  <Trash2 width={14} height={14} />
                 </button>
               )}
             </div>
