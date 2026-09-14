@@ -390,7 +390,7 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <AtkStatusBadge status={item.status} departemen={item.departemen} />
+                            <AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
                           </span>
                           <button
                             type="button"

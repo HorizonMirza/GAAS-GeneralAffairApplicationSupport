@@ -196,7 +196,7 @@ export default function OfficeSuppliesOverviewPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <AtkStatusBadge status={item.status} departemen={item.departemen} />
+                  <AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}

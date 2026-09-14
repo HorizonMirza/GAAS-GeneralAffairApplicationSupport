@@ -1314,7 +1314,7 @@ export default function SuperAdminPage() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>{formatDate(item.tanggal)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteArsip(item)}>Delete</button>
                       </td>
@@ -1484,7 +1484,7 @@ export default function SuperAdminPage() {
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><AtkStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td><AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteAtk(item)}>Delete</button>
                       </td>
@@ -1649,7 +1649,7 @@ export default function SuperAdminPage() {
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteSarana(item)}>Delete</button>
                       </td>
