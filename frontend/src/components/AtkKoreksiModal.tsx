@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { KoreksiAtkPayload, PermintaanAtk } from "@/lib/types";
+import type { KoreksiAtkPayload, PermintaanAtk, SumberPembelian } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
+
+const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
 
 interface Props {
   open: boolean;
@@ -20,13 +24,15 @@ function toFormFields(item: PermintaanAtk): KoreksiAtkPayload {
     namaPemohon: item.namaPemohon,
     noTeleponPemohon: item.noTeleponPemohon,
     catatan: item.catatan,
+    sumberPembelian: item.sumberPembelian,
   };
 }
 
 // Admin/Approval GA's typo-correction tool: fix the requester's own contact details (or Catatan)
 // without touching what's actually being requested - Keperluan, Items and Tanggal stay the
 // origin creator's own, same principle as VehicleBookingRescheduleModal leaving Keperluan/PIC
-// untouched.
+// untouched. Sumber Pembelian is the one exception - it's GA's own pick (not the requester's),
+// so it's correctable here too, shown only once GA has actually chosen it.
 export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props) {
   const [form, setForm] = useState<KoreksiAtkPayload | null>(null);
   const [error, setError] = useState("");
@@ -51,7 +57,7 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
     e.preventDefault();
     setBusy(true);
     try {
-      await api.koreksiAtk(item!.id, { ...form!, catatan: form!.catatan || null });
+      await api.koreksiAtk(item!.id, { ...form!, catatan: form!.catatan || null, sumberPembelian: form!.sumberPembelian || null });
       showToast("Data pemohon berhasil dikoreksi");
       onClose();
       onSaved();
@@ -91,6 +97,19 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
               <label htmlFor="ka-no-telepon-pemohon">No. Telepon Pemohon</label>
               <input type="text" id="ka-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
             </div>
+            {item.sumberPembelian && (
+              <div className="field full">
+                <label htmlFor="ka-sumber-pembelian">Sumber Pembelian</label>
+                <SearchableSelect
+                  id="ka-sumber-pembelian"
+                  value={form.sumberPembelian || ""}
+                  onChange={(v) => set("sumberPembelian", v as SumberPembelian)}
+                  options={SUMBER_PEMBELIAN_OPTIONS}
+                  getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian]}
+                  placeholder="Pilih Sumber Pembelian"
+                />
+              </div>
+            )}
             <div className="field full">
               <label htmlFor="ka-catatan">Catatan</label>
               <input type="text" id="ka-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

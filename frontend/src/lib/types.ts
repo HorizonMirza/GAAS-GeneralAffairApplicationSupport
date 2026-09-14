@@ -675,6 +675,7 @@ export interface KoreksiAtkPayload {
   namaPemohon: string;
   noTeleponPemohon: string;
   catatan: string | null;
+  sumberPembelian: SumberPembelian | null;
 }
 
 export interface VehicleOption {

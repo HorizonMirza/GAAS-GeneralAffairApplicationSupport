@@ -80,10 +80,12 @@ public class PermintaanAtkController : ApiControllerBase
             ? (payload.Divisi, payload.Departemen)
             : (EffectiveDivisi(user), EffectiveDepartemen(user));
 
-    // A rejected request is a dead end (no revision-and-resubmit path, same as the booking
-    // modules) - the only thing editable by its creator is a never-submitted DRAFT.
+    // Unlike Room/Vehicle Booking, a rejected request here isn't a dead end - no other party
+    // fills in authoritative data at approval time the way Pengiriman's KPU does, so there's no
+    // need for RejectTarget-style routing. Any reject, at any tier, goes straight back to its
+    // origin creator to revise and resubmit (see Update() below).
     private static bool IsEditableByOrigin(PermintaanAtk item, User currentUser) =>
-        item.Status == StatusEnum.DRAFT && item.CreatedBy == currentUser.Id;
+        (item.Status == StatusEnum.DRAFT || RejectedStatuses.Contains(item.Status)) && item.CreatedBy == currentUser.Id;
 
     private static bool IsDeletableByOrigin(PermintaanAtk item, User currentUser)
     {
@@ -333,6 +335,14 @@ public class PermintaanAtkController : ApiControllerBase
         var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
 
+        // A rejected request goes back to DRAFT after being revised - origin still has to open it
+        // and submit again explicitly (mirrors the original create flow). RejectReason is kept so
+        // the note stays visible while the revision is pending.
+        var wasRejected = RejectedStatuses.Contains(item.Status);
+
+        // NomorPermintaan embeds its MM.YYYY, so reissue it (new sequence, same divisi) when the
+        // edit moves the item into a different month/year, same pattern as Room Booking's
+        // equivalent change.
         if (item.Tanggal.Year != payload.Tanggal.Year || item.Tanggal.Month != payload.Tanggal.Month)
         {
             var seq = await IncrementNomorSequenceAsync(item.Divisi, payload.Tanggal.Year, payload.Tanggal.Month);
@@ -340,6 +350,11 @@ public class PermintaanAtkController : ApiControllerBase
         }
 
         ApplyCreatePayload(item, payload);
+        if (wasRejected)
+        {
+            item.Status = StatusEnum.DRAFT;
+            AddLog(item, "REVISED", user!);
+        }
         await _db.SaveChangesAsync();
         return Ok(PermintaanAtkOut.From(item));
     }
@@ -375,7 +390,13 @@ public class PermintaanAtkController : ApiControllerBase
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
         item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
-        AddLog(item, "CORRECTED", user!, $"Nama/No. Telepon Pemohon dikoreksi menjadi {item.NamaPemohon} / {item.NoTeleponPemohon}");
+        var detail = $"Nama/No. Telepon Pemohon dikoreksi menjadi {item.NamaPemohon} / {item.NoTeleponPemohon}";
+        if (payload.SumberPembelian.HasValue)
+        {
+            item.SumberPembelian = payload.SumberPembelian;
+            detail += $"; Sumber Pembelian dikoreksi menjadi {item.SumberPembelian}";
+        }
+        AddLog(item, "CORRECTED", user!, detail);
 
         await _db.SaveChangesAsync();
         return Ok(PermintaanAtkOut.From(item));

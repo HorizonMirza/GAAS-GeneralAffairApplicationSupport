@@ -444,10 +444,10 @@ export function atkOriginActorLabel(item: PermintaanAtk): string {
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
-// Same rule as isBookingEditableByOrigin - mirrors the backend's
-// PermintaanAtkController.IsEditableByOrigin exactly.
+// Mirrors the backend's PermintaanAtkController.IsEditableByOrigin exactly - a rejected request
+// isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isAtkEditableByOrigin(item: PermintaanAtk, me: Me): boolean {
-  return item.status === "DRAFT" && item.createdBy === me.id;
+  return (item.status === "DRAFT" || REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
 // Same rule as isBookingDeletableByOrigin - mirrors the backend's
@@ -508,10 +508,10 @@ export function saranaOriginActorLabel(item: PerbaikanSarana): string {
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
-// Same rule as isBookingEditableByOrigin - mirrors the backend's
-// PerbaikanSaranaController.IsEditableByOrigin exactly.
+// Mirrors the backend's PerbaikanSaranaController.IsEditableByOrigin exactly - a rejected report
+// isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isSaranaEditableByOrigin(item: PerbaikanSarana, me: Me): boolean {
-  return item.status === "DRAFT" && item.createdBy === me.id;
+  return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
 // Same rule as isBookingDeletableByOrigin - mirrors the backend's
@@ -581,10 +581,10 @@ export function arsipOriginActorLabel(item: PermintaanArsip): string {
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
-// Same rule as isBookingEditableByOrigin - mirrors the backend's
-// PermintaanArsipController.IsEditableByOrigin exactly.
+// Mirrors the backend's PermintaanArsipController.IsEditableByOrigin exactly - a rejected request
+// isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isArsipEditableByOrigin(item: PermintaanArsip, me: Me): boolean {
-  return item.status === "DRAFT" && item.createdBy === me.id;
+  return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
 // Same rule as isBookingDeletableByOrigin - mirrors the backend's
