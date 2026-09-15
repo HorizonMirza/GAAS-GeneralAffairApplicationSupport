@@ -1,10 +1,11 @@
 namespace PengirimanApi.Models;
 
 // Maintenance: laporan kerusakan sarana/prasarana yang butuh perbaikan oleh GA. Alur approval-nya
-// sama dengan Room/Vehicle Booking dan Permintaan ATK (BookingStatusEnum, berakhir di
-// APPROVED_GA_APPROVAL) - tanpa tahap KPU seperti Pengiriman. Setelah disetujui final, eksekusi
-// fisiknya sendiri dilacak lewat ExecutionStage (lihat ExecutionStageEnum) - berjalan terpisah
-// dari Status, yang tetap APPROVED_GA_APPROVAL sepanjang eksekusi berlangsung.
+// sama dengan Room/Vehicle Booking (BookingStatusEnum, berakhir di APPROVED_GA_APPROVAL) - tanpa
+// tahap KPU. Permintaan ATK bukan anggota kelompok ini: modul itu memakai StatusEnum dan punya
+// tahap KPU sendiri. Setelah disetujui final, eksekusi fisiknya sendiri dilacak lewat
+// ExecutionStage (lihat ExecutionStageEnum) - berjalan terpisah dari Status, yang tetap
+// APPROVED_GA_APPROVAL sepanjang eksekusi berlangsung.
 public class PerbaikanSarana
 {
     public int Id { get; set; }
