@@ -71,6 +71,6 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 
 - [`Prd.md`](./Prd.md) — kebutuhan produk & daftar modul.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — detail teknis backend & frontend.
-- [`workflow.md`](./workflow.md) — alur kerja pengembangan (revisi → verifikasi → pengiriman perubahan).
+- [`workflow.md`](./workflow.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
 - [`TODO.md`](./TODO.md) — ide/fitur yang sudah dibahas tapi belum dikerjakan.
 - [`skill.md`](./skill.md) — ringkasan stack & konvensi kode yang perlu dipahami untuk berkontribusi.

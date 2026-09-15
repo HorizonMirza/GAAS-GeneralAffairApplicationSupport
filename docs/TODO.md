@@ -22,7 +22,7 @@ Daftar ide/fitur yang sudah didiskusikan tapi sengaja ditunda. Ditulis supaya ti
 - [x] Vehicle Booking — kalender ketersediaan kendaraan, alur approval sama dengan Room Booking.
 - [x] Office Supplies — permintaan ATK dengan approval berjenjang, satu permintaan bisa berisi banyak baris barang.
 - [x] Maintenance — laporan perbaikan sarana dengan kategori kerusakan & tingkat urgensi (urgensi tinggi diprioritaskan di daftar).
-- [x] Archive — awalnya dibangun sebagai penyimpanan dokumen umum tanpa alur approval, lalu dirombak jadi modul permintaan pemindahan arsip fisik dengan alur approval sama seperti Room/Vehicle/ATK/Maintenance, ditambah halaman Catalog read-only untuk arsip yang sudah disetujui penuh (lihat [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian Archive).
+- [x] Archive — awalnya dibangun sebagai penyimpanan dokumen umum tanpa alur approval, lalu dirombak jadi modul permintaan pemindahan arsip fisik dengan alur approval sama seperti Room/Vehicle/Maintenance (tanpa KPU), ditambah halaman Catalog read-only untuk arsip yang sudah disetujui penuh (lihat [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian Archive).
 
 ## Catatan
 

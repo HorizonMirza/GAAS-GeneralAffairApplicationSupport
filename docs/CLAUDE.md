@@ -22,4 +22,4 @@ User (pemilik proyek) tidak selalu berlatar belakang teknis. Jelaskan instruksi 
 
 ## Rahasia
 
-Jangan pernah menaruh isi `appsettings.Development.json`, `appsettings.json`, atau `.env.local` ke dalam commit, chat, atau paket yang dikirim ke user — lihat [`workflow.md`](./workflow.md) bagian rahasia.
+Jangan pernah menaruh isi `appsettings.Development.json`, `appsettings.json`, atau `.env.local` ke dalam commit atau chat — lihat [`workflow.md`](./workflow.md) bagian rahasia.

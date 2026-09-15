@@ -24,4 +24,4 @@ Ringkasan pengetahuan/stack yang perlu dipahami untuk berkontribusi ke proyek in
 
 ## Alur Kerja Kontribusi
 
-Lihat [`workflow.md`](./workflow.md) untuk siklus revisi → verifikasi → pengiriman perubahan yang dipakai sepanjang proyek ini.
+Lihat [`workflow.md`](./workflow.md) untuk siklus revisi → verifikasi → commit & push yang dipakai sepanjang proyek ini.
