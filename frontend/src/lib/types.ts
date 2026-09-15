@@ -155,6 +155,7 @@ export interface ActivityNotification {
   itemLabel: string;
   actorId: number;
   actorNama: string;
+  actorRole: Role;
   message: string;
   createdAt: string;
 }

@@ -57,11 +57,12 @@ public abstract class ApiControllerBase : ControllerBase
         string itemLabel,
         int actorId,
         string actorNama,
+        string actorRole,
         string message)
     {
         var recipients = recipientUserIds.ToList();
         if (recipients.Count == 0) return;
-        var notification = new ActivityNotificationOut(type, kind, itemId, itemLabel, actorId, actorNama, message, DateTime.UtcNow);
+        var notification = new ActivityNotificationOut(type, kind, itemId, itemLabel, actorId, actorNama, actorRole, message, DateTime.UtcNow);
         await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveActivityNotification", notification);
     }
 

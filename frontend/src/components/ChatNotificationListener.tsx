@@ -43,12 +43,6 @@ function activityColorClass(type: ActivityNotification["type"]): string {
   return " chat-notification-banner-progress";
 }
 
-function activityAvatarColorClass(type: ActivityNotification["type"]): string {
-  if (type === "approved") return " chat-notification-avatar-approved";
-  if (type === "rejected") return " chat-notification-avatar-rejected";
-  return " chat-notification-avatar-progress";
-}
-
 function bannerHref(banner: BannerState): string {
   const base = NOTIFICATION_TRANSAKSI_PATH[banner.kind];
   return banner.source === "chat" ? `${base}?chat=${banner.itemId}` : `${base}?highlight=${banner.itemId}`;
@@ -137,6 +131,7 @@ export default function ChatNotificationListener() {
       {banners.map((banner) => {
         const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
         const actorId = banner.source === "chat" ? banner.senderId : banner.actorId;
+        const actorRole = banner.source === "chat" ? banner.senderRole : banner.actorRole;
         const detail = banner.source === "chat" ? `Chat: ${banner.preview}` : banner.message;
         return (
           <button
@@ -155,10 +150,7 @@ export default function ChatNotificationListener() {
               }
             }}
           >
-            <span
-              className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}
-              style={banner.source === "chat" ? { background: ROLE_COLOR[banner.senderRole] } : undefined}
-            >
+            <span className="chat-notification-avatar" style={{ background: ROLE_COLOR[actorRole] }}>
               {photoErrors.has(banner.id) ? (
                 <PersonIcon />
               ) : (

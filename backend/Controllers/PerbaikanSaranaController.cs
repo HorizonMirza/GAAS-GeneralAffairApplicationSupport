@@ -460,7 +460,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Melaporkan Kerusakan/Pengajuan Perbaikan Baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Melaporkan Kerusakan/Pengajuan Perbaikan Baru");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -656,7 +656,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval Departemen/Divisi)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -675,7 +675,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval Departemen/Divisi)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -697,7 +697,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Admin GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -719,7 +719,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Admin GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -741,7 +741,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -763,7 +763,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval GA)");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -791,7 +791,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "LOKASI_DICEK", user, payload.Catatan);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Menandai Lokasi Sudah Dicek");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Menandai Lokasi Sudah Dicek");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -846,7 +846,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "GAMBAR_DIBUAT", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Mengunggah Gambar Rencana Perbaikan");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengunggah Gambar Rencana Perbaikan");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -1007,7 +1007,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "SELESAI", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Menyelesaikan Eksekusi Perbaikan");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Menyelesaikan Eksekusi Perbaikan");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
@@ -1108,7 +1108,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         AddLog(item, "EKSEKUSI_DIBATALKAN", user!, $"Dibatalkan dari tahap {fromStage}" + (catatan != null ? $": {catatan}" : ""));
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, "Membatalkan Tahap Eksekusi Terakhir");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Membatalkan Tahap Eksekusi Terakhir");
         return Ok(PerbaikanSaranaOut.From(item));
     }
 

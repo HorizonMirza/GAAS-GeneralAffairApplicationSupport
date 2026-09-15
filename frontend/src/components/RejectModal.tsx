@@ -174,7 +174,12 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") e.stopPropagation();
+              if (e.key !== "Enter") return;
+              e.stopPropagation();
+              if (!e.shiftKey) {
+                e.preventDefault();
+                if (!busy) handleConfirm();
+              }
             }}
           />
         </div>

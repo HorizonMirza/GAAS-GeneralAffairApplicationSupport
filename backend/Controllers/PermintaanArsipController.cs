@@ -434,7 +434,7 @@ public class PermintaanArsipController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Mengajukan Pemindahan Arsip Baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengajukan Pemindahan Arsip Baru");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -673,7 +673,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval Departemen/Divisi)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -692,7 +692,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval Departemen/Divisi)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -714,7 +714,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Admin GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -736,7 +736,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Admin GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -758,7 +758,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 
@@ -780,7 +780,7 @@ public class PermintaanArsipController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var saveError = await TrySaveChangesAsync(_db);
         if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "arsip", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval GA)");
         return Ok(PermintaanArsipOut.From(item));
     }
 

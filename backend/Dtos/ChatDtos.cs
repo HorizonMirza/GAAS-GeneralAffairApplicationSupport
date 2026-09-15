@@ -49,6 +49,7 @@ public record ActivityNotificationOut(
     string ItemLabel,
     int ActorId,
     string ActorNama,
+    string ActorRole,
     string Message,
     DateTime CreatedAt
 );

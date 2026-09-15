@@ -503,7 +503,7 @@ public class PengirimanController : ApiControllerBase
         item.RejectTarget = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "created", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Mengajukan Pengiriman Baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "created", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengajukan Pengiriman Baru");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -724,7 +724,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_L1", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval Departemen/Divisi)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -743,7 +743,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_L1", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Ditolak (Approval Departemen/Divisi)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval Departemen/Divisi)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -766,7 +766,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_GA", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Admin GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -791,7 +791,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_GA", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, "Ditolak (Admin GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, user!.Role.ToString(), "Ditolak (Admin GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -813,7 +813,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_GA_APPROVAL", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -839,7 +839,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_GA_APPROVAL", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, "Ditolak (Approval GA)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, user!.Role.ToString(), "Ditolak (Approval GA)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -879,7 +879,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "APPROVED_KPU", user);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, "Disetujui (Mitra)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approved", "pengiriman", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Mitra)");
         return Ok(PengirimanOut.From(item));
     }
 
@@ -902,7 +902,7 @@ public class PengirimanController : ApiControllerBase
         AddLog(item, "REJECTED_KPU", user!, payload.Reason);
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, "Ditolak (Mitra)");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "pengiriman", item.Id, ItemLabel(item), user!.Id, user!.Nama, user!.Role.ToString(), "Ditolak (Mitra)");
         return Ok(PengirimanOut.From(item));
     }
 
