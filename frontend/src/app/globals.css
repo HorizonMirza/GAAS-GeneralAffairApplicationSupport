@@ -3885,7 +3885,11 @@ table.data-table {
   border-color: var(--blue-400);
   box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
 }
-.searchable-select-trigger:disabled { cursor: not-allowed; }
+.searchable-select-trigger:disabled {
+  cursor: not-allowed;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
 
 .searchable-select-trigger > span:first-child {
   /* min-width: 0 overrides the flex item's default min-width: auto, which otherwise sizes to the
@@ -3982,7 +3986,11 @@ table.data-table {
 }
 
 .filter-picker-trigger svg { flex-shrink: 0; color: var(--text-secondary); }
-.filter-picker-trigger:disabled { cursor: not-allowed; }
+.filter-picker-trigger:disabled {
+  cursor: not-allowed;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
 .filter-picker-trigger:hover { border-color: var(--blue-300); }
 .filter-picker-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .filter-picker-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
