@@ -32,7 +32,7 @@ public class BookingRuangExportController : ApiControllerBase
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
         ("tipe", "Tipe"),
-        ("peserta", "Peserta"),
+        ("peserta", "Jumlah Peserta"),
         ("catatan", "Catatan"),
         ("status", "Status"),
     };

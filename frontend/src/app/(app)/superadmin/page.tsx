@@ -835,10 +835,10 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Barang</th><th>Divisi</th><th>Departemen</th>
-                <th>Pengirim</th><th>No. Telepon Pengirim</th><th>Penerima</th><th>No. Telepon Penerima</th>
-                <th>Kode Program</th><th>Asuransi</th><th>Pengemasan</th><th>Catatan</th>
-                <th>Berat (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
+                <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th>
+                <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
+                <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -1069,7 +1069,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Peserta</th>
+                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Jumlah Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
@@ -1620,7 +1620,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
                 <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>

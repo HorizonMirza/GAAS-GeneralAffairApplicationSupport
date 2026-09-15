@@ -226,7 +226,7 @@ export default function ArsipKatalogPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Jumlah</th>
+              <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Jumlah Arsip</th>
               <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
               <th>Lokasi Penyimpanan Saat Ini</th><th>Nama PIC</th><th>No. Telepon PIC</th>
               <th>Catatan</th><th>Divisi</th><th>Departemen</th><th>Tanggal Disetujui</th>

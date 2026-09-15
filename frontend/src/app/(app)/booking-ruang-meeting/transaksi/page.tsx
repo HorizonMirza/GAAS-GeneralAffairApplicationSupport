@@ -381,7 +381,7 @@ function BookingTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Divisi</th><th>Departemen</th>
-                <th>Tipe</th><th>Peserta</th><th>Catatan</th><th>Status</th>
+                <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>

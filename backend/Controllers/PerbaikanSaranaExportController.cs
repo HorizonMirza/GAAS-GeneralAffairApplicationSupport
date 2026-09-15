@@ -25,7 +25,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("diajukan", "Diajukan"),
         ("tanggal", "Tanggal Pengajuan"),
         ("lokasi", "Lokasi"),
-        ("kategori", "Kategori"),
+        ("kategori", "Kategori Kerusakan"),
         ("deskripsi", "Deskripsi Kerusakan"),
         ("nama_pelapor", "Nama Pelapor"),
         ("no_telepon_pelapor", "No. Telepon Pelapor"),

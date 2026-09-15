@@ -35,7 +35,7 @@ public class ArsipExportController : ApiControllerBase
     {
         ("nomor_arsip", "No Pemindahan"),
         ("tanggal", "Tanggal"),
-        ("jumlah_arsip", "Jumlah"),
+        ("jumlah_arsip", "Jumlah Arsip"),
         ("nama_arsip", "Nama Arsip"),
         ("kategori", "Kategori"),
         ("tahun_arsip", "Tahun"),

@@ -352,7 +352,7 @@ function MaintenanceTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
                 <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th>
               </tr>
