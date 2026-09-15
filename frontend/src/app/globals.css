@@ -1691,6 +1691,17 @@ body.auth-ready .app-shell {
   gap: 16px;
 }
 
+/* That same min-0 floor lets each column shrink below the width its icon + arrow actually need,
+   so on a phone the six-card row ran 27px past the viewport and scrolled the whole page
+   sideways. Below tablet width the cards wrap instead of being squeezed. */
+@media (max-width: 860px) {
+  .module-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .module-grid { grid-template-columns: 1fr; }
+}
+
 .module-card {
   display: flex;
   align-items: center;

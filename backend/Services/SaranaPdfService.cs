@@ -94,7 +94,7 @@ public static class SaranaPdfService
                     col.Item().PaddingTop(20).Text("Menyetujui,").Bold();
                     col.Item().Text("Approval General Affair").Bold();
                     col.Item().PaddingTop(30).Text(item.ApprovedApprovalGaAt.HasValue
-                        ? $"Disetujui secara digital pada {item.ApprovedApprovalGaAt.Value:dd MMMM yyyy HH:mm} WIB{ApprovalGaSuffix(item, actorNames)}"
+                        ? $"Disetujui secara digital pada {WaktuWib.From(item.ApprovedApprovalGaAt.Value):dd MMMM yyyy HH:mm} WIB{ApprovalGaSuffix(item, actorNames)}"
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
@@ -102,7 +102,7 @@ public static class SaranaPdfService
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 
-                page.Footer().AlignCenter().Text($"Dicetak {DateTime.Now:dd MMMM yyyy HH:mm}").FontSize(8).FontColor("#999999");
+                page.Footer().AlignCenter().Text($"Dicetak {WaktuWib.Now:dd MMMM yyyy HH:mm} WIB").FontSize(8).FontColor("#999999");
             });
         });
 
@@ -167,8 +167,8 @@ public static class SaranaPdfService
         {
             ("Divisi / Departemen", DivisiLabel(item)),
             ("Status", "Approved"),
-            ("Diajukan Pada", item.CreatedAt.ToString("dd MMMM yyyy HH:mm") + " WIB"),
-            ("Disetujui Pada", item.ApprovedApprovalGaAt.HasValue ? item.ApprovedApprovalGaAt.Value.ToString("dd MMMM yyyy HH:mm") + " WIB" : "-"),
+            ("Diajukan Pada", WaktuWib.Panjang(item.CreatedAt)),
+            ("Disetujui Pada", WaktuWib.Panjang(item.ApprovedApprovalGaAt)),
         };
 
         container.Column(col =>
@@ -189,7 +189,7 @@ public static class SaranaPdfService
     {
         string ActorAndTime(int? actorId, DateTime? at) =>
             actorId.HasValue && at.HasValue
-                ? $"{actorNames.GetValueOrDefault(actorId.Value, "-")} - {at.Value:dd MMMM yyyy HH:mm} WIB"
+                ? $"{actorNames.GetValueOrDefault(actorId.Value, "-")} - {WaktuWib.From(at.Value):dd MMMM yyyy HH:mm} WIB"
                 : "-";
 
         var pairs = new (string Label, string Value)[]

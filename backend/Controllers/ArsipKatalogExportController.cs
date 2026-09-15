@@ -69,7 +69,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,
         "catatan" => row.Catatan,
-        "tanggal_disetujui" => row.ApprovedApprovalGaAt?.ToString("yyyy-MM-dd"),
+        "tanggal_disetujui" => WaktuWib.From(row.ApprovedApprovalGaAt)?.ToString("yyyy-MM-dd"),
         _ => null,
     };
 

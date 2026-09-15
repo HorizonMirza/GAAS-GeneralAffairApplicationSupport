@@ -500,9 +500,9 @@ export default function ProfilePage() {
       setPasswordFormOpen(false);
     } catch (err) {
       const message = (err as Error).message;
-      // "Password ini salah" is about the Current Password field specifically, so it
+      // "Password saat ini salah" is about the Current Password field specifically, so it
       // renders under that field instead of the generic banner at the bottom of the dialog.
-      if (message.includes("ini salah")) {
+      if (message.includes("Password saat ini salah")) {
         setPasswordErrors({ currentPassword: message });
       } else {
         setPasswordErrors({ general: message });

@@ -115,9 +115,13 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <label htmlFor="rs-nama-kegiatan">Nama Kegiatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="rs-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-pic" disabled value={item.pic || ""} />
+            </div>
+            <div className="field">
+              <label htmlFor="rs-telepon-pic">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="rs-telepon-pic" disabled value={item.noTeleponPic || ""} />
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>

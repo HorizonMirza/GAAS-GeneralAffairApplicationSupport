@@ -22,7 +22,7 @@ public class BookingKendaraanExportController : ApiControllerBase
     private static readonly (string Field, string Label)[] Columns =
     {
         ("nomor_pemesanan", "No Pesanan"),
-        ("diajukan", "Diajukan"),
+        ("diajukan", "Diajukan (WIB)"),
         ("tanggal", "Tanggal"),
         ("jam", "Jam"),
         ("keperluan", "Tujuan"),
@@ -73,7 +73,7 @@ public class BookingKendaraanExportController : ApiControllerBase
     private static object? GetFieldValue(BookingKendaraan row, string field) => field switch
     {
         "nomor_pemesanan" => row.NomorPemesanan ?? "-",
-        "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        "diajukan" => WaktuWib.Pendek(row.CreatedAt),
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "jam" => JamLabel(row),
         "keperluan" => row.Keperluan,

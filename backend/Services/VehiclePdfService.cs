@@ -60,7 +60,7 @@ public static class VehiclePdfService
                         txt.Span(item.NomorPemesanan ?? "-").FontSize(10.5f).Bold();
                     });
 
-                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Permintaan", item.CreatedAt.ToString("dd MMMM yyyy")));
+                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Permintaan", WaktuWib.From(item.CreatedAt).ToString("dd MMMM yyyy")));
                     col.Item().Element(c => InfoRow(c, "Kepada", "Approval General Affair"));
                     col.Item().Element(c => InfoRow(c, "Dari", $"{item.Pembuat?.Nama ?? "-"} - {DivisiLabel(item)}"));
 
@@ -77,7 +77,7 @@ public static class VehiclePdfService
                     col.Item().PaddingTop(20).Text("Menyetujui,").Bold();
                     col.Item().Text("Approval General Affair").Bold();
                     col.Item().PaddingTop(30).Text(item.ApprovedApprovalGaAt.HasValue
-                        ? $"Disetujui secara digital pada {item.ApprovedApprovalGaAt.Value:dd MMMM yyyy HH:mm} WIB"
+                        ? $"Disetujui secara digital pada {WaktuWib.From(item.ApprovedApprovalGaAt.Value):dd MMMM yyyy HH:mm} WIB"
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
@@ -85,7 +85,7 @@ public static class VehiclePdfService
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 
-                page.Footer().AlignCenter().Text($"Dicetak {DateTime.Now:dd MMMM yyyy HH:mm}").FontSize(8).FontColor("#999999");
+                page.Footer().AlignCenter().Text($"Dicetak {WaktuWib.Now:dd MMMM yyyy HH:mm} WIB").FontSize(8).FontColor("#999999");
             });
         });
 
@@ -196,8 +196,8 @@ public static class VehiclePdfService
             ("No. Telepon PIC", item.NoTeleponPic ?? "-"),
             ("Divisi / Departemen", DivisiLabel(item)),
             ("Status", "Approved"),
-            ("Diajukan Pada", item.CreatedAt.ToString("dd MMMM yyyy HH:mm") + " WIB"),
-            ("Disetujui Pada", item.ApprovedApprovalGaAt.HasValue ? item.ApprovedApprovalGaAt.Value.ToString("dd MMMM yyyy HH:mm") + " WIB" : "-"),
+            ("Diajukan Pada", WaktuWib.Panjang(item.CreatedAt)),
+            ("Disetujui Pada", WaktuWib.Panjang(item.ApprovedApprovalGaAt)),
         };
 
         container.Column(col =>

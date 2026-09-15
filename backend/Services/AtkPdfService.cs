@@ -81,7 +81,7 @@ public static class AtkPdfService
                     col.Item().PaddingTop(20).Text("Menyetujui,").Bold();
                     col.Item().Text("Mitra").Bold();
                     col.Item().PaddingTop(30).Text(item.ApprovedKpuAt.HasValue
-                        ? $"Disetujui secara digital pada {item.ApprovedKpuAt.Value:dd MMMM yyyy HH:mm} WIB{KpuSuffix(item, actorNames)}"
+                        ? $"Disetujui secara digital pada {WaktuWib.From(item.ApprovedKpuAt.Value):dd MMMM yyyy HH:mm} WIB{KpuSuffix(item, actorNames)}"
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
@@ -89,7 +89,7 @@ public static class AtkPdfService
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 
-                page.Footer().AlignCenter().Text($"Dicetak {DateTime.Now:dd MMMM yyyy HH:mm}").FontSize(8).FontColor("#999999");
+                page.Footer().AlignCenter().Text($"Dicetak {WaktuWib.Now:dd MMMM yyyy HH:mm} WIB").FontSize(8).FontColor("#999999");
             });
         });
 
@@ -157,8 +157,8 @@ public static class AtkPdfService
             ("Divisi / Departemen", DivisiLabel(item)),
             ("Status", "Approved"),
             ("Sumber Pembelian", item.SumberPembelian.HasValue ? SumberPembelianLabel.GetValueOrDefault(item.SumberPembelian.Value.ToString(), item.SumberPembelian.Value.ToString()) : "-"),
-            ("Diajukan Pada", item.CreatedAt.ToString("dd MMMM yyyy HH:mm") + " WIB"),
-            ("Disetujui Pada", item.ApprovedKpuAt.HasValue ? item.ApprovedKpuAt.Value.ToString("dd MMMM yyyy HH:mm") + " WIB" : "-"),
+            ("Diajukan Pada", WaktuWib.Panjang(item.CreatedAt)),
+            ("Disetujui Pada", WaktuWib.Panjang(item.ApprovedKpuAt)),
         };
 
         container.Column(col =>

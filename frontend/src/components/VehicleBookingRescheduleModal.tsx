@@ -103,9 +103,13 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               <label htmlFor="rk-keperluan">Keperluan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-keperluan" disabled value={item.keperluan} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="rk-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-pic" disabled value={item.pic || ""} />
+            </div>
+            <div className="field">
+              <label htmlFor="rk-telepon-pic">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="rk-telepon-pic" disabled value={item.noTeleponPic || ""} />
             </div>
             <div className="field">
               <label htmlFor="rk-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>

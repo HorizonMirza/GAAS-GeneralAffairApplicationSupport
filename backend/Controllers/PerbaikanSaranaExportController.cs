@@ -22,7 +22,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
     private static readonly (string Field, string Label)[] Columns =
     {
         ("nomor_perbaikan", "No Pengajuan"),
-        ("diajukan", "Diajukan"),
+        ("diajukan", "Diajukan (WIB)"),
         ("tanggal", "Tanggal Pengajuan"),
         ("lokasi", "Lokasi"),
         ("kategori", "Kategori Kerusakan"),
@@ -35,11 +35,11 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("status", "Status"),
         ("execution_stage", "Status Eksekusi"),
         ("lokasi_dicek_oleh", "Lokasi Dicek Oleh"),
-        ("lokasi_dicek_pada", "Lokasi Dicek Pada"),
+        ("lokasi_dicek_pada", "Lokasi Dicek Pada (WIB)"),
         ("gambar_dibuat_oleh", "Gambar Dibuat Oleh"),
-        ("gambar_dibuat_pada", "Gambar Dibuat Pada"),
+        ("gambar_dibuat_pada", "Gambar Dibuat Pada (WIB)"),
         ("selesai_oleh", "Selesai Oleh"),
-        ("selesai_pada", "Selesai Pada"),
+        ("selesai_pada", "Selesai Pada (WIB)"),
     };
 
     private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 65, 40, 40, 40, 40, 55, 45, 45, 40, 40, 40, 40, 40, 40 };
@@ -84,7 +84,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
     private static object? GetFieldValue(PerbaikanSarana row, string field, Dictionary<int, string> actorNames) => field switch
     {
         "nomor_perbaikan" => row.NomorPerbaikan ?? "-",
-        "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        "diajukan" => WaktuWib.Pendek(row.CreatedAt),
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "lokasi" => row.Lokasi,
         "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori.ToString(), row.Kategori.ToString()),
@@ -101,11 +101,11 @@ public class PerbaikanSaranaExportController : ApiControllerBase
             ? ExecutionStageLabel.GetValueOrDefault(row.ExecutionStage.ToString(), row.ExecutionStage.ToString())
             : "-",
         "lokasi_dicek_oleh" => row.LokasiDicekBy.HasValue ? actorNames.GetValueOrDefault(row.LokasiDicekBy.Value, "-") : "-",
-        "lokasi_dicek_pada" => row.LokasiDicekAt?.ToString("yyyy-MM-dd HH:mm") ?? "-",
+        "lokasi_dicek_pada" => WaktuWib.Pendek(row.LokasiDicekAt),
         "gambar_dibuat_oleh" => row.GambarDibuatBy.HasValue ? actorNames.GetValueOrDefault(row.GambarDibuatBy.Value, "-") : "-",
-        "gambar_dibuat_pada" => row.GambarDibuatAt?.ToString("yyyy-MM-dd HH:mm") ?? "-",
+        "gambar_dibuat_pada" => WaktuWib.Pendek(row.GambarDibuatAt),
         "selesai_oleh" => row.SelesaiBy.HasValue ? actorNames.GetValueOrDefault(row.SelesaiBy.Value, "-") : "-",
-        "selesai_pada" => row.SelesaiAt?.ToString("yyyy-MM-dd HH:mm") ?? "-",
+        "selesai_pada" => WaktuWib.Pendek(row.SelesaiAt),
         _ => null,
     };
 

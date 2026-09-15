@@ -24,7 +24,7 @@ public class PermintaanAtkExportController : ApiControllerBase
     private static readonly (string Field, string Label)[] Columns =
     {
         ("nomor_permintaan", "No Permintaan"),
-        ("diajukan", "Diajukan"),
+        ("diajukan", "Diajukan (WIB)"),
         ("tanggal", "Tanggal Dibutuhkan"),
         ("keperluan", "Tujuan"),
         ("nama_pemohon", "Nama Pemohon"),
@@ -72,7 +72,7 @@ public class PermintaanAtkExportController : ApiControllerBase
     private static object? GetFieldValue(PermintaanAtk row, string field) => field switch
     {
         "nomor_permintaan" => row.NomorPermintaan,
-        "diajukan" => row.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+        "diajukan" => WaktuWib.Pendek(row.CreatedAt),
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "keperluan" => row.Keperluan,
         "nama_pemohon" => row.NamaPemohon,

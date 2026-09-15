@@ -797,7 +797,7 @@ public class PerbaikanSaranaController : ApiControllerBase
     // required=true (rencana perbaikan) rejects a missing file; required=false (foto kerusakan/
     // foto selesai, keduanya opsional) treats a missing file as "nothing to store" rather than an
     // error - contentType comes back null in that case as the signal to skip storing anything.
-    private static (bool ok, string? contentType, string? error) ValidateImageFile(IFormFile? file, bool required)
+    private static async Task<(bool ok, string? contentType, string? error)> ValidateImageFileAsync(IFormFile? file, bool required)
     {
         if (file == null || file.Length == 0)
             return required ? (false, null, "Gambar wajib diunggah") : (true, null, null);
@@ -806,6 +806,11 @@ public class PerbaikanSaranaController : ApiControllerBase
         var ext = Path.GetExtension(file.FileName);
         if (string.IsNullOrEmpty(ext) || !AllowedGambarExtensions.TryGetValue(ext, out var contentType))
             return (false, null, "Format gambar tidak didukung. Gunakan JPG atau PNG.");
+        // The extension alone proves nothing - StoreImageFileAsync keeps it and the file is later
+        // served back under contentType, so a renamed .txt would be handed to the browser as an
+        // image. Trust the bytes, and require them to agree with the extension the file claims.
+        if (await SidikGambar.DeteksiTipeAsync(file) != contentType)
+            return (false, null, "Isi file bukan gambar JPG/PNG yang valid.");
         return (true, contentType, null);
     }
 
@@ -831,7 +836,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (item.ExecutionStage != ExecutionStageEnum.LOKASI_DICEK)
             return StatusCode(403, new { detail = "Lokasi harus dicek terlebih dahulu" });
 
-        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
+        var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: true);
         if (!fileOk) return BadRequest(new { detail = fileError });
 
         var storedFilename = await StoreImageFileAsync(file!);
@@ -895,7 +900,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         foreach (var file in files)
         {
-            var (fileOk, contentType, fileError) = ValidateImageFile(file, required: true);
+            var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: true);
             if (!fileOk) return BadRequest(new { detail = fileError });
 
             var storedFilename = await StoreImageFileAsync(file);
@@ -991,7 +996,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         // Foto hasil (after) opsional - kalau dilampirkan, tetap dijalankan lewat validasi gambar
         // yang sama supaya tidak ada celah format/ukuran file yang berbeda dari upload lain.
-        var (fileOk, contentType, fileError) = ValidateImageFile(file, required: false);
+        var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: false);
         if (!fileOk) return BadRequest(new { detail = fileError });
         if (contentType != null)
         {
