@@ -80,6 +80,8 @@ src/app/page.tsx                       Halaman login
 src/app/(app)/                         Halaman setelah login (route group, pakai layout bersama)
   dashboard/                             Ringkasan lintas modul (dulu bernama "home")
   profile/                               Profil & ganti password
+  bantuan/                               Help Center (FAQ statis, bukan dari backend)
+  contact-person/                        Direktori kontak (data statis di constants.ts)
   superadmin/                            Kelola data master (role SUPER_ADMIN)
   ekspedisi/overview/, transaksi/,
     invoice-history/                     Expedition - dashboard, tabel transaksi, riwayat invoice (KPU)
