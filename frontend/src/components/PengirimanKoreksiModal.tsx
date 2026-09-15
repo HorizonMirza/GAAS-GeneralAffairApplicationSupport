@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
-import { formatDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KoreksiPengirimanPayload, Pengiriman } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -82,11 +83,11 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
             <div className="field">
               <label htmlFor="pk-tanggal">Tanggal <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-tanggal" disabled value={formatDate(item.tanggal)} />
+              <DateFilterPicker id="pk-tanggal" disabled clearable={false} value={item.tanggal} onChange={() => {}} />
             </div>
             <div className="field">
-              <label htmlFor="pk-tujuan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-tujuan" disabled value={item.tujuanPenerimaan} />
+              <label htmlFor="pk-jumlah-item">Jumlah Barang <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="pk-jumlah-item" disabled value={item.jumlahItem} />
             </div>
             <div className="field">
               <label htmlFor="pk-nama-pengirim">Nama Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -98,7 +99,7 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
             <div className="field full">
               <label htmlFor="pk-alamat-pengirim">Alamat Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-alamat-pengirim" required maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
+              <textarea id="pk-alamat-pengirim" required maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="pk-nama-penerima">Nama Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -110,7 +111,23 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
             <div className="field full">
               <label htmlFor="pk-alamat-penerima">Alamat Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-alamat-penerima" required maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
+              <textarea id="pk-alamat-penerima" required maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
+            </div>
+            <div className="field full">
+              <label htmlFor="pk-tujuan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="pk-tujuan" disabled value={item.tujuanPenerimaan} />
+            </div>
+            <div className="field full">
+              <label htmlFor="pk-kode-program">Kode Program <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="pk-kode-program" disabled value={item.kodeProgram} />
+            </div>
+            <div className="field">
+              <label htmlFor="pk-asuransi">Asuransi <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <SearchableSelect id="pk-asuransi" disabled value={item.asuransiStatus} onChange={() => {}} options={["Tidak", "Ya"]} placeholder="Tidak" />
+            </div>
+            <div className="field">
+              <label htmlFor="pk-packing">Pengemasan Tambahan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <SearchableSelect id="pk-packing" disabled value={item.requestPacking} onChange={() => {}} options={["Tidak", "Tambahan Kayu"]} placeholder="Tidak" />
             </div>
             <div className="field full">
               <label htmlFor="pk-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
