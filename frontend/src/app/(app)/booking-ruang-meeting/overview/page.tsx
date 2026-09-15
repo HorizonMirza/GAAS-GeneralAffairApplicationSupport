@@ -2,7 +2,7 @@
 
 import { MessageSquare } from "lucide-react";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -258,7 +258,7 @@ export default function BookingOverviewPage() {
       </div>
 
       {rooms.length > 0 && (
-        <div className="room-grid">
+        <div className="room-grid" style={{ "--grid-cols": Math.ceil(rooms.length / 2) } as CSSProperties}>
           {rooms.map((r) => {
             const availability: "available" | "full" | "closed" = closedToday
               ? "closed"

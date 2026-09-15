@@ -2,7 +2,7 @@
 
 import { MessageSquare } from "lucide-react";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -235,7 +235,7 @@ export default function VehicleBookingOverviewPage() {
       </div>
 
       {vehicles.length > 0 && (
-        <div className="room-grid">
+        <div className="room-grid" style={{ "--grid-cols": Math.ceil(vehicles.length / 2) } as CSSProperties}>
           {vehicles.map((v) => {
             // Today's operating hours (07:00-18:00) are already over - "Close" rather than
             // "Full", which would otherwise wrongly imply every hour was genuinely booked out.

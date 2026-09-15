@@ -1524,11 +1524,12 @@ body.auth-ready .app-shell {
 /* ---------- Room booking: room picker grid ---------- */
 .room-grid {
   display: grid;
-  /* auto-fit + minmax (not a fixed column count) so the same rule already scales cleanly from
-     phone to a large desktop monitor: exactly as many 150px+ columns as actually fit, rather than
-     forcing 5 columns that get squeezed unreadably thin on a small/tablet-width window or forcing
-     only 5 even on a wide monitor with room to show more per row. */
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  /* Targets exactly --grid-cols columns (set inline per page as ceil(itemCount/2), so the grid
+     always fills 2 full rows instead of leaving a mostly-empty last row) by making each track's
+     minimum width an equal 1/N share of the row - auto-fit then naturally settles on N columns at
+     normal widths. On a narrower window that share drops below 150px, so the max() falls back to
+     150px and auto-fit reduces the column count on its own, keeping cards readable on mobile. */
+  grid-template-columns: repeat(auto-fit, minmax(max(150px, calc((100% - (var(--grid-cols, 5) - 1) * 12px) / var(--grid-cols, 5))), 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
