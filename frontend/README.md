@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the frontend of **GAAS** (General Affair Application System, built for PGN Solution) — a [Next.js](https://nextjs.org) project (App Router) bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app). For project-specific setup, architecture, and module details, see [`docs/README.md`](../docs/README.md) and [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) at the repo root — this file only covers generic Next.js tooling.
 
 ## Getting Started
 
-First, run the development server:
+This frontend needs the backend (`../backend`) running separately, and `frontend/.env.local` set with `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api` (see `docs/README.md` for the full local setup, including the backend and database).
+
+Once that's in place, run the development server:
 
 ```bash
 npm run dev
@@ -29,8 +31,6 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This app is deployed internally alongside its ASP.NET Core backend and PostgreSQL database, not on Vercel — see [`docs/README.md`](../docs/README.md) for the actual deployment/runtime setup.
