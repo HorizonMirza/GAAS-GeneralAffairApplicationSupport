@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Lock, Pencil } from "lucide-react";
+import { CheckCircle2, Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { KATEGORI_KERUSAKAN_LABEL } from "@/lib/constants";
-import { formatDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { KoreksiSaranaPayload, PerbaikanSarana, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
+import type { KategoriKerusakan, KoreksiSaranaPayload, PerbaikanSarana, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
+import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
+import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
+
+const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
 
 interface Props {
   open: boolean;
@@ -84,11 +87,19 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
             </div>
             <div className="field">
               <label htmlFor="ks-tanggal">Tanggal Pengajuan <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="ks-tanggal" disabled value={formatDate(item.tanggal)} />
+              <DateFilterPicker id="ks-tanggal" disabled clearable={false} value={item.tanggal} onChange={() => {}} />
             </div>
             <div className="field">
               <label htmlFor="ks-kategori">Kategori Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="ks-kategori" disabled value={KATEGORI_KERUSAKAN_LABEL[item.kategori] || item.kategori} />
+              <SearchableSelect
+                id="ks-kategori"
+                disabled
+                value={item.kategori}
+                onChange={() => {}}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                placeholder="Pilih kategori"
+              />
             </div>
             <div className="field full">
               <label htmlFor="ks-lokasi">Lokasi <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -104,25 +115,28 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
             </div>
             <div className="field full">
               <label htmlFor="ks-deskripsi">Deskripsi Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="ks-deskripsi" disabled value={item.deskripsiKerusakan} />
+              <textarea id="ks-deskripsi" disabled value={item.deskripsiKerusakan} onChange={() => {}} />
             </div>
             {fotoKerusakan.length > 0 && (
               <div className="field full">
                 <label>Foto Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
-                <div className="photo-drop-list">
-                  {fotoKerusakan.map((foto, index) => (
-                    <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
-                      <span className="photo-drop-item-index">{index + 1}.</span>
-                      <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
-                        <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
-                      </a>
-                      <div className="photo-drop-item-info">
-                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
-                          {foto.originalFilename}
+                <div className="photo-drop-uploader">
+                  <div className="photo-drop-list">
+                    {fotoKerusakan.map((foto, index) => (
+                      <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
+                        <span className="photo-drop-item-index">{index + 1}.</span>
+                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
+                          <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
                         </a>
+                        <div className="photo-drop-item-info">
+                          <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                            {foto.originalFilename}
+                          </a>
+                        </div>
+                        <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
