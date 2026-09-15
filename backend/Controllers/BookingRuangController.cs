@@ -161,12 +161,11 @@ public class BookingRuangController : ApiControllerBase
         return item.CreatedBy == currentUser.Id || currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
     }
 
-    // Indonesia has no DST, so a fixed +7h offset from UTC is exact year-round for WIB (same fact
-    // IcsService's JakartaOffset relies on) - Tanggal/JamMulai are stored as plain WIB wall-clock
-    // values (never UTC), so "now" needs the same +7h shift before the two are compared.
+    // Tanggal/JamMulai are stored as plain WIB wall-clock values (never UTC), so "now" has to be
+    // taken in WIB too before the two are compared - see WaktuWib.
     private static bool IsPastCancelDeadline(BookingRuang item)
     {
-        var nowWib = DateTime.UtcNow.AddHours(7);
+        var nowWib = WaktuWib.Now;
         var startWib = item.IsWholeDay || item.JamMulai == null
             ? item.Tanggal.ToDateTime(TimeOnly.MinValue)
             : item.Tanggal.ToDateTime(item.JamMulai.Value);
@@ -490,7 +489,10 @@ public class BookingRuangController : ApiControllerBase
         if (string.IsNullOrEmpty(effectiveDivisi))
             return Ok(new { nomorPemesanan = "" });
 
-        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        // Nomor memuat bulan/tahun, jadi tanggal acuannya harus hari kalender WIB. DateTime.UtcNow
+        // masih menunjuk hari kemarin sampai pukul 07:00 WIB, yang membuat transaksi tanggal 1
+        // pukul 00:30 WIB bernomor bulan sebelumnya.
+        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(WaktuWib.Now);
         var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         return Ok(new { nomorPemesanan = BuildNomorPemesanan(effectiveDivisi, seq, effectiveTanggal) });
     }

@@ -340,7 +340,10 @@ public class PengirimanController : ApiControllerBase
         if (string.IsNullOrEmpty(effectiveDivisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
-        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        // Nomor memuat bulan/tahun, jadi tanggal acuannya harus hari kalender WIB. DateTime.UtcNow
+        // masih menunjuk hari kemarin sampai pukul 07:00 WIB, yang membuat transaksi tanggal 1
+        // pukul 00:30 WIB bernomor bulan sebelumnya.
+        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(WaktuWib.Now);
         var seq = await PeekNextTransmittalSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         var nomor = BuildNomorTransmittal(effectiveDivisi, seq, effectiveTanggal);
         return Ok(new { nomorTransmittal = nomor });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, nowWib } from "@/lib/format";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 
 export type CalendarViewMode = "day" | "week" | "month" | "avail";
@@ -30,7 +30,7 @@ function toIso(d: Date): string {
 }
 
 function todayIso(): string {
-  return toIso(new Date());
+  return toIso(nowWib());
 }
 
 export function addDays(iso: string, days: number): string {
@@ -397,7 +397,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
   }, [nowLineActive, view, refDate, entries]);
 
   const nowLineHourFrac = (() => {
-    const now = new Date();
+    const now = nowWib();
     return now.getHours() + now.getMinutes() / 60;
   })();
   const nowLineWithinHours = nowLineHourFrac >= HOURS[0] && nowLineHourFrac <= HOURS[HOURS.length - 1] + 1;
@@ -613,7 +613,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
     entriesByDate.set(e.tanggal, list);
   }
 
-  const today = toIso(new Date());
+  const today = toIso(nowWib());
   // Chunked into weeks (not one flat 42-cell grid) so each row can be a flex item that grows to
   // fill .month-grid's height (see .month-grid-row in globals.css) - keeps the grid's bottom
   // edge flush with the sidebar's instead of leaving blank space under it whenever the sidebar

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { RoomUtilizationItem } from "@/lib/types";
+import { nowWib } from "@/lib/format";
 
 const REPORT_ROLES = new Set(["ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"]);
 
@@ -13,13 +14,13 @@ function toIso(d: Date): string {
 }
 
 function defaultDateFrom(): string {
-  const d = new Date();
+  const d = nowWib();
   d.setDate(d.getDate() - 30);
   return toIso(d);
 }
 
 function defaultDateTo(): string {
-  return toIso(new Date());
+  return toIso(nowWib());
 }
 
 function formatPercent(rate: number | null): string {

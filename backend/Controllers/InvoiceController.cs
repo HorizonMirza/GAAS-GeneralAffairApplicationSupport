@@ -264,7 +264,10 @@ public class InvoiceController : ApiControllerBase
         var uploadedSet = uploadedBulan.ToHashSet();
 
         var missing = new List<string>();
-        var cursor = DateTime.UtcNow;
+        // Daftar bulan yang invoice-nya belum diunggah - labelnya "YYYY-MM", jadi acuannya harus
+        // bulan kalender WIB. DateTime.UtcNow masih menunjuk bulan lalu sampai pukul 07:00 WIB di
+        // tanggal 1.
+        var cursor = WaktuWib.Now;
         for (var i = 0; i < monthsBack; i++)
         {
             var bulan = $"{cursor.Year:0000}-{cursor.Month:00}";

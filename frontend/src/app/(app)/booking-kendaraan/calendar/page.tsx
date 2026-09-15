@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
+  canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
   isKendaraanCancellableByOrigin,
@@ -24,10 +25,12 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
+import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
+import { nowWib } from "@/lib/format";
 
 const ALL_VEHICLES_VALUE = "__all__";
 
@@ -36,7 +39,7 @@ function pad(n: number): string {
 }
 
 function todayIso(): string {
-  const d = new Date();
+  const d = nowWib();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
@@ -89,6 +92,7 @@ function VehicleCalendarPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<BookingKendaraan | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -420,6 +424,12 @@ function VehicleCalendarPageInner() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
+        canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
+        onKoreksi={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setKoreksiTarget(item);
+        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -469,6 +479,13 @@ function VehicleCalendarPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
+        onSaved={reloadAll}
+      />
+
+      <VehicleBookingKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
         onSaved={reloadAll}
       />
 

@@ -12,6 +12,7 @@ import {
   bookingRoomsLabel,
   bookingStatusBorderClass,
   buildRoomBookingDuplicateInitial,
+  canGaKoreksiBooking,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -19,7 +20,7 @@ import {
   isBookingOriginRole,
   isBookingPdfAvailable,
 } from "@/lib/constants";
-import { currentYearMonth, formatDate, todayLocalDate } from "@/lib/format";
+import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
@@ -43,7 +44,7 @@ function minutesToHHMM(min: number): string {
 }
 
 function nowMinutesLocal(): number {
-  const now = new Date();
+  const now = nowWib();
   return now.getHours() * 60 + now.getMinutes();
 }
 
@@ -137,6 +138,7 @@ import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomInfoModal from "@/components/RoomInfoModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
+import RoomBookingKoreksiModal from "@/components/RoomBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
@@ -161,6 +163,7 @@ export default function BookingOverviewPage() {
   const [infoRoom, setInfoRoom] = useState<RoomOption | null>(null);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -404,6 +407,12 @@ export default function BookingOverviewPage() {
               }
             : undefined
         }
+        canKoreksi={!!rowMenu.menuItem && canGaKoreksiBooking(rowMenu.menuItem, me)}
+        onKoreksi={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setKoreksiTarget(item);
+        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -498,6 +507,13 @@ export default function BookingOverviewPage() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
+        onSaved={load}
+      />
+
+      <RoomBookingKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
         onSaved={load}
       />
 

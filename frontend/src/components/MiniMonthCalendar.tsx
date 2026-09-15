@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { BookingRuang } from "@/lib/types";
+import { nowWib } from "@/lib/format";
 
 const MONTH_NAMES = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -19,7 +20,7 @@ function toIso(y: number, m: number, d: number): string {
 }
 
 function todayIso(): string {
-  const d = new Date();
+  const d = nowWib();
   return toIso(d.getFullYear(), d.getMonth(), d.getDate());
 }
 

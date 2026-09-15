@@ -263,7 +263,10 @@ public class PermintaanArsipController : ApiControllerBase
         if (string.IsNullOrEmpty(effectiveDivisi))
             return Ok(new { nomorArsip = "" });
 
-        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        // Nomor memuat bulan/tahun, jadi tanggal acuannya harus hari kalender WIB. DateTime.UtcNow
+        // masih menunjuk hari kemarin sampai pukul 07:00 WIB, yang membuat transaksi tanggal 1
+        // pukul 00:30 WIB bernomor bulan sebelumnya.
+        var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(WaktuWib.Now);
         var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         return Ok(new { nomorArsip = BuildNomorArsip(effectiveDivisi, seq, effectiveTanggal) });
     }

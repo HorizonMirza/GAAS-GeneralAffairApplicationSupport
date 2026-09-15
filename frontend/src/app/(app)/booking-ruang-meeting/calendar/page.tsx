@@ -9,6 +9,7 @@ import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
   bookingRoomsLabel,
   buildRoomBookingDuplicateInitial,
+  canGaKoreksiBooking,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -25,10 +26,12 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
+import RoomBookingKoreksiModal from "@/components/RoomBookingKoreksiModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
+import { nowWib } from "@/lib/format";
 
 const ALL_ROOMS_VALUE = "__all__";
 
@@ -37,7 +40,7 @@ function pad(n: number): string {
 }
 
 function todayIso(): string {
-  const d = new Date();
+  const d = nowWib();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
@@ -81,6 +84,7 @@ function BookingCalendarPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -422,6 +426,12 @@ function BookingCalendarPageInner() {
               }
             : undefined
         }
+        canKoreksi={!!rowMenu.menuItem && canGaKoreksiBooking(rowMenu.menuItem, me)}
+        onKoreksi={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setKoreksiTarget(item);
+        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -482,6 +492,13 @@ function BookingCalendarPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
+        onSaved={reload}
+      />
+
+      <RoomBookingKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
         onSaved={reload}
       />
 

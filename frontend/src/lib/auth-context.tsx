@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "./api";
 import type { Me, OrgStructure } from "./types";
@@ -20,7 +20,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  async function refresh() {
+  // Memoized because pages list it in useCallback/useEffect deps (see each overview page's
+  // `load`) - a new function identity on every provider render would retrigger their data fetch.
+  const refresh = useCallback(async () => {
     try {
       const result = await api.me();
       setMe(result);
@@ -35,17 +37,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
   useEffect(() => {
     // Session check on mount - genuinely synchronizing with an external system (the API/cookie),
     // not state derived from props, so the "no setState in effect" guidance doesn't apply here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
-  return <AuthContext.Provider value={{ me, orgStructure, loading, refresh }}>{children}</AuthContext.Provider>;
+  // A fresh object literal here would be a new context value on every provider render, which
+  // re-renders every useAuth() consumer in the app - which is all of them, via AppShell.
+  const value = useMemo(
+    () => ({ me, orgStructure, loading, refresh }),
+    [me, orgStructure, loading, refresh]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
