@@ -19,8 +19,8 @@ Ringkasan pengetahuan/stack yang perlu dipahami untuk berkontribusi ke proyek in
 - **Reject reason opsional**: alasan penolakan tidak wajib diisi di seluruh alur — jangan tambahkan validasi wajib tanpa diminta.
 - **Bahasa UI**: label & pesan yang tampil ke pengguna pakai Bahasa Indonesia, kecuali nama modul yang sudah sengaja diganti ke Bahasa Inggris ringkas (lihat `Prd.md`).
 - **Tidak ada 2-baris di label sidebar/menu** — pilih istilah singkat, karena `.nav-category-trigger` sengaja tidak dipotong dengan ellipsis.
-- **Modul transaksional baru (approval berjenjang)**: jangan desain dari nol — Room Booking, Vehicle Booking, Office Supplies, dan Maintenance semuanya memakai pola & `BookingStatusEnum` yang sama (lihat "Pola Modul Transaksional" di `ARCHITECTURE.md`). Contek controller/model/DTO/frontend modul yang paling mirip kebutuhan modul barunya, lalu sesuaikan field-nya saja.
-- **Modul tanpa approval** (seperti Archive): jangan paksakan pola `BookingStatusEnum`/chat/log kalau memang tidak ada alur approval-nya — lihat Archive sebagai contoh modul "penyimpanan langsung" tanpa status sama sekali.
+- **Modul transaksional baru (approval berjenjang)**: jangan desain dari nol — Room Booking, Vehicle Booking, Office Supplies, Maintenance, dan Archive semuanya memakai pola & `BookingStatusEnum` yang sama (lihat "Pola Modul Transaksional" di `ARCHITECTURE.md`). Contek controller/model/DTO/frontend modul yang paling mirip kebutuhan modul barunya, lalu sesuaikan field-nya saja.
+- **Modul tanpa approval**: kalau suatu saat ada kebutuhan modul yang benar-benar tidak butuh alur approval (mis. penyimpanan langsung tanpa status), jangan paksakan pola `BookingStatusEnum`/chat/log ke modul itu — tapi saat ini semua modul transaksional yang ada (termasuk Archive) sudah memakai alur approval penuh, jadi belum ada contoh nyata di codebase untuk pola ini.
 
 ## Alur Kerja Kontribusi
 

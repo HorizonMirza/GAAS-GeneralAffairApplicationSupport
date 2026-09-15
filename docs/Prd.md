@@ -34,9 +34,9 @@ Kantor membutuhkan sistem untuk mencatat pengiriman barang (ekspedisi) yang mela
 
 Setiap penolakan mencatat `rejectReason` (opsional) dan mengembalikan dokumen ke pihak sebelumnya.
 
-## Alur Kerja (Room Booking, Vehicle Booking, Office Supplies, Maintenance)
+## Alur Kerja (Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive)
 
-Keempat modul ini memakai rantai approval yang sama, satu tahap lebih pendek dari Ekspedisi (**tanpa tahap KPU** — berhenti di Approval GA):
+Kelima modul ini memakai rantai approval yang sama, satu tahap lebih pendek dari Ekspedisi (**tanpa tahap KPU** — berhenti di Approval GA):
 
 1. Admin Departemen/Divisi input data → `DRAFT`, submit → `SUBMITTED`.
 2. Approval Departemen/Divisi → `APPROVED_L1` atau `REJECTED_L1`.
@@ -47,9 +47,7 @@ Kalau pembuat data kebetulan sudah berperan sebagai Approval Departemen/Divisi, 
 
 Setiap modul punya nomor dokumen otomatis per divisi per bulan (`0001.<KodeSatuanKerja>.<MM>.<YYYY>`), riwayat approval per item, dan chat real-time (lihat [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian SignalR).
 
-## Alur Kerja (Archive)
-
-Tidak ada approval sama sekali — begitu dokumen diunggah, langsung tersimpan dan terlihat oleh semua unit (bukan hanya unit pengunggah). Siapa pun kecuali KPU boleh unggah; hanya pengunggah sendiri atau Admin/Approval GA/Super Admin yang boleh mengedit/menghapusnya.
+Khusus Archive: yang diajukan bukan file digital, tapi **permintaan pemindahan arsip fisik** dari status aktif (dipegang divisi/departemen) ke inaktif (dipegang Admin/Approval GA). Begitu permintaan mencapai `APPROVED_GA_APPROVAL`, arsipnya otomatis muncul di halaman **Catalog** — daftar read-only berisi semua arsip yang sudah resmi berpindah ke inaktif, terpisah dari daftar permintaan (halaman "Relocation") yang menampilkan seluruh permintaan apa pun hasil akhirnya.
 
 ## Fitur yang Sudah Ada
 
@@ -57,7 +55,7 @@ Tidak ada approval sama sekali — begitu dokumen diunggah, langsung tersimpan d
 - CRUD data dengan validasi field & nomor dokumen otomatis per divisi/bulan, di setiap modul transaksional.
 - Alur approval berjenjang (lihat bagian Alur Kerja di atas), dengan riwayat approval (log) per item.
 - Chat real-time per item (SignalR) di setiap modul transaksional — diskusi antar pihak terkait, dengan mention & notifikasi belum-dibaca.
-- Export data ke Excel & PDF, dengan filter (status/divisi/direktorat/pencarian) — Ekspedisi & Room Booking.
+- Export data ke Excel & PDF, dengan filter (status/divisi/direktorat/pencarian) — di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive). Room Booking, Vehicle Booking, Office Supplies, dan Maintenance juga punya cetak slip PDF per dokumen.
 - Kalender ketersediaan (Room Booking, Vehicle Booking) dengan tampilan Harian/Mingguan/Bulanan.
 - Halaman Super Admin untuk kelola data master.
 - Dashboard ringkas per role dengan status antrian & jumlah dokumen.
@@ -69,12 +67,12 @@ Aplikasi (branding: **PGM Solution**) adalah platform multi-modul. Semua modul d
 
 | Modul | Status | Catatan |
 |---|---|---|
-| Expedition (pengiriman barang) | **Aktif** | Modul pertama/paling lengkap — satu-satunya dengan tahap KPU & export Excel/PDF |
+| Expedition (pengiriman barang) | **Aktif** | Modul pertama/paling lengkap — satu-satunya dengan tahap KPU |
 | Room Booking | **Aktif** | Kalender, deteksi konflik jadwal, series/recurring booking |
 | Vehicle Booking | **Aktif** | Kalender ketersediaan kendaraan |
 | Office Supplies (permintaan ATK) | **Aktif** | Satu permintaan bisa berisi banyak baris barang |
 | Maintenance (perbaikan sarana & prasarana) | **Aktif** | Kategori kerusakan & tingkat urgensi, laporan urgensi tinggi diprioritaskan di daftar |
-| Archive (penyimpanan dokumen) | **Aktif** | Satu-satunya modul **tanpa** alur approval — unggah langsung tersimpan, terlihat semua unit |
+| Archive (permintaan pemindahan arsip) | **Aktif** | Alur approval sama seperti Room/Vehicle/ATK/Maintenance (tanpa KPU); item bukan file digital, tapi metadata arsip fisik. Ada halaman Catalog terpisah untuk melihat arsip yang sudah selesai dipindah |
 
 ## Ide/Kebutuhan yang Sudah Dibahas, Belum Diputuskan Jadwalnya
 

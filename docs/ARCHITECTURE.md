@@ -16,14 +16,18 @@ frontend (Next.js, browser)  <-- JWT httpOnly cookie -->  backend (ASP.NET Core 
 ASP.NET Core 8 Web API, project `PengirimanApi`.
 
 ```
-Controllers/   Endpoint HTTP per domain - satu controller "utama" + satu controller chat per modul transaksional:
-                  Auth, Profile, Export                                    (lintas modul)
-                  Pengiriman, Chat                                         (Ekspedisi, + Invoice untuk invoice-nya)
-                  BookingRuang, BookingChat                                (Room Booking)
-                  BookingKendaraan, BookingKendaraanChat                   (Vehicle Booking)
-                  PermintaanAtk, PermintaanAtkChat                        (Office Supplies)
-                  PerbaikanSarana, PerbaikanSaranaChat                    (Maintenance)
-                  Archive                                                  (tanpa chat/approval - lihat di bawah)
+Controllers/   Endpoint HTTP per domain - satu controller "utama" + satu controller chat + satu controller export
+                per modul transaksional:
+                  Auth, Profile, Users, NotificationSettings                (lintas modul)
+                  Pengiriman, Chat, Export                                  (Ekspedisi, + Invoice untuk invoice-nya)
+                  BookingRuang, BookingChat, BookingRuangExport             (Room Booking)
+                  BookingKendaraan, BookingKendaraanChat,
+                    BookingKendaraanExport                                  (Vehicle Booking)
+                  PermintaanAtk, PermintaanAtkChat, PermintaanAtkExport     (Office Supplies)
+                  PerbaikanSarana, PerbaikanSaranaChat,
+                    PerbaikanSaranaExport                                   (Maintenance)
+                  PermintaanArsip, PermintaanArsipChat, ArsipExport,
+                    ArsipKatalogExport                                      (Archive - lihat catatan di bawah)
 Models/        Entity EF Core - satu grup per modul (item + Log + Counter nomor dokumen + ChatMessage/ChatRead),
                 ditambah User/Enums yang dipakai lintas modul. Lihat isi folder untuk daftar lengkap.
 Data/          AppDbContext (mapping tabel) + DbSeeder (akun & data awal)
@@ -31,32 +35,33 @@ Dtos/          Bentuk request/response API (terpisah dari entity) - satu file pe
 Hubs/          ChatHub (SignalR) - push real-time chat ke setiap modul transaksional, lihat bagian SignalR di bawah
 Services/      JwtService (buat/verifikasi token), CurrentUserService (ambil user dari cookie),
                 OrgTree (struktur Direktorat/Divisi/Departemen), MeetingRooms/Vehicles (data master ruang/kendaraan),
-                BookingPdfService (PDF konfirmasi booking), IcsService (export kalender .ics)
+                ChatImageStorage (simpan lampiran gambar chat), IcsService (export kalender .ics),
+                BookingPdfService/VehiclePdfService/AtkPdfService/SaranaPdfService (PDF konfirmasi/slip per modul)
 Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, switch resetdb/seed
 ```
 
 - ORM: Entity Framework Core dengan provider `Npgsql.EntityFrameworkCore.PostgreSQL`.
-- Export Excel via `ClosedXML`, export PDF via `QuestPDF` (Ekspedisi export + PDF konfirmasi Room Booking).
+- Export Excel via `ClosedXML`, export PDF via `QuestPDF` — tersedia di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive), lewat endpoint `export`/`export-pdf` di controller Export masing-masing. Room Booking, Vehicle Booking, Office Supplies, dan Maintenance juga punya endpoint `{id}/pdf` untuk cetak slip satu dokumen (beda dari `export-pdf` yang mencetak daftar hasil filter).
 - Password di-hash dengan `BCrypt.Net-Next`.
 - Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `database/` (lihat catatan di bagian Database).
 - Konfigurasi rahasia (connection string, JWT secret) ada di `appsettings.Development.json`, **tidak** masuk git — dikelola manual per environment.
 
-## Pola Modul Transaksional (Room Booking, Vehicle Booking, Office Supplies, Maintenance)
+## Pola Modul Transaksional (Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive)
 
-Keempat modul ini (dan Ekspedisi) berbagi satu pola arsitektur yang sama - kalau menambah modul baru, contek salah satu dari ini dulu:
+Kelima modul ini (dan Ekspedisi) berbagi satu pola arsitektur yang sama - kalau menambah modul baru, contek salah satu dari ini dulu:
 
 - **Status**: `BookingStatusEnum` (`DRAFT → SUBMITTED → APPROVED_L1/REJECTED_L1 → APPROVED_GA/REJECTED_GA → APPROVED_GA_APPROVAL/REJECTED_GA_APPROVAL`) - beda dari `StatusEnum` milik Ekspedisi yang punya tahap KPU tambahan.
-- **Nomor dokumen otomatis**: satu tabel counter per modul (`RoomBookingCounter`, `KendaraanBookingCounter`, `AtkCounter`, `SaranaCounter`), keyed `(divisi, year, month)`, di-increment lewat `INSERT ... ON CONFLICT DO UPDATE` (race-safe) di endpoint `next-nomor`.
+- **Nomor dokumen otomatis**: satu tabel counter per modul (`RoomBookingCounter`, `KendaraanBookingCounter`, `AtkCounter`, `SaranaCounter`, `ArsipCounter`), keyed `(divisi, year, month)`, di-increment lewat `INSERT ... ON CONFLICT DO UPDATE` (race-safe) di endpoint `next-nomor`.
 - **Origin roles**: `ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA` boleh membuat data; kalau Admin/Approval GA yang input, datanya distempel unit GA sendiri ("Procurement and General Affair" / "Asset Management and General Affair"), bukan unit asal mereka (karena akun GA tidak terhubung ke Divisi/Departemen manapun).
 - **Reject = jalan buntu**: tidak seperti Ekspedisi, item yang ditolak di modul-modul ini tidak bisa direvisi & resubmit - hanya bisa dihapus oleh pembuat atau Admin/Approval GA.
 - **Chat + mention**: setiap modul punya `{Modul}ChatController` + tabel `{Modul}ChatMessage`/`{Modul}ChatRead` sendiri, di-push real-time lewat `ChatHub` (lihat bagian SignalR).
 - **Frontend**: `constants.ts` punya helper `is{Modul}EditableByOrigin`, `is{Modul}DeletableByOrigin`, `is{Modul}GaActionable`, `{modul}OriginActorLabel` yang masing-masing mirror aturan backend-nya persis (dikomentari di source-nya).
 
-Archive **tidak** mengikuti pola ini - lihat bagian tersendiri di bawah.
+## Archive (`PermintaanArsip`)
 
-## Archive (pengecualian pola di atas)
+Archive **bukan** penyimpanan file digital — modelnya (`PermintaanArsip`) tidak punya field upload sama sekali. Yang dicatat adalah **permintaan pemindahan arsip fisik**: satu permintaan = satu unit arsip yang mau dipindah dari status aktif (dipegang divisi/departemen sendiri) ke inaktif (dipegang Admin/Approval GA), lengkap dengan lokasi penyimpanan, kategori, tahun, dan PIC-nya. Modul ini mengikuti pola modul transaksional di atas persis (status, chat, nomor dokumen, dsb), tanpa tahap KPU, dan berakhir di `APPROVED_GA_APPROVAL` — begitu final disetujui, arsipnya dianggap resmi berpindah ke inaktif.
 
-Satu-satunya modul tanpa status/approval: upload langsung tersimpan (`ArchiveController`), terlihat oleh semua unit (bukan dibatasi per divisi seperti modul lain), dan tidak punya chat/log riwayat. Yang boleh mengedit/menghapus: pengunggah sendiri, atau Admin/Approval GA/Super Admin. Mendukung banyak jenis file (PDF/Word/Excel/PowerPoint/gambar/ZIP, maks 20 MB), disimpan di `uploads/archive/` dengan nama file acak (GUID) - pola penyimpanan filenya sama dengan Invoice (`uploads/invoices/`).
+Ada satu halaman tambahan yang modul lain tidak punya: **Catalog** (`arsip/katalog`, endpoint `GET /api/permintaan-arsip/catalog`) - registry read-only berisi arsip yang sudah lolos `APPROVED_GA_APPROVAL`, yaitu "apa saja yang benar-benar sedang ada di arsip inaktif sekarang", terpisah dari daftar permintaan (`arsip/transaksi`, disebut "Relocation" di sidebar) yang menampilkan seluruh permintaan apa pun hasilnya. `ArsipKatalogExportController` menyediakan export Excel/PDF khusus untuk daftar katalog ini.
 
 ## SignalR (chat real-time)
 
@@ -80,7 +85,9 @@ src/app/(app)/                         Halaman setelah login (route group, pakai
     calendar/, transaksi/                 Vehicle Booking - + kalender ketersediaan kendaraan
   office-supplies/overview/, transaksi/  Office Supplies (permintaan ATK)
   maintenance/overview/, transaksi/      Maintenance (laporan perbaikan sarana)
-  arsip/                                  Archive - halaman tunggal (tanpa Overview terpisah, tidak ada approval)
+  arsip/overview/, transaksi/, katalog/  Archive - transaksi ("Relocation" di sidebar) = permintaan
+                                          pemindahan arsip dengan approval; katalog ("Catalog") = daftar
+                                          read-only arsip yang sudah APPROVED_GA_APPROVAL
 src/components/                        Komponen reusable (modal, badge, stepper, sidebar/AppShell, chat, dsb) -
                                           modal & row-menu umumnya berpasangan per modul (mis. Room{X}, Vehicle{X},
                                           Atk{X}, Sarana{X}), lihat pola di bagian "Pola Modul Transaksional" di atas
@@ -107,4 +114,4 @@ Reset skema penuh dilakukan lewat `dotnet run -- resetdb` (drop semua tabel lalu
 3. `PengirimanController` mengubah status, menulis baris baru ke `PengirimanLog` (riwayat approval), simpan ke database lewat `AppDbContext`.
 4. Response dikembalikan, frontend memanggil ulang `load()` untuk refresh data & menampilkan toast.
 
-Alur yang sama berlaku di modul lain (`BookingRuangController`, `BookingKendaraanController`, `PermintaanAtkController`, `PerbaikanSaranaController`) — hanya nama controller/tabel log yang berbeda, mekanismenya identik.
+Alur yang sama berlaku di modul lain (`BookingRuangController`, `BookingKendaraanController`, `PermintaanAtkController`, `PerbaikanSaranaController`, `PermintaanArsipController`) — hanya nama controller/tabel log yang berbeda, mekanismenya identik.
