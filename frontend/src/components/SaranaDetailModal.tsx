@@ -318,9 +318,9 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     {visibleFotoKerusakan.map((foto, index) => (
                       <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
                         <span className="photo-drop-item-index">{newFotoFiles.length + index + 1}.</span>
-                        <div className="photo-drop-item-thumb">
+                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
                           <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
-                        </div>
+                        </a>
                         <div className="photo-drop-item-info">
                           <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
                             {foto.originalFilename}
