@@ -8,6 +8,13 @@ interface Props {
   files: File[];
   onChange: (files: File[]) => void;
   maxFiles?: number;
+  // Nomor urut ditampilkan mulai dari totalMax + 1, bukan 1 - dipakai SaranaDetailModal supaya
+  // foto baru yang belum diunggah menyambung nomor dari foto lama yang sudah tersimpan.
+  numberOffset?: number;
+  // Angka tetap yang ditampilkan di teks "Max N Foto" - beda dari `maxFiles` (kapasitas sisa
+  // yang sebenarnya dipakai untuk membatasi upload) supaya labelnya tidak berubah-ubah
+  // tergantung berapa foto yang sudah ada (lihat SaranaDetailModal).
+  totalMax?: number;
   disabled?: boolean;
 }
 
@@ -21,8 +28,9 @@ function formatBytes(bytes: number): string {
 // reuses the same .file-dropzone look InvoiceUploadModal already established for single-file
 // drag-and-drop, extended with a file list (thumbnail + remove) since here more than one file can
 // be attached at once.
-export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, disabled }: Props) {
+export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, numberOffset = 0, totalMax, disabled }: Props) {
   const [dragging, setDragging] = useState(false);
+  const displayMax = totalMax ?? maxFiles;
 
   function addFiles(newFiles: FileList | File[]) {
     const incoming = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
@@ -51,11 +59,11 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
       >
         <UploadCloud width={32} height={32} />
         <div className="photo-drop-title">
-          {atLimit ? <>Max {maxFiles} Foto</> : <>Pilih foto atau Drag and Drop disini.</>}
+          {atLimit ? <>Max {displayMax} Foto</> : <>Pilih foto atau Drag and Drop disini.</>}
         </div>
         {!atLimit && (
           <div className="photo-drop-caption">
-            Format JPG dan PNG, Max {maxFiles} Foto
+            Format JPG dan PNG, Max {displayMax} Foto
           </div>
         )}
         {!disabled && !atLimit && (
@@ -79,6 +87,7 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, d
             <div className="photo-drop-item" key={`${file.name}-${file.lastModified}-${index}`}>
               <div className="photo-drop-item-thumb">
                 <img src={URL.createObjectURL(file)} alt={file.name} />
+                <span className="photo-drop-item-number">{numberOffset + index + 1}</span>
               </div>
               <div className="photo-drop-item-info">
                 <span className="photo-drop-item-name">{file.name}</span>

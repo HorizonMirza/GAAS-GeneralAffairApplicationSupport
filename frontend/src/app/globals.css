@@ -2685,16 +2685,21 @@ body.auth-ready .app-shell {
 
 .photo-drop-list { display: flex; flex-direction: column; gap: 14px; }
 
-/* A list right after the dropzone (newly picked files), a dropzone right after an existing list
-   ("add more" in SaranaDetailModal's edit mode), or a second list right after one (newly picked
-   files above already-saved ones in edit mode) gets a divider - a bare list with nothing above it
-   (e.g. the view-only file list, or the dropzone as the box's first child) does not. */
+/* A list right after the dropzone (newly picked files), or a dropzone right after an existing
+   list ("add more" in SaranaDetailModal's edit mode), gets a divider - a bare list with nothing
+   above it (e.g. the view-only file list, or the dropzone as the box's first child) does not. */
 .file-dropzone + .photo-drop-list,
-.photo-drop-list + .file-dropzone,
-.photo-drop-list + .photo-drop-list {
+.photo-drop-list + .file-dropzone {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--border-subtle);
+}
+
+/* Newly picked files (from PhotoDropUploader) directly above already-saved ones (in
+   SaranaDetailModal's edit mode) flow as one continuous list - same gap as within each list,
+   no divider line, so the two groups don't read as visually separate. */
+.photo-drop-list + .photo-drop-list {
+  margin-top: 14px;
 }
 
 .photo-drop-item {
@@ -2718,6 +2723,7 @@ body.auth-ready .app-shell {
 }
 
 .photo-drop-item-thumb {
+  position: relative;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
@@ -2727,6 +2733,22 @@ body.auth-ready .app-shell {
 }
 
 .photo-drop-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.photo-drop-item-number {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
 
 .photo-drop-item-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
 .photo-drop-item-name { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

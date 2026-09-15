@@ -310,14 +310,16 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                     files={newFotoFiles}
                     onChange={setNewFotoFiles}
                     maxFiles={MAX_FOTO_KERUSAKAN - visibleFotoKerusakan.length}
+                    totalMax={MAX_FOTO_KERUSAKAN}
                   />
                 )}
                 {visibleFotoKerusakan.length > 0 && (
                   <div className="photo-drop-list">
-                    {visibleFotoKerusakan.map((foto) => (
+                    {visibleFotoKerusakan.map((foto, index) => (
                       <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
                         <div className="photo-drop-item-thumb">
                           <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
+                          <span className="photo-drop-item-number">{newFotoFiles.length + index + 1}</span>
                         </div>
                         <div className="photo-drop-item-info">
                           <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
