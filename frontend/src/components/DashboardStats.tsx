@@ -10,6 +10,7 @@ import type {
   Me,
   PengirimanStatsResponse,
   PerbaikanSaranaStatsResponse,
+  PermintaanArsipStatsResponse,
   PermintaanAtkStatsResponse,
 } from "@/lib/types";
 
@@ -38,19 +39,22 @@ interface Props {
   onKendaraanStats?: (data: BookingKendaraanStatsResponse | null) => void;
   onAtkStats?: (data: PermintaanAtkStatsResponse | null) => void;
   onSaranaStats?: (data: PerbaikanSaranaStatsResponse | null) => void;
+  onArsipStats?: (data: PermintaanArsipStatsResponse | null) => void;
 }
 
-export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats, onAtkStats, onSaranaStats }: Props) {
+export default function DashboardStats({ me, onPengirimanStats, onBookingStats, onKendaraanStats, onAtkStats, onSaranaStats, onArsipStats }: Props) {
   const [pengiriman, setPengiriman] = useState<PengirimanStatsView | null>(null);
   const [booking, setBooking] = useState<BookingStatsView | null>(null);
   const [kendaraan, setKendaraan] = useState<BookingStatsView | null>(null);
   const [atk, setAtk] = useState<BookingStatsView | null>(null);
   const [sarana, setSarana] = useState<BookingStatsView | null>(null);
+  const [arsip, setArsip] = useState<BookingStatsView | null>(null);
   const [pengirimanFailed, setPengirimanFailed] = useState(false);
   const [bookingFailed, setBookingFailed] = useState(false);
   const [kendaraanFailed, setKendaraanFailed] = useState(false);
   const [atkFailed, setAtkFailed] = useState(false);
   const [saranaFailed, setSaranaFailed] = useState(false);
+  const [arsipFailed, setArsipFailed] = useState(false);
 
   // Fetched (and failure-handled) independently - an outage in one source must not blank out
   // the other's numbers too, which a shared Promise.all/catch would do.
@@ -141,6 +145,22 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
       .catch(() => {
         setSaranaFailed(true);
         onSaranaStats?.(null);
+      });
+    api.getArsipStats(bulan)
+      .then((r) => {
+        onArsipStats?.(r);
+        const rc = r.countsByStatus;
+        setArsip({
+          waitingL1: rc.SUBMITTED ?? 0,
+          waitingGa: rc.APPROVED_L1 ?? 0,
+          waitingGaApproval: rc.APPROVED_GA ?? 0,
+          completed: rc.APPROVED_GA_APPROVAL ?? 0,
+          rejected: (rc.REJECTED_L1 ?? 0) + (rc.REJECTED_GA ?? 0) + (rc.REJECTED_GA_APPROVAL ?? 0),
+        });
+      })
+      .catch(() => {
+        setArsipFailed(true);
+        onArsipStats?.(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -252,6 +272,26 @@ export default function DashboardStats({ me, onPengirimanStats, onBookingStats, 
               <div className="stat-tile"><div className="value">{sarana.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
               <div className="stat-tile"><div className="value">{sarana.completed}</div><div className="label">Approved</div></div>
               <div className="stat-tile"><div className="value">{sarana.rejected}</div><div className="label">Rejected</div></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {me.role !== "KPU" && (
+        <div className="dashboard-stats-section">
+          <div className="dashboard-stats-section-head">
+            <h4>Archive</h4>
+            <Link href="/arsip/transaksi" className="dashboard-stats-link">Lihat Semua &rarr;</Link>
+          </div>
+          {!arsip ? (
+            <p className="text-secondary">{arsipFailed ? "Gagal memuat ringkasan." : "Memuat ringkasan..."}</p>
+          ) : (
+            <div className="stat-grid">
+              <div className="stat-tile"><div className="value">{arsip.waitingL1}</div><div className="label">{l1Label}</div></div>
+              <div className="stat-tile"><div className="value">{arsip.waitingGa}</div><div className="label">Admin General Affair</div></div>
+              <div className="stat-tile"><div className="value">{arsip.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+              <div className="stat-tile"><div className="value">{arsip.completed}</div><div className="label">Approved</div></div>
+              <div className="stat-tile"><div className="value">{arsip.rejected}</div><div className="label">Rejected</div></div>
             </div>
           )}
         </div>
