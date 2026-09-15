@@ -354,6 +354,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.NomorPemesanan).HasColumnName("nomor_pemesanan").HasMaxLength(50);
             e.Property(b => b.NamaKegiatan).HasColumnName("nama_kegiatan").HasMaxLength(255).IsRequired();
             e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
+            e.Property(b => b.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
             e.Property(b => b.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
             e.Property(b => b.KapasitasRuang).HasColumnName("kapasitas_ruang");
             e.Property(b => b.JumlahPeserta).HasColumnName("jumlah_peserta");
@@ -478,6 +479,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.NomorPemesanan).HasColumnName("nomor_pemesanan").HasMaxLength(50);
             e.Property(b => b.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
             e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
+            e.Property(b => b.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
             e.Property(b => b.NamaKendaraan).HasColumnName("nama_kendaraan").HasMaxLength(100).IsRequired();
             e.Property(b => b.PlatNomor).HasColumnName("plat_nomor").HasMaxLength(20);
             e.Property(b => b.KapasitasKendaraan).HasColumnName("kapasitas_kendaraan");

@@ -6,6 +6,7 @@ public class BookingKendaraan
     public string? NomorPemesanan { get; set; }
     public string Keperluan { get; set; } = null!;
     public string? Pic { get; set; }
+    public string? NoTeleponPic { get; set; }
     public string NamaKendaraan { get; set; } = null!;
     public string? PlatNomor { get; set; }
     public int KapasitasKendaraan { get; set; }

@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
   buildRoomBookingDuplicateInitial,
+  canGaKoreksiBooking,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -29,6 +30,7 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
+import RoomBookingKoreksiModal from "@/components/RoomBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
@@ -78,6 +80,7 @@ function BookingTransaksiPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -380,17 +383,17 @@ function BookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Ruangan</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Ruangan</th>
                 <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -405,6 +408,7 @@ function BookingTransaksiPageInner() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
                       <td>{item.jumlahPeserta}</td>
@@ -502,6 +506,12 @@ function BookingTransaksiPageInner() {
               }
             : undefined
         }
+        canKoreksi={!!rowMenu.menuItem && canGaKoreksiBooking(rowMenu.menuItem, me)}
+        onKoreksi={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setKoreksiTarget(item);
+        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -560,6 +570,13 @@ function BookingTransaksiPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
+        onSaved={loadTable}
+      />
+
+      <RoomBookingKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
         onSaved={loadTable}
       />
 

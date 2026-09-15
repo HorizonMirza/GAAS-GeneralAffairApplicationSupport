@@ -193,6 +193,7 @@ public static class VehiclePdfService
             ("Nama Pengemudi", item.Supir ?? "-"),
             ("Jumlah Penumpang", $"{item.JumlahPenumpang} orang"),
             ("Nama PIC", item.Pic ?? "-"),
+            ("No. Telepon PIC", item.NoTeleponPic ?? "-"),
             ("Divisi / Departemen", DivisiLabel(item)),
             ("Status", "Approved"),
             ("Diajukan Pada", item.CreatedAt.ToString("dd MMMM yyyy HH:mm") + " WIB"),

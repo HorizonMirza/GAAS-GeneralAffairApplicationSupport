@@ -21,6 +21,8 @@ import type {
   KategoriKerusakan,
   KoreksiArsipPayload,
   KoreksiAtkPayload,
+  KoreksiBookingPayload,
+  KoreksiKendaraanPayload,
   KoreksiPengirimanPayload,
   KoreksiSaranaPayload,
   InvoiceListResponse,
@@ -421,6 +423,8 @@ export const api = {
       method: "PATCH",
       body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
     }),
+  koreksiBooking: (id: number, payload: KoreksiBookingPayload) =>
+    apiRequest<BookingRuang>(`/booking-ruang/${id}/koreksi`, { method: "PATCH", body: payload }),
   bulkRescheduleSeries: (seriesId: string, dayShift: number) =>
     apiRequest<BulkRescheduleItemResult[]>(`/booking-ruang/series/${seriesId}/bulk-reschedule`, {
       method: "PATCH",
@@ -485,6 +489,8 @@ export const api = {
       method: "PATCH",
       body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
     }),
+  koreksiKendaraanBooking: (id: number, payload: KoreksiKendaraanPayload) =>
+    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/koreksi`, { method: "PATCH", body: payload }),
   deleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}`, { method: "DELETE" }),
   superAdminDeleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}/super-admin`, { method: "DELETE" }),
   cancelKendaraanBooking: (id: number, reason: string | null) =>

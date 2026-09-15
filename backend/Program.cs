@@ -237,6 +237,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS pic VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS no_telepon_pic VARCHAR(50) NOT NULL DEFAULT ''");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS nomor_pemesanan VARCHAR(50)");
 
     // Internal/External classification, recurring-series fields, and the per-booking conflict
@@ -416,6 +417,7 @@ using (var scope = app.Services.CreateScope())
         )");
     // Backfill for a database that already ran the CREATE TABLE above before Supir existed.
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS supir VARCHAR(255)");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS no_telepon_pic VARCHAR(50) NOT NULL DEFAULT ''");
     migrateDb.Database.ExecuteSqlRaw(@"
         CREATE TABLE IF NOT EXISTS booking_kendaraan_logs (
             id SERIAL PRIMARY KEY,

@@ -6,6 +6,7 @@ public class BookingKendaraanCreate
 {
     public string Keperluan { get; set; } = null!;
     public string? Pic { get; set; }
+    public string? NoTeleponPic { get; set; }
     // Admin/Approval GA only: lets them book on behalf of any divisi/departemen instead of their
     // own home unit (see BookingKendaraanController.OriginRoles) - ignored for every other role,
     // and ignored for GA too when left blank (falls back to their own GA home unit as before).
@@ -33,6 +34,8 @@ public class BookingKendaraanReschedule
     public TimeOnly? JamSelesai { get; set; }
 }
 
+public record KoreksiBookingKendaraanRequest(string Pic, string NoTeleponPic);
+
 public record BookingKendaraanLogOut(
     int Id,
     string Action,
@@ -48,6 +51,7 @@ public class BookingKendaraanOut
     public string? NomorPemesanan { get; set; }
     public string Keperluan { get; set; } = null!;
     public string? Pic { get; set; }
+    public string? NoTeleponPic { get; set; }
     public string NamaKendaraan { get; set; } = null!;
     public string? PlatNomor { get; set; }
     public int KapasitasKendaraan { get; set; }
@@ -82,6 +86,7 @@ public class BookingKendaraanOut
         NomorPemesanan = b.NomorPemesanan,
         Keperluan = b.Keperluan,
         Pic = b.Pic,
+        NoTeleponPic = b.NoTeleponPic,
         NamaKendaraan = b.NamaKendaraan,
         PlatNomor = b.PlatNomor,
         KapasitasKendaraan = b.KapasitasKendaraan,

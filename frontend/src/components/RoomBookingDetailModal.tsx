@@ -40,6 +40,7 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   return {
     namaKegiatan: item.namaKegiatan,
     pic: item.pic || "",
+    noTeleponPic: item.noTeleponPic || "",
     namaRuang: item.namaRuang,
     additionalRooms: item.additionalRooms,
     jumlahPeserta: item.jumlahPeserta,
@@ -192,7 +193,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     e.preventDefault();
     setBusy(true);
     try {
-      await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
+      await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, noTeleponPic: form!.noTeleponPic || null, catatan: form!.catatan || null });
       showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();
       onSaved();
@@ -219,9 +220,13 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} maxLength={150} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="bv-pic">Nama PIC</label>
               <input type="text" id="bv-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="bv-telepon-pic">No. Telepon PIC</label>
+              <input type="text" id="bv-telepon-pic" required disabled={!isEdit} maxLength={50} value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>

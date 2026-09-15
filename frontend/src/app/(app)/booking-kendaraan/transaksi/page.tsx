@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
   isKendaraanCancellableByOrigin,
@@ -26,6 +27,7 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
+import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
@@ -70,6 +72,7 @@ function VehicleBookingTransaksiPageInner() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [koreksiTarget, setKoreksiTarget] = useState<BookingKendaraan | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -361,17 +364,17 @@ function VehicleBookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Kendaraan</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Kendaraan</th>
                 <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -386,6 +389,7 @@ function VehicleBookingTransaksiPageInner() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
                       <td title={item.namaKendaraan}>{truncateText(item.namaKendaraan, 20)}</td>
                       <td title={item.supir || ""}>{truncateText(item.supir, 18)}</td>
                       <td>{item.jumlahPenumpang}</td>
@@ -471,6 +475,12 @@ function VehicleBookingTransaksiPageInner() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
+        canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
+        onKoreksi={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setKoreksiTarget(item);
+        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -512,6 +522,13 @@ function VehicleBookingTransaksiPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
+        onSaved={loadTable}
+      />
+
+      <VehicleBookingKoreksiModal
+        open={!!koreksiTarget}
+        item={koreksiTarget}
+        onClose={() => setKoreksiTarget(null)}
         onSaved={loadTable}
       />
 

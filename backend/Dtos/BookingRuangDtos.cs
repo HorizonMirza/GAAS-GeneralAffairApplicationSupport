@@ -6,6 +6,7 @@ public class BookingRuangCreate
 {
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
+    public string? NoTeleponPic { get; set; }
     // Admin/Approval GA only: lets them book on behalf of any divisi/departemen instead of their
     // own home unit (see BookingRuangController.OriginRoles) - ignored for every other role, and
     // ignored for GA too when left blank (falls back to their own GA home unit as before).
@@ -44,6 +45,8 @@ public class BookingRuangReschedule
     public TimeOnly? JamSelesai { get; set; }
 }
 
+public record KoreksiBookingRuangRequest(string Pic, string NoTeleponPic);
+
 public record BookingRuangLogOut(
     int Id,
     string Action,
@@ -59,6 +62,7 @@ public class BookingRuangOut
     public string? NomorPemesanan { get; set; }
     public string NamaKegiatan { get; set; } = null!;
     public string? Pic { get; set; }
+    public string? NoTeleponPic { get; set; }
     public string NamaRuang { get; set; } = null!;
     public List<string> AdditionalRooms { get; set; } = new();
     public int KapasitasRuang { get; set; }
@@ -98,6 +102,7 @@ public class BookingRuangOut
         NomorPemesanan = b.NomorPemesanan,
         NamaKegiatan = b.NamaKegiatan,
         Pic = b.Pic,
+        NoTeleponPic = b.NoTeleponPic,
         NamaRuang = b.NamaRuang,
         AdditionalRooms = b.AdditionalRooms.Select(r => r.NamaRuang).ToList(),
         KapasitasRuang = b.KapasitasRuang,

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -136,6 +137,11 @@ public class BookingRuangController : ApiControllerBase
     private static bool IsGaReschedulable(BookingRuang item) =>
         item.Status is BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED
             or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
+
+    // Accepts any real phone number without guessing a regional format, but still catches
+    // obviously-wrong values (empty, letters, a couple of stray digits).
+    private static bool IsValidPhone(string phone) =>
+        Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
 
     private static bool IsL1Actionable(BookingRuang item) => item.Status == BookingStatusEnum.SUBMITTED;
 
@@ -315,6 +321,8 @@ public class BookingRuangController : ApiControllerBase
             return "Nama kegiatan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.Pic))
             return "PIC wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPic ?? ""))
+            return "No. telepon PIC tidak valid";
         if (payload.JumlahPeserta <= 0)
             return "Jumlah peserta harus lebih dari 0";
         if (payload.JumlahPeserta > MaxJumlahPeserta)
@@ -363,6 +371,7 @@ public class BookingRuangController : ApiControllerBase
     {
         item.NamaKegiatan = payload.NamaKegiatan;
         item.Pic = payload.Pic;
+        item.NoTeleponPic = payload.NoTeleponPic;
         item.NamaRuang = payload.NamaRuang;
         item.KapasitasRuang = MeetingRooms.GetCapacity(payload.NamaRuang) ?? 0;
         item.JumlahPeserta = payload.JumlahPeserta;
@@ -989,6 +998,32 @@ public class BookingRuangController : ApiControllerBase
             ? $"{item.Tanggal:dd/MM/yyyy} (Sepanjang Hari)"
             : $"{item.Tanggal:dd/MM/yyyy} {item.JamMulai:HH:mm}-{item.JamSelesai:HH:mm}";
         AddLog(item, "RESCHEDULED", user!, $"Dipindahkan ke {item.NamaRuang}, {jadwalText}");
+
+        await _db.SaveChangesAsync();
+        return Ok(BookingRuangOut.From(item));
+    }
+
+    // Admin/Approval GA's narrow correction tool: fix a typo in the PIC's name or phone number
+    // without touching anything else about the booking - same in-flight window and same principle
+    // as Reschedule leaving Nama Kegiatan/PIC untouched, just the other way around (this touches
+    // PIC, Reschedule touches the slot). Mirrors PerbaikanSaranaController.Koreksi.
+    [HttpPatch("{itemId:int}/koreksi")]
+    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiBookingRuangRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
+        if (roleError != null) return roleError;
+
+        var item = await _db.BookingRuangs.FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!IsGaReschedulable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+
+        if (string.IsNullOrWhiteSpace(payload.Pic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
+        if (!IsValidPhone(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC tidak valid" });
+
+        item.Pic = payload.Pic.Trim();
+        item.NoTeleponPic = payload.NoTeleponPic.Trim();
+        AddLog(item, "CORRECTED", user!, $"Data PIC dikoreksi menjadi {item.Pic} / {item.NoTeleponPic}");
 
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));

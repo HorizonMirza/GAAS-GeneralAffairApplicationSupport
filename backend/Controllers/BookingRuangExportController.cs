@@ -28,6 +28,7 @@ public class BookingRuangExportController : ApiControllerBase
         ("jam", "Jam"),
         ("nama_kegiatan", "Nama Kegiatan"),
         ("pic", "Nama PIC"),
+        ("telepon_pic", "No. Telepon PIC"),
         ("ruangan", "Ruangan"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
@@ -39,7 +40,7 @@ public class BookingRuangExportController : ApiControllerBase
 
     private static readonly float[] PdfColWidths =
     {
-        30, 34, 22, 30, 50, 30, 46, 34, 34, 20, 16, 50, 40,
+        30, 34, 22, 30, 50, 30, 34, 46, 34, 34, 20, 16, 50, 40,
     };
 
     private static readonly Dictionary<string, string> StatusLabel = new()
@@ -87,6 +88,7 @@ public class BookingRuangExportController : ApiControllerBase
         "jam" => JamLabel(row),
         "nama_kegiatan" => row.NamaKegiatan,
         "pic" => row.Pic,
+        "telepon_pic" => row.NoTeleponPic,
         "ruangan" => RoomsLabel(row),
         "divisi" => row.Divisi,
         "departemen" => row.Departemen,

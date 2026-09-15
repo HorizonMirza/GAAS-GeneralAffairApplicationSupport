@@ -25,6 +25,7 @@ function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKen
   return {
     keperluan: "",
     pic: "",
+    noTeleponPic: "",
     namaKendaraan: "",
     jumlahPenumpang: 1,
     tanggal: todayLocalDate(),
@@ -166,9 +167,13 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               <label htmlFor="fk-keperluan">Tujuan</label>
               <input type="text" id="fk-keperluan" required maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="fk-pic">Nama PIC</label>
               <input type="text" id="fk-pic" required maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="fk-telepon-pic">No. Telepon PIC</label>
+              <input type="text" id="fk-telepon-pic" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>

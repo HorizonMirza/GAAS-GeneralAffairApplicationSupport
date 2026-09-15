@@ -321,6 +321,12 @@ export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
 }
 
+// Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
+// the slot - see RoomBookingKoreksiModal and BookingRuangController.Koreksi.
+export function canGaKoreksiBooking(item: BookingRuang, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+}
+
 // A confirmation PDF only exists once a booking reached the final Approved state.
 export function isBookingPdfAvailable(item: BookingRuang): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
@@ -429,6 +435,12 @@ export function isKendaraanGaReschedulable(item: BookingKendaraan): boolean {
 }
 
 export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isKendaraanGaReschedulable(item);
+}
+
+// Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
+// the slot - see VehicleBookingKoreksiModal and BookingKendaraanController.Koreksi.
+export function canGaKoreksiKendaraan(item: BookingKendaraan, me: Me): boolean {
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isKendaraanGaReschedulable(item);
 }
 

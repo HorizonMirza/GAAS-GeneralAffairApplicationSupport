@@ -34,6 +34,7 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
   return {
     keperluan: item.keperluan,
     pic: item.pic || "",
+    noTeleponPic: item.noTeleponPic || "",
     namaKendaraan: item.namaKendaraan,
     jumlahPenumpang: item.jumlahPenumpang,
     tanggal: item.tanggal,
@@ -147,7 +148,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
     e.preventDefault();
     setBusy(true);
     try {
-      await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, catatan: form!.catatan || null });
+      await api.updateKendaraanBooking(item!.id, { ...form!, pic: form!.pic || null, noTeleponPic: form!.noTeleponPic || null, catatan: form!.catatan || null });
       showToast("Booking berhasil diperbarui");
       onClose();
       onSaved();
@@ -174,9 +175,13 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               <label htmlFor="bk-keperluan">Tujuan</label>
               <input type="text" id="bk-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="bk-pic">Nama PIC</label>
               <input type="text" id="bk-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="bk-telepon-pic">No. Telepon PIC</label>
+              <input type="text" id="bk-telepon-pic" required disabled={!isEdit} maxLength={50} value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="bk-tanggal">Tanggal</label>

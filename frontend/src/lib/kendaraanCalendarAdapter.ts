@@ -12,6 +12,7 @@ export function kendaraanAsBookingRuangShape(k: BookingKendaraan): BookingRuang 
     nomorPemesanan: k.nomorPemesanan,
     namaKegiatan: k.keperluan,
     pic: k.pic,
+    noTeleponPic: k.noTeleponPic,
     namaRuang: k.namaKendaraan,
     additionalRooms: [],
     kapasitasRuang: k.kapasitasKendaraan,

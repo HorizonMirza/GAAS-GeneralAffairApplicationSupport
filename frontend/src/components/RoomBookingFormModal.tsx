@@ -28,6 +28,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
   return {
     namaKegiatan: "",
     pic: "",
+    noTeleponPic: "",
     namaRuang: "",
     additionalRooms: [],
     jumlahPeserta: 1,
@@ -199,9 +200,13 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
               <input type="text" id="f-nama-kegiatan" required maxLength={150} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
-            <div className="field full">
+            <div className="field">
               <label htmlFor="f-pic">Nama PIC</label>
               <input type="text" id="f-pic" required maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="f-telepon-pic">No. Telepon PIC</label>
+              <input type="text" id="f-telepon-pic" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>

@@ -308,6 +308,7 @@ export interface BookingRuang {
   nomorPemesanan: string | null;
   namaKegiatan: string;
   pic: string | null;
+  noTeleponPic: string | null;
   namaRuang: string;
   additionalRooms: string[];
   kapasitasRuang: number;
@@ -362,9 +363,16 @@ export interface BookingRuangLog {
   createdAt: string;
 }
 
+// Admin/Approval GA's narrow correction payload - see BookingRuangController.Koreksi.
+export interface KoreksiBookingPayload {
+  pic: string;
+  noTeleponPic: string;
+}
+
 export interface BookingRuangCreatePayload {
   namaKegiatan: string;
   pic: string | null;
+  noTeleponPic: string | null;
   // Admin/Approval GA only: books on behalf of another divisi/departemen instead of their own GA
   // home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
@@ -696,6 +704,7 @@ export interface BookingKendaraan {
   nomorPemesanan: string | null;
   keperluan: string;
   pic: string | null;
+  noTeleponPic: string | null;
   namaKendaraan: string;
   platNomor: string | null;
   kapasitasKendaraan: number;
@@ -745,9 +754,16 @@ export interface BookingKendaraanLog {
   createdAt: string;
 }
 
+// Admin/Approval GA's narrow correction payload - see BookingKendaraanController.Koreksi.
+export interface KoreksiKendaraanPayload {
+  pic: string;
+  noTeleponPic: string;
+}
+
 export interface BookingKendaraanCreatePayload {
   keperluan: string;
   pic: string | null;
+  noTeleponPic: string | null;
   divisi?: string;
   departemen?: string;
   namaKendaraan: string;

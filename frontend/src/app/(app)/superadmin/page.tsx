@@ -1072,17 +1072,17 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Ruangan</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Ruangan</th>
                 <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
-                <tr><td colSpan={15} className="table-empty">{bookingError}</td></tr>
+                <tr><td colSpan={16} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -1097,6 +1097,7 @@ export default function SuperAdminPage() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
                       <td>{item.jumlahPeserta}</td>
@@ -1303,17 +1304,17 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Kendaraan</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Kendaraan</th>
                 <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {kendaraanBusy ? (
-                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
               ) : kendaraanError ? (
-                <tr><td colSpan={15} className="table-empty">{kendaraanError}</td></tr>
+                <tr><td colSpan={16} className="table-empty">{kendaraanError}</td></tr>
               ) : kendaraanItems.length === 0 ? (
-                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 kendaraanItems.map((item, index) => {
                   const rowNumber = (kendaraanFilters.page - 1) * kendaraanFilters.limit + index + 1;
@@ -1328,6 +1329,7 @@ export default function SuperAdminPage() {
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
                       <td title={item.namaKendaraan}>{truncateText(item.namaKendaraan, 20)}</td>
                       <td title={item.supir || ""}>{truncateText(item.supir, 18)}</td>
                       <td>{item.jumlahPenumpang}</td>
