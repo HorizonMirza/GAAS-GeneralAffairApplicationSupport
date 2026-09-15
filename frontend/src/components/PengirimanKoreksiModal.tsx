@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
@@ -76,43 +77,43 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="pk-nomor-transmittal">Nomor Transmittal</label>
+              <label htmlFor="pk-nomor-transmittal">Nomor Transmittal <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="pk-nomor-transmittal" disabled value={item.nomorTransmittal || ""} />
             </div>
             <div className="field">
-              <label htmlFor="pk-tanggal">Tanggal</label>
+              <label htmlFor="pk-tanggal">Tanggal <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="pk-tanggal" disabled value={formatDate(item.tanggal)} />
             </div>
             <div className="field">
-              <label htmlFor="pk-tujuan">Tujuan</label>
+              <label htmlFor="pk-tujuan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="pk-tujuan" disabled value={item.tujuanPenerimaan} />
             </div>
             <div className="field">
-              <label htmlFor="pk-nama-pengirim">Nama Pengirim</label>
+              <label htmlFor="pk-nama-pengirim">Nama Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-nama-pengirim" required maxLength={255} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pk-telepon-pengirim">No. Telepon Pengirim</label>
+              <label htmlFor="pk-telepon-pengirim">No. Telepon Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-telepon-pengirim" required maxLength={50} value={form.noTeleponPengirim} onChange={(e) => set("noTeleponPengirim", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pk-alamat-pengirim">Alamat Pengirim</label>
+              <label htmlFor="pk-alamat-pengirim">Alamat Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-alamat-pengirim" required maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pk-nama-penerima">Nama Penerima</label>
+              <label htmlFor="pk-nama-penerima">Nama Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-nama-penerima" required maxLength={255} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pk-telepon-penerima">No. Telepon Penerima</label>
+              <label htmlFor="pk-telepon-penerima">No. Telepon Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-telepon-penerima" required maxLength={50} value={form.noTeleponPenerima} onChange={(e) => set("noTeleponPenerima", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pk-alamat-penerima">Alamat Penerima</label>
+              <label htmlFor="pk-alamat-penerima">Alamat Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-alamat-penerima" required maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pk-catatan">Catatan</label>
+              <label htmlFor="pk-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="pk-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>

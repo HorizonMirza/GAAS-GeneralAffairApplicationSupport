@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { KATEGORI_KERUSAKAN_LABEL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { KoreksiSaranaPayload, PerbaikanSarana } from "@/lib/types";
+import type { KoreksiSaranaPayload, PerbaikanSarana, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
@@ -28,9 +29,12 @@ function toFormFields(item: PerbaikanSarana): KoreksiSaranaPayload {
 // Admin/Approval GA's typo-correction tool: fix the reporter's contact details or physical
 // location without touching the report itself - Kategori, DeskripsiKerusakan and FotoKerusakan
 // stay the origin creator's own, same principle as VehicleBookingRescheduleModal leaving
-// Keperluan/PIC untouched.
+// Keperluan/PIC untouched. Field order mirrors SaranaFormModal/SaranaDetailModal (the full
+// report) rather than only listing the editable subset, with a lock/pencil icon on each label
+// so it's obvious at a glance which ones will actually save.
 export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Props) {
   const [form, setForm] = useState<KoreksiSaranaPayload | null>(null);
+  const [fotoKerusakan, setFotoKerusakan] = useState<PerbaikanSaranaFotoKerusakan[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
@@ -41,6 +45,7 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
     if (!open || !item) return;
     setForm(toFormFields(item));
     setError("");
+    api.listFotoKerusakanSarana(item.id).then(setFotoKerusakan).catch(() => setFotoKerusakan([]));
   }, [open, item]);
 
   if (!open || !item || !form) return null;
@@ -74,35 +79,55 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ks-nomor-perbaikan">Nomor Pengajuan Perbaikan</label>
+              <label htmlFor="ks-nomor-perbaikan">Nomor Pengajuan Perbaikan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ks-nomor-perbaikan" disabled value={item.nomorPerbaikan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="ks-tanggal">Tanggal Pengajuan</label>
+              <label htmlFor="ks-tanggal">Tanggal Pengajuan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ks-tanggal" disabled value={formatDate(item.tanggal)} />
             </div>
             <div className="field">
-              <label htmlFor="ks-kategori">Kategori Kerusakan</label>
+              <label htmlFor="ks-kategori">Kategori Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ks-kategori" disabled value={KATEGORI_KERUSAKAN_LABEL[item.kategori] || item.kategori} />
             </div>
             <div className="field full">
-              <label htmlFor="ks-deskripsi">Deskripsi Kerusakan</label>
-              <input type="text" id="ks-deskripsi" disabled value={item.deskripsiKerusakan} />
-            </div>
-            <div className="field full">
-              <label htmlFor="ks-lokasi">Lokasi</label>
+              <label htmlFor="ks-lokasi">Lokasi <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-lokasi" required maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ks-nama-pelapor">Nama Pelapor</label>
+              <label htmlFor="ks-nama-pelapor">Nama Pelapor <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-nama-pelapor" required maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ks-no-telepon-pelapor">No. Telepon Pelapor</label>
+              <label htmlFor="ks-no-telepon-pelapor">No. Telepon Pelapor <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="ks-catatan">Catatan</label>
+              <label htmlFor="ks-deskripsi">Deskripsi Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="ks-deskripsi" disabled value={item.deskripsiKerusakan} />
+            </div>
+            {fotoKerusakan.length > 0 && (
+              <div className="field full">
+                <label>Foto Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>
+                <div className="photo-drop-list">
+                  {fotoKerusakan.map((foto, index) => (
+                    <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
+                      <span className="photo-drop-item-index">{index + 1}.</span>
+                      <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
+                        <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
+                      </a>
+                      <div className="photo-drop-item-info">
+                        <a href={api.saranaFotoKerusakanUrl(item.id, foto.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                          {foto.originalFilename}
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="field full">
+              <label htmlFor="ks-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>

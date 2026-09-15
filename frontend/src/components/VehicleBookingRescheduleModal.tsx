@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
@@ -94,27 +95,27 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="rk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>
+              <label htmlFor="rk-nomor-pemesanan">Nomor Pesanan Kendaraan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="rk-keperluan">Keperluan</label>
+              <label htmlFor="rk-keperluan">Keperluan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-keperluan" disabled value={item.keperluan} />
             </div>
             <div className="field full">
-              <label htmlFor="rk-pic">PIC</label>
+              <label htmlFor="rk-pic">PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-pic" disabled value={item.pic || ""} />
             </div>
             <div className="field">
-              <label htmlFor="rk-tanggal">Tanggal</label>
+              <label htmlFor="rk-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
-              <label htmlFor="rk-penumpang">Jumlah Penumpang</label>
+              <label htmlFor="rk-penumpang">Jumlah Penumpang <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-penumpang" disabled value={item.jumlahPenumpang ? `${item.jumlahPenumpang}` : ""} />
             </div>
             <div className="field">
-              <label htmlFor="rk-jam-mulai">Jam Mulai</label>
+              <label htmlFor="rk-jam-mulai">Jam Mulai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rk-jam-mulai"
                 disabled={form.isWholeDay}
@@ -125,7 +126,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               />
             </div>
             <div className="field">
-              <label htmlFor="rk-jam-selesai">Jam Selesai</label>
+              <label htmlFor="rk-jam-selesai">Jam Selesai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rk-jam-selesai"
                 disabled={form.isWholeDay}
@@ -136,7 +137,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               />
             </div>
             <div className="field full">
-              <label htmlFor="rk-sepanjang-hari">Durasi (Opsional)</label>
+              <label htmlFor="rk-sepanjang-hari">Durasi (Opsional) <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <button
                 type="button"
                 id="rk-sepanjang-hari"
@@ -153,7 +154,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="rk-kendaraan">Kendaraan</label>
+              <label htmlFor="rk-kendaraan">Kendaraan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rk-kendaraan"
                 value={form.namaKendaraan}
@@ -167,11 +168,11 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               />
             </div>
             <div className="field full">
-              <label htmlFor="rk-supir">Supir</label>
+              <label htmlFor="rk-supir">Supir <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-supir" disabled value={vehicles.find((v) => v.nama === form.namaKendaraan)?.supir ?? item.supir ?? ""} />
             </div>
             <div className="field full">
-              <label htmlFor="rk-catatan">Catatan</label>
+              <label htmlFor="rk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>

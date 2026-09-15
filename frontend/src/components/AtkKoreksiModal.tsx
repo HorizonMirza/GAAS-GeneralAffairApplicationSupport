@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
@@ -78,28 +79,28 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ka-nomor-permintaan">Nomor Permintaan ATK</label>
+              <label htmlFor="ka-nomor-permintaan">Nomor Permintaan ATK <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="ka-tujuan">Tujuan</label>
+              <label htmlFor="ka-tujuan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-tujuan" disabled value={item.keperluan} />
             </div>
             <div className="field full">
-              <label htmlFor="ka-tanggal">Tanggal Dibutuhkan</label>
+              <label htmlFor="ka-tanggal">Tanggal Dibutuhkan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-tanggal" disabled value={formatDate(item.tanggal)} />
             </div>
             <div className="field">
-              <label htmlFor="ka-nama-pemohon">Nama Pemohon</label>
+              <label htmlFor="ka-nama-pemohon">Nama Pemohon <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ka-nama-pemohon" required maxLength={255} value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ka-no-telepon-pemohon">No. Telepon Pemohon</label>
+              <label htmlFor="ka-no-telepon-pemohon">No. Telepon Pemohon <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ka-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
             </div>
             {item.sumberPembelian && (
               <div className="field full">
-                <label htmlFor="ka-sumber-pembelian">Sumber Pembelian</label>
+                <label htmlFor="ka-sumber-pembelian">Sumber Pembelian <Pencil className="field-edit-icon" width={12} height={12} /></label>
                 <SearchableSelect
                   id="ka-sumber-pembelian"
                   value={form.sumberPembelian || ""}
@@ -111,7 +112,7 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
               </div>
             )}
             <div className="field full">
-              <label htmlFor="ka-catatan">Catatan</label>
+              <label htmlFor="ka-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ka-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>

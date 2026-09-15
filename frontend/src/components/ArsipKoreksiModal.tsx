@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
@@ -74,35 +75,35 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ak-nomor-arsip">Nomor Pemindahan Arsip</label>
+              <label htmlFor="ak-nomor-arsip">Nomor Pemindahan Arsip <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ak-nomor-arsip" disabled value={item.nomorArsip || ""} />
             </div>
             <div className="field">
-              <label htmlFor="ak-tanggal">Tanggal</label>
+              <label htmlFor="ak-tanggal">Tanggal <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ak-tanggal" disabled value={formatDate(item.tanggal)} />
             </div>
             <div className="field">
-              <label htmlFor="ak-kategori">Kategori</label>
+              <label htmlFor="ak-kategori">Kategori <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ak-kategori" disabled value={ARCHIVE_KATEGORI_LABEL[item.kategori] || item.kategori} />
             </div>
             <div className="field full">
-              <label htmlFor="ak-nama-arsip">Nama Arsip</label>
+              <label htmlFor="ak-nama-arsip">Nama Arsip <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ak-nama-arsip" disabled value={item.namaArsip} />
             </div>
             <div className="field full">
-              <label htmlFor="ak-lokasi">Lokasi Penyimpanan Saat Ini</label>
+              <label htmlFor="ak-lokasi">Lokasi Penyimpanan Saat Ini <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ak-lokasi" required maxLength={255} value={form.lokasiPenyimpanan} onChange={(e) => set("lokasiPenyimpanan", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ak-nama-pic">Nama PIC</label>
+              <label htmlFor="ak-nama-pic">Nama PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ak-nama-pic" required maxLength={255} value={form.namaPic} onChange={(e) => set("namaPic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ak-telepon-pic">No. Telepon PIC</label>
+              <label htmlFor="ak-telepon-pic">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ak-telepon-pic" required maxLength={50} value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="ak-catatan">Catatan</label>
+              <label htmlFor="ak-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ak-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>

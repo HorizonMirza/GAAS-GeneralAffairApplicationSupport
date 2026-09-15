@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
@@ -106,27 +107,27 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan</label>
+              <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="rs-nama-kegiatan">Nama Kegiatan</label>
+              <label htmlFor="rs-nama-kegiatan">Nama Kegiatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
             <div className="field full">
-              <label htmlFor="rs-pic">PIC</label>
+              <label htmlFor="rs-pic">PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-pic" disabled value={item.pic || ""} />
             </div>
             <div className="field">
-              <label htmlFor="rs-tanggal">Tanggal</label>
+              <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <DateFilterPicker id="rs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
-              <label htmlFor="rs-peserta">Jumlah Peserta</label>
+              <label htmlFor="rs-peserta">Jumlah Peserta <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-peserta" disabled value={item.jumlahPeserta ? `${Math.min(item.jumlahPeserta, MAX_JUMLAH_PESERTA)}` : ""} />
             </div>
             <div className="field">
-              <label htmlFor="rs-jam-mulai">Jam Mulai</label>
+              <label htmlFor="rs-jam-mulai">Jam Mulai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-jam-mulai"
                 value={form.jamMulai || undefined}
@@ -137,7 +138,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               />
             </div>
             <div className="field">
-              <label htmlFor="rs-jam-selesai">Jam Selesai</label>
+              <label htmlFor="rs-jam-selesai">Jam Selesai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-jam-selesai"
                 value={form.jamSelesai || undefined}
@@ -148,7 +149,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               />
             </div>
             <div className="field full">
-              <label htmlFor="rs-sepanjang-hari">Durasi (Opsional)</label>
+              <label htmlFor="rs-sepanjang-hari">Durasi (Opsional) <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <button
                 type="button"
                 id="rs-sepanjang-hari"
@@ -165,7 +166,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="rs-ruang">Ruang</label>
+              <label htmlFor="rs-ruang">Ruang <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-ruang"
                 value={form.namaRuang || undefined}
@@ -176,7 +177,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="rs-ruang-tambahan">Ruang Tambahan (Opsional)</label>
+                <label htmlFor="rs-ruang-tambahan">Ruang Tambahan (Opsional) <Pencil className="field-edit-icon" width={12} height={12} /></label>
                 <RoomMultiSelect
                   id="rs-ruang-tambahan"
                   rooms={rooms}
@@ -187,7 +188,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </div>
             )}
             <div className="field full">
-              <label htmlFor="rs-tipe">Tipe</label>
+              <label htmlFor="rs-tipe">Tipe <Lock className="field-lock-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-tipe"
                 value={item.tipe}
@@ -199,7 +200,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               />
             </div>
             <div className="field full">
-              <label htmlFor="rs-catatan">Catatan</label>
+              <label htmlFor="rs-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>

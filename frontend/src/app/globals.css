@@ -343,6 +343,19 @@ body {
   color: var(--text-secondary);
 }
 
+/* Marks a koreksi/reschedule field's label as locked (origin data, read-only here) or editable
+   (the subset Admin/Approval GA is actually allowed to change) - see SaranaKoreksiModal and its
+   siblings (Arsip/Atk/Pengiriman Koreksi, Room/Vehicle Booking Reschedule). */
+.field-lock-icon,
+.field-edit-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-left: 4px;
+}
+
+.field-lock-icon { color: var(--text-secondary); }
+.field-edit-icon { color: var(--blue-500); }
+
 .field input,
 .field select,
 .field textarea {
