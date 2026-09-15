@@ -2685,11 +2685,13 @@ body.auth-ready .app-shell {
 
 .photo-drop-list { display: flex; flex-direction: column; gap: 14px; }
 
-/* A list right after the dropzone (newly picked files), or a dropzone right after an existing
-   list ("add more" in SaranaDetailModal's edit mode), gets a divider - a bare list with nothing
-   above it (e.g. the view-only file list, or the dropzone as the box's first child) does not. */
+/* A list right after the dropzone (newly picked files), a dropzone right after an existing list
+   ("add more" in SaranaDetailModal's edit mode), or a second list right after one (newly picked
+   files above already-saved ones in edit mode) gets a divider - a bare list with nothing above it
+   (e.g. the view-only file list, or the dropzone as the box's first child) does not. */
 .file-dropzone + .photo-drop-list,
-.photo-drop-list + .file-dropzone {
+.photo-drop-list + .file-dropzone,
+.photo-drop-list + .photo-drop-list {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--border-subtle);

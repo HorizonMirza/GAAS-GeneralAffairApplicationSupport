@@ -304,6 +304,14 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               <label>Foto Kerusakan</label>
               {(visibleFotoKerusakan.length > 0 || (isEdit && visibleFotoKerusakan.length < MAX_FOTO_KERUSAKAN)) && (
               <div className="photo-drop-uploader">
+                {isEdit && visibleFotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
+                  <PhotoDropUploader
+                    id="ds-foto-kerusakan-add"
+                    files={newFotoFiles}
+                    onChange={setNewFotoFiles}
+                    maxFiles={MAX_FOTO_KERUSAKAN - visibleFotoKerusakan.length}
+                  />
+                )}
                 {visibleFotoKerusakan.length > 0 && (
                   <div className="photo-drop-list">
                     {visibleFotoKerusakan.map((foto) => (
@@ -325,14 +333,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                       </div>
                     ))}
                   </div>
-                )}
-                {isEdit && visibleFotoKerusakan.length < MAX_FOTO_KERUSAKAN && (
-                  <PhotoDropUploader
-                    id="ds-foto-kerusakan-add"
-                    files={newFotoFiles}
-                    onChange={setNewFotoFiles}
-                    maxFiles={MAX_FOTO_KERUSAKAN - visibleFotoKerusakan.length}
-                  />
                 )}
               </div>
               )}
