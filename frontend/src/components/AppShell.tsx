@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
-import { ROLE_LABEL_FULL } from "@/lib/constants";
+import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -213,7 +213,7 @@ function AccountMenu() {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="account-avatar">
+        <span className="account-avatar" style={me.hasPhoto ? undefined : { background: ROLE_COLOR[me.role] }}>
           {me.hasPhoto ? (
             <img src={api.profilePhotoUrl()} alt="" />
           ) : (
@@ -242,6 +242,7 @@ function AccountMenu() {
               name: me.nama,
               subtitle: ROLE_LABEL_FULL[me.role] || me.role,
               avatarUrl: me.hasPhoto ? api.profilePhotoUrl() : undefined,
+              avatarColor: ROLE_COLOR[me.role],
             }}
             navItems={navItems}
             logoutItem={{ icon: LOGOUT_ICON, label: "Log out", onClick: handleLogout }}

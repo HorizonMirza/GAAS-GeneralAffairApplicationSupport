@@ -23,6 +23,7 @@ export interface UserProfile {
   name: string;
   subtitle: string;
   avatarUrl?: string;
+  avatarColor?: string;
 }
 
 interface UserProfileSidebarProps {
@@ -92,7 +93,10 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
           {user.avatarUrl ? (
             <img src={user.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
           ) : (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: user.avatarColor }}
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg>
             </span>
           )}
