@@ -171,16 +171,6 @@ export default function MaintenanceOverviewPage() {
         </div>
       )}
 
-      {stats && (stats.execMenunggu > 0 || stats.execLokasiDicek > 0 || stats.execGambarDibuat > 0) && (
-        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
-          <strong>Eksekusi Fisik Berjalan:</strong>{" "}
-          {[
-            stats.execMenunggu > 0 ? `${stats.execMenunggu} Menunggu Mulai` : null,
-            stats.execLokasiDicek > 0 ? `${stats.execLokasiDicek} Lokasi Dicek` : null,
-            stats.execGambarDibuat > 0 ? `${stats.execGambarDibuat} Gambar Dibuat` : null,
-          ].filter(Boolean).join(" · ")}
-        </div>
-      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Pengajuan Terbaru Saya</h3>

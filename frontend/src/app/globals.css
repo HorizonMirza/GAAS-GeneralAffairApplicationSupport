@@ -1090,7 +1090,6 @@ body.auth-ready .app-shell {
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: var(--glow-blue);
 }
 
 .account-avatar img {
