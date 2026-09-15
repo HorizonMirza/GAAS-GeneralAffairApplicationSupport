@@ -41,8 +41,7 @@ public record KoreksiPengirimanRequest(
     string AlamatPengirim,
     string NamaPenerima,
     string AlamatPenerima,
-    string NoTeleponPenerima,
-    string? Catatan
+    string NoTeleponPenerima
 );
 
 public record RejectRequest(string? Reason);

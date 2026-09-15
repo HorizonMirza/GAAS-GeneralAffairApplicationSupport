@@ -164,11 +164,11 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             )}
             <div className="field full">
               <label htmlFor="fk-keperluan">Tujuan</label>
-              <input type="text" id="fk-keperluan" required maxLength={150} placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fk-keperluan" required maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="fk-pic">Nama PIC</label>
-              <input type="text" id="fk-pic" required maxLength={50} placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="fk-pic" required maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
@@ -239,17 +239,28 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 options={vehicles.map((v) => v.nama)}
                 getLabel={(nama) => {
                   const v = vehicles.find((x) => x.nama === nama);
-                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
+                  return v ? `${v.nama} - ${v.platNomor} - Pengemudi: ${v.supir}` : nama;
                 }}
                 placeholder="Pilih kendaraan"
               />
             </div>
-            {selectedVehicle && (
-              <div className="field full">
-                <label htmlFor="fk-supir">Supir</label>
-                <input type="text" id="fk-supir" disabled value={selectedVehicle.supir} />
-              </div>
-            )}
+            <div className="field full">
+              <label htmlFor="fk-supir">Nama Pengemudi</label>
+              <SearchableSelect
+                id="fk-supir"
+                value={selectedVehicle?.supir}
+                onChange={(supir) => {
+                  const matched = vehicles.find((v) => v.supir === supir);
+                  if (matched) set("namaKendaraan", matched.nama);
+                }}
+                options={vehicles.map((v) => v.supir)}
+                getLabel={(supir) => {
+                  const v = vehicles.find((x) => x.supir === supir);
+                  return v ? `${v.supir} - Kendaraan: ${v.nama}` : supir;
+                }}
+                placeholder="Pilih nama pengemudi"
+              />
+            </div>
             <div className="field full">
               <label htmlFor="fk-catatan">Catatan</label>
               <input type="text" id="fk-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />

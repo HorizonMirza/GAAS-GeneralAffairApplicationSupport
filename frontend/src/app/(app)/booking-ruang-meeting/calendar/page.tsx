@@ -243,7 +243,7 @@ function BookingCalendarPageInner() {
             </button>
           )}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="calendar-room-select">Ruang</label>
+            <label htmlFor="calendar-room-select">Ruangan</label>
             <SearchableSelect
               id="calendar-room-select"
               value={view === "avail" ? ALL_ROOMS_VALUE : selectedRoom}

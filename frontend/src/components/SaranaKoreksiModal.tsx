@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { KATEGORI_KERUSAKAN_LABEL } from "@/lib/constants";
+import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KategoriKerusakan, KoreksiSaranaPayload, PerbaikanSarana, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -25,7 +26,6 @@ function toFormFields(item: PerbaikanSarana): KoreksiSaranaPayload {
     namaPelapor: item.namaPelapor,
     noTeleponPelapor: item.noTeleponPelapor,
     lokasi: item.lokasi,
-    catatan: item.catatan,
   };
 }
 
@@ -61,7 +61,7 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
     e.preventDefault();
     setBusy(true);
     try {
-      await api.koreksiSarana(item!.id, { ...form!, catatan: form!.catatan || null });
+      await api.koreksiSarana(item!.id, form!);
       showToast("Data pelapor berhasil dikoreksi");
       onClose();
       onSaved();
@@ -76,10 +76,15 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Koreksi Data Pelapor {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Koreksi Data PIC {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="ks-nomor-perbaikan">Nomor Pengajuan Perbaikan <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -106,11 +111,11 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
               <input type="text" id="ks-lokasi" required maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ks-nama-pelapor">Nama Pelapor <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <label htmlFor="ks-nama-pelapor">Nama PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-nama-pelapor" required maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ks-no-telepon-pelapor">No. Telepon Pelapor <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <label htmlFor="ks-no-telepon-pelapor">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ks-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field full">
@@ -141,8 +146,8 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
               </div>
             )}
             <div className="field full">
-              <label htmlFor="ks-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="ks-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="ks-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="ks-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
           <div className="error-text">{error}</div>

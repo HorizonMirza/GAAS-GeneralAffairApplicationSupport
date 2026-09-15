@@ -222,7 +222,6 @@ export interface KoreksiPengirimanPayload {
   namaPenerima: string;
   alamatPenerima: string;
   noTeleponPenerima: string;
-  catatan: string | null;
 }
 
 export interface ApproveKpuPayload {
@@ -501,7 +500,6 @@ export interface KoreksiArsipPayload {
   lokasiPenyimpanan: string;
   namaPic: string;
   noTeleponPic: string;
-  catatan: string | null;
 }
 
 // --- Maintenance (Perbaikan Sarana) ---
@@ -592,7 +590,6 @@ export interface KoreksiSaranaPayload {
   namaPelapor: string;
   noTeleponPelapor: string;
   lokasi: string;
-  catatan: string | null;
 }
 
 // --- Office Supplies (Permintaan ATK) ---
@@ -678,7 +675,6 @@ export interface PermintaanAtkCreatePayload {
 export interface KoreksiAtkPayload {
   namaPemohon: string;
   noTeleponPemohon: string;
-  catatan: string | null;
   sumberPembelian: SumberPembelian | null;
 }
 

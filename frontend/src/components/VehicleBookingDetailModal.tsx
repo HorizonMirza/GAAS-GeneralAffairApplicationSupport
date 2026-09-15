@@ -250,14 +250,28 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 options={vehicles.map((v) => v.nama)}
                 getLabel={(nama) => {
                   const v = vehicles.find((x) => x.nama === nama);
-                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
+                  return v ? `${v.nama} - ${v.platNomor} - Pengemudi: ${v.supir}` : nama;
                 }}
                 placeholder="Pilih kendaraan"
               />
             </div>
             <div className="field full">
-              <label htmlFor="bk-supir">Supir</label>
-              <input type="text" id="bk-supir" disabled value={selectedVehicle?.supir ?? item.supir ?? ""} />
+              <label htmlFor="bk-supir">Nama Pengemudi</label>
+              <SearchableSelect
+                id="bk-supir"
+                disabled={!isEdit}
+                value={selectedVehicle?.supir ?? item.supir ?? undefined}
+                onChange={(supir) => {
+                  const matched = vehicles.find((v) => v.supir === supir);
+                  if (matched) set("namaKendaraan", matched.nama);
+                }}
+                options={vehicles.map((v) => v.supir)}
+                getLabel={(supir) => {
+                  const v = vehicles.find((x) => x.supir === supir);
+                  return v ? `${v.supir} - Kendaraan: ${v.nama}` : supir;
+                }}
+                placeholder="Pilih nama pengemudi"
+              />
             </div>
             <div className="field full">
               <label htmlFor="bk-catatan">Catatan</label>

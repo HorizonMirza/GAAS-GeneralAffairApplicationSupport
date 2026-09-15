@@ -28,7 +28,7 @@ public class BookingRuangExportController : ApiControllerBase
         ("jam", "Jam"),
         ("nama_kegiatan", "Nama Kegiatan"),
         ("pic", "Nama PIC"),
-        ("ruangan", "Ruang"),
+        ("ruangan", "Ruangan"),
         ("divisi", "Divisi"),
         ("departemen", "Departemen"),
         ("tipe", "Tipe"),

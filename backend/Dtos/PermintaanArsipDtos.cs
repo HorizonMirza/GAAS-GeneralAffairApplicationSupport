@@ -20,7 +20,7 @@ public class PermintaanArsipCreate
     public string? Catatan { get; set; }
 }
 
-public record KoreksiArsipRequest(string LokasiPenyimpanan, string NamaPic, string NoTeleponPic, string? Catatan);
+public record KoreksiArsipRequest(string LokasiPenyimpanan, string NamaPic, string NoTeleponPic);
 
 public record PermintaanArsipLogOut(
     int Id,

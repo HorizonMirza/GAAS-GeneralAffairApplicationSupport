@@ -190,7 +190,7 @@ public static class VehiclePdfService
     {
         var pairs = new (string Label, string Value)[]
         {
-            ("Supir", item.Supir ?? "-"),
+            ("Nama Pengemudi", item.Supir ?? "-"),
             ("Jumlah Penumpang", $"{item.JumlahPenumpang} orang"),
             ("Nama PIC", item.Pic ?? "-"),
             ("Divisi / Departemen", DivisiLabel(item)),

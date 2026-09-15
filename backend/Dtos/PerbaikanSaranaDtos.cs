@@ -110,7 +110,7 @@ public record ExecutionStageRequest(string? Catatan);
 // Admin/Approval GA's narrow correction tool (see PerbaikanSaranaController.Koreksi): fixes
 // administrative typos in the reporter's contact details and physical location without touching
 // the report itself (Kategori/DeskripsiKerusakan/FotoKerusakan stay the origin creator's own).
-public record KoreksiSaranaRequest(string NamaPelapor, string NoTeleponPelapor, string Lokasi, string? Catatan);
+public record KoreksiSaranaRequest(string NamaPelapor, string NoTeleponPelapor, string Lokasi);
 
 public class PerbaikanSaranaListResponse
 {

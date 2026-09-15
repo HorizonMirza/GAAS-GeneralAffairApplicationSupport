@@ -439,7 +439,6 @@ public class PengirimanController : ApiControllerBase
         item.NamaPenerima = payload.NamaPenerima.Trim();
         item.AlamatPenerima = payload.AlamatPenerima.Trim();
         item.NoTeleponPenerima = payload.NoTeleponPenerima.Trim();
-        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
         AddLog(item, "CORRECTED", user!, $"Data pengirim/penerima dikoreksi menjadi {item.NamaPengirim} / {item.NamaPenerima}");
 
         await _db.SaveChangesAsync();

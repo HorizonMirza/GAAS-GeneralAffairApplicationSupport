@@ -116,7 +116,7 @@ export default function LaporanUtilisasiPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Ruang</th>
+                  <th>Ruangan</th>
                   <th>Jam Terpakai</th>
                   <th style={{ width: "30%" }}></th>
                   <th>Approved</th>

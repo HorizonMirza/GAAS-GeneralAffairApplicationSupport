@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -101,10 +102,15 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Ubah Ruang/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Ubah Ruangan/Jadwal {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -166,18 +172,18 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="rs-ruang">Ruang <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <label htmlFor="rs-ruang">Ruangan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder="Pilih ruang"
+                placeholder="Pilih Ruangan"
               />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="rs-ruang-tambahan">Ruang Tambahan (Opsional) <Pencil className="field-edit-icon" width={12} height={12} /></label>
+                <label htmlFor="rs-ruang-tambahan">Ruangan Tambahan (Opsional) <Pencil className="field-edit-icon" width={12} height={12} /></label>
                 <RoomMultiSelect
                   id="rs-ruang-tambahan"
                   rooms={rooms}

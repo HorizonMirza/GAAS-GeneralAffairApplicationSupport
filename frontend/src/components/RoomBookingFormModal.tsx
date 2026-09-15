@@ -197,11 +197,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             )}
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>
-              <input type="text" id="f-nama-kegiatan" required maxLength={150} placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
+              <input type="text" id="f-nama-kegiatan" required maxLength={150} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
               <label htmlFor="f-pic">Nama PIC</label>
-              <input type="text" id="f-pic" required maxLength={50} placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
+              <input type="text" id="f-pic" required maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
@@ -263,18 +263,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="f-ruang">Ruang</label>
+              <label htmlFor="f-ruang">Ruangan</label>
               <SearchableSelect
                 id="f-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder="Pilih ruang"
+                placeholder="Pilih Ruangan"
               />
             </div>
             {rooms.filter((r) => r.nama !== form.namaRuang).length > 0 && (
               <div className="field full">
-                <label htmlFor="f-ruang-tambahan">Ruang Tambahan (Opsional)</label>
+                <label htmlFor="f-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
                 <RoomMultiSelect
                   id="f-ruang-tambahan"
                   rooms={rooms}

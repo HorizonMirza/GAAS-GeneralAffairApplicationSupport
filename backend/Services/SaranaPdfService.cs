@@ -85,7 +85,7 @@ public static class SaranaPdfService
                     col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Pengajuan", item.Tanggal.ToString("dd MMMM yyyy")));
                     col.Item().Element(c => InfoRow(c, "Kepada", "Approval General Affair"));
                     col.Item().Element(c => InfoRow(c, "Dari", $"{item.NamaPelapor} - {DivisiLabel(item)}"));
-                    col.Item().Element(c => InfoRow(c, "No. Telepon Pelapor", item.NoTeleponPelapor));
+                    col.Item().Element(c => InfoRow(c, "No. Telepon PIC", item.NoTeleponPelapor));
 
                     col.Item().PaddingTop(12).Element(c => BuildTable(c, item));
 

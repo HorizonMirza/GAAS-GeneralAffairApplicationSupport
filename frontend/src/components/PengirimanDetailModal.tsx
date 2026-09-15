@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
-import { formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
+import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -216,6 +216,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>

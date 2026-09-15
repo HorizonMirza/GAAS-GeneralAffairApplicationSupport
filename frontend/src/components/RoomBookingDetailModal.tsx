@@ -285,19 +285,19 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               </button>
             </div>
             <div className="field full">
-              <label htmlFor="bv-ruang">Ruang</label>
+              <label htmlFor="bv-ruang">Ruangan</label>
               <SearchableSelect
                 id="bv-ruang"
                 value={form.namaRuang || undefined}
                 onChange={setNamaRuang}
                 options={rooms.map((r) => r.nama)}
-                placeholder="Pilih ruang"
+                placeholder="Pilih Ruangan"
                 disabled={!isEdit}
               />
             </div>
             {(isEdit ? rooms.filter((r) => r.nama !== form.namaRuang).length > 0 : (form.additionalRooms || []).length > 0) && (
               <div className="field full">
-                <label htmlFor="bv-ruang-tambahan">Ruang Tambahan (Opsional)</label>
+                <label htmlFor="bv-ruang-tambahan">Ruangan Tambahan (Opsional)</label>
                 <RoomMultiSelect
                   id="bv-ruang-tambahan"
                   rooms={rooms}

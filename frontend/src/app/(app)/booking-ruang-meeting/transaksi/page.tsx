@@ -308,7 +308,7 @@ function BookingTransaksiPageInner() {
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                  <label htmlFor="filter-ruang">Ruang</label>
+                  <label htmlFor="filter-ruang">Ruangan</label>
                   <SearchableSelect
                     id="filter-ruang"
                     value={filters.namaRuang}
@@ -380,7 +380,7 @@ function BookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruangan</th><th>Divisi</th><th>Departemen</th>
                 <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>

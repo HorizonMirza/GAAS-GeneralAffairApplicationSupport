@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -93,6 +94,11 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rk-nomor-pemesanan">Nomor Pesanan Kendaraan <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -162,13 +168,13 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 options={vehicles.map((v) => v.nama)}
                 getLabel={(nama) => {
                   const v = vehicles.find((x) => x.nama === nama);
-                  return v ? `${v.nama} - ${v.platNomor} - Supir: ${v.supir}` : nama;
+                  return v ? `${v.nama} - ${v.platNomor} - Pengemudi: ${v.supir}` : nama;
                 }}
                 placeholder={form.namaKendaraan}
               />
             </div>
             <div className="field full">
-              <label htmlFor="rk-supir">Supir <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="rk-supir">Nama Pengemudi <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-supir" disabled value={vehicles.find((v) => v.nama === form.namaKendaraan)?.supir ?? item.supir ?? ""} />
             </div>
             <div className="field full">

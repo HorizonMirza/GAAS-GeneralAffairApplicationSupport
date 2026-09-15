@@ -382,7 +382,6 @@ public class PermintaanAtkController : ApiControllerBase
 
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
-        item.Catatan = string.IsNullOrWhiteSpace(payload.Catatan) ? null : payload.Catatan.Trim();
         var detail = $"Nama/No. Telepon Pemohon dikoreksi menjadi {item.NamaPemohon} / {item.NoTeleponPemohon}";
         if (payload.SumberPembelian.HasValue)
         {

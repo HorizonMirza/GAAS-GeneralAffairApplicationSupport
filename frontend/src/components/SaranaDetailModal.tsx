@@ -279,11 +279,11 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ds-nama-pelapor">Nama Pelapor</label>
+              <label htmlFor="ds-nama-pelapor">Nama PIC</label>
               <input type="text" id="ds-nama-pelapor" required disabled={!isEdit} maxLength={255} value={form.namaPelapor} onChange={(e) => set("namaPelapor", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ds-no-telepon-pelapor">No. Telepon Pelapor</label>
+              <label htmlFor="ds-no-telepon-pelapor">No. Telepon PIC</label>
               <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
             </div>
             <div className="field full">

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KoreksiPengirimanPayload, Pengiriman } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -25,7 +26,6 @@ function toFormFields(item: Pengiriman): KoreksiPengirimanPayload {
     namaPenerima: item.namaPenerima,
     alamatPenerima: item.alamatPenerima,
     noTeleponPenerima: item.noTeleponPenerima,
-    catatan: item.catatan,
   };
 }
 
@@ -57,7 +57,7 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
     e.preventDefault();
     setBusy(true);
     try {
-      await api.koreksiPengiriman(item!.id, { ...form!, catatan: form!.catatan || null });
+      await api.koreksiPengiriman(item!.id, form!);
       showToast("Data pengirim/penerima berhasil dikoreksi");
       onClose();
       onSaved();
@@ -76,6 +76,11 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pk-nomor-transmittal">Nomor Transmittal <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -130,8 +135,8 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
               <SearchableSelect id="pk-packing" disabled value={item.requestPacking} onChange={() => {}} options={["Tidak", "Tambahan Kayu"]} placeholder="Tidak" />
             </div>
             <div className="field full">
-              <label htmlFor="pk-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="pk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="pk-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
           <div className="error-text">{error}</div>

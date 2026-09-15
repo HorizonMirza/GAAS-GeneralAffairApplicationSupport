@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
+import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { ArchiveKategori, KoreksiArsipPayload, PermintaanArsip } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -25,7 +26,6 @@ function toFormFields(item: PermintaanArsip): KoreksiArsipPayload {
     lokasiPenyimpanan: item.lokasiPenyimpanan,
     namaPic: item.namaPic || "",
     noTeleponPic: item.noTeleponPic || "",
-    catatan: item.catatan,
   };
 }
 
@@ -57,7 +57,7 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
     e.preventDefault();
     setBusy(true);
     try {
-      await api.koreksiArsip(item!.id, { ...form!, catatan: form!.catatan || null });
+      await api.koreksiArsip(item!.id, form!);
       showToast("Data lokasi/PIC berhasil dikoreksi");
       onClose();
       onSaved();
@@ -76,6 +76,11 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="ak-nomor-arsip">Nomor Pemindahan Arsip <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -122,8 +127,8 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
               <input type="text" id="ak-tahun" disabled value={item.tahunArsip} />
             </div>
             <div className="field full">
-              <label htmlFor="ak-catatan">Catatan <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="ak-catatan" maxLength={255} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <label htmlFor="ak-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="ak-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
           <div className="error-text">{error}</div>

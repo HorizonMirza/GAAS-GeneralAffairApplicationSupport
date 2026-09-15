@@ -353,7 +353,7 @@ function MaintenanceTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
-                <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>

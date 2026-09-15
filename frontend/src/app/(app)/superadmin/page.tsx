@@ -1030,7 +1030,7 @@ export default function SuperAdminPage() {
             />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-ruang">Ruang</label>
+            <label htmlFor="filter-booking-ruang">Ruangan</label>
             <SearchableSelect
               id="filter-booking-ruang"
               value={bookingFilters.namaRuang}
@@ -1069,7 +1069,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Jumlah Peserta</th>
+                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruangan</th><th>Jumlah Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
@@ -1621,7 +1621,7 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
-                <th>Nama Pelapor</th><th>No. Telepon Pelapor</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th>
                 <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
