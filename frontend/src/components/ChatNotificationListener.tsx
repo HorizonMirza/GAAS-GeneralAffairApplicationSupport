@@ -34,13 +34,54 @@ function PersonIcon() {
   );
 }
 
-// Orange while still moving through the approval chain (just created, or approved at a
-// non-final tier), green once it reaches the final approved status, red once rejected at any
-// tier - chat notifications (source "chat") stay their own blue and never reach this.
-function activityColorClass(type: ActivityNotification["type"]): string {
-  if (type === "approved") return " chat-notification-banner-approved";
-  if (type === "rejected") return " chat-notification-banner-rejected";
-  return " chat-notification-banner-progress";
+function ChatBadgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12a7 7 0 0 1 7-7h2a7 7 0 0 1 0 14h-1l-3 3v-3a7 7 0 0 1-5-6.7z"></path>
+    </svg>
+  );
+}
+
+function ClockBadgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 6v6l4 2"></path>
+    </svg>
+  );
+}
+
+function CheckBadgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 13l4 4L19 7"></path>
+    </svg>
+  );
+}
+
+function CrossBadgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <path d="M6 6l12 12M18 6L6 18"></path>
+    </svg>
+  );
+}
+
+// Blue chat bubble for a message; otherwise orange while still moving through the approval
+// chain (just created, or approved at a non-final tier), green once it reaches the final
+// approved status, red once rejected at any tier - same convention as the bell dropdown's
+// unread dot, now carried by the avatar badge instead of the banner's left border.
+function badgeClass(banner: BannerState): string {
+  if (banner.source === "chat") return "chat-notification-badge-chat";
+  if (banner.type === "approved") return "chat-notification-badge-approved";
+  if (banner.type === "rejected") return "chat-notification-badge-rejected";
+  return "chat-notification-badge-progress";
+}
+
+function BadgeIcon({ banner }: { banner: BannerState }) {
+  if (banner.source === "chat") return <ChatBadgeIcon />;
+  if (banner.type === "approved") return <CheckBadgeIcon />;
+  if (banner.type === "rejected") return <CrossBadgeIcon />;
+  return <ClockBadgeIcon />;
 }
 
 function bannerHref(banner: BannerState): string {
@@ -137,7 +178,7 @@ export default function ChatNotificationListener() {
           <button
             key={banner.id}
             type="button"
-            className={`chat-notification-banner${banner.source === "activity" ? activityColorClass(banner.type) : ""}${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
+            className={`chat-notification-banner${banner.leaving ? " chat-notification-banner-leaving" : ""}`}
             onClick={() => {
               dismiss(banner.id);
               // Same split as NotificationBell.openItem: a chat banner opens its thread on top of
@@ -150,17 +191,22 @@ export default function ChatNotificationListener() {
               }
             }}
           >
-            <span className="chat-notification-avatar" style={{ background: ROLE_COLOR[actorRole] }}>
-              {photoErrors.has(banner.id) ? (
-                <PersonIcon />
-              ) : (
-                <img
-                  src={api.userPhotoUrl(actorId)}
-                  alt=""
-                  className="chat-notification-avatar-photo"
-                  onError={() => setPhotoErrors((current) => new Set(current).add(banner.id))}
-                />
-              )}
+            <span className="chat-notification-avatar-wrap">
+              <span className="chat-notification-avatar" style={{ background: ROLE_COLOR[actorRole] }}>
+                {photoErrors.has(banner.id) ? (
+                  <PersonIcon />
+                ) : (
+                  <img
+                    src={api.userPhotoUrl(actorId)}
+                    alt=""
+                    className="chat-notification-avatar-photo"
+                    onError={() => setPhotoErrors((current) => new Set(current).add(banner.id))}
+                  />
+                )}
+              </span>
+              <span className={`chat-notification-badge ${badgeClass(banner)}`}>
+                <BadgeIcon banner={banner} />
+              </span>
             </span>
             <span className="chat-notification-body">
               <span className="chat-notification-title">

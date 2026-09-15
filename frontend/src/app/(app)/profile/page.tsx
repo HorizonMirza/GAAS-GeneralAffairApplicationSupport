@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { COVER_PRESETS, ROLE_LABEL } from "@/lib/constants";
+import { COVER_PRESETS, ROLE_COLOR, ROLE_LABEL } from "@/lib/constants";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -544,7 +544,7 @@ export default function ProfilePage() {
         </div>
         <div className="profile-hero-body">
           <div className="profile-hero-avatar-wrap">
-            <div className="profile-hero-avatar">
+            <div className="profile-hero-avatar" style={me.hasPhoto ? undefined : { background: ROLE_COLOR[me.role], color: "#fff" }}>
               {me.hasPhoto ? (
                 <img src={api.profilePhotoUrl(photoVersion || undefined)} alt="Foto profil" />
               ) : (
@@ -643,7 +643,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-            <div className="edit-profile-avatar">
+            <div className="edit-profile-avatar" style={stagedPhotoPreviewUrl || editHasPhoto ? undefined : { background: ROLE_COLOR[me.role], color: "#fff" }}>
               {stagedPhotoPreviewUrl ? (
                 <img src={stagedPhotoPreviewUrl} alt="Foto profil" />
               ) : editHasPhoto ? (

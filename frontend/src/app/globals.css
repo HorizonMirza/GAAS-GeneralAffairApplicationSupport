@@ -362,6 +362,17 @@ body {
   box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
 }
 
+/* Locked/read-only fields (e.g. the origin report's own data in a GA correction modal) need to
+   look visibly different from the fields that can actually be edited - otherwise every field
+   in the form looks the same and there's no way to tell which ones will save. */
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
 .field input::placeholder,
 .field textarea::placeholder {
   color: var(--text-secondary);
@@ -4457,7 +4468,6 @@ table.data-table {
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  border-left: 4px solid var(--blue-500);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   border-radius: 14px;
   padding: 12px 14px;
@@ -4468,29 +4478,16 @@ table.data-table {
   animation: chat-notification-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Flat left-border accent, no glow - just enough color to read the kind at a glance. Chat stays
-   the default blue above; a transaction/approval event picks one of three: orange while still
-   moving through the approval chain (just created, or approved at a non-final tier), green once
-   it reaches the final approved status, red once rejected at any tier. Same convention as the
-   bell dropdown's unread dot. */
-.chat-notification-banner-progress {
-  border-left-color: var(--badge-submitted-bg);
-}
-
-.chat-notification-banner-approved {
-  border-left-color: var(--badge-completed-bg);
-}
-
-.chat-notification-banner-rejected {
-  border-left-color: var(--badge-rejected-bg);
-}
-
 .chat-notification-banner-leaving {
   animation: chat-notification-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-.chat-notification-avatar {
+.chat-notification-avatar-wrap {
+  position: relative;
   flex-shrink: 0;
+}
+
+.chat-notification-avatar {
   width: 38px;
   height: 38px;
   border-radius: 999px;
@@ -4508,6 +4505,45 @@ table.data-table {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Small badge overlapping the avatar's corner names what kind of update this is - a chat bubble
+   for a message, or the kind (clock/check/cross) for a workflow event still moving through the
+   approval chain, approved at the final tier, or rejected at any tier. Replaces the old
+   left-border accent so the avatar itself carries the at-a-glance signal. */
+.chat-notification-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-notification-badge svg {
+  width: 8px;
+  height: 8px;
+  stroke: #fff;
+}
+
+.chat-notification-badge-chat {
+  background: var(--blue-500);
+}
+
+.chat-notification-badge-progress {
+  background: var(--badge-submitted-bg);
+}
+
+.chat-notification-badge-approved {
+  background: var(--badge-completed-bg);
+}
+
+.chat-notification-badge-rejected {
+  background: var(--badge-rejected-bg);
 }
 
 .chat-notification-body {
