@@ -85,9 +85,9 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, n
         <div className="photo-drop-list">
           {files.map((file, index) => (
             <div className="photo-drop-item" key={`${file.name}-${file.lastModified}-${index}`}>
+              <span className="photo-drop-item-index">{numberOffset + index + 1}.</span>
               <div className="photo-drop-item-thumb">
                 <img src={URL.createObjectURL(file)} alt={file.name} />
-                <span className="photo-drop-item-number">{numberOffset + index + 1}</span>
               </div>
               <div className="photo-drop-item-info">
                 <span className="photo-drop-item-name">{file.name}</span>

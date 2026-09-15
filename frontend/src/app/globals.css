@@ -2723,7 +2723,6 @@ body.auth-ready .app-shell {
 }
 
 .photo-drop-item-thumb {
-  position: relative;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
@@ -2734,20 +2733,13 @@ body.auth-ready .app-shell {
 
 .photo-drop-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-.photo-drop-item-number {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  font-size: 9px;
+.photo-drop-item-index {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: right;
+  font-size: 0.78rem;
   font-weight: 700;
-  line-height: 14px;
-  text-align: center;
+  color: var(--text-secondary);
 }
 
 .photo-drop-item-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
