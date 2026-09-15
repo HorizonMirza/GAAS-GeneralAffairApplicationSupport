@@ -4,7 +4,7 @@ Ringkasan konteks proyek ini untuk siapa pun (manusia atau AI) yang membantu pen
 
 ## Apa Ini
 
-Aplikasi internal **PGM Solution** — platform multi-modul untuk operasional kantor. Enam modul sudah aktif dengan backend + frontend penuh: **Expedition** (pengiriman barang, modul pertama/paling lengkap — satu-satunya yang punya tahap KPU), **Room Booking**, **Vehicle Booking**, **Office Supplies** (permintaan ATK), **Maintenance** (laporan perbaikan sarana), dan **Archive** (permintaan pemindahan arsip fisik — bukan penyimpanan file, ikut alur approval yang sama seperti Room/Vehicle/ATK/Maintenance). Detail per modul di [`Prd.md`](./Prd.md) bagian Modul.
+Aplikasi internal **PGM Solution** — platform multi-modul untuk operasional kantor. Enam modul sudah aktif dengan backend + frontend penuh: **Expedition** (pengiriman barang, modul pertama/paling lengkap — satu-satunya dengan reject yang bisa direvisi & dikirim ulang), **Room Booking**, **Vehicle Booking**, **Office Supplies** (permintaan ATK — satu-satunya modul selain Ekspedisi yang punya tahap KPU), **Maintenance** (laporan perbaikan sarana), dan **Archive** (permintaan pemindahan arsip fisik — bukan penyimpanan file, ikut alur approval yang sama seperti Room/Vehicle/Maintenance, tanpa KPU). Detail per modul di [`Prd.md`](./Prd.md) bagian Modul.
 
 ## Stack
 

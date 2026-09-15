@@ -21,7 +21,7 @@ Kantor membutuhkan sistem untuk mencatat pengiriman barang (ekspedisi) yang mela
 | `APPROVAL_DIVISI` | Approve/reject dokumen dari Divisi (tahap 1) |
 | `ADMIN_GA` | Cek fisik barang, approve/reject (tahap 2) |
 | `APPROVAL_GA` | Approve/reject final di sisi GA (tahap 3, dan status akhir untuk modul selain Ekspedisi) |
-| `KPU` | Approve final, cetak resi, isi biaya pengiriman — hanya di Ekspedisi (lihat [KPU_HIDDEN_CATEGORIES](../frontend/src/components/AppShell.tsx), KPU tidak melihat modul lain di sidebar) |
+| `KPU` (ditampilkan sebagai "Mitra" di UI) | Ekspedisi: approve final, cetak resi, isi biaya pengiriman. Office Supplies: sign-off final pembelian ATK (baik dibeli lewat KPU sendiri maupun kanal eksternal PaDi). Modul lain tidak melibatkan KPU sama sekali (lihat [KPU_HIDDEN_CATEGORIES](../frontend/src/components/AppShell.tsx) — Room Booking, Vehicle Booking, Maintenance, Archive disembunyikan dari sidebar KPU) |
 | `SUPER_ADMIN` | Kelola data master (lihat halaman Super Admin) |
 
 ## Alur Kerja (Ekspedisi)
@@ -34,9 +34,9 @@ Kantor membutuhkan sistem untuk mencatat pengiriman barang (ekspedisi) yang mela
 
 Setiap penolakan mencatat `rejectReason` (opsional) dan mengembalikan dokumen ke pihak sebelumnya.
 
-## Alur Kerja (Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive)
+## Alur Kerja (Room Booking, Vehicle Booking, Maintenance, Archive)
 
-Kelima modul ini memakai rantai approval yang sama, satu tahap lebih pendek dari Ekspedisi (**tanpa tahap KPU** — berhenti di Approval GA):
+Keempat modul ini memakai rantai approval yang sama, satu tahap lebih pendek dari Ekspedisi (**tanpa tahap KPU** — berhenti di Approval GA):
 
 1. Admin Departemen/Divisi input data → `DRAFT`, submit → `SUBMITTED`.
 2. Approval Departemen/Divisi → `APPROVED_L1` atau `REJECTED_L1`.
@@ -48,6 +48,18 @@ Kalau pembuat data kebetulan sudah berperan sebagai Approval Departemen/Divisi, 
 Setiap modul punya nomor dokumen otomatis per divisi per bulan (`0001.<KodeSatuanKerja>.<MM>.<YYYY>`), riwayat approval per item, dan chat real-time (lihat [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian SignalR).
 
 Khusus Archive: yang diajukan bukan file digital, tapi **permintaan pemindahan arsip fisik** dari status aktif (dipegang divisi/departemen) ke inaktif (dipegang Admin/Approval GA). Begitu permintaan mencapai `APPROVED_GA_APPROVAL`, arsipnya otomatis muncul di halaman **Catalog** — daftar read-only berisi semua arsip yang sudah resmi berpindah ke inaktif, terpisah dari daftar permintaan (halaman "Relocation") yang menampilkan seluruh permintaan apa pun hasil akhirnya.
+
+## Alur Kerja (Office Supplies)
+
+Office Supplies **bukan** anggota kelompok di atas — tahapnya sama dengan Ekspedisi (termasuk tahap KPU), tapi reject-nya tetap jalan buntu seperti modul lain:
+
+1. Admin Departemen/Divisi input permintaan ATK → `DRAFT`, submit → `SUBMITTED`.
+2. Approval Departemen/Divisi → `APPROVED_L1` atau `REJECTED_L1`.
+3. Admin GA cek → `APPROVED_GA` atau `REJECTED_GA`.
+4. Approval GA menentukan sumber pembelian (KPU sendiri atau kanal eksternal PaDi) → `APPROVED_GA_APPROVAL` atau `REJECTED_GA_APPROVAL`.
+5. KPU/Mitra sign-off final (berlaku untuk kedua sumber pembelian) → `COMPLETED`, atau `REJECTED_KPU`.
+
+Berbeda dari Ekspedisi, reject di tahap manapun (termasuk oleh KPU) adalah jalan buntu — tidak ada revisi-dan-kirim-ulang.
 
 ## Fitur yang Sudah Ada
 
@@ -67,12 +79,12 @@ Aplikasi (branding: **PGM Solution**) adalah platform multi-modul. Semua modul d
 
 | Modul | Status | Catatan |
 |---|---|---|
-| Expedition (pengiriman barang) | **Aktif** | Modul pertama/paling lengkap — satu-satunya dengan tahap KPU |
+| Expedition (pengiriman barang) | **Aktif** | Modul pertama/paling lengkap — satu-satunya dengan reject yang bisa direvisi & dikirim ulang (modul lain reject = jalan buntu) |
 | Room Booking | **Aktif** | Kalender, deteksi konflik jadwal, series/recurring booking |
 | Vehicle Booking | **Aktif** | Kalender ketersediaan kendaraan |
-| Office Supplies (permintaan ATK) | **Aktif** | Satu permintaan bisa berisi banyak baris barang |
+| Office Supplies (permintaan ATK) | **Aktif** | Satu permintaan bisa berisi banyak baris barang; satu-satunya modul selain Ekspedisi yang punya tahap KPU (sign-off pembelian, baik lewat KPU sendiri maupun kanal eksternal PaDi) |
 | Maintenance (perbaikan sarana & prasarana) | **Aktif** | Kategori kerusakan & tingkat urgensi, laporan urgensi tinggi diprioritaskan di daftar |
-| Archive (permintaan pemindahan arsip) | **Aktif** | Alur approval sama seperti Room/Vehicle/ATK/Maintenance (tanpa KPU); item bukan file digital, tapi metadata arsip fisik. Ada halaman Catalog terpisah untuk melihat arsip yang sudah selesai dipindah |
+| Archive (permintaan pemindahan arsip) | **Aktif** | Alur approval sama seperti Room/Vehicle/Maintenance (tanpa KPU); item bukan file digital, tapi metadata arsip fisik. Ada halaman Catalog terpisah untuk melihat arsip yang sudah selesai dipindah |
 
 ## Ide/Kebutuhan yang Sudah Dibahas, Belum Diputuskan Jadwalnya
 

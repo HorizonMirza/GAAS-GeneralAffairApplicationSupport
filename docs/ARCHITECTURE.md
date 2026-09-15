@@ -46,16 +46,20 @@ Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, s
 - Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `database/` (lihat catatan di bagian Database).
 - Konfigurasi rahasia (connection string, JWT secret) ada di `appsettings.Development.json`, **tidak** masuk git — dikelola manual per environment.
 
-## Pola Modul Transaksional (Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive)
+## Pola Modul Transaksional (Room Booking, Vehicle Booking, Maintenance, Archive)
 
-Kelima modul ini (dan Ekspedisi) berbagi satu pola arsitektur yang sama - kalau menambah modul baru, contek salah satu dari ini dulu:
+Keempat modul ini (dan Ekspedisi/Office Supplies, dengan catatan di bawah) berbagi satu pola arsitektur yang sama - kalau menambah modul baru, contek salah satu dari ini dulu:
 
-- **Status**: `BookingStatusEnum` (`DRAFT → SUBMITTED → APPROVED_L1/REJECTED_L1 → APPROVED_GA/REJECTED_GA → APPROVED_GA_APPROVAL/REJECTED_GA_APPROVAL`) - beda dari `StatusEnum` milik Ekspedisi yang punya tahap KPU tambahan.
+- **Status**: `BookingStatusEnum` (`DRAFT → SUBMITTED → APPROVED_L1/REJECTED_L1 → APPROVED_GA/REJECTED_GA → APPROVED_GA_APPROVAL/REJECTED_GA_APPROVAL`) - beda dari `StatusEnum` milik Ekspedisi/Office Supplies yang punya tahap KPU tambahan (lihat catatan Office Supplies di bawah).
 - **Nomor dokumen otomatis**: satu tabel counter per modul (`RoomBookingCounter`, `KendaraanBookingCounter`, `AtkCounter`, `SaranaCounter`, `ArsipCounter`), keyed `(divisi, year, month)`, di-increment lewat `INSERT ... ON CONFLICT DO UPDATE` (race-safe) di endpoint `next-nomor`.
 - **Origin roles**: `ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA` boleh membuat data; kalau Admin/Approval GA yang input, datanya distempel unit GA sendiri ("Procurement and General Affair" / "Asset Management and General Affair"), bukan unit asal mereka (karena akun GA tidak terhubung ke Divisi/Departemen manapun).
 - **Reject = jalan buntu**: tidak seperti Ekspedisi, item yang ditolak di modul-modul ini tidak bisa direvisi & resubmit - hanya bisa dihapus oleh pembuat atau Admin/Approval GA.
 - **Chat + mention**: setiap modul punya `{Modul}ChatController` + tabel `{Modul}ChatMessage`/`{Modul}ChatRead` sendiri, di-push real-time lewat `ChatHub` (lihat bagian SignalR).
 - **Frontend**: `constants.ts` punya helper `is{Modul}EditableByOrigin`, `is{Modul}DeletableByOrigin`, `is{Modul}GaActionable`, `{modul}OriginActorLabel` yang masing-masing mirror aturan backend-nya persis (dikomentari di source-nya).
+
+### Office Supplies (`PermintaanAtk`) - hybrid, bukan anggota penuh pola di atas
+
+Office Supplies memakai `StatusEnum` yang sama dengan Ekspedisi (bukan `BookingStatusEnum`), termasuk tahap KPU tambahan setelah Approval GA (`APPROVED_GA_APPROVAL → COMPLETED` lewat `approve-kpu`/`reject-kpu`) - karena pembelian ATK oleh Admin/Approval GA selalu butuh sign-off KPU, baik dibeli lewat kanal KPU sendiri maupun lewat PaDi eksternal (dicatat di field `SumberPembelian: KPU | PADI`, diisi Admin GA saat approve, tidak memengaruhi apakah KPU perlu approve). Tapi berbeda dari Ekspedisi, reject Office Supplies di tahap manapun (termasuk `reject-kpu`) tetap **jalan buntu** - tidak ada revisi-dan-kirim-ulang, sama seperti modul lain di atas. Role KPU ditampilkan sebagai **"Mitra"** di UI Office Supplies (lihat `ROLE_LABEL`/`STATUS_LABEL` di `constants.ts`).
 
 ## Archive (`PermintaanArsip`)
 

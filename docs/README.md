@@ -1,6 +1,6 @@
 # PGM Solution
 
-Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah KPU khusus di Expedition). Detail per modul di [`Prd.md`](./Prd.md).
+Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah tahap KPU di Expedition dan Office Supplies). Detail per modul di [`Prd.md`](./Prd.md).
 
 ## Arsitektur
 
@@ -61,7 +61,7 @@ DRAFT -> SUBMITTED
 
 Reject di tiap tahap mengembalikan dokumen ke pihak sebelumnya untuk direvisi lalu resubmit.
 
-Modul lain (Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive) pakai alur serupa tapi berhenti di Approval GA (tanpa tahap KPU), dan reject di modul-modul itu adalah jalan buntu (tidak ada revisi-resubmit). Archive sendiri bukan penyimpanan file digital, melainkan permintaan pemindahan arsip fisik — begitu disetujui penuh, arsipnya muncul di halaman Catalog (read-only). Detail lengkap di [`Prd.md`](./Prd.md).
+Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi berhenti di Approval GA (tanpa tahap KPU). Office Supplies punya tahap KPU seperti Ekspedisi (KPU sign-off pembelian ATK, baik lewat KPU sendiri maupun kanal eksternal PaDi). Reject di kelima modul ini (semua kecuali Ekspedisi) selalu jalan buntu — tidak ada revisi-resubmit. Archive sendiri bukan penyimpanan file digital, melainkan permintaan pemindahan arsip fisik — begitu disetujui penuh, arsipnya muncul di halaman Catalog (read-only). Detail lengkap di [`Prd.md`](./Prd.md).
 
 ## Peran (Role)
 
