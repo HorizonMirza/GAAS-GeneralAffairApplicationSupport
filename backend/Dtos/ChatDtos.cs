@@ -31,6 +31,7 @@ public record ChatNotificationOut(
     string ItemLabel,
     int SenderId,
     string SenderNama,
+    string SenderRole,
     string Preview,
     DateTime CreatedAt
 );

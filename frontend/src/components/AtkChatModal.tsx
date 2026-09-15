@@ -37,11 +37,13 @@ function renderWithMentions(text: string, labels: string[]) {
   return parts;
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
+function PersonIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path>
+    </svg>
+  );
 }
 
 function CheckIcon() {
@@ -229,7 +231,7 @@ export default function AtkChatModal({ open, itemId, itemLabel, departemen, crea
                       style={{ background: roleColor, visibility: isFirstInGroup ? "visible" : "hidden" }}
                     >
                       {photoErrors.has(m.senderId) ? (
-                        initials(m.senderNama)
+                        <PersonIcon />
                       ) : (
                         <img
                           src={api.userPhotoUrl(m.senderId)}

@@ -95,6 +95,7 @@ public class PerbaikanSaranaChatController : ApiControllerBase
             $"{item.Lokasi} - {item.NomorPerbaikan ?? "#" + perbaikanSaranaId}",
             user.Id,
             user.Nama,
+            user.Role.ToString(),
             text);
 
         return StatusCode(201, outMessage);

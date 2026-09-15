@@ -95,6 +95,7 @@ public class BookingKendaraanChatController : ApiControllerBase
             $"{item.NamaKendaraan} - {item.NomorPemesanan ?? item.PlatNomor ?? "-"}",
             user.Id,
             user.Nama,
+            user.Role.ToString(),
             text);
 
         return StatusCode(201, outMessage);

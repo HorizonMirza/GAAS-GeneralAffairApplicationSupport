@@ -139,6 +139,7 @@ export interface ChatNotification {
   itemLabel: string;
   senderId: number;
   senderNama: string;
+  senderRole: Role;
   preview: string;
   createdAt: string;
 }

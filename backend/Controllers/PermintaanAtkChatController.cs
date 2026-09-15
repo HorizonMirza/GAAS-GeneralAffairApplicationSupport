@@ -95,6 +95,7 @@ public class PermintaanAtkChatController : ApiControllerBase
             $"{item.Keperluan} - {item.NomorPermintaan ?? "#" + permintaanAtkId}",
             user.Id,
             user.Nama,
+            user.Role.ToString(),
             text);
 
         return StatusCode(201, outMessage);

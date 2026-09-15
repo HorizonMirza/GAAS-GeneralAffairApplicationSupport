@@ -7,6 +7,7 @@ import { openGlobalChat } from "@/lib/globalChat";
 import { playActivityNotificationSound, playChatNotificationSound, setNotificationSoundIds } from "@/lib/notificationSound";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
+import { ROLE_COLOR } from "@/lib/constants";
 import type { ActivityNotification, ChatNotification } from "@/lib/types";
 
 const DISMISS_AFTER_MS = 10000;
@@ -24,8 +25,13 @@ type BannerState =
   | ({ id: number; leaving: boolean; source: "chat" } & ChatNotification)
   | ({ id: number; leaving: boolean; source: "activity" } & ActivityNotification);
 
-function initials(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
+function PersonIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path>
+    </svg>
+  );
 }
 
 // Orange while still moving through the approval chain (just created, or approved at a
@@ -149,9 +155,12 @@ export default function ChatNotificationListener() {
               }
             }}
           >
-            <span className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}>
+            <span
+              className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}
+              style={banner.source === "chat" ? { background: ROLE_COLOR[banner.senderRole] } : undefined}
+            >
               {photoErrors.has(banner.id) ? (
-                initials(actorNama)
+                <PersonIcon />
               ) : (
                 <img
                   src={api.userPhotoUrl(actorId)}

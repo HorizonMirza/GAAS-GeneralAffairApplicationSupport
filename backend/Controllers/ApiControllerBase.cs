@@ -32,12 +32,13 @@ public abstract class ApiControllerBase : ControllerBase
         string itemLabel,
         int senderId,
         string senderNama,
+        string senderRole,
         string message)
     {
         var recipients = recipientUserIds.ToList();
         if (recipients.Count == 0) return;
         var preview = message.Length > 120 ? message[..120] + "…" : message;
-        var notification = new ChatNotificationOut(kind, itemId, itemLabel, senderId, senderNama, preview, DateTime.UtcNow);
+        var notification = new ChatNotificationOut(kind, itemId, itemLabel, senderId, senderNama, senderRole, preview, DateTime.UtcNow);
         await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveChatNotification", notification);
     }
 
