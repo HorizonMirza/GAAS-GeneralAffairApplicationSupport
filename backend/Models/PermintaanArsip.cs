@@ -4,10 +4,10 @@ namespace PengirimanApi.Models;
 // status aktif (dipegang divisi/departemen sendiri) ke inaktif (dipegang Admin/Approval GA).
 // Satu permintaan = satu arsip (dulu satu permintaan bisa berisi banyak arsip lewat
 // PermintaanArsipItem - dihapus, field arsipnya sekarang langsung di sini). Alur approval-nya
-// sama dengan Room/Vehicle Booking dan Permintaan ATK (BookingStatusEnum, berakhir di
-// APPROVED_GA_APPROVAL - begitu final disetujui, arsipnya dianggap resmi berpindah ke
-// inaktif/dipegang GA) - tanpa tahap KPU seperti Pengiriman, dan reject adalah dead end, tidak
-// ada revisi-dan-kirim-ulang.
+// pakai BookingStatusEnum, berakhir di APPROVED_GA_APPROVAL (begitu final disetujui, arsipnya
+// dianggap resmi berpindah ke inaktif/dipegang GA) - tanpa tahap KPU seperti Pengiriman. Reject
+// di tier manapun bukan dead end - kembali ke pembuat aslinya untuk direvisi dan dikirim ulang
+// (lihat PermintaanArsipController.IsEditableByOrigin).
 public class PermintaanArsip
 {
     public int Id { get; set; }

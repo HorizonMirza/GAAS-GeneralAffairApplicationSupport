@@ -12,10 +12,10 @@ namespace PengirimanApi.Controllers;
 
 // Archive (Permintaan Pemindahan Arsip): divisi/departemen meminta arsip yang sudah tidak
 // dipakai dipindahkan dari status aktif (dipegang unit sendiri) ke inaktif (dipegang Admin/
-// Approval GA) - begitu disetujui final, arsipnya dianggap resmi berpindah. Alur approval sama
-// dengan Room/Vehicle Booking dan Permintaan ATK (Departemen/Divisi -> Admin GA -> Approval GA,
-// tanpa tahap KPU), reject adalah dead end (tidak ada revisi-dan-kirim-ulang). Satu permintaan =
-// satu arsip.
+// Approval GA) - begitu disetujui final, arsipnya dianggap resmi berpindah. Alur approval
+// (Departemen/Divisi -> Admin GA -> Approval GA, tanpa tahap KPU) mirip Room/Vehicle Booking,
+// tapi reject di sini bukan dead end - kembali ke pembuat asli untuk direvisi dan dikirim ulang
+// (lihat IsEditableByOrigin di bawah). Satu permintaan = satu arsip.
 [Route("api/permintaan-arsip")]
 public class PermintaanArsipController : ApiControllerBase
 {

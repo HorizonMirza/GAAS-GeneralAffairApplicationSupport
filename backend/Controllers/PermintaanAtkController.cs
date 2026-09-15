@@ -12,8 +12,10 @@ namespace PengirimanApi.Controllers;
 
 // Office Supplies (Permintaan ATK): same approval chain as Pengiriman (Departemen/Divisi -> Admin
 // GA -> Approval GA -> KPU, since Admin GA/Approval GA buy either through KPU or the external
-// PaDi channel - see SumberPembelian), but reject is a dead end at every tier, same as
-// Room/Vehicle Booking - there is no revision-and-resubmit path. One request carries many item
+// PaDi channel - see SumberPembelian). Unlike Pengiriman, reject at any tier here goes straight
+// back to the origin creator to revise and resubmit - there is no RejectTarget-style GA/origin
+// routing since no other party fills in authoritative data at approval time (see
+// IsEditableByOrigin below). One request carries many item
 // rows (PermintaanAtkItem) - there is no scheduling/conflict dimension here.
 [Route("api/permintaan-atk")]
 public class PermintaanAtkController : ApiControllerBase
