@@ -274,7 +274,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 placeholder="Pilih kategori"
               />
             </div>
-            <div className="field">
+            <div className="field full">
               <label htmlFor="ds-lokasi">Lokasi</label>
               <input type="text" id="ds-lokasi" required disabled={!isEdit} maxLength={255} value={form.lokasi} onChange={(e) => set("lokasi", e.target.value)} />
             </div>
