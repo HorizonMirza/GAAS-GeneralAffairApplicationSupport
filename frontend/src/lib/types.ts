@@ -137,6 +137,7 @@ export interface ChatNotification {
   kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
   itemId: number;
   itemLabel: string;
+  senderId: number;
   senderNama: string;
   preview: string;
   createdAt: string;
@@ -151,6 +152,7 @@ export interface ActivityNotification {
   kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
   itemId: number;
   itemLabel: string;
+  actorId: number;
   actorNama: string;
   message: string;
   createdAt: string;

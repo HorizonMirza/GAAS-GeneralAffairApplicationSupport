@@ -93,6 +93,7 @@ public class BookingKendaraanChatController : ApiControllerBase
             "kendaraan",
             bookingKendaraanId,
             $"{item.NamaKendaraan} - {item.NomorPemesanan ?? item.PlatNomor ?? "-"}",
+            user.Id,
             user.Nama,
             text);
 

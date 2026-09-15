@@ -29,6 +29,7 @@ public record ChatNotificationOut(
     string Kind,
     int ItemId,
     string ItemLabel,
+    int SenderId,
     string SenderNama,
     string Preview,
     DateTime CreatedAt
@@ -45,6 +46,7 @@ public record ActivityNotificationOut(
     string Kind,
     int ItemId,
     string ItemLabel,
+    int ActorId,
     string ActorNama,
     string Message,
     DateTime CreatedAt

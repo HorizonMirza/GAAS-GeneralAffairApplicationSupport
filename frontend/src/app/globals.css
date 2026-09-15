@@ -4491,6 +4491,7 @@ table.data-table {
   width: 38px;
   height: 38px;
   border-radius: 999px;
+  overflow: hidden;
   background: var(--gradient-primary);
   color: var(--text-inverse);
   display: flex;
@@ -4498,6 +4499,12 @@ table.data-table {
   justify-content: center;
   font-weight: 700;
   font-size: 0.95rem;
+}
+
+.chat-notification-avatar-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .chat-notification-avatar-progress {

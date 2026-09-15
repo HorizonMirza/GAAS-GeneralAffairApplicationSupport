@@ -30,13 +30,14 @@ public abstract class ApiControllerBase : ControllerBase
         string kind,
         int itemId,
         string itemLabel,
+        int senderId,
         string senderNama,
         string message)
     {
         var recipients = recipientUserIds.ToList();
         if (recipients.Count == 0) return;
         var preview = message.Length > 120 ? message[..120] + "…" : message;
-        var notification = new ChatNotificationOut(kind, itemId, itemLabel, senderNama, preview, DateTime.UtcNow);
+        var notification = new ChatNotificationOut(kind, itemId, itemLabel, senderId, senderNama, preview, DateTime.UtcNow);
         await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveChatNotification", notification);
     }
 
@@ -53,12 +54,13 @@ public abstract class ApiControllerBase : ControllerBase
         string kind,
         int itemId,
         string itemLabel,
+        int actorId,
         string actorNama,
         string message)
     {
         var recipients = recipientUserIds.ToList();
         if (recipients.Count == 0) return;
-        var notification = new ActivityNotificationOut(type, kind, itemId, itemLabel, actorNama, message, DateTime.UtcNow);
+        var notification = new ActivityNotificationOut(type, kind, itemId, itemLabel, actorId, actorNama, message, DateTime.UtcNow);
         await hub.Clients.Groups(recipients.Select(ChatHub.UserGroup).ToList()).SendAsync("ReceiveActivityNotification", notification);
     }
 

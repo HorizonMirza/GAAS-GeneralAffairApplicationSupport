@@ -240,6 +240,9 @@ export const api = {
   // previous photo's, so the browser would keep showing its cached copy) without recomputing a
   // new value - and therefore a new <img src> - on every render.
   profilePhotoUrl: (v?: number) => (v ? `${API_BASE}/profile/photo?v=${v}` : `${API_BASE}/profile/photo`),
+  // Any other user's profile photo (e.g. the actor shown in a notification banner) - 404s if
+  // that user has none, same as profilePhotoUrl's own GET /profile/photo.
+  userPhotoUrl: (userId: number) => `${API_BASE}/users/${userId}/photo`,
   deletePhoto: () => apiRequest<Me>("/profile/photo", { method: "DELETE" }),
   updateCoverPreset: (preset: string) =>
     apiRequest<Me>("/profile/cover-preset", { method: "PUT", body: { preset } }),

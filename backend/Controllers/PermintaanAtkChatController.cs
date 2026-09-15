@@ -93,6 +93,7 @@ public class PermintaanAtkChatController : ApiControllerBase
             "atk",
             permintaanAtkId,
             $"{item.Keperluan} - {item.NomorPermintaan ?? "#" + permintaanAtkId}",
+            user.Id,
             user.Nama,
             text);
 

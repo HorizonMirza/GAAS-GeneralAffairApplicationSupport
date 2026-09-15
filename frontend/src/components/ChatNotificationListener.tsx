@@ -59,6 +59,9 @@ export default function ChatNotificationListener() {
   const { me } = useAuth();
   const router = useRouter();
   const [banners, setBanners] = useState<BannerState[]>([]);
+  // Tracks which banners' actor photo failed to load (no photo uploaded, or a fetch error) - once
+  // marked, that banner falls back to the initials avatar instead of retrying the broken <img>.
+  const [photoErrors, setPhotoErrors] = useState<Set<number>>(new Set());
   const idRef = useRef(0);
   const timers = useRef<Map<number, { leave: ReturnType<typeof setTimeout>; remove?: ReturnType<typeof setTimeout> }>>(new Map());
 
@@ -127,6 +130,7 @@ export default function ChatNotificationListener() {
     <div className="chat-notification-stack">
       {banners.map((banner) => {
         const actorNama = banner.source === "chat" ? banner.senderNama : banner.actorNama;
+        const actorId = banner.source === "chat" ? banner.senderId : banner.actorId;
         const detail = banner.source === "chat" ? `Chat: ${banner.preview}` : banner.message;
         return (
           <button
@@ -145,7 +149,18 @@ export default function ChatNotificationListener() {
               }
             }}
           >
-            <span className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}>{initials(actorNama)}</span>
+            <span className={`chat-notification-avatar${banner.source === "activity" ? activityAvatarColorClass(banner.type) : ""}`}>
+              {photoErrors.has(banner.id) ? (
+                initials(actorNama)
+              ) : (
+                <img
+                  src={api.userPhotoUrl(actorId)}
+                  alt=""
+                  className="chat-notification-avatar-photo"
+                  onError={() => setPhotoErrors((current) => new Set(current).add(banner.id))}
+                />
+              )}
+            </span>
             <span className="chat-notification-body">
               <span className="chat-notification-title">
                 <strong>{actorNama}</strong> - {NOTIFICATION_KIND_LABEL[banner.kind]}

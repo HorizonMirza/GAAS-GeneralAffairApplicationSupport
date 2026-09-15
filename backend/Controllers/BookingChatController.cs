@@ -104,6 +104,7 @@ public class BookingChatController : ApiControllerBase
             "booking",
             bookingRuangId,
             $"{item.NamaRuang} - {item.NomorPemesanan ?? item.NamaKegiatan}",
+            user.Id,
             user.Nama,
             text);
 

@@ -102,6 +102,7 @@ public class ChatController : ApiControllerBase
             "pengiriman",
             pengirimanId,
             $"Pengiriman {item.NomorTransmittal}",
+            user.Id,
             user.Nama,
             text);
 

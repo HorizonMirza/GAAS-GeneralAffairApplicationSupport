@@ -93,6 +93,7 @@ public class PerbaikanSaranaChatController : ApiControllerBase
             "sarana",
             perbaikanSaranaId,
             $"{item.Lokasi} - {item.NomorPerbaikan ?? "#" + perbaikanSaranaId}",
+            user.Id,
             user.Nama,
             text);
 

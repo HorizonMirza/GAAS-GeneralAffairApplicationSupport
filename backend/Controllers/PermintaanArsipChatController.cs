@@ -93,6 +93,7 @@ public class PermintaanArsipChatController : ApiControllerBase
             "arsip",
             permintaanArsipId,
             $"{item.NamaArsip} - {item.NomorArsip ?? "#" + permintaanArsipId}",
+            user.Id,
             user.Nama,
             text);
 
