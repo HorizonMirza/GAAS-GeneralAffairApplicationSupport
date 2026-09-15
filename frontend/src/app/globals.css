@@ -4969,7 +4969,7 @@ table.data-table {
 
 .chat-bubble-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 8px;
   justify-content: flex-start;
   margin-top: 10px;
