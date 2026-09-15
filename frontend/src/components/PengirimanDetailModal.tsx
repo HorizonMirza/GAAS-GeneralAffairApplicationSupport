@@ -324,7 +324,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (Mitra)</h4>
               <div className="form-grid">
                 <div className="field">
-                  <label htmlFor="pv-k-resi">No Resi</label>
+                  <label htmlFor="pv-k-resi">No. Resi</label>
                   <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value)} />
                 </div>
                 <div className="field">

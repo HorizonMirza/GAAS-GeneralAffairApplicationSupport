@@ -167,7 +167,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               <input type="text" id="fk-keperluan" required maxLength={150} placeholder="Contoh: Kunjungan ke PGSOL Bogor" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="fk-pic">PIC</label>
+              <label htmlFor="fk-pic">Nama PIC</label>
               <input type="text" id="fk-pic" required maxLength={50} placeholder="Nama penanggung jawab perjalanan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">

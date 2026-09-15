@@ -220,7 +220,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <input type="text" id="bv-nama-kegiatan" required disabled={!isEdit} maxLength={150} value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="bv-pic">PIC</label>
+              <label htmlFor="bv-pic">Nama PIC</label>
               <input type="text" id="bv-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">

@@ -200,7 +200,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <input type="text" id="f-nama-kegiatan" required maxLength={150} placeholder="Contoh: Technical Meeting EPC" value={form.namaKegiatan} onChange={(e) => set("namaKegiatan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="f-pic">PIC</label>
+              <label htmlFor="f-pic">Nama PIC</label>
               <input type="text" id="f-pic" required maxLength={50} placeholder="Nama penanggung jawab kegiatan" value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">

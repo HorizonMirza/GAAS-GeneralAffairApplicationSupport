@@ -115,7 +115,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
             <div className="field full">
-              <label htmlFor="rs-pic">PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="rs-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-pic" disabled value={item.pic || ""} />
             </div>
             <div className="field">

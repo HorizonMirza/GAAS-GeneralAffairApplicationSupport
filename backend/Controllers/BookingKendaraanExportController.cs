@@ -25,7 +25,7 @@ public class BookingKendaraanExportController : ApiControllerBase
         ("diajukan", "Diajukan"),
         ("tanggal", "Tanggal"),
         ("jam", "Jam"),
-        ("keperluan", "Keperluan"),
+        ("keperluan", "Tujuan"),
         ("pic", "PIC"),
         ("kendaraan", "Kendaraan"),
         ("supir", "Supir"),

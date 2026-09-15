@@ -202,7 +202,7 @@ public static class BookingPdfService
         {
             ("Tipe Booking", item.Tipe == TipeBookingEnum.EXTERNAL ? "External" : "Internal"),
             ("Jumlah Peserta", $"{item.JumlahPeserta} orang"),
-            ("PIC", item.Pic ?? "-"),
+            ("Nama PIC", item.Pic ?? "-"),
             ("Divisi / Departemen", DivisiLabel(item)),
             ("Pengulangan", RecurrenceLabel(item)),
             ("Status", "Approved"),

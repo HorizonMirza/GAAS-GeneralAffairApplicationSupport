@@ -196,7 +196,7 @@ public class PermintaanAtkController : ApiControllerBase
                 return "Departemen tidak ditemukan pada divisi tersebut";
         }
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
-            return "Keperluan wajib diisi";
+            return "Tujuan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaPemohon))
             return "Nama pemohon wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NoTeleponPemohon))

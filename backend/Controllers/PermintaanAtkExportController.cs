@@ -26,7 +26,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         ("nomor_permintaan", "No Permintaan"),
         ("diajukan", "Diajukan"),
         ("tanggal", "Tanggal Dibutuhkan"),
-        ("keperluan", "Keperluan"),
+        ("keperluan", "Tujuan"),
         ("nama_pemohon", "Nama Pemohon"),
         ("no_telepon_pemohon", "No. Telepon Pemohon"),
         ("daftar_barang", "Daftar Barang"),

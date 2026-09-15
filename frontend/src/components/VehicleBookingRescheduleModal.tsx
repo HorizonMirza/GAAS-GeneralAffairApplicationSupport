@@ -103,7 +103,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               <input type="text" id="rk-keperluan" disabled value={item.keperluan} />
             </div>
             <div className="field full">
-              <label htmlFor="rk-pic">PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="rk-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rk-pic" disabled value={item.pic || ""} />
             </div>
             <div className="field">

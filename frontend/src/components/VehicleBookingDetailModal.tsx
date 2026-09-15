@@ -175,7 +175,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               <input type="text" id="bk-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="bk-pic">PIC</label>
+              <label htmlFor="bk-pic">Nama PIC</label>
               <input type="text" id="bk-pic" required disabled={!isEdit} maxLength={50} value={form.pic || ""} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">

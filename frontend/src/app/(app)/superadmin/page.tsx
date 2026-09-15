@@ -835,9 +835,9 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Item</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Barang</th><th>Divisi</th><th>Departemen</th>
                 <th>Pengirim</th><th>No. Telepon Pengirim</th><th>Penerima</th><th>No. Telepon Penerima</th>
-                <th>Kode Program</th><th>Asuransi</th><th>Packing</th><th>Catatan</th>
+                <th>Kode Program</th><th>Asuransi</th><th>Pengemasan</th><th>Catatan</th>
                 <th>Berat (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
@@ -1069,7 +1069,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>PIC</th><th>Ruang</th><th>Peserta</th>
+                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruang</th><th>Peserta</th>
                 <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
