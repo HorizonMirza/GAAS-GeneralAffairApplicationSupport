@@ -1,4 +1,4 @@
-# PRD — Sistem Pendataan Pengiriman Barang Kantor (PGM Solution)
+# PRD — Sistem Pendataan Pengiriman Barang Kantor (GAAS — General Affair Application System, PGN Solution)
 
 ## Latar Belakang
 
@@ -9,7 +9,7 @@ Kantor membutuhkan sistem untuk mencatat pengiriman barang (ekspedisi) yang mela
 - Mempercepat & menstandarkan proses input, verifikasi fisik, dan approval pengiriman barang.
 - Memberi visibilitas status dokumen secara real-time ke semua pihak terkait (pengirim, Admin GA, KPU).
 - Menyediakan jejak audit (riwayat approval, catatan reject) untuk setiap dokumen.
-- Menjadi platform terpusat ("PGM Solution") untuk modul-modul kantor lain (lihat [Modul](#modul)).
+- Menjadi platform terpusat ("GAAS", dikembangkan untuk PGN Solution) untuk modul-modul kantor lain (lihat [Modul](#modul)).
 
 ## Peran Pengguna
 
@@ -75,7 +75,7 @@ Berbeda dari Ekspedisi, reject di tahap manapun (termasuk oleh KPU) adalah jalan
 
 ## Modul
 
-Aplikasi (branding: **PGM Solution**) adalah platform multi-modul. Semua modul di sidebar sudah aktif (backend + frontend lengkap, bukan lagi placeholder):
+Aplikasi (nama sistem: **GAAS**, dibangun untuk **PGN Solution**) adalah platform multi-modul. Semua modul di sidebar sudah aktif (backend + frontend lengkap, bukan lagi placeholder):
 
 | Modul | Status | Catatan |
 |---|---|---|

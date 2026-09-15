@@ -318,7 +318,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
         <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logo-pgm-solution.png" alt="PGM Solution" className="brand-logo-sidebar-img" />
+          <img src="/assets/logo-pgn-solution.png" alt="PGN Solution" className="brand-logo-sidebar-img" />
         </Link>
 
         <ScrollArea className="sidebar-scroll">

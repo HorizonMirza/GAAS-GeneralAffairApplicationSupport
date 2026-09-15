@@ -87,7 +87,7 @@ public static class IcsService
         {
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//PGM Solution//Room Booking//ID",
+            "PRODID:-//PGN Solution//Room Booking//ID",
             "CALSCALE:GREGORIAN",
         };
         lines.AddRange(BuildEventLines(item));
@@ -106,7 +106,7 @@ public static class IcsService
         {
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//PGM Solution//Room Booking//ID",
+            "PRODID:-//PGN Solution//Room Booking//ID",
             "CALSCALE:GREGORIAN",
             $"X-WR-CALNAME:{Escape(calendarName)}",
             "REFRESH-INTERVAL;VALUE=DURATION:PT1H",

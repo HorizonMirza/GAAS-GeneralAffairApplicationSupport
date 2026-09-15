@@ -47,8 +47,8 @@ export default function LoginPage() {
         <div className="brand-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/assets/logo-pgm-solution.png"
-            alt="PGM Solution"
+            src="/assets/logo-pgn-solution.png"
+            alt="PGN Solution"
             className="brand-logo-img"
             style={{ maxWidth: 240, maxHeight: 72, width: "auto", height: "auto" }}
           />

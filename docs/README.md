@@ -1,4 +1,4 @@
-# PGM Solution
+# GAAS (General Affair Application System) — PGN Solution
 
 Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah tahap KPU di Expedition dan Office Supplies). Detail per modul di [`Prd.md`](./Prd.md).
 
