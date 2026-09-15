@@ -3,18 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
+import { ATK_CATALOG } from "@/lib/atkCatalog";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
+import TextAutocomplete from "./TextAutocomplete";
 import { useToast } from "./ui/ToastProvider";
 
 // Exact-match lookup only (typing something not in the catalog just stays free text) - used to
 // auto-fill Satuan the moment a row's Nama Barang matches one of the 200 starter items.
 const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
+const ATK_CATALOG_NAMES = ATK_CATALOG.map((i) => i.namaBarang);
 
 interface Props {
   open: boolean;
@@ -192,17 +194,15 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                 </div>
                 {form.items.map((row, idx) => (
                   <div key={idx} className="item-row">
-                    <input
-                      type="text"
+                    <TextAutocomplete
                       className="item-row-col-lg"
-                      aria-label={`Nama barang ${idx + 1}`}
+                      ariaLabel={`Nama barang ${idx + 1}`}
                       required
                       maxLength={255}
-                      list={ATK_CATALOG_DATALIST_ID}
+                      options={ATK_CATALOG_NAMES}
                       placeholder="Nama barang (contoh: Pulpen)"
                       value={row.namaBarang}
-                      onChange={(e) => {
-                        const namaBarang = e.target.value;
+                      onChange={(namaBarang) => {
                         const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
                         setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
                       }}
@@ -256,11 +256,6 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
-          <datalist id={ATK_CATALOG_DATALIST_ID}>
-            {ATK_CATALOG.map((i) => (
-              <option key={i.namaBarang} value={i.namaBarang} />
-            ))}
-          </datalist>
 
           <div className="error-text">{error}</div>
           <div className="modal-actions">

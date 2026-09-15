@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { canGaKoreksiPengiriman, isEditableByOrigin } from "@/lib/constants";
-import { formatCurrency, formatDate, truncateText } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
@@ -341,7 +341,7 @@ function TransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
                 <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
                 <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th>
@@ -349,11 +349,11 @@ function TransaksiPageInner() {
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={20} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={21} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={20} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={21} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={20} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={21} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -362,6 +362,7 @@ function TransaksiPageInner() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorTransmittal}</td>
                       <td>{item.noResi || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.tujuanPenerimaan}>{truncateText(item.tujuanPenerimaan, 15)}</td>
                       <td>{item.jumlahItem}</td>

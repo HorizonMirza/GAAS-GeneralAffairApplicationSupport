@@ -835,7 +835,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
                 <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
                 <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
@@ -843,11 +843,11 @@ export default function SuperAdminPage() {
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={21} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={22} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={21} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={22} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={21} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={22} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -856,6 +856,7 @@ export default function SuperAdminPage() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorTransmittal}</td>
                       <td>{item.noResi || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.tujuanPenerimaan}>{truncateText(item.tujuanPenerimaan, 15)}</td>
                       <td>{item.jumlahItem}</td>

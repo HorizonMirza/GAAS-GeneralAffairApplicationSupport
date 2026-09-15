@@ -12,7 +12,7 @@ import {
   isArsipEditableByOrigin,
   isBookingOriginRole,
 } from "@/lib/constants";
-import { formatDate, truncateText } from "@/lib/format";
+import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
@@ -348,7 +348,7 @@ function ArsipTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Jumlah Arsip</th>
+                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Jumlah Arsip</th>
                 <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
                 <th>Lokasi Penyimpanan Saat Ini</th><th>Nama PIC</th><th>No. Telepon PIC</th>
                 <th>Catatan</th><th>Divisi</th><th>Departemen</th><th>Status</th>
@@ -356,11 +356,11 @@ function ArsipTransaksiPageInner() {
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={14} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -368,6 +368,7 @@ function ArsipTransaksiPageInner() {
                     <tr key={item.id} id={`tx-row-${item.id}`} className={item.id === highlightId ? "row-highlight-blink" : undefined}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{item.jumlahArsip}</td>
                       <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>

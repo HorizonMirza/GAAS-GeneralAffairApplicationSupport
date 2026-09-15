@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { ATK_CATALOG, ATK_CATALOG_DATALIST_ID } from "@/lib/atkCatalog";
+import { ATK_CATALOG } from "@/lib/atkCatalog";
 import {
   GA_APPROVAL_ACTIONABLE_STATUSES,
   L1_ACTIONABLE_STATUSES,
@@ -19,11 +19,13 @@ import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
+import TextAutocomplete from "./TextAutocomplete";
 import { useToast } from "./ui/ToastProvider";
 
 // Exact-match lookup only (typing something not in the catalog just stays free text) - used to
 // auto-fill Satuan the moment a row's Nama Barang matches one of the 200 starter items.
 const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
+const ATK_CATALOG_NAMES = ATK_CATALOG.map((i) => i.namaBarang);
 
 const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
 
@@ -226,18 +228,16 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                 </div>
                 {form.items.map((row, idx) => (
                   <div key={idx} className="item-row">
-                    <input
-                      type="text"
+                    <TextAutocomplete
                       className="item-row-col-lg"
-                      aria-label={`Nama barang ${idx + 1}`}
+                      ariaLabel={`Nama barang ${idx + 1}`}
                       required
                       disabled={!isEdit}
                       maxLength={255}
-                      list={ATK_CATALOG_DATALIST_ID}
+                      options={ATK_CATALOG_NAMES}
                       placeholder="Nama barang"
                       value={row.namaBarang}
-                      onChange={(e) => {
-                        const namaBarang = e.target.value;
+                      onChange={(namaBarang) => {
                         const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
                         setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
                       }}
@@ -362,12 +362,6 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             )}
           </div>
         </form>
-
-        <datalist id={ATK_CATALOG_DATALIST_ID}>
-          {ATK_CATALOG.map((i) => (
-            <option key={i.namaBarang} value={i.namaBarang} />
-          ))}
-        </datalist>
       </div>
     </ModalOverlay>
   );

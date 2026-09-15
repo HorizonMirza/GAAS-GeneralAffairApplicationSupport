@@ -1,14 +1,12 @@
 // Starter catalog of common office-supply items for Office Supplies (Permintaan ATK) - there is
 // no real product database yet, so this seeds the "Nama Barang" autocomplete (see
-// AtkFormModal/AtkDetailModal's `list={ATK_CATALOG_DATALIST_ID}`) with 200 realistic items and a
-// sensible default Satuan. It only suggests - the field stays free text, so anything not listed
-// here can still be typed in by hand.
+// AtkFormModal/AtkDetailModal's TextAutocomplete) with 200 realistic items and a sensible default
+// Satuan. It only suggests - the field stays free text, so anything not listed here can still be
+// typed in by hand.
 export interface AtkCatalogItem {
   namaBarang: string;
   satuan: string;
 }
-
-export const ATK_CATALOG_DATALIST_ID = "atk-catalog-nama-barang";
 
 export const ATK_CATALOG: AtkCatalogItem[] = [
   // Alat Tulis
