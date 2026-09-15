@@ -2703,6 +2703,20 @@ body.auth-ready .app-shell {
   gap: 10px;
 }
 
+/* Foto yang sudah tersimpan di server (bukan baru dipilih) - padding+margin negatif dipasang
+   permanen (bukan cuma saat hover) supaya highlight tidak menggeser layout item lain. */
+.photo-drop-item-existing {
+  padding: 8px;
+  margin: -8px;
+  border-radius: 10px;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.photo-drop-item-existing:hover {
+  background: var(--bg-surface-alt);
+  box-shadow: 0 0 0 1px var(--border-subtle) inset;
+}
+
 .photo-drop-item-thumb {
   width: 40px;
   height: 40px;

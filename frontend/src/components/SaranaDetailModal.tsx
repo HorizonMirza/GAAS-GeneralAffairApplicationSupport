@@ -315,7 +315,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 {visibleFotoKerusakan.length > 0 && (
                   <div className="photo-drop-list">
                     {visibleFotoKerusakan.map((foto) => (
-                      <div className="photo-drop-item" key={foto.id}>
+                      <div className="photo-drop-item photo-drop-item-existing" key={foto.id}>
                         <div className="photo-drop-item-thumb">
                           <img src={api.saranaFotoKerusakanUrl(item.id, foto.id)} alt={foto.originalFilename} />
                         </div>
