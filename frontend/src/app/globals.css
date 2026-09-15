@@ -4246,7 +4246,7 @@ table.data-table {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 10px;
 }
 
 /* ---------- Row status cell + action menu (Transaksi table) ---------- */

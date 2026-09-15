@@ -72,15 +72,10 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Koreksi Data Pengirim/Penerima {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Form Data Barang {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pk-nomor-transmittal">Nomor Transmittal <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -139,6 +134,11 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
               <input type="text" id="pk-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>

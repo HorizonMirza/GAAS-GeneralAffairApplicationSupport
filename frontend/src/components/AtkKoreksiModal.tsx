@@ -73,15 +73,10 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Koreksi Data Pemohon {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Form Permintaan ATK {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="ka-nomor-permintaan">Nomor Permintaan ATK <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -138,6 +133,11 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
               <input type="text" id="ka-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>

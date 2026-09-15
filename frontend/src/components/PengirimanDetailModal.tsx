@@ -216,11 +216,6 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>
@@ -323,6 +318,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
 
           {showKpuSection && (
             <div style={{ marginTop: 6, paddingTop: 16, borderTop: "1px solid var(--border-subtle)" }}>

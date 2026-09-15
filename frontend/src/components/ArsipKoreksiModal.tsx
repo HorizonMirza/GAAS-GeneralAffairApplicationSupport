@@ -72,15 +72,10 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Koreksi Data Lokasi/PIC {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Form Pemindahan Arsip {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="ak-nomor-arsip">Nomor Pemindahan Arsip <Lock className="field-lock-icon" width={12} height={12} /></label>
@@ -131,6 +126,11 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
               <input type="text" id="ak-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
           <div className="error-text">{error}</div>
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
