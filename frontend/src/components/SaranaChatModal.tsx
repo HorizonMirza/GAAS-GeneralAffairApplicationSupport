@@ -63,6 +63,9 @@ function SendIcon() {
 export default function SaranaChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
+  // Tracks senders whose photo failed to load (no photo uploaded, or a fetch error) - once
+  // marked, that sender's bubbles fall back to initials instead of retrying the broken <img>.
+  const [photoErrors, setPhotoErrors] = useState<Set<number>>(new Set());
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -225,7 +228,16 @@ export default function SaranaChatModal({ open, itemId, itemLabel, departemen, c
                       className="chat-avatar"
                       style={{ background: roleColor, visibility: isFirstInGroup ? "visible" : "hidden" }}
                     >
-                      {initials(m.senderNama)}
+                      {photoErrors.has(m.senderId) ? (
+                        initials(m.senderNama)
+                      ) : (
+                        <img
+                          src={api.userPhotoUrl(m.senderId)}
+                          alt=""
+                          className="chat-avatar-photo"
+                          onError={() => setPhotoErrors((current) => new Set(current).add(m.senderId))}
+                        />
+                      )}
                     </div>
                   )}
                   <div className="chat-bubble-stack">
