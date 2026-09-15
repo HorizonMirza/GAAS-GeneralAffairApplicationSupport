@@ -380,7 +380,7 @@ function BookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruangan</th><th>Divisi</th><th>Departemen</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Ruangan</th>
                 <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
@@ -402,10 +402,10 @@ function BookingTransaksiPageInner() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
                       <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
-                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
-                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
                       <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>

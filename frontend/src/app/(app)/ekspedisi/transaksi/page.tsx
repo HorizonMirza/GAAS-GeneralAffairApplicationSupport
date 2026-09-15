@@ -342,18 +342,18 @@ function TransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
-                <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th>
+                <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Alamat Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th><th>Alamat Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
                 <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={21} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={23} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={21} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={23} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={21} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={23} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -370,8 +370,10 @@ function TransaksiPageInner() {
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.namaPengirim}>{truncateText(item.namaPengirim, 18)}</td>
                       <td>{item.noTeleponPengirim}</td>
+                      <td title={item.alamatPengirim}>{truncateText(item.alamatPengirim, 18)}</td>
                       <td title={item.namaPenerima}>{truncateText(item.namaPenerima, 18)}</td>
                       <td>{item.noTeleponPenerima}</td>
+                      <td title={item.alamatPenerima}>{truncateText(item.alamatPenerima, 18)}</td>
                       <td>{item.kodeProgram}</td>
                       <td>{item.asuransiStatus}</td>
                       <td title={item.requestPacking || ""}>{truncateText(item.requestPacking, 15)}</td>

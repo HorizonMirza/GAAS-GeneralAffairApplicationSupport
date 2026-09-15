@@ -352,9 +352,9 @@ function MaintenanceTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
-                <th>Nama PIC</th><th>No. Telepon PIC</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Tanggal Pengajuan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th>
+                <th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -372,14 +372,14 @@ function MaintenanceTransaksiPageInner() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorPerbaikan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
                       <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
                       <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
-                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
-                      <td>{item.noTeleponPelapor}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
+                      <td>{item.noTeleponPelapor}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">

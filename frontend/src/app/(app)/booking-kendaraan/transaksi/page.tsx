@@ -361,8 +361,8 @@ function VehicleBookingTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tujuan</th><th>Nama PIC</th><th>Divisi</th><th>Departemen</th><th>Kendaraan</th><th>Nama Pengemudi</th><th>Jumlah Penumpang</th>
-                <th>Tanggal</th><th>Jam</th><th>Catatan</th><th>Status</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Kendaraan</th>
+                <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -380,15 +380,15 @@ function VehicleBookingTransaksiPageInner() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorPemesanan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
-                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td title={item.namaKendaraan}>{truncateText(item.namaKendaraan, 20)}</td>
                       <td title={item.supir || ""}>{truncateText(item.supir, 18)}</td>
                       <td>{item.jumlahPenumpang}</td>
-                      <td>{formatDate(item.tanggal)}</td>
-                      <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">

@@ -354,8 +354,8 @@ function OfficeSuppliesTransaksiPageInner() {
             <thead>
               <tr>
                 <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th>
-                <th>Tujuan</th><th>Daftar Barang</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Sumber Pembelian</th><th>Catatan</th><th>Status</th>
+                <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -378,14 +378,14 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
-                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
-                      <td>{item.noTeleponPemohon}</td>
                       <td>{item.items.length}</td>
                       <td>{totalKuantitas}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
+                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
+                      <td>{item.noTeleponPemohon}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">

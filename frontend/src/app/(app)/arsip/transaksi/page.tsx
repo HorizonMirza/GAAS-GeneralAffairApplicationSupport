@@ -350,8 +350,8 @@ function ArsipTransaksiPageInner() {
               <tr>
                 <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Jumlah Arsip</th>
                 <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
-                <th>Lokasi Penyimpanan Saat Ini</th><th>Nama PIC</th><th>No. Telepon PIC</th>
-                <th>Catatan</th><th>Divisi</th><th>Departemen</th><th>Status</th>
+                <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -375,11 +375,11 @@ function ArsipTransaksiPageInner() {
                       <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
                       <td>{item.tahunArsip}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
-                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">

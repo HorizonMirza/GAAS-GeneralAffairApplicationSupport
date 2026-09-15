@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { arsipItemsSummary, atkItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_KERUSAKAN_LABEL, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_KERUSAKAN_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -836,18 +836,18 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
-                <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th>
+                <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Alamat Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th><th>Alamat Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
                 <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={22} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={24} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={22} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={24} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={22} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={24} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -864,8 +864,10 @@ export default function SuperAdminPage() {
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
                       <td title={item.namaPengirim}>{truncateText(item.namaPengirim, 18)}</td>
                       <td>{item.noTeleponPengirim}</td>
+                      <td title={item.alamatPengirim}>{truncateText(item.alamatPengirim, 18)}</td>
                       <td title={item.namaPenerima}>{truncateText(item.namaPenerima, 18)}</td>
                       <td>{item.noTeleponPenerima}</td>
+                      <td title={item.alamatPenerima}>{truncateText(item.alamatPenerima, 18)}</td>
                       <td>{item.kodeProgram}</td>
                       <td>{item.asuransiStatus}</td>
                       <td title={item.requestPacking || ""}>{truncateText(item.requestPacking, 15)}</td>
@@ -1070,17 +1072,17 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Nama Kegiatan</th><th>Nama PIC</th><th>Ruangan</th><th>Jumlah Peserta</th>
-                <th>Tanggal</th><th>Jam</th><th>Diajukan</th><th>Divisi</th><th>Departemen</th><th>Status</th><th>Aksi</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Ruangan</th>
+                <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
-                <tr><td colSpan={13} className="table-empty">{bookingError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -1088,15 +1090,17 @@ export default function SuperAdminPage() {
                     <tr key={item.id}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorPemesanan || "-"}</td>
-                      <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
-                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
-                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
-                      <td>{item.jumlahPeserta}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
-                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td title={item.namaKegiatan}>{truncateText(item.namaKegiatan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
+                      <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
+                      <td>{item.jumlahPeserta}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <span className="badge-stack">
                           <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
@@ -1227,6 +1231,150 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
+      <h2 style={{ margin: "24px 0 12px" }}>Vehicle Booking</h2>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Booking Kendaraan</h3>
+        </div>
+        <div className="toolbar">
+          <div className="field">
+            <label htmlFor="filter-kendaraan-tanggal">Filter Tanggal</label>
+            <DateFilterPicker id="filter-kendaraan-tanggal" value={kendaraanFilters.tanggal} onChange={(v) => updateKendaraanFilter({ tanggal: v })} />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-kendaraan-status">Status</label>
+            <SearchableSelect
+              id="filter-kendaraan-status"
+              value={kendaraanFilters.status}
+              onChange={(v) => updateKendaraanFilter({ status: v as BookingStatus | "" })}
+              options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL"]}
+              getLabel={(v) => ({
+                DRAFT: "Draft",
+                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+                REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+                APPROVED_L1: "On-Approval: Admin GA",
+                REJECTED_GA: "Rejected: Admin GA",
+                APPROVED_GA: "On-Approval: Approval GA",
+                REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+                APPROVED_GA_APPROVAL: "Approved",
+              } as Record<string, string>)[v] || v}
+              clearLabel="Semua Status"
+              placeholder="Semua Status"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-kendaraan-nama">Kendaraan</label>
+            <SearchableSelect
+              id="filter-kendaraan-nama"
+              value={kendaraanFilters.namaKendaraan}
+              onChange={(v) => updateKendaraanFilter({ namaKendaraan: v })}
+              options={vehicles.map((v) => v.nama)}
+              clearLabel="Semua Kendaraan"
+              placeholder="Semua Kendaraan"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-kendaraan-divisi">Divisi</label>
+            <SearchableSelect
+              id="filter-kendaraan-divisi"
+              value={kendaraanFilters.divisi}
+              onChange={(v) => updateKendaraanFilter({ divisi: v, departemen: "" })}
+              options={kendaraanDivisiOptions}
+              clearLabel="Semua Divisi"
+              placeholder="Semua Divisi"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="filter-kendaraan-departemen">Departemen</label>
+            <SearchableSelect
+              id="filter-kendaraan-departemen"
+              value={kendaraanFilters.departemen}
+              onChange={(v) => updateKendaraanFilter({ departemen: v })}
+              options={kendaraanDepartemenOptions}
+              clearLabel="Semua Departemen"
+              placeholder="Semua Departemen"
+            />
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetKendaraanFilters}>Hapus Filter</button>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>Kendaraan</th>
+                <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kendaraanBusy ? (
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+              ) : kendaraanError ? (
+                <tr><td colSpan={15} className="table-empty">{kendaraanError}</td></tr>
+              ) : kendaraanItems.length === 0 ? (
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+              ) : (
+                kendaraanItems.map((item, index) => {
+                  const rowNumber = (kendaraanFilters.page - 1) * kendaraanFilters.limit + index + 1;
+                  return (
+                    <tr key={item.id}>
+                      <td>{rowNumber}</td>
+                      <td>{item.nomorPemesanan || "-"}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td>{formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay)}</td>
+                      <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
+                      <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                      <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                      <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
+                      <td title={item.namaKendaraan}>{truncateText(item.namaKendaraan, 20)}</td>
+                      <td title={item.supir || ""}>{truncateText(item.supir, 18)}</td>
+                      <td>{item.jumlahPenumpang}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                      <td>
+                        <span className="badge-stack">
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
+                        </span>
+                      </td>
+                      <td>
+                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteKendaraanBooking(item)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="filter-kendaraan-limit">Tampilkan</label>
+              <SearchableSelect
+                id="filter-kendaraan-limit"
+                value={String(kendaraanFilters.limit)}
+                onChange={(v) => updateKendaraanFilter({ limit: Number(v) })}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} booking`}
+                placeholder={`${kendaraanFilters.limit} booking`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {kendaraanTotal} booking · Halaman {kendaraanFilters.page} dari {kendaraanTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={kendaraanFilters.page <= 1} onClick={() => goToKendaraanPage(kendaraanFilters.page - 1)}>‹</button>
+              {kendaraanPageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === kendaraanFilters.page ? "active" : ""}`} onClick={() => goToKendaraanPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={kendaraanFilters.page >= kendaraanTotalPages} onClick={() => goToKendaraanPage(kendaraanFilters.page + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <h2 style={{ margin: "24px 0 12px" }}>Archive</h2>
 
       <div className="card">
@@ -1290,31 +1438,38 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Daftar Arsip</th>
-                <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th><th>Tanggal</th><th>Status</th><th>Aksi</th>
+                <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Jumlah Arsip</th>
+                <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
+                <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {arsipBusy ? (
-                <tr><td colSpan={10} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
               ) : arsipError ? (
-                <tr><td colSpan={10} className="table-empty">{arsipError}</td></tr>
+                <tr><td colSpan={16} className="table-empty">{arsipError}</td></tr>
               ) : arsipItems.length === 0 ? (
-                <tr><td colSpan={10} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 arsipItems.map((item, index) => {
                   const rowNumber = (arsipFilters.page - 1) * arsipFilters.limit + index + 1;
-                  const arsipList = arsipItemsSummary(item);
                   return (
                     <tr key={item.id}>
                       <td>{rowNumber}</td>
                       <td>{item.nomorArsip || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
-                      <td title={arsipList}>{truncateText(arsipList, 45)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
+                      <td>{item.jumlahArsip}</td>
+                      <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>
+                      <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                      <td>{item.tahunArsip}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
+                      <td>{item.noTeleponPic || "-"}</td>
+                      <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteArsip(item)}>Delete</button>
@@ -1453,8 +1608,8 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th>
-                <th>Tujuan</th><th>Daftar Barang</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Sumber Pembelian</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -1477,14 +1632,14 @@ export default function SuperAdminPage() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
-                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
-                      <td>{item.noTeleponPemohon}</td>
                       <td>{item.items.length}</td>
                       <td>{totalKuantitas}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
+                      <td title={item.namaPemohon}>{truncateText(item.namaPemohon, 18)}</td>
+                      <td>{item.noTeleponPemohon}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                      <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
                       <td><AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteAtk(item)}>Delete</button>
@@ -1621,9 +1776,9 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
-                <th>Nama PIC</th><th>No. Telepon PIC</th>
-                <th>Divisi</th><th>Departemen</th><th>Tanggal Pengajuan</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Tanggal Pengajuan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th>
+                <th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -1641,14 +1796,14 @@ export default function SuperAdminPage() {
                       <td>{rowNumber}</td>
                       <td>{item.nomorPerbaikan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
+                      <td>{formatDate(item.tanggal)}</td>
                       <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
                       <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
-                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
-                      <td>{item.noTeleponPelapor}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
-                      <td>{formatDate(item.tanggal)}</td>
+                      <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
+                      <td>{item.noTeleponPelapor}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
