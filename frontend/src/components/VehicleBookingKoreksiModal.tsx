@@ -21,6 +21,7 @@ function toFormFields(item: BookingKendaraan): KoreksiKendaraanPayload {
   return {
     pic: item.pic || "",
     noTeleponPic: item.noTeleponPic || "",
+    catatan: "",
   };
 }
 
@@ -107,6 +108,16 @@ export default function VehicleBookingKoreksiModal({ open, item, onClose, onSave
             <div className="field full">
               <label htmlFor="kk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="kk-catatan" disabled value={item.catatan || ""} />
+            </div>
+            <div className="field full">
+              <label htmlFor="kk-alasan-koreksi">Alasan Koreksi (opsional)</label>
+              <textarea
+                id="kk-alasan-koreksi"
+                maxLength={255}
+                placeholder="Contoh: Nama PIC salah ketik"
+                value={form.catatan}
+                onChange={(e) => set("catatan", e.target.value)}
+              />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (

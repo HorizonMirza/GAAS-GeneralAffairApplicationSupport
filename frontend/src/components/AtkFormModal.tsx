@@ -138,7 +138,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="fa-nomor-permintaan">Nomor Permintaan ATK</label>
-              <input type="text" id="fa-nomor-permintaan" className="field-nomor-generated" disabled value={nomorPermintaan} />
+              <input type="text" id="fa-nomor-permintaan" disabled value={nomorPermintaan} />
             </div>
             {isGaActor && (
               <>

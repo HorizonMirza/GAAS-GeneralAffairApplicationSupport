@@ -41,7 +41,11 @@ public record KoreksiPengirimanRequest(
     string AlamatPengirim,
     string NamaPenerima,
     string AlamatPenerima,
-    string NoTeleponPenerima
+    string NoTeleponPenerima,
+    // Optional - the GA's own explanation for why this correction was made, appended to the
+    // auto-generated "dikoreksi menjadi X / Y" summary in the log so History can show more than
+    // just what changed.
+    string? Catatan = null
 );
 
 public record RejectRequest(string? Reason);

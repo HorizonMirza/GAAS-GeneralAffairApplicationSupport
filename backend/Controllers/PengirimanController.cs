@@ -444,7 +444,9 @@ public class PengirimanController : ApiControllerBase
         item.NamaPenerima = payload.NamaPenerima.Trim();
         item.AlamatPenerima = payload.AlamatPenerima.Trim();
         item.NoTeleponPenerima = payload.NoTeleponPenerima.Trim();
-        AddLog(item, "CORRECTED", user!, $"Data pengirim/penerima dikoreksi menjadi {item.NamaPengirim} / {item.NamaPenerima}");
+        var koreksiDetail = $"Data pengirim/penerima dikoreksi menjadi {item.NamaPengirim} / {item.NamaPenerima}";
+        if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
+        AddLog(item, "CORRECTED", user!, koreksiDetail);
 
         await _db.SaveChangesAsync();
         return Ok(PengirimanOut.From(item));

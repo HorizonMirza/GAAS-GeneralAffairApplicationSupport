@@ -130,4 +130,4 @@ public record SubmitAtkRequest(SumberPembelianEnum? SumberPembelian);
 // Room/Vehicle Booking's Reschedule leaving Nama Kegiatan/Keperluan/PIC untouched).
 // SumberPembelian is the one exception - it's GA's own selection (not the requester's), so it's
 // correctable here too instead of forcing a reject just to fix GA's own pick.
-public record KoreksiAtkRequest(string NamaPemohon, string NoTeleponPemohon, SumberPembelianEnum? SumberPembelian);
+public record KoreksiAtkRequest(string NamaPemohon, string NoTeleponPemohon, SumberPembelianEnum? SumberPembelian, string? Catatan = null);

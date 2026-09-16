@@ -375,26 +375,21 @@ body {
   box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
 }
 
-/* Locked/read-only fields (e.g. the origin report's own data in a GA correction modal) need to
-   look visibly different from the fields that can actually be edited - otherwise every field
-   in the form looks the same and there's no way to tell which ones will save. */
+/* Locked/read-only fields (e.g. Detail's view mode, or the origin report's own data in a GA
+   correction modal) still need to look visibly different from fields that can actually be edited
+   - otherwise every field in the form looks the same and there's no way to tell which ones will
+   save. That signal is carried by the box alone (this pale background instead of the editable
+   field's light-blue one, plus the not-allowed cursor) - the text itself stays the same black as
+   an editable field's, not dimmed grey, since a value someone typed in on purpose (their own
+   shipment data, a booking they made) shouldn't read as washed-out just because this particular
+   view can't change it right now. A field that's locked for a specific, explained reason (a
+   Koreksi modal's uneditable rows) says so with the Lock icon next to its label instead. */
 .field input:disabled,
 .field select:disabled,
 .field textarea:disabled {
   background: var(--bg-surface);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-}
-
-/* The auto-generated Nomor field at the top of every module's create form (Nomor Transmittal/
-   Pemesanan/Perbaikan/Arsip/Permintaan) - shown disabled because the value is server-assigned,
-   not because it's "locked" the way a Koreksi modal's uneditable fields are. Those still get the
-   dimmed grey text above (a real visual warning: this won't save if you change it); this one just
-   keeps the same black text as every editable field, differing only by staying on the white
-   background instead of the pale-blue used for fields you can actually type into. */
-.field input.field-nomor-generated:disabled {
   color: var(--text-primary);
-  background: var(--bg-surface);
+  cursor: not-allowed;
 }
 
 .field input::placeholder,

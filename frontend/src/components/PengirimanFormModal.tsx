@@ -118,7 +118,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nomor-transmittal">Nomor Transmittal</label>
-              <input type="text" id="f-nomor-transmittal" className="field-nomor-generated" disabled value={nomorTransmittal} />
+              <input type="text" id="f-nomor-transmittal" disabled value={nomorTransmittal} />
             </div>
             {isGaActor && (
               <>

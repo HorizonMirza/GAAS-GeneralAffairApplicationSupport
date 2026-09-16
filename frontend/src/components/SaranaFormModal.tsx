@@ -130,7 +130,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="fs-nomor-perbaikan">Nomor Pengajuan Perbaikan</label>
-              <input type="text" id="fs-nomor-perbaikan" className="field-nomor-generated" disabled value={nomorPerbaikan} />
+              <input type="text" id="fs-nomor-perbaikan" disabled value={nomorPerbaikan} />
             </div>
             {isGaActor && (
               <>

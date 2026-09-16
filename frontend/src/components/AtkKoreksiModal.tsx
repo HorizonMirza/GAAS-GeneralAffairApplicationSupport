@@ -26,6 +26,7 @@ function toFormFields(item: PermintaanAtk): KoreksiAtkPayload {
     namaPemohon: item.namaPemohon,
     noTeleponPemohon: item.noTeleponPemohon,
     sumberPembelian: item.sumberPembelian,
+    catatan: "",
   };
 }
 
@@ -131,6 +132,16 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
             <div className="field full">
               <label htmlFor="ka-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-catatan" disabled value={item.catatan || ""} />
+            </div>
+            <div className="field full">
+              <label htmlFor="ka-alasan-koreksi">Alasan Koreksi (opsional)</label>
+              <textarea
+                id="ka-alasan-koreksi"
+                maxLength={255}
+                placeholder="Contoh: Nama pemohon salah ketik"
+                value={form.catatan}
+                onChange={(e) => set("catatan", e.target.value)}
+              />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (

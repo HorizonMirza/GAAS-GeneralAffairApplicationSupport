@@ -136,7 +136,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="fk-nomor-pemesanan">Nomor Pesanan Kendaraan</label>
-              <input type="text" id="fk-nomor-pemesanan" className="field-nomor-generated" disabled value={nomorPemesanan} />
+              <input type="text" id="fk-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
             {isGaActor && (
               <>

@@ -388,7 +388,9 @@ public class PerbaikanSaranaController : ApiControllerBase
         item.NamaPelapor = payload.NamaPelapor.Trim();
         item.NoTeleponPelapor = payload.NoTeleponPelapor.Trim();
         item.Lokasi = payload.Lokasi.Trim();
-        AddLog(item, "CORRECTED", user!, $"Data PIC/lokasi dikoreksi menjadi {item.NamaPelapor} / {item.NoTeleponPelapor} / {item.Lokasi}");
+        var koreksiDetail = $"Data PIC/lokasi dikoreksi menjadi {item.NamaPelapor} / {item.NoTeleponPelapor} / {item.Lokasi}";
+        if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
+        AddLog(item, "CORRECTED", user!, koreksiDetail);
 
         await _db.SaveChangesAsync();
         return Ok(PerbaikanSaranaOut.From(item));

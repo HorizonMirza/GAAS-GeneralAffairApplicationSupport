@@ -131,7 +131,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="fr-nomor-arsip">Nomor Pemindahan Arsip</label>
-              <input type="text" id="fr-nomor-arsip" className="field-nomor-generated" disabled value={nomorArsip} />
+              <input type="text" id="fr-nomor-arsip" disabled value={nomorArsip} />
             </div>
             {isGaActor && (
               <>

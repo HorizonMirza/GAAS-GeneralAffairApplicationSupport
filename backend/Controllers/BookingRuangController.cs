@@ -1035,7 +1035,9 @@ public class BookingRuangController : ApiControllerBase
 
         item.Pic = payload.Pic.Trim();
         item.NoTeleponPic = payload.NoTeleponPic.Trim();
-        AddLog(item, "CORRECTED", user!, $"Data PIC dikoreksi menjadi {item.Pic} / {item.NoTeleponPic}");
+        var koreksiDetail = $"Data PIC dikoreksi menjadi {item.Pic} / {item.NoTeleponPic}";
+        if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
+        AddLog(item, "CORRECTED", user!, koreksiDetail);
 
         await _db.SaveChangesAsync();
         return Ok(BookingRuangOut.From(item));

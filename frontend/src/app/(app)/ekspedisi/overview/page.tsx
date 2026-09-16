@@ -221,6 +221,7 @@ export default function OverviewPage() {
           !!rowMenu.menuItem &&
           ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me))
         }
+        canDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

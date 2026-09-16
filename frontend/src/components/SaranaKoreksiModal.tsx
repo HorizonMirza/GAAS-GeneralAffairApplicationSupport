@@ -26,6 +26,7 @@ function toFormFields(item: PerbaikanSarana): KoreksiSaranaPayload {
     namaPelapor: item.namaPelapor,
     noTeleponPelapor: item.noTeleponPelapor,
     lokasi: item.lokasi,
+    catatan: "",
   };
 }
 
@@ -143,6 +144,16 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
             <div className="field full">
               <label htmlFor="ks-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ks-catatan" disabled value={item.catatan || ""} />
+            </div>
+            <div className="field full">
+              <label htmlFor="ks-alasan-koreksi">Alasan Koreksi (opsional)</label>
+              <textarea
+                id="ks-alasan-koreksi"
+                maxLength={255}
+                placeholder="Contoh: Nama PIC salah ketik"
+                value={form.catatan}
+                onChange={(e) => set("catatan", e.target.value)}
+              />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (

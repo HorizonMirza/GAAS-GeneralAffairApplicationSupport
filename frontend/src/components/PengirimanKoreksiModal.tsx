@@ -26,6 +26,7 @@ function toFormFields(item: Pengiriman): KoreksiPengirimanPayload {
     namaPenerima: item.namaPenerima,
     alamatPenerima: item.alamatPenerima,
     noTeleponPenerima: item.noTeleponPenerima,
+    catatan: "",
   };
 }
 
@@ -162,6 +163,16 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             <div className="field full">
               <label htmlFor="pk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="pk-catatan" disabled value={item.catatan || ""} />
+            </div>
+            <div className="field full">
+              <label htmlFor="pk-alasan-koreksi">Alasan Koreksi (opsional)</label>
+              <textarea
+                id="pk-alasan-koreksi"
+                maxLength={255}
+                placeholder="Contoh: Nama penerima salah ketik"
+                value={form.catatan}
+                onChange={(e) => set("catatan", e.target.value)}
+              />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (

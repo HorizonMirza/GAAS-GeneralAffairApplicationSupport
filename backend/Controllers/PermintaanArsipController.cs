@@ -371,7 +371,9 @@ public class PermintaanArsipController : ApiControllerBase
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.NamaPic = payload.NamaPic.Trim();
         item.NoTeleponPic = payload.NoTeleponPic.Trim();
-        AddLog(item, "CORRECTED", user!, $"Lokasi/PIC dikoreksi menjadi {item.LokasiPenyimpanan} / {item.NamaPic}");
+        var koreksiDetail = $"Lokasi/PIC dikoreksi menjadi {item.LokasiPenyimpanan} / {item.NamaPic}";
+        if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
+        AddLog(item, "CORRECTED", user!, koreksiDetail);
 
         await _db.SaveChangesAsync();
         return Ok(PermintaanArsipOut.From(item));

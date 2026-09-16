@@ -395,6 +395,7 @@ public class PermintaanAtkController : ApiControllerBase
             item.SumberPembelian = payload.SumberPembelian;
             detail += $"; Sumber Pembelian dikoreksi menjadi {item.SumberPembelian}";
         }
+        if (!string.IsNullOrWhiteSpace(payload.Catatan)) detail += $": {payload.Catatan.Trim()}";
         AddLog(item, "CORRECTED", user!, detail);
 
         await _db.SaveChangesAsync();

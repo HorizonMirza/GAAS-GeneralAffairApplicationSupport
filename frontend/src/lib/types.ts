@@ -222,6 +222,9 @@ export interface KoreksiPengirimanPayload {
   namaPenerima: string;
   alamatPenerima: string;
   noTeleponPenerima: string;
+  // Optional - the GA's own explanation for the correction, appended to the auto-generated
+  // summary in History rather than replacing it.
+  catatan: string;
 }
 
 export interface ApproveKpuPayload {
@@ -367,6 +370,7 @@ export interface BookingRuangLog {
 export interface KoreksiBookingPayload {
   pic: string;
   noTeleponPic: string;
+  catatan: string;
 }
 
 export interface BookingRuangCreatePayload {
@@ -508,6 +512,7 @@ export interface KoreksiArsipPayload {
   lokasiPenyimpanan: string;
   namaPic: string;
   noTeleponPic: string;
+  catatan: string;
 }
 
 // --- Maintenance (Perbaikan Sarana) ---
@@ -598,6 +603,7 @@ export interface KoreksiSaranaPayload {
   namaPelapor: string;
   noTeleponPelapor: string;
   lokasi: string;
+  catatan: string;
 }
 
 // --- Office Supplies (Permintaan ATK) ---
@@ -684,6 +690,7 @@ export interface KoreksiAtkPayload {
   namaPemohon: string;
   noTeleponPemohon: string;
   sumberPembelian: SumberPembelian | null;
+  catatan: string;
 }
 
 export interface VehicleOption {
@@ -758,6 +765,7 @@ export interface BookingKendaraanLog {
 export interface KoreksiKendaraanPayload {
   pic: string;
   noTeleponPic: string;
+  catatan: string;
 }
 
 export interface BookingKendaraanCreatePayload {

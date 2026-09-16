@@ -26,6 +26,7 @@ function toFormFields(item: PermintaanArsip): KoreksiArsipPayload {
     lokasiPenyimpanan: item.lokasiPenyimpanan,
     namaPic: item.namaPic || "",
     noTeleponPic: item.noTeleponPic || "",
+    catatan: "",
   };
 }
 
@@ -124,6 +125,16 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
             <div className="field full">
               <label htmlFor="ak-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ak-catatan" disabled value={item.catatan || ""} />
+            </div>
+            <div className="field full">
+              <label htmlFor="ak-alasan-koreksi">Alasan Koreksi (opsional)</label>
+              <textarea
+                id="ak-alasan-koreksi"
+                maxLength={255}
+                placeholder="Contoh: Lokasi penyimpanan salah ketik"
+                value={form.catatan}
+                onChange={(e) => set("catatan", e.target.value)}
+              />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (

@@ -194,18 +194,32 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     }
   }
 
-  async function handleUpdateSubmit(e: React.FormEvent) {
+  // Every workflow action below is `type="submit"` (Reject stays `type="button"` - a destructive
+  // action should never fire just because Enter was pressed in a text field), so this one handler
+  // is what Enter actually triggers no matter which single action currently applies - Save in Edit
+  // mode, Submit for a DRAFT's own creator, or Approve for whichever tier is reviewing right now.
+  // The conditions mirror the buttons rendered in modal-actions below and are mutually exclusive.
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    try {
-      await api.updatePengiriman(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Data berhasil diperbarui");
-      onClose();
-      onSaved();
-    } catch (err) {
-      setError((err as Error).message);
-      setBusy(false);
+    if (busy) return;
+    if (isEdit) {
+      setBusy(true);
+      try {
+        await api.updatePengiriman(item!.id, { ...form!, catatan: form!.catatan || null });
+        showToast("Data berhasil diperbarui");
+        onClose();
+        onSaved();
+      } catch (err) {
+        setError((err as Error).message);
+        setBusy(false);
+      }
+      return;
     }
+    if (canSubmitDraft) return handleSubmitDraft();
+    if (canL1Act) return handleApproveL1();
+    if (canGaAct) return handleApproveGa();
+    if (canGaApprovalAct) return handleApproveGaApproval();
+    if (canKpuAct) return handleKpuApprove();
   }
 
   return (
@@ -215,7 +229,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>
@@ -318,14 +332,8 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
-          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
-              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
-
           {showKpuSection && (
-            <div style={{ marginTop: 6, paddingTop: 16, borderTop: "1px solid var(--border-subtle)" }}>
+            <div style={{ marginTop: 16 }}>
               <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (Mitra)</h4>
               <div className="form-grid">
                 <div className="field">
@@ -360,45 +368,53 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
           )}
 
+          {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+              <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
+            </div>
+          )}
+
           {item.rejectReason && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
               <strong>Catatan Penolakan:</strong> {item.rejectReason}
             </div>
           )}
 
-          <div className="error-text">{error}</div>
-          <div className="modal-actions">
-            {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
-            )}
-            {canL1Act && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1", originActorLabel(item), item.createdByRole); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
-              </>
-            )}
-            {canGaAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga", originActorLabel(item), item.createdByRole); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
-              </>
-            )}
-            {canGaApprovalAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval", originActorLabel(item), item.createdByRole); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
-              </>
-            )}
-            {canKpuAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item), item.createdByRole); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKpuApprove} disabled={busy}>Approve</button>
-              </>
-            )}
-            {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
-            )}
-          </div>
+          {error && <div className="error-text">{error}</div>}
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || canKpuAct || isEdit) && (
+            <div className="modal-actions">
+              {canSubmitDraft && (
+                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Submit</button>
+              )}
+              {canL1Act && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "l1", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                  <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Approve</button>
+                </>
+              )}
+              {canGaAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                  <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Approve</button>
+                </>
+              )}
+              {canGaApprovalAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "ga-approval", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                  <button type="submit" className="btn btn-approve" style={{ width: "auto" }}>Approve</button>
+                </>
+              )}
+              {canKpuAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kpu", originActorLabel(item), item.createdByRole); }}>Reject</button>
+                  <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Approve</button>
+                </>
+              )}
+              {isEdit && (
+                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </ModalOverlay>
