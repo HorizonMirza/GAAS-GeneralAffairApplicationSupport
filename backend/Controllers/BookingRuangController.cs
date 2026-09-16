@@ -1113,11 +1113,11 @@ public class BookingRuangController : ApiControllerBase
         if (!IsDeletableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
-        // Only a booking that actually held the slot (FindConflictAsync only blocks on
-        // APPROVED_GA_APPROVAL) frees anything real by being deleted - notify whoever is waiting
-        // on this exact room+date+time before it's gone.
-        if (item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
-            await NotifyWaitlistAsync(item);
+        // No NotifyWaitlistAsync here: only an APPROVED_GA_APPROVAL booking ever held a slot
+        // (FindConflictAsync blocks on nothing else), and IsDeletableByOrigin above has already
+        // refused that status - deleting only ever reaches DRAFT/rejected/cancelled bookings,
+        // which were not holding anything. Cancel is where an approved booking releases its slot,
+        // and that path does notify the waitlist.
 
         // A partial series (some occurrences deleted, others not) doesn't make sense - deleting
         // one occurrence removes the whole series with it, same "1 paket" convention as
