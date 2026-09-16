@@ -62,12 +62,7 @@ public class PerbaikanSaranaController : ApiControllerBase
     {
         _db = db;
         _hub = hub;
-        var configured = config.GetValue<string>("SaranaUploadDir") ?? "uploads/sarana";
-        _uploadDir = Path.IsPathRooted(configured)
-            ? configured
-            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
-        _uploadDir = Path.GetFullPath(_uploadDir);
-        Directory.CreateDirectory(_uploadDir);
+        _uploadDir = DirektoriUnggahan.ResolveDanBuat(config, DirektoriUnggahan.KunciSarana, DirektoriUnggahan.DefaultSarana);
     }
 
     // Label shown in the "transaksi baru"/"proses approval" notification banner - same

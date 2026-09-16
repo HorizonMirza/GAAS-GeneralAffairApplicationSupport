@@ -54,12 +54,7 @@ public class ProfileController : ApiControllerBase
         _db = db;
         _jwt = jwt;
         _config = config;
-        var configured = config.GetValue<string>("ProfilePhotoUploadDir") ?? "uploads/profile-photos";
-        _uploadDir = Path.IsPathRooted(configured)
-            ? configured
-            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
-        _uploadDir = Path.GetFullPath(_uploadDir);
-        Directory.CreateDirectory(_uploadDir);
+        _uploadDir = DirektoriUnggahan.ResolveDanBuat(config, DirektoriUnggahan.KunciFotoProfil, DirektoriUnggahan.DefaultFotoProfil);
     }
 
     [HttpGet("")]

@@ -23,12 +23,7 @@ public class InvoiceController : ApiControllerBase
         : base(currentUser)
     {
         _db = db;
-        var configured = config.GetValue<string>("UploadDir") ?? "uploads/invoices";
-        _uploadDir = Path.IsPathRooted(configured)
-            ? configured
-            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
-        _uploadDir = Path.GetFullPath(_uploadDir);
-        Directory.CreateDirectory(_uploadDir);
+        _uploadDir = DirektoriUnggahan.ResolveDanBuat(config, DirektoriUnggahan.KunciInvoice, DirektoriUnggahan.DefaultInvoice);
     }
 
     // file.ContentType is just the multipart Content-Type header the client chose to send - not

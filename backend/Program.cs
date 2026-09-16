@@ -774,6 +774,41 @@ if (args.Contains("seed"))
     return;
 }
 
+// Housekeeping sweep for files on disk that no database row points at any more - see
+// Services/PembersihFileYatim.cs for where they come from. Reports only unless --apply is given.
+//
+//   dotnet run -- bersihkan-file-yatim
+//   dotnet run -- bersihkan-file-yatim --apply
+//   dotnet run -- bersihkan-file-yatim --apply --min-umur-jam=72
+if (args.Contains("bersihkan-file-yatim"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    var umurMinimumJam = PembersihFileYatim.DefaultUmurMinimumJam;
+    var argUmur = args.FirstOrDefault(a => a.StartsWith("--min-umur-jam=", StringComparison.Ordinal));
+    if (argUmur != null && !int.TryParse(argUmur["--min-umur-jam=".Length..], out umurMinimumJam))
+    {
+        Console.Error.WriteLine($"Nilai {argUmur} tidak valid - harus angka jam, misalnya --min-umur-jam=72");
+        Environment.ExitCode = 1;
+        return;
+    }
+    if (umurMinimumJam < 0)
+    {
+        Console.Error.WriteLine("--min-umur-jam tidak boleh negatif.");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    await PembersihFileYatim.JalankanAsync(
+        db,
+        app.Configuration,
+        apply: args.Contains("--apply"),
+        umurMinimumJam,
+        Console.Out);
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

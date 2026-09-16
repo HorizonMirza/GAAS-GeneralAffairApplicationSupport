@@ -16,11 +16,7 @@ public class UsersController : ApiControllerBase
     {
         _db = db;
         // Same upload dir as ProfileController - both read the photo files it writes.
-        var configured = config.GetValue<string>("ProfilePhotoUploadDir") ?? "uploads/profile-photos";
-        _uploadDir = Path.IsPathRooted(configured)
-            ? configured
-            : Path.Combine(AppContext.BaseDirectory, "..", "..", "..", configured);
-        _uploadDir = Path.GetFullPath(_uploadDir);
+        _uploadDir = DirektoriUnggahan.Resolve(config, DirektoriUnggahan.KunciFotoProfil, DirektoriUnggahan.DefaultFotoProfil);
     }
 
     // Any logged-in user can view another user's profile photo, same visibility as their name -
