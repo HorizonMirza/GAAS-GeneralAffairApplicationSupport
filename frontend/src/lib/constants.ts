@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, Role, Status, SumberPembelian, TipeBooking } from "./types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
@@ -657,3 +657,82 @@ export const COVER_PRESETS: CoverPreset[] = [
   { key: "slate", label: "Slate", gradient: "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)" },
   { key: "indigo", label: "Indigo", gradient: "linear-gradient(135deg, #1e1b4b 0%, #4f46e5 55%, #a5b4fc 100%)" },
 ];
+
+// --- Riwayat Aktivitas (Super Admin, lintas modul) ---
+
+// The module keys the backend's RiwayatAktivitasController.Sources emits, mapped to the names
+// used in the sidebar so one stream of rows from seven tables still reads like the app.
+export const RIWAYAT_MODUL_LABEL: Record<RiwayatModul, string> = {
+  "ekspedisi": "Expedition",
+  "booking-ruang": "Room Booking",
+  "booking-kendaraan": "Vehicle Booking",
+  "permintaan-atk": "Office Supplies",
+  "perbaikan-sarana": "Maintenance",
+  "permintaan-arsip": "Archive",
+  "invoice": "Invoice",
+};
+
+// Deep-link target per module, so a row can take Super Admin to the record it describes.
+export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
+  "ekspedisi": "/ekspedisi/transaksi",
+  "booking-ruang": "/booking-ruang-meeting/transaksi",
+  "booking-kendaraan": "/booking-kendaraan/transaksi",
+  "permintaan-atk": "/office-supplies/transaksi",
+  "perbaikan-sarana": "/maintenance/transaksi",
+  "permintaan-arsip": "/arsip/transaksi",
+  "invoice": "/ekspedisi/invoice-history",
+};
+
+// Two actions the backend writes that LOG_ACTION_META never got an entry for - the per-item
+// history modals fall back to the raw string for them, which is tolerable there because the
+// surrounding rows give context, but a cross-module list has none to lean on.
+const RIWAYAT_EXTRA_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
+  CANCELLED: { label: "Dibatalkan Pengaju", type: "reject" },
+  EKSEKUSI_DIBATALKAN: { label: "Tahap Eksekusi Dimundurkan", type: "neutral" },
+};
+
+// Invoice uses its own action vocabulary (UPLOADED/DRAFT_UPDATED, and a bare APPROVED/REJECTED
+// that means something different from the other modules'), so the module decides which map wins.
+export function riwayatActionMeta(
+  modul: RiwayatModul,
+  action: string
+): { label: string; type: "neutral" | "approve" | "reject" } {
+  const primary = modul === "invoice" ? INVOICE_LOG_ACTION_META : LOG_ACTION_META;
+  return primary[action] || RIWAYAT_EXTRA_ACTION_META[action] || { label: action, type: "neutral" };
+}
+
+// Everything the Aksi dropdown can filter by. Kept as one flat list rather than per-module,
+// because the filter is applied before the module is known (and a module filter may not be set).
+export const RIWAYAT_ACTION_OPTIONS: string[] = [
+  "CREATED",
+  "REVISED",
+  "SUBMITTED",
+  "APPROVED_L1",
+  "REJECTED_L1",
+  "APPROVED_GA",
+  "REJECTED_GA",
+  "APPROVED_GA_APPROVAL",
+  "REJECTED_GA_APPROVAL",
+  "APPROVED_KPU",
+  "REJECTED_KPU",
+  "CANCELLED",
+  "RESCHEDULED",
+  "CORRECTED",
+  "LOKASI_DICEK",
+  "GAMBAR_DIBUAT",
+  "SELESAI",
+  "EKSEKUSI_DIBATALKAN",
+  "UPLOADED",
+  "DRAFT_UPDATED",
+  "APPROVED",
+  "REJECTED",
+];
+
+// The Aksi dropdown has no module context, so a code that means different things in different
+// modules is spelled out rather than shown under one module's label.
+export const RIWAYAT_ACTION_FILTER_LABEL: Record<string, string> = {
+  APPROVED: "Invoice Disetujui",
+  REJECTED: "Invoice Ditolak",
+  UPLOADED: "Invoice Disimpan sebagai Draft",
+  DRAFT_UPDATED: "Draft Invoice Diperbarui",
+};

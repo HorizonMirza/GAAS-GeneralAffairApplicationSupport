@@ -53,6 +53,9 @@ import type {
   PermintaanAtkLog,
   PermintaanAtkStatsResponse,
   RejectTarget,
+  RiwayatAktivitasListResponse,
+  RiwayatAktor,
+  RiwayatModul,
   RoomOption,
   Status,
   SumberPembelian,
@@ -755,7 +758,36 @@ export const api = {
   getArsipChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-arsip/${id}/chat`),
   sendArsipChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/permintaan-arsip/${id}/chat`, { method: "POST", body: { message } }),
+
+  // Super Admin only - the seven per-module log tables unioned into one stream.
+  listRiwayatAktivitas: (params: ListRiwayatParams) =>
+    apiRequest<RiwayatAktivitasListResponse>("/riwayat-aktivitas", { params: riwayatListParams(params) }),
+  // Only the accounts that actually appear in the logs, so the Pelaku dropdown
+  // stays short instead of listing every account that has never done anything.
+  listRiwayatAktor: () => apiRequest<RiwayatAktor[]>("/riwayat-aktivitas/aktor"),
 };
+
+export interface ListRiwayatParams {
+  page?: number;
+  limit?: number;
+  modul?: RiwayatModul | "";
+  actorId?: number | "";
+  action?: string;
+  dariTanggal?: string;
+  sampaiTanggal?: string;
+}
+
+function riwayatListParams(p: ListRiwayatParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    modul: p.modul,
+    actor_id: p.actorId,
+    action: p.action,
+    dari_tanggal: p.dariTanggal,
+    sampai_tanggal: p.sampaiTanggal,
+  };
+}
 
 export interface ListArsipParams {
   page?: number;

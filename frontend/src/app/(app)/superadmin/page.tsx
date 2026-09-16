@@ -18,6 +18,7 @@ import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
+import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
@@ -1845,6 +1846,10 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>Activity Log</h2>
+
+      <RiwayatAktivitasCard />
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}

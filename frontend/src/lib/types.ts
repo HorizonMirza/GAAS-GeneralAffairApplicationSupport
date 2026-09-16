@@ -784,3 +784,46 @@ export interface BookingKendaraanReschedulePayload {
   jamMulai: string | null;
   jamSelesai: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Riwayat Aktivitas (Super Admin)
+// ---------------------------------------------------------------------------
+
+// Each module writes its own *_logs table, and each one is only readable through
+// that module's {id}/logs endpoint. The backend UNIONs all seven into one stream
+// so Super Admin can ask "what did this person do last week" across the app.
+export type RiwayatModul =
+  | "ekspedisi"
+  | "booking-ruang"
+  | "booking-kendaraan"
+  | "permintaan-atk"
+  | "perbaikan-sarana"
+  | "permintaan-arsip"
+  | "invoice";
+
+export interface RiwayatAktivitas {
+  modul: RiwayatModul;
+  itemId: number;
+  // The parent's human-readable number, or the invoice's Bulan. Null when the
+  // record never got one (an unsubmitted draft).
+  nomor: string | null;
+  action: string;
+  reason: string | null;
+  actorId: number | null;
+  actorNama: string | null;
+  actorRole: string | null;
+  createdAt: string;
+}
+
+export interface RiwayatAktivitasListResponse {
+  items: RiwayatAktivitas[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface RiwayatAktor {
+  id: number;
+  nama: string;
+  role: string;
+}
