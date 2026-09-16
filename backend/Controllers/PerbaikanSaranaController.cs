@@ -429,6 +429,52 @@ public class PerbaikanSaranaController : ApiControllerBase
         return NoContent();
     }
 
+    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
+    // why this mirrors List's filters and deletes in one statement.
+    [HttpDelete("super-admin/bulk")]
+    public async Task<IActionResult> SuperAdminBulkDelete(
+        [FromQuery(Name = "status")] string? status = null,
+        [FromQuery] string? kategori = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery] string? direktorat = null,
+        [FromQuery] string? bulan = null,
+        [FromQuery] string? search = null,
+        [FromQuery] DateOnly? tanggal = null)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (roleError != null) return roleError;
+
+        BookingStatusEnum? statusFilter = null;
+        var onlyRejected = false;
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "REJECTED") onlyRejected = true;
+            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else return BadRequest(new { detail = "Status tidak valid" });
+        }
+
+        KategoriKerusakanEnum? kategoriFilter = null;
+        if (!string.IsNullOrEmpty(kategori))
+        {
+            if (Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori)) kategoriFilter = parsedKategori;
+            else return BadRequest(new { detail = "Kategori tidak valid" });
+        }
+
+        IQueryable<PerbaikanSarana> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var deleted = await query.ExecuteDeleteAsync();
+        return Ok(new { deleted });
+    }
+
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {

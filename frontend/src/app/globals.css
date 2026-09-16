@@ -5453,3 +5453,57 @@ table.data-table {
   pointer-events: none;
 }
 
+
+/* --- Hapus Semua per section (Super Admin) --- */
+
+/* The scope box in BulkDeleteModal: says out loud what the delete is limited to, because the
+   difference between "this month" and "everything" is one filter the user may have forgotten
+   they set. Colours come from the theme tokens so both themes read correctly. */
+.bulk-delete-scope {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.bulk-delete-scope-title {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bulk-delete-scope-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.bulk-delete-scope-list li { margin-top: 2px; }
+
+/* No filter set means the button empties the whole module - that deserves to look different
+   from a scoped delete, not the same calm grey. */
+.bulk-delete-scope-danger {
+  border-left-color: var(--badge-rejected-bg);
+  background: color-mix(in srgb, var(--badge-rejected-bg) 8%, var(--bg-surface-alt));
+}
+
+/* Sits next to "Hapus Filter" in each section toolbar - same size as its neighbours, but outlined
+   in the reject colour so it never reads as just another filter control. */
+.btn-bulk-delete {
+  width: auto;
+  align-self: flex-end;
+  background: transparent;
+  color: var(--badge-rejected-bg);
+  border: 1px solid color-mix(in srgb, var(--badge-rejected-bg) 45%, transparent);
+}
+
+.btn-bulk-delete:hover:not(:disabled) {
+  background: var(--badge-rejected-bg);
+  color: var(--badge-rejected-fg);
+  border-color: var(--badge-rejected-bg);
+}
+
+.btn-bulk-delete:disabled { opacity: 0.45; }

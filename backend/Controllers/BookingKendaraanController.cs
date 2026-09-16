@@ -701,6 +701,46 @@ public class BookingKendaraanController : ApiControllerBase
         return NoContent();
     }
 
+    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
+    // why this mirrors List's filters and deletes in one statement.
+    [HttpDelete("super-admin/bulk")]
+    public async Task<IActionResult> SuperAdminBulkDelete(
+        [FromQuery(Name = "status")] string? status = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery(Name = "nama_kendaraan")] string? namaKendaraan = null,
+        [FromQuery] DateOnly? tanggal = null,
+        [FromQuery] string? direktorat = null,
+        [FromQuery] string? bulan = null,
+        [FromQuery] string? search = null,
+        [FromQuery] string? sejakBulan = null)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (roleError != null) return roleError;
+
+        BookingStatusEnum? statusFilter = null;
+        var onlyRejected = false;
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "REJECTED") onlyRejected = true;
+            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else return BadRequest(new { detail = "Status tidak valid" });
+        }
+
+        IQueryable<BookingKendaraan> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.BookingKendaraans.AsQueryable(), user!, statusFilter, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var deleted = await query.ExecuteDeleteAsync();
+        return Ok(new { deleted });
+    }
+
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {

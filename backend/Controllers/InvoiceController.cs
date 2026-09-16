@@ -339,6 +339,49 @@ public class InvoiceController : ApiControllerBase
         return NoContent();
     }
 
+    // "Hapus Semua" on the Super Admin page's Invoice card. Same filters the card itself sends to
+    // ListInvoice, so what gets deleted is exactly what the table lists - every page of it.
+    //
+    // Unlike the other modules this cannot be a single DELETE statement: every invoice revision
+    // keeps a file on disk, those paths live on the InvoiceLog rows, and the rows are gone the
+    // moment the invoice is. So the paths are collected first, exactly as DeleteInvoice does for
+    // one invoice, and the files are only removed once the DB side has actually committed.
+    [HttpDelete("super-admin/bulk")]
+    public async Task<IActionResult> SuperAdminBulkDelete(
+        [FromQuery] string? bulan = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int? uploadedBy = null)
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        // Mirrors ListInvoice's non-KPU branch - Super Admin never sees anyone's DRAFT, so
+        // "Hapus Semua" must not delete one either.
+        var query = _db.Invoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
+        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
+        if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
+
+        var items = await query.Include(i => i.Logs).ToListAsync();
+        if (items.Count == 0) return Ok(new { deleted = 0 });
+
+        var filesToDelete = items
+            .SelectMany(i => i.Logs.Select(l => l.FilePath).Append(i.FilePath))
+            .Where(f => f != null)
+            .Distinct()
+            .ToList();
+
+        _db.Invoices.RemoveRange(items);
+        await _db.SaveChangesAsync();
+        foreach (var f in filesToDelete)
+        {
+            var path = Path.Combine(_uploadDir, f!);
+            if (System.IO.File.Exists(path))
+                System.IO.File.Delete(path);
+        }
+        return Ok(new { deleted = items.Count });
+    }
+
     [HttpPatch("{invoiceId}/approve")]
     public async Task<IActionResult> ApproveInvoice(int invoiceId, [FromBody] InvoiceReviewRequest payload)
     {

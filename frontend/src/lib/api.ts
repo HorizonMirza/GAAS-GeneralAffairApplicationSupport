@@ -765,7 +765,30 @@ export const api = {
   // Only the accounts that actually appear in the logs, so the Pelaku dropdown
   // stays short instead of listing every account that has never done anything.
   listRiwayatAktor: () => apiRequest<RiwayatAktor[]>("/riwayat-aktivitas/aktor"),
+
+  // "Hapus Semua" per section on the Super Admin page. Each one takes the same filter object as
+  // its list call, and the backend runs it through the same filter builder - so what is deleted
+  // is exactly the set the table is showing, every page of it. With no filters set that is the
+  // whole module. Each returns how many rows actually went.
+  superAdminBulkDeletePengiriman: (params: ListPengirimanParams) =>
+    apiRequest<BulkDeleteResult>("/pengiriman/super-admin/bulk", { method: "DELETE", params: listParams(params) }),
+  superAdminBulkDeleteBooking: (params: ListBookingParams) =>
+    apiRequest<BulkDeleteResult>("/booking-ruang/super-admin/bulk", { method: "DELETE", params: bookingListParams(params) }),
+  superAdminBulkDeleteKendaraanBooking: (params: ListKendaraanBookingParams) =>
+    apiRequest<BulkDeleteResult>("/booking-kendaraan/super-admin/bulk", { method: "DELETE", params: kendaraanListParams(params) }),
+  superAdminBulkDeleteAtk: (params: ListAtkParams) =>
+    apiRequest<BulkDeleteResult>("/permintaan-atk/super-admin/bulk", { method: "DELETE", params: atkListParams(params) }),
+  superAdminBulkDeleteSarana: (params: ListSaranaParams) =>
+    apiRequest<BulkDeleteResult>("/perbaikan-sarana/super-admin/bulk", { method: "DELETE", params: saranaListParams(params) }),
+  superAdminBulkDeleteArsip: (params: ListArsipParams) =>
+    apiRequest<BulkDeleteResult>("/permintaan-arsip/super-admin/bulk", { method: "DELETE", params: arsipListParams(params) }),
+  superAdminBulkDeleteInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
+    apiRequest<BulkDeleteResult>("/invoice/super-admin/bulk", { method: "DELETE", params }),
 };
+
+export interface BulkDeleteResult {
+  deleted: number;
+}
 
 export interface ListRiwayatParams {
   page?: number;

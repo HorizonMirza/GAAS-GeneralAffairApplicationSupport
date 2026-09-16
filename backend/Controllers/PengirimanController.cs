@@ -480,6 +480,50 @@ public class PengirimanController : ApiControllerBase
         return NoContent();
     }
 
+    // "Hapus Semua" on the Super Admin page. Takes the same filters as List and runs them through
+    // the same ApplyListFilters, so what gets deleted is exactly the set the table is showing -
+    // every page of it, not just the page on screen. With no filters set that is the whole module.
+    //
+    // One DELETE statement rather than a loop of per-id deletes: the rows never come back to the
+    // app, the whole thing is one transaction (so it cannot stop half-done), and child rows go
+    // with it through the ON DELETE CASCADE already on every *_logs / *_chat_* / *_items table.
+    [HttpDelete("super-admin/bulk")]
+    public async Task<IActionResult> SuperAdminBulkDelete(
+        [FromQuery] string? bulan = null,
+        [FromQuery(Name = "status")] string? status = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery] string? direktorat = null,
+        [FromQuery(Name = "nomor_transmittal")] string? nomorTransmittal = null,
+        [FromQuery] string? sejakBulan = null,
+        [FromQuery] DateOnly? tanggal = null)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (roleError != null) return roleError;
+
+        StatusEnum? statusFilter = null;
+        var onlyRejected = false;
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (status == "REJECTED") onlyRejected = true;
+            else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
+            else return BadRequest(new { detail = "Status tidak valid" });
+        }
+
+        IQueryable<Pengiriman> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var deleted = await query.ExecuteDeleteAsync();
+        return Ok(new { deleted });
+    }
+
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {
