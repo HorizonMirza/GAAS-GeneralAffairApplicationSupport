@@ -4902,6 +4902,41 @@ table.data-table {
   .pagination-right { justify-content: center; width: 100%; }
 }
 
+/* ---------- Room waitlist ("Antrean Ruangan Saya" on Room Booking Overview) ---------- */
+.waitlist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.waitlist-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.waitlist-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* A notified entry is the whole point of the feature - the slot the person was waiting for is
+   free now, so it gets the same green accent Approved rows use rather than sitting in the list
+   looking like the still-waiting ones. */
+.waitlist-row-ready {
+  border-color: var(--badge-completed-fg);
+}
+
+@media (max-width: 520px) {
+  .waitlist-row-actions { width: 100%; justify-content: space-between; }
+}
+
 /* ---------- Status border beam (draft: none, on-approval: orange, rejected: red, approved: green) ---------- */
 @property --beam-angle {
   syntax: '<angle>';

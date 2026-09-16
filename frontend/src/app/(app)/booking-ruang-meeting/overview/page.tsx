@@ -22,7 +22,7 @@ import {
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
-import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
+import type { BookingRuang, BookingRuangCreatePayload, RoomOption, WaitlistEntry } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
 
 // Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView). "Penuh" hanya berarti
@@ -168,6 +168,8 @@ export default function BookingOverviewPage() {
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
 
   const rowMenu = useRowMenu(items);
 
@@ -209,6 +211,41 @@ export default function BookingOverviewPage() {
   useEffect(() => {
     api.listRooms().then(setRooms).catch(() => setRooms([]));
   }, []);
+
+  const loadWaitlist = useCallback(() => {
+    api.myWaitlist().then(setWaitlist).catch(() => setWaitlist([]));
+  }, []);
+
+  useEffect(() => {
+    loadWaitlist();
+  }, [loadWaitlist]);
+
+  // The backend stamps NotifiedAt on every matching entry the moment an approved booking for that
+  // room+slot is deleted or rescheduled (BookingRuangController.NotifyWaitlistAsync). Joining is
+  // whole-day because this is reached from the room card, which reports "Full" for the day rather
+  // than for one hour - the entry then matches whatever frees up that day.
+  async function handleJoinWaitlist(namaRuang: string) {
+    setWaitlistBusy(true);
+    try {
+      await api.joinWaitlist({ namaRuang, tanggal: todayLocalDate(), isWholeDay: true });
+      loadWaitlist();
+      showToast(`Anda masuk antrean ${namaRuang}. Kami beri tahu begitu ada slot kosong hari ini.`);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setWaitlistBusy(false);
+    }
+  }
+
+  async function handleLeaveWaitlist(entry: WaitlistEntry) {
+    try {
+      await api.leaveWaitlist(entry.id);
+      loadWaitlist();
+      showToast(`Antrean ${entry.namaRuang} dibatalkan`);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
 
   useEffect(() => {
     // Drives the available/penuh strip on each room card below - fetched once on mount, same as
@@ -294,6 +331,31 @@ export default function BookingOverviewPage() {
             );
           })}
         </div>
+      )}
+
+      {waitlist.length > 0 && (
+        <>
+          <h3 style={{ margin: "24px 0 12px" }}>Antrean Ruangan Saya</h3>
+          {waitlist.map((w) => (
+            <div key={w.id} className={`card waitlist-row${w.notifiedAt ? " waitlist-row-ready" : ""}`}>
+              <div className="waitlist-row-main">
+                <strong>{w.namaRuang}</strong>
+                <span className="text-secondary">
+                  {formatDate(w.tanggal)}
+                  {w.isWholeDay ? " · Sepanjang Hari" : ` · ${w.jamMulai?.slice(0, 5)}-${w.jamSelesai?.slice(0, 5)}`}
+                </span>
+              </div>
+              <div className="waitlist-row-actions">
+                <span className={`badge ${w.notifiedAt ? "badge-completed" : "badge-waiting"}`}>
+                  {w.notifiedAt ? "Slot Tersedia" : "Menunggu"}
+                </span>
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => handleLeaveWaitlist(w)}>
+                  {w.notifiedAt ? "Tutup" : "Batal Antre"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
@@ -489,6 +551,14 @@ export default function BookingOverviewPage() {
           setInfoRoom(null);
           router.push(`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(nama)}`);
         }}
+        onJoinWaitlist={() => {
+          if (!infoRoom) return;
+          const nama = infoRoom.nama;
+          setInfoRoom(null);
+          handleJoinWaitlist(nama);
+        }}
+        waitlistJoined={!!infoRoom && waitlist.some((w) => w.namaRuang === infoRoom.nama && w.tanggal === todayLocalDate())}
+        waitlistBusy={waitlistBusy}
       />
 
       {me && (

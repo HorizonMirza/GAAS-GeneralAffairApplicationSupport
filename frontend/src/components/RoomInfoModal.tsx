@@ -34,6 +34,12 @@ interface Props {
   // form - the label still varies by role, since read-only roles get "Lihat Kalender" instead.
   onBook: () => void;
   bookLabel?: string;
+  // Room Booking only: ask to be notified when this room frees up on the day being shown. Only
+  // rendered when availability is "full" - there is nothing to wait for otherwise. Vehicle
+  // Booking passes none of these and the button never appears there.
+  onJoinWaitlist?: () => void;
+  waitlistJoined?: boolean;
+  waitlistBusy?: boolean;
 }
 
 const SLIDE_INTERVAL_MS = 1600;
@@ -97,6 +103,9 @@ export default function RoomInfoModal({
   onClose,
   onBook,
   bookLabel = "Booking",
+  onJoinWaitlist,
+  waitlistJoined,
+  waitlistBusy,
 }: Props) {
   if (!open || nama == null) return null;
   return (
@@ -146,6 +155,17 @@ export default function RoomInfoModal({
           )}
         </div>
         <div className="modal-actions">
+          {onJoinWaitlist && availability === "full" && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto" }}
+              disabled={waitlistJoined || waitlistBusy}
+              onClick={onJoinWaitlist}
+            >
+              {waitlistJoined ? "Sudah Antre" : waitlistBusy ? "Memproses..." : "Antre Ruangan Ini"}
+            </button>
+          )}
           <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={onBook}>{bookLabel}</button>
         </div>
       </div>
