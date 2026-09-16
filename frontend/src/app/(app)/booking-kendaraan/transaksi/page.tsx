@@ -255,7 +255,7 @@ function VehicleBookingTransaksiPageInner() {
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-kendaraan-search">Cari Pesanan</label>
-            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan, keperluan, PIC, kendaraan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">

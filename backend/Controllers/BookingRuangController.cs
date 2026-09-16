@@ -305,8 +305,16 @@ public class BookingRuangController : ApiControllerBase
         if (!string.IsNullOrEmpty(namaRuang))
             query = query.Where(b => b.NamaRuang == namaRuang || b.AdditionalRooms.Any(r => r.NamaRuang == namaRuang));
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
+        // Same shape as Office Supplies/Maintenance/Archive: the nomor plus the three things a
+        // person actually remembers about a booking - what it was for, who ran it, and which
+        // room - rather than forcing them to know the nomor to find anything.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(b => b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%"));
+            query = query.Where(b =>
+                (b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%")) ||
+                EF.Functions.ILike(b.NamaKegiatan, $"%{search}%") ||
+                (b.Pic != null && EF.Functions.ILike(b.Pic, $"%{search}%")) ||
+                EF.Functions.ILike(b.NamaRuang, $"%{search}%") ||
+                b.AdditionalRooms.Any(r => EF.Functions.ILike(r.NamaRuang, $"%{search}%")));
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }

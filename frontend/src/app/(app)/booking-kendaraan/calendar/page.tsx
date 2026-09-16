@@ -288,7 +288,7 @@ function VehicleCalendarPageInner() {
               type="text"
               id="calendar-kendaraan-search-input"
               className="calendar-search-input"
-              placeholder="No Pesanan"
+              placeholder="No Pesanan, keperluan, PIC, kendaraan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

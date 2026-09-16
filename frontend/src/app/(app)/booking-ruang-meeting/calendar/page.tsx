@@ -274,7 +274,7 @@ function BookingCalendarPageInner() {
               type="text"
               id="calendar-search-input"
               className="calendar-search-input"
-              placeholder="No Pesanan"
+              placeholder="No Pesanan, kegiatan, PIC, ruangan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

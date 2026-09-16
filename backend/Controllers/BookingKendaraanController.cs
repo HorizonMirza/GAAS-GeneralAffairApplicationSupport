@@ -231,8 +231,16 @@ public class BookingKendaraanController : ApiControllerBase
         }
         if (!string.IsNullOrEmpty(namaKendaraan)) query = query.Where(b => b.NamaKendaraan == namaKendaraan);
         if (tanggal.HasValue) query = query.Where(b => b.Tanggal == tanggal.Value);
+        // Mirrors Room Booking's own search (see BookingRuangController.ApplyListFilters): the
+        // nomor plus what the trip was for, who ran it, and which vehicle. Supir is in here too
+        // because the driver's name is one of the things people ask about a past trip.
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(b => b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%"));
+            query = query.Where(b =>
+                (b.NomorPemesanan != null && EF.Functions.ILike(b.NomorPemesanan, $"%{search}%")) ||
+                EF.Functions.ILike(b.Keperluan, $"%{search}%") ||
+                (b.Pic != null && EF.Functions.ILike(b.Pic, $"%{search}%")) ||
+                EF.Functions.ILike(b.NamaKendaraan, $"%{search}%") ||
+                (b.Supir != null && EF.Functions.ILike(b.Supir, $"%{search}%")));
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
