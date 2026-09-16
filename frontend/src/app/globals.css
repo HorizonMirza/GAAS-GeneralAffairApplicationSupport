@@ -3606,13 +3606,13 @@ table.data-table {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .total-akumulasi-footer .total-akumulasi-value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -4153,6 +4153,14 @@ table.data-table {
   width: 200px;
   max-height: 190px;
   overflow-y: auto;
+  /* Still scrolls (mouse wheel, trackpad, keyboard) - just without the visible track/thumb, since
+     the grid's own layout already makes it obvious there's more above/below. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.year-picker-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-picker-footer {

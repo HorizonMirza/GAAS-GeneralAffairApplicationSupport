@@ -41,6 +41,12 @@ public class PermintaanArsipController : ApiControllerBase
         BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
     };
 
+    // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option.
+    private static readonly BookingStatusEnum[] OnApprovalStatuses =
+    {
+        BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
+    };
+
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
 
@@ -134,7 +140,8 @@ public class PermintaanArsipController : ApiControllerBase
         string? search = null,
         bool onlyRejected = false,
         DateOnly? tanggal = null,
-        string? kategori = null)
+        string? kategori = null,
+        bool onlyOnApproval = false)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -157,6 +164,7 @@ public class PermintaanArsipController : ApiControllerBase
 
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
+        else if (onlyOnApproval) query = query.Where(p => OnApprovalStatuses.Contains(p.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -427,9 +435,11 @@ public class PermintaanArsipController : ApiControllerBase
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -437,7 +447,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
+            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -506,9 +516,11 @@ public class PermintaanArsipController : ApiControllerBase
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -516,7 +528,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
+            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

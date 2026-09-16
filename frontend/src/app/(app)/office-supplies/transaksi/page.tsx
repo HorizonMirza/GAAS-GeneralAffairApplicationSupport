@@ -37,7 +37,7 @@ interface FilterState {
   limit: number;
   tanggal: string;
   bulan: string;
-  status: Status | "REJECTED" | "";
+  status: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -264,14 +264,11 @@ function OfficeSuppliesTransaksiPageInner() {
                   <SearchableSelect
                     id="filter-atk-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "REJECTED", "COMPLETED"]}
+                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}

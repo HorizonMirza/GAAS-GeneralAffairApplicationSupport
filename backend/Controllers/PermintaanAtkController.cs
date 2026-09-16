@@ -44,6 +44,12 @@ public class PermintaanAtkController : ApiControllerBase
         StatusEnum.REJECTED_L1, StatusEnum.REJECTED_GA, StatusEnum.REJECTED_GA_APPROVAL, StatusEnum.REJECTED_KPU,
     };
 
+    // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option.
+    private static readonly StatusEnum[] OnApprovalStatuses =
+    {
+        StatusEnum.SUBMITTED, StatusEnum.APPROVED_L1, StatusEnum.APPROVED_GA, StatusEnum.APPROVED_GA_APPROVAL,
+    };
+
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
 
@@ -138,7 +144,8 @@ public class PermintaanAtkController : ApiControllerBase
         string? search = null,
         bool onlyRejected = false,
         DateOnly? tanggal = null,
-        SumberPembelianEnum? sumberPembelian = null)
+        SumberPembelianEnum? sumberPembelian = null,
+        bool onlyOnApproval = false)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -161,6 +168,7 @@ public class PermintaanAtkController : ApiControllerBase
 
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
+        else if (onlyOnApproval) query = query.Where(p => OnApprovalStatuses.Contains(p.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -450,9 +458,11 @@ public class PermintaanAtkController : ApiControllerBase
 
         StatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -468,7 +478,7 @@ public class PermintaanAtkController : ApiControllerBase
         IQueryable<PermintaanAtk> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter);
+            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -547,9 +557,11 @@ public class PermintaanAtkController : ApiControllerBase
 
         StatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -565,7 +577,7 @@ public class PermintaanAtkController : ApiControllerBase
         IQueryable<PermintaanAtk> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter);
+            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

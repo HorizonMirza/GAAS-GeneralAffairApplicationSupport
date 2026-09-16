@@ -35,7 +35,7 @@ interface FilterState {
   limit: number;
   tanggal: string;
   bulan: string;
-  status: BookingStatus | "REJECTED" | "";
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori: ArchiveKategori | "";
   divisi: string;
   departemen: string;
@@ -260,13 +260,11 @@ function ArsipTransaksiPageInner() {
                   <SearchableSelect
                     id="filter-arsip-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "Approved",
                     } as Record<string, string>)[v] || v}

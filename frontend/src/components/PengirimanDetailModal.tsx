@@ -362,7 +362,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 </div>
                 <div className="field full">
                   <label htmlFor="pv-k-total">Total</label>
-                  <input type="text" id="pv-k-total" readOnly value={kTotal} />
+                  <input type="text" id="pv-k-total" disabled value={kTotal} />
                 </div>
               </div>
             </div>

@@ -31,9 +31,9 @@ interface FilterState {
   tanggal: string;
   bulan: string;
   search: string;
-  // "REJECTED" is a synthetic value (not a real Status) meaning "any of the 4 reject-stage
-  // statuses" - collapsed into one Status filter dropdown option.
-  status: Status | "REJECTED" | "";
+  // "REJECTED"/"ON_APPROVAL" are synthetic values (not real Status members) collapsing every
+  // reject-stage or on-approval-stage status into the app-wide 4-option Status filter dropdown.
+  status: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -266,14 +266,11 @@ function TransaksiPageInner() {
                   <SearchableSelect
                     id="filter-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "REJECTED", "COMPLETED"]}
+                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}

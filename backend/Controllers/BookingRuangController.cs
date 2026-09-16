@@ -254,6 +254,14 @@ public class BookingRuangController : ApiControllerBase
         BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
     };
 
+    // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option -
+    // APPROVED_GA_APPROVAL is excluded since it's Room Booking's own true final "Approved" state
+    // (no Mitra/KPU stage here), not something still waiting on someone.
+    private static readonly BookingStatusEnum[] OnApprovalStatuses =
+    {
+        BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
+    };
+
     public static IQueryable<BookingRuang> ApplyListFilters(
         AppDbContext db,
         IQueryable<BookingRuang> query,
@@ -267,7 +275,8 @@ public class BookingRuangController : ApiControllerBase
         string? bulan = null,
         string? search = null,
         string? sejakBulan = null,
-        bool onlyRejected = false)
+        bool onlyRejected = false,
+        bool onlyOnApproval = false)
     {
         if (currentUser.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN)
         {
@@ -292,6 +301,7 @@ public class BookingRuangController : ApiControllerBase
 
         if (statusFilter.HasValue) query = query.Where(b => b.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(b => RejectedStatuses.Contains(b.Status));
+        else if (onlyOnApproval) query = query.Where(b => OnApprovalStatuses.Contains(b.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -1175,9 +1185,11 @@ public class BookingRuangController : ApiControllerBase
 
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -1185,7 +1197,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected);
+            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -1338,9 +1350,11 @@ public class BookingRuangController : ApiControllerBase
         // instead of via [FromQuery] enum binding (which would 400 on it).
         BookingStatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -1348,7 +1362,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected);
+            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

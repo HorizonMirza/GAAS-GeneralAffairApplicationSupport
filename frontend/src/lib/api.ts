@@ -174,7 +174,7 @@ export interface ListPengirimanParams {
   nomorTransmittal?: string;
   // "REJECTED" is a synthetic value (not a real Status) meaning "any of the 4 reject-stage
   // statuses" - collapsed into one Status filter dropdown option.
-  status?: Status | "REJECTED" | "";
+  status?: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;
@@ -815,7 +815,7 @@ function riwayatListParams(p: ListRiwayatParams) {
 export interface ListArsipParams {
   page?: number;
   limit?: number;
-  status?: BookingStatus | "REJECTED" | "";
+  status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori?: ArchiveKategori | "";
   divisi?: string;
   departemen?: string;
@@ -869,7 +869,7 @@ function arsipCatalogParams(p: ListArsipCatalogParams) {
 export interface ListSaranaParams {
   page?: number;
   limit?: number;
-  status?: BookingStatus | "REJECTED" | "";
+  status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori?: KategoriKerusakan | "";
   divisi?: string;
   departemen?: string;
@@ -897,7 +897,7 @@ function saranaListParams(p: ListSaranaParams) {
 export interface ListAtkParams {
   page?: number;
   limit?: number;
-  status?: Status | "REJECTED" | "";
+  status?: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi?: string;
   departemen?: string;
   direktorat?: string;
@@ -927,7 +927,7 @@ export interface ListBookingParams {
   limit?: number;
   // "REJECTED" is a synthetic value (not a real BookingStatus) meaning "any of the 3
   // reject-stage statuses" - collapsed into one Status filter dropdown option.
-  status?: BookingStatus | "REJECTED" | "";
+  status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi?: string;
   departemen?: string;
   namaRuang?: string;
@@ -972,7 +972,7 @@ function bookingListParams(p: ListBookingParams) {
 export interface ListKendaraanBookingParams {
   page?: number;
   limit?: number;
-  status?: BookingStatus | "REJECTED" | "";
+  status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi?: string;
   departemen?: string;
   namaKendaraan?: string;

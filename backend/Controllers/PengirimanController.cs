@@ -175,6 +175,13 @@ public class PengirimanController : ApiControllerBase
         StatusEnum.REJECTED_L1, StatusEnum.REJECTED_GA, StatusEnum.REJECTED_GA_APPROVAL, StatusEnum.REJECTED_KPU,
     };
 
+    // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option - every tier
+    // still waiting on someone, but not yet the true final COMPLETED state.
+    private static readonly StatusEnum[] OnApprovalStatuses =
+    {
+        StatusEnum.SUBMITTED, StatusEnum.APPROVED_L1, StatusEnum.APPROVED_GA, StatusEnum.APPROVED_GA_APPROVAL,
+    };
+
     public static IQueryable<Pengiriman> ApplyListFilters(
         AppDbContext db,
         IQueryable<Pengiriman> query,
@@ -187,7 +194,8 @@ public class PengirimanController : ApiControllerBase
         string? bulan,
         string? sejakBulan = null,
         bool onlyRejected = false,
-        DateOnly? tanggal = null)
+        DateOnly? tanggal = null,
+        bool onlyOnApproval = false)
     {
         // Admin dan Approval Departemen/Divisi berbagi satu tim: keduanya melihat seluruh data
         // barang unit mereka (siapapun yang membuatnya), kecuali draft orang lain yang belum
@@ -215,6 +223,7 @@ public class PengirimanController : ApiControllerBase
 
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
+        else if (onlyOnApproval) query = query.Where(p => OnApprovalStatuses.Contains(p.Status));
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -227,7 +236,12 @@ public class PengirimanController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
-        if (!string.IsNullOrEmpty(nomorTransmittal)) query = query.Where(p => EF.Functions.ILike(p.NomorTransmittal, $"%{nomorTransmittal}%"));
+        // The search box is still labeled "No Transmittal" (that's what everyone types most
+        // often), but it also matches No. Resi now that Mitra fills that in - no separate field
+        // needed for someone who only has the resi number on hand.
+        if (!string.IsNullOrEmpty(nomorTransmittal))
+            query = query.Where(p => EF.Functions.ILike(p.NomorTransmittal, $"%{nomorTransmittal}%")
+                || (p.NoResi != null && EF.Functions.ILike(p.NoResi, $"%{nomorTransmittal}%")));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
@@ -505,9 +519,11 @@ public class PengirimanController : ApiControllerBase
 
         StatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -515,7 +531,7 @@ public class PengirimanController : ApiControllerBase
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -583,9 +599,11 @@ public class PengirimanController : ApiControllerBase
         // via [FromQuery] enum binding (which would 400 on it).
         StatusEnum? statusFilter = null;
         var onlyRejected = false;
+        var onlyOnApproval = false;
         if (!string.IsNullOrEmpty(status))
         {
             if (status == "REJECTED") onlyRejected = true;
+            else if (status == "ON_APPROVAL") onlyOnApproval = true;
             else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
             else return BadRequest(new { detail = "Status tidak valid" });
         }
@@ -593,7 +611,7 @@ public class PengirimanController : ApiControllerBase
         IQueryable<Pengiriman> query;
         try
         {
-            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal);
+            query = ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, sejakBulan, onlyRejected, tanggal, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

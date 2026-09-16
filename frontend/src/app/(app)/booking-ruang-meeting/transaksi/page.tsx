@@ -43,9 +43,9 @@ interface FilterState {
   limit: number;
   tanggal: string;
   bulan: string;
-  // "REJECTED" is a synthetic value (not a real BookingStatus) meaning "any of the 3
-  // reject-stage statuses" - collapsed into one Status filter dropdown option.
-  status: BookingStatus | "REJECTED" | "";
+  // "REJECTED"/"ON_APPROVAL" are synthetic values (not real BookingStatus members) collapsing
+  // every reject-stage or on-approval-stage status into the app-wide 4-option Status filter.
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -295,13 +295,11 @@ function BookingTransaksiPageInner() {
                   <SearchableSelect
                     id="filter-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
+                    onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "Approved",
                       CANCELLED: "Cancelled",

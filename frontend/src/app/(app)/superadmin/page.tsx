@@ -30,7 +30,7 @@ interface BookingFilterState {
   page: number;
   limit: number;
   tanggal: string;
-  status: BookingStatus | "";
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   namaRuang: string;
@@ -42,7 +42,7 @@ interface KendaraanFilterState {
   page: number;
   limit: number;
   tanggal: string;
-  status: BookingStatus | "";
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   namaKendaraan: string;
@@ -55,7 +55,7 @@ interface ArsipFilterState {
   limit: number;
   bulan: string;
   search: string;
-  status: BookingStatus | "REJECTED" | "";
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
 }
@@ -67,7 +67,7 @@ interface AtkFilterState {
   limit: number;
   bulan: string;
   search: string;
-  status: Status | "REJECTED" | "";
+  status: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -81,7 +81,7 @@ interface SaranaFilterState {
   limit: number;
   bulan: string;
   search: string;
-  status: BookingStatus | "REJECTED" | "";
+  status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori: KategoriKerusakan | "";
   divisi: string;
   departemen: string;
@@ -95,7 +95,7 @@ interface FilterState {
   limit: number;
   bulan: string;
   search: string;
-  status: Status | "";
+  status: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
   direktorat: string;
@@ -471,11 +471,12 @@ export default function SuperAdminPage() {
     return entries.filter(([, v]) => !!v).map(([label, v]) => `${label}: ${v}`);
   }
 
-  // "REJECTED" is the synthetic dropdown value covering all reject stages, so it is not a key in
-  // either status map.
+  // "REJECTED"/"ON_APPROVAL" are the synthetic dropdown values covering every reject-stage or
+  // on-approval-stage status, so neither is a key in either status map.
   function statusText(status: string): string {
     if (!status) return "";
     if (status === "REJECTED") return "Rejected";
+    if (status === "ON_APPROVAL") return "On-Approval";
     return STATUS_LABEL[status as Status] || BOOKING_STATUS_LABEL[status as BookingStatus] || status;
   }
 
@@ -827,18 +828,12 @@ export default function SuperAdminPage() {
                   <SearchableSelect
                     id="filter-status"
                     value={filters.status}
-                    onChange={(v) => updateFilter({ status: v as Status | "" })}
-                    options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL", "REJECTED_KPU", "COMPLETED"]}
+                    onChange={(v) => updateFilter({ status: v as Status | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      REJECTED_L1: "Rejected: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      REJECTED_GA: "Rejected: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
-                      REJECTED_GA_APPROVAL: "Rejected: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
-                      REJECTED_KPU: "Rejected: Mitra",
+                      ON_APPROVAL: "On-Approval",
+                      REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}
                     clearLabel="Semua Status"
@@ -1095,16 +1090,12 @@ export default function SuperAdminPage() {
             <SearchableSelect
               id="filter-booking-status"
               value={bookingFilters.status}
-              onChange={(v) => updateBookingFilter({ status: v as BookingStatus | "" })}
-              options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL"]}
+              onChange={(v) => updateBookingFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
               getLabel={(v) => ({
                 DRAFT: "Draft",
-                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                REJECTED_L1: "Rejected: Approval Departemen/Divisi",
-                APPROVED_L1: "On-Approval: Admin GA",
-                REJECTED_GA: "Rejected: Admin GA",
-                APPROVED_GA: "On-Approval: Approval GA",
-                REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+                ON_APPROVAL: "On-Approval",
+                REJECTED: "Rejected",
                 APPROVED_GA_APPROVAL: "Approved",
               } as Record<string, string>)[v] || v}
               clearLabel="Semua Status"
@@ -1248,16 +1239,12 @@ export default function SuperAdminPage() {
             <SearchableSelect
               id="filter-kendaraan-status"
               value={kendaraanFilters.status}
-              onChange={(v) => updateKendaraanFilter({ status: v as BookingStatus | "" })}
-              options={["DRAFT", "SUBMITTED", "REJECTED_L1", "APPROVED_L1", "REJECTED_GA", "APPROVED_GA", "REJECTED_GA_APPROVAL", "APPROVED_GA_APPROVAL"]}
+              onChange={(v) => updateKendaraanFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
               getLabel={(v) => ({
                 DRAFT: "Draft",
-                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                REJECTED_L1: "Rejected: Approval Departemen/Divisi",
-                APPROVED_L1: "On-Approval: Admin GA",
-                REJECTED_GA: "Rejected: Admin GA",
-                APPROVED_GA: "On-Approval: Approval GA",
-                REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+                ON_APPROVAL: "On-Approval",
+                REJECTED: "Rejected",
                 APPROVED_GA_APPROVAL: "Approved",
               } as Record<string, string>)[v] || v}
               clearLabel="Semua Status"
@@ -1404,13 +1391,11 @@ export default function SuperAdminPage() {
             <SearchableSelect
               id="filter-arsip-status"
               value={arsipFilters.status}
-              onChange={(v) => updateArsipFilter({ status: v as BookingStatus | "REJECTED" | "" })}
-              options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+              onChange={(v) => updateArsipFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
               getLabel={(v) => ({
                 DRAFT: "Draft",
-                SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                APPROVED_L1: "On-Approval: Admin GA",
-                APPROVED_GA: "On-Approval: Approval GA",
+                ON_APPROVAL: "On-Approval",
                 REJECTED: "Rejected",
                 APPROVED_GA_APPROVAL: "Approved",
               } as Record<string, string>)[v] || v}
@@ -1553,14 +1538,11 @@ export default function SuperAdminPage() {
                   <SearchableSelect
                     id="filter-atk-status"
                     value={atkFilters.status}
-                    onChange={(v) => updateAtkFilter({ status: v as Status | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "REJECTED", "COMPLETED"]}
+                    onChange={(v) => updateAtkFilter({ status: v as Status | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
-                      APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       COMPLETED: "Approved",
                     } as Record<string, string>)[v] || v}
@@ -1730,13 +1712,11 @@ export default function SuperAdminPage() {
                   <SearchableSelect
                     id="filter-sarana-status"
                     value={saranaFilters.status}
-                    onChange={(v) => updateSaranaFilter({ status: v as BookingStatus | "REJECTED" | "" })}
-                    options={["DRAFT", "SUBMITTED", "APPROVED_L1", "APPROVED_GA", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    onChange={(v) => updateSaranaFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
-                      SUBMITTED: "On-Approval: Approval Departemen/Divisi",
-                      APPROVED_L1: "On-Approval: Admin GA",
-                      APPROVED_GA: "On-Approval: Approval GA",
+                      ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "Approved",
                     } as Record<string, string>)[v] || v}
