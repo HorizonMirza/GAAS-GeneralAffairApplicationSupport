@@ -60,7 +60,9 @@ public class PengirimanController : ApiControllerBase
 
     private async Task<List<int>> ActivityRecipientIdsAsync(Pengiriman item, int actorId)
     {
-        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        var users = await _db.Users.Where(u => u.Id != actorId)
+            .Select(u => new AccessUser(u.Id, u.Role, u.Divisi, u.Departemen))
+            .ToListAsync();
         return users.Where(u => CanAccessPengiriman(u, item)).Select(u => u.Id).ToList();
     }
 

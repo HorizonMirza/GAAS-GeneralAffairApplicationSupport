@@ -120,6 +120,7 @@ public class ExportController : ApiControllerBase
     private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
         var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal);
+        BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
 
@@ -150,7 +151,15 @@ public class ExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+        List<Pengiriman> rows;
+        try
+        {
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
 
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Mutasi Pengiriman");
@@ -265,7 +274,15 @@ public class ExportController : ApiControllerBase
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
         var (statusFilter, onlyRejected) = parsedStatus.Value;
 
-        var rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+        List<Pengiriman> rows;
+        try
+        {
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
         decimal grandTotal = rows.Where(r => r.Total.HasValue).Sum(r => r.Total!.Value);
         var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
 

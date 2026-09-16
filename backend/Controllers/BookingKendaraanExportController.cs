@@ -117,6 +117,7 @@ public class BookingKendaraanExportController : ApiControllerBase
     private List<BookingKendaraan> ExportRows(User currentUser, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? namaKendaraan, DateOnly? tanggal, string? direktorat, string? bulan, string? search)
     {
         var query = BookingKendaraanController.ApplyListFilters(_db, _db.BookingKendaraans.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search, onlyRejected: onlyRejected);
+        BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(b => b.Tanggal).ThenBy(b => b.Id).ToList();
     }
 

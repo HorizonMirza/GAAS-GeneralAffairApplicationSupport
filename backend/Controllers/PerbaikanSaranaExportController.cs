@@ -154,6 +154,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
     {
         KategoriKerusakanEnum? kategoriFilter = !string.IsNullOrEmpty(kategori) && Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori) ? parsedKategori : null;
         var query = PerbaikanSaranaController.ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), currentUser, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal);
+        BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
 

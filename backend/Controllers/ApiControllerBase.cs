@@ -122,7 +122,7 @@ public abstract class ApiControllerBase : ControllerBase
     // just protected) so ChatHub - which can't inherit this class, Hub already has its own base -
     // can reuse the exact same rule instead of duplicating it when deciding whether to let a
     // connection join a chat's SignalR group.
-    public static bool CanAccessPengiriman(User user, Pengiriman item)
+    public static bool CanAccessPengiriman(AccessUser user, Pengiriman item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -136,7 +136,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Public for the same reason as CanAccessPengiriman above - reused by ChatHub.
-    public static bool CanAccessBookingRuang(User user, BookingRuang item)
+    public static bool CanAccessBookingRuang(AccessUser user, BookingRuang item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -153,7 +153,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
-    public static bool CanAccessPerbaikanSarana(User user, PerbaikanSarana item)
+    public static bool CanAccessPerbaikanSarana(AccessUser user, PerbaikanSarana item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -167,7 +167,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
-    public static bool CanAccessPermintaanArsip(User user, PermintaanArsip item)
+    public static bool CanAccessPermintaanArsip(AccessUser user, PermintaanArsip item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -181,7 +181,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
-    public static bool CanAccessPermintaanAtk(User user, PermintaanAtk item)
+    public static bool CanAccessPermintaanAtk(AccessUser user, PermintaanAtk item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;
@@ -195,7 +195,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Same rule as CanAccessBookingRuang, and public for the same reason - ChatHub reuses it.
-    public static bool CanAccessBookingKendaraan(User user, BookingKendaraan item)
+    public static bool CanAccessBookingKendaraan(AccessUser user, BookingKendaraan item)
     {
         if (user.Role is not (RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI))
             return true;

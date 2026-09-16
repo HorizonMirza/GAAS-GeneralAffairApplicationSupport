@@ -78,7 +78,9 @@ public class PerbaikanSaranaController : ApiControllerBase
     // already lets see it, minus the actor who just triggered the event.
     private async Task<List<int>> ActivityRecipientIdsAsync(PerbaikanSarana item, int actorId)
     {
-        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        var users = await _db.Users.Where(u => u.Id != actorId)
+            .Select(u => new AccessUser(u.Id, u.Role, u.Divisi, u.Departemen))
+            .ToListAsync();
         return users.Where(u => CanAccessPerbaikanSarana(u, item)).Select(u => u.Id).ToList();
     }
 

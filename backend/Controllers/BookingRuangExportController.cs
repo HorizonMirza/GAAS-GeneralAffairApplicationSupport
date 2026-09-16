@@ -126,6 +126,7 @@ public class BookingRuangExportController : ApiControllerBase
     private List<BookingRuang> ExportRows(User currentUser, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? namaRuang, DateOnly? tanggal, string? direktorat, string? bulan, string? search)
     {
         var query = BookingRuangController.ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search);
+        BatasEkspor.Pastikan(query.Count());
         return query.Include(b => b.AdditionalRooms).OrderBy(b => b.Tanggal).ThenBy(b => b.Id).ToList();
     }
 

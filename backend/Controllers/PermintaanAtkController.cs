@@ -61,7 +61,9 @@ public class PermintaanAtkController : ApiControllerBase
     // already lets see it, minus the actor who just triggered the event.
     private async Task<List<int>> ActivityRecipientIdsAsync(PermintaanAtk item, int actorId)
     {
-        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        var users = await _db.Users.Where(u => u.Id != actorId)
+            .Select(u => new AccessUser(u.Id, u.Role, u.Divisi, u.Departemen))
+            .ToListAsync();
         return users.Where(u => CanAccessPermintaanAtk(u, item)).Select(u => u.Id).ToList();
     }
 

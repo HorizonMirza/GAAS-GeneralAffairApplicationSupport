@@ -120,6 +120,7 @@ public class ArsipExportController : ApiControllerBase
     private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
         var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
+        BatasEkspor.Pastikan(await query.CountAsync());
         return await query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 

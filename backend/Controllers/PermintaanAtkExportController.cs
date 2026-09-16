@@ -128,6 +128,7 @@ public class PermintaanAtkExportController : ApiControllerBase
     private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, SumberPembelianEnum? sumberPembelian = null)
     {
         var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelian);
+        BatasEkspor.Pastikan(await query.CountAsync());
         return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
 

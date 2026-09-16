@@ -109,6 +109,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
         if (!string.IsNullOrEmpty(search)) requestQuery = requestQuery.Where(p => EF.Functions.ILike(p.NamaArsip, $"%{search}%"));
 
+        BatasEkspor.Pastikan(await requestQuery.CountAsync());
         return await requestQuery
             .OrderByDescending(p => p.ApprovedApprovalGaAt)
             .ThenBy(p => p.Id)
