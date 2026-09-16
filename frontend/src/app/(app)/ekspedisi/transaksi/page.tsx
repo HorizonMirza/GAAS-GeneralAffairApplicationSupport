@@ -332,7 +332,7 @@ function TransaksiPageInner() {
               ⬇ Download Excel
             </button>
             {isOrigin && (
-              <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>+ Pengiriman Barang</button>
+              <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>+ Input Data Barang</button>
             )}
           </div>
         </div>

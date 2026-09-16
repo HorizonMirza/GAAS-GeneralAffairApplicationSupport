@@ -91,11 +91,26 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
             <div className="field">
               <label htmlFor="pk-nama-pengirim">Nama Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-nama-pengirim" required maxLength={255} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
+              <input
+                type="text"
+                id="pk-nama-pengirim"
+                required
+                maxLength={255}
+                value={form.namaPengirim}
+                onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="pk-telepon-pengirim">No. Telepon Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-telepon-pengirim" required maxLength={50} value={form.noTeleponPengirim} onChange={(e) => set("noTeleponPengirim", e.target.value)} />
+              <input
+                type="text"
+                id="pk-telepon-pengirim"
+                inputMode="tel"
+                required
+                maxLength={50}
+                value={form.noTeleponPengirim}
+                onChange={(e) => set("noTeleponPengirim", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="pk-alamat-pengirim">Alamat Pengirim <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -103,11 +118,26 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
             <div className="field">
               <label htmlFor="pk-nama-penerima">Nama Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-nama-penerima" required maxLength={255} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
+              <input
+                type="text"
+                id="pk-nama-penerima"
+                required
+                maxLength={255}
+                value={form.namaPenerima}
+                onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="pk-telepon-penerima">No. Telepon Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="pk-telepon-penerima" required maxLength={50} value={form.noTeleponPenerima} onChange={(e) => set("noTeleponPenerima", e.target.value)} />
+              <input
+                type="text"
+                id="pk-telepon-penerima"
+                inputMode="tel"
+                required
+                maxLength={50}
+                value={form.noTeleponPenerima}
+                onChange={(e) => set("noTeleponPenerima", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="pk-alamat-penerima">Alamat Penerima <Pencil className="field-edit-icon" width={12} height={12} /></label>

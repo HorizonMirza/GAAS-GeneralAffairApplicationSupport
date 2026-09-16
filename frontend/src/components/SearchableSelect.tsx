@@ -5,11 +5,23 @@ import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 import { useClickOutside } from "@/lib/useClickOutside";
 
-// Rough upper bound on the panel's own height (search input + padding + the options list's own
-// 220px max-height, see .searchable-select-options) - used to decide whether it fits below the
-// trigger without having to wait for a real layout measurement of the panel itself, which would
-// mean rendering it top-anchored first and flipping a frame later (a visible flash).
-const PANEL_HEIGHT_ESTIMATE = 300;
+// A data-driven estimate of the panel's own rendered height, used to decide whether it fits below
+// the trigger without having to wait for a real layout measurement of the panel itself (which
+// would mean rendering it top-anchored first and flipping a frame later - a visible flash). Built
+// from the same numbers the CSS actually uses, rather than one flat worst-case number: a 2-option
+// dropdown (e.g. Asuransi's "Tidak"/"Ya") is a fraction of a long searchable list's height, and
+// treating every dropdown as if it were the tallest one flips even a tiny list upward whenever
+// it's merely somewhere in the lower half of a tall scrollable modal - covering fields below it
+// that would have had plenty of room.
+const PANEL_PADDING = 16; // .searchable-select-panel: 8px top + 8px bottom
+const OPTION_ROW_HEIGHT = 36; // .searchable-select-option: ~8px+8px padding + one line of text
+const SEARCH_INPUT_HEIGHT = 42; // .searchable-select-search: ~8px+8px padding + line + 6px margin
+const OPTIONS_LIST_MAX_HEIGHT = 220; // .searchable-select-options: max-height
+
+function estimatePanelHeight(optionCount: number, hasSearch: boolean): number {
+  const optionsHeight = Math.min(optionCount * OPTION_ROW_HEIGHT, OPTIONS_LIST_MAX_HEIGHT);
+  return PANEL_PADDING + (hasSearch ? SEARCH_INPUT_HEIGHT : 0) + optionsHeight;
+}
 
 interface Props {
   id: string;
@@ -55,12 +67,13 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
   // to see the rest of the list.
   useLayoutEffect(() => {
     if (!open) return;
+    const panelHeightEstimate = estimatePanelHeight(options.length + (clearLabel ? 1 : 0), showSearch);
     function recompute() {
       const rect = wrapRef.current?.getBoundingClientRect();
       if (!rect) return;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      setDropUp(spaceBelow < PANEL_HEIGHT_ESTIMATE && spaceAbove > spaceBelow);
+      setDropUp(spaceBelow < panelHeightEstimate && spaceAbove > spaceBelow);
     }
     recompute();
     // `true` = capture phase, so this also fires for scroll events on an ancestor scroll
@@ -72,7 +85,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
       window.removeEventListener("scroll", recompute, true);
       window.removeEventListener("resize", recompute);
     };
-  }, [open]);
+  }, [open, options.length, clearLabel, showSearch]);
 
   useEffect(() => {
     if (open && showSearch) {

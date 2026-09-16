@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { COVER_PRESETS, ROLE_COLOR, ROLE_LABEL } from "@/lib/constants";
@@ -9,6 +10,7 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog";
+import { itemVariants, sidebarVariants } from "@/components/ui/menu";
 import { Camera, Eye, Lock, Palette, Pencil, Trash2, Upload, X } from "lucide-react";
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
@@ -667,28 +669,28 @@ export default function ProfilePage() {
                 <Camera width={16} height={16} />
               </button>
               {photoMenuOpen && (
-                <div className="photo-action-menu">
+                <motion.div className="photo-action-menu" initial="hidden" animate="visible" variants={sidebarVariants}>
                   {(stagedPhotoPreviewUrl || editHasPhoto) && (
-                    <button type="button" className="row-menu-item" onClick={handleViewPhoto}>
+                    <motion.button type="button" className="row-menu-item" variants={itemVariants} onClick={handleViewPhoto}>
                       <Eye width={16} height={16} />
                       View Photo
-                    </button>
+                    </motion.button>
                   )}
-                  <button type="button" className="row-menu-item" onClick={handleTakePhotoClick}>
+                  <motion.button type="button" className="row-menu-item" variants={itemVariants} onClick={handleTakePhotoClick}>
                     <Camera width={16} height={16} />
                     Take Photo
-                  </button>
-                  <button type="button" className="row-menu-item" onClick={handleUploadPhotoClick}>
+                  </motion.button>
+                  <motion.button type="button" className="row-menu-item" variants={itemVariants} onClick={handleUploadPhotoClick}>
                     <Upload width={16} height={16} />
                     Upload Photo
-                  </button>
+                  </motion.button>
                   {(stagedPhotoPreviewUrl || editHasPhoto) && (
-                    <button type="button" className="row-menu-item row-menu-item-danger" onClick={handleRemovePhoto}>
+                    <motion.button type="button" className="row-menu-item row-menu-item-danger" variants={itemVariants} onClick={handleRemovePhoto}>
                       <Trash2 width={16} height={16} />
                       Remove Photo
-                    </button>
+                    </motion.button>
                   )}
-                </div>
+                </motion.div>
               )}
               <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={handlePhotoChange} />
             </div>
@@ -707,9 +709,9 @@ export default function ProfilePage() {
             </div>
 
             {showCoverPresets && (
-              <div className="field">
-                <label>Cover Image</label>
-                <div className="cover-preset-row">
+              <motion.div className="field" initial="hidden" animate="visible" variants={sidebarVariants}>
+                <motion.label variants={itemVariants}>Cover Image</motion.label>
+                <motion.div className="cover-preset-row" variants={itemVariants}>
                   {COVER_PRESETS.map((p) => (
                     <button
                       key={p.key}
@@ -722,8 +724,8 @@ export default function ProfilePage() {
                       onClick={() => handleCoverPresetPick(p.key)}
                     />
                   ))}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             )}
           </form>
 

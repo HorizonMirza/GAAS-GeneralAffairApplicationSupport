@@ -118,7 +118,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="f-nomor-transmittal">Nomor Transmittal</label>
-              <input type="text" id="f-nomor-transmittal" disabled value={nomorTransmittal} />
+              <input type="text" id="f-nomor-transmittal" className="field-nomor-generated" disabled value={nomorTransmittal} />
             </div>
             {isGaActor && (
               <>
@@ -168,7 +168,14 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field">
               <label htmlFor="f-pengirim">Nama Pengirim</label>
-              <input type="text" id="f-pengirim" required maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
+              <input
+                type="text"
+                id="f-pengirim"
+                required
+                maxLength={50}
+                value={form.namaPengirim}
+                onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-telepon-pengirim">No. Telepon Pengirim</label>
@@ -188,7 +195,14 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field">
               <label htmlFor="f-penerima">Nama Penerima</label>
-              <input type="text" id="f-penerima" required maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
+              <input
+                type="text"
+                id="f-penerima"
+                required
+                maxLength={50}
+                value={form.namaPenerima}
+                onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-telepon">No. Telepon Penerima</label>
@@ -212,7 +226,18 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
             </div>
             <div className="field full">
               <label htmlFor="f-kode-program">Kode Program</label>
-              <input type="text" id="f-kode-program" required placeholder="Contoh: 11.03.018.206.29.0313.47.09" value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
+              <input
+                type="text"
+                id="f-kode-program"
+                required
+                inputMode="numeric"
+                placeholder="Contoh: 11.03.018.206.29.0313.47.09"
+                value={form.kodeProgram}
+                // Digits plus the dot separators the MAK-style code above is written with - not
+                // pure digits-only, or the exact format shown in this field's own placeholder
+                // would be untypable.
+                onChange={(e) => set("kodeProgram", e.target.value.replace(/[^0-9.]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-asuransi">Asuransi</label>

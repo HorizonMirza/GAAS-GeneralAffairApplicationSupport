@@ -386,6 +386,17 @@ body {
   cursor: not-allowed;
 }
 
+/* The auto-generated Nomor field at the top of every module's create form (Nomor Transmittal/
+   Pemesanan/Perbaikan/Arsip/Permintaan) - shown disabled because the value is server-assigned,
+   not because it's "locked" the way a Koreksi modal's uneditable fields are. Those still get the
+   dimmed grey text above (a real visual warning: this won't save if you change it); this one just
+   keeps the same black text as every editable field, differing only by staying on the white
+   background instead of the pale-blue used for fields you can actually type into. */
+.field input.field-nomor-generated:disabled {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
 .field input::placeholder,
 .field textarea::placeholder {
   color: var(--text-secondary);

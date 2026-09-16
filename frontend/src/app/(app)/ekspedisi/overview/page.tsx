@@ -133,7 +133,7 @@ export default function OverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Pengiriman Barang
+            + Input Data Barang
           </button>
         )}
       </div>
