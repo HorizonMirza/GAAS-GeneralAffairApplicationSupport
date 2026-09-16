@@ -399,19 +399,48 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
+    // Every image a laporan owns: the damage photos (1-5 rows in perbaikan_sarana_foto_kerusakan),
+    // the plan drawing, and the completion photo. Has to be read before the row goes, because the
+    // foto_kerusakan rows are taken with it by ON DELETE CASCADE and their paths would be
+    // unrecoverable afterwards - which is exactly how these files used to be left behind on disk
+    // forever. Invoice has done it this way per-invoice all along (see InvoiceController.
+    // DeleteInvoice); this brings Maintenance in line.
+    private static IEnumerable<string> FileMilik(PerbaikanSarana item) =>
+        item.FotoKerusakan.Select(f => f.FilePath)
+            .Append(item.GambarFilePath)
+            .Append(item.FotoSelesaiFilePath)
+            .Where(f => !string.IsNullOrEmpty(f))
+            .Select(f => f!);
+
+    // Only ever called after the DB side has committed: if SaveChanges/ExecuteDelete throws, the
+    // laporan and every file it still points to are left intact, rather than the files vanishing
+    // while the rows remain. A path that is already gone from disk is not an error - re-uploads
+    // and eksekusi/reset have been leaving stale paths around since before this existed.
+    private void HapusFileDisk(IEnumerable<string> relativePaths)
+    {
+        foreach (var f in relativePaths.Distinct())
+        {
+            var path = Path.Combine(_uploadDir, f);
+            if (System.IO.File.Exists(path))
+                System.IO.File.Delete(path);
+        }
+    }
+
     [HttpDelete("{itemId:int}")]
     public async Task<IActionResult> Delete(int itemId)
     {
         var (user, roleError) = await RequireRoleAsync(OriginRoles);
         if (roleError != null) return roleError;
 
-        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
+        var item = await _db.PerbaikanSaranas.Include(p => p.FotoKerusakan).FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
+        var files = FileMilik(item).ToList();
         _db.PerbaikanSaranas.Remove(item);
         await _db.SaveChangesAsync();
+        HapusFileDisk(files);
         return NoContent();
     }
 
@@ -421,11 +450,13 @@ public class PerbaikanSaranaController : ApiControllerBase
         var (_, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (roleError != null) return roleError;
 
-        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
+        var item = await _db.PerbaikanSaranas.Include(p => p.FotoKerusakan).FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
 
+        var files = FileMilik(item).ToList();
         _db.PerbaikanSaranas.Remove(item);
         await _db.SaveChangesAsync();
+        HapusFileDisk(files);
         return NoContent();
     }
 
@@ -471,7 +502,28 @@ public class PerbaikanSaranaController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
+        // Read the file paths before the DELETE, for the same reason FileMilik exists: the
+        // foto_kerusakan rows go with their laporan and take their paths with them. Projected to
+        // strings rather than materialised as entities - ExecuteDeleteAsync below still does the
+        // deleting, this query only collects what has to be cleaned off disk afterwards.
+        //
+        // A laporan created between this query and the DELETE would be deleted with its files
+        // left behind. That is the harmless direction to err in (a stray file, never a missing
+        // one), and this is a Super Admin housekeeping action, not a hot path.
+        var files = await query
+            .Select(p => new
+            {
+                p.GambarFilePath,
+                p.FotoSelesaiFilePath,
+                Foto = p.FotoKerusakan.Select(f => f.FilePath).ToList(),
+            })
+            .ToListAsync();
+
         var deleted = await query.ExecuteDeleteAsync();
+        HapusFileDisk(files
+            .SelectMany(f => f.Foto.Append(f.GambarFilePath).Append(f.FotoSelesaiFilePath))
+            .Where(f => !string.IsNullOrEmpty(f))
+            .Select(f => f!));
         return Ok(new { deleted });
     }
 
