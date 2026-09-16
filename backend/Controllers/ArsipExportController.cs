@@ -50,15 +50,18 @@ public class ArsipExportController : ApiControllerBase
 
     private static readonly float[] PdfColWidths = { 45, 28, 30, 70, 30, 24, 55, 45, 40, 55, 40, 40, 55 };
 
+    // Matches the frontend's own 4-word collapse (STATUS_LABEL/BOOKING_STATUS_LABEL in
+    // lib/constants.ts) - the exported document's Status column should read the same as the
+    // app's badges.
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
         ["DRAFT"] = "Draft",
-        ["SUBMITTED"] = "On-Approval: Approval Departemen/Divisi",
-        ["REJECTED_L1"] = "Rejected: Approval Departemen/Divisi",
-        ["APPROVED_L1"] = "On-Approval: Admin GA",
-        ["REJECTED_GA"] = "Rejected: Admin GA",
-        ["APPROVED_GA"] = "On-Approval: Approval GA",
-        ["REJECTED_GA_APPROVAL"] = "Rejected: Approval GA",
+        ["SUBMITTED"] = "On-Approval",
+        ["REJECTED_L1"] = "Rejected",
+        ["APPROVED_L1"] = "On-Approval",
+        ["REJECTED_GA"] = "Rejected",
+        ["APPROVED_GA"] = "On-Approval",
+        ["REJECTED_GA_APPROVAL"] = "Rejected",
         ["APPROVED_GA_APPROVAL"] = "Approved",
     };
 
@@ -91,7 +94,7 @@ public class ArsipExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
+    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -102,6 +105,7 @@ public class ArsipExportController : ApiControllerBase
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
         else if (onlyRejected) parts.Add("rejected");
+        else if (onlyOnApproval) parts.Add("on-approval");
         if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(kategori));
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
@@ -110,16 +114,17 @@ public class ArsipExportController : ApiControllerBase
         return "pemindahan-arsip-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private static (BookingStatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    private static (BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval)? ParseStatusFilter(string? status)
     {
-        if (string.IsNullOrEmpty(status)) return (null, false);
-        if (status == "REJECTED") return (null, true);
-        return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false) : null;
+        if (string.IsNullOrEmpty(status)) return (null, false, false);
+        if (status == "REJECTED") return (null, true, false);
+        if (status == "ON_APPROVAL") return (null, false, true);
+        return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false, false) : null;
     }
 
-    private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
+    private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
-        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori);
+        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
         BatasEkspor.Pastikan(await query.CountAsync());
         return await query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
@@ -140,12 +145,12 @@ public class ArsipExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<PermintaanArsip> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, kategori);
         }
         catch (ArgumentException ex)
         {
@@ -202,7 +207,7 @@ public class ArsipExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, kategori) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -222,19 +227,19 @@ public class ArsipExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<PermintaanArsip> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, kategori);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
 
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, kategori);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, kategori);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

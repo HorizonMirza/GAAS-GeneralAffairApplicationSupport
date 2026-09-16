@@ -47,17 +47,19 @@ public class PermintaanAtkExportController : ApiControllerBase
         ["PADI"] = "PaDi (Eksternal)",
     };
 
+    // Matches the frontend's own 4-word collapse (STATUS_LABEL in lib/constants.ts) - the
+    // exported document's Status column should read the same as the app's badges.
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
         ["DRAFT"] = "Draft",
-        ["SUBMITTED"] = "On-Approval: Approval Departemen/Divisi",
-        ["REJECTED_L1"] = "Rejected: Approval Departemen/Divisi",
-        ["APPROVED_L1"] = "On-Approval: Admin GA",
-        ["REJECTED_GA"] = "Rejected: Admin GA",
-        ["APPROVED_GA"] = "On-Approval: Approval GA",
-        ["REJECTED_GA_APPROVAL"] = "Rejected: Approval GA",
-        ["APPROVED_GA_APPROVAL"] = "On-Approval: Mitra",
-        ["REJECTED_KPU"] = "Rejected: Mitra",
+        ["SUBMITTED"] = "On-Approval",
+        ["REJECTED_L1"] = "Rejected",
+        ["APPROVED_L1"] = "On-Approval",
+        ["REJECTED_GA"] = "Rejected",
+        ["APPROVED_GA"] = "On-Approval",
+        ["REJECTED_GA_APPROVAL"] = "Rejected",
+        ["APPROVED_GA_APPROVAL"] = "On-Approval",
+        ["REJECTED_KPU"] = "Rejected",
         ["COMPLETED"] = "Approved",
     };
 
@@ -94,7 +96,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -105,6 +107,7 @@ public class PermintaanAtkExportController : ApiControllerBase
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
         else if (onlyRejected) parts.Add("rejected");
+        else if (onlyOnApproval) parts.Add("on-approval");
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -112,11 +115,12 @@ public class PermintaanAtkExportController : ApiControllerBase
         return "permintaan-atk-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private static (StatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    private static (StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval)? ParseStatusFilter(string? status)
     {
-        if (string.IsNullOrEmpty(status)) return (null, false);
-        if (status == "REJECTED") return (null, true);
-        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false) : null;
+        if (string.IsNullOrEmpty(status)) return (null, false, false);
+        if (status == "REJECTED") return (null, true, false);
+        if (status == "ON_APPROVAL") return (null, false, true);
+        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false, false) : null;
     }
 
     private static (SumberPembelianEnum? value, bool ok) ParseSumberPembelianFilter(string? sumberPembelian)
@@ -125,9 +129,9 @@ public class PermintaanAtkExportController : ApiControllerBase
         return Enum.TryParse<SumberPembelianEnum>(sumberPembelian, out var parsed) ? (parsed, true) : (null, false);
     }
 
-    private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, SumberPembelianEnum? sumberPembelian = null)
+    private async Task<List<PermintaanAtk>> ExportRowsAsync(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, SumberPembelianEnum? sumberPembelian = null)
     {
-        var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelian);
+        var query = PermintaanAtkController.ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelian, onlyOnApproval);
         BatasEkspor.Pastikan(await query.CountAsync());
         return await query.Include(p => p.Items).OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }
@@ -148,7 +152,7 @@ public class PermintaanAtkExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         var (sumberPembelianFilter, sumberOk) = ParseSumberPembelianFilter(sumberPembelian);
         if (!sumberOk) return BadRequest(new { detail = "Sumber pembelian tidak valid" });
@@ -156,7 +160,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         List<PermintaanAtk> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
         }
         catch (ArgumentException ex)
         {
@@ -213,7 +217,7 @@ public class PermintaanAtkExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -233,7 +237,7 @@ public class PermintaanAtkExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         var (sumberPembelianFilter, sumberOk) = ParseSumberPembelianFilter(sumberPembelian);
         if (!sumberOk) return BadRequest(new { detail = "Sumber pembelian tidak valid" });
@@ -241,14 +245,14 @@ public class PermintaanAtkExportController : ApiControllerBase
         List<PermintaanAtk> rows;
         try
         {
-            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
+            rows = await ExportRowsAsync(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal, sumberPembelianFilter);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
 
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, search, tanggal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

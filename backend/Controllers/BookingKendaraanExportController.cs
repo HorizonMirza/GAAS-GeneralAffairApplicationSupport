@@ -42,15 +42,18 @@ public class BookingKendaraanExportController : ApiControllerBase
         30, 34, 22, 30, 50, 30, 34, 46, 34, 34, 34, 20, 50, 40,
     };
 
+    // Matches the frontend's own 4-word collapse (STATUS_LABEL/BOOKING_STATUS_LABEL in
+    // lib/constants.ts) - the exported document's Status column should read the same as the
+    // app's badges.
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
         ["DRAFT"] = "Draft",
-        ["SUBMITTED"] = "On-Approval: Approval Departemen/Divisi",
-        ["REJECTED_L1"] = "Rejected: Approval Departemen/Divisi",
-        ["APPROVED_L1"] = "On-Approval: Admin GA",
-        ["REJECTED_GA"] = "Rejected: Admin GA",
-        ["APPROVED_GA"] = "On-Approval: Approval GA",
-        ["REJECTED_GA_APPROVAL"] = "Rejected: Approval GA",
+        ["SUBMITTED"] = "On-Approval",
+        ["REJECTED_L1"] = "Rejected",
+        ["APPROVED_L1"] = "On-Approval",
+        ["REJECTED_GA"] = "Rejected",
+        ["APPROVED_GA"] = "On-Approval",
+        ["REJECTED_GA_APPROVAL"] = "Rejected",
         ["APPROVED_GA_APPROVAL"] = "Approved",
         ["CANCELLED"] = "Cancelled",
     };
@@ -95,7 +98,7 @@ public class BookingKendaraanExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? namaKendaraan, string? search, DateOnly? tanggal = null)
+    private static string BuildFilename(string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? namaKendaraan, string? search, DateOnly? tanggal = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -106,6 +109,7 @@ public class BookingKendaraanExportController : ApiControllerBase
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
         else if (onlyRejected) parts.Add("rejected");
+        else if (onlyOnApproval) parts.Add("on-approval");
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -114,9 +118,9 @@ public class BookingKendaraanExportController : ApiControllerBase
         return "booking-kendaraan-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private List<BookingKendaraan> ExportRows(User currentUser, BookingStatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? namaKendaraan, DateOnly? tanggal, string? direktorat, string? bulan, string? search)
+    private List<BookingKendaraan> ExportRows(User currentUser, BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? namaKendaraan, DateOnly? tanggal, string? direktorat, string? bulan, string? search)
     {
-        var query = BookingKendaraanController.ApplyListFilters(_db, _db.BookingKendaraans.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search, onlyRejected: onlyRejected);
+        var query = BookingKendaraanController.ApplyListFilters(_db, _db.BookingKendaraans.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search, onlyRejected: onlyRejected, onlyOnApproval: onlyOnApproval);
         BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(b => b.Tanggal).ThenBy(b => b.Id).ToList();
     }
@@ -124,11 +128,12 @@ public class BookingKendaraanExportController : ApiControllerBase
     // "REJECTED" is a synthetic value the Status filter dropdown sends for its single "Rejected"
     // option - it isn't a real BookingStatusEnum member, so it's parsed here instead of via
     // [FromQuery] enum binding (which would 400 on it). Shared by both export endpoints below.
-    private static (BookingStatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    private static (BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval)? ParseStatusFilter(string? status)
     {
-        if (string.IsNullOrEmpty(status)) return (null, false);
-        if (status == "REJECTED") return (null, true);
-        return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false) : null;
+        if (string.IsNullOrEmpty(status)) return (null, false, false);
+        if (status == "REJECTED") return (null, true, false);
+        if (status == "ON_APPROVAL") return (null, false, true);
+        return Enum.TryParse<BookingStatusEnum>(status, out var parsed) ? (parsed, false, false) : null;
     }
 
     [HttpGet("export")]
@@ -147,12 +152,12 @@ public class BookingKendaraanExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<BookingKendaraan> rows;
         try
         {
-            rows = ExportRows(user!, statusFilter, onlyRejected, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search);
+            rows = ExportRows(user!, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search);
         }
         catch (ArgumentException ex)
         {
@@ -220,7 +225,7 @@ public class BookingKendaraanExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, namaKendaraan, search, tanggal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, namaKendaraan, search, tanggal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -240,19 +245,19 @@ public class BookingKendaraanExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<BookingKendaraan> rows;
         try
         {
-            rows = ExportRows(user!, statusFilter, onlyRejected, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search);
+            rows = ExportRows(user!, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, namaKendaraan, tanggal, direktorat, bulan, search);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
 
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, namaKendaraan, search, tanggal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, namaKendaraan, search, tanggal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";

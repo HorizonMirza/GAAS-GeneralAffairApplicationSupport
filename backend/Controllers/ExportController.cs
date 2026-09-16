@@ -47,17 +47,19 @@ public class ExportController : ApiControllerBase
         45, 30, 26, 50, 16, 36, 36, 38, 34, 95, 38, 34, 95, 34, 20, 26, 24, 60, 24, 28, 46, 40,
     };
 
+    // Matches the frontend's own 4-word collapse (STATUS_LABEL in lib/constants.ts) - the
+    // exported document's Status column should read the same as the app's badges.
     private static readonly Dictionary<string, string> StatusLabel = new()
     {
         ["DRAFT"] = "Draft",
-        ["SUBMITTED"] = "On-Approval Departemen/Divisi",
-        ["REJECTED_L1"] = "Rejected Approval Departemen/Divisi",
-        ["APPROVED_L1"] = "On-Approval Admin GA",
-        ["REJECTED_GA"] = "Rejected Admin GA",
-        ["APPROVED_GA"] = "On-Approval Approval GA",
-        ["REJECTED_GA_APPROVAL"] = "Rejected Approval GA",
-        ["APPROVED_GA_APPROVAL"] = "On-Approval Mitra",
-        ["REJECTED_KPU"] = "Rejected Mitra",
+        ["SUBMITTED"] = "On-Approval",
+        ["REJECTED_L1"] = "Rejected",
+        ["APPROVED_L1"] = "On-Approval",
+        ["REJECTED_GA"] = "Rejected",
+        ["APPROVED_GA"] = "On-Approval",
+        ["REJECTED_GA_APPROVAL"] = "Rejected",
+        ["APPROVED_GA_APPROVAL"] = "On-Approval",
+        ["REJECTED_KPU"] = "Rejected",
         ["COMPLETED"] = "Approved",
     };
 
@@ -89,7 +91,7 @@ public class ExportController : ApiControllerBase
         "asuransi_harga" => row.AsuransiHarga,
         "sub_total" => row.SubTotal,
         "total" => row.Total,
-        "status" => row.Status.ToString(),
+        "status" => StatusLabel.GetValueOrDefault(row.Status.ToString(), row.Status.ToString()),
         _ => null,
     };
 
@@ -99,7 +101,7 @@ public class ExportController : ApiControllerBase
         return slug.Trim('-').ToLowerInvariant();
     }
 
-    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
+    private static string BuildFilename(string? bulan, StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
@@ -110,6 +112,7 @@ public class ExportController : ApiControllerBase
             parts.Add(Slugify(StatusLabel.GetValueOrDefault(key, key)));
         }
         else if (onlyRejected) parts.Add("rejected");
+        else if (onlyOnApproval) parts.Add("on-approval");
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -117,9 +120,9 @@ public class ExportController : ApiControllerBase
         return "mutasi-pengiriman-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
-    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
+    private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
-        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal);
+        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal, onlyOnApproval: onlyOnApproval);
         BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }
@@ -127,11 +130,12 @@ public class ExportController : ApiControllerBase
     // "REJECTED" is a synthetic value the Status filter dropdown sends for its single "Rejected"
     // option - it isn't a real StatusEnum member, so it's parsed here instead of via [FromQuery]
     // enum binding (which would 400 on it). Shared by both export endpoints below.
-    private static (StatusEnum? statusFilter, bool onlyRejected)? ParseStatusFilter(string? status)
+    private static (StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval)? ParseStatusFilter(string? status)
     {
-        if (string.IsNullOrEmpty(status)) return (null, false);
-        if (status == "REJECTED") return (null, true);
-        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false) : null;
+        if (string.IsNullOrEmpty(status)) return (null, false, false);
+        if (status == "REJECTED") return (null, true, false);
+        if (status == "ON_APPROVAL") return (null, false, true);
+        return Enum.TryParse<StatusEnum>(status, out var parsed) ? (parsed, false, false) : null;
     }
 
     [HttpGet("export")]
@@ -149,12 +153,12 @@ public class ExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<Pengiriman> rows;
         try
         {
-            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, nomorTransmittal, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -253,7 +257,7 @@ public class ExportController : ApiControllerBase
 
         using var stream = new MemoryStream();
         wb.SaveAs(stream);
-        var filename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal) + ".xlsx";
+        var filename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, nomorTransmittal, tanggal) + ".xlsx";
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
     }
 
@@ -272,19 +276,19 @@ public class ExportController : ApiControllerBase
 
         var parsedStatus = ParseStatusFilter(status);
         if (parsedStatus == null) return BadRequest(new { detail = "Status tidak valid" });
-        var (statusFilter, onlyRejected) = parsedStatus.Value;
+        var (statusFilter, onlyRejected, onlyOnApproval) = parsedStatus.Value;
 
         List<Pengiriman> rows;
         try
         {
-            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+            rows = ExportRows(user!, bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, nomorTransmittal, tanggal);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
         }
         decimal grandTotal = rows.Where(r => r.Total.HasValue).Sum(r => r.Total!.Value);
-        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, divisi, departemen, direktorat, nomorTransmittal, tanggal);
+        var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, nomorTransmittal, tanggal);
 
         var headerBg = "#1450C9";
         var altBg = "#F5F9FF";
