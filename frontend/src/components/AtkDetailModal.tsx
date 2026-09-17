@@ -120,7 +120,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     setBusy(true);
     try {
       await api.submitAtk(item!.id, submitNeedsSumberPembelian ? (sumberPembelian as SumberPembelian) : null);
-      showToast("Permintaan berhasil dikirim untuk approval");
+      showToast("Pesanan berhasil dikirim untuk approval");
       onClose();
       onSaved();
     } catch (err) {
@@ -133,7 +133,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkL1(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Admin GA");
+      showToast("Pesanan berhasil di-approve, diteruskan ke Admin GA");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -148,7 +148,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkGa(item!.id, sumberPembelian);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Approval General Affair");
+      showToast("Pesanan berhasil di-approve, diteruskan ke Approval General Affair");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -159,7 +159,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkGaApproval(item!.id);
-      showToast("Permintaan berhasil di-approve, diteruskan ke Mitra");
+      showToast("Pesanan berhasil di-approve, diteruskan ke Mitra");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -170,7 +170,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkKpu(item!.id);
-      showToast("Permintaan Perlengkapan Kantor berhasil disetujui");
+      showToast("Pesanan Kebutuhan Kantor berhasil disetujui");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -182,7 +182,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     setBusy(true);
     try {
       await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
-      showToast("Permintaan berhasil diperbarui");
+      showToast("Pesanan berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -195,13 +195,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Permintaan Perlengkapan Kantor" : "Detail Permintaan Perlengkapan Kantor"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Pesanan Kebutuhan Kantor" : "Detail Pesanan Kebutuhan Kantor"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="da-nomor-permintaan">Nomor Permintaan</label>
+              <label htmlFor="da-nomor-permintaan">Nomor Pesanan</label>
               <input type="text" id="da-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field">
@@ -241,7 +241,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     <span className="item-row-col-lg">Nama Barang</span>
                     <span className="item-row-col-sm">Jumlah</span>
                     <span className="item-row-col-md">Satuan</span>
-                    {isEdit && <span className="item-row-col-spacer" />}
+                    {isEdit && <span className="item-row-delete-btn" />}
                   </div>
                   {form.items.map((row, idx) => (
                     <div key={idx} className="item-row">
@@ -288,7 +288,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                       {isEdit && (
                         <button
                           type="button"
-                          className="card-icon-btn card-icon-btn-danger item-row-col-spacer"
+                          className="card-icon-btn card-icon-btn-danger item-row-delete-btn"
                           aria-label={`Hapus baris barang ${idx + 1}`}
                           disabled={form.items.length <= 1}
                           style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
@@ -310,7 +310,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label htmlFor="da-catatan">Catatan</label>
-              <input type="text" id="da-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="da-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Stok Menipis, Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

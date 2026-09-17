@@ -120,10 +120,10 @@ export default function OfficeSuppliesOverviewPage() {
       : "Approval Departemen/Divisi";
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus Permintaan Perlengkapan Kantor ini secara permanen?", async () => {
+    confirm("Hapus Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pesanan berhasil dihapus");
         load();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -137,7 +137,7 @@ export default function OfficeSuppliesOverviewPage() {
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-            + Permintaan Perlengkapan Kantor
+            + Pesan Kebutuhan Kantor
           </button>
         )}
       </div>
@@ -153,7 +153,7 @@ export default function OfficeSuppliesOverviewPage() {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0 }}>Permintaan Terbaru Saya</h3>
+        <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
             id="overview-atk-status-filter"
@@ -258,7 +258,7 @@ export default function OfficeSuppliesOverviewPage() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-Perlengkapan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
+            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Pesanan-Kebutuhan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

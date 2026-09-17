@@ -511,15 +511,16 @@ export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
 };
 
 // Order mirrors the grouping in lib/atkCatalog.ts - LAINNYA is the catch-all, kept last.
+// Urutan berdasarkan abjad label-nya (tampil apa adanya di dropdown Kategori).
 export const KATEGORI_ATK_LABEL: Record<AtkKategori, string> = {
   ALAT_TULIS: "Alat Tulis",
-  KERTAS_CETAK: "Kertas & Cetak",
-  PERLENGKAPAN_KANTOR: "Perlengkapan Kantor",
-  MAP_FILING: "Map & Filing",
   ELEKTRONIK_KOMPUTER: "Elektronik & Komputer",
   KEBERSIHAN_PANTRY: "Kebersihan & Pantry",
-  PERLENGKAPAN_RAPAT: "Perlengkapan Rapat",
+  KERTAS_CETAK: "Kertas & Cetak",
   LAINNYA: "Lainnya",
+  MAP_FILING: "Map & Filing",
+  PERLENGKAPAN_KANTOR: "Perlengkapan Kantor",
+  PERLENGKAPAN_RAPAT: "Perlengkapan Rapat",
 };
 
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".

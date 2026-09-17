@@ -533,7 +533,7 @@ public class PermintaanAtkController : ApiControllerBase
         item.RejectReason = null;
         AddLog(item, "SUBMITTED", user);
         await _db.SaveChangesAsync();
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "atk", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengajukan Permintaan Perlengkapan Kantor Baru");
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "atk", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengajukan Pesanan Kebutuhan Kantor Baru");
         return Ok(PermintaanAtkOut.From(item));
     }
 
@@ -930,6 +930,6 @@ public class PermintaanAtkController : ApiControllerBase
             ? await _db.Users.Where(u => u.Id == item.ApprovedByKpu.Value).ToDictionaryAsync(u => u.Id, u => u.Nama)
             : new Dictionary<int, string>();
         var bytes = AtkPdfService.Generate(item, actorNames);
-        return File(bytes, "application/pdf", $"Bukti-Permintaan-Perlengkapan-Kantor-{item.NomorPermintaan}.pdf");
+        return File(bytes, "application/pdf", $"Bukti-Pesanan-Kebutuhan-Kantor-{item.NomorPermintaan}.pdf");
     }
 }

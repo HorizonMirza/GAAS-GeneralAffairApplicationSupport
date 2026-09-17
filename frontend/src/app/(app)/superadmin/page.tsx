@@ -643,7 +643,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteAtk(item: PermintaanAtk) {
-    confirm("Yakin ingin menghapus Permintaan Perlengkapan Kantor ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Pesanan Kebutuhan Kantor ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteAtk(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -1514,12 +1514,12 @@ export default function SuperAdminPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3>Permintaan Perlengkapan Kantor</h3>
+          <h3>Pesanan Kebutuhan Kantor</h3>
         </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-atk-search">Cari Permintaan</label>
-            <input type="text" id="filter-atk-search" placeholder="No Permintaan" value={atkSearchInput} onChange={(e) => handleAtkSearchChange(e.target.value)} />
+            <label htmlFor="filter-atk-search">Cari Pesanan</label>
+            <input type="text" id="filter-atk-search" placeholder="No Pesanan" value={atkSearchInput} onChange={(e) => handleAtkSearchChange(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="filter-atk-bulan">Filter Bulan</label>
@@ -1602,7 +1602,7 @@ export default function SuperAdminPage() {
           <button
             className="btn btn-bulk-delete"
             disabled={atkBusy || atkTotal === 0}
-            onClick={() => askBulkDelete("Office Supplies", "Permintaan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
+            onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
           >
             Hapus Semua
           </button>
@@ -1612,7 +1612,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
                 <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th><th>Aksi</th>
               </tr>
@@ -1667,13 +1667,13 @@ export default function SuperAdminPage() {
                 value={String(atkFilters.limit)}
                 onChange={(v) => updateAtkFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} Permintaan`}
-                placeholder={`${atkFilters.limit} Permintaan`}
+                getLabel={(v) => `${v} Pesanan`}
+                placeholder={`${atkFilters.limit} Pesanan`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {atkTotal} Permintaan · Halaman {atkFilters.page} dari {atkTotalPages}</span>
+            <span className="text-secondary">Total {atkTotal} Pesanan · Halaman {atkFilters.page} dari {atkTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={atkFilters.page <= 1} onClick={() => goToAtkPage(atkFilters.page - 1)}>‹</button>
               {atkPageButtons.map((p) => (

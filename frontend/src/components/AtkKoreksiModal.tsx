@@ -74,13 +74,13 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan Perlengkapan Kantor {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>Form Pesanan Kebutuhan Kantor {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ka-nomor-permintaan">Nomor Permintaan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="ka-nomor-permintaan">Nomor Pesanan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field">

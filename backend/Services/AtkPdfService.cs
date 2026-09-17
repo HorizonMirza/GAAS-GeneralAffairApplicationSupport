@@ -73,10 +73,10 @@ public static class AtkPdfService
                             .Text("APPROVED").FontColor(ApprovedGreen).Bold().FontSize(11);
                     });
 
-                    col.Item().PaddingTop(8).AlignCenter().Text("BUKTI PERMINTAAN PERLENGKAPAN KANTOR").Bold().FontSize(15);
+                    col.Item().PaddingTop(8).AlignCenter().Text("BUKTI PESANAN KEBUTUHAN KANTOR").Bold().FontSize(15);
                     col.Item().AlignCenter().Text(txt =>
                     {
-                        txt.Span("No. Permintaan: ").FontSize(10.5f);
+                        txt.Span("No. Pesanan: ").FontSize(10.5f);
                         txt.Span(item.NomorPermintaan ?? "-").FontSize(10.5f).Bold();
                     });
 
@@ -98,7 +98,7 @@ public static class AtkPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa permintaan perlengkapan kantor di atas telah disetujui secara final. Nomor permintaan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima barang."
+                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa pesanan kebutuhan kantor di atas telah disetujui secara final. Nomor pesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima barang."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

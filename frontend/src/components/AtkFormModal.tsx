@@ -129,7 +129,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
       await api.createAtk({ ...form, kategori: form.kategori, departemen: form.departemen || undefined, catatan: form.catatan || null });
-      showToast("Permintaan Perlengkapan Kantor berhasil disimpan sebagai Draft");
+      showToast("Pesanan Kebutuhan Kantor berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -143,13 +143,13 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan Perlengkapan Kantor {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Pesan Kebutuhan Kantor {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fa-nomor-permintaan">Nomor Permintaan</label>
+              <label htmlFor="fa-nomor-permintaan">Nomor Pesanan</label>
               <input type="text" id="fa-nomor-permintaan" disabled value={nomorPermintaan} />
             </div>
             {isGaActor && (
@@ -214,7 +214,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                     <span className="item-row-col-lg">Nama Barang</span>
                     <span className="item-row-col-sm">Jumlah</span>
                     <span className="item-row-col-md">Satuan</span>
-                    <span className="item-row-col-spacer" />
+                    <span className="item-row-delete-btn" />
                   </div>
                   {form.items.map((row, idx) => (
                     <div key={idx} className="item-row">
@@ -224,7 +224,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                         required
                         maxLength={255}
                         options={ATK_CATALOG_NAMES}
-                        placeholder="Nama barang (contoh: Pulpen)"
+                        placeholder="Nama barang"
                         value={row.namaBarang}
                         onChange={(namaBarang) => {
                           const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
@@ -257,7 +257,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                       />
                       <button
                         type="button"
-                        className="card-icon-btn card-icon-btn-danger item-row-col-spacer"
+                        className="card-icon-btn card-icon-btn-danger item-row-delete-btn"
                         aria-label={`Hapus baris barang ${idx + 1}`}
                         disabled={form.items.length <= 1}
                         style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
@@ -278,7 +278,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
             <div className="field full">
               <label htmlFor="fa-catatan">Catatan</label>
-              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Stok Menipis, Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

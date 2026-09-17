@@ -199,10 +199,10 @@ function OfficeSuppliesTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus Permintaan Perlengkapan Kantor ini secara permanen?", async () => {
+    confirm("Hapus Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
-        showToast("Permintaan berhasil dihapus");
+        showToast("Pesanan berhasil dihapus");
         loadTable();
       } catch (err) {
         showToast((err as Error).message, "error");
@@ -243,8 +243,8 @@ function OfficeSuppliesTransaksiPageInner() {
       <div className="card">
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
-            <label htmlFor="filter-atk-search">Cari Permintaan</label>
-            <input type="text" id="filter-atk-search" placeholder="No Permintaan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <label htmlFor="filter-atk-search">Cari Pesanan</label>
+            <input type="text" id="filter-atk-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
@@ -330,7 +330,7 @@ function OfficeSuppliesTransaksiPageInner() {
             )}
           </div>
 
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Permintaan</button>
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Semua Pesanan</button>
 
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.atkExportPdfUrl(currentExportParams()), "_blank")}>
@@ -341,7 +341,7 @@ function OfficeSuppliesTransaksiPageInner() {
             </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + Permintaan Perlengkapan Kantor
+                + Pesan Kebutuhan Kantor
               </button>
             )}
           </div>
@@ -351,7 +351,7 @@ function OfficeSuppliesTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
                 <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
               </tr>
@@ -423,13 +423,13 @@ function OfficeSuppliesTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} Permintaan`}
-                placeholder={`${filters.limit} Permintaan`}
+                getLabel={(v) => `${v} Pesanan`}
+                placeholder={`${filters.limit} Pesanan`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {total} Permintaan · Halaman {filters.page} dari {totalPages}</span>
+            <span className="text-secondary">Total {total} Pesanan · Halaman {filters.page} dari {totalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={filters.page <= 1} onClick={() => goToPage(filters.page - 1)}>‹</button>
               {pageButtons.map((p) => (
@@ -476,7 +476,7 @@ function OfficeSuppliesTransaksiPageInner() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-Perlengkapan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
+            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Pesanan-Kebutuhan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

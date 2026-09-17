@@ -5390,6 +5390,11 @@ table.data-table {
 .item-row-col-sm { flex: 1 1 80px; min-width: 80px; }
 .item-row-col-spacer { flex: 0 0 30px; width: 30px; }
 
+/* Office Supplies "Daftar Barang": hapus-baris button sized to match the row's own input boxes
+   (44px tall) instead of item-row-col-spacer's smaller 30px square used elsewhere, so it doesn't
+   look undersized next to Nama Barang/Jumlah/Satuan. */
+.item-row-delete-btn { flex: 0 0 44px; width: 44px; height: 44px; }
+
 .chat-count-badge {
   position: absolute;
   top: -6px;
