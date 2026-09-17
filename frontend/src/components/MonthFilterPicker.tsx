@@ -29,12 +29,17 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  // Filter bars keep the panel at its own comfortable fixed width regardless of how narrow the
+  // trigger is (see .filter-picker-panel-month). A form field's trigger spans the full field
+  // width instead, so stretching the panel to match it (rather than the fixed 240px floor)
+  // reads as one continuous control instead of a mismatched popover.
+  fillWidth?: boolean;
 }
 
 // Replaces the plain <input type="month"> used for every "Filter Bulan" across the app - the
 // native control renders the OS/browser's own picker UI, which CSS cannot restyle at all, so
 // matching the requested card-with-month-grid design meant building this instead.
-export default function MonthFilterPicker({ id, value, onChange, placeholder = "Semua Bulan" }: Props) {
+export default function MonthFilterPicker({ id, value, onChange, placeholder = "Semua Bulan", fillWidth = false }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -87,7 +92,7 @@ export default function MonthFilterPicker({ id, value, onChange, placeholder = "
       </button>
       {open && (
         <motion.div
-          className={`filter-picker-panel filter-picker-panel-month${dropUp ? " filter-picker-panel-up" : ""}`}
+          className={`filter-picker-panel filter-picker-panel-month${dropUp ? " filter-picker-panel-up" : ""}${fillWidth ? " filter-picker-panel-fill" : ""}`}
           initial="hidden"
           animate="visible"
           variants={sidebarVariants}

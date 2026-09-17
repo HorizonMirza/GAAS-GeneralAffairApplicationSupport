@@ -104,14 +104,13 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
               id="invoice-upload-nama"
               required
               maxLength={255}
-              placeholder="Contoh: PT Ekspedisi Jaya"
               value={nama}
               onChange={(e) => setNama(e.target.value)}
             />
           </div>
           <div className="field">
             <label htmlFor="invoice-upload-bulan">Bulan Invoice</label>
-            <MonthFilterPicker id="invoice-upload-bulan" value={bulan} onChange={setBulan} placeholder="Pilih bulan" />
+            <MonthFilterPicker id="invoice-upload-bulan" value={bulan} onChange={setBulan} placeholder="Pilih bulan" fillWidth />
           </div>
           <div className="field">
             <label htmlFor="invoice-upload-file">File Invoice (PDF)</label>
