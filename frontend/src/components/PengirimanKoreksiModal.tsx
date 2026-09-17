@@ -98,7 +98,7 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
                 required
                 maxLength={255}
                 value={form.namaPengirim}
-                onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+                onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z0-9\s.'-]/g, ""))}
               />
             </div>
             <div className="field">
@@ -125,7 +125,7 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
                 required
                 maxLength={255}
                 value={form.namaPenerima}
-                onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))}
+                onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z0-9\s.'-]/g, ""))}
               />
             </div>
             <div className="field">
