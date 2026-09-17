@@ -166,7 +166,7 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: -8 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
