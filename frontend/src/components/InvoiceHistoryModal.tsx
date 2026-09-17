@@ -65,8 +65,8 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
                       )}
                       {log.originalFilename && invoiceId != null && (
                         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                          <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem" }} href={api.invoiceLogFileUrl(invoiceId, log.id)} target="_blank" rel="noopener noreferrer">Lihat PDF</a>
-                          <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem" }} href={api.invoiceLogDownloadUrl(invoiceId, log.id)}>Download PDF</a>
+                          <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem", textDecoration: "none" }} href={api.invoiceLogFileUrl(invoiceId, log.id)} target="_blank" rel="noopener noreferrer">Lihat PDF</a>
+                          <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem", textDecoration: "none" }} href={api.invoiceLogDownloadUrl(invoiceId, log.id)}>Download PDF</a>
                         </div>
                       )}
                     </div>
