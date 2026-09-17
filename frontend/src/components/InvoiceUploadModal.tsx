@@ -123,9 +123,8 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
               onDrop={handleDrop}
             >
               <UploadCloud width={32} height={32} />
-              <div className="file-dropzone-text">
-                Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span>
-              </div>
+              <div className="photo-drop-title">Pilih file atau Drag and Drop disini.</div>
+              <div className="photo-drop-caption">Format PDF, Max 10 MB</div>
               <input
                 type="file"
                 id="invoice-upload-file"
@@ -133,9 +132,6 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
                 className="file-dropzone-input"
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
-            </div>
-            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>
-              Hanya file PDF, maksimal 10 MB
             </div>
             {file && (
               <div className="photo-drop-list">
