@@ -382,7 +382,7 @@ function MaintenanceTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} />
                             {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
                               <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
                             )}

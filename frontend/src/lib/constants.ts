@@ -1,19 +1,20 @@
 import { formatDate } from "./format";
 import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
-// Collapsed to the app-wide 4-state vocabulary (Draft / On-Approval / Rejected / Approved) -
-// which specific tier is on-approval or rejected is still visible from the "Waiting: X" sub-badge
-// and the approval Stepper, so the main label no longer needs to spell it out too.
+// Single badge, always "Status: Role" so whoever is currently holding it (on-approval) or who
+// stopped it (rejected) is visible at a glance without a second sub-badge or the Stepper. SUBMITTED
+// and REJECTED_L1 are overridden dynamically in getStatusLabel below since which track (Departemen
+// vs Divisi) applies depends on the item.
 export const STATUS_LABEL: Record<Status, string> = {
   DRAFT: "Draft",
-  SUBMITTED: "On-Approval",
-  REJECTED_L1: "Rejected",
-  APPROVED_L1: "On-Approval",
-  REJECTED_GA: "Rejected",
-  APPROVED_GA: "On-Approval",
-  REJECTED_GA_APPROVAL: "Rejected",
-  APPROVED_GA_APPROVAL: "On-Approval",
-  REJECTED_KPU: "Rejected",
+  SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+  REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+  APPROVED_L1: "On-Approval: Admin GA",
+  REJECTED_GA: "Rejected: Admin GA",
+  APPROVED_GA: "On-Approval: Approval GA",
+  REJECTED_GA_APPROVAL: "Rejected: Approval GA",
+  APPROVED_GA_APPROVAL: "On-Approval: Mitra",
+  REJECTED_KPU: "Rejected: Mitra",
   COMPLETED: "Approved",
 };
 
@@ -62,10 +63,9 @@ export function cardStatusBorderClass(status: Status): string {
   return "";
 }
 
-// The `departemen` param is unused now that the label is a fixed 4-word vocabulary, but kept in
-// the signature since every caller (StatusBadge, AtkStatusBadge, ...) still passes it.
 export function getStatusLabel(status: Status, departemen?: string | null): string {
-  void departemen;
+  if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
+  if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;
   return STATUS_LABEL[status];
 }
 
@@ -116,34 +116,14 @@ export const ROLE_COLOR: Record<Role, string> = {
 };
 
 // Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya, bukan
-// selalu "Admin". Dipakai baik untuk badge "Waiting" maupun untuk label pilihan target reject.
-// Generic atas field yang sama-sama dimiliki Pengiriman/PermintaanAtk/PerbaikanSarana/
-// PermintaanArsip, bukan cuma Pengiriman.
+// selalu "Admin". Dipakai untuk label pilihan target reject (RejectModal). Generic atas field
+// yang sama-sama dimiliki Pengiriman/PermintaanAtk/PerbaikanSarana/PermintaanArsip, bukan cuma
+// Pengiriman.
 export function originActorLabel(item: { createdByRole: Role; departemen: string | null }): string {
   if (item.createdByRole === "ADMIN_GA") return "Admin GA";
   if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
-}
-
-// Shows who actually performed the rejection (the tier that stopped the approval chain), not who
-// needs to act next - e.g. "Rejected: Approval Departemen" for a REJECTED_L1 item.
-export function getRejectedByLabel(item: Pengiriman): string | undefined {
-  if (item.status === "REJECTED_L1") return `Rejected: Approval ${trackWord(item.departemen)}`;
-  if (item.status === "REJECTED_GA") return "Rejected: Admin GA";
-  if (item.status === "REJECTED_GA_APPROVAL") return "Rejected: Approval GA";
-  if (item.status === "REJECTED_KPU") return "Rejected: Mitra";
-  return undefined;
-}
-
-// Same "Waiting: X" idea as Pengiriman's getWaitingLabel, but for the simpler single-destination
-// reject flow (ATK/Maintenance/Archive) - every reject, at every tier, always routes back to the
-// same origin creator, so there's no RejectTarget branch to consider here.
-export function getSimpleWaitingLabel(status: BookingStatus | Status, item: { createdByRole: Role; departemen: string | null }): string | undefined {
-  if (status === "REJECTED_L1" || status === "REJECTED_GA" || status === "REJECTED_GA_APPROVAL" || status === "REJECTED_KPU") {
-    return `Waiting: ${originActorLabel(item)}`;
-  }
-  return undefined;
 }
 
 export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
@@ -200,9 +180,9 @@ export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
 export const INVOICE_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
-  PENDING: "On-Approval",
+  PENDING: "On-Approval: Admin GA",
   APPROVED: "Approved",
-  REJECTED: "Rejected",
+  REJECTED: "Rejected: Admin GA",
 };
 
 export const INVOICE_STATUS_CLASS: Record<string, string> = {
@@ -245,16 +225,17 @@ export function isBookingOriginRole(role: Role): boolean {
   return BOOKING_ORIGIN_ROLES.includes(role);
 }
 
-// Same 4-state collapse as STATUS_LABEL above - APPROVED_GA_APPROVAL is Room/Vehicle Booking's
-// own true final state (no Mitra/KPU stage here), so it's "Approved" rather than "On-Approval".
+// Same "Status: Role" pattern as STATUS_LABEL above - APPROVED_GA_APPROVAL is Room/Vehicle
+// Booking's own true final state (no Mitra/KPU stage here), so it's "Approved" rather than
+// "On-Approval: ...".
 export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   DRAFT: "Draft",
-  SUBMITTED: "On-Approval",
-  REJECTED_L1: "Rejected",
-  APPROVED_L1: "On-Approval",
-  REJECTED_GA: "Rejected",
-  APPROVED_GA: "On-Approval",
-  REJECTED_GA_APPROVAL: "Rejected",
+  SUBMITTED: "On-Approval: Approval Departemen/Divisi",
+  REJECTED_L1: "Rejected: Approval Departemen/Divisi",
+  APPROVED_L1: "On-Approval: Admin GA",
+  REJECTED_GA: "Rejected: Admin GA",
+  APPROVED_GA: "On-Approval: Approval GA",
+  REJECTED_GA_APPROVAL: "Rejected: Approval GA",
   APPROVED_GA_APPROVAL: "Approved",
   CANCELLED: "Cancelled",
 };
@@ -283,7 +264,8 @@ export function bookingStatusBorderClass(status: BookingStatus): string {
 }
 
 export function getBookingStatusLabel(status: BookingStatus, departemen?: string | null): string {
-  void departemen;
+  if (status === "SUBMITTED") return `On-Approval: Approval ${trackWord(departemen)}`;
+  if (status === "REJECTED_L1") return `Rejected: Approval ${trackWord(departemen)}`;
   return BOOKING_STATUS_LABEL[status];
 }
 

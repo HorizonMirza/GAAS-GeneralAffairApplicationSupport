@@ -381,7 +381,7 @@ function ArsipTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} />
                           </span>
                           <button
                             type="button"

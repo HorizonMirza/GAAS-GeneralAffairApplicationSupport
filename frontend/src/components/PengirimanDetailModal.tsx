@@ -347,6 +347,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             {showKpuSection && (
               <>
+                <div className="field full form-grid-divider" />
                 <div className="field">
                   <label htmlFor="pv-k-resi">No. Resi</label>
                   <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />

@@ -3744,6 +3744,15 @@ table.data-table {
 
 .form-grid .field.full { grid-column: 1 / -1; }
 
+/* Thin separator between two logically distinct groups of fields sharing one .form-grid (e.g.
+   Ekspedisi's own fields vs. the Mitra-filled Resi & Biaya fields) - just a hairline, no heading
+   text, so the groups still read as one continuous form. */
+.form-grid-divider {
+  height: 0;
+  margin: 4px 0 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
 /* Trims the vertical rhythm of an already-long form (e.g. the Room Booking edit form, which can
    carry a dozen fields including the recurring-booking section) without touching every other
    form-grid in the app - scope this to a form-grid that opts in. */
