@@ -1471,7 +1471,7 @@ export default function SuperAdminPage() {
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteArsip(item)}>Delete</button>
                       </td>
@@ -1815,7 +1815,7 @@ export default function SuperAdminPage() {
                       <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
                       <td>{item.noTeleponPelapor}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} /></td>
+                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
                         <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteSarana(item)}>Delete</button>
                       </td>

@@ -116,14 +116,38 @@ export const ROLE_COLOR: Record<Role, string> = {
 };
 
 // Label untuk siapa sebenarnya origin/pembuat data ini - ikut peran pembuat aslinya, bukan
-// selalu "Admin". Dipakai untuk label pilihan target reject (RejectModal). Generic atas field
-// yang sama-sama dimiliki Pengiriman/PermintaanAtk/PerbaikanSarana/PermintaanArsip, bukan cuma
-// Pengiriman.
+// selalu "Admin". Dipakai baik untuk badge "Waiting" maupun untuk label pilihan target reject.
+// Generic atas field yang sama-sama dimiliki Pengiriman/PermintaanAtk/PerbaikanSarana/
+// PermintaanArsip, bukan cuma Pengiriman.
 export function originActorLabel(item: { createdByRole: Role; departemen: string | null }): string {
   if (item.createdByRole === "ADMIN_GA") return "Admin GA";
   if (item.createdByRole === "APPROVAL_GA") return "Approval GA";
   const tier = item.createdByRole === "APPROVAL_DEPARTEMEN" || item.createdByRole === "APPROVAL_DIVISI" ? "Approval" : "Admin";
   return `${tier} ${trackWord(item.departemen)}`;
+}
+
+// Second sub-badge shown only on a Rejected item - the main "Rejected: X" badge already says
+// which tier stopped it, this says who now needs to act (revise & resubmit) to move it forward
+// again. REJECTED_GA_APPROVAL/REJECTED_KPU can route back to either Admin GA or the original
+// creator depending on rejectTarget (see PengirimanController's own RejectTarget branch).
+export function getWaitingLabel(item: Pengiriman): string | undefined {
+  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
+    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${originActorLabel(item)}`;
+  }
+  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
+    return `Waiting: ${originActorLabel(item)}`;
+  }
+  return undefined;
+}
+
+// Same "Waiting: X" idea as Pengiriman's getWaitingLabel, but for the simpler single-destination
+// reject flow (ATK/Maintenance/Archive) - every reject, at every tier, always routes back to the
+// same origin creator, so there's no RejectTarget branch to consider here.
+export function getSimpleWaitingLabel(status: BookingStatus | Status, item: { createdByRole: Role; departemen: string | null }): string | undefined {
+  if (status === "REJECTED_L1" || status === "REJECTED_GA" || status === "REJECTED_GA_APPROVAL" || status === "REJECTED_KPU") {
+    return `Waiting: ${originActorLabel(item)}`;
+  }
+  return undefined;
 }
 
 export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {

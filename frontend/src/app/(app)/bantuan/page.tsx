@@ -17,7 +17,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Apa arti setiap status pengajuan yang saya lihat?",
     answer:
-      "Draft berarti data belum diajukan dan masih bebas diedit atau dihapus. On-Approval berarti sedang menunggu persetujuan, dengan nama tingkat yang sedang memprosesnya langsung tertulis di badge-nya (contoh: \"On-Approval: Admin GA\"). Rejected juga langsung menyebut tingkat mana yang menolaknya (contoh: \"Rejected: Approval Departemen\") dan pengajuan itu dianggap selesai/gagal. Approved berarti pengajuan sudah lolos semua tingkat approval dan resmi disetujui.",
+      "Draft berarti data belum diajukan dan masih bebas diedit atau dihapus. On-Approval berarti sedang menunggu persetujuan, dengan nama tingkat yang sedang memprosesnya langsung tertulis di badge-nya (contoh: \"On-Approval: Admin GA\"). Rejected berarti ditolak dan pengajuan itu dianggap selesai/gagal - badge-nya langsung menyebut tingkat mana yang menolak (contoh: \"Rejected: Approval Departemen\"), dan kalau masih menunggu Anda merevisi dan mengajukan ulang, badge kedua \"Waiting: ...\" di bawahnya menunjukkan siapa yang harus Anda hubungi. Approved berarti pengajuan sudah lolos semua tingkat approval dan resmi disetujui.",
   },
   {
     question: "Di mana saya bisa melihat riwayat pengajuan saya?",
