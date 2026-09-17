@@ -140,7 +140,7 @@ export default function MaintenanceOverviewPage() {
       : "Approval Departemen/Divisi";
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus pengajuan perbaikan ini secara permanen?", async () => {
+    confirm("Hapus Pengajuan Perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
         showToast("Pengajuan berhasil dihapus");

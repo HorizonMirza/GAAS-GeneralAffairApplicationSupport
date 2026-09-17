@@ -272,8 +272,8 @@ export default function ArsipKatalogPage() {
               value={String(filters.limit)}
               onChange={(v) => updateFilter({ limit: Number(v) })}
               options={["5", "10", "20", "50"]}
-              getLabel={(v) => `${v} arsip`}
-              placeholder={`${filters.limit} arsip`}
+              getLabel={(v) => `${v} Arsip`}
+              placeholder={`${filters.limit} Arsip`}
             />
           </div>
         </div>

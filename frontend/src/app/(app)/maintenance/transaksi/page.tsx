@@ -201,7 +201,7 @@ function MaintenanceTransaksiPageInner() {
   }
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus pengajuan perbaikan ini secara permanen?", async () => {
+    confirm("Hapus Pengajuan Perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
         showToast("Pengajuan berhasil dihapus");
@@ -420,8 +420,8 @@ function MaintenanceTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} pengajuan`}
-                placeholder={`${filters.limit} pengajuan`}
+                getLabel={(v) => `${v} Pengajuan`}
+                placeholder={`${filters.limit} Pengajuan`}
               />
             </div>
           </div>

@@ -110,7 +110,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
         departemen: form.departemen || undefined,
         catatan: form.catatan || null,
       });
-      showToast("Pemindahan arsip berhasil disimpan sebagai Draft");
+      showToast("Pemindahan Arsip berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {

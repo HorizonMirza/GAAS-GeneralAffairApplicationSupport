@@ -144,7 +144,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
     onClose();
     try {
       await api.approveArsipGaApproval(item!.id);
-      showToast("Pemindahan arsip berhasil disetujui");
+      showToast("Pemindahan Arsip berhasil disetujui");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -227,7 +227,7 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 required
                 disabled={!isEdit}
                 maxLength={100}
-                placeholder="Nama arsip"
+                placeholder="Nama Arsip"
                 value={form.namaArsip}
                 onChange={(e) => set("namaArsip", e.target.value)}
               />

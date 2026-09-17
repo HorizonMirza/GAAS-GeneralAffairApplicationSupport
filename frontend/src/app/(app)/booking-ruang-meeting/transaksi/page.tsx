@@ -450,8 +450,8 @@ function BookingTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} pesanan`}
-                placeholder={`${filters.limit} pesanan`}
+                getLabel={(v) => `${v} Pesanan`}
+                placeholder={`${filters.limit} Pesanan`}
               />
             </div>
           </div>

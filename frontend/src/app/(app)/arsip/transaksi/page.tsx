@@ -197,7 +197,7 @@ function ArsipTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanArsip) {
-    confirm("Hapus pemindahan arsip ini secara permanen?", async () => {
+    confirm("Hapus Pemindahan Arsip ini secara permanen?", async () => {
       try {
         await api.deleteArsip(item.id);
         showToast("Pemindahan berhasil dihapus");
@@ -416,8 +416,8 @@ function ArsipTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} pemindahan`}
-                placeholder={`${filters.limit} pemindahan`}
+                getLabel={(v) => `${v} Pemindahan`}
+                placeholder={`${filters.limit} Pemindahan`}
               />
             </div>
           </div>

@@ -609,7 +609,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteArsip(item: PermintaanArsip) {
-    confirm("Yakin ingin menghapus pemindahan arsip ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Pemindahan Arsip ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteArsip(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -677,7 +677,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteSarana(item: PerbaikanSarana) {
-    confirm("Yakin ingin menghapus pengajuan perbaikan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Pengajuan Perbaikan ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteSarana(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -1492,13 +1492,13 @@ export default function SuperAdminPage() {
                 value={String(arsipFilters.limit)}
                 onChange={(v) => updateArsipFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} pemindahan`}
-                placeholder={`${arsipFilters.limit} pemindahan`}
+                getLabel={(v) => `${v} Pemindahan`}
+                placeholder={`${arsipFilters.limit} Pemindahan`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {arsipTotal} pemindahan · Halaman {arsipFilters.page} dari {arsipTotalPages}</span>
+            <span className="text-secondary">Total {arsipTotal} Pemindahan · Halaman {arsipFilters.page} dari {arsipTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={arsipFilters.page <= 1} onClick={() => goToArsipPage(arsipFilters.page - 1)}>‹</button>
               {arsipPageButtons.map((p) => (
@@ -1776,7 +1776,7 @@ export default function SuperAdminPage() {
           <button
             className="btn btn-bulk-delete"
             disabled={saranaBusy || saranaTotal === 0}
-            onClick={() => askBulkDelete("Maintenance", "pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
+            onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
           >
             Hapus Semua
           </button>
@@ -1836,8 +1836,8 @@ export default function SuperAdminPage() {
                 value={String(saranaFilters.limit)}
                 onChange={(v) => updateSaranaFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} pengajuan`}
-                placeholder={`${saranaFilters.limit} pengajuan`}
+                getLabel={(v) => `${v} Pengajuan`}
+                placeholder={`${saranaFilters.limit} Pengajuan`}
               />
             </div>
           </div>
