@@ -255,6 +255,12 @@ public class PengirimanController : ApiControllerBase
     private static bool IsValidPhone(string phone) =>
         Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
 
+    // Matches the frontend's own sanitizer (letters, spaces, and a few name punctuation marks) -
+    // enforced here too since the API is reachable directly, not just through the form that
+    // already strips digits as the user types.
+    private static bool IsValidName(string name) =>
+        Regex.IsMatch(name, @"^[A-Za-z\s.'-]+$");
+
     private static string? ValidatePayload(PengirimanCreate payload, bool isGaActor)
     {
         // Only Admin/Approval GA can input on behalf of another unit - the field is silently
@@ -273,6 +279,8 @@ public class PengirimanController : ApiControllerBase
             return "Tujuan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaPengirim))
             return "Nama pengirim wajib diisi";
+        if (!IsValidName(payload.NamaPengirim))
+            return "Nama pengirim hanya boleh berisi huruf";
         if (!IsValidPhone(payload.NoTeleponPengirim))
             return "Nomor telepon pengirim tidak valid";
         if (string.IsNullOrWhiteSpace(payload.AlamatPengirim))
@@ -281,6 +289,8 @@ public class PengirimanController : ApiControllerBase
             return "Kode program wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaPenerima))
             return "Nama penerima wajib diisi";
+        if (!IsValidName(payload.NamaPenerima))
+            return "Nama penerima hanya boleh berisi huruf";
         if (string.IsNullOrWhiteSpace(payload.AlamatPenerima))
             return "Alamat penerima wajib diisi";
         if (!IsValidPhone(payload.NoTeleponPenerima))
@@ -446,9 +456,11 @@ public class PengirimanController : ApiControllerBase
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
 
         if (string.IsNullOrWhiteSpace(payload.NamaPengirim)) return BadRequest(new { detail = "Nama pengirim wajib diisi" });
+        if (!IsValidName(payload.NamaPengirim)) return BadRequest(new { detail = "Nama pengirim hanya boleh berisi huruf" });
         if (!IsValidPhone(payload.NoTeleponPengirim)) return BadRequest(new { detail = "No. telepon pengirim tidak valid" });
         if (string.IsNullOrWhiteSpace(payload.AlamatPengirim)) return BadRequest(new { detail = "Alamat pengirim wajib diisi" });
         if (string.IsNullOrWhiteSpace(payload.NamaPenerima)) return BadRequest(new { detail = "Nama penerima wajib diisi" });
+        if (!IsValidName(payload.NamaPenerima)) return BadRequest(new { detail = "Nama penerima hanya boleh berisi huruf" });
         if (string.IsNullOrWhiteSpace(payload.AlamatPenerima)) return BadRequest(new { detail = "Alamat penerima wajib diisi" });
         if (!IsValidPhone(payload.NoTeleponPenerima)) return BadRequest(new { detail = "No. telepon penerima tidak valid" });
 

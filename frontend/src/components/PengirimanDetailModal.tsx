@@ -257,7 +257,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-pengirim">Nama Pengirim</label>
-              <input type="text" id="pv-pengirim" required disabled={!isEdit} maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value)} />
+              <input type="text" id="pv-pengirim" required disabled={!isEdit} maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))} />
             </div>
             <div className="field">
               <label htmlFor="pv-telepon-pengirim">No. Telepon Pengirim</label>
@@ -278,7 +278,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
             </div>
             <div className="field">
               <label htmlFor="pv-penerima">Nama Penerima</label>
-              <input type="text" id="pv-penerima" required disabled={!isEdit} maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value)} />
+              <input type="text" id="pv-penerima" required disabled={!isEdit} maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z\s.'-]/g, ""))} />
             </div>
             <div className="field">
               <label htmlFor="pv-telepon">No. Telepon Penerima</label>
