@@ -40,7 +40,7 @@ export default function InvoiceHistoryPage() {
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
-  const [invoiceAction, setInvoiceAction] = useState<{ id: number; type: "approve" | "reject" } | null>(null);
+  const [invoiceRejectId, setInvoiceRejectId] = useState<number | null>(null);
   const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
   const [invoiceUpdateTarget, setInvoiceUpdateTarget] = useState<Invoice | null>(null);
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
@@ -287,7 +287,7 @@ export default function InvoiceHistoryPage() {
         item={invoiceDetail}
         me={me}
         onClose={() => setInvoiceDetail(null)}
-        onRequestAction={(id, type) => setInvoiceAction({ id, type })}
+        onRequestAction={(id) => setInvoiceRejectId(id)}
         onSubmitted={() => {
           setInvoiceDetail(null);
           loadInvoices();
@@ -295,12 +295,11 @@ export default function InvoiceHistoryPage() {
       />
 
       <InvoiceActionModal
-        open={!!invoiceAction}
-        invoiceId={invoiceAction?.id ?? null}
-        type={invoiceAction?.type ?? null}
-        onClose={() => setInvoiceAction(null)}
+        open={invoiceRejectId != null}
+        invoiceId={invoiceRejectId}
+        onClose={() => setInvoiceRejectId(null)}
         onDone={() => {
-          setInvoiceAction(null);
+          setInvoiceRejectId(null);
           setInvoiceDetail(null);
           loadInvoices();
         }}

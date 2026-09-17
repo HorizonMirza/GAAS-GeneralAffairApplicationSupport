@@ -9,20 +9,21 @@ import { useToast } from "./ui/ToastProvider";
 interface Props {
   open: boolean;
   invoiceId: number | null;
-  type: "approve" | "reject" | null;
   onClose: () => void;
   onDone: () => void;
 }
 
-export default function InvoiceActionModal({ open, invoiceId, type, onClose, onDone }: Props) {
+// Approve has no notes step (see InvoiceDetailModal.handleApprove) - this modal now only handles
+// Reject, which keeps a reason since a rejection needs to explain what's wrong.
+export default function InvoiceActionModal({ open, invoiceId, onClose, onDone }: Props) {
   const [catatan, setCatatan] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  useAutofocusFirstField(containerRef, `${open}-${invoiceId}-${type}`);
+  useAutofocusFirstField(containerRef, `${open}-${invoiceId}`);
 
-  if (!open || !type) return null;
+  if (!open) return null;
 
   function reset() {
     setCatatan("");
@@ -36,17 +37,12 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
   }
 
   async function handleConfirm() {
-    if (invoiceId == null || !type) return;
+    if (invoiceId == null) return;
     const value = catatan.trim() || null;
     setBusy(true);
     try {
-      if (type === "approve") {
-        await api.approveInvoice(invoiceId, value);
-        showToast("Invoice disetujui");
-      } else {
-        await api.rejectInvoice(invoiceId, value);
-        showToast("Invoice ditolak");
-      }
+      await api.rejectInvoice(invoiceId, value);
+      showToast("Invoice ditolak");
       reset();
       onDone();
     } catch (err) {
@@ -59,7 +55,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>{type === "approve" ? "Approve Invoice" : "Reject Invoice"}</h3>
+          <h3>Reject Invoice</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="field">
@@ -83,12 +79,12 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
         <div className="modal-actions">
           <button
             type="button"
-            className={type === "approve" ? "btn btn-confirm-approve" : "btn btn-confirm-danger"}
+            className="btn btn-confirm-danger"
             style={{ width: "auto" }}
             onClick={handleConfirm}
             disabled={busy}
           >
-            {type === "approve" ? "Approve" : "Reject"}
+            Reject
           </button>
         </div>
       </div>

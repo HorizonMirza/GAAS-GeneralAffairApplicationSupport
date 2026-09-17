@@ -13,7 +13,7 @@ interface Props {
   item: Invoice | null;
   me: Me;
   onClose: () => void;
-  onRequestAction: (id: number, type: "approve" | "reject") => void;
+  onRequestAction: (id: number) => void;
   onSubmitted: () => void;
 }
 
@@ -43,6 +43,19 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
     try {
       await api.submitInvoice(item.id);
       showToast("Invoice berhasil dikirim untuk approval");
+      onSubmitted();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  async function handleApprove() {
+    if (!item) return;
+    setBusy(true);
+    try {
+      await api.approveInvoice(item.id, null);
+      showToast("Invoice disetujui");
       onSubmitted();
     } catch (err) {
       setError((err as Error).message);
@@ -91,8 +104,8 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
         <div className="modal-actions">
           {canReview && (
             <>
-              <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => onRequestAction(item.id, "reject")}>Reject</button>
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={() => onRequestAction(item.id, "approve")}>Approve</button>
+              <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => onRequestAction(item.id)}>Reject</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApprove} disabled={busy}>Approve</button>
             </>
           )}
           {canSubmitDraft && (
