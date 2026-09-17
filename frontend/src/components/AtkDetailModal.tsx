@@ -23,10 +23,12 @@ import SearchableSelect from "./SearchableSelect";
 import TextAutocomplete from "./TextAutocomplete";
 import { useToast } from "./ui/ToastProvider";
 
-// Exact-match lookup only (typing something not in the catalog just stays free text) - used to
-// auto-fill Satuan the moment a row's Nama Barang matches one of the 200 starter items.
+// Satuan is no longer a field the user fills in by hand - it's derived silently from the catalog
+// the moment Nama Barang matches one of the 200 starter items, falling back to "pcs" (the most
+// common unit in the catalog) for anything typed that isn't an exact match.
 const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
 const ATK_CATALOG_NAMES = ATK_CATALOG.map((i) => i.namaBarang);
+const DEFAULT_SATUAN = "pcs";
 
 const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
 
@@ -240,7 +242,6 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                   <div className="item-row-header">
                     <span className="item-row-col-lg">Nama Barang</span>
                     <span className="item-row-col-sm">Jumlah</span>
-                    <span className="item-row-col-md">Satuan</span>
                     {isEdit && <span className="item-row-delete-btn" />}
                   </div>
                   {form.items.map((row, idx) => (
@@ -252,11 +253,10 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                         disabled={!isEdit}
                         maxLength={255}
                         options={ATK_CATALOG_NAMES}
-                        placeholder="Nama barang"
+                        placeholder="Contoh: Pulpen"
                         value={row.namaBarang}
                         onChange={(namaBarang) => {
-                          const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
-                          setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
+                          setItem(idx, { namaBarang, satuan: ATK_CATALOG_BY_NAME.get(namaBarang) || DEFAULT_SATUAN });
                         }}
                       />
                       <input
@@ -273,17 +273,6 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                           const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
                           setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
                         }}
-                      />
-                      <input
-                        type="text"
-                        className="item-row-col-md"
-                        aria-label={`Satuan barang ${idx + 1}`}
-                        required
-                        disabled={!isEdit}
-                        maxLength={50}
-                        placeholder="Satuan"
-                        value={row.satuan}
-                        onChange={(e) => setItem(idx, { satuan: e.target.value })}
                       />
                       {isEdit && (
                         <button

@@ -510,17 +510,17 @@ export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
   PADI: "PaDi (Eksternal)",
 };
 
-// Order mirrors the grouping in lib/atkCatalog.ts - LAINNYA is the catch-all, kept last.
-// Urutan berdasarkan abjad label-nya (tampil apa adanya di dropdown Kategori).
+// Order is longest label to shortest (same display convention as KATEGORI_KERUSAKAN_LABEL below),
+// which naturally lands LAINNYA - the catch-all - at the end.
 export const KATEGORI_ATK_LABEL: Record<AtkKategori, string> = {
-  ALAT_TULIS: "Alat Tulis",
   ELEKTRONIK_KOMPUTER: "Elektronik & Komputer",
   KEBERSIHAN_PANTRY: "Kebersihan & Pantry",
-  KERTAS_CETAK: "Kertas & Cetak",
-  LAINNYA: "Lainnya",
-  MAP_FILING: "Map & Filing",
   PERLENGKAPAN_KANTOR: "Perlengkapan Kantor",
   PERLENGKAPAN_RAPAT: "Perlengkapan Rapat",
+  KERTAS_CETAK: "Kertas & Cetak",
+  MAP_FILING: "Map & Filing",
+  ALAT_TULIS: "Alat Tulis",
+  LAINNYA: "Lainnya",
 };
 
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".

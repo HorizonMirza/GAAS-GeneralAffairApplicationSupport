@@ -109,13 +109,11 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
                 <div className="item-row-header">
                   <span className="item-row-col-lg">Nama Barang</span>
                   <span className="item-row-col-sm">Jumlah</span>
-                  <span className="item-row-col-md">Satuan</span>
                 </div>
                 {item.items.map((row, idx) => (
                   <div key={idx} className="item-row">
                     <input type="text" className="item-row-col-lg" aria-label={`Nama barang ${idx + 1}`} disabled value={row.namaBarang} />
                     <input type="text" className="item-row-col-sm" aria-label={`Jumlah barang ${idx + 1}`} disabled value={row.jumlah} />
-                    <input type="text" className="item-row-col-md" aria-label={`Satuan barang ${idx + 1}`} disabled value={row.satuan} />
                   </div>
                 ))}
               </div>
