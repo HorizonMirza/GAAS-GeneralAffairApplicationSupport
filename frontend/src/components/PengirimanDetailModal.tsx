@@ -222,6 +222,20 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     if (canKpuAct) return handleKpuApprove();
   }
 
+  // focusNextFieldOnEnter only preventDefault()s when it moves focus to the *next* field - on the
+  // last one it deliberately falls through to the browser's native "Enter submits the form"
+  // behavior. That's fine for a plain data-entry form, but here it silently fires a real workflow
+  // action (Save/Submit/Approve) just from finishing a sentence in the last text field (e.g.
+  // Catatan) and hitting Enter out of habit. Stop that fallback for every text field; Enter on an
+  // actually-focused button (Tab'd to Submit/Approve on purpose) is untouched.
+  function handleFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    focusNextFieldOnEnter(e);
+    const target = e.target as HTMLElement;
+    if (e.key === "Enter" && (target.tagName === "INPUT" || target.tagName === "SELECT")) {
+      e.preventDefault();
+    }
+  }
+
   return (
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
@@ -229,7 +243,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>
@@ -331,11 +345,8 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               <label htmlFor="pv-catatan">Catatan</label>
               <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value.replace(/[^A-Za-z0-9\s]/g, ""))} />
             </div>
-          </div>
-          {showKpuSection && (
-            <div style={{ marginTop: 16 }}>
-              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Form Resi &amp; Biaya (Mitra)</h4>
-              <div className="form-grid">
+            {showKpuSection && (
+              <>
                 <div className="field">
                   <label htmlFor="pv-k-resi">No. Resi</label>
                   <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
@@ -364,12 +375,12 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                   <label htmlFor="pv-k-total">Total</label>
                   <input type="text" id="pv-k-total" disabled value={kTotal} />
                 </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: -8 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}

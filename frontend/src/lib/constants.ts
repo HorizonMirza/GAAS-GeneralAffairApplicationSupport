@@ -126,13 +126,13 @@ export function originActorLabel(item: { createdByRole: Role; departemen: string
   return `${tier} ${trackWord(item.departemen)}`;
 }
 
-export function getWaitingLabel(item: Pengiriman): string | undefined {
-  if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
-    return item.rejectTarget === "GA" ? "Waiting: Admin GA" : `Waiting: ${originActorLabel(item)}`;
-  }
-  if (item.status === "REJECTED_L1" || item.status === "REJECTED_GA") {
-    return `Waiting: ${originActorLabel(item)}`;
-  }
+// Shows who actually performed the rejection (the tier that stopped the approval chain), not who
+// needs to act next - e.g. "Rejected: Approval Departemen" for a REJECTED_L1 item.
+export function getRejectedByLabel(item: Pengiriman): string | undefined {
+  if (item.status === "REJECTED_L1") return `Rejected: Approval ${trackWord(item.departemen)}`;
+  if (item.status === "REJECTED_GA") return "Rejected: Admin GA";
+  if (item.status === "REJECTED_GA_APPROVAL") return "Rejected: Approval GA";
+  if (item.status === "REJECTED_KPU") return "Rejected: Mitra";
   return undefined;
 }
 
