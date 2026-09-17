@@ -170,7 +170,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     onClose();
     try {
       await api.approveAtkKpu(item!.id);
-      showToast("Permintaan ATK berhasil disetujui");
+      showToast("Permintaan Perlengkapan Kantor berhasil disetujui");
       onSaved();
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -195,7 +195,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Permintaan ATK" : "Detail Permintaan ATK"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Permintaan Perlengkapan Kantor" : "Detail Permintaan Perlengkapan Kantor"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>

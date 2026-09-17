@@ -199,7 +199,7 @@ function OfficeSuppliesTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus Permintaan ATK ini secara permanen?", async () => {
+    confirm("Hapus Permintaan Perlengkapan Kantor ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
         showToast("Permintaan berhasil dihapus");
@@ -341,7 +341,7 @@ function OfficeSuppliesTransaksiPageInner() {
             </button>
             {isOrigin && (
               <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
-                + Permintaan ATK
+                + Permintaan Perlengkapan Kantor
               </button>
             )}
           </div>
@@ -476,7 +476,7 @@ function OfficeSuppliesTransaksiPageInner() {
           rowMenu.close();
           if (!item) return;
           try {
-            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-ATK-${item.nomorPermintaan || item.id}.pdf`);
+            await downloadFile(api.atkPdfUrl(item.id), `Bukti-Permintaan-Perlengkapan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

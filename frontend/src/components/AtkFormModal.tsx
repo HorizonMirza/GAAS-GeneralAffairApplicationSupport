@@ -129,7 +129,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
       await api.createAtk({ ...form, kategori: form.kategori, departemen: form.departemen || undefined, catatan: form.catatan || null });
-      showToast("Permintaan ATK berhasil disimpan sebagai Draft");
+      showToast("Permintaan Perlengkapan Kantor berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
     } catch (err) {
@@ -143,7 +143,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Form Permintaan ATK {unitName ? `(${unitName})` : ""}</h3>
+          <h3>Form Permintaan Perlengkapan Kantor {unitName ? `(${unitName})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>

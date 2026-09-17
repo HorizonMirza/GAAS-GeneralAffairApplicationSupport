@@ -643,7 +643,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteAtk(item: PermintaanAtk) {
-    confirm("Yakin ingin menghapus Permintaan ATK ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Permintaan Perlengkapan Kantor ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteAtk(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -1514,7 +1514,7 @@ export default function SuperAdminPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3>Permintaan ATK</h3>
+          <h3>Permintaan Perlengkapan Kantor</h3>
         </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">

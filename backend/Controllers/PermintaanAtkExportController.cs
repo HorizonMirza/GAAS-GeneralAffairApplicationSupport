@@ -126,7 +126,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
         if (!string.IsNullOrEmpty(search)) parts.Add($"cari-{Slugify(search)}");
-        return "permintaan-atk-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
+        return "permintaan-perlengkapan-kantor-" + (parts.Count > 0 ? string.Join("-", parts) : "semua");
     }
 
     private static (StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval)? ParseStatusFilter(string? status)
@@ -182,7 +182,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         }
 
         using var wb = new XLWorkbook();
-        var ws = wb.Worksheets.Add("Permintaan ATK");
+        var ws = wb.Worksheets.Add("Permintaan Perlengkapan Kantor");
 
         var header = new List<string> { "No" };
         header.AddRange(Columns.Select(c => c.Label));
