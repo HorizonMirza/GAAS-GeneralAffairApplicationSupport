@@ -35,7 +35,7 @@ export default function ApprovalLog({ logs, kind }: Props) {
                 <span className="approval-log-time">{formatDateTime(log.createdAt)}</span>
               </div>
               <div className="approval-log-actor">{actorLabel}</div>
-              {log.reason && (
+              {log.reason && log.action !== "CORRECTED" && (
                 <div className="approval-log-reason">
                   <strong>Catatan:</strong> {log.reason}
                 </div>
