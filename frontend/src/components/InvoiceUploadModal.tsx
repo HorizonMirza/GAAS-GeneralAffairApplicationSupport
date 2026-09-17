@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CheckCircle2, FileText, Trash2, UploadCloud } from "lucide-react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
+import { formatFileSize } from "@/lib/format";
 import { useAutofocusFirstField } from "@/lib/formNav";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
+  const [nama, setNama] = useState("");
   const [bulan, setBulan] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
@@ -26,6 +29,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
   if (!open) return null;
 
   function handleClose() {
+    setNama("");
     setBulan("");
     setFile(null);
     setError("");
@@ -61,8 +65,8 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!bulan || !file) {
-      setError("Lengkapi bulan dan file invoice.");
+    if (!nama.trim() || !bulan || !file) {
+      setError("Lengkapi nama, bulan, dan file invoice.");
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
@@ -71,8 +75,9 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
     }
     setBusy(true);
     try {
-      await api.uploadInvoice(bulan, file);
+      await api.uploadInvoice(nama.trim(), bulan, file);
       showToast("Invoice berhasil disimpan sebagai draft");
+      setNama("");
       setBulan("");
       setFile(null);
       onDone();
@@ -92,6 +97,18 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
         </div>
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
+            <label htmlFor="invoice-upload-nama">Nama Invoice</label>
+            <input
+              type="text"
+              id="invoice-upload-nama"
+              required
+              maxLength={255}
+              placeholder="Contoh: Invoice Ekspedisi September"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+            />
+          </div>
+          <div className="field">
             <label htmlFor="invoice-upload-bulan">Bulan Invoice</label>
             <input
               type="month"
@@ -110,13 +127,9 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <UploadCloud width={32} height={32} />
               <div className="file-dropzone-text">
-                {file ? (
-                  <strong>{file.name}</strong>
-                ) : (
-                  <>Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span></>
-                )}
+                Tarik file ke sini atau <span className="file-dropzone-link">pilih file</span>
               </div>
               <input
                 type="file"
@@ -126,7 +139,26 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
-            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>Maksimal 10 MB</div>
+            <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>
+              Hanya file PDF, maksimal 10 MB
+            </div>
+            {file && (
+              <div className="photo-drop-list">
+                <div className="photo-drop-item">
+                  <div className="photo-drop-item-thumb">
+                    <FileText width={18} height={18} />
+                  </div>
+                  <div className="photo-drop-item-info">
+                    <span className="photo-drop-item-name">{file.name}</span>
+                    <span className="photo-drop-item-size">{formatFileSize(file.size)}</span>
+                  </div>
+                  <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => handleFileChange(null)}>
+                    <Trash2 width={14} height={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">

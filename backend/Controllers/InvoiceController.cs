@@ -56,11 +56,13 @@ public class InvoiceController : ApiControllerBase
         user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
 
     [HttpPost("")]
-    public async Task<IActionResult> UploadInvoice([FromForm] string bulan, [FromForm] IFormFile? file)
+    public async Task<IActionResult> UploadInvoice([FromForm] string nama, [FromForm] string bulan, [FromForm] IFormFile? file)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
         if (error != null) return error;
 
+        if (string.IsNullOrWhiteSpace(nama))
+            return StatusCode(400, new { detail = "Nama invoice wajib diisi" });
         if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
             return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
         if (file == null || file.Length == 0)
@@ -85,6 +87,7 @@ public class InvoiceController : ApiControllerBase
         var originalFilename = string.IsNullOrEmpty(file.FileName) ? "invoice.pdf" : file.FileName;
         var item = new Invoice
         {
+            Nama = nama.Trim(),
             Bulan = bulan,
             FilePath = storedFilename,
             OriginalFilename = originalFilename,
@@ -200,7 +203,7 @@ public class InvoiceController : ApiControllerBase
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
-        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
+        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.Nama, $"%{search}%") || EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
         // Relevant when Admin/Approval GA/Super Admin review invoices from more than one KPU
         // account - a no-op for KPU itself, which is already scoped to its own uploads above.
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
@@ -354,7 +357,7 @@ public class InvoiceController : ApiControllerBase
         // "Hapus Semua" must not delete one either.
         var query = _db.Invoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
-        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
+        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.Nama, $"%{search}%") || EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
         var items = await query.Include(i => i.Logs).ToListAsync();

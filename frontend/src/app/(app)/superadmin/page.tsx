@@ -1030,8 +1030,8 @@ export default function SuperAdminPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                   </div>
                   <div className="invoice-row-info">
-                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)}</div>
-                    <div className="invoice-row-meta">{inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
+                    <div className="invoice-row-title">{inv.nama}</div>
+                    <div className="invoice-row-meta">Invoice {invoiceBulanLabel(inv.bulan)} · {inv.originalFilename} · Diunggah {formatDateTime(inv.uploadedAt)}</div>
                     {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
                     {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>

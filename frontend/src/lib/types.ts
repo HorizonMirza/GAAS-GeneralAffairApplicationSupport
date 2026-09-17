@@ -237,6 +237,7 @@ export interface ApproveKpuPayload {
 
 export interface Invoice {
   id: number;
+  nama: string;
   bulan: string;
   originalFilename: string;
   status: InvoiceStatus;

@@ -1011,6 +1011,7 @@ public class AppDbContext : DbContext
             e.ToTable("invoices");
             e.HasKey(i => i.Id);
             e.Property(i => i.Id).HasColumnName("id");
+            e.Property(i => i.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
             e.Property(i => i.Bulan).HasColumnName("bulan").HasMaxLength(7).IsRequired();
             e.Property(i => i.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired();
             e.Property(i => i.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();

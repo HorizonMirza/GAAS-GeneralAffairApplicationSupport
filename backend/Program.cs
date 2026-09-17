@@ -733,6 +733,8 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
 
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS invoices ADD COLUMN IF NOT EXISTS nama VARCHAR(255) NOT NULL DEFAULT ''");
+
     // Notification sound settings - a single singleton row (id=1) Superadmin edits from the
     // Superadmin page; every other user only ever reads it (see NotificationSettingsController).
     // Defaults match the sounds that were hardcoded before this setting existed ("ding" for chat,

@@ -17,6 +17,7 @@ public record InvoiceLogOut(
 public class InvoiceOut
 {
     public int Id { get; set; }
+    public string Nama { get; set; } = null!;
     public string Bulan { get; set; } = null!;
     public string OriginalFilename { get; set; } = null!;
     public InvoiceStatusEnum Status { get; set; }
@@ -33,6 +34,7 @@ public class InvoiceOut
     public static InvoiceOut From(Invoice i) => new()
     {
         Id = i.Id,
+        Nama = i.Nama,
         Bulan = i.Bulan,
         OriginalFilename = i.OriginalFilename,
         Status = i.Status,

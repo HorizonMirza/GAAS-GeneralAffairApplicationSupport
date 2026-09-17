@@ -3,6 +3,7 @@ namespace PengirimanApi.Models;
 public class Invoice
 {
     public int Id { get; set; }
+    public string Nama { get; set; } = null!;
     public string Bulan { get; set; } = null!;
     public string FilePath { get; set; } = null!;
     public string OriginalFilename { get; set; } = null!;

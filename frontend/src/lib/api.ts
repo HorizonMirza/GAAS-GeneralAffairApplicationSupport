@@ -313,8 +313,9 @@ export const api = {
   listInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/invoice/uploaders"),
   getMissingInvoiceMonths: (monthsBack?: number) =>
     apiRequest<string[]>("/invoice/missing-months", { params: { monthsBack } }),
-  uploadInvoice: async (bulan: string, file: File) => {
+  uploadInvoice: async (nama: string, bulan: string, file: File) => {
     const formData = new FormData();
+    formData.append("nama", nama);
     formData.append("bulan", bulan);
     formData.append("file", file);
     const response = await fetch(`${API_BASE}/invoice`, {
