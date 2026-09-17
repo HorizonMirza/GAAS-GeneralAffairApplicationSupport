@@ -951,8 +951,8 @@ export default function SuperAdminPage() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} transaksi`}
-                placeholder={`${filters.limit} transaksi`}
+                getLabel={(v) => `${v} Transaksi`}
+                placeholder={`${filters.limit} Transaksi`}
               />
             </div>
           </div>

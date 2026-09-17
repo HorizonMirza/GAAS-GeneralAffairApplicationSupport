@@ -161,7 +161,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
               </label>
               <label className={`reject-target-option ${target === "ORIGIN" ? "selected" : ""}`}>
                 <input type="radio" name="reject-target" value="ORIGIN" checked={target === "ORIGIN"} onChange={() => setTarget("ORIGIN")} />
-                <span>{originLabel} (pembuat data)</span>
+                <span>{originLabel} (Pembuat Data)</span>
               </label>
             </div>
           </div>
