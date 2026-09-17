@@ -264,7 +264,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
               <input type="text" id="f-catatan" maxLength={255} placeholder="Contoh: Request JNE Instant" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value.replace(/[^A-Za-z0-9\s]/g, ""))} />
             </div>
           </div>
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>

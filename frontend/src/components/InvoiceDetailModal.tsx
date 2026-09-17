@@ -83,7 +83,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
             </div>
           )}
         </div>
-        <div className="error-text">{error}</div>
+        {error && <div className="error-text">{error}</div>}
         <div className="modal-actions">
           {canReview && (
             <>

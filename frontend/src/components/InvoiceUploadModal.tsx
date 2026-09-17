@@ -128,7 +128,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
             </div>
             <div className="text-secondary" style={{ fontSize: "0.78rem", marginTop: 6 }}>Maksimal 10 MB</div>
           </div>
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>

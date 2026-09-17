@@ -729,8 +729,8 @@ body {
 .error-text {
   color: #d64545;
   font-size: 0.85rem;
-  margin-top: 10px;
-  min-height: 1.2em;
+  margin-top: 4px;
+  min-height: 0;
 }
 
 .field-error-text {

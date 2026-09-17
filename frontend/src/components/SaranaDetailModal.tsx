@@ -466,7 +466,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
           )}
 
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             {canSubmitDraft && (
               <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>

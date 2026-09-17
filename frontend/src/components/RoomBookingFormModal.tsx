@@ -347,7 +347,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <input type="text" id="f-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>

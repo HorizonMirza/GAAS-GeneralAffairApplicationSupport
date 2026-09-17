@@ -328,7 +328,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
           )}
 
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             {canSubmitDraft && (
               <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>

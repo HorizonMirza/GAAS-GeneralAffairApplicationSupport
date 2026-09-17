@@ -71,7 +71,7 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
             onChange={(e) => setCatatan(e.target.value)}
           />
         </div>
-        <div className="error-text">{error}</div>
+        {error && <div className="error-text">{error}</div>}
         <div className="modal-actions">
           <button
             type="button"

@@ -209,7 +209,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
               <input type="text" id="fs-catatan" maxLength={255} placeholder="Contoh: Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>

@@ -186,7 +186,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}
-          <div className="error-text">{error}</div>
+          {error && <div className="error-text">{error}</div>}
           <div className="modal-actions">
             <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
           </div>
