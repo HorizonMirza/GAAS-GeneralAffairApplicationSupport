@@ -57,6 +57,7 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
                         <span className="approval-log-title">{meta.label}</span>
                         <span className="approval-log-time">{formatDateTime(log.createdAt)}</span>
                       </div>
+                      {log.actorNama && <div className="approval-log-actor">{log.actorNama}</div>}
                       {log.reason && (
                         <div className="approval-log-reason">
                           <strong>Catatan:</strong> {log.reason}
