@@ -135,6 +135,7 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
             {file && (
               <div className="photo-drop-list">
                 <div className="photo-drop-item">
+                  <span className="photo-drop-item-index">1.</span>
                   <div className="photo-drop-item-thumb">
                     <FileText width={18} height={18} />
                   </div>

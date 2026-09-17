@@ -22,6 +22,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   const [nama, setNama] = useState("");
   const [bulan, setBulan] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [existingRemoved, setExistingRemoved] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -37,6 +38,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     setNama(item.nama);
     setBulan(item.bulan);
     setFile(null);
+    setExistingRemoved(false);
     setError("");
   }, [open, item]);
 
@@ -143,9 +145,29 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
             </div>
+            {!file && !existingRemoved && item.originalFilename && (
+              <div className="photo-drop-list">
+                <div className="photo-drop-item photo-drop-item-existing">
+                  <span className="photo-drop-item-index">1.</span>
+                  <a href={api.invoiceFileUrl(item.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
+                    <FileText width={18} height={18} />
+                  </a>
+                  <div className="photo-drop-item-info">
+                    <a href={api.invoiceFileUrl(item.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                      {item.originalFilename}
+                    </a>
+                  </div>
+                  <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => setExistingRemoved(true)}>
+                    <Trash2 width={14} height={14} />
+                  </button>
+                </div>
+              </div>
+            )}
             {file && (
               <div className="photo-drop-list">
                 <div className="photo-drop-item">
+                  <span className="photo-drop-item-index">1.</span>
                   <div className="photo-drop-item-thumb">
                     <FileText width={18} height={18} />
                   </div>
