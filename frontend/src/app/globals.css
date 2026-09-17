@@ -4105,7 +4105,7 @@ table.data-table {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  width: 200px;
+  width: 100%;
 }
 
 .month-picker-cell {
@@ -4159,7 +4159,7 @@ table.data-table {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  width: 200px;
+  width: 100%;
   max-height: 190px;
   overflow-y: auto;
   /* Still scrolls (mouse wheel, trackpad, keyboard) - just without the visible track/thumb, since
