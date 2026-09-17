@@ -85,6 +85,15 @@ public class ProfileController : ApiControllerBase
 
         var newNoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
         var newEmail = string.IsNullOrWhiteSpace(payload.Email) ? null : payload.Email.Trim();
+
+        // Matches the frontend's own sanitizer/validator - enforced here too since the API is
+        // reachable directly. Both fields stay optional (null is fine), only a non-empty value
+        // that doesn't look like a real phone number/email is rejected.
+        if (newNoHp != null && System.Text.RegularExpressions.Regex.Replace(newNoHp, "[^0-9]", "") is not { Length: >= 8 and <= 15 })
+            return StatusCode(400, new { detail = "Nomor telepon tidak valid" });
+        if (newEmail != null && !System.Text.RegularExpressions.Regex.IsMatch(newEmail, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
+            return StatusCode(400, new { detail = "Format email tidak valid" });
+
         var contactChanged = username != user!.Username || newNoHp != user.NoHp || newEmail != user.Email;
 
         // Changing the account/contact fields that gate login and password recovery is treated

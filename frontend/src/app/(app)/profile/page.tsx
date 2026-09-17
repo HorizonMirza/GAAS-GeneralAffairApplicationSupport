@@ -123,6 +123,23 @@ function validateCurrentPassword(value: string): string | undefined {
   return undefined;
 }
 
+// Same digit-count rule already used for phone fields elsewhere in the app (Ekspedisi, bookings,
+// etc.) - strip everything but digits and check the length, so a leading "+" or spaces typed in
+// don't themselves fail validation.
+function isValidPhone(value: string): boolean {
+  const digits = value.replace(/[^0-9]/g, "");
+  return digits.length >= 8 && digits.length <= 15;
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateFieldDraft(field: AccountField, value: string): string | undefined {
+  if (!value) return undefined;
+  if (field === "noHp" && !isValidPhone(value)) return "Nomor telepon tidak valid";
+  if (field === "email" && !EMAIL_PATTERN.test(value)) return "Format email tidak valid (harus mengandung @)";
+  return undefined;
+}
+
 // Drives both the live checklist below and the actual submit-time validation, so the two can
 // never drift apart (e.g. the checklist showing all-green while submit still rejects it).
 const PASSWORD_REQUIREMENTS = [
@@ -202,6 +219,7 @@ export default function ProfilePage() {
 
   const [editingField, setEditingField] = useState<AccountField | null>(null);
   const [fieldDraft, setFieldDraft] = useState("");
+  const [fieldDraftError, setFieldDraftError] = useState("");
   const [fieldPassword, setFieldPassword] = useState("");
   const [fieldPasswordError, setFieldPasswordError] = useState("");
   const [savingField, setSavingField] = useState(false);
@@ -338,6 +356,7 @@ export default function ProfilePage() {
 
   function openFieldEdit(field: AccountField) {
     setFieldDraft(currentValue[field]);
+    setFieldDraftError("");
     setFieldPassword("");
     setFieldPasswordError("");
     setEditingField(field);
@@ -362,6 +381,17 @@ export default function ProfilePage() {
   async function handleFieldSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingField) return;
+
+    const draftValue = fieldDraft.trim();
+    if (editingField === "username" && !draftValue) {
+      setFieldDraftError("Username wajib diisi");
+      return;
+    }
+    const draftError = validateFieldDraft(editingField, draftValue);
+    if (draftError) {
+      setFieldDraftError(draftError);
+      return;
+    }
     if (!fieldPassword.trim()) {
       setFieldPasswordError("Password saat ini wajib diisi");
       return;
@@ -745,7 +775,11 @@ export default function ProfilePage() {
                 <DialogTitle>Change {FIELD_META[editingField].label}</DialogTitle>
               </DialogHeader>
 
-              <form id="field-edit-form" onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
+              {/* noValidate: the email/tel input types below would otherwise let the browser's
+                  own native validation UI intercept Save before handleFieldSubmit ever runs,
+                  skipping our styled ErrorAlert entirely - validateFieldDraft is now the single
+                  source of truth for what counts as a valid value. */}
+              <form id="field-edit-form" noValidate onSubmit={handleFieldSubmit} onKeyDown={focusNextFieldOnEnter}>
                 <div className="settings-current-value">
                   <div className="settings-current-value-icon">{FIELD_META[editingField].icon}</div>
                   <div>
@@ -764,10 +798,17 @@ export default function ProfilePage() {
                       placeholder={FIELD_META[editingField].placeholder}
                       required={editingField === "username"}
                       autoFocus
+                      aria-invalid={!!fieldDraftError}
+                      aria-describedby="field-draft-error"
                       value={fieldDraft}
-                      onChange={(e) => setFieldDraft(e.target.value)}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setFieldDraft(editingField === "noHp" ? raw.replace(/[^0-9+]/g, "") : raw);
+                        if (fieldDraftError) setFieldDraftError("");
+                      }}
                     />
                   </div>
+                  <ErrorAlert id="field-draft-error" message={fieldDraftError} />
                 </div>
 
                 <PasswordField
