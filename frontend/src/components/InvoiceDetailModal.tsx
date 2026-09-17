@@ -59,7 +59,7 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
         </div>
         <div className="detail-grid">
           <div className="detail-row">
-            <span className="detail-label">Nama Invoice</span>
+            <span className="detail-label">Nama Pengirim Invoice</span>
             <span className="detail-value">{item.nama}</span>
           </div>
           <div className="detail-row">

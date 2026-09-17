@@ -7,6 +7,7 @@ import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
 import { formatFileSize } from "@/lib/format";
 import { useAutofocusFirstField } from "@/lib/formNav";
 import ModalOverlay from "./ModalOverlay";
+import MonthFilterPicker from "./MonthFilterPicker";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -97,26 +98,20 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
         </div>
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="invoice-upload-nama">Nama Invoice</label>
+            <label htmlFor="invoice-upload-nama">Nama Pengirim Invoice</label>
             <input
               type="text"
               id="invoice-upload-nama"
               required
               maxLength={255}
-              placeholder="Contoh: Invoice Ekspedisi September"
+              placeholder="Contoh: PT Ekspedisi Jaya"
               value={nama}
               onChange={(e) => setNama(e.target.value)}
             />
           </div>
           <div className="field">
             <label htmlFor="invoice-upload-bulan">Bulan Invoice</label>
-            <input
-              type="month"
-              id="invoice-upload-bulan"
-              required
-              value={bulan}
-              onChange={(e) => setBulan(e.target.value)}
-            />
+            <MonthFilterPicker id="invoice-upload-bulan" value={bulan} onChange={setBulan} placeholder="Pilih bulan" />
           </div>
           <div className="field">
             <label htmlFor="invoice-upload-file">File Invoice (PDF)</label>

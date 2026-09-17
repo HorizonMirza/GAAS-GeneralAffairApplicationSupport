@@ -130,7 +130,7 @@ export default function InvoiceHistoryPage() {
             <input
               type="text"
               id="invoice-filter-search"
-              placeholder="Nama Invoice"
+              placeholder="Nama Pengirim Invoice"
               value={invoiceSearchInput}
               onChange={(e) => handleInvoiceSearchChange(e.target.value)}
             />

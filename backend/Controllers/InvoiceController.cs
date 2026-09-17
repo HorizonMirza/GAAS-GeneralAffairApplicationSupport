@@ -62,7 +62,7 @@ public class InvoiceController : ApiControllerBase
         if (error != null) return error;
 
         if (string.IsNullOrWhiteSpace(nama))
-            return StatusCode(400, new { detail = "Nama invoice wajib diisi" });
+            return StatusCode(400, new { detail = "Nama pengirim invoice wajib diisi" });
         if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
             return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
         if (file == null || file.Length == 0)
