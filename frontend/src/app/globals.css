@@ -5327,53 +5327,52 @@ table.data-table {
   color: #d64545;
 }
 
-/* Multi-item rows (ATK "Daftar Barang", etc.) - gives the raw per-row inputs the same
-   padding/border/radius as every other .field input instead of rendering as unstyled native
-   inputs, and a one-time column header instead of repeating a label on every row. */
+/* Multi-item rows (ATK "Daftar Barang", etc.) - each row repeats its own Nama Barang/Jumlah
+   label directly above its box (tight, like every other .field label) instead of a single
+   shared header, and the two columns use .form-grid's own 16px gap between them. */
 .item-row-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
   margin-top: 6px;
-}
-
-.item-row-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 0 2px;
-  line-height: 1;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
 }
 
 .item-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  align-items: flex-start;
+  gap: 16px;
+  align-items: flex-end;
 }
 
-.item-row input.item-row-col-lg,
-.item-row input.item-row-col-md,
-.item-row input.item-row-col-sm {
+.item-row-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-row-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.item-row-field input {
   padding: 11px 14px;
   border-radius: 10px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface-alt);
   color: var(--text-primary);
   outline: none;
+  width: 100%;
 }
 
-.item-row input.item-row-col-lg:focus,
-.item-row input.item-row-col-md:focus,
-.item-row input.item-row-col-sm:focus {
+.item-row-field input:focus {
   border-color: var(--blue-400);
   box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
 }
 
-.item-row input:disabled {
+.item-row-field input:disabled {
   opacity: 0.7;
 }
 

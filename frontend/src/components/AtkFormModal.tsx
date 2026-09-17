@@ -212,39 +212,40 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               <label>Daftar Barang</label>
               <div className="photo-drop-uploader">
                 <div className="item-row-list">
-                  <div className="item-row-header">
-                    <span className="item-row-col-lg">Nama Barang</span>
-                    <span className="item-row-col-sm">Jumlah</span>
-                    <span className="item-row-delete-btn" />
-                  </div>
                   {form.items.map((row, idx) => (
                     <div key={idx} className="item-row">
-                      <TextAutocomplete
-                        className="item-row-col-lg"
-                        ariaLabel={`Nama barang ${idx + 1}`}
-                        required
-                        maxLength={255}
-                        options={ATK_CATALOG_NAMES}
-                        placeholder="Contoh: Pulpen"
-                        value={row.namaBarang}
-                        onChange={(namaBarang) => {
-                          setItem(idx, { namaBarang, satuan: ATK_CATALOG_BY_NAME.get(namaBarang) || DEFAULT_SATUAN });
-                        }}
-                      />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="item-row-col-sm"
-                        aria-label={`Jumlah barang ${idx + 1}`}
-                        required
-                        placeholder="Jumlah"
-                        value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                        onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                          setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                        }}
-                      />
+                      <div className="item-row-field item-row-col-lg">
+                        <label htmlFor={`fa-nama-barang-${idx}`}>Nama Barang</label>
+                        <TextAutocomplete
+                          id={`fa-nama-barang-${idx}`}
+                          ariaLabel={`Nama barang ${idx + 1}`}
+                          required
+                          maxLength={255}
+                          options={ATK_CATALOG_NAMES}
+                          placeholder="Contoh: Pulpen"
+                          value={row.namaBarang}
+                          onChange={(namaBarang) => {
+                            setItem(idx, { namaBarang, satuan: ATK_CATALOG_BY_NAME.get(namaBarang) || DEFAULT_SATUAN });
+                          }}
+                        />
+                      </div>
+                      <div className="item-row-field item-row-col-sm">
+                        <label htmlFor={`fa-jumlah-${idx}`}>Jumlah</label>
+                        <input
+                          type="text"
+                          id={`fa-jumlah-${idx}`}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          aria-label={`Jumlah barang ${idx + 1}`}
+                          required
+                          placeholder="Jumlah"
+                          value={row.jumlah === 0 ? "" : String(row.jumlah)}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                            setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
+                          }}
+                        />
+                      </div>
                       <button
                         type="button"
                         className="card-icon-btn card-icon-btn-danger item-row-delete-btn"

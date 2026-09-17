@@ -106,14 +106,16 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
             <div className="field full">
               <label>Daftar Barang <Lock className="field-lock-icon" width={12} height={12} /></label>
               <div className="item-row-list">
-                <div className="item-row-header">
-                  <span className="item-row-col-lg">Nama Barang</span>
-                  <span className="item-row-col-sm">Jumlah</span>
-                </div>
                 {item.items.map((row, idx) => (
                   <div key={idx} className="item-row">
-                    <input type="text" className="item-row-col-lg" aria-label={`Nama barang ${idx + 1}`} disabled value={row.namaBarang} />
-                    <input type="text" className="item-row-col-sm" aria-label={`Jumlah barang ${idx + 1}`} disabled value={row.jumlah} />
+                    <div className="item-row-field item-row-col-lg">
+                      <label htmlFor={`ka-nama-barang-${idx}`}>Nama Barang</label>
+                      <input type="text" id={`ka-nama-barang-${idx}`} aria-label={`Nama barang ${idx + 1}`} disabled value={row.namaBarang} />
+                    </div>
+                    <div className="item-row-field item-row-col-sm">
+                      <label htmlFor={`ka-jumlah-${idx}`}>Jumlah</label>
+                      <input type="text" id={`ka-jumlah-${idx}`} aria-label={`Jumlah barang ${idx + 1}`} disabled value={row.jumlah} />
+                    </div>
                   </div>
                 ))}
               </div>
