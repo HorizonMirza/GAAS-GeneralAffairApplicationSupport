@@ -130,7 +130,7 @@ export default function NotificationBell() {
   const unreadCount = items.filter((item) => !item.read).length;
   const visibleItems = tab === "all" ? items : items.filter((item) => item.source === tab);
   const emptyLabel =
-    tab === "chat" ? "Belum ada chat baru" : tab === "activity" ? "Belum ada transaksi baru" : "Belum ada notifikasi baru";
+    tab === "chat" ? "Belum ada chat baru" : tab === "activity" ? "Belum ada Transaksi baru" : "Belum ada notifikasi baru";
 
   function openItem(item: Item) {
     setItems((current) => current.map((it) => (it.key === item.key ? { ...it, read: true } : it)));

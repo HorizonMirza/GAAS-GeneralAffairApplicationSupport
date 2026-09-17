@@ -198,7 +198,7 @@ function OfficeSuppliesTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus permintaan ATK ini secara permanen?", async () => {
+    confirm("Hapus Permintaan ATK ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
         showToast("Permintaan berhasil dihapus");
@@ -421,8 +421,8 @@ function OfficeSuppliesTransaksiPageInner() {
                 value={String(filters.limit)}
                 onChange={(v) => updateFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${filters.limit} permintaan`}
+                getLabel={(v) => `${v} Permintaan`}
+                placeholder={`${filters.limit} Permintaan`}
               />
             </div>
           </div>

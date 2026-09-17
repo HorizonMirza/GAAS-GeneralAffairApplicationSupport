@@ -104,7 +104,7 @@ export default function InvoiceHistoryPage() {
   if (!me || !INVOICE_HISTORY_ROLES.includes(me.role)) return null;
 
   function handleDeleteInvoice(inv: Invoice) {
-    confirm("Yakin ingin menghapus invoice ini?", async () => {
+    confirm("Yakin ingin menghapus Invoice ini?", async () => {
       try {
         await api.deleteInvoice(inv.id);
         showToast("Invoice berhasil dihapus");
@@ -226,13 +226,13 @@ export default function InvoiceHistoryPage() {
                 value={String(invoiceLimit)}
                 onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} invoice`}
-                placeholder={`${invoiceLimit} invoice`}
+                getLabel={(v) => `${v} Invoice`}
+                placeholder={`${invoiceLimit} Invoice`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <span className="text-secondary">Total {invoiceTotal} Invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
               {invoicePageButtons.map((p) => (

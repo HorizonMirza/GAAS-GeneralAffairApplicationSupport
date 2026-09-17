@@ -64,7 +64,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     e.preventDefault();
     setError("");
     if (!file || !item) {
-      setError("Pilih file invoice yang baru.");
+      setError("Pilih file Invoice yang baru.");
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
@@ -74,7 +74,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     setBusy(true);
     try {
       await api.updateInvoice(item.id, file);
-      showToast(isDraft ? "Draft invoice berhasil diperbarui" : "Revisi invoice tersimpan sebagai draft, kirim kembali lewat Detail");
+      showToast(isDraft ? "Draft Invoice berhasil diperbarui" : "Revisi Invoice tersimpan sebagai draft, kirim kembali lewat Detail");
       setFile(null);
       onDone();
     } catch (err) {

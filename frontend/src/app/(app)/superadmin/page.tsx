@@ -525,7 +525,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteInvoice(inv: Invoice) {
-    confirm("Yakin ingin menghapus invoice ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Invoice ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.deleteInvoice(inv.id);
         showToast("Invoice berhasil dihapus permanen");
@@ -643,7 +643,7 @@ export default function SuperAdminPage() {
   }
 
   function handleDeleteAtk(item: PermintaanAtk) {
-    confirm("Yakin ingin menghapus permintaan ATK ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+    confirm("Yakin ingin menghapus Permintaan ATK ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
       try {
         await api.superAdminDeleteAtk(item.id);
         showToast("Data berhasil dihapus permanen");
@@ -880,7 +880,7 @@ export default function SuperAdminPage() {
           <button
             className="btn btn-bulk-delete"
             disabled={tableBusy || total === 0}
-            onClick={() => askBulkDelete("Expedition", "transaksi", total, activeFilters([["Cari", filters.search], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
+            onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
           >
             Hapus Semua
           </button>
@@ -1003,7 +1003,7 @@ export default function SuperAdminPage() {
               disabled={invoices == null || invoiceTotal === 0}
               onClick={() => askBulkDelete(
                 "Invoice",
-                "invoice",
+                "Invoice",
                 invoiceTotal,
                 activeFilters([["Bulan", bulanText(invoiceFilterBulan)]]),
                 () => api.superAdminBulkDeleteInvoice({ bulan: invoiceFilterBulan }),
@@ -1056,13 +1056,13 @@ export default function SuperAdminPage() {
                 value={String(invoiceLimit)}
                 onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} invoice`}
-                placeholder={`${invoiceLimit} invoice`}
+                getLabel={(v) => `${v} Invoice`}
+                placeholder={`${invoiceLimit} Invoice`}
               />
             </div>
           </div>
           <div className="pagination-right">
-            <span className="text-secondary">Total {invoiceTotal} invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <span className="text-secondary">Total {invoiceTotal} Invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
             <div className="pages">
               <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
               {invoicePageButtons.map((p) => (
@@ -1429,7 +1429,7 @@ export default function SuperAdminPage() {
           <button
             className="btn btn-bulk-delete"
             disabled={arsipBusy || arsipTotal === 0}
-            onClick={() => askBulkDelete("Archive", "permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
+            onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
           >
             Hapus Semua
           </button>
@@ -1602,7 +1602,7 @@ export default function SuperAdminPage() {
           <button
             className="btn btn-bulk-delete"
             disabled={atkBusy || atkTotal === 0}
-            onClick={() => askBulkDelete("Office Supplies", "permintaan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
+            onClick={() => askBulkDelete("Office Supplies", "Permintaan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
           >
             Hapus Semua
           </button>
@@ -1666,8 +1666,8 @@ export default function SuperAdminPage() {
                 value={String(atkFilters.limit)}
                 onChange={(v) => updateAtkFilter({ limit: Number(v) })}
                 options={["5", "10", "20", "50"]}
-                getLabel={(v) => `${v} permintaan`}
-                placeholder={`${atkFilters.limit} permintaan`}
+                getLabel={(v) => `${v} Permintaan`}
+                placeholder={`${atkFilters.limit} Permintaan`}
               />
             </div>
           </div>
