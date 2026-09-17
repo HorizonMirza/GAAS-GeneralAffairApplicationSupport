@@ -5341,8 +5341,7 @@ table.data-table {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 0 2px 4px;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 2px;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-secondary);
