@@ -17,6 +17,7 @@ public class PermintaanAtkCreate
     public string? Divisi { get; set; }
     public string? Departemen { get; set; }
     public DateOnly Tanggal { get; set; }
+    public AtkKategoriEnum Kategori { get; set; }
     public string Keperluan { get; set; } = null!;
     public string NamaPemohon { get; set; } = null!;
     public string NoTeleponPemohon { get; set; } = null!;
@@ -40,6 +41,7 @@ public class PermintaanAtkOut
     public int Id { get; set; }
     public string? NomorPermintaan { get; set; }
     public DateOnly Tanggal { get; set; }
+    public AtkKategoriEnum Kategori { get; set; }
     public string Keperluan { get; set; } = null!;
     public string? Catatan { get; set; }
     public List<PermintaanAtkItemOut> Items { get; set; } = new();
@@ -72,6 +74,7 @@ public class PermintaanAtkOut
         Id = p.Id,
         NomorPermintaan = p.NomorPermintaan,
         Tanggal = p.Tanggal,
+        Kategori = p.Kategori,
         Keperluan = p.Keperluan,
         Catatan = p.Catatan,
         Items = p.Items

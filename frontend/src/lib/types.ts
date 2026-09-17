@@ -610,6 +610,16 @@ export interface KoreksiSaranaPayload {
 // --- Office Supplies (Permintaan ATK) ---
 // Alur approval-nya memakai BookingStatus (berakhir di APPROVED_GA_APPROVAL, tanpa tahap KPU).
 
+export type AtkKategori =
+  | "ALAT_TULIS"
+  | "KERTAS_CETAK"
+  | "PERLENGKAPAN_KANTOR"
+  | "MAP_FILING"
+  | "ELEKTRONIK_KOMPUTER"
+  | "KEBERSIHAN_PANTRY"
+  | "PERLENGKAPAN_RAPAT"
+  | "LAINNYA";
+
 export interface PermintaanAtkItem {
   id: number;
   namaBarang: string;
@@ -621,6 +631,7 @@ export interface PermintaanAtk {
   id: number;
   nomorPermintaan: string | null;
   tanggal: string;
+  kategori: AtkKategori;
   keperluan: string;
   catatan: string | null;
   items: PermintaanAtkItem[];
@@ -679,6 +690,7 @@ export interface PermintaanAtkCreatePayload {
   divisi?: string;
   departemen?: string;
   tanggal: string;
+  kategori: AtkKategori;
   keperluan: string;
   namaPemohon: string;
   noTeleponPemohon: string;

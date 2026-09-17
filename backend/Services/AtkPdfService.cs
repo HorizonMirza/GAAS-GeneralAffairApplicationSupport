@@ -24,6 +24,18 @@ public static class AtkPdfService
         ["PADI"] = "PaDi (Eksternal)",
     };
 
+    private static readonly Dictionary<string, string> AtkKategoriLabel = new()
+    {
+        ["ALAT_TULIS"] = "Alat Tulis",
+        ["KERTAS_CETAK"] = "Kertas & Cetak",
+        ["PERLENGKAPAN_KANTOR"] = "Perlengkapan Kantor",
+        ["MAP_FILING"] = "Map & Filing",
+        ["ELEKTRONIK_KOMPUTER"] = "Elektronik & Komputer",
+        ["KEBERSIHAN_PANTRY"] = "Kebersihan & Pantry",
+        ["PERLENGKAPAN_RAPAT"] = "Perlengkapan Rapat",
+        ["LAINNYA"] = "Lainnya",
+    };
+
     private static byte[]? _logoBytes;
 
     private static byte[] LoadLogo()
@@ -68,10 +80,11 @@ public static class AtkPdfService
                         txt.Span(item.NomorPermintaan ?? "-").FontSize(10.5f).Bold();
                     });
 
-                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal Dibutuhkan", item.Tanggal.ToString("dd MMMM yyyy")));
+                    col.Item().PaddingTop(10).Element(c => InfoRow(c, "Tanggal", item.Tanggal.ToString("dd MMMM yyyy")));
+                    col.Item().Element(c => InfoRow(c, "Kategori", AtkKategoriLabel.GetValueOrDefault(item.Kategori.ToString(), item.Kategori.ToString())));
                     col.Item().Element(c => InfoRow(c, "Kepada", "Mitra"));
                     col.Item().Element(c => InfoRow(c, "Dari", $"{item.NamaPemohon} - {DivisiLabel(item)}"));
-                    col.Item().Element(c => InfoRow(c, "No. Telepon Pemohon", item.NoTeleponPemohon));
+                    col.Item().Element(c => InfoRow(c, "No. Telepon PIC", item.NoTeleponPemohon));
                     col.Item().Element(c => InfoRow(c, "Tujuan", item.Keperluan));
 
                     col.Item().PaddingTop(12).Element(c => BuildTable(c, item));

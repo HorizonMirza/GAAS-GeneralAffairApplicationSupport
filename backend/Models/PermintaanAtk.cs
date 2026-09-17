@@ -9,6 +9,7 @@ public class PermintaanAtk
     public int Id { get; set; }
     public string? NomorPermintaan { get; set; }
     public DateOnly Tanggal { get; set; }
+    public AtkKategoriEnum Kategori { get; set; }
     public string Keperluan { get; set; } = null!;
     public string? Catatan { get; set; }
 

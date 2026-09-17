@@ -25,10 +25,11 @@ public class PermintaanAtkExportController : ApiControllerBase
     {
         ("nomor_permintaan", "No Permintaan"),
         ("diajukan", "Diajukan (WIB)"),
-        ("tanggal", "Tanggal Dibutuhkan"),
+        ("tanggal", "Tanggal"),
+        ("kategori", "Kategori"),
         ("keperluan", "Tujuan"),
-        ("nama_pemohon", "Nama Pemohon"),
-        ("no_telepon_pemohon", "No. Telepon Pemohon"),
+        ("nama_pemohon", "Nama PIC"),
+        ("no_telepon_pemohon", "No. Telepon PIC"),
         ("daftar_barang", "Daftar Barang"),
         ("jumlah_jenis", "Jumlah Jenis"),
         ("total_kuantitas", "Total Kuantitas"),
@@ -39,12 +40,24 @@ public class PermintaanAtkExportController : ApiControllerBase
         ("status", "Status"),
     };
 
-    private static readonly float[] PdfColWidths = { 40, 34, 26, 45, 40, 32, 90, 20, 24, 40, 40, 30, 55, 45 };
+    private static readonly float[] PdfColWidths = { 40, 34, 26, 34, 45, 40, 32, 90, 20, 24, 40, 40, 30, 55, 45 };
 
     private static readonly Dictionary<string, string> SumberPembelianLabel = new()
     {
         ["KPU"] = "KPU",
         ["PADI"] = "PaDi (Eksternal)",
+    };
+
+    private static readonly Dictionary<string, string> AtkKategoriLabel = new()
+    {
+        ["ALAT_TULIS"] = "Alat Tulis",
+        ["KERTAS_CETAK"] = "Kertas & Cetak",
+        ["PERLENGKAPAN_KANTOR"] = "Perlengkapan Kantor",
+        ["MAP_FILING"] = "Map & Filing",
+        ["ELEKTRONIK_KOMPUTER"] = "Elektronik & Komputer",
+        ["KEBERSIHAN_PANTRY"] = "Kebersihan & Pantry",
+        ["PERLENGKAPAN_RAPAT"] = "Perlengkapan Rapat",
+        ["LAINNYA"] = "Lainnya",
     };
 
     // Matches the frontend's own 4-word collapse (STATUS_LABEL in lib/constants.ts) - the
@@ -76,6 +89,7 @@ public class PermintaanAtkExportController : ApiControllerBase
         "nomor_permintaan" => row.NomorPermintaan,
         "diajukan" => WaktuWib.Pendek(row.CreatedAt),
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
+        "kategori" => AtkKategoriLabel.GetValueOrDefault(row.Kategori.ToString(), row.Kategori.ToString()),
         "keperluan" => row.Keperluan,
         "nama_pemohon" => row.NamaPemohon,
         "no_telepon_pemohon" => row.NoTeleponPemohon,

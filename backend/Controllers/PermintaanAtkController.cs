@@ -207,6 +207,8 @@ public class PermintaanAtkController : ApiControllerBase
             if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
                 return "Departemen tidak ditemukan pada divisi tersebut";
         }
+        if (!Enum.IsDefined(typeof(AtkKategoriEnum), payload.Kategori))
+            return "Kategori tidak valid";
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
             return "Tujuan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaPemohon))
@@ -234,6 +236,7 @@ public class PermintaanAtkController : ApiControllerBase
     private void ApplyCreatePayload(PermintaanAtk item, PermintaanAtkCreate payload)
     {
         item.Tanggal = payload.Tanggal;
+        item.Kategori = payload.Kategori;
         item.Keperluan = payload.Keperluan.Trim();
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();

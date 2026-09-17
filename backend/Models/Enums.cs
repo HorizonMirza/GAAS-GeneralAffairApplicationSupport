@@ -119,3 +119,17 @@ public enum ArchiveKategoriEnum
     PANDUAN,
     LAINNYA,
 }
+
+// Office Supplies: jenis barang yang diminta, mengikuti pengelompokan implisit di
+// lib/atkCatalog.ts (frontend) - dipakai untuk filter/tampilan di Transaksi.
+public enum AtkKategoriEnum
+{
+    ALAT_TULIS,
+    KERTAS_CETAK,
+    PERLENGKAPAN_KANTOR,
+    MAP_FILING,
+    ELEKTRONIK_KOMPUTER,
+    KEBERSIHAN_PANTRY,
+    PERLENGKAPAN_RAPAT,
+    LAINNYA,
+}

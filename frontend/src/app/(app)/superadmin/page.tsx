@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -1612,18 +1612,18 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th><th>Aksi</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {atkBusy ? (
-                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
               ) : atkError ? (
-                <tr><td colSpan={16} className="table-empty">{atkError}</td></tr>
+                <tr><td colSpan={17} className="table-empty">{atkError}</td></tr>
               ) : atkItems.length === 0 ? (
-                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 atkItems.map((item, index) => {
                   const rowNumber = (atkFilters.page - 1) * atkFilters.limit + index + 1;
@@ -1635,6 +1635,7 @@ export default function SuperAdminPage() {
                       <td>{item.nomorPermintaan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
+                      <td>{KATEGORI_ATK_LABEL[item.kategori] || item.kategori}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
                       <td>{item.items.length}</td>

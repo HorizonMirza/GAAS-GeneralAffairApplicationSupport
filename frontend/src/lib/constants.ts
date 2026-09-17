@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
+import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
 // Single badge, always "Status: Role" so whoever is currently holding it (on-approval) or who
 // stopped it (rejected) is visible at a glance without a second sub-badge or the Stepper. SUBMITTED
@@ -508,6 +508,18 @@ export function canGaKoreksiAtk(item: PermintaanAtk, me: Me): boolean {
 export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
   KPU: "KPU",
   PADI: "PaDi (Eksternal)",
+};
+
+// Order mirrors the grouping in lib/atkCatalog.ts - LAINNYA is the catch-all, kept last.
+export const KATEGORI_ATK_LABEL: Record<AtkKategori, string> = {
+  ALAT_TULIS: "Alat Tulis",
+  KERTAS_CETAK: "Kertas & Cetak",
+  PERLENGKAPAN_KANTOR: "Perlengkapan Kantor",
+  MAP_FILING: "Map & Filing",
+  ELEKTRONIK_KOMPUTER: "Elektronik & Komputer",
+  KEBERSIHAN_PANTRY: "Kebersihan & Pantry",
+  PERLENGKAPAN_RAPAT: "Perlengkapan Rapat",
+  LAINNYA: "Lainnya",
 };
 
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
-import { SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
+import { KATEGORI_ATK_LABEL, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KoreksiAtkPayload, PermintaanAtk, SumberPembelian } from "@/lib/types";
@@ -80,19 +80,23 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="ka-nomor-permintaan">Nomor Permintaan ATK <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="ka-nomor-permintaan">Nomor Permintaan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ka-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="ka-tanggal">Tanggal Dibutuhkan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="ka-tanggal">Tanggal <Lock className="field-lock-icon" width={12} height={12} /></label>
               <DateFilterPicker id="ka-tanggal" disabled clearable={false} value={item.tanggal} onChange={() => {}} />
             </div>
             <div className="field">
-              <label htmlFor="ka-nama-pemohon">Nama Pemohon <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <label htmlFor="ka-kategori">Kategori <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="ka-kategori" disabled value={KATEGORI_ATK_LABEL[item.kategori] || item.kategori} />
+            </div>
+            <div className="field">
+              <label htmlFor="ka-nama-pemohon">Nama PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ka-nama-pemohon" required maxLength={255} value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="ka-no-telepon-pemohon">No. Telepon Pemohon <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <label htmlFor="ka-no-telepon-pemohon">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <input type="text" id="ka-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
             </div>
             <div className="field">

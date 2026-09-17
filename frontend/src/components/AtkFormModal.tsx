@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ATK_CATALOG } from "@/lib/atkCatalog";
+import { KATEGORI_ATK_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
+import type { AtkKategori, Me, PermintaanAtkCreatePayload, PermintaanAtkItemPayload } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
@@ -29,9 +30,14 @@ function emptyItem(): PermintaanAtkItemPayload {
   return { namaBarang: "", jumlah: 1, satuan: "" };
 }
 
-function emptyForm(): PermintaanAtkCreatePayload {
+// kategori starts unselected (unlike the payload's required AtkKategori) so the field shows the
+// "Pilih Kategori" placeholder instead of defaulting to the first option.
+type AtkFormState = Omit<PermintaanAtkCreatePayload, "kategori"> & { kategori?: AtkKategori };
+
+function emptyForm(): AtkFormState {
   return {
     tanggal: todayLocalDate(),
+    kategori: undefined,
     keperluan: "",
     namaPemohon: "",
     noTeleponPemohon: "",
@@ -40,11 +46,13 @@ function emptyForm(): PermintaanAtkCreatePayload {
   };
 }
 
+const KATEGORI_OPTIONS = Object.keys(KATEGORI_ATK_LABEL) as AtkKategori[];
+
 const MAX_ITEM_ROWS = 30;
 
 export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
-  const [form, setForm] = useState<PermintaanAtkCreatePayload>(emptyForm());
+  const [form, setForm] = useState<AtkFormState>(emptyForm());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nomorPermintaan, setNomorPermintaan] = useState("");
@@ -81,7 +89,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
     me.divisi ||
     (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
-  function set<K extends keyof PermintaanAtkCreatePayload>(key: K, value: PermintaanAtkCreatePayload[K]) {
+  function set<K extends keyof AtkFormState>(key: K, value: AtkFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -112,11 +120,15 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
         return;
       }
     }
+    if (!form.kategori) {
+      setError("Kategori wajib dipilih");
+      return;
+    }
     setBusy(true);
     try {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
       // undefined here (not sent at all) so the backend still records a null Departemen.
-      await api.createAtk({ ...form, departemen: form.departemen || undefined, catatan: form.catatan || null });
+      await api.createAtk({ ...form, kategori: form.kategori, departemen: form.departemen || undefined, catatan: form.catatan || null });
       showToast("Permintaan ATK berhasil disimpan sebagai Draft");
       onClose();
       onCreated();
@@ -137,7 +149,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="fa-nomor-permintaan">Nomor Permintaan ATK</label>
+              <label htmlFor="fa-nomor-permintaan">Nomor Permintaan</label>
               <input type="text" id="fa-nomor-permintaan" disabled value={nomorPermintaan} />
             </div>
             {isGaActor && (
@@ -167,93 +179,106 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
               </>
             )}
             <div className="field">
-              <label htmlFor="fa-tanggal">Tanggal Dibutuhkan</label>
+              <label htmlFor="fa-tanggal">Tanggal</label>
               <DateFilterPicker id="fa-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
-              <label htmlFor="fa-nama-pemohon">Nama Pemohon</label>
-              <input type="text" id="fa-nama-pemohon" required maxLength={255} placeholder="Nama yang mengajukan permintaan" value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
+              <label htmlFor="fa-kategori">Kategori</label>
+              <SearchableSelect
+                id="fa-kategori"
+                value={form.kategori}
+                onChange={(v) => set("kategori", v as AtkKategori)}
+                options={KATEGORI_OPTIONS}
+                getLabel={(v) => KATEGORI_ATK_LABEL[v as AtkKategori] || v}
+                placeholder="Pilih Kategori"
+              />
             </div>
             <div className="field">
-              <label htmlFor="fa-no-telepon-pemohon">No. Telepon Pemohon</label>
-              <input type="text" id="fa-no-telepon-pemohon" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
+              <label htmlFor="fa-nama-pemohon">Nama PIC</label>
+              <input type="text" id="fa-nama-pemohon" required maxLength={255} value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
             </div>
             <div className="field">
+              <label htmlFor="fa-no-telepon-pemohon">No. Telepon PIC</label>
+              <input type="text" id="fa-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
+            </div>
+            <div className="field full">
               <label htmlFor="fa-keperluan">Tujuan</label>
-              <input type="text" id="fa-keperluan" required maxLength={150} placeholder="Contoh: Kebutuhan ATK bulanan tim" value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
+              <input type="text" id="fa-keperluan" required maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
               <label>Daftar Barang</label>
-              <div className="item-row-list">
-                <div className="item-row-header">
-                  <span className="item-row-col-lg">Nama Barang</span>
-                  <span className="item-row-col-sm">Jumlah</span>
-                  <span className="item-row-col-md">Satuan</span>
-                  <span className="item-row-col-spacer" />
-                </div>
-                {form.items.map((row, idx) => (
-                  <div key={idx} className="item-row">
-                    <TextAutocomplete
-                      className="item-row-col-lg"
-                      ariaLabel={`Nama barang ${idx + 1}`}
-                      required
-                      maxLength={255}
-                      options={ATK_CATALOG_NAMES}
-                      placeholder="Nama barang (contoh: Pulpen)"
-                      value={row.namaBarang}
-                      onChange={(namaBarang) => {
-                        const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
-                        setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
-                      }}
-                    />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className="item-row-col-sm"
-                      aria-label={`Jumlah barang ${idx + 1}`}
-                      required
-                      placeholder="Jumlah"
-                      value={row.jumlah === 0 ? "" : String(row.jumlah)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                        setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
-                      }}
-                    />
-                    <input
-                      type="text"
-                      className="item-row-col-md"
-                      aria-label={`Satuan barang ${idx + 1}`}
-                      required
-                      maxLength={50}
-                      placeholder="Satuan (pcs/rim/box)"
-                      value={row.satuan}
-                      onChange={(e) => setItem(idx, { satuan: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="card-icon-btn card-icon-btn-danger item-row-col-spacer"
-                      aria-label={`Hapus baris barang ${idx + 1}`}
-                      disabled={form.items.length <= 1}
-                      style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
-                      onClick={() => removeItemRow(idx)}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
+              <div className="photo-drop-uploader">
+                <div className="item-row-list">
+                  <div className="item-row-header">
+                    <span className="item-row-col-lg">Nama Barang</span>
+                    <span className="item-row-col-sm">Jumlah</span>
+                    <span className="item-row-col-md">Satuan</span>
+                    <span className="item-row-col-spacer" />
                   </div>
-                ))}
+                  {form.items.map((row, idx) => (
+                    <div key={idx} className="item-row">
+                      <TextAutocomplete
+                        className="item-row-col-lg"
+                        ariaLabel={`Nama barang ${idx + 1}`}
+                        required
+                        maxLength={255}
+                        options={ATK_CATALOG_NAMES}
+                        placeholder="Nama barang (contoh: Pulpen)"
+                        value={row.namaBarang}
+                        onChange={(namaBarang) => {
+                          const catalogSatuan = ATK_CATALOG_BY_NAME.get(namaBarang);
+                          setItem(idx, catalogSatuan && !row.satuan ? { namaBarang, satuan: catalogSatuan } : { namaBarang });
+                        }}
+                      />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="item-row-col-sm"
+                        aria-label={`Jumlah barang ${idx + 1}`}
+                        required
+                        placeholder="Jumlah"
+                        value={row.jumlah === 0 ? "" : String(row.jumlah)}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                          setItem(idx, { jumlah: digits === "" ? 0 : Math.min(Number(digits), 9999) });
+                        }}
+                      />
+                      <input
+                        type="text"
+                        className="item-row-col-md"
+                        aria-label={`Satuan barang ${idx + 1}`}
+                        required
+                        maxLength={50}
+                        placeholder="Satuan (pcs/rim/box)"
+                        value={row.satuan}
+                        onChange={(e) => setItem(idx, { satuan: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className="card-icon-btn card-icon-btn-danger item-row-col-spacer"
+                        aria-label={`Hapus baris barang ${idx + 1}`}
+                        disabled={form.items.length <= 1}
+                        style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
+                        onClick={() => removeItemRow(idx)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {form.items.length < MAX_ITEM_ROWS && (
+                  <button type="button" className="btn btn-secondary" style={{ width: "100%", marginTop: 12 }} onClick={addItemRow}>
+                    + Tambah Barang
+                  </button>
+                )}
               </div>
-              {form.items.length < MAX_ITEM_ROWS && (
-                <button type="button" className="btn btn-secondary" style={{ width: "auto", marginTop: 8 }} onClick={addItemRow}>
-                  + Tambah Barang
-                </button>
-              )}
             </div>
 
             <div className="field full">
               <label htmlFor="fa-catatan">Catatan</label>
-              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Segera di Approve" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

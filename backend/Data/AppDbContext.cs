@@ -602,6 +602,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.Id).HasColumnName("id");
             e.Property(p => p.NomorPermintaan).HasColumnName("nomor_permintaan").HasMaxLength(50);
             e.Property(p => p.Tanggal).HasColumnName("tanggal");
+            e.Property(p => p.Kategori).HasColumnName("kategori").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.Keperluan).HasColumnName("keperluan").HasMaxLength(255).IsRequired();
             e.Property(p => p.Catatan).HasColumnName("catatan");
 

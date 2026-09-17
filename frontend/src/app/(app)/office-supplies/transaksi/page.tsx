@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  KATEGORI_ATK_LABEL,
   SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
   canGaKoreksiAtk,
@@ -350,18 +351,18 @@ function OfficeSuppliesTransaksiPageInner() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal Dibutuhkan</th>
+                <th>No</th><th>No Permintaan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Nama Pemohon</th><th>No. Telepon Pemohon</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={15} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={16} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -373,6 +374,7 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>{item.nomorPermintaan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
+                      <td>{KATEGORI_ATK_LABEL[item.kategori] || item.kategori}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
                       <td>{item.items.length}</td>

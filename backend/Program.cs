@@ -526,6 +526,7 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS sumber_pembelian VARCHAR(20)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS nama_pemohon VARCHAR(255) NOT NULL DEFAULT ''");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS no_telepon_pemohon VARCHAR(50) NOT NULL DEFAULT ''");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_atk ADD COLUMN IF NOT EXISTS kategori VARCHAR(50) NOT NULL DEFAULT 'LAINNYA'");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_status ON permintaan_atk (status)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_divisi ON permintaan_atk (divisi)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_atk_departemen ON permintaan_atk (departemen)");
