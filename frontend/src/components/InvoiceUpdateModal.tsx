@@ -81,8 +81,17 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!nama.trim() || !bulan || !file || !item) {
-      setError("Lengkapi nama, bulan, dan file invoice.");
+    if (!item) return;
+    if (!nama.trim()) {
+      setError("Nama pengirim invoice wajib diisi.");
+      return;
+    }
+    if (!bulan) {
+      setError("Bulan invoice wajib diisi.");
+      return;
+    }
+    if (!file) {
+      setError("Pilih file PDF pengganti untuk menyimpan pembaruan.");
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
