@@ -335,8 +335,10 @@ export const api = {
     }
     return response.json();
   },
-  updateInvoice: async (id: number, file: File) => {
+  updateInvoice: async (id: number, nama: string, bulan: string, file: File) => {
     const formData = new FormData();
+    formData.append("nama", nama);
+    formData.append("bulan", bulan);
     formData.append("file", file);
     const response = await fetch(`${API_BASE}/invoice/${id}`, {
       method: "PATCH",

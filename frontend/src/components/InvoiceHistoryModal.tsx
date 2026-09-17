@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FileText } from "lucide-react";
 import { api } from "@/lib/api";
-import { INVOICE_LOG_ACTION_META, LOG_ROLE_LABEL } from "@/lib/constants";
+import { INVOICE_LOG_ACTION_META } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { InvoiceLog } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
@@ -49,7 +50,6 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
             <div className="approval-log">
               {logs.map((log) => {
                 const meta = INVOICE_LOG_ACTION_META[log.action] || { label: log.action, type: "neutral" as const };
-                const actorLabel = log.actorRole ? LOG_ROLE_LABEL[log.actorRole] || log.actorRole : "-";
                 return (
                   <div key={log.id} className={`approval-log-item approval-log-${meta.type}`}>
                     <div className="approval-log-dot"></div>
@@ -58,7 +58,6 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
                         <span className="approval-log-title">{meta.label}</span>
                         <span className="approval-log-time">{formatDateTime(log.createdAt)}</span>
                       </div>
-                      <div className="approval-log-actor">{actorLabel}</div>
                       {log.reason && (
                         <div className="approval-log-reason">
                           <strong>Catatan:</strong> {log.reason}
@@ -66,7 +65,9 @@ export default function InvoiceHistoryModal({ open, invoiceId, onClose }: Props)
                       )}
                       {log.originalFilename && invoiceId != null && (
                         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                          <span className="text-secondary" style={{ fontSize: "0.8rem" }}>{log.originalFilename}</span>
+                          <div className="photo-drop-item-thumb">
+                            <FileText width={18} height={18} />
+                          </div>
                           <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem" }} href={api.invoiceLogFileUrl(invoiceId, log.id)} target="_blank" rel="noopener noreferrer">Lihat PDF</a>
                           <a className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: "0.75rem" }} href={api.invoiceLogDownloadUrl(invoiceId, log.id)}>Download PDF</a>
                         </div>

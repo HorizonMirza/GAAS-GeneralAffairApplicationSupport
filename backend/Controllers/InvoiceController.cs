@@ -55,6 +55,21 @@ public class InvoiceController : ApiControllerBase
     private static bool CanViewInvoice(Invoice item, User user) =>
         user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
 
+    private static readonly string[] MonthNamesId = { "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember" };
+
+    // "search" matches both the sender name (Nama) and the invoice's displayed title ("Invoice
+    // <bulan berbahasa Indonesia>") - the row title Invoice History actually shows. A raw ILike
+    // on Bulan ("2026-01") would never match what someone types ("Invoice Januari 2026" or just
+    // "Januari"), so the Indonesian label is built here and matched in memory instead.
+    private static bool MatchesInvoiceSearch(Invoice invoice, string search)
+    {
+        if (invoice.Nama.Contains(search, StringComparison.OrdinalIgnoreCase)) return true;
+        var parts = invoice.Bulan.Split('-');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out var month) || month < 1 || month > 12) return false;
+        var label = $"Invoice {MonthNamesId[month - 1]} {parts[0]}";
+        return label.Contains(search, StringComparison.OrdinalIgnoreCase);
+    }
+
     [HttpPost("")]
     public async Task<IActionResult> UploadInvoice([FromForm] string nama, [FromForm] string bulan, [FromForm] IFormFile? file)
     {
@@ -135,11 +150,15 @@ public class InvoiceController : ApiControllerBase
     }
 
     [HttpPatch("{invoiceId}")]
-    public async Task<IActionResult> UpdateInvoice(int invoiceId, [FromForm] IFormFile? file)
+    public async Task<IActionResult> UpdateInvoice(int invoiceId, [FromForm] string nama, [FromForm] string bulan, [FromForm] IFormFile? file)
     {
         var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
         if (error != null) return error;
 
+        if (string.IsNullOrWhiteSpace(nama))
+            return StatusCode(400, new { detail = "Nama pengirim invoice wajib diisi" });
+        if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
+            return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
         if (file.Length > MaxInvoiceFileSizeBytes)
@@ -153,6 +172,13 @@ public class InvoiceController : ApiControllerBase
         if (item.Status != InvoiceStatusEnum.REJECTED && item.Status != InvoiceStatusEnum.DRAFT)
             return StatusCode(403, new { detail = "Invoice hanya bisa diupdate saat status Draft atau Rejected" });
 
+        if (bulan != item.Bulan)
+        {
+            var alreadyExists = await _db.Invoices.AnyAsync(i => i.Id != invoiceId && i.UploadedBy == user.Id && i.Bulan == bulan);
+            if (alreadyExists)
+                return StatusCode(400, new { detail = "Invoice untuk bulan ini sudah pernah dikirim. Gunakan Updates untuk merevisi." });
+        }
+
         if (file.ContentType != "application/pdf" || !await LooksLikePdfAsync(file))
             return StatusCode(400, new { detail = "File invoice harus berformat PDF" });
 
@@ -165,6 +191,8 @@ public class InvoiceController : ApiControllerBase
 
         var originalFilename = string.IsNullOrEmpty(file.FileName) ? "invoice.pdf" : file.FileName;
         var wasRejected = item.Status == InvoiceStatusEnum.REJECTED;
+        item.Nama = nama.Trim();
+        item.Bulan = bulan;
         item.FilePath = storedFilename;
         item.OriginalFilename = originalFilename;
         item.Status = InvoiceStatusEnum.DRAFT;
@@ -203,18 +231,32 @@ public class InvoiceController : ApiControllerBase
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
-        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.Nama, $"%{search}%") || EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
         // Relevant when Admin/Approval GA/Super Admin review invoices from more than one KPU
         // account - a no-op for KPU itself, which is already scoped to its own uploads above.
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
-        var total = await query.CountAsync();
-        var items = await query
-            .Include(i => i.Pengunggah)
-            .OrderByDescending(i => i.UploadedAt)
-            .Skip((page - 1) * limit)
-            .Take(limit)
-            .ToListAsync();
+        int total;
+        List<Invoice> items;
+        if (!string.IsNullOrEmpty(search))
+        {
+            // MatchesInvoiceSearch also checks the Indonesian month label, which EF cannot
+            // translate into SQL - materialize the (already role/bulan/uploadedBy-scoped)
+            // candidates and filter/paginate in memory instead.
+            var candidates = await query.Include(i => i.Pengunggah).ToListAsync();
+            var matched = candidates.Where(i => MatchesInvoiceSearch(i, search)).OrderByDescending(i => i.UploadedAt).ToList();
+            total = matched.Count;
+            items = matched.Skip((page - 1) * limit).Take(limit).ToList();
+        }
+        else
+        {
+            total = await query.CountAsync();
+            items = await query
+                .Include(i => i.Pengunggah)
+                .OrderByDescending(i => i.UploadedAt)
+                .Skip((page - 1) * limit)
+                .Take(limit)
+                .ToListAsync();
+        }
 
         return Ok(new InvoiceListResponse
         {
@@ -357,10 +399,10 @@ public class InvoiceController : ApiControllerBase
         // "Hapus Semua" must not delete one either.
         var query = _db.Invoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
         if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
-        if (!string.IsNullOrEmpty(search)) query = query.Where(i => EF.Functions.ILike(i.Nama, $"%{search}%") || EF.Functions.ILike(i.OriginalFilename, $"%{search}%"));
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
-        var items = await query.Include(i => i.Logs).ToListAsync();
+        var candidates = await query.Include(i => i.Logs).ToListAsync();
+        var items = string.IsNullOrEmpty(search) ? candidates : candidates.Where(i => MatchesInvoiceSearch(i, search)).ToList();
         if (items.Count == 0) return Ok(new { deleted = 0 });
 
         var filesToDelete = items

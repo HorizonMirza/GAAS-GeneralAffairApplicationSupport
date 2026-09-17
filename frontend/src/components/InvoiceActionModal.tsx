@@ -69,6 +69,14 @@ export default function InvoiceActionModal({ open, invoiceId, type, onClose, onD
             placeholder="Contoh: Invoice sudah sesuai"
             value={catatan}
             onChange={(e) => setCatatan(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.stopPropagation();
+              if (!e.shiftKey) {
+                e.preventDefault();
+                if (!busy) handleConfirm();
+              }
+            }}
           />
         </div>
         {error && <div className="error-text">{error}</div>}

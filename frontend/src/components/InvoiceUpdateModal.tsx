@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, FileText, Trash2, UploadCloud } from "lucide-react";
 import { api } from "@/lib/api";
 import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
@@ -8,6 +8,7 @@ import { formatFileSize } from "@/lib/format";
 import { useAutofocusFirstField } from "@/lib/formNav";
 import type { Invoice } from "@/lib/types";
 import ModalOverlay from "./ModalOverlay";
+import MonthFilterPicker from "./MonthFilterPicker";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Props) {
+  const [nama, setNama] = useState("");
+  const [bulan, setBulan] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,6 +28,17 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}`);
+
+  // This modal instance stays mounted across different invoices (only `open`/`item` change), so
+  // Nama/Bulan need to be re-synced from the invoice being opened rather than kept from whichever
+  // invoice was edited last.
+  useEffect(() => {
+    if (!open || !item) return;
+    setNama(item.nama);
+    setBulan(item.bulan);
+    setFile(null);
+    setError("");
+  }, [open, item]);
 
   if (!open || !item) return null;
 
@@ -65,8 +79,8 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!file || !item) {
-      setError("Pilih file Invoice yang baru.");
+    if (!nama.trim() || !bulan || !file || !item) {
+      setError("Lengkapi nama, bulan, dan file invoice.");
       return;
     }
     if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
@@ -75,7 +89,7 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
     }
     setBusy(true);
     try {
-      await api.updateInvoice(item.id, file);
+      await api.updateInvoice(item.id, nama.trim(), bulan, file);
       showToast(isDraft ? "Draft Invoice berhasil diperbarui" : "Revisi Invoice tersimpan sebagai draft, kirim kembali lewat Detail");
       setFile(null);
       onDone();
@@ -94,6 +108,21 @@ export default function InvoiceUpdateModal({ open, item, onClose, onDone }: Prop
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="invoice-update-nama">Nama Pengirim Invoice</label>
+            <input
+              type="text"
+              id="invoice-update-nama"
+              required
+              maxLength={255}
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="invoice-update-bulan">Bulan Invoice</label>
+            <MonthFilterPicker id="invoice-update-bulan" value={bulan} onChange={setBulan} placeholder="Pilih bulan" fillWidth />
+          </div>
           <div className="field">
             <label htmlFor="invoice-update-file">File Invoice Baru (PDF)</label>
             <div
