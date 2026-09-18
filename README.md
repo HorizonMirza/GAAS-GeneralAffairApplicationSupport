@@ -32,3 +32,7 @@ Semua dokumentasi detail ada di [`docs/`](./docs):
 - [`docs/TODO.md`](./docs/TODO.md) — ide/fitur yang sudah dibahas tapi belum dikerjakan.
 
 Mulai dari [`docs/README.md`](./docs/README.md) untuk instruksi menjalankan proyek secara lokal.
+
+## Status
+
+Proyek internal PGN Solution — tidak untuk didistribusikan di luar organisasi.
