@@ -38,6 +38,14 @@ interface BookingFilterState {
 
 const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
 
+// Repeated across every module section below - hoisted so the same style object is reused
+// instead of a fresh literal at each of the ~46 call sites.
+const SECTION_HEADING_STYLE = { margin: "24px 0 12px" };
+const AUTO_WIDTH_STYLE = { width: "auto" };
+const RESET_FILTER_BUTTON_STYLE = { width: "auto", alignSelf: "flex-end" };
+const FIELD_NO_MARGIN_STYLE = { marginBottom: 0 };
+const FIELD_NO_MARGIN_TOP_SPACED_STYLE = { marginBottom: 0, marginTop: 12 };
+
 interface KendaraanFilterState {
   page: number;
   limit: number;
@@ -803,7 +811,7 @@ export default function SuperAdminPage() {
 
       <NotificationSoundSettingsCard />
 
-      <h2 style={{ margin: "24px 0 12px" }}>Expedition</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Expedition</h2>
 
       <div className="card">
         <div className="toolbar">
@@ -817,7 +825,7 @@ export default function SuperAdminPage() {
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
-            <button type="button" className="btn filter-dropdown-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
+            <button type="button" className="btn filter-dropdown-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setFilterOpen((v) => !v)}>
               Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
@@ -840,7 +848,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Status"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-direktorat">Direktorat</label>
                   <SearchableSelect
                     id="filter-direktorat"
@@ -851,7 +859,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Direktorat"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-divisi">Divisi</label>
                   <SearchableSelect
                     id="filter-divisi"
@@ -862,7 +870,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Divisi"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-departemen">Departemen</label>
                   <SearchableSelect
                     id="filter-departemen"
@@ -876,7 +884,7 @@ export default function SuperAdminPage() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={tableBusy || total === 0}
@@ -932,7 +940,7 @@ export default function SuperAdminPage() {
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
                       <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDelete(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDelete(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -944,7 +952,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-limit"
@@ -975,7 +983,7 @@ export default function SuperAdminPage() {
         </div>
 
         <div className="invoice-toolbar-slim">
-          <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+          <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
             <MonthFilterPicker
               id="invoice-filter-bulan"
@@ -983,18 +991,18 @@ export default function SuperAdminPage() {
               onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
             />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
             <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ width: "auto" }}
+              style={AUTO_WIDTH_STYLE}
               onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
             >
               Semua Invoice
             </button>
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
             <span className="field-label-spacer">Hapus Semua</span>
             <button
               type="button"
@@ -1049,7 +1057,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="invoice-limit">Tampilkan</label>
               <SearchableSelect
                 id="invoice-limit"
@@ -1074,7 +1082,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Room Booking</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Room Booking</h2>
 
       <div className="card">
         <div className="card-header">
@@ -1135,7 +1143,7 @@ export default function SuperAdminPage() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetBookingFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={bookingBusy || bookingTotal === 0}
@@ -1186,7 +1194,7 @@ export default function SuperAdminPage() {
                         </span>
                       </td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteBooking(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteBooking(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -1198,7 +1206,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-booking-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-booking-limit"
@@ -1223,7 +1231,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Vehicle Booking</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Vehicle Booking</h2>
 
       <div className="card">
         <div className="card-header">
@@ -1284,7 +1292,7 @@ export default function SuperAdminPage() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetKendaraanFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={kendaraanBusy || kendaraanTotal === 0}
@@ -1334,7 +1342,7 @@ export default function SuperAdminPage() {
                         </span>
                       </td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteKendaraanBooking(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteKendaraanBooking(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -1346,7 +1354,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-kendaraan-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-kendaraan-limit"
@@ -1371,7 +1379,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Archive</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Archive</h2>
 
       <div className="card">
         <div className="card-header">
@@ -1425,7 +1433,7 @@ export default function SuperAdminPage() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetArsipFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={arsipBusy || arsipTotal === 0}
@@ -1473,7 +1481,7 @@ export default function SuperAdminPage() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteArsip(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteArsip(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -1485,7 +1493,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-arsip-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-arsip-limit"
@@ -1510,7 +1518,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Office Supplies</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Office Supplies</h2>
 
       <div className="card">
         <div className="card-header">
@@ -1527,13 +1535,13 @@ export default function SuperAdminPage() {
           </div>
           <div className="filter-dropdown-wrap" ref={atkFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
-            <button type="button" className="btn filter-dropdown-toggle" id="filter-atk-toggle" style={{ width: "auto" }} onClick={() => setAtkFilterOpen((v) => !v)}>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-atk-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setAtkFilterOpen((v) => !v)}>
               Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {atkFilterOpen && (
               <div className="filter-dropdown-panel">
-                <div className="field" style={{ marginBottom: 0 }}>
+                <div className="field" style={FIELD_NO_MARGIN_STYLE}>
                   <label htmlFor="filter-atk-status">Status</label>
                   <SearchableSelect
                     id="filter-atk-status"
@@ -1550,7 +1558,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Status"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-atk-sumber">Sumber Pembelian</label>
                   <SearchableSelect
                     id="filter-atk-sumber"
@@ -1562,7 +1570,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Sumber"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-atk-direktorat">Direktorat</label>
                   <SearchableSelect
                     id="filter-atk-direktorat"
@@ -1573,7 +1581,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Direktorat"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-atk-divisi">Divisi</label>
                   <SearchableSelect
                     id="filter-atk-divisi"
@@ -1584,7 +1592,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Divisi"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-atk-departemen">Departemen</label>
                   <SearchableSelect
                     id="filter-atk-departemen"
@@ -1598,7 +1606,7 @@ export default function SuperAdminPage() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetAtkFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetAtkFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={atkBusy || atkTotal === 0}
@@ -1648,7 +1656,7 @@ export default function SuperAdminPage() {
                       <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
                       <td><AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteAtk(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteAtk(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -1660,7 +1668,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-atk-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-atk-limit"
@@ -1685,7 +1693,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Maintenance</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Maintenance</h2>
 
       <div className="card">
         <div className="card-header">
@@ -1702,13 +1710,13 @@ export default function SuperAdminPage() {
           </div>
           <div className="filter-dropdown-wrap" ref={saranaFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
-            <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-toggle" style={{ width: "auto" }} onClick={() => setSaranaFilterOpen((v) => !v)}>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setSaranaFilterOpen((v) => !v)}>
               Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {saranaFilterOpen && (
               <div className="filter-dropdown-panel">
-                <div className="field" style={{ marginBottom: 0 }}>
+                <div className="field" style={FIELD_NO_MARGIN_STYLE}>
                   <label htmlFor="filter-sarana-status">Status</label>
                   <SearchableSelect
                     id="filter-sarana-status"
@@ -1725,7 +1733,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Status"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-sarana-kategori">Kategori Kerusakan</label>
                   <SearchableSelect
                     id="filter-sarana-kategori"
@@ -1737,7 +1745,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Kategori"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-sarana-direktorat">Direktorat</label>
                   <SearchableSelect
                     id="filter-sarana-direktorat"
@@ -1748,7 +1756,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Direktorat"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-sarana-divisi">Divisi</label>
                   <SearchableSelect
                     id="filter-sarana-divisi"
@@ -1759,7 +1767,7 @@ export default function SuperAdminPage() {
                     placeholder="Semua Divisi"
                   />
                 </div>
-                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
                   <label htmlFor="filter-sarana-departemen">Departemen</label>
                   <SearchableSelect
                     id="filter-sarana-departemen"
@@ -1773,7 +1781,7 @@ export default function SuperAdminPage() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetSaranaFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetSaranaFilters}>Hapus Filter</button>
           <button
             className="btn btn-bulk-delete"
             disabled={saranaBusy || saranaTotal === 0}
@@ -1818,7 +1826,7 @@ export default function SuperAdminPage() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={() => handleDeleteSarana(item)}>Delete</button>
+                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteSarana(item)}>Delete</button>
                       </td>
                     </tr>
                   );
@@ -1830,7 +1838,7 @@ export default function SuperAdminPage() {
 
         <div className="pagination">
           <div className="pagination-left">
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
               <label htmlFor="filter-sarana-limit">Tampilkan</label>
               <SearchableSelect
                 id="filter-sarana-limit"
@@ -1855,7 +1863,7 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <h2 style={{ margin: "24px 0 12px" }}>Activity Log</h2>
+      <h2 style={SECTION_HEADING_STYLE}>Activity Log</h2>
 
       <RiwayatAktivitasCard />
 
