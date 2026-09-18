@@ -69,6 +69,7 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 
 ## Dokumen Lain
 
+- [`../README.md`](../README.md) — halaman utama repo di GitHub, ringkasan singkat yang mengarah balik ke sini.
 - [`Prd.md`](./Prd.md) — kebutuhan produk & daftar modul.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — detail teknis backend & frontend.
 - [`workflow.md`](./workflow.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
