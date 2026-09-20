@@ -67,6 +67,8 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 
 `ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA`, `KPU`, `SUPER_ADMIN`. Tidak ada pendaftaran akun mandiri — semua akun dibuat lewat seed (`backend/Data/DbSeeder.cs`).
 
+dokumen
+
 ## Dokumen Lain
 
 - [`../README.md`](../README.md) — halaman utama repo di GitHub, ringkasan singkat yang mengarah balik ke sini.
