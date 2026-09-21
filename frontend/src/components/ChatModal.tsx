@@ -179,7 +179,7 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || itemId == null) return;
+    if (!text || itemId == null || sending) return;
     setSending(true);
     setError("");
     try {
@@ -200,6 +200,9 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
       setError((err as Error).message);
     } finally {
       setSending(false);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     }
   }
 
@@ -286,7 +289,6 @@ export default function ChatModal({ open, itemId, itemLabel, departemen, created
               placeholder="Tulis pesan..."
               value={draft}
               onChange={handleDraftChange}
-              disabled={sending}
             />
             <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || !draft.trim()}>
               <SendIcon />

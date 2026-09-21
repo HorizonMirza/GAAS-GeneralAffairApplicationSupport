@@ -182,7 +182,7 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || itemId == null) return;
+    if (!text || itemId == null || sending) return;
     setSending(true);
     setError("");
     try {
@@ -203,6 +203,9 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
       setError((err as Error).message);
     } finally {
       setSending(false);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     }
   }
 
@@ -291,7 +294,6 @@ export default function RoomBookingChatModal({ open, itemId, itemLabel, departem
               placeholder="Tulis pesan..."
               value={draft}
               onChange={handleDraftChange}
-              disabled={sending}
             />
             <button type="submit" className="chat-send-btn" aria-label="Kirim" disabled={sending || !draft.trim()}>
               <SendIcon />
