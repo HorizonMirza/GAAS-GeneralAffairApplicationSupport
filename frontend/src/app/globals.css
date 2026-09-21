@@ -2021,7 +2021,6 @@ body.auth-ready .app-shell {
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  justify-content: space-between;
 }
 
 .room-card-meta-exact {
@@ -2087,25 +2086,6 @@ body.auth-ready .app-shell {
 .room-card-slot-row-exact.slot-closed {
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
-}
-
-.room-card-btn-exact {
-  width: 100%;
-  margin-top: 4px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: #2563eb;
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 150ms ease;
-}
-
-.room-card-btn-exact:hover {
-  background: #1d4ed8;
 }
 
 /* ---------- Room/Vehicle info modal (Overview grid card -> here -> Booking form) ---------- */

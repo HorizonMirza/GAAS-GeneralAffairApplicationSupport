@@ -90,124 +90,73 @@ function roomPhotoUrls(roomName: string): string[] {
   return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
-const ROOM_CAPACITIES: Record<string, number> = {
-  "Ruang Eksternal Receptionist": 12,
-  "Ruang Eksternal Besar": 20,
-  "Ruang Eksternal Kecil": 8,
-  "Ruang Golf": 10,
-  "Ruang Open Space": 30,
-  "Ruang ECC": 16,
-  "Ruang Solution 1": 14,
-  "Ruang Solution 2": 14,
-  "Ruang Solution 3": 14,
-  "Ruang Solution Utama": 25,
-};
-
-const DEMO_ROOM_SCHEDULES: Record<string, { jam: string; status: "free" | "booked"; judul?: string }[]> = {
-  "Ruang Eksternal Receptionist": [
-    { jam: "08:00 - 10:00", status: "free" },
-    { jam: "10:00 - 12:00", status: "booked", judul: "Rapat Vendor" },
-    { jam: "13:00 - 15:00", status: "free" },
-  ],
-  "Ruang Eksternal Besar": [
-    { jam: "08:00 - 11:00", status: "free" },
-    { jam: "11:00 - 13:00", status: "booked", judul: "Townhall Divisi" },
-    { jam: "14:00 - 17:00", status: "free" },
-  ],
-  "Ruang Eksternal Kecil": [
-    { jam: "08:00 - 12:00", status: "booked", judul: "Interview HR" },
-    { jam: "13:00 - 15:00", status: "booked", judul: "Review Project" },
-    { jam: "15:00 - 17:00", status: "booked", judul: "Evaluasi Tim" },
-  ],
-  "Ruang Golf": [
-    { jam: "09:00 - 11:30", status: "free" },
-    { jam: "13:00 - 15:00", status: "booked", judul: "Sesi Direksi" },
-    { jam: "15:30 - 17:30", status: "free" },
-  ],
-  "Ruang Open Space": [
-    { jam: "08:00 - 12:00", status: "free" },
-    { jam: "13:00 - 14:30", status: "booked", judul: "Sprint Planning" },
-    { jam: "15:00 - 18:00", status: "free" },
-  ],
-  "Ruang ECC": [
-    { jam: "08:30 - 11:00", status: "free" },
-    { jam: "11:00 - 13:00", status: "booked", judul: "Video Conf Board" },
-    { jam: "14:00 - 16:30", status: "free" },
-  ],
-  "Ruang Solution 1": [
-    { jam: "08:00 - 10:30", status: "free" },
-    { jam: "11:00 - 12:30", status: "booked", judul: "Diskusi Desain" },
-    { jam: "13:30 - 16:00", status: "free" },
-  ],
-  "Ruang Solution 2": [
-    { jam: "08:00 - 12:00", status: "free" },
-    { jam: "13:00 - 15:00", status: "booked", judul: "Sync Engineering" },
-    { jam: "15:30 - 17:30", status: "free" },
-  ],
-  "Ruang Solution 3": [
-    { jam: "08:30 - 11:30", status: "free" },
-    { jam: "11:30 - 13:00", status: "booked", judul: "Kajian Teknis" },
-    { jam: "14:00 - 17:00", status: "free" },
-  ],
-  "Ruang Solution Utama": [
-    { jam: "08:00 - 10:00", status: "free" },
-    { jam: "10:30 - 12:30", status: "booked", judul: "Presentasi Klien" },
-    { jam: "14:00 - 17:00", status: "free" },
-  ],
-};
-
-function getRoomCardSlots(
+function getRealRoomDaySlots(
   roomName: string,
   todayEntries: BookingRuang[],
-  closed: boolean,
-  fullyBooked: boolean
-): { jam: string; status: "free" | "booked"; judul?: string }[] {
+  closed: boolean
+): { jam: string; status: "free" | "booked"; judul: string }[] {
   if (closed) {
     return [
-      { jam: "08:00 - 11:00", status: "booked", judul: "Tutup" },
-      { jam: "11:00 - 14:00", status: "booked", judul: "Tutup" },
-      { jam: "14:00 - 17:00", status: "booked", judul: "Tutup" },
+      { jam: "07:00 - 11:00", status: "booked", judul: "Tutup" },
+      { jam: "11:00 - 15:00", status: "booked", judul: "Tutup" },
+      { jam: "15:00 - 19:00", status: "booked", judul: "Tutup" },
     ];
   }
 
+  // Filter actual real bookings for this room today
   const roomBookings = todayEntries.filter(
     (e) =>
       e.status !== "DRAFT" &&
       e.status !== "CANCELLED" &&
       !e.status.startsWith("REJECTED") &&
       (e.namaRuang === roomName || e.additionalRooms?.includes(roomName))
-  );
+  ).sort((a, b) => {
+    const aStart = a.isWholeDay ? OPEN_MIN : toMinutes(a.jamMulai || "07:00");
+    const bStart = b.isWholeDay ? OPEN_MIN : toMinutes(b.jamMulai || "07:00");
+    return aStart - bStart;
+  });
 
+  // If there are real bookings today in the database:
   if (roomBookings.length > 0) {
-    const slots: { jam: string; status: "free" | "booked"; judul?: string }[] = [];
-    for (const b of roomBookings.slice(0, 3)) {
+    const slots: { jam: string; status: "free" | "booked"; judul: string }[] = [];
+    for (const b of roomBookings) {
+      if (slots.length >= 3) break;
       const jam = b.isWholeDay
-        ? "08:00 - 17:00"
-        : `${b.jamMulai?.slice(0, 5) || "08:00"} - ${b.jamSelesai?.slice(0, 5) || "10:00"}`;
+        ? "07:00 - 19:00"
+        : `${b.jamMulai?.slice(0, 5) || "07:00"} - ${b.jamSelesai?.slice(0, 5) || "19:00"}`;
       slots.push({ jam, status: "booked", judul: b.namaKegiatan || "Terisi" });
     }
-    const fallbackFree = ["08:00 - 10:00", "11:00 - 13:00", "14:00 - 17:00"];
-    for (const f of fallbackFree) {
+
+    const standardWindows = [
+      { start: "07:00", end: "11:00" },
+      { start: "11:00", end: "15:00" },
+      { start: "15:00", end: "19:00" },
+    ];
+
+    for (const w of standardWindows) {
       if (slots.length >= 3) break;
-      if (!slots.some((s) => s.jam === f)) {
-        slots.push({ jam: f, status: "free", judul: "Kosong" });
+      const wStart = toMinutes(w.start);
+      const wEnd = toMinutes(w.end);
+      const overlaps = roomBookings.some((b) => {
+        if (b.isWholeDay) return true;
+        if (!b.jamMulai || !b.jamSelesai) return false;
+        const bStart = toMinutes(b.jamMulai);
+        const bEnd = toMinutes(b.jamSelesai);
+        return bStart < wEnd && bEnd > wStart;
+      });
+      if (!overlaps) {
+        slots.push({ jam: `${w.start} - ${w.end}`, status: "free", judul: "Kosong" });
       }
     }
-    return slots.slice(0, 3);
+
+    return slots.slice(0, 3).sort((a, b) => a.jam.localeCompare(b.jam));
   }
 
-  if (fullyBooked) {
-    return [
-      { jam: "08:00 - 11:00", status: "booked", judul: "Penuh" },
-      { jam: "11:00 - 14:00", status: "booked", judul: "Penuh" },
-      { jam: "14:00 - 17:00", status: "booked", judul: "Penuh" },
-    ];
-  }
-
-  return DEMO_ROOM_SCHEDULES[roomName] || [
-    { jam: "08:00 - 10:00", status: "free", judul: "Kosong" },
-    { jam: "10:00 - 12:00", status: "free", judul: "Kosong" },
-    { jam: "13:00 - 15:00", status: "free", judul: "Kosong" },
+  // If NO bookings in the database today, show the 3 real empty operational sessions:
+  return [
+    { jam: "07:00 - 11:00", status: "free", judul: "Kosong" },
+    { jam: "11:00 - 15:00", status: "free", judul: "Kosong" },
+    { jam: "15:00 - 19:00", status: "free", judul: "Kosong" },
   ];
 }
 
@@ -437,8 +386,7 @@ export default function BookingOverviewPage() {
                 : "Available hari ini";
 
             const isAvail = availability === "available";
-            const kapasitas = ROOM_CAPACITIES[r.nama] || r.kapasitas || 12;
-            const slots = getRoomCardSlots(r.nama, todayEntries, closedToday, availability === "full");
+            const slots = getRealRoomDaySlots(r.nama, todayEntries, closedToday);
 
             return (
               <div
@@ -468,7 +416,6 @@ export default function BookingOverviewPage() {
                 <div className="room-card-body-exact">
                   <div className="room-card-meta-exact">
                     <span>Jadwal Hari Ini</span>
-                    <span>👥 {kapasitas} Orang</span>
                   </div>
                   <div className="room-card-slots-exact">
                     {slots.slice(0, 3).map((s, idx) => (
@@ -483,16 +430,6 @@ export default function BookingOverviewPage() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    className="room-card-btn-exact"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setInfoRoom(r);
-                    }}
-                  >
-                    Pesan Slot
-                  </button>
                 </div>
               </div>
             );
