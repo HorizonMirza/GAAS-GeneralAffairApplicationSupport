@@ -98,6 +98,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
+    setError("");
   }
 
   async function handleBulkReschedule() {
@@ -279,6 +280,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           return;
         }
       }
+    }
+    if (!form?.namaRuang) {
+      setError("Ruangan wajib dipilih");
+      return;
+    }
+    if (!form?.tipe) {
+      setError("Tipe wajib dipilih");
+      return;
     }
     setBusy(true);
     try {

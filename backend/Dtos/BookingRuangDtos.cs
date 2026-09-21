@@ -22,7 +22,7 @@ public class BookingRuangCreate
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }
     public string? Catatan { get; set; }
-    public TipeBookingEnum Tipe { get; set; } = TipeBookingEnum.INTERNAL;
+    public TipeBookingEnum? Tipe { get; set; }
 
     // When true (with Frequency/EndDate both set), Create() generates one occurrence per computed
     // date instead of a single booking - see BookingRuangController.BuildOccurrenceDates.

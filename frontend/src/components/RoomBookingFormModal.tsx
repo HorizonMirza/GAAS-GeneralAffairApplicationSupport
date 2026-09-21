@@ -131,6 +131,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    setError("");
   }
 
   // Switching the primary room to one already picked as an additional room would otherwise leave
@@ -255,6 +256,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         }
       }
     }
+    if (!form.namaRuang) {
+      setError("Ruangan wajib dipilih");
+      return;
+    }
+    if (!form.tipe) {
+      setError("Tipe wajib dipilih");
+      return;
+    }
     setBusy(true);
     try {
       const created = await api.createBooking({
@@ -268,7 +277,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         catatan: form.catatan || null,
         jamMulai: form.isWholeDay ? "07:00" : form.jamMulai,
         jamSelesai: form.isWholeDay ? "18:00" : form.jamSelesai,
-        tipe: form.tipe || "INTERNAL",
+        tipe: form.tipe!,
       });
       showToast(
         created.length > 1
