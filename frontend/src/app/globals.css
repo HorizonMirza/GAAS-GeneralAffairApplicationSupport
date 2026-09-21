@@ -366,6 +366,13 @@ body {
   background: var(--bg-surface-alt);
   color: var(--text-primary);
   outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input:hover:not(:disabled),
+.field select:hover:not(:disabled),
+.field textarea:hover:not(:disabled) {
+  border-color: var(--blue-400);
 }
 
 .field input:focus,
@@ -1631,11 +1638,18 @@ body.auth-ready .app-shell {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 
 .dashboard-stat-card:hover {
-  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  border-color: var(--blue-400);
+  box-shadow: var(--glow-blue);
+}
+
+.dashboard-stat-card:hover .dashboard-stat-card-icon {
+  border-color: var(--blue-400);
+  background: rgba(75, 141, 255, 0.1);
 }
 
 .dashboard-stat-card-head {
@@ -1695,6 +1709,12 @@ body.auth-ready .app-shell {
   border-radius: 10px;
   padding: 10px 12px;
   text-align: center;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.dashboard-stat-highlight-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 40, 90, 0.08);
 }
 
 .dashboard-stat-highlight-box.primary {
@@ -1830,15 +1850,16 @@ body.auth-ready .app-shell {
 }
 
 .superadmin-tab-btn:hover {
-  color: var(--text-primary);
+  color: var(--blue-500);
   background: var(--bg-surface);
-  border-color: var(--border-subtle);
+  border-color: var(--blue-400);
 }
 
 .superadmin-tab-btn-active {
   background: var(--gradient-primary) !important;
   color: #fff !important;
   box-shadow: var(--shadow-sm);
+  border-color: transparent !important;
 }
 
 .superadmin-subtabs {
@@ -1861,7 +1882,7 @@ body.auth-ready .app-shell {
 }
 
 .superadmin-subtab-btn:hover {
-  color: var(--text-primary);
+  color: var(--blue-500);
   border-color: var(--blue-400);
 }
 
@@ -4185,7 +4206,7 @@ table.data-table {
   transition: border-color 0.15s ease;
 }
 
-.room-multiselect-trigger:hover { border-color: var(--blue-300); }
+.room-multiselect-trigger:hover { border-color: var(--blue-400); }
 .room-multiselect-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .room-multiselect-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
 .room-multiselect-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
@@ -4257,7 +4278,7 @@ table.data-table {
   transition: border-color 0.15s ease;
 }
 
-.searchable-select-trigger:hover { border-color: var(--blue-300); }
+.searchable-select-trigger:hover { border-color: var(--blue-400); }
 .searchable-select-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .searchable-select-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
 
@@ -4322,8 +4343,10 @@ table.data-table {
   color: var(--text-primary);
   font-size: 0.9rem;
   font-family: inherit;
+  transition: border-color 0.15s ease;
 }
 
+.searchable-select-search:hover { border-color: var(--blue-400); }
 .searchable-select-search:focus { outline: none; border-color: var(--blue-400); }
 
 .searchable-select-options {
@@ -4379,7 +4402,7 @@ table.data-table {
   background: var(--bg-surface);
   color: var(--text-secondary);
 }
-.filter-picker-trigger:hover { border-color: var(--blue-300); }
+.filter-picker-trigger:hover { border-color: var(--blue-400); }
 .filter-picker-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .filter-picker-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
 .filter-picker-trigger:focus {
@@ -4595,7 +4618,7 @@ table.data-table {
   cursor: pointer;
 }
 .date-picker-select-trigger svg { flex-shrink: 0; color: var(--text-secondary); }
-.date-picker-select-trigger:hover { border-color: var(--blue-300); }
+.date-picker-select-trigger:hover { border-color: var(--blue-400); }
 .date-picker-select-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 
 .date-picker-select-dropdown {
