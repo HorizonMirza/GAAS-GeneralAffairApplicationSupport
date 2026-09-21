@@ -439,7 +439,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 onChange={handleJamMulaiChange}
                 options={isEdit ? (form.jamMulai && !availableStartHours.includes(form.jamMulai) ? [form.jamMulai, ...availableStartHours] : availableStartHours) : (form.isWholeDay ? ["07:00"] : (form.jamMulai ? [form.jamMulai] : HOUR_OPTIONS))}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={form.isWholeDay ? "07:00" : (availableStartHours[0] || "Pilih jam")}
+                placeholder={form.isWholeDay ? "07:00" : (availableStartHours[0] || "Tidak ada slot")}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
@@ -452,7 +452,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 onChange={handleJamSelesaiChange}
                 options={isEdit ? (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours) : (form.isWholeDay ? ["18:00"] : (form.jamSelesai ? [form.jamSelesai] : HOUR_OPTIONS))}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}
+                placeholder={form.isWholeDay ? "18:00" : (availableStartHours.length === 0 ? "Tidak ada slot" : (availableEndHours[0] || "Pilih jam"))}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />

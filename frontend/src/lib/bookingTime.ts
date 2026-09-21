@@ -33,8 +33,10 @@ export function getAvailableStartHours(tanggal: string): string[] {
  * End hours must be strictly greater than start hour, up to 18:00.
  */
 export function getAvailableEndHours(jamMulai?: string | null): string[] {
-  const startH = jamMulai ? parseInt(jamMulai.slice(0, 2), 10) : OPERATING_START_HOUR;
-  const minEnd = Math.max(OPERATING_START_HOUR + 1, (isNaN(startH) ? OPERATING_START_HOUR : startH) + 1);
+  if (!jamMulai) return [];
+  const startH = parseInt(jamMulai.slice(0, 2), 10);
+  if (isNaN(startH)) return [];
+  const minEnd = Math.max(OPERATING_START_HOUR + 1, startH + 1);
 
   const hours: string[] = [];
   for (let h = minEnd; h <= OPERATING_END_HOUR; h++) {

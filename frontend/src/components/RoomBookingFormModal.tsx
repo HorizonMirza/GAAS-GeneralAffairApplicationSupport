@@ -450,7 +450,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 onChange={handleJamSelesaiChange}
                 options={form.isWholeDay ? ["18:00"] : availableEndHours}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}
+                placeholder={form.isWholeDay ? "18:00" : (availableStartHours.length === 0 ? "Tidak ada slot" : (availableEndHours[0] || "Pilih jam"))}
                 disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
