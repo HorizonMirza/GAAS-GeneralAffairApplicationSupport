@@ -2016,27 +2016,24 @@ body.auth-ready .app-shell {
 
 /* Card Body */
 .room-card-body-exact {
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   flex: 1;
 }
-
 
 .room-card-slots-exact {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .room-card-slot-row-exact {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border-radius: 6px;
-  font-size: 0.69rem;
+  font-size: 0.72rem;
   line-height: 1.25;
 }
 

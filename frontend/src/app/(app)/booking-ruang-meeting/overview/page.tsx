@@ -90,74 +90,71 @@ function roomPhotoUrls(roomName: string): string[] {
   return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
-function getRealRoomDaySlots(
+function getRealRoomCurrentSlot(
   roomName: string,
   todayEntries: BookingRuang[],
   closed: boolean
-): { jam: string; status: "free" | "booked"; judul: string }[] {
+): { jam: string; status: "free" | "booked"; judul: string } {
   if (closed) {
-    return [
-      { jam: "07:00 - 11:00", status: "booked", judul: "Tutup" },
-      { jam: "11:00 - 15:00", status: "booked", judul: "Tutup" },
-      { jam: "15:00 - 19:00", status: "booked", judul: "Tutup" },
-    ];
+    return { jam: "Tutup", status: "booked", judul: "Tutup" };
+  }
+
+  const now = nowMinutesLocal();
+  if (now >= CLOSE_MIN) {
+    return { jam: "18:00", status: "booked", judul: "Tutup" };
   }
 
   // Filter actual real bookings for this room today
-  const roomBookings = todayEntries.filter(
-    (e) =>
-      e.status !== "DRAFT" &&
-      e.status !== "CANCELLED" &&
-      !e.status.startsWith("REJECTED") &&
-      (e.namaRuang === roomName || e.additionalRooms?.includes(roomName))
-  ).sort((a, b) => {
-    const aStart = a.isWholeDay ? OPEN_MIN : toMinutes(a.jamMulai || "07:00");
-    const bStart = b.isWholeDay ? OPEN_MIN : toMinutes(b.jamMulai || "07:00");
-    return aStart - bStart;
-  });
+  const roomBookings = todayEntries
+    .filter(
+      (e) =>
+        e.status !== "DRAFT" &&
+        e.status !== "CANCELLED" &&
+        !e.status.startsWith("REJECTED") &&
+        (e.namaRuang === roomName || e.additionalRooms?.includes(roomName))
+    )
+    .map((e) => {
+      const start = e.isWholeDay ? OPEN_MIN : toMinutes(e.jamMulai || "07:00");
+      const end = e.isWholeDay ? CLOSE_MIN : toMinutes(e.jamSelesai || "18:00");
+      return { ...e, startMin: start, endMin: end };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
 
-  // If there are real bookings today in the database:
-  if (roomBookings.length > 0) {
-    const slots: { jam: string; status: "free" | "booked"; judul: string }[] = [];
-    for (const b of roomBookings) {
-      if (slots.length >= 3) break;
-      const jam = b.isWholeDay
-        ? "07:00 - 19:00"
-        : `${b.jamMulai?.slice(0, 5) || "07:00"} - ${b.jamSelesai?.slice(0, 5) || "19:00"}`;
-      slots.push({ jam, status: "booked", judul: b.namaKegiatan || "Terisi" });
-    }
+  // Determine current starting hour rounded down (e.g. 13:28 -> 13:00)
+  const currentHour = now < OPEN_MIN ? Math.floor(OPEN_MIN / 60) : Math.floor(now / 60);
+  const startHhmm = `${String(currentHour).padStart(2, "0")}:00`;
 
-    const standardWindows = [
-      { start: "07:00", end: "11:00" },
-      { start: "11:00", end: "15:00" },
-      { start: "15:00", end: "19:00" },
-    ];
-
-    for (const w of standardWindows) {
-      if (slots.length >= 3) break;
-      const wStart = toMinutes(w.start);
-      const wEnd = toMinutes(w.end);
-      const overlaps = roomBookings.some((b) => {
-        if (b.isWholeDay) return true;
-        if (!b.jamMulai || !b.jamSelesai) return false;
-        const bStart = toMinutes(b.jamMulai);
-        const bEnd = toMinutes(b.jamSelesai);
-        return bStart < wEnd && bEnd > wStart;
-      });
-      if (!overlaps) {
-        slots.push({ jam: `${w.start} - ${w.end}`, status: "free", judul: "Kosong" });
-      }
-    }
-
-    return slots.slice(0, 3).sort((a, b) => a.jam.localeCompare(b.jam));
+  // Check if there is an ongoing booking right now
+  const ongoing = roomBookings.find((b) => b.startMin <= now && b.endMin > now);
+  if (ongoing) {
+    const jam = ongoing.isWholeDay
+      ? "07:00 - 18:00"
+      : `${ongoing.jamMulai?.slice(0, 5) || "07:00"} - ${ongoing.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return {
+      jam,
+      status: "booked",
+      judul: ongoing.namaKegiatan || "Terisi",
+    };
   }
 
-  // If NO bookings in the database today, show the 3 real empty operational sessions:
-  return [
-    { jam: "07:00 - 11:00", status: "free", judul: "Kosong" },
-    { jam: "11:00 - 15:00", status: "free", judul: "Kosong" },
-    { jam: "15:00 - 19:00", status: "free", judul: "Kosong" },
-  ];
+  // No ongoing booking right now -> Room is free right now!
+  // Find the next upcoming booking starting after now
+  const upcoming = roomBookings.find((b) => b.startMin > now && b.startMin < CLOSE_MIN);
+  if (upcoming) {
+    const untilHhmm = upcoming.jamMulai?.slice(0, 5) || "18:00";
+    return {
+      jam: `${startHhmm} - ${untilHhmm}`,
+      status: "free",
+      judul: "Available",
+    };
+  }
+
+  // No more bookings today -> Available from current hour until 18:00
+  return {
+    jam: `${startHhmm} - 18:00`,
+    status: "free",
+    judul: "Available",
+  };
 }
 
 // Free (bookable) hours left today, one entry per whole hour within operating hours (e.g.
@@ -386,7 +383,7 @@ export default function BookingOverviewPage() {
                 : "Available hari ini";
 
             const isAvail = availability === "available";
-            const slots = getRealRoomDaySlots(r.nama, todayEntries, closedToday);
+            const slot = getRealRoomCurrentSlot(r.nama, todayEntries, closedToday);
 
             return (
               <div
@@ -408,24 +405,23 @@ export default function BookingOverviewPage() {
                   <div className="room-card-photo-overlay" />
                   <div className="room-card-photo-footer">
                     <span className="room-title">{r.nama}</span>
-                    <span className={`room-badge ${isAvail ? "badge-available" : "badge-full"}`}>
-                      {isAvail ? "Available" : availability === "closed" ? "Close" : "Full"}
-                    </span>
+                    {!isAvail && (
+                      <span className={`room-badge ${availability === "closed" ? "badge-closed" : "badge-full"}`}>
+                        {availability === "closed" ? "Close" : "Full"}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="room-card-body-exact">
                   <div className="room-card-slots-exact">
-                    {slots.slice(0, 3).map((s, idx) => (
-                      <div
-                        key={idx}
-                        className={`room-card-slot-row-exact ${
-                          s.status === "free" ? "slot-free" : "slot-booked"
-                        }`}
-                      >
-                        <span className="slot-time">{s.jam}</span>
-                        <span className="slot-status">{s.status === "free" ? "Kosong" : s.judul || "Terisi"}</span>
-                      </div>
-                    ))}
+                    <div
+                      className={`room-card-slot-row-exact ${
+                        slot.status === "free" ? "slot-free" : "slot-booked"
+                      }`}
+                    >
+                      <span className="slot-time">{slot.jam}</span>
+                      <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                    </div>
                   </div>
                 </div>
               </div>
