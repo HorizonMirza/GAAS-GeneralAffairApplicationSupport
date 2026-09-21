@@ -62,7 +62,7 @@ export default function InvoiceActionModal({ open, invoiceId, onClose, onDone }:
           <label htmlFor="invoice-action-catatan">Catatan (opsional)</label>
           <textarea
             id="invoice-action-catatan"
-            placeholder="Contoh: Invoice sudah sesuai"
+            placeholder="Contoh: Nominal tagihan tidak sesuai"
             value={catatan}
             onChange={(e) => setCatatan(e.target.value)}
             onKeyDown={(e) => {
