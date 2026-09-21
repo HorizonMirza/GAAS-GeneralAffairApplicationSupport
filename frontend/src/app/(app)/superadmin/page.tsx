@@ -23,8 +23,21 @@ import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
+import { Calendar, Car, ClipboardList, Folder, Layers, Shield, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
+
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip";
+
+const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
+  { key: "overview", label: "Ringkasan & Audit", icon: <Shield width={16} height={16} /> },
+  { key: "ekspedisi", label: "Ekspedisi & Invoice", icon: <Layers width={16} height={16} /> },
+  { key: "booking-ruang", label: "Room Booking", icon: <Calendar width={16} height={16} /> },
+  { key: "booking-kendaraan", label: "Vehicle Booking", icon: <Car width={16} height={16} /> },
+  { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
+  { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
+  { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
+];
 
 interface BookingFilterState {
   page: number;
@@ -116,6 +129,9 @@ export default function SuperAdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
+
+  const [activeTab, setActiveTab] = useState<SuperAdminTab>("overview");
+  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"pengiriman" | "invoice">("pengiriman");
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -413,40 +429,58 @@ export default function SuperAdminPage() {
   }, [saranaFilters]);
 
   useEffect(() => {
-    loadTable();
-  }, [loadTable]);
+    if (activeTab === "ekspedisi") {
+      loadTable();
+    }
+  }, [activeTab, loadTable]);
 
   useEffect(() => {
-    if (me?.role === "SUPER_ADMIN") loadInvoices();
-  }, [me, loadInvoices]);
+    if (activeTab === "ekspedisi" && me?.role === "SUPER_ADMIN") {
+      loadInvoices();
+    }
+  }, [activeTab, me, loadInvoices]);
 
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    if (activeTab === "booking-ruang") {
+      loadBookings();
+    }
+  }, [activeTab, loadBookings]);
 
   useEffect(() => {
-    loadArsip();
-  }, [loadArsip]);
+    if (activeTab === "booking-kendaraan") {
+      loadKendaraanBookings();
+    }
+  }, [activeTab, loadKendaraanBookings]);
 
   useEffect(() => {
-    loadAtk();
-  }, [loadAtk]);
+    if (activeTab === "arsip") {
+      loadArsip();
+    }
+  }, [activeTab, loadArsip]);
 
   useEffect(() => {
-    loadSarana();
-  }, [loadSarana]);
+    if (activeTab === "atk") {
+      loadAtk();
+    }
+  }, [activeTab, loadAtk]);
 
   useEffect(() => {
-    loadKendaraanBookings();
-  }, [loadKendaraanBookings]);
+    if (activeTab === "sarana") {
+      loadSarana();
+    }
+  }, [activeTab, loadSarana]);
 
   useEffect(() => {
-    api.listRooms().then(setRooms).catch(() => setRooms([]));
-  }, []);
+    if (activeTab === "booking-ruang" && rooms.length === 0) {
+      api.listRooms().then(setRooms).catch(() => setRooms([]));
+    }
+  }, [activeTab, rooms.length]);
 
   useEffect(() => {
-    api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
-  }, []);
+    if (activeTab === "booking-kendaraan" && vehicles.length === 0) {
+      api.listVehicles().then(setVehicles).catch(() => setVehicles([]));
+    }
+  }, [activeTab, vehicles.length]);
 
   if (!me || me.role !== "SUPER_ADMIN") return null;
 
@@ -807,13 +841,66 @@ export default function SuperAdminPage() {
 
   return (
     <>
-      <DashboardStats me={me} />
+      <div className="superadmin-header">
+        <h1>
+          <Shield width={22} height={22} style={{ color: "var(--blue-500)" }} />
+          Super Admin GAAS
+        </h1>
+        <p>Panel kontrol master sistem, manajemen seluruh data transaksi, audit aktivitas, dan pengaturan global.</p>
+      </div>
 
-      <NotificationSoundSettingsCard />
+      <div className="superadmin-tabs-nav">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={`superadmin-tab-btn ${activeTab === tab.key ? "superadmin-tab-btn-active" : ""}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      <h2 style={SECTION_HEADING_STYLE}>Expedition</h2>
+      {activeTab === "overview" && (
+        <>
+          <DashboardStats me={me} />
 
-      <div className="card">
+          <div style={{ marginTop: 28 }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
+              Activity Log (Riwayat Aktivitas Lintas Modul)
+            </h3>
+            <RiwayatAktivitasCard />
+          </div>
+
+          <div style={{ marginTop: 28 }}>
+            <NotificationSoundSettingsCard />
+          </div>
+        </>
+      )}
+
+      {activeTab === "ekspedisi" && (
+        <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${ekspedisiSubtab === "pengiriman" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setEkspedisiSubtab("pengiriman")}
+            >
+              Transaksi Pengiriman ({total})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${ekspedisiSubtab === "invoice" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setEkspedisiSubtab("invoice")}
+            >
+              Vendor Invoices ({invoiceTotal})
+            </button>
+          </div>
+
+          {ekspedisiSubtab === "pengiriman" && (
+            <div className="card">
         <div className="toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
@@ -976,7 +1063,9 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+          )}
 
+          {ekspedisiSubtab === "invoice" && (
       <div className="card">
         <div className="card-header">
           <h3>History Invoice Pembiayaan</h3>
@@ -1081,9 +1170,11 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+          )}
+        </>
+      )}
 
-      <h2 style={SECTION_HEADING_STYLE}>Room Booking</h2>
-
+      {activeTab === "booking-ruang" && (
       <div className="card">
         <div className="card-header">
           <h3>Room Booking Meeting</h3>
@@ -1230,9 +1321,9 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <h2 style={SECTION_HEADING_STYLE}>Vehicle Booking</h2>
-
+      {activeTab === "booking-kendaraan" && (
       <div className="card">
         <div className="card-header">
           <h3>Booking Kendaraan</h3>
@@ -1378,9 +1469,9 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <h2 style={SECTION_HEADING_STYLE}>Archive</h2>
-
+      {activeTab === "arsip" && (
       <div className="card">
         <div className="card-header">
           <h3>Pemindahan Arsip</h3>
@@ -1517,9 +1608,9 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <h2 style={SECTION_HEADING_STYLE}>Office Supplies</h2>
-
+      {activeTab === "atk" && (
       <div className="card">
         <div className="card-header">
           <h3>Pesanan Kebutuhan Kantor</h3>
@@ -1692,9 +1783,9 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <h2 style={SECTION_HEADING_STYLE}>Maintenance</h2>
-
+      {activeTab === "sarana" && (
       <div className="card">
         <div className="card-header">
           <h3>Pengajuan Perbaikan Sarana</h3>
@@ -1862,10 +1953,7 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
-
-      <h2 style={SECTION_HEADING_STYLE}>Activity Log</h2>
-
-      <RiwayatAktivitasCard />
+      )}
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
