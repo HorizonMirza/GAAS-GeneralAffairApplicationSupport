@@ -218,8 +218,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     setForm((f) => (f ? {
       ...f,
       isRecurring: !f.isRecurring,
-      recurrenceFrequency: !f.isRecurring ? (f.recurrenceFrequency || "WEEKLY") : f.recurrenceFrequency,
-      recurrenceEndDate: !f.isRecurring ? (f.recurrenceEndDate || f.tanggal) : f.recurrenceEndDate,
+      recurrenceFrequency: !f.isRecurring ? (f.recurrenceFrequency || "WEEKLY") : null,
+      recurrenceEndDate: !f.isRecurring ? (f.recurrenceEndDate || f.tanggal) : null,
     } : f));
   }
 
@@ -352,6 +352,16 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
       setError("Tipe wajib dipilih");
       return;
     }
+    if (form?.isRecurring) {
+      if (!form.recurrenceFrequency) {
+        setError("Frekuensi pengulangan wajib dipilih");
+        return;
+      }
+      if (!form.recurrenceEndDate) {
+        setError("Tanggal akhir pengulangan wajib diisi");
+        return;
+      }
+    }
     setBusy(true);
     try {
       await api.updateBooking(item!.id, {
@@ -361,6 +371,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
         pic: form!.pic || null,
         noTeleponPic: form!.noTeleponPic || null,
         catatan: form!.catatan || null,
+        recurrenceFrequency: form!.isRecurring ? form!.recurrenceFrequency : null,
+        recurrenceEndDate: form!.isRecurring ? form!.recurrenceEndDate : null,
       });
       showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();

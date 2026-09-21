@@ -321,6 +321,16 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
       setError("Tipe wajib dipilih");
       return;
     }
+    if (form.isRecurring) {
+      if (!form.recurrenceFrequency) {
+        setError("Frekuensi pengulangan wajib dipilih");
+        return;
+      }
+      if (!form.recurrenceEndDate) {
+        setError("Tanggal akhir pengulangan wajib diisi");
+        return;
+      }
+    }
     setBusy(true);
     try {
       const created = await api.createBooking({
@@ -335,6 +345,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         jamMulai: form.isWholeDay ? "07:00" : form.jamMulai,
         jamSelesai: form.isWholeDay ? "18:00" : form.jamSelesai,
         tipe: form.tipe!,
+        recurrenceFrequency: form.isRecurring ? form.recurrenceFrequency : null,
+        recurrenceEndDate: form.isRecurring ? form.recurrenceEndDate : null,
       });
       showToast(
         created.length > 1
