@@ -1900,9 +1900,9 @@ body.auth-ready .app-shell {
      minimum width an equal 1/N share of the row - auto-fit then naturally settles on N columns at
      normal widths. On a narrower window that share drops below 150px, so the max() falls back to
      150px and auto-fit reduces the column count on its own, keeping cards readable on mobile. */
-  grid-template-columns: repeat(auto-fit, minmax(max(210px, calc((100% - (var(--grid-cols, 5) - 1) * 14px) / var(--grid-cols, 5))), 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(max(200px, calc((100% - (var(--grid-cols, 5) - 1) * 10px) / var(--grid-cols, 5))), 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .room-card {
@@ -1914,7 +1914,7 @@ body.auth-ready .app-shell {
   margin: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
   text-align: left;
@@ -1933,7 +1933,7 @@ body.auth-ready .app-shell {
 /* Photo Banner */
 .room-card-photo-banner {
   position: relative;
-  height: 112px;
+  height: 70px;
   width: 100%;
   overflow: hidden;
   background: var(--bg-surface-alt, #1e293b);
@@ -1960,21 +1960,21 @@ body.auth-ready .app-shell {
 
 .room-card-photo-footer {
   position: absolute;
-  bottom: 8px;
-  left: 12px;
-  right: 12px;
+  bottom: 5px;
+  left: 8px;
+  right: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   z-index: 1;
   color: #ffffff;
 }
 
 .room-card-photo-footer .room-title {
   font-weight: 700;
-  font-size: 0.75rem;
-  line-height: 1.25;
+  font-size: 0.7rem;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1982,9 +1982,9 @@ body.auth-ready .app-shell {
 }
 
 .room-card-photo-footer .room-badge {
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 999px;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -2016,7 +2016,7 @@ body.auth-ready .app-shell {
 
 /* Card Body */
 .room-card-body-exact {
-  padding: 8px 10px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -2031,10 +2031,10 @@ body.auth-ready .app-shell {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  line-height: 1.25;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 0.69rem;
+  line-height: 1.2;
 }
 
 .room-card-slot-row-exact.slot-free {

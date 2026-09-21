@@ -355,7 +355,7 @@ export default function BookingOverviewPage() {
 
   return (
     <>
-      <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+      <div className="card-header dashboard-welcome-header" style={{ marginBottom: 12 }}>
         <WelcomeGreeting me={me} />
         {isOrigin && (
           <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setFormOpen(true)}>
@@ -455,7 +455,7 @@ export default function BookingOverviewPage() {
         </>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 0 10px", gap: 12, flexWrap: "wrap" }}>
         <h3 style={{ margin: 0 }}>Pesanan Terbaru Saya</h3>
         <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
           <SearchableSelect
