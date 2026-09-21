@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { formatDateTime, nowWib } from "@/lib/format";
+import { isPastSlot } from "@/lib/bookingTime";
 import type { BookingRuang, RoomOption } from "@/lib/types";
 
 export type CalendarViewMode = "day" | "week" | "month" | "avail";
@@ -300,6 +301,8 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
 
   function startDrag(columnKey: string, hour: number, cell: CellPlan | undefined, colIndex = 0) {
     if (!canCreate || !cell || cell.type !== "empty") return;
+    const targetDate = view === "avail" ? refDate : columnKey;
+    if (isPastSlot(targetDate, hour)) return;
     setDrag({ columnKey, startHour: hour, currentHour: hour, startColIndex: colIndex, currentColIndex: colIndex });
   }
 
@@ -425,7 +428,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                   <DayCell
                     cell={cell}
                     date={refDate}
-                    canCreate={canCreate}
+                    canCreate={canCreate && !isPastSlot(refDate, hour)}
                     isDragPreview={isInDragRange(refDate, hour)}
                     onMouseDown={() => startDrag(refDate, hour, cell)}
                     onMouseEnter={() => continueDrag(refDate, hour)}
@@ -487,7 +490,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       key={date}
                       cell={cell}
                       date={date}
-                      canCreate={canCreate}
+                      canCreate={canCreate && !isPastSlot(date, hour)}
                       isDragPreview={isInDragRange(date, hour)}
                       onMouseDown={() => startDrag(date, hour, cell)}
                       onMouseEnter={() => continueDrag(date, hour)}
@@ -552,7 +555,7 @@ export default function RoomCalendarView({ view, refDate, entries, canCreate, on
                       key={r.nama}
                       cell={cell}
                       date={r.nama}
-                      canCreate={canCreate}
+                      canCreate={canCreate && !isPastSlot(refDate, hour)}
                       isDragPreview={isInAvailDragRange(idx, hour)}
                       onMouseDown={() => startDrag(r.nama, hour, cell, idx)}
                       onMouseEnter={() => continueDrag(r.nama, hour, idx)}

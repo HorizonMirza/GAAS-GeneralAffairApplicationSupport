@@ -284,6 +284,26 @@ public class BookingKendaraanController : ApiControllerBase
             if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
                 return "Departemen tidak ditemukan pada divisi tersebut";
         }
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+
+        if (payload.Tanggal < todayWib)
+            return "Tanggal booking tidak boleh di masa lalu";
+
+        if (payload.Tanggal == todayWib)
+        {
+            if (payload.IsWholeDay)
+            {
+                if (currentTimeWib >= OperatingStart)
+                    return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
+            }
+            else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
+            {
+                return "Jam mulai booking tidak boleh di masa lalu";
+            }
+        }
+
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)

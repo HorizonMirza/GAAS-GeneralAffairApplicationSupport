@@ -234,7 +234,14 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
             })}
           </motion.div>
           <motion.div className="filter-picker-footer" variants={itemVariants}>
-            <button type="button" className="filter-picker-link" onClick={() => selectDay(today)}>Hari Ini</button>
+            <button
+              type="button"
+              className="filter-picker-link"
+              disabled={!!minDate && today < minDate}
+              onClick={() => selectDay(today)}
+            >
+              Hari Ini
+            </button>
             {clearable && value && (
               <button
                 type="button"

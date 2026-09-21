@@ -13,7 +13,13 @@ import RoomMultiSelect from "./RoomMultiSelect";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
-const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
+import {
+  getAvailableStartHours,
+  getAvailableEndHours,
+  isWholeDayAllowed,
+  getDefaultBookingSlot,
+} from "@/lib/bookingTime";
+
 const RECURRENCE_OPTIONS: RecurrenceFrequency[] = ["DAILY", "WEEKLY", "MONTHLY"];
 
 interface Props {
@@ -25,24 +31,49 @@ interface Props {
 }
 
 function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCreatePayload {
-  return {
+  const slot = getDefaultBookingSlot(initial?.tanggal);
+  const base: BookingRuangCreatePayload = {
     namaKegiatan: "",
     pic: "",
     noTeleponPic: "",
     namaRuang: "",
     additionalRooms: [],
     jumlahPeserta: 1,
-    tanggal: todayLocalDate(),
+    tanggal: slot.tanggal,
     isWholeDay: false,
-    jamMulai: "07:00",
-    jamSelesai: "09:00",
+    jamMulai: slot.jamMulai,
+    jamSelesai: slot.jamSelesai,
     catatan: "",
     tipe: undefined,
     isRecurring: false,
     recurrenceFrequency: null,
     recurrenceEndDate: null,
-    ...initial,
   };
+
+  const merged = { ...base, ...initial };
+
+  // Sanitize merged values to prevent past slots if date is today
+  const starts = getAvailableStartHours(merged.tanggal);
+  if (!isWholeDayAllowed(merged.tanggal)) {
+    merged.isWholeDay = false;
+  }
+  if (merged.tanggal === todayLocalDate()) {
+    if (starts.length === 0) {
+      merged.jamMulai = "";
+      merged.jamSelesai = "";
+    } else if (!merged.jamMulai || !starts.includes(merged.jamMulai)) {
+      merged.jamMulai = starts[0];
+      const ends = getAvailableEndHours(merged.jamMulai);
+      merged.jamSelesai = ends[1] || ends[0] || "";
+    } else {
+      const ends = getAvailableEndHours(merged.jamMulai);
+      if (!merged.jamSelesai || !ends.includes(merged.jamSelesai)) {
+        merged.jamSelesai = ends[0] || "";
+      }
+    }
+  }
+
+  return merged;
 }
 
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
@@ -87,6 +118,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     me.divisi ||
     (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
+  const availableStartHours = getAvailableStartHours(form.tanggal);
+  const availableEndHours = getAvailableEndHours(form.jamMulai);
+  const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
+  const isTodayPast = form.tanggal === todayLocalDate() && availableStartHours.length === 0;
+
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -108,7 +144,56 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
     }));
   }
 
+  function handleTanggalChange(newDate: string) {
+    const starts = getAvailableStartHours(newDate);
+    setForm((f) => {
+      let newJamMulai = f.jamMulai;
+      let newJamSelesai = f.jamSelesai;
+      let newIsWholeDay = f.isWholeDay;
+
+      if (!isWholeDayAllowed(newDate)) {
+        newIsWholeDay = false;
+      }
+
+      if (starts.length === 0) {
+        newJamMulai = "";
+        newJamSelesai = "";
+      } else if (!newJamMulai || !starts.includes(newJamMulai)) {
+        newJamMulai = starts[0];
+        const ends = getAvailableEndHours(newJamMulai);
+        newJamSelesai = ends[1] || ends[0] || "";
+      } else {
+        const ends = getAvailableEndHours(newJamMulai);
+        if (!newJamSelesai || !ends.includes(newJamSelesai)) {
+          newJamSelesai = ends[0] || "";
+        }
+      }
+
+      return {
+        ...f,
+        tanggal: newDate,
+        isWholeDay: newIsWholeDay,
+        jamMulai: newJamMulai,
+        jamSelesai: newJamSelesai,
+      };
+    });
+  }
+
+  function handleJamMulaiChange(v: string) {
+    const ends = getAvailableEndHours(v);
+    setForm((f) => {
+      let newEnd = f.jamSelesai;
+      if (!newEnd || !ends.includes(newEnd)) {
+        const sH = parseInt(v.slice(0, 2), 10);
+        const prefEnd = `${String(Math.min(18, sH + 2)).padStart(2, "0")}:00`;
+        newEnd = ends.includes(prefEnd) ? prefEnd : (ends[0] || "");
+      }
+      return { ...f, jamMulai: v, jamSelesai: newEnd };
+    });
+  }
+
   function toggleWholeDay() {
+    if (!form.isWholeDay && !isWholeDayAllowed(form.tanggal)) return;
     setForm((f) => ({
       ...f,
       isWholeDay: !f.isWholeDay,
@@ -127,6 +212,27 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
       if (form.departemen === undefined) {
         setError("Departemen wajib dipilih");
         return;
+      }
+    }
+    if (form.tanggal < todayLocalDate()) {
+      setError("Tanggal booking tidak boleh di masa lalu");
+      return;
+    }
+    if (form.tanggal === todayLocalDate()) {
+      if (form.isWholeDay && !isWholeDayAllowed(form.tanggal)) {
+        setError("Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)");
+        return;
+      }
+      if (!form.isWholeDay) {
+        if (!form.jamMulai || !form.jamSelesai) {
+          setError("Jam mulai dan jam selesai wajib dipilih");
+          return;
+        }
+        const starts = getAvailableStartHours(form.tanggal);
+        if (!starts.includes(form.jamMulai)) {
+          setError("Jam mulai booking sudah terlewat untuk hari ini");
+          return;
+        }
       }
     }
     setBusy(true);
@@ -219,7 +325,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
-              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
+              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>
@@ -242,10 +348,10 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <SearchableSelect
                 id="f-jam-mulai"
                 value={form.jamMulai || undefined}
-                onChange={(v) => set("jamMulai", v)}
-                options={HOUR_OPTIONS}
-                placeholder="07:00"
-                disabled={form.isWholeDay}
+                onChange={handleJamMulaiChange}
+                options={availableStartHours}
+                placeholder={availableStartHours[0] || "Tidak ada slot"}
+                disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
             </div>
@@ -255,9 +361,9 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 id="f-jam-selesai"
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
-                options={HOUR_OPTIONS}
-                placeholder="09:00"
-                disabled={form.isWholeDay}
+                options={availableEndHours}
+                placeholder={availableEndHours[0] || "Pilih jam"}
+                disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
             </div>
@@ -266,9 +372,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <button
                 type="button"
                 id="f-sepanjang-hari"
-                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}
+                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!wholeDayAllowed ? " field-toggle-disabled" : ""}`}
                 aria-pressed={form.isWholeDay}
+                disabled={!wholeDayAllowed}
                 onClick={toggleWholeDay}
+                title={!wholeDayAllowed ? "Sepanjang hari hanya dapat dipilih sebelum jam 07:00 atau untuk hari berikutnya" : undefined}
               >
                 <span className="field-toggle-box">
                   {form.isWholeDay && (
@@ -277,7 +385,17 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 </span>
                 Sepanjang Hari
               </button>
+              {!wholeDayAllowed && form.tanggal === todayLocalDate() && (
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                  * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
+                </span>
+              )}
             </div>
+            {isTodayPast && (
+              <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
+                Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.
+              </div>
+            )}
             <div className="field full">
               <label htmlFor="f-ruang">Ruangan</label>
               <SearchableSelect

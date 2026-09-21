@@ -365,6 +365,27 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+
+        if (payload.Tanggal < todayWib)
+            return "Tanggal booking tidak boleh di masa lalu";
+
+        if (payload.Tanggal == todayWib)
+        {
+            if (payload.IsWholeDay)
+            {
+                if (currentTimeWib >= OperatingStart)
+                    return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
+            }
+            else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
+            {
+                return "Jam mulai booking tidak boleh di masa lalu";
+            }
+        }
+
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -582,6 +603,15 @@ public class BookingRuangController : ApiControllerBase
         if (error != null) return error;
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return BadRequest(new { detail = "Ruang tidak ditemukan" });
+
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+        if (payload.Tanggal < todayWib)
+            return BadRequest(new { detail = "Tanggal waitlist tidak boleh di masa lalu" });
+        if (payload.Tanggal == todayWib && !payload.IsWholeDay && payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
+            return BadRequest(new { detail = "Jam waitlist tidak boleh di masa lalu" });
+
         if (!payload.IsWholeDay && (payload.JamMulai == null || payload.JamSelesai == null))
             return BadRequest(new { detail = "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari" });
 
@@ -960,6 +990,27 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+
+        if (payload.Tanggal < todayWib)
+            return "Tanggal booking tidak boleh di masa lalu";
+
+        if (payload.Tanggal == todayWib)
+        {
+            if (payload.IsWholeDay)
+            {
+                if (currentTimeWib >= OperatingStart)
+                    return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
+            }
+            else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
+            {
+                return "Jam mulai booking tidak boleh di masa lalu";
+            }
+        }
+
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -1086,6 +1137,14 @@ public class BookingRuangController : ApiControllerBase
             }
 
             var newDate = oldDate.AddDays(payload.DayShift);
+            var nowWib = WaktuWib.Now;
+            var todayWib = DateOnly.FromDateTime(nowWib);
+            var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+            if (newDate < todayWib || (newDate == todayWib && ((item.IsWholeDay && currentTimeWib >= OperatingStart) || (!item.IsWholeDay && item.JamMulai != null && item.JamMulai.Value <= currentTimeWib))))
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = "Jadwal baru tidak boleh di masa lalu" });
+                continue;
+            }
             if (newDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {
                 results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
