@@ -874,7 +874,42 @@ public class BookingRuangController : ApiControllerBase
         // and Nomor Pemesanan.
         var oldSeriesId = item.SeriesId;
         var oldTanggal = item.Tanggal;
-        var occurrenceDates = BuildOccurrenceDates(payload);
+
+        var existingSiblings = oldSeriesId != null
+            ? await _db.BookingRuangs
+                .Include(b => b.AdditionalRooms)
+                .Where(b => b.SeriesId == oldSeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
+                .ToListAsync()
+            : new List<BookingRuang>();
+        var oldDates = new HashSet<DateOnly>(existingSiblings.Select(s => s.Tanggal)) { oldTanggal };
+        var seriesStartDate = oldDates.Min();
+
+        var occurrencePayload = payload;
+        if (oldSeriesId != null && payload.IsRecurring && payload.Tanggal == oldTanggal && seriesStartDate < payload.Tanggal)
+        {
+            occurrencePayload = new BookingRuangCreate
+            {
+                NamaKegiatan = payload.NamaKegiatan,
+                Pic = payload.Pic,
+                NoTeleponPic = payload.NoTeleponPic,
+                Divisi = payload.Divisi,
+                Departemen = payload.Departemen,
+                NamaRuang = payload.NamaRuang,
+                AdditionalRooms = payload.AdditionalRooms,
+                JumlahPeserta = payload.JumlahPeserta,
+                Tanggal = seriesStartDate,
+                IsWholeDay = payload.IsWholeDay,
+                JamMulai = payload.JamMulai,
+                JamSelesai = payload.JamSelesai,
+                Catatan = payload.Catatan,
+                Tipe = payload.Tipe,
+                IsRecurring = payload.IsRecurring,
+                RecurrenceFrequency = payload.RecurrenceFrequency,
+                RecurrenceEndDate = payload.RecurrenceEndDate,
+            };
+        }
+
+        var occurrenceDates = BuildOccurrenceDates(occurrencePayload);
         var willBeSeries = occurrenceDates.Count > 1;
 
         var roomList = RoomList(payload.NamaRuang, payload.AdditionalRooms);
@@ -914,18 +949,12 @@ public class BookingRuangController : ApiControllerBase
             item.HasConflict = conflict != null;
         }
 
-        var existingSiblings = oldSeriesId != null
-            ? await _db.BookingRuangs
-                .Include(b => b.AdditionalRooms)
-                .Where(b => b.SeriesId == oldSeriesId && b.Id != item.Id && b.Status == BookingStatusEnum.DRAFT)
-                .ToListAsync()
-            : new List<BookingRuang>();
-        var oldDates = new HashSet<DateOnly>(existingSiblings.Select(s => s.Tanggal)) { oldTanggal };
         var newDates = new HashSet<DateOnly>(occurrenceDates);
         var scheduleUnchanged = oldSeriesId != null && oldDates.SetEquals(newDates);
 
         if (scheduleUnchanged)
         {
+            item.Tanggal = oldTanggal;
             // Same "package" convention as the approval endpoints below: a DRAFT series member
             // shares its room/kegiatan/jam definition with every sibling occurrence (only Tanggal
             // differs between them), so propagate this edit to keep them consistent.
@@ -950,6 +979,7 @@ public class BookingRuangController : ApiControllerBase
 
             if (willBeSeries)
             {
+                item.Tanggal = occurrenceDates[0];
                 foreach (var tanggal in occurrenceDates.Skip(1))
                 {
                     var sibling = new BookingRuang

@@ -182,12 +182,69 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         newIsWholeDay = false;
       }
 
+      let newRecurrenceEndDate = f.recurrenceEndDate;
+      if (f.isRecurring && newRecurrenceEndDate && newDate > newRecurrenceEndDate) {
+        newRecurrenceEndDate = newDate;
+      }
+
       return {
         ...f,
         tanggal: newDate,
+        recurrenceEndDate: newRecurrenceEndDate,
         isWholeDay: newIsWholeDay,
         jamMulai: newJamMulai,
         jamSelesai: newJamSelesai,
+      };
+    });
+  }
+
+  function handleRecurrenceEndDateChange(v: string) {
+    setForm((f) => {
+      if (v && v < f.tanggal) {
+        const newStart = v;
+        const newEnd = f.recurrenceEndDate && f.recurrenceEndDate > f.tanggal ? f.recurrenceEndDate : f.tanggal;
+
+        let newJamMulai = f.jamMulai;
+        let newJamSelesai = f.jamSelesai;
+        let newIsWholeDay = f.isWholeDay;
+        const starts = getAvailableStartHours(newStart);
+
+        if (!isWholeDayAllowed(newStart)) {
+          newIsWholeDay = false;
+        }
+
+        if (starts.length === 0) {
+          newJamMulai = "";
+          newJamSelesai = "";
+        } else if (!newJamMulai || !starts.includes(newJamMulai)) {
+          newJamMulai = starts[0];
+          const ends = getAvailableEndHours(newJamMulai);
+          newJamSelesai = ends[1] || ends[0] || "";
+        } else {
+          const ends = getAvailableEndHours(newJamMulai);
+          if (!newJamSelesai || !ends.includes(newJamSelesai)) {
+            newJamSelesai = ends[0] || "";
+          }
+        }
+
+        if (newJamMulai === "07:00" && newJamSelesai === "18:00" && isWholeDayAllowed(newStart)) {
+          newIsWholeDay = true;
+        } else if (newJamMulai !== "07:00" || newJamSelesai !== "18:00") {
+          newIsWholeDay = false;
+        }
+
+        return {
+          ...f,
+          tanggal: newStart,
+          recurrenceEndDate: newEnd,
+          isWholeDay: newIsWholeDay,
+          jamMulai: newJamMulai,
+          jamSelesai: newJamSelesai,
+        };
+      }
+      return {
+        ...f,
+        recurrenceEndDate: v,
       };
     });
   }
@@ -496,9 +553,9 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                   <DateFilterPicker
                     id="f-recurrence-end"
                     clearable={false}
-                    minDate={form.tanggal}
+                    minDate={todayLocalDate()}
                     value={form.recurrenceEndDate || ""}
-                    onChange={(v) => set("recurrenceEndDate", v)}
+                    onChange={handleRecurrenceEndDateChange}
                   />
                 </div>
               </>
