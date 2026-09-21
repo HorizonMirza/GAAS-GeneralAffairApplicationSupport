@@ -450,17 +450,23 @@ export function isKendaraanDeletableByOrigin(item: BookingKendaraan, me: Me): bo
 // Same rule as isBookingGaReschedulable - mirrors
 // BookingKendaraanController.IsGaReschedulable.
 export function isKendaraanGaReschedulable(item: BookingKendaraan): boolean {
-  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+  return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
 export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolean {
-  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isKendaraanGaReschedulable(item);
+  if (me.role === "ADMIN_GA") {
+    return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+  }
+  if (me.role === "APPROVAL_GA") {
+    return item.status === "APPROVED_GA";
+  }
+  return false;
 }
 
 // Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
 // the slot - see VehicleBookingKoreksiModal and BookingKendaraanController.Koreksi.
 export function canGaKoreksiKendaraan(item: BookingKendaraan, me: Me): boolean {
-  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isKendaraanGaReschedulable(item);
+  return canGaRescheduleKendaraan(item, me);
 }
 
 export function isKendaraanGaActionable(item: BookingKendaraan): boolean {

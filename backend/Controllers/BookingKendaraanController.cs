@@ -116,8 +116,7 @@ public class BookingKendaraanController : ApiControllerBase
     }
 
     private static bool IsGaReschedulable(BookingKendaraan item) =>
-        item.Status is BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED
-            or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
+        item.Status is BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
 
     // Accepts any real phone number without guessing a regional format, but still catches
     // obviously-wrong values (empty, letters, a couple of stray digits).
@@ -624,6 +623,8 @@ public class BookingKendaraanController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaReschedulable(item))
             return StatusCode(403, new { detail = "Jadwal tidak dapat dipindahkan pada status ini" });
+        if (user!.Role == RoleEnum.APPROVAL_GA && item.Status != BookingStatusEnum.APPROVED_GA)
+            return StatusCode(403, new { detail = "Jadwal belum mencapai tahap Approval General Affair" });
 
         var validationError = ValidateReschedule(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
@@ -669,6 +670,8 @@ public class BookingKendaraanController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaReschedulable(item))
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+        if (user!.Role == RoleEnum.APPROVAL_GA && item.Status != BookingStatusEnum.APPROVED_GA)
+            return StatusCode(403, new { detail = "Jadwal belum mencapai tahap Approval General Affair" });
 
         if (string.IsNullOrWhiteSpace(payload.Pic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
         if (!IsValidPhone(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC tidak valid" });

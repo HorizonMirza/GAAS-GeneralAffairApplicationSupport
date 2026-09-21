@@ -5,13 +5,12 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { getAvailableEndHours, getAvailableStartHours, isWholeDayAllowed } from "@/lib/bookingTime";
 import type { BookingKendaraanCreatePayload, Me, VehicleOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
-
-const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
 
 interface Props {
   open: boolean;
@@ -22,23 +21,48 @@ interface Props {
 }
 
 function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKendaraanCreatePayload {
-  const isFullDay = Boolean(
-    initial?.isWholeDay ||
-    (initial?.jamMulai?.slice(0, 5) === "07:00" && initial?.jamSelesai?.slice(0, 5) === "18:00")
-  );
-  return {
+  const base: BookingKendaraanCreatePayload = {
     keperluan: "",
     pic: "",
     noTeleponPic: "",
     namaKendaraan: "",
     jumlahPenumpang: 1,
     tanggal: todayLocalDate(),
-    isWholeDay: isFullDay,
+    isWholeDay: false,
     jamMulai: "07:00",
-    jamSelesai: isFullDay ? "18:00" : "09:00",
+    jamSelesai: "09:00",
     catatan: "",
-    ...initial,
   };
+
+  const merged = { ...base, ...initial };
+  if (merged.jamMulai) merged.jamMulai = merged.jamMulai.slice(0, 5);
+  if (merged.jamSelesai) merged.jamSelesai = merged.jamSelesai.slice(0, 5);
+
+  const starts = getAvailableStartHours(merged.tanggal);
+  if (!isWholeDayAllowed(merged.tanggal)) {
+    merged.isWholeDay = false;
+  }
+  if (merged.tanggal === todayLocalDate()) {
+    if (starts.length === 0) {
+      merged.jamMulai = "";
+      merged.jamSelesai = "";
+    } else if (!merged.jamMulai || !starts.includes(merged.jamMulai)) {
+      merged.jamMulai = starts[0];
+      const ends = getAvailableEndHours(merged.jamMulai);
+      merged.jamSelesai = ends[1] || ends[0] || "";
+    } else {
+      const ends = getAvailableEndHours(merged.jamMulai);
+      if (!merged.jamSelesai || !ends.includes(merged.jamSelesai)) {
+        merged.jamSelesai = ends[0] || "";
+      }
+    }
+  }
+
+  if (merged.jamMulai === "07:00" && merged.jamSelesai === "18:00" && isWholeDayAllowed(merged.tanggal)) {
+    merged.isWholeDay = true;
+  }
+
+  return merged;
 }
 
 export default function VehicleBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
@@ -85,25 +109,76 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
 
+  const availableStartHours = getAvailableStartHours(form.tanggal);
+  const availableEndHours = getAvailableEndHours(form.jamMulai);
+  const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
+  const isTodayPast = form.tanggal === todayLocalDate() && availableStartHours.length === 0;
+
   function set<K extends keyof BookingKendaraanCreatePayload>(key: K, value: BookingKendaraanCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    setError("");
+  }
+
+  function handleTanggalChange(newDate: string) {
+    setForm((f) => {
+      const wholeDayAllowedForDate = isWholeDayAllowed(newDate);
+      let newIsWholeDay = f.isWholeDay && wholeDayAllowedForDate;
+      const starts = getAvailableStartHours(newDate);
+      let newJamMulai = f.jamMulai;
+      let newJamSelesai = f.jamSelesai;
+
+      if (starts.length === 0) {
+        newJamMulai = "";
+        newJamSelesai = "";
+      } else if (!newJamMulai || !starts.includes(newJamMulai)) {
+        newJamMulai = starts[0];
+        const ends = getAvailableEndHours(newJamMulai);
+        newJamSelesai = ends[1] || ends[0] || "";
+      } else {
+        const ends = getAvailableEndHours(newJamMulai);
+        if (!newJamSelesai || !ends.includes(newJamSelesai)) {
+          newJamSelesai = ends[0] || "";
+        }
+      }
+
+      if (newJamMulai === "07:00" && newJamSelesai === "18:00" && wholeDayAllowedForDate) {
+        newIsWholeDay = true;
+      }
+
+      return {
+        ...f,
+        tanggal: newDate,
+        isWholeDay: newIsWholeDay,
+        jamMulai: newIsWholeDay ? "07:00" : newJamMulai,
+        jamSelesai: newIsWholeDay ? "18:00" : newJamSelesai,
+      };
+    });
+    setError("");
   }
 
   function handleJamMulaiChange(v: string) {
+    const ends = getAvailableEndHours(v);
     setForm((f) => {
-      const autoWholeDay = v === "07:00" && f.jamSelesai === "18:00";
-      return { ...f, jamMulai: v, isWholeDay: autoWholeDay };
+      let newEnd = f.jamSelesai;
+      if (!newEnd || !ends.includes(newEnd)) {
+        const sH = parseInt(v.slice(0, 2), 10);
+        const prefEnd = `${String(Math.min(18, sH + 2)).padStart(2, "0")}:00`;
+        newEnd = ends.includes(prefEnd) ? prefEnd : (ends[0] || "");
+      }
+      const autoWholeDay = v === "07:00" && newEnd === "18:00" && isWholeDayAllowed(f.tanggal);
+      return { ...f, jamMulai: v, jamSelesai: newEnd, isWholeDay: autoWholeDay };
     });
   }
 
   function handleJamSelesaiChange(v: string) {
     setForm((f) => {
-      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00";
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00" && isWholeDayAllowed(f.tanggal);
       return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
     });
   }
 
   function toggleWholeDay() {
+    if (!form.isWholeDay && !isWholeDayAllowed(form.tanggal)) return;
     setForm((f) => ({
       ...f,
       isWholeDay: !f.isWholeDay,
@@ -124,14 +199,47 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
         return;
       }
     }
+    if (form.tanggal < todayLocalDate()) {
+      setError("Tanggal booking tidak boleh di masa lalu");
+      return;
+    }
+    if (form.tanggal === todayLocalDate()) {
+      if (form.isWholeDay && !isWholeDayAllowed(form.tanggal)) {
+        setError("Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)");
+        return;
+      }
+      if (!form.isWholeDay) {
+        if (!form.jamMulai || !form.jamSelesai) {
+          setError("Jam mulai dan jam selesai wajib dipilih");
+          return;
+        }
+        const starts = getAvailableStartHours(form.tanggal);
+        if (!starts.includes(form.jamMulai)) {
+          setError("Jam mulai booking sudah terlewat untuk hari ini");
+          return;
+        }
+      }
+    }
+    if (!form.isWholeDay && form.jamMulai && form.jamSelesai && form.jamMulai >= form.jamSelesai) {
+      setError("Jam selesai harus lebih akhir dari jam mulai");
+      return;
+    }
+    if (!form.namaKendaraan) {
+      setError("Kendaraan wajib dipilih");
+      return;
+    }
+    if (selectedVehicle && form.jumlahPenumpang > selectedVehicle.kapasitas) {
+      setError(`Jumlah penumpang maksimal ${selectedVehicle.kapasitas} orang`);
+      return;
+    }
     setBusy(true);
     try {
       await api.createKendaraanBooking({
         ...form,
         pic: form.pic || null,
         catatan: form.catatan || null,
-        jamMulai: form.isWholeDay ? null : form.jamMulai,
-        jamSelesai: form.isWholeDay ? null : form.jamSelesai,
+        jamMulai: form.isWholeDay ? "07:00" : form.jamMulai,
+        jamSelesai: form.isWholeDay ? "18:00" : form.jamSelesai,
       });
       showToast("Booking kendaraan berhasil disimpan sebagai Draft");
       onClose();
@@ -195,7 +303,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
-              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
+              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} />
             </div>
             <div className="field">
               <label htmlFor="fk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>
@@ -218,22 +326,26 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               <label htmlFor="fk-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="fk-jam-mulai"
-                disabled={form.isWholeDay}
-                value={form.jamMulai || undefined}
+                disabled={form.isWholeDay || availableStartHours.length === 0}
+                value={form.jamMulai || (form.isWholeDay ? "07:00" : undefined)}
                 onChange={handleJamMulaiChange}
-                options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                options={form.isWholeDay ? ["07:00"] : (form.jamMulai && !availableStartHours.includes(form.jamMulai) ? [form.jamMulai, ...availableStartHours] : availableStartHours)}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
+                placeholder={form.isWholeDay ? "07:00" : availableStartHours.length === 0 ? "Tidak ada slot" : "Pilih jam"}
+                searchable={false}
               />
             </div>
             <div className="field">
               <label htmlFor="fk-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="fk-jam-selesai"
-                disabled={form.isWholeDay}
-                value={form.jamSelesai || undefined}
+                disabled={form.isWholeDay || availableStartHours.length === 0}
+                value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
                 onChange={handleJamSelesaiChange}
-                options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                options={form.isWholeDay ? ["18:00"] : (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours)}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
+                placeholder={form.isWholeDay ? "18:00" : availableStartHours.length === 0 ? "Tidak ada slot" : (availableEndHours[0] || "Pilih jam")}
+                searchable={false}
               />
             </div>
             <div className="field full">
@@ -241,9 +353,11 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               <button
                 type="button"
                 id="fk-sepanjang-hari"
-                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}`}
+                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!wholeDayAllowed ? " field-toggle-disabled" : ""}`}
                 aria-pressed={form.isWholeDay}
+                disabled={!wholeDayAllowed}
                 onClick={toggleWholeDay}
+                title={!wholeDayAllowed ? "Sepanjang hari hanya dapat dipilih sebelum jam 07:00 atau untuk hari berikutnya" : undefined}
               >
                 <span className="field-toggle-box">
                   {form.isWholeDay && (
@@ -252,7 +366,17 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 </span>
                 Sepanjang Hari
               </button>
+              {!wholeDayAllowed && form.tanggal === todayLocalDate() && (
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                  * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
+                </span>
+              )}
             </div>
+            {isTodayPast && (
+              <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
+                Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.
+              </div>
+            )}
             <div className="field full">
               <label htmlFor="fk-kendaraan">Kendaraan</label>
               <SearchableSelect

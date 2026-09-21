@@ -30,6 +30,7 @@ import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
+import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { nowWib } from "@/lib/format";
 
 const ALL_VEHICLES_VALUE = "__all__";
@@ -370,7 +371,7 @@ function VehicleCalendarPageInner() {
               canCreate={isOrigin}
               onSlotSelect={(date, startHour, endHour, kendaraan) => {
                 if (!isOrigin) return;
-                const isFullDay = startHour === 7 && endHour === 18;
+                const isFullDay = startHour === 7 && endHour === 18 && isWholeDayAllowed(date);
                 setFormInitial({
                   namaKendaraan: kendaraan || selectedVehicle,
                   tanggal: date,

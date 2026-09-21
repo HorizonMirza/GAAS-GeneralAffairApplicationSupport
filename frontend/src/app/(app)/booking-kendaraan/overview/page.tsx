@@ -135,6 +135,73 @@ function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKen
   return vehicleFreeSlotsToday(vehicleName, todayEntries).length === 0;
 }
 
+function getRealVehicleCurrentSlot(
+  vehicleName: string,
+  todayEntries: BookingKendaraan[],
+  closed: boolean
+): { jam: string; status: "free" | "booked"; judul: string } {
+  if (closed) {
+    return { jam: "Tutup", status: "booked", judul: "Tutup" };
+  }
+
+  const now = nowMinutesLocal();
+  if (now >= CLOSE_MIN) {
+    return { jam: "18:00", status: "booked", judul: "Tutup" };
+  }
+
+  // Filter actual real bookings for this vehicle today
+  const vehicleBookings = todayEntries
+    .filter(
+      (e) =>
+        e.status !== "DRAFT" &&
+        e.status !== "CANCELLED" &&
+        !e.status.startsWith("REJECTED") &&
+        e.namaKendaraan === vehicleName
+    )
+    .map((e) => {
+      const start = e.isWholeDay ? OPEN_MIN : toMinutes(e.jamMulai || "07:00");
+      const end = e.isWholeDay ? CLOSE_MIN : toMinutes(e.jamSelesai || "18:00");
+      return { ...e, startMin: start, endMin: end };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
+
+  // Determine current starting hour rounded down (e.g. 13:28 -> 13:00)
+  const currentHour = now < OPEN_MIN ? Math.floor(OPEN_MIN / 60) : Math.floor(now / 60);
+  const startHhmm = `${String(currentHour).padStart(2, "0")}:00`;
+
+  // Check if there is an ongoing booking right now
+  const ongoing = vehicleBookings.find((b) => b.startMin <= now && b.endMin > now);
+  if (ongoing) {
+    const jam = ongoing.isWholeDay
+      ? "07:00 - 18:00"
+      : `${ongoing.jamMulai?.slice(0, 5) || "07:00"} - ${ongoing.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return {
+      jam,
+      status: "booked",
+      judul: ongoing.keperluan || "Terisi",
+    };
+  }
+
+  // No ongoing booking right now -> Vehicle is free right now!
+  // Find the next upcoming booking starting after now
+  const upcoming = vehicleBookings.find((b) => b.startMin > now && b.startMin < CLOSE_MIN);
+  if (upcoming) {
+    const untilHhmm = upcoming.jamMulai?.slice(0, 5) || "18:00";
+    return {
+      jam: `${startHhmm} - ${untilHhmm}`,
+      status: "free",
+      judul: "Available",
+    };
+  }
+
+  // No more bookings today -> Available from current hour until 18:00
+  return {
+    jam: `${startHhmm} - 18:00`,
+    status: "free",
+    judul: "Available",
+  };
+}
+
 export default function VehicleBookingOverviewPage() {
   const { me, loading } = useAuth();
   const router = useRouter();
@@ -250,20 +317,49 @@ export default function VehicleBookingOverviewPage() {
             const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
             const availTitle =
               availability === "closed" ? "Close (di luar jam operasional)" : availability === "full" ? "Full hari ini" : "Available hari ini";
+            const slot = getRealVehicleCurrentSlot(v.nama, todayEntries, isPastClosingToday);
             return (
-              <button
-                type="button"
+              <div
                 key={v.nama}
                 onClick={() => setInfoVehicle(v)}
-                className={`room-card room-card-${availability}`}
+                className="room-card"
                 title={availTitle}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setInfoVehicle(v);
+                  }
+                }}
               >
-                <span className="room-card-avail-badge">{availLabel}</span>
-                <div className="room-card-icon" style={{ backgroundImage: `url(${vehiclePhotoUrl(v.nama)})` }} />
-                <div className="room-card-body">
-                  <h4>{v.nama}</h4>
+                <div className="room-card-photo-banner">
+                  <img src={vehiclePhotoUrl(v.nama)} alt={v.nama} />
+                  <div className="room-card-photo-overlay" />
+                  <div className="room-card-photo-footer">
+                    <span className="room-title">{v.nama}</span>
+                    <span className={`room-badge ${availability === "closed" ? "badge-closed" : availability === "full" ? "badge-full" : "badge-available"}`}>
+                      {availLabel}
+                    </span>
+                  </div>
                 </div>
-              </button>
+                <div className="room-card-body-exact">
+                  {availability !== "closed" ? (
+                    <div className="room-card-slots-exact">
+                      <div
+                        className={`room-card-slot-row-exact ${
+                          slot.status === "free" ? "slot-free" : "slot-booked"
+                        }`}
+                      >
+                        <span className="slot-time">{slot.jam}</span>
+                        <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="room-card-slots-exact" style={{ minHeight: 22 }} />
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -308,9 +404,15 @@ export default function VehicleBookingOverviewPage() {
               <div className="card-header">
                 <div className="card-header-title">
                   <strong>{item.keperluan} - {item.nomorPemesanan || "-"}</strong>
-                  <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {item.departemen || item.divisi}
-                  </div>
+                  {(() => {
+                    const orgUnit = item.departemen || item.divisi;
+                    const subtitle = `${formatDate(item.tanggal)}${orgUnit ? ` · ${orgUnit}` : ""} · ${item.namaKendaraan}`;
+                    return (
+                      <div className="text-secondary" style={{ fontSize: "0.82rem" }} title={subtitle}>
+                        {subtitle}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />

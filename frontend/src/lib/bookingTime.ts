@@ -1,4 +1,5 @@
 import { nowWib, todayLocalDate } from "./format";
+export { todayLocalDate };
 
 export const OPERATING_START_HOUR = 7;
 export const OPERATING_END_HOUR = 18;
