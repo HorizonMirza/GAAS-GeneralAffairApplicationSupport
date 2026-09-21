@@ -414,9 +414,6 @@ export default function BookingOverviewPage() {
                   </div>
                 </div>
                 <div className="room-card-body-exact">
-                  <div className="room-card-meta-exact">
-                    <span>Jadwal Hari Ini</span>
-                  </div>
                   <div className="room-card-slots-exact">
                     {slots.slice(0, 3).map((s, idx) => (
                       <div

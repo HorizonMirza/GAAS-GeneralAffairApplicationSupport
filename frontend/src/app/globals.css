@@ -2023,14 +2023,6 @@ body.auth-ready .app-shell {
   flex: 1;
 }
 
-.room-card-meta-exact {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.69rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
 
 .room-card-slots-exact {
   display: flex;
