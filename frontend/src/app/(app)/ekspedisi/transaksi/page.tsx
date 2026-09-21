@@ -112,10 +112,16 @@ function TransaksiPageInner() {
     };
   }, [items, highlightId]);
 
-  const loadTable = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open and would otherwise unmount the table rows to
+  // "Memuat data..." and back on every message, flickering the page visible behind the modal's
+  // blurred backdrop for no visible benefit.
+  const loadTable = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++tableReqIdRef.current;
-    setTableBusy(true);
-    setTableError("");
+    if (!opts?.silent) {
+      setTableBusy(true);
+      setTableError("");
+    }
     try {
       const result = await api.listPengiriman({
         page: filters.page,
@@ -144,9 +150,9 @@ function TransaksiPageInner() {
       setTotalBulanIni(result?.totalBulanIni ?? null);
     } catch (err) {
       if (reqId !== tableReqIdRef.current) return;
-      setTableError((err as Error).message);
+      if (!opts?.silent) setTableError((err as Error).message);
     } finally {
-      if (reqId === tableReqIdRef.current) setTableBusy(false);
+      if (reqId === tableReqIdRef.current && !opts?.silent) setTableBusy(false);
     }
   }, [filters]);
 
@@ -478,7 +484,7 @@ function TransaksiPageInner() {
         createdByRole={chatItem?.createdByRole ?? null}
         me={me}
         onClose={() => setChatItem(null)}
-        onRead={loadTable}
+        onRead={() => loadTable({ silent: true })}
       />
 
       <PengirimanFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />

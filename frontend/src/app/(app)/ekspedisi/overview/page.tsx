@@ -62,9 +62,13 @@ export default function OverviewPage() {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
   }, [loading, me, router]);
 
-  const load = useCallback(async () => {
+  // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
+  // incoming message while the modal is open and would otherwise unmount the card grid to
+  // "Memuat data..." and back on every message, flickering the page visible behind the modal's
+  // blurred backdrop for no visible benefit.
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!me) return;
-    setBusy(true);
+    if (!opts?.silent) setBusy(true);
     try {
       const bulan = currentYearMonth();
       // Not capped to a small page size - shows every transaction for the current bulan, so the
@@ -90,7 +94,7 @@ export default function OverviewPage() {
         completed: counts.COMPLETED ?? 0,
       });
     } finally {
-      setBusy(false);
+      if (!opts?.silent) setBusy(false);
     }
   }, [me]);
 
@@ -293,7 +297,7 @@ export default function OverviewPage() {
           createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
-          onRead={load}
+          onRead={() => load({ silent: true })}
         />
       )}
     </>
