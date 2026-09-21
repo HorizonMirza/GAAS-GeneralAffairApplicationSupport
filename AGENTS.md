@@ -14,6 +14,7 @@ For every user prompt, the agent must strictly follow this 7-step lifecycle:
 2. **Clarify Before Coding (Crucial)**: If the prompt is ambiguous, underspecified, or has multiple design options, **DO NOT assume or make code changes immediately**. Always ask the user for clarification and detail first to guarantee the result matches their exact vision.
 3. **Local Revision & Verification**: Once requirements are clear, modify files directly in the local workspace (`C:\Users\purba\Downloads\GAAS`). Always verify changes (e.g. `npx tsc --noEmit`) to ensure zero compile or type errors.
 4. **Signed Commit & Push to GitHub**:
+   - Commit message format: ALWAYS start with `[agy]` prefix (e.g. `[agy] refactor: modernisasi dashboard`).
    - Stage only files related to the task.
    - Commit as `Horizon Mirza <purbandonomirza@gmail.com>`.
    - Sign every commit using the configured ED25519 SSH signing key.
