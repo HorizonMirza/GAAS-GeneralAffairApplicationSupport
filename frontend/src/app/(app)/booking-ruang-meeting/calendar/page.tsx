@@ -287,6 +287,7 @@ function BookingCalendarPageInner() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          {/* MiniMonthCalendar sidebar matching DateFilterPicker format */}
           <MiniMonthCalendar
             selectedDate={refDate}
             onSelect={setRefDate}

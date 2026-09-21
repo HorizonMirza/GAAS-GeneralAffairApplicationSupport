@@ -226,7 +226,7 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
       <div className="mini-calendar-weekdays">
         {DAY_LABELS.map((d) => <span key={d}>{d}</span>)}
       </div>
-      <div className="mini-calendar-grid">
+      <div className="mini-calendar-grid filter-picker-day-grid">
         {cells.map((c) => {
           const isToday = c.iso === today;
           const isSelected = c.iso === selectedDate;
