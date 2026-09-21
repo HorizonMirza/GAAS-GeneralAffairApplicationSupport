@@ -22,6 +22,7 @@ import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
 import SearchableSelect from "@/components/SearchableSelect";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
@@ -266,7 +267,14 @@ function BookingCalendarPageInner() {
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-date-input">Tanggal</label>
-            <input type="date" id="calendar-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
+            <DateFilterPicker
+              id="calendar-date-input"
+              value={refDate}
+              onChange={(v) => {
+                if (v) setRefDate(v);
+              }}
+              clearable={false}
+            />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-search-input">Cari Pesanan</label>

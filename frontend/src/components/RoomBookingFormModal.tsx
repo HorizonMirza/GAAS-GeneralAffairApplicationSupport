@@ -206,7 +206,16 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-telepon-pic">No. Telepon PIC</label>
-              <input type="text" id="f-telepon-pic" required maxLength={50} placeholder="Contoh: 08123456789" value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="f-telepon-pic"
+                required
+                maxLength={20}
+                placeholder="Contoh: 08123456789"
+                value={form.noTeleponPic || ""}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>

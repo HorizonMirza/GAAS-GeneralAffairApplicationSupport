@@ -226,7 +226,17 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
             </div>
             <div className="field">
               <label htmlFor="bv-telepon-pic">No. Telepon PIC</label>
-              <input type="text" id="bv-telepon-pic" required disabled={!isEdit} maxLength={50} value={form.noTeleponPic || ""} onChange={(e) => set("noTeleponPic", e.target.value)} />
+              <input
+                type="text"
+                inputMode="tel"
+                id="bv-telepon-pic"
+                required
+                disabled={!isEdit}
+                maxLength={20}
+                placeholder="Contoh: 08123456789"
+                value={form.noTeleponPic || ""}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="bv-tanggal">Tanggal</label>
@@ -450,32 +460,34 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           )}
 
           {error && <div className="error-text">{error}</div>}
-          <div className="modal-actions">
-            {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
-            )}
-            {canL1Act && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-l1", bookingOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
-              </>
-            )}
-            {canGaAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga", bookingOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
-              </>
-            )}
-            {canGaApprovalAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga-approval", bookingOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
-              </>
-            )}
-            {isEdit && (
-              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
-            )}
-          </div>
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit) && (
+            <div className="modal-actions">
+              {canSubmitDraft && (
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
+              )}
+              {canL1Act && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-l1", bookingOriginActorLabel(item)); }}>Reject</button>
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
+                </>
+              )}
+              {canGaAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga", bookingOriginActorLabel(item)); }}>Reject</button>
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
+                </>
+              )}
+              {canGaApprovalAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "booking-ga-approval", bookingOriginActorLabel(item)); }}>Reject</button>
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGaApproval}>Approve</button>
+                </>
+              )}
+              {isEdit && (
+                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </ModalOverlay>
