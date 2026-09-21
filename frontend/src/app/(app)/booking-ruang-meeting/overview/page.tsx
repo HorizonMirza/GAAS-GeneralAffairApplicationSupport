@@ -404,24 +404,26 @@ export default function BookingOverviewPage() {
                   <div className="room-card-photo-overlay" />
                   <div className="room-card-photo-footer">
                     <span className="room-title">{r.nama}</span>
-                    {!isAvail && (
-                      <span className={`room-badge ${availability === "closed" ? "badge-closed" : "badge-full"}`}>
-                        {availability === "closed" ? "Close" : "Full"}
-                      </span>
-                    )}
+                    <span className={`room-badge ${availability === "closed" ? "badge-closed" : availability === "full" ? "badge-full" : "badge-available"}`}>
+                      {availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available"}
+                    </span>
                   </div>
                 </div>
                 <div className="room-card-body-exact">
-                  <div className="room-card-slots-exact">
-                    <div
-                      className={`room-card-slot-row-exact ${
-                        slot.status === "free" ? "slot-free" : "slot-booked"
-                      }`}
-                    >
-                      <span className="slot-time">{slot.jam}</span>
-                      <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                  {availability !== "closed" ? (
+                    <div className="room-card-slots-exact">
+                      <div
+                        className={`room-card-slot-row-exact ${
+                          slot.status === "free" ? "slot-free" : "slot-booked"
+                        }`}
+                      >
+                        <span className="slot-time">{slot.jam}</span>
+                        <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="room-card-slots-exact" style={{ minHeight: 22 }} />
+                  )}
                 </div>
               </div>
             );

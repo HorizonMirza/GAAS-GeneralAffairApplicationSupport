@@ -369,8 +369,8 @@ export function buildRoomBookingDuplicateInitial(item: BookingRuang): Partial<Bo
     additionalRooms: item.additionalRooms,
     jumlahPeserta: item.jumlahPeserta,
     isWholeDay: item.isWholeDay,
-    jamMulai: item.jamMulai,
-    jamSelesai: item.jamSelesai,
+    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
+    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
     catatan: item.catatan,
     tipe: item.tipe,
   };

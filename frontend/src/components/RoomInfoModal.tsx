@@ -44,7 +44,7 @@ interface Props {
 
 const SLIDE_INTERVAL_MS = 1600;
 
-function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: string[]; availability: RoomInfoAvailability; availLabel: string }) {
+function PhotoSlideshow({ photoUrls }: { photoUrls: string[] }) {
   const [index, setIndex] = useState(0);
   const count = photoUrls.length;
 
@@ -60,23 +60,23 @@ function PhotoSlideshow({ photoUrls, availability, availLabel }: { photoUrls: st
   if (count === 0) return null;
 
   return (
-    <div className={`room-card room-card-${availability} room-info-photo`}>
-      <span className="room-card-avail-badge">{availLabel}</span>
+    <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 16 }}>
       <button
         type="button"
         className="room-info-slideshow"
         aria-label="Foto berikutnya"
         onClick={() => setIndex((i) => (i + 1) % count)}
+        style={{ width: "100%", display: "block", border: "none", padding: 0, background: "none", cursor: "pointer" }}
       >
         <div
           className="room-info-slideshow-track"
-          style={{ width: `${count * 100}%`, transform: `translateX(-${index * (100 / count)}%)` }}
+          style={{ width: `${count * 100}%`, transform: `translateX(-${index * (100 / count)}%)`, display: "flex", transition: "transform 250ms ease" }}
         >
           {photoUrls.map((url, i) => (
             <div
               key={i}
-              className="room-card-icon room-info-photo-icon"
-              style={{ width: `${100 / count}%`, backgroundImage: `url(${url})` }}
+              className="room-info-photo-icon"
+              style={{ width: `${100 / count}%`, height: 220, flexShrink: 0, backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" }}
             />
           ))}
         </div>
@@ -115,7 +115,7 @@ export default function RoomInfoModal({
           <h3>{nama}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <PhotoSlideshow photoUrls={photoUrls} availability={availability} availLabel={availLabel} />
+        <PhotoSlideshow photoUrls={photoUrls} />
         {kapasitas != null && (
           <div className="room-info-row">
             <span className="text-secondary">Kapasitas</span>

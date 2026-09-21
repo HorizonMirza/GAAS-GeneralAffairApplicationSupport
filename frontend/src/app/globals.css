@@ -1982,7 +1982,12 @@ body.auth-ready .app-shell {
 }
 
 .room-card-photo-footer .room-badge {
-  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  height: 18px;
+  line-height: 1;
   border-radius: 999px;
   font-size: 0.58rem;
   font-weight: 700;

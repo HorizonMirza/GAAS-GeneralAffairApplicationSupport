@@ -343,6 +343,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 value={form.jamMulai || undefined}
                 onChange={handleJamMulaiChange}
                 options={isEdit ? (form.jamMulai && !availableStartHours.includes(form.jamMulai) ? [form.jamMulai, ...availableStartHours] : availableStartHours) : (form.jamMulai ? [form.jamMulai] : HOUR_OPTIONS)}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={availableStartHours[0] || "Pilih jam"}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
@@ -355,35 +356,38 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={isEdit ? (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours) : (form.jamSelesai ? [form.jamSelesai] : HOUR_OPTIONS)}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={availableEndHours[0] || "Pilih jam"}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
             </div>
-            <div className="field full">
-              <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
-              <button
-                type="button"
-                id="bv-sepanjang-hari"
-                className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!isEdit || !wholeDayAllowed ? " field-toggle-disabled" : ""}`}
-                aria-pressed={form.isWholeDay}
-                disabled={!isEdit || !wholeDayAllowed}
-                onClick={toggleWholeDay}
-                title={!wholeDayAllowed ? "Sepanjang hari hanya dapat dipilih sebelum jam 07:00 atau untuk hari berikutnya" : undefined}
-              >
-                <span className="field-toggle-box">
-                  {form.isWholeDay && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  )}
-                </span>
-                Sepanjang Hari
-              </button>
-              {isEdit && !wholeDayAllowed && form.tanggal === todayLocalDate() && (
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                  * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
-                </span>
-              )}
-            </div>
+            {(isEdit || form.isWholeDay) && (
+              <div className="field full">
+                <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
+                <button
+                  type="button"
+                  id="bv-sepanjang-hari"
+                  className={`field-toggle${form.isWholeDay ? " field-toggle-active" : ""}${!isEdit || !wholeDayAllowed ? " field-toggle-disabled" : ""}`}
+                  aria-pressed={form.isWholeDay}
+                  disabled={!isEdit || !wholeDayAllowed}
+                  onClick={toggleWholeDay}
+                  title={!wholeDayAllowed ? "Sepanjang hari hanya dapat dipilih sebelum jam 07:00 atau untuk hari berikutnya" : undefined}
+                >
+                  <span className="field-toggle-box">
+                    {form.isWholeDay && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    )}
+                  </span>
+                  Sepanjang Hari
+                </button>
+                {isEdit && !wholeDayAllowed && form.tanggal === todayLocalDate() && (
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                    * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
+                  </span>
+                )}
+              </div>
+            )}
             {isEdit && isTodayPast && (
               <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
                 Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.

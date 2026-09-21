@@ -51,6 +51,8 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
   };
 
   const merged = { ...base, ...initial };
+  if (merged.jamMulai) merged.jamMulai = merged.jamMulai.slice(0, 5);
+  if (merged.jamSelesai) merged.jamSelesai = merged.jamSelesai.slice(0, 5);
 
   // Sanitize merged values to prevent past slots if date is today
   const starts = getAvailableStartHours(merged.tanggal);
@@ -350,6 +352,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 value={form.jamMulai || undefined}
                 onChange={handleJamMulaiChange}
                 options={availableStartHours}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={availableStartHours[0] || "Tidak ada slot"}
                 disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
@@ -362,6 +365,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={availableEndHours}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={availableEndHours[0] || "Pilih jam"}
                 disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}

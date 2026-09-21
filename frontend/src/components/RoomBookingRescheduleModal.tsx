@@ -138,6 +138,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder="Pilih jam"
                 disabled={form.isWholeDay}
               />
@@ -149,6 +150,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
+                getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder="Pilih jam"
                 disabled={form.isWholeDay}
               />
