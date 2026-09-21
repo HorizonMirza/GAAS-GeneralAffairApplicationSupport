@@ -362,7 +362,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 searchable={false}
               />
             </div>
-            {(isEdit || form.isWholeDay) && (
+            {isEdit && (
               <div className="field full">
                 <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
                 <button

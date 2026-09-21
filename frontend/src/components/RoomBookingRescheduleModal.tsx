@@ -27,6 +27,7 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
     namaRuang: item.namaRuang,
     additionalRooms: item.additionalRooms,
     tanggal: item.tanggal,
+    jumlahPeserta: item.jumlahPeserta,
     isWholeDay: item.isWholeDay,
     // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
     // are "HH:mm" - without slicing, the value never matches any option and the browser silently
@@ -81,6 +82,10 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form?.jumlahPeserta || form.jumlahPeserta <= 0) {
+      setError("Jumlah peserta minimal 1 orang");
+      return;
+    }
     setBusy(true);
     try {
       await api.rescheduleBooking(item!.id, {
@@ -128,8 +133,20 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <DateFilterPicker id="rs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
             </div>
             <div className="field">
-              <label htmlFor="rs-peserta">Jumlah Peserta <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-peserta" disabled value={item.jumlahPeserta ? `${Math.min(item.jumlahPeserta, MAX_JUMLAH_PESERTA)}` : ""} />
+              <label htmlFor="rs-peserta">Jumlah Peserta <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="rs-peserta"
+                value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta ?? "")}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), MAX_JUMLAH_PESERTA);
+                  set("jumlahPeserta", parsed);
+                }}
+                placeholder="Jumlah peserta"
+              />
             </div>
             <div className="field">
               <label htmlFor="rs-jam-mulai">Jam Mulai <Pencil className="field-edit-icon" width={12} height={12} /></label>

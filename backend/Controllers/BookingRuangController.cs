@@ -1020,6 +1020,14 @@ public class BookingRuangController : ApiControllerBase
             if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
+
+        if (payload.JumlahPeserta.HasValue)
+        {
+            if (payload.JumlahPeserta.Value <= 0)
+                return "Jumlah peserta minimal 1 orang";
+            if (payload.JumlahPeserta.Value > MaxJumlahPeserta)
+                return $"Jumlah peserta maksimal {MaxJumlahPeserta} orang";
+        }
         return null;
     }
 
@@ -1059,6 +1067,10 @@ public class BookingRuangController : ApiControllerBase
         item.NamaRuang = payload.NamaRuang;
         item.KapasitasRuang = MeetingRooms.GetCapacity(payload.NamaRuang) ?? 0;
         item.Tanggal = payload.Tanggal;
+        if (payload.JumlahPeserta.HasValue && payload.JumlahPeserta.Value > 0)
+        {
+            item.JumlahPeserta = Math.Min(payload.JumlahPeserta.Value, MaxJumlahPeserta);
+        }
         item.IsWholeDay = payload.IsWholeDay;
         item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
         item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;

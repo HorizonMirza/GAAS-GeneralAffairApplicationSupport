@@ -402,6 +402,7 @@ export interface BookingRuangReschedulePayload {
   namaRuang: string;
   additionalRooms?: string[];
   tanggal: string;
+  jumlahPeserta?: number;
   isWholeDay: boolean;
   jamMulai: string | null;
   jamSelesai: string | null;

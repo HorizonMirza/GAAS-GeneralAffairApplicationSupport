@@ -40,6 +40,7 @@ public class BookingRuangReschedule
     public string NamaRuang { get; set; } = null!;
     public List<string>? AdditionalRooms { get; set; }
     public DateOnly Tanggal { get; set; }
+    public int? JumlahPeserta { get; set; }
     public bool IsWholeDay { get; set; }
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }

@@ -9,9 +9,7 @@ import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
   bookingRoomsLabel,
   buildRoomBookingDuplicateInitial,
-  canGaKoreksiBooking,
   canGaRescheduleBooking,
-  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -27,11 +25,9 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
-import RoomBookingKoreksiModal from "@/components/RoomBookingKoreksiModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import CancelBookingModal from "@/components/CancelBookingModal";
 import { nowWib } from "@/lib/format";
 
 const ALL_ROOMS_VALUE = "__all__";
@@ -85,11 +81,9 @@ function BookingCalendarPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
-  const [koreksiTarget, setKoreksiTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   // Bulanan's grid has no row-based content to naturally match the sidebar's height the way
   // Harian/Mingguan's hour rows do, so its card is matched to the sidebar's real rendered height
@@ -399,12 +393,6 @@ function BookingCalendarPageInner() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
-        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
-        onCancel={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setCancelTargetId(item.id);
-        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -435,12 +423,6 @@ function BookingCalendarPageInner() {
               }
             : undefined
         }
-        canKoreksi={!!rowMenu.menuItem && canGaKoreksiBooking(rowMenu.menuItem, me)}
-        onKoreksi={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setKoreksiTarget(item);
-        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -504,13 +486,6 @@ function BookingCalendarPageInner() {
         onSaved={reload}
       />
 
-      <RoomBookingKoreksiModal
-        open={!!koreksiTarget}
-        item={koreksiTarget}
-        onClose={() => setKoreksiTarget(null)}
-        onSaved={reload}
-      />
-
       <RejectModal
         open={!!rejectTarget}
         targetId={rejectTarget?.id ?? null}
@@ -519,17 +494,6 @@ function BookingCalendarPageInner() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          reload();
-        }}
-      />
-
-      <CancelBookingModal
-        open={cancelTargetId != null}
-        targetId={cancelTargetId}
-        targetType="room"
-        onClose={() => setCancelTargetId(null)}
-        onDone={() => {
-          setCancelTargetId(null);
           reload();
         }}
       />

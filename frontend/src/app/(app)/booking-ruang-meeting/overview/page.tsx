@@ -12,9 +12,7 @@ import {
   bookingRoomsLabel,
   bookingStatusBorderClass,
   buildRoomBookingDuplicateInitial,
-  canGaKoreksiBooking,
   canGaRescheduleBooking,
-  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -205,9 +203,7 @@ import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomInfoModal from "@/components/RoomInfoModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
-import RoomBookingKoreksiModal from "@/components/RoomBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import CancelBookingModal from "@/components/CancelBookingModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -230,11 +226,9 @@ export default function BookingOverviewPage() {
   const [infoRoom, setInfoRoom] = useState<RoomOption | null>(null);
   const [detail, setDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingRuang | null>(null);
-  const [koreksiTarget, setKoreksiTarget] = useState<BookingRuang | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [waitlistBusy, setWaitlistBusy] = useState(false);
 
@@ -538,12 +532,6 @@ export default function BookingOverviewPage() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
-        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
-        onCancel={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setCancelTargetId(item.id);
-        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -567,12 +555,6 @@ export default function BookingOverviewPage() {
               }
             : undefined
         }
-        canKoreksi={!!rowMenu.menuItem && canGaKoreksiBooking(rowMenu.menuItem, me)}
-        onKoreksi={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setKoreksiTarget(item);
-        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -678,13 +660,6 @@ export default function BookingOverviewPage() {
         onSaved={load}
       />
 
-      <RoomBookingKoreksiModal
-        open={!!koreksiTarget}
-        item={koreksiTarget}
-        onClose={() => setKoreksiTarget(null)}
-        onSaved={load}
-      />
-
       <RejectModal
         open={!!rejectTarget}
         targetId={rejectTarget?.id ?? null}
@@ -693,17 +668,6 @@ export default function BookingOverviewPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          load();
-        }}
-      />
-
-      <CancelBookingModal
-        open={cancelTargetId != null}
-        targetId={cancelTargetId}
-        targetType="room"
-        onClose={() => setCancelTargetId(null)}
-        onDone={() => {
-          setCancelTargetId(null);
           load();
         }}
       />

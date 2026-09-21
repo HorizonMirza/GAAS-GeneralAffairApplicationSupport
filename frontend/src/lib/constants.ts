@@ -359,6 +359,7 @@ export function buildRoomBookingDuplicateInitial(item: BookingRuang): Partial<Bo
   return {
     namaKegiatan: item.namaKegiatan,
     pic: item.pic,
+    noTeleponPic: item.noTeleponPic || "",
     divisi: item.divisi || undefined,
     // "" is the deliberate "Kebutuhan Divisi ini" choice (see SearchableSelect's clearLabel) -
     // distinct from undefined, which SearchableSelect instead renders as unset/required. A null
