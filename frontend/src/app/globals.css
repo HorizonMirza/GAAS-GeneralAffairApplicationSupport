@@ -1900,9 +1900,9 @@ body.auth-ready .app-shell {
      minimum width an equal 1/N share of the row - auto-fit then naturally settles on N columns at
      normal widths. On a narrower window that share drops below 150px, so the max() falls back to
      150px and auto-fit reduces the column count on its own, keeping cards readable on mobile. */
-  grid-template-columns: repeat(auto-fit, minmax(max(150px, calc((100% - (var(--grid-cols, 5) - 1) * 12px) / var(--grid-cols, 5))), 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(max(210px, calc((100% - (var(--grid-cols, 5) - 1) * 14px) / var(--grid-cols, 5))), 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .room-card {
@@ -1915,40 +1915,62 @@ body.auth-ready .app-shell {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   text-decoration: none;
   text-align: left;
   color: inherit;
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .room-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--glow-blue);
   border-color: var(--blue-400);
 }
 
-/* Today's availability at a glance - hijau: masih ada slot kosong hari ini, merah: tidak bisa
-   dibooking hari ini (penuh ATAU tutup di akhir pekan - sama-sama merah, teks badge yang beda
-   yang membedakan alasannya). Badge teks di pojok, bukan cuma garis tipis di kiri, supaya
-   statusnya langsung terbaca tanpa harus memperhatikan warna border yang tipis. */
+/* Today's availability border indicator */
 .room-card-available { border-left-color: var(--green-500); }
 .room-card-full,
 .room-card-closed { border-left-color: var(--badge-rejected-bg); }
+
+/* Option 4: Photo Header */
+.room-card-photo {
+  position: relative;
+  height: 120px;
+  width: 100%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: var(--bg-surface-alt, #e2e8f0);
+  overflow: hidden;
+  transition: filter 180ms ease;
+}
+
+.room-card:hover .room-card-photo {
+  filter: brightness(1.04);
+}
+
+.room-card-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
+  pointer-events: none;
+}
 
 .room-card-avail-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 1;
-  padding: 3px 9px;
+  z-index: 2;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.64rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
 }
 .room-card-available .room-card-avail-badge { background: var(--badge-completed-bg); color: var(--badge-completed-fg); }
 .room-card-full .room-card-avail-badge,
@@ -1967,13 +1989,14 @@ body.auth-ready .app-shell {
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   color: #fff;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.room-card-subscribe-btn:hover { background: rgba(0, 0, 0, 0.55); }
+.room-card-subscribe-btn:hover { background: rgba(0, 0, 0, 0.7); }
 
+/* Backwards compatibility for vehicle cards */
 .room-card-icon {
   height: 84px;
   display: flex;
@@ -1984,8 +2007,161 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
-.room-card-body { padding: 8px 10px; }
-.room-card-body h4 { margin: 0; font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
+.room-card-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.room-card-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.room-card-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-primary);
+  transition: color 150ms ease;
+}
+
+.room-card:hover .room-card-title {
+  color: var(--blue-500);
+}
+
+.room-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+/* Schedule & Timeline */
+.room-card-schedule {
+  background: var(--bg-surface-soft, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-card-schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.room-card-schedule-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.room-card-schedule-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.room-card-schedule-badge.status-available {
+  background: var(--badge-completed-bg);
+  color: var(--badge-completed-fg);
+}
+
+.room-card-schedule-badge.status-full,
+.room-card-schedule-badge.status-closed {
+  background: var(--badge-rejected-bg);
+  color: var(--badge-rejected-fg);
+}
+
+.room-card-timeline-bar {
+  display: flex;
+  gap: 3px;
+  height: 7px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timeline-block {
+  flex: 1;
+  height: 100%;
+  border-radius: 2px;
+  transition: transform 120ms ease, opacity 120ms ease;
+  cursor: pointer;
+}
+
+.timeline-block:hover {
+  transform: scaleY(1.6);
+  opacity: 0.9;
+}
+
+.timeline-block-free {
+  background: var(--green-500, #10b981);
+}
+
+.timeline-block-booked {
+  background: #ef4444;
+}
+
+.timeline-block-past {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.room-card-schedule-summary {
+  font-size: 0.72rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Facilities tags */
+.room-card-facilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.room-card-facility-tag {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--bg-surface-alt, rgba(0, 0, 0, 0.03));
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-weight: 500;
+}
+
+.room-card-facility-more {
+  font-weight: 600;
+  color: var(--blue-500);
+}
+
+/* Footer */
+.room-card-footer {
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.room-card-action-btn {
+  width: 100%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ---------- Room/Vehicle info modal (Overview grid card -> here -> Booking form) ---------- */
 .room-info-modal { max-width: 420px; }

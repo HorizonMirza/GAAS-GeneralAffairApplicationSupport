@@ -314,20 +314,126 @@ export default function BookingOverviewPage() {
                 : availability === "full"
                 ? "Full hari ini"
                 : "Available hari ini";
+
+            // Calculate 12 hourly timeline blocks (07:00 - 19:00)
+            const now = nowMinutesLocal();
+            const hourBlocks = [];
+            let freeFutureHours = 0;
+            for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
+              const slotEnd = h + 60;
+              const isPast = slotEnd <= now;
+              const bookedBy = todayEntries.find((entry) => {
+                if (entry.status === "DRAFT" || entry.status === "CANCELLED" || entry.status.startsWith("REJECTED")) return false;
+                if (entry.namaRuang !== r.nama && !entry.additionalRooms?.includes(r.nama)) return false;
+                if (entry.isWholeDay) return true;
+                if (!entry.jamMulai || !entry.jamSelesai) return false;
+                const start = toMinutes(entry.jamMulai);
+                const end = toMinutes(entry.jamSelesai);
+                return start < slotEnd && end > h;
+              });
+
+              if (!bookedBy && !isPast) freeFutureHours++;
+
+              hourBlocks.push({
+                hour: h,
+                state: bookedBy ? "booked" : isPast ? "past" : "free",
+                title: bookedBy
+                  ? `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: ${bookedBy.namaKegiatan}`
+                  : isPast
+                  ? `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: Lewat`
+                  : `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: Bebas`,
+              });
+            }
+
+            const scheduleSummary = closedToday
+              ? isWeekendToday
+                ? "Tutup akhir pekan"
+                : "Tutup (di luar operasional)"
+              : availability === "full"
+              ? "Penuh sepanjang hari ini"
+              : freeFutureHours >= 12
+              ? "Bebas sepanjang hari (07:00–19:00)"
+              : `${freeFutureHours} jam slot bebas tersisa`;
+
             return (
-              <button
-                type="button"
+              <div
                 key={r.nama}
                 onClick={() => setInfoRoom(r)}
                 className={`room-card room-card-${availability}`}
                 title={availTitle}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setInfoRoom(r);
+                  }
+                }}
               >
-                <span className="room-card-avail-badge">{availLabel}</span>
-                <div className="room-card-icon" style={{ backgroundImage: `url(${roomPhotoUrl(r.nama)})` }} />
-                <div className="room-card-body">
-                  <h4>{r.nama}</h4>
+                <div className="room-card-photo" style={{ backgroundImage: `url(${roomPhotoUrl(r.nama)})` }}>
+                  <div className="room-card-photo-overlay" />
+                  <span className="room-card-avail-badge">{availLabel}</span>
                 </div>
-              </button>
+                <div className="room-card-body">
+                  <div className="room-card-header-info">
+                    <h4 className="room-card-title">{r.nama}</h4>
+                    <div className="room-card-meta text-secondary">
+                      <span>{r.lantai || "Lantai 1"}</span>
+                      <span>·</span>
+                      <span>👥 {r.kapasitas} Kursi</span>
+                    </div>
+                  </div>
+
+                  <div className="room-card-schedule">
+                    <div className="room-card-schedule-header">
+                      <span className="room-card-schedule-label">Jadwal Hari Ini</span>
+                      <span className={`room-card-schedule-badge status-${availability}`}>
+                        {availability === "closed" ? "Tutup" : availability === "full" ? "Penuh" : `${freeFutureHours} Jam`}
+                      </span>
+                    </div>
+                    <div className="room-card-timeline-bar" aria-label="Timeline Ketersediaan Hari Ini">
+                      {hourBlocks.map((b) => (
+                        <div
+                          key={b.hour}
+                          className={`timeline-block timeline-block-${b.state}`}
+                          title={b.title}
+                        />
+                      ))}
+                    </div>
+                    <div className="room-card-schedule-summary text-secondary" title={scheduleSummary}>
+                      {scheduleSummary}
+                    </div>
+                  </div>
+
+                  {r.fasilitas && r.fasilitas.length > 0 && (
+                    <div className="room-card-facilities">
+                      {r.fasilitas.slice(0, 3).map((f) => (
+                        <span key={f} className="room-card-facility-tag">
+                          {f}
+                        </span>
+                      ))}
+                      {r.fasilitas.length > 3 && (
+                        <span className="room-card-facility-tag room-card-facility-more">
+                          +{r.fasilitas.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="room-card-footer">
+                    <button
+                      type="button"
+                      className="btn btn-primary room-card-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInfoRoom(r);
+                      }}
+                    >
+                      {availability === "full" ? "Lihat Jadwal" : "Pesan Ruang"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
