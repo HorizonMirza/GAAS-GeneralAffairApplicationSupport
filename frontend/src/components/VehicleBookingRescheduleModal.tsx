@@ -21,12 +21,13 @@ interface Props {
 }
 
 function toFormFields(item: BookingKendaraan): BookingKendaraanReschedulePayload {
+  const isFullDay = item.isWholeDay || (item.jamMulai?.slice(0, 5) === "07:00" && item.jamSelesai?.slice(0, 5) === "18:00");
   return {
     namaKendaraan: item.namaKendaraan,
     tanggal: item.tanggal,
-    isWholeDay: item.isWholeDay,
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
+    isWholeDay: isFullDay,
+    jamMulai: isFullDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
+    jamSelesai: isFullDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
   };
 }
 
@@ -53,6 +54,22 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
 
   function set<K extends keyof BookingKendaraanReschedulePayload>(key: K, value: BookingKendaraanReschedulePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
+  }
+
+  function handleJamMulaiChange(v: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const autoWholeDay = v === "07:00" && f.jamSelesai === "18:00";
+      return { ...f, jamMulai: v, isWholeDay: autoWholeDay };
+    });
+  }
+
+  function handleJamSelesaiChange(v: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00";
+      return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
+    });
   }
 
   function toggleWholeDay() {
@@ -125,7 +142,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 id="rk-jam-mulai"
                 disabled={form.isWholeDay}
                 value={form.jamMulai || undefined}
-                onChange={(v) => set("jamMulai", v)}
+                onChange={handleJamMulaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />
@@ -136,7 +153,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 id="rk-jam-selesai"
                 disabled={form.isWholeDay}
                 value={form.jamSelesai || undefined}
-                onChange={(v) => set("jamSelesai", v)}
+                onChange={handleJamSelesaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />

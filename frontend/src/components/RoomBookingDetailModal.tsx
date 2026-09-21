@@ -38,6 +38,7 @@ interface Props {
 }
 
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
+  const isFullDay = item.isWholeDay || (item.jamMulai?.slice(0, 5) === "07:00" && item.jamSelesai?.slice(0, 5) === "18:00");
   return {
     namaKegiatan: item.namaKegiatan,
     pic: item.pic || "",
@@ -46,12 +47,12 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
     additionalRooms: item.additionalRooms,
     jumlahPeserta: item.jumlahPeserta,
     tanggal: item.tanggal,
-    isWholeDay: item.isWholeDay,
+    isWholeDay: isFullDay,
     // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
     // are "HH:mm" - without slicing, the value never matches any option and the browser silently
     // falls back to displaying the first option (07:00) instead of the item's real time.
-    jamMulai: item.isWholeDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
-    jamSelesai: item.isWholeDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
+    jamMulai: isFullDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
+    jamSelesai: isFullDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
     catatan: item.catatan || "",
     tipe: item.tipe,
     isRecurring: !!item.seriesId,
@@ -154,6 +155,12 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
         }
       }
 
+      if (newJamMulai === "07:00" && newJamSelesai === "18:00" && isWholeDayAllowed(newDate)) {
+        newIsWholeDay = true;
+      } else if (newJamMulai !== "07:00" || newJamSelesai !== "18:00") {
+        newIsWholeDay = false;
+      }
+
       return {
         ...f,
         tanggal: newDate,
@@ -174,7 +181,16 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
         const prefEnd = `${String(Math.min(18, sH + 2)).padStart(2, "0")}:00`;
         newEnd = ends.includes(prefEnd) ? prefEnd : (ends[0] || "");
       }
-      return { ...f, jamMulai: v, jamSelesai: newEnd };
+      const autoWholeDay = v === "07:00" && newEnd === "18:00" && isWholeDayAllowed(f.tanggal);
+      return { ...f, jamMulai: v, jamSelesai: newEnd, isWholeDay: autoWholeDay };
+    });
+  }
+
+  function handleJamSelesaiChange(v: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00" && isWholeDayAllowed(f.tanggal);
+      return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
     });
   }
 
@@ -361,7 +377,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <SearchableSelect
                 id="bv-jam-selesai"
                 value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
-                onChange={(v) => set("jamSelesai", v)}
+                onChange={handleJamSelesaiChange}
                 options={isEdit ? (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours) : (form.isWholeDay ? ["18:00"] : (form.jamSelesai ? [form.jamSelesai] : HOUR_OPTIONS))}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}

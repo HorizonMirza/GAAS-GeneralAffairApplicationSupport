@@ -370,11 +370,13 @@ function VehicleCalendarPageInner() {
               canCreate={isOrigin}
               onSlotSelect={(date, startHour, endHour, kendaraan) => {
                 if (!isOrigin) return;
+                const isFullDay = startHour === 7 && endHour === 18;
                 setFormInitial({
                   namaKendaraan: kendaraan || selectedVehicle,
                   tanggal: date,
                   jamMulai: `${String(startHour).padStart(2, "0")}:00`,
                   jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
+                  isWholeDay: isFullDay,
                 });
                 setFormOpen(true);
               }}

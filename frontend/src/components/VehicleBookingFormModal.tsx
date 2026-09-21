@@ -22,6 +22,10 @@ interface Props {
 }
 
 function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKendaraanCreatePayload {
+  const isFullDay = Boolean(
+    initial?.isWholeDay ||
+    (initial?.jamMulai?.slice(0, 5) === "07:00" && initial?.jamSelesai?.slice(0, 5) === "18:00")
+  );
   return {
     keperluan: "",
     pic: "",
@@ -29,9 +33,9 @@ function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKen
     namaKendaraan: "",
     jumlahPenumpang: 1,
     tanggal: todayLocalDate(),
-    isWholeDay: false,
+    isWholeDay: isFullDay,
     jamMulai: "07:00",
-    jamSelesai: "09:00",
+    jamSelesai: isFullDay ? "18:00" : "09:00",
     catatan: "",
     ...initial,
   };
@@ -83,6 +87,20 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
 
   function set<K extends keyof BookingKendaraanCreatePayload>(key: K, value: BookingKendaraanCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function handleJamMulaiChange(v: string) {
+    setForm((f) => {
+      const autoWholeDay = v === "07:00" && f.jamSelesai === "18:00";
+      return { ...f, jamMulai: v, isWholeDay: autoWholeDay };
+    });
+  }
+
+  function handleJamSelesaiChange(v: string) {
+    setForm((f) => {
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00";
+      return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
+    });
   }
 
   function toggleWholeDay() {
@@ -202,7 +220,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 id="fk-jam-mulai"
                 disabled={form.isWholeDay}
                 value={form.jamMulai || undefined}
-                onChange={(v) => set("jamMulai", v)}
+                onChange={handleJamMulaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />
@@ -213,7 +231,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 id="fk-jam-selesai"
                 disabled={form.isWholeDay}
                 value={form.jamSelesai || undefined}
-                onChange={(v) => set("jamSelesai", v)}
+                onChange={handleJamSelesaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />

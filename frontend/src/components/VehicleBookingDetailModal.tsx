@@ -31,6 +31,7 @@ interface Props {
 }
 
 function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
+  const isFullDay = item.isWholeDay || (item.jamMulai?.slice(0, 5) === "07:00" && item.jamSelesai?.slice(0, 5) === "18:00");
   return {
     keperluan: item.keperluan,
     pic: item.pic || "",
@@ -38,12 +39,12 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
     namaKendaraan: item.namaKendaraan,
     jumlahPenumpang: item.jumlahPenumpang,
     tanggal: item.tanggal,
-    isWholeDay: item.isWholeDay,
+    isWholeDay: isFullDay,
     // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
     // are "HH:mm" - without slicing, the value never matches any option and the browser silently
     // falls back to displaying the first option instead of the item's real time.
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
+    jamMulai: isFullDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
+    jamSelesai: isFullDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
     catatan: item.catatan || "",
   };
 }
@@ -84,6 +85,22 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
 
   function set<K extends keyof BookingKendaraanCreatePayload>(key: K, value: BookingKendaraanCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
+  }
+
+  function handleJamMulaiChange(v: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const autoWholeDay = v === "07:00" && f.jamSelesai === "18:00";
+      return { ...f, jamMulai: v, isWholeDay: autoWholeDay };
+    });
+  }
+
+  function handleJamSelesaiChange(v: string) {
+    setForm((f) => {
+      if (!f) return f;
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00";
+      return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
+    });
   }
 
   function toggleWholeDay() {
@@ -211,7 +228,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 id="bk-jam-mulai"
                 disabled={!isEdit || form.isWholeDay}
                 value={form.jamMulai || undefined}
-                onChange={(v) => set("jamMulai", v)}
+                onChange={handleJamMulaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />
@@ -222,7 +239,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 id="bk-jam-selesai"
                 disabled={!isEdit || form.isWholeDay}
                 value={form.jamSelesai || undefined}
-                onChange={(v) => set("jamSelesai", v)}
+                onChange={handleJamSelesaiChange}
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
               />

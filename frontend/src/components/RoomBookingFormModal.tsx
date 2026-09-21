@@ -75,6 +75,10 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
     }
   }
 
+  if (merged.jamMulai === "07:00" && merged.jamSelesai === "18:00" && isWholeDayAllowed(merged.tanggal)) {
+    merged.isWholeDay = true;
+  }
+
   return merged;
 }
 
@@ -171,6 +175,12 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         }
       }
 
+      if (newJamMulai === "07:00" && newJamSelesai === "18:00" && isWholeDayAllowed(newDate)) {
+        newIsWholeDay = true;
+      } else if (newJamMulai !== "07:00" || newJamSelesai !== "18:00") {
+        newIsWholeDay = false;
+      }
+
       return {
         ...f,
         tanggal: newDate,
@@ -190,7 +200,15 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         const prefEnd = `${String(Math.min(18, sH + 2)).padStart(2, "0")}:00`;
         newEnd = ends.includes(prefEnd) ? prefEnd : (ends[0] || "");
       }
-      return { ...f, jamMulai: v, jamSelesai: newEnd };
+      const autoWholeDay = v === "07:00" && newEnd === "18:00" && isWholeDayAllowed(f.tanggal);
+      return { ...f, jamMulai: v, jamSelesai: newEnd, isWholeDay: autoWholeDay };
+    });
+  }
+
+  function handleJamSelesaiChange(v: string) {
+    setForm((f) => {
+      const autoWholeDay = f.jamMulai === "07:00" && v === "18:00" && isWholeDayAllowed(f.tanggal);
+      return { ...f, jamSelesai: v, isWholeDay: autoWholeDay };
     });
   }
 
@@ -363,7 +381,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <SearchableSelect
                 id="f-jam-selesai"
                 value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
-                onChange={(v) => set("jamSelesai", v)}
+                onChange={handleJamSelesaiChange}
                 options={form.isWholeDay ? ["18:00"] : availableEndHours}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
                 placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}

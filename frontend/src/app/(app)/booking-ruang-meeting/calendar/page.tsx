@@ -29,6 +29,7 @@ import RoomBookingChatModal from "@/components/RoomBookingChatModal";
 import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import { nowWib } from "@/lib/format";
+import { isWholeDayAllowed } from "@/lib/bookingTime";
 
 const ALL_ROOMS_VALUE = "__all__";
 
@@ -363,12 +364,14 @@ function BookingCalendarPageInner() {
               canCreate={isOrigin}
               onSlotSelect={(date, startHour, endHour, room, additionalRooms) => {
                 if (!isOrigin) return;
+                const isFullDay = startHour === 7 && endHour === 18 && isWholeDayAllowed(date);
                 setFormInitial({
                   namaRuang: room || selectedRoom,
                   additionalRooms: additionalRooms && additionalRooms.length > 0 ? additionalRooms : undefined,
                   tanggal: date,
                   jamMulai: `${String(startHour).padStart(2, "0")}:00`,
                   jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
+                  isWholeDay: isFullDay,
                 });
                 setFormOpen(true);
               }}
