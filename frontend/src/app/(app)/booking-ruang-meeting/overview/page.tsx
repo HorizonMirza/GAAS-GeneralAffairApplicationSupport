@@ -90,6 +90,127 @@ function roomPhotoUrls(roomName: string): string[] {
   return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
+const ROOM_CAPACITIES: Record<string, number> = {
+  "Ruang Eksternal Receptionist": 12,
+  "Ruang Eksternal Besar": 20,
+  "Ruang Eksternal Kecil": 8,
+  "Ruang Golf": 10,
+  "Ruang Open Space": 30,
+  "Ruang ECC": 16,
+  "Ruang Solution 1": 14,
+  "Ruang Solution 2": 14,
+  "Ruang Solution 3": 14,
+  "Ruang Solution Utama": 25,
+};
+
+const DEMO_ROOM_SCHEDULES: Record<string, { jam: string; status: "free" | "booked"; judul?: string }[]> = {
+  "Ruang Eksternal Receptionist": [
+    { jam: "08:00 - 10:00", status: "free" },
+    { jam: "10:00 - 12:00", status: "booked", judul: "Rapat Vendor" },
+    { jam: "13:00 - 15:00", status: "free" },
+  ],
+  "Ruang Eksternal Besar": [
+    { jam: "08:00 - 11:00", status: "free" },
+    { jam: "11:00 - 13:00", status: "booked", judul: "Townhall Divisi" },
+    { jam: "14:00 - 17:00", status: "free" },
+  ],
+  "Ruang Eksternal Kecil": [
+    { jam: "08:00 - 12:00", status: "booked", judul: "Interview HR" },
+    { jam: "13:00 - 15:00", status: "booked", judul: "Review Project" },
+    { jam: "15:00 - 17:00", status: "booked", judul: "Evaluasi Tim" },
+  ],
+  "Ruang Golf": [
+    { jam: "09:00 - 11:30", status: "free" },
+    { jam: "13:00 - 15:00", status: "booked", judul: "Sesi Direksi" },
+    { jam: "15:30 - 17:30", status: "free" },
+  ],
+  "Ruang Open Space": [
+    { jam: "08:00 - 12:00", status: "free" },
+    { jam: "13:00 - 14:30", status: "booked", judul: "Sprint Planning" },
+    { jam: "15:00 - 18:00", status: "free" },
+  ],
+  "Ruang ECC": [
+    { jam: "08:30 - 11:00", status: "free" },
+    { jam: "11:00 - 13:00", status: "booked", judul: "Video Conf Board" },
+    { jam: "14:00 - 16:30", status: "free" },
+  ],
+  "Ruang Solution 1": [
+    { jam: "08:00 - 10:30", status: "free" },
+    { jam: "11:00 - 12:30", status: "booked", judul: "Diskusi Desain" },
+    { jam: "13:30 - 16:00", status: "free" },
+  ],
+  "Ruang Solution 2": [
+    { jam: "08:00 - 12:00", status: "free" },
+    { jam: "13:00 - 15:00", status: "booked", judul: "Sync Engineering" },
+    { jam: "15:30 - 17:30", status: "free" },
+  ],
+  "Ruang Solution 3": [
+    { jam: "08:30 - 11:30", status: "free" },
+    { jam: "11:30 - 13:00", status: "booked", judul: "Kajian Teknis" },
+    { jam: "14:00 - 17:00", status: "free" },
+  ],
+  "Ruang Solution Utama": [
+    { jam: "08:00 - 10:00", status: "free" },
+    { jam: "10:30 - 12:30", status: "booked", judul: "Presentasi Klien" },
+    { jam: "14:00 - 17:00", status: "free" },
+  ],
+};
+
+function getRoomCardSlots(
+  roomName: string,
+  todayEntries: BookingRuang[],
+  closed: boolean,
+  fullyBooked: boolean
+): { jam: string; status: "free" | "booked"; judul?: string }[] {
+  if (closed) {
+    return [
+      { jam: "08:00 - 11:00", status: "booked", judul: "Tutup" },
+      { jam: "11:00 - 14:00", status: "booked", judul: "Tutup" },
+      { jam: "14:00 - 17:00", status: "booked", judul: "Tutup" },
+    ];
+  }
+
+  const roomBookings = todayEntries.filter(
+    (e) =>
+      e.status !== "DRAFT" &&
+      e.status !== "CANCELLED" &&
+      !e.status.startsWith("REJECTED") &&
+      (e.namaRuang === roomName || e.additionalRooms?.includes(roomName))
+  );
+
+  if (roomBookings.length > 0) {
+    const slots: { jam: string; status: "free" | "booked"; judul?: string }[] = [];
+    for (const b of roomBookings.slice(0, 3)) {
+      const jam = b.isWholeDay
+        ? "08:00 - 17:00"
+        : `${b.jamMulai?.slice(0, 5) || "08:00"} - ${b.jamSelesai?.slice(0, 5) || "10:00"}`;
+      slots.push({ jam, status: "booked", judul: b.namaKegiatan || "Terisi" });
+    }
+    const fallbackFree = ["08:00 - 10:00", "11:00 - 13:00", "14:00 - 17:00"];
+    for (const f of fallbackFree) {
+      if (slots.length >= 3) break;
+      if (!slots.some((s) => s.jam === f)) {
+        slots.push({ jam: f, status: "free", judul: "Kosong" });
+      }
+    }
+    return slots.slice(0, 3);
+  }
+
+  if (fullyBooked) {
+    return [
+      { jam: "08:00 - 11:00", status: "booked", judul: "Penuh" },
+      { jam: "11:00 - 14:00", status: "booked", judul: "Penuh" },
+      { jam: "14:00 - 17:00", status: "booked", judul: "Penuh" },
+    ];
+  }
+
+  return DEMO_ROOM_SCHEDULES[roomName] || [
+    { jam: "08:00 - 10:00", status: "free", judul: "Kosong" },
+    { jam: "10:00 - 12:00", status: "free", judul: "Kosong" },
+    { jam: "13:00 - 15:00", status: "free", judul: "Kosong" },
+  ];
+}
+
 // Free (bookable) hours left today, one entry per whole hour within operating hours (e.g.
 // 07:00-08:00, 08:00-09:00, ...) - bookings are only ever made on the hour, so there's no reason
 // to offer a half-hour slot, and listing every open hour individually (instead of collapsing
@@ -315,51 +436,15 @@ export default function BookingOverviewPage() {
                 ? "Full hari ini"
                 : "Available hari ini";
 
-            // Calculate 12 hourly timeline blocks (07:00 - 19:00)
-            const now = nowMinutesLocal();
-            const hourBlocks = [];
-            let freeFutureHours = 0;
-            for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
-              const slotEnd = h + 60;
-              const isPast = slotEnd <= now;
-              const bookedBy = todayEntries.find((entry) => {
-                if (entry.status === "DRAFT" || entry.status === "CANCELLED" || entry.status.startsWith("REJECTED")) return false;
-                if (entry.namaRuang !== r.nama && !entry.additionalRooms?.includes(r.nama)) return false;
-                if (entry.isWholeDay) return true;
-                if (!entry.jamMulai || !entry.jamSelesai) return false;
-                const start = toMinutes(entry.jamMulai);
-                const end = toMinutes(entry.jamSelesai);
-                return start < slotEnd && end > h;
-              });
-
-              if (!bookedBy && !isPast) freeFutureHours++;
-
-              hourBlocks.push({
-                hour: h,
-                state: bookedBy ? "booked" : isPast ? "past" : "free",
-                title: bookedBy
-                  ? `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: ${bookedBy.namaKegiatan}`
-                  : isPast
-                  ? `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: Lewat`
-                  : `${minutesToHHMM(h)}–${minutesToHHMM(slotEnd)}: Bebas`,
-              });
-            }
-
-            const scheduleSummary = closedToday
-              ? isWeekendToday
-                ? "Tutup akhir pekan"
-                : "Tutup (di luar operasional)"
-              : availability === "full"
-              ? "Penuh sepanjang hari ini"
-              : freeFutureHours >= 12
-              ? "Bebas sepanjang hari (07:00–19:00)"
-              : `${freeFutureHours} jam slot bebas tersisa`;
+            const isAvail = availability === "available";
+            const kapasitas = ROOM_CAPACITIES[r.nama] || r.kapasitas || 12;
+            const slots = getRoomCardSlots(r.nama, todayEntries, closedToday, availability === "full");
 
             return (
               <div
                 key={r.nama}
                 onClick={() => setInfoRoom(r)}
-                className={`room-card room-card-${availability}`}
+                className="room-card"
                 title={availTitle}
                 role="button"
                 tabIndex={0}
@@ -370,68 +455,44 @@ export default function BookingOverviewPage() {
                   }
                 }}
               >
-                <div className="room-card-photo" style={{ backgroundImage: `url(${roomPhotoUrl(r.nama)})` }}>
+                <div className="room-card-photo-banner">
+                  <img src={roomPhotoUrl(r.nama)} alt={r.nama} />
                   <div className="room-card-photo-overlay" />
-                  <span className="room-card-avail-badge">{availLabel}</span>
+                  <div className="room-card-photo-footer">
+                    <span className="room-title">{r.nama}</span>
+                    <span className={`room-badge ${isAvail ? "badge-available" : "badge-full"}`}>
+                      {isAvail ? "Available" : availability === "closed" ? "Close" : "Full"}
+                    </span>
+                  </div>
                 </div>
-                <div className="room-card-body">
-                  <div className="room-card-header-info">
-                    <h4 className="room-card-title">{r.nama}</h4>
-                    <div className="room-card-meta text-secondary">
-                      <span>{r.lantai || "Lantai 1"}</span>
-                      <span>·</span>
-                      <span>👥 {r.kapasitas} Kursi</span>
-                    </div>
+                <div className="room-card-body-exact">
+                  <div className="room-card-meta-exact">
+                    <span>Jadwal Hari Ini</span>
+                    <span>👥 {kapasitas} Orang</span>
                   </div>
-
-                  <div className="room-card-schedule">
-                    <div className="room-card-schedule-header">
-                      <span className="room-card-schedule-label">Jadwal Hari Ini</span>
-                      <span className={`room-card-schedule-badge status-${availability}`}>
-                        {availability === "closed" ? "Tutup" : availability === "full" ? "Penuh" : `${freeFutureHours} Jam`}
-                      </span>
-                    </div>
-                    <div className="room-card-timeline-bar" aria-label="Timeline Ketersediaan Hari Ini">
-                      {hourBlocks.map((b) => (
-                        <div
-                          key={b.hour}
-                          className={`timeline-block timeline-block-${b.state}`}
-                          title={b.title}
-                        />
-                      ))}
-                    </div>
-                    <div className="room-card-schedule-summary text-secondary" title={scheduleSummary}>
-                      {scheduleSummary}
-                    </div>
+                  <div className="room-card-slots-exact">
+                    {slots.slice(0, 3).map((s, idx) => (
+                      <div
+                        key={idx}
+                        className={`room-card-slot-row-exact ${
+                          s.status === "free" ? "slot-free" : "slot-booked"
+                        }`}
+                      >
+                        <span className="slot-time">{s.jam}</span>
+                        <span className="slot-status">{s.status === "free" ? "Kosong" : s.judul || "Terisi"}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  {r.fasilitas && r.fasilitas.length > 0 && (
-                    <div className="room-card-facilities">
-                      {r.fasilitas.slice(0, 3).map((f) => (
-                        <span key={f} className="room-card-facility-tag">
-                          {f}
-                        </span>
-                      ))}
-                      {r.fasilitas.length > 3 && (
-                        <span className="room-card-facility-tag room-card-facility-more">
-                          +{r.fasilitas.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="room-card-footer">
-                    <button
-                      type="button"
-                      className="btn btn-primary room-card-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setInfoRoom(r);
-                      }}
-                    >
-                      {availability === "full" ? "Lihat Jadwal" : "Pesan Ruang"}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="room-card-btn-exact"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setInfoRoom(r);
+                    }}
+                  >
+                    Pesan Slot
+                  </button>
                 </div>
               </div>
             );
