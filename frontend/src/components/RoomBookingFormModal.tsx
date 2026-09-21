@@ -37,7 +37,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
     jamMulai: "07:00",
     jamSelesai: "09:00",
     catatan: "",
-    tipe: "INTERNAL",
+    tipe: undefined,
     isRecurring: false,
     recurrenceFrequency: null,
     recurrenceEndDate: null,
@@ -142,6 +142,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         catatan: form.catatan || null,
         jamMulai: form.isWholeDay ? null : form.jamMulai,
         jamSelesai: form.isWholeDay ? null : form.jamSelesai,
+        tipe: form.tipe || "INTERNAL",
       });
       showToast(
         created.length > 1
@@ -212,7 +213,6 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 id="f-telepon-pic"
                 required
                 maxLength={20}
-                placeholder="Contoh: 08123456789"
                 value={form.noTeleponPic || ""}
                 onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
               />
@@ -244,8 +244,9 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 value={form.jamMulai || undefined}
                 onChange={(v) => set("jamMulai", v)}
                 options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                placeholder="07:00"
                 disabled={form.isWholeDay}
+                searchable={false}
               />
             </div>
             <div className="field">
@@ -255,8 +256,9 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 value={form.jamSelesai || undefined}
                 onChange={(v) => set("jamSelesai", v)}
                 options={HOUR_OPTIONS}
-                placeholder="Pilih jam"
+                placeholder="09:00"
                 disabled={form.isWholeDay}
+                searchable={false}
               />
             </div>
             <div className="field full">
@@ -306,7 +308,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
                 options={Object.keys(TIPE_BOOKING_LABELS)}
                 getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
-                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
+                placeholder="Pilih Tipe"
+                searchable={false}
               />
             </div>
             <div className="field full">

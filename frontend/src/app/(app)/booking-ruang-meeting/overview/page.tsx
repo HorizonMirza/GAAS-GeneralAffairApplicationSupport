@@ -195,7 +195,7 @@ function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]):
   return roomFreeSlotsToday(roomName, todayEntries).length === 0;
 }
 
-type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED" | "CANCELLED";
+type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import SearchableSelect from "@/components/SearchableSelect";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
@@ -325,8 +325,7 @@ export default function BookingOverviewPage() {
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
     if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
     if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
-    if (statusFilter === "CANCELLED") return items.filter((i) => i.status === "CANCELLED");
-    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status) || i.status === "CANCELLED");
   }, [items, statusFilter]);
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
@@ -462,16 +461,16 @@ export default function BookingOverviewPage() {
             id="overview-status-filter"
             value={statusFilter}
             onChange={(v) => setStatusFilter(v as StatusFilter)}
-            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED", "CANCELLED"]}
+            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
             getLabel={(v) => ({
               ALL: "Semua Status",
               DRAFT: "Draft",
               ON_APPROVAL: "On-Approval",
               APPROVED: "Approved",
               REJECTED: "Rejected",
-              CANCELLED: "Cancelled",
             } as Record<string, string>)[v] || v}
             placeholder="Semua Status"
+            searchable={false}
           />
         </div>
       </div>
@@ -500,7 +499,7 @@ export default function BookingOverviewPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="badge-stack">
-                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
+                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
                     {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                   </span>
                   <button
@@ -636,8 +635,8 @@ export default function BookingOverviewPage() {
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         closedLabel={closedToday ? (isWeekendToday ? "Tutup (akhir pekan)" : "Tutup (di luar jam operasional)") : undefined}
         fullyOpenLabel={
-          infoRoom && !closedToday && roomFreeSlotsToday(infoRoom.nama, todayEntries).length === remainingHourSlotsToday().count && remainingHourSlotsToday().count > 0
-            ? "Tersedia"
+          infoRoom && !closedToday
+            ? getRealRoomCurrentSlot(infoRoom.nama, todayEntries, closedToday).jam
             : undefined
         }
         bookLabel={isOrigin ? "Booking" : "Lihat Kalender"}

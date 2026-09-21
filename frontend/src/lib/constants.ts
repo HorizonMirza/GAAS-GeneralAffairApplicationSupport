@@ -282,7 +282,7 @@ function isPastBookingStart(tanggal: string, jamMulai: string | null, isWholeDay
 
 export function bookingStatusBorderClass(status: BookingStatus): string {
   if (status === "APPROVED_GA_APPROVAL") return "item-row-card-approved";
-  if (BOOKING_REJECTED_STATUSES.includes(status)) return "item-row-card-rejected";
+  if (BOOKING_REJECTED_STATUSES.includes(status) || status === "CANCELLED") return "item-row-card-rejected";
   if (BOOKING_ON_APPROVAL_STATUSES.includes(status)) return "item-row-card-onapproval";
   return "";
 }

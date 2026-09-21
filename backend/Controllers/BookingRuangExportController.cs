@@ -56,6 +56,7 @@ public class BookingRuangExportController : ApiControllerBase
         ["APPROVED_GA"] = "On-Approval",
         ["REJECTED_GA_APPROVAL"] = "Rejected",
         ["APPROVED_GA_APPROVAL"] = "Approved",
+        ["CANCELLED"] = "Rejected",
     };
 
     private static readonly Dictionary<string, string> TipeLabel = new()

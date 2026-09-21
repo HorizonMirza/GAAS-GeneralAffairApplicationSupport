@@ -296,16 +296,16 @@ function BookingTransaksiPageInner() {
                     id="filter-status"
                     value={filters.status}
                     onChange={(v) => updateFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
-                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL", "CANCELLED"]}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
                     getLabel={(v) => ({
                       DRAFT: "Draft",
                       ON_APPROVAL: "On-Approval",
                       REJECTED: "Rejected",
                       APPROVED_GA_APPROVAL: "Approved",
-                      CANCELLED: "Cancelled",
                     } as Record<string, string>)[v] || v}
                     clearLabel="Semua Status"
                     placeholder="Semua Status"
+                    searchable={false}
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -414,7 +414,7 @@ function BookingTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} />
+                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
                             {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                           </span>
                           <button

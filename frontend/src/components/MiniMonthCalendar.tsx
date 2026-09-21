@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { BookingRuang } from "@/lib/types";
 import { nowWib } from "@/lib/format";
+import { useClickOutside } from "@/lib/useClickOutside";
 
 const MONTH_NAMES = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+function yearRange(): number[] {
+  const nowYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = nowYear - 15; y <= nowYear + 10; y++) years.push(y);
+  return years;
+}
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -48,6 +56,18 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
   const [dotsByDate, setDotsByDate] = useState<Map<string, Set<string>>>(new Map());
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const monthSelectRef = useRef<HTMLDivElement>(null);
+  const yearSelectRef = useRef<HTMLDivElement>(null);
+  const activeYearOptionRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside([monthSelectRef], () => setMonthDropdownOpen(false), monthDropdownOpen);
+  useClickOutside([yearSelectRef], () => setYearDropdownOpen(false), yearDropdownOpen);
+
+  useEffect(() => {
+    if (yearDropdownOpen) activeYearOptionRef.current?.scrollIntoView({ block: "center" });
+  }, [yearDropdownOpen]);
 
   // Jumps the visible month to match selectedDate whenever it changes from outside (e.g. the
   // parent's day picker), while Prev/Next still move viewYear/viewMonth independently in
@@ -126,31 +146,81 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
   );
   const effectiveDotsByDate = providedDotsByDate ?? dotsByDate;
 
-  function prevMonth() {
-    if (viewMonth === 0) {
-      setViewYear((y) => y - 1);
-      setViewMonth(11);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
-  }
-
-  function nextMonthNav() {
-    if (viewMonth === 11) {
-      setViewYear((y) => y + 1);
-      setViewMonth(0);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
+  function handleTodayClick() {
+    const t = todayIso();
+    const d = nowWib();
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+    onSelect(t);
   }
 
   return (
     <div className="mini-calendar">
-      <div className="mini-calendar-header">
-        <span className="mini-calendar-title">{MONTH_NAMES[viewMonth]} {viewYear}</span>
-        <div className="mini-calendar-nav">
-          <button type="button" onClick={prevMonth} aria-label="Bulan sebelumnya">‹</button>
-          <button type="button" onClick={nextMonthNav} aria-label="Bulan berikutnya">›</button>
+      <div className="date-picker-header">
+        <div className="date-picker-select-wrap" ref={monthSelectRef}>
+          <button
+            type="button"
+            className="date-picker-select-trigger"
+            aria-expanded={monthDropdownOpen}
+            onClick={() => {
+              setMonthDropdownOpen((v) => !v);
+              setYearDropdownOpen(false);
+            }}
+          >
+            {MONTH_NAMES[viewMonth]}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {monthDropdownOpen && (
+            <div className="date-picker-select-dropdown">
+              {MONTH_NAMES.map((m, idx) => (
+                <div
+                  key={m}
+                  className={`date-picker-select-option${idx === viewMonth ? " date-picker-select-option-active" : ""}`}
+                  onClick={() => {
+                    setViewMonth(idx);
+                    setMonthDropdownOpen(false);
+                  }}
+                >
+                  {m}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="date-picker-select-wrap" ref={yearSelectRef}>
+          <button
+            type="button"
+            className="date-picker-select-trigger"
+            aria-expanded={yearDropdownOpen}
+            onClick={() => {
+              setYearDropdownOpen((v) => !v);
+              setMonthDropdownOpen(false);
+            }}
+          >
+            {viewYear}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {yearDropdownOpen && (
+            <div className="date-picker-select-dropdown date-picker-select-dropdown-scroll">
+              {yearRange().map((y) => (
+                <div
+                  key={y}
+                  ref={y === viewYear ? activeYearOptionRef : undefined}
+                  className={`date-picker-select-option${y === viewYear ? " date-picker-select-option-active" : ""}`}
+                  onClick={() => {
+                    setViewYear(y);
+                    setYearDropdownOpen(false);
+                  }}
+                >
+                  {y}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="mini-calendar-weekdays">
@@ -180,6 +250,11 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
             </button>
           );
         })}
+      </div>
+      <div className="filter-picker-footer">
+        <button type="button" className="filter-picker-link" onClick={handleTodayClick}>
+          Hari Ini
+        </button>
       </div>
     </div>
   );

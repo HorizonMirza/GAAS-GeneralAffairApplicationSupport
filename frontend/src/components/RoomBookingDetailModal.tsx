@@ -233,7 +233,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 required
                 disabled={!isEdit}
                 maxLength={20}
-                placeholder="Contoh: 08123456789"
                 value={form.noTeleponPic || ""}
                 onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
               />
@@ -268,6 +267,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
                 disabled={!isEdit || form.isWholeDay}
+                searchable={false}
               />
             </div>
             <div className="field">
@@ -279,6 +279,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 options={HOUR_OPTIONS}
                 placeholder="Pilih jam"
                 disabled={!isEdit || form.isWholeDay}
+                searchable={false}
               />
             </div>
             <div className="field full">
@@ -331,8 +332,9 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
                 options={Object.keys(TIPE_BOOKING_LABELS)}
                 getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
-                placeholder={form.tipe ? TIPE_BOOKING_LABELS[form.tipe] : "Pilih tipe"}
+                placeholder="Pilih Tipe"
                 disabled={!isEdit}
+                searchable={false}
               />
             </div>
             {/* Editing lets the origin creator redefine an existing series' recurrence too (not

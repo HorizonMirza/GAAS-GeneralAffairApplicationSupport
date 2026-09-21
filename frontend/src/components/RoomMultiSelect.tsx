@@ -28,7 +28,7 @@ export default function RoomMultiSelect({ id, rooms, excludeRoom, selected, onCh
   useClickOutside([wrapRef], () => setOpen(false), open);
 
   const options = rooms.filter((r) => r.nama !== excludeRoom);
-  const summary = selected.length === 0 ? (readOnly ? "Tidak ada ruangan tambahan" : "Pilih ruangan tambahan") : selected.join(", ");
+  const summary = selected.length === 0 ? (readOnly ? "Tidak ada ruangan tambahan" : "Pilih Ruangan Tambahan") : selected.join(", ");
 
   function toggle(nama: string) {
     onChange(selected.includes(nama) ? selected.filter((r) => r !== nama) : [...selected, nama]);

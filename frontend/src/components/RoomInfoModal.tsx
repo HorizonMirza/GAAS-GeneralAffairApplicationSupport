@@ -129,29 +129,21 @@ export default function RoomInfoModal({
           </div>
         ))}
         {facilities && facilities.length > 0 && (
-          <div className="room-info-row room-info-row-stack">
+          <div className="room-info-row">
             <span className="text-secondary">Fasilitas</span>
-            <div className="room-info-slots">
-              {facilities.map((f) => (
-                <span key={f} className="room-info-slot-chip">{f}</span>
-              ))}
-            </div>
+            <span>{facilities.join(", ")}</span>
           </div>
         )}
-        <div className="room-info-row room-info-row-stack">
+        <div className="room-info-row">
           <span className="text-secondary">Jam tersedia hari ini</span>
           {closedLabel ? (
             <span>{closedLabel}</span>
           ) : fullyOpenLabel ? (
             <span>{fullyOpenLabel}</span>
           ) : freeSlotsToday.length > 0 ? (
-            <div className="room-info-slots">
-              {freeSlotsToday.map((slot) => (
-                <span key={slot} className="room-info-slot-chip">{slot}</span>
-              ))}
-            </div>
+            <span>{freeSlotsToday.join(", ")}</span>
           ) : (
-            <span>Penuh sepanjang hari</span>
+            <span>Penuh</span>
           )}
         </div>
         <div className="modal-actions">

@@ -13,16 +13,27 @@ interface Props {
   // revise and resubmit, so it gets the same "Waiting: X" second badge as Pengiriman's own
   // StatusBadge, just without a RejectTarget branch (there's only ever one destination).
   revisable?: boolean;
+  isRoom?: boolean;
 }
 
-export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false }: Props) {
-  const label = status === "CANCELLED" && cancelledByName ? `Cancel: ${cancelledByName}` : getBookingStatusLabel(status, departemen);
+export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false, isRoom = false }: Props) {
+  const label =
+    isRoom && status === "CANCELLED"
+      ? "Rejected"
+      : status === "CANCELLED" && cancelledByName
+      ? `Cancel: ${cancelledByName}`
+      : getBookingStatusLabel(status, departemen);
   const waitingLabel = revisable ? getSimpleWaitingLabel(status, { createdByRole, departemen }) : undefined;
   // Pengiriman's StatusBadge also renders an "approved_ga_approval" status, but that one isn't
   // final there (a KPU stage still follows) - it needs to stay orange, while Room Booking's own
   // APPROVED_GA_APPROVAL is the true final/green status. Same enum name, different meaning, so
   // this one status gets its own class instead of colliding with Pengiriman's.
-  const cls = status === "APPROVED_GA_APPROVAL" ? "booking-approved_ga_approval" : status.toLowerCase();
+  const cls =
+    isRoom && status === "CANCELLED"
+      ? "rejected"
+      : status === "APPROVED_GA_APPROVAL"
+      ? "booking-approved_ga_approval"
+      : status.toLowerCase();
   if (waitingLabel) {
     return (
       <div className="badge-stack">

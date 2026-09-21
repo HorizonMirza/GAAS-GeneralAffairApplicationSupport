@@ -251,7 +251,7 @@ public class BookingRuangController : ApiControllerBase
     // rejectTarget/StatusBadge already show which stage rejected an item on each row.
     private static readonly BookingStatusEnum[] RejectedStatuses =
     {
-        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
+        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL, BookingStatusEnum.CANCELLED,
     };
 
     // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option -

@@ -3050,6 +3050,7 @@ body.auth-ready .app-shell {
 }
 
 .badge-draft { background: var(--badge-draft-bg); color: var(--badge-draft-fg); }
+.badge-rejected,
 .badge-cancelled { background: var(--badge-rejected-bg); color: var(--badge-rejected-fg); }
 .badge-submitted { background: var(--badge-submitted-bg); color: var(--badge-submitted-fg); }
 .badge-waiting { background: var(--badge-waiting-bg); color: var(--badge-waiting-fg); }
@@ -3724,7 +3725,7 @@ table.data-table {
 
 /* Mini month calendar (sidebar) */
 .mini-calendar {
-  background: var(--bg-surface-alt);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 12px;

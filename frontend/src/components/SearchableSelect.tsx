@@ -44,12 +44,14 @@ interface Props {
   // e.g. "APPROVED_GA_APPROVAL" -> "Approved". Defaults to the value itself when omitted, so every
   // existing plain-string caller is unaffected.
   getLabel?: (value: string) => string;
+  // When explicitly false, disables/hides the search input regardless of option count
+  searchable?: boolean;
 }
 
 // Click-to-open, type-to-filter single select - same collapsed-by-default trigger/panel pattern
 // as RoomMultiSelect, but for picking one value out of a long list (e.g. every Divisi/Departemen
 // in the org tree) without having to scroll through it one by one.
-export default function SearchableSelect({ id, value, onChange, options, placeholder, clearLabel, disabled, emptyOptionsText, getLabel }: Props) {
+export default function SearchableSelect({ id, value, onChange, options, placeholder, clearLabel, disabled, emptyOptionsText, getLabel, searchable }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [dropUp, setDropUp] = useState(false);
@@ -59,7 +61,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
   const label = (v: string) => (getLabel ? getLabel(v) : v);
   // A handful of options is faster to just scan by eye - the search box only earns its keep
   // (and the extra click-to-focus step) once there's enough of a list to actually search through.
-  const showSearch = options.length > 5;
+  const showSearch = searchable !== undefined ? searchable : options.length > 5;
 
   // Decided before paint (useLayoutEffect, not useEffect) so the panel never flashes downward
   // for a frame before flipping - a trigger near the bottom of a tall modal would otherwise open
