@@ -396,6 +396,8 @@ body {
 .field textarea:disabled {
   background: var(--bg-surface);
   color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
+  opacity: 1;
   cursor: not-allowed;
 }
 
@@ -4313,9 +4315,15 @@ table.data-table {
 .room-multiselect-trigger.room-multiselect-trigger-readonly {
   background: var(--bg-surface);
   color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
+  opacity: 1;
 }
-.room-multiselect-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
+.room-multiselect-trigger:disabled { cursor: not-allowed; }
 .room-multiselect-trigger.room-multiselect-trigger-readonly:hover { border-color: var(--border-subtle); }
+.room-multiselect-trigger:disabled .account-chevron,
+.room-multiselect-trigger.room-multiselect-trigger-readonly .account-chevron {
+  color: var(--text-secondary);
+}
 
 .room-multiselect-trigger > span:first-child {
   overflow: hidden;
@@ -4323,7 +4331,11 @@ table.data-table {
   white-space: nowrap;
 }
 
-.room-multiselect-placeholder { color: var(--text-secondary); opacity: 0.75; }
+.room-multiselect-placeholder {
+  color: var(--text-secondary);
+  -webkit-text-fill-color: var(--text-secondary);
+  opacity: 0.75;
+}
 
 .room-multiselect-panel {
   position: absolute;
@@ -4403,6 +4415,11 @@ table.data-table {
 .searchable-select-trigger:disabled {
   cursor: not-allowed;
   background: var(--bg-surface);
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
+  opacity: 1;
+}
+.searchable-select-trigger:disabled .account-chevron {
   color: var(--text-secondary);
 }
 
@@ -4417,7 +4434,11 @@ table.data-table {
   white-space: nowrap;
 }
 
-.searchable-select-placeholder { color: var(--text-secondary); opacity: 0.75; }
+.searchable-select-placeholder {
+  color: var(--text-secondary);
+  -webkit-text-fill-color: var(--text-secondary);
+  opacity: 0.75;
+}
 
 .searchable-select-panel {
   position: absolute;
@@ -4506,7 +4527,9 @@ table.data-table {
 .filter-picker-trigger:disabled {
   cursor: not-allowed;
   background: var(--bg-surface);
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
+  opacity: 1;
 }
 .filter-picker-trigger:hover { border-color: var(--blue-400); }
 .filter-picker-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
