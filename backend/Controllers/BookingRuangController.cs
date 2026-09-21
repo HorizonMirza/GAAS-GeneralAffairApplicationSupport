@@ -1722,7 +1722,7 @@ public class BookingRuangController : ApiControllerBase
         var losers = candidates.Where(b =>
             winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
 
-        const string reason = "Ruang sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama";
+        const string reason = "Ruang sudah dipesan oleh orang yang lebih dulu";
         foreach (var loser in losers)
         {
             var affected = await _db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -1737,22 +1737,6 @@ public class BookingRuangController : ApiControllerBase
             if (affected > 0)
             {
                 AddLog(loser, "REJECTED_GA_APPROVAL", actor, reason);
-                // Auto-join the loser's creator to the waitlist for the exact room(s)/slot they
-                // just lost, so they hear about it if the winner ever cancels/reschedules away -
-                // this is the "leverage the existing auto-reject-competitor mechanism" waitlist
-                // entry point; the other is a user manually joining from a "Penuh" room.
-                foreach (var room in RoomList(loser).Where(r => winnerRooms.Contains(r)))
-                {
-                    _db.BookingWaitlists.Add(new BookingWaitlist
-                    {
-                        NamaRuang = room,
-                        Tanggal = loser.Tanggal,
-                        IsWholeDay = loser.IsWholeDay,
-                        JamMulai = loser.JamMulai,
-                        JamSelesai = loser.JamSelesai,
-                        UserId = loser.CreatedBy,
-                    });
-                }
             }
         }
     }
