@@ -598,6 +598,27 @@ public class BookingKendaraanController : ApiControllerBase
     {
         if (!Vehicles.IsValidVehicle(payload.NamaKendaraan))
             return "Kendaraan tidak ditemukan";
+
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+
+        if (payload.Tanggal < todayWib)
+            return "Tanggal booking tidak boleh di masa lalu";
+
+        if (payload.Tanggal == todayWib)
+        {
+            if (payload.IsWholeDay)
+            {
+                if (currentTimeWib >= OperatingStart)
+                    return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
+            }
+            else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
+            {
+                return "Jam mulai booking tidak boleh di masa lalu";
+            }
+        }
+
         if (!payload.IsWholeDay)
         {
             if (payload.JamMulai == null || payload.JamSelesai == null)
@@ -788,6 +809,26 @@ public class BookingKendaraanController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (item.Status != BookingStatusEnum.DRAFT || !IsEditableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data hanya bisa dikirim dari status Draft" });
+
+        var nowWib = WaktuWib.Now;
+        var todayWib = DateOnly.FromDateTime(nowWib);
+        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
+
+        if (item.Tanggal < todayWib)
+            return BadRequest(new { detail = "Tanggal booking sudah lewat, silakan ubah tanggal terlebih dahulu" });
+
+        if (item.Tanggal == todayWib)
+        {
+            if (item.IsWholeDay)
+            {
+                if (currentTimeWib >= OperatingStart)
+                    return BadRequest(new { detail = "Booking sepanjang hari untuk hari ini hanya dapat diajukan sebelum jam operasional dimulai (07:00)" });
+            }
+            else if (item.JamMulai != null && item.JamMulai.Value <= currentTimeWib)
+            {
+                return BadRequest(new { detail = "Jam mulai booking sudah lewat, silakan ubah jam booking terlebih dahulu" });
+            }
+        }
 
         // Whichever tier the submitter's own role would normally sit at gets skipped, same
         // convention as Room Booking/Pengiriman.
