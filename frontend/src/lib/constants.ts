@@ -319,23 +319,30 @@ export function isBookingDeletableByOrigin(item: BookingRuang, me: Me): boolean 
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
-// Admin/Approval GA's separate, narrower editing right: while a booking is still live (not yet
-// finally approved, not rejected), they can move its room/date/time to resolve a scheduling
-// conflict - see RoomBookingRescheduleModal. Mirrors BookingRuangController.IsGaReschedulable.
+// Admin/Approval GA's separate editing right: once a booking reaches the GA approval workflow,
+// they can move its room/date/time to resolve a scheduling conflict or update details.
+// It is NOT available while the booking is still at DRAFT or SUBMITTED (Approval Divisi).
 export function isBookingGaReschedulable(item: BookingRuang): boolean {
-  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+  return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
 // Role + status together: whether the "Updates" row-menu item should open the reschedule form for
-// this account on this item (Admin/Approval GA only, and only while the item is still reschedulable).
+// this account on this item. Admin GA can update once it reaches them (APPROVED_L1 or APPROVED_GA),
+// while Approval GA can update once it reaches their approval stage (APPROVED_GA).
 export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
-  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+  if (me.role === "ADMIN_GA") {
+    return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+  }
+  if (me.role === "APPROVAL_GA") {
+    return item.status === "APPROVED_GA";
+  }
+  return false;
 }
 
 // Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
 // the slot - see RoomBookingKoreksiModal and BookingRuangController.Koreksi.
 export function canGaKoreksiBooking(item: BookingRuang, me: Me): boolean {
-  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isBookingGaReschedulable(item);
+  return canGaRescheduleBooking(item, me);
 }
 
 // A confirmation PDF only exists once a booking reached the final Approved state.

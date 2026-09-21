@@ -50,8 +50,8 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
     // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
     // are "HH:mm" - without slicing, the value never matches any option and the browser silently
     // falls back to displaying the first option (07:00) instead of the item's real time.
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
+    jamMulai: item.isWholeDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
+    jamSelesai: item.isWholeDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
     catatan: item.catatan || "",
     tipe: item.tipe,
     isRecurring: !!item.seriesId,
@@ -266,7 +266,14 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
     }
     setBusy(true);
     try {
-      await api.updateBooking(item!.id, { ...form!, pic: form!.pic || null, noTeleponPic: form!.noTeleponPic || null, catatan: form!.catatan || null });
+      await api.updateBooking(item!.id, {
+        ...form!,
+        jamMulai: form!.isWholeDay ? "07:00" : form!.jamMulai,
+        jamSelesai: form!.isWholeDay ? "18:00" : form!.jamSelesai,
+        pic: form!.pic || null,
+        noTeleponPic: form!.noTeleponPic || null,
+        catatan: form!.catatan || null,
+      });
       showToast(form!.isRecurring ? "Booking berulang berhasil disimpan sebagai Draft" : "Booking berhasil diperbarui");
       onClose();
       onSaved();
@@ -340,11 +347,11 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="bv-jam-mulai"
-                value={form.jamMulai || undefined}
+                value={form.jamMulai || (form.isWholeDay ? "07:00" : undefined)}
                 onChange={handleJamMulaiChange}
-                options={isEdit ? (form.jamMulai && !availableStartHours.includes(form.jamMulai) ? [form.jamMulai, ...availableStartHours] : availableStartHours) : (form.jamMulai ? [form.jamMulai] : HOUR_OPTIONS)}
+                options={isEdit ? (form.jamMulai && !availableStartHours.includes(form.jamMulai) ? [form.jamMulai, ...availableStartHours] : availableStartHours) : (form.isWholeDay ? ["07:00"] : (form.jamMulai ? [form.jamMulai] : HOUR_OPTIONS))}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={availableStartHours[0] || "Pilih jam"}
+                placeholder={form.isWholeDay ? "07:00" : (availableStartHours[0] || "Pilih jam")}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
@@ -353,18 +360,18 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               <label htmlFor="bv-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="bv-jam-selesai"
-                value={form.jamSelesai || undefined}
+                value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
                 onChange={(v) => set("jamSelesai", v)}
-                options={isEdit ? (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours) : (form.jamSelesai ? [form.jamSelesai] : HOUR_OPTIONS)}
+                options={isEdit ? (form.jamSelesai && !availableEndHours.includes(form.jamSelesai) ? [form.jamSelesai, ...availableEndHours] : availableEndHours) : (form.isWholeDay ? ["18:00"] : (form.jamSelesai ? [form.jamSelesai] : HOUR_OPTIONS))}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={availableEndHours[0] || "Pilih jam"}
+                placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}
                 disabled={!isEdit || form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
             </div>
-            {isEdit && (
+            {(isEdit || form.isWholeDay) && (
               <div className="field full">
-                <label htmlFor="bv-sepanjang-hari">Durasi (Opsional)</label>
+                <label htmlFor="bv-sepanjang-hari">{isEdit ? "Durasi (Opsional)" : "Durasi"}</label>
                 <button
                   type="button"
                   id="bv-sepanjang-hari"

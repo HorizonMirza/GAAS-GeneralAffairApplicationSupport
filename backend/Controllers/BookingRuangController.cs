@@ -137,8 +137,7 @@ public class BookingRuangController : ApiControllerBase
     // a scheduling conflict - see Reschedule() below. This is deliberately independent of
     // IsEditableByOrigin above (which only ever concerns the original creator's own DRAFT).
     private static bool IsGaReschedulable(BookingRuang item) =>
-        item.Status is BookingStatusEnum.DRAFT or BookingStatusEnum.SUBMITTED
-            or BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
+        item.Status is BookingStatusEnum.APPROVED_L1 or BookingStatusEnum.APPROVED_GA;
 
     // Accepts any real phone number without guessing a regional format, but still catches
     // obviously-wrong values (empty, letters, a couple of stray digits).
@@ -417,8 +416,8 @@ public class BookingRuangController : ApiControllerBase
         item.JumlahPeserta = payload.JumlahPeserta;
         item.Tanggal = payload.Tanggal;
         item.IsWholeDay = payload.IsWholeDay;
-        item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
-        item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;
+        item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
+        item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
         item.Catatan = payload.Catatan;
         item.Tipe = payload.Tipe;
 
@@ -1046,6 +1045,8 @@ public class BookingRuangController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaReschedulable(item))
             return StatusCode(403, new { detail = "Jadwal tidak dapat dipindahkan pada status ini" });
+        if (user!.Role == RoleEnum.APPROVAL_GA && item.Status != BookingStatusEnum.APPROVED_GA)
+            return StatusCode(403, new { detail = "Jadwal belum mencapai tahap Approval General Affair" });
 
         var validationError = ValidateReschedule(payload);
         if (validationError != null) return BadRequest(new { detail = validationError });
@@ -1072,8 +1073,8 @@ public class BookingRuangController : ApiControllerBase
             item.JumlahPeserta = Math.Min(payload.JumlahPeserta.Value, MaxJumlahPeserta);
         }
         item.IsWholeDay = payload.IsWholeDay;
-        item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
-        item.JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai;
+        item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
+        item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
         item.HasConflict = false;
         item.AdditionalRooms.Clear();
         foreach (var room in (payload.AdditionalRooms ?? new List<string>()).Distinct())
@@ -1102,6 +1103,8 @@ public class BookingRuangController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaReschedulable(item))
             return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+        if (user!.Role == RoleEnum.APPROVAL_GA && item.Status != BookingStatusEnum.APPROVED_GA)
+            return StatusCode(403, new { detail = "Data belum mencapai tahap Approval General Affair" });
 
         if (string.IsNullOrWhiteSpace(payload.Pic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
         if (!IsValidPhone(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC tidak valid" });

@@ -248,8 +248,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         departemen: form.departemen || undefined,
         pic: form.pic || null,
         catatan: form.catatan || null,
-        jamMulai: form.isWholeDay ? null : form.jamMulai,
-        jamSelesai: form.isWholeDay ? null : form.jamSelesai,
+        jamMulai: form.isWholeDay ? "07:00" : form.jamMulai,
+        jamSelesai: form.isWholeDay ? "18:00" : form.jamSelesai,
         tipe: form.tipe || "INTERNAL",
       });
       showToast(
@@ -349,11 +349,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-jam-mulai">Jam Mulai</label>
               <SearchableSelect
                 id="f-jam-mulai"
-                value={form.jamMulai || undefined}
+                value={form.jamMulai || (form.isWholeDay ? "07:00" : undefined)}
                 onChange={handleJamMulaiChange}
-                options={availableStartHours}
+                options={form.isWholeDay ? ["07:00"] : availableStartHours}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={availableStartHours[0] || "Tidak ada slot"}
+                placeholder={form.isWholeDay ? "07:00" : (availableStartHours[0] || "Tidak ada slot")}
                 disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />
@@ -362,11 +362,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-jam-selesai">Jam Selesai</label>
               <SearchableSelect
                 id="f-jam-selesai"
-                value={form.jamSelesai || undefined}
+                value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
                 onChange={(v) => set("jamSelesai", v)}
-                options={availableEndHours}
+                options={form.isWholeDay ? ["18:00"] : availableEndHours}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder={availableEndHours[0] || "Pilih jam"}
+                placeholder={form.isWholeDay ? "18:00" : (availableEndHours[0] || "Pilih jam")}
                 disabled={form.isWholeDay || availableStartHours.length === 0}
                 searchable={false}
               />

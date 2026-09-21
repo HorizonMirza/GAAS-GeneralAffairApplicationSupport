@@ -1473,6 +1473,10 @@ body.auth-ready .app-shell {
   text-overflow: ellipsis;
 }
 
+.item-row-card .card-header {
+  flex-wrap: nowrap;
+}
+
 .welcome-heading {
   font-size: 1.4rem;
   font-weight: 700;
@@ -4305,7 +4309,13 @@ table.data-table {
 .room-multiselect-trigger:hover { border-color: var(--blue-400); }
 .room-multiselect-trigger[aria-expanded="true"] { border-color: var(--blue-400); }
 .room-multiselect-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
+.room-multiselect-trigger:disabled,
+.room-multiselect-trigger.room-multiselect-trigger-readonly {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
 .room-multiselect-trigger:disabled { cursor: not-allowed; opacity: 0.6; }
+.room-multiselect-trigger.room-multiselect-trigger-readonly:hover { border-color: var(--border-subtle); }
 
 .room-multiselect-trigger > span:first-child {
   overflow: hidden;

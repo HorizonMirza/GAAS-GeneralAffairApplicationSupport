@@ -248,6 +248,18 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS recurrence_end_date DATE");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS has_conflict BOOLEAN NOT NULL DEFAULT FALSE");
 
+    // Backfill whole-day records to store 07:00:00 and 18:00:00 as operating hours
+    migrateDb.Database.ExecuteSqlRaw(@"
+        UPDATE booking_ruang
+        SET jam_mulai = '07:00:00', jam_selesai = '18:00:00'
+        WHERE is_whole_day = true AND (jam_mulai IS NULL OR jam_selesai IS NULL OR jam_mulai <> '07:00:00' OR jam_selesai <> '18:00:00')
+    ");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        UPDATE booking_kendaraan
+        SET jam_mulai = '07:00:00', jam_selesai = '18:00:00'
+        WHERE is_whole_day = true AND (jam_mulai IS NULL OR jam_selesai IS NULL OR jam_mulai <> '07:00:00' OR jam_selesai <> '18:00:00')
+    ");
+
     // Additional rooms for a multi-room booking - brand new table, same reasoning as
     // booking_chat_messages below (EnsureCreated() only creates tables for a fresh database).
     migrateDb.Database.ExecuteSqlRaw(@"

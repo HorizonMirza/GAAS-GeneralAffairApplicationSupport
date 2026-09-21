@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -32,8 +32,8 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
     // The API returns TimeOnly values as "HH:mm:ss", but the Jam Mulai/Selesai <select> options
     // are "HH:mm" - without slicing, the value never matches any option and the browser silently
     // falls back to displaying the first option (07:00) instead of the item's real time.
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
+    jamMulai: item.isWholeDay ? "07:00" : (item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai),
+    jamSelesai: item.isWholeDay ? "18:00" : (item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai),
   };
 }
 
@@ -90,8 +90,8 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
     try {
       await api.rescheduleBooking(item!.id, {
         ...form!,
-        jamMulai: form!.isWholeDay ? null : form!.jamMulai,
-        jamSelesai: form!.isWholeDay ? null : form!.jamSelesai,
+        jamMulai: form!.isWholeDay ? "07:00" : form!.jamMulai,
+        jamSelesai: form!.isWholeDay ? "18:00" : form!.jamSelesai,
       });
       showToast("Ruang/jadwal booking berhasil dipindahkan");
       onClose();
@@ -114,23 +114,23 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
           <div className="form-grid">
             <div className="field full">
               <label htmlFor="rs-nomor-pemesanan">Nomor Pesanan Ruangan <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
+              <input type="text" id="rs-nomor-pemesanan" disabled value={item.nomorPemesanan || "-"} />
             </div>
             <div className="field full">
               <label htmlFor="rs-nama-kegiatan">Nama Kegiatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
             <div className="field">
-              <label htmlFor="rs-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-pic" disabled value={item.pic || ""} />
+              <label htmlFor="rs-nama-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="rs-nama-pic" disabled value={item.pic || "-"} />
             </div>
             <div className="field">
-              <label htmlFor="rs-telepon-pic">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-telepon-pic" disabled value={item.noTeleponPic || ""} />
+              <label htmlFor="rs-no-telepon">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <input type="text" id="rs-no-telepon" disabled value={item.noTeleponPic || "-"} />
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <DateFilterPicker id="rs-tanggal" value={form.tanggal} onChange={(v) => set("tanggal", v)} clearable={false} />
+              <DateFilterPicker id="rs-tanggal" clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} minDate={todayLocalDate()} />
             </div>
             <div className="field">
               <label htmlFor="rs-peserta">Jumlah Peserta <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -139,24 +139,24 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                 inputMode="numeric"
                 pattern="[0-9]*"
                 id="rs-peserta"
-                value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta ?? "")}
+                required
+                value={form.jumlahPeserta === 0 ? "" : String(form.jumlahPeserta)}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
                   const parsed = digits === "" ? 0 : Math.min(Number(digits), MAX_JUMLAH_PESERTA);
                   set("jumlahPeserta", parsed);
                 }}
-                placeholder="Jumlah peserta"
               />
             </div>
             <div className="field">
               <label htmlFor="rs-jam-mulai">Jam Mulai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-jam-mulai"
-                value={form.jamMulai || undefined}
+                value={form.jamMulai || (form.isWholeDay ? "07:00" : undefined)}
                 onChange={(v) => set("jamMulai", v)}
-                options={HOUR_OPTIONS}
+                options={form.isWholeDay ? ["07:00"] : HOUR_OPTIONS}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder="Pilih jam"
+                placeholder={form.isWholeDay ? "07:00" : "Pilih jam"}
                 disabled={form.isWholeDay}
               />
             </div>
@@ -164,11 +164,11 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <label htmlFor="rs-jam-selesai">Jam Selesai <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect
                 id="rs-jam-selesai"
-                value={form.jamSelesai || undefined}
+                value={form.jamSelesai || (form.isWholeDay ? "18:00" : undefined)}
                 onChange={(v) => set("jamSelesai", v)}
-                options={HOUR_OPTIONS}
+                options={form.isWholeDay ? ["18:00"] : HOUR_OPTIONS}
                 getLabel={(v) => (v ? v.slice(0, 5) : v)}
-                placeholder="Pilih jam"
+                placeholder={form.isWholeDay ? "18:00" : "Pilih jam"}
                 disabled={form.isWholeDay}
               />
             </div>

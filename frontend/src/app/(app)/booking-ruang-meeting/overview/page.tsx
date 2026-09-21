@@ -427,11 +427,17 @@ export default function BookingOverviewPage() {
               <div className="card-header">
                 <div className="card-header-title">
                   <strong>{item.namaKegiatan} - {item.nomorPemesanan || "-"}</strong>
-                  <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                    {formatDate(item.tanggal)} · {bookingRoomsLabel(item)} · {item.departemen || item.divisi}
-                  </div>
+                  {(() => {
+                    const orgUnit = item.departemen || item.divisi;
+                    const subtitle = `${formatDate(item.tanggal)}${orgUnit ? ` · ${orgUnit}` : ""} · ${bookingRoomsLabel(item)}`;
+                    return (
+                      <div className="text-secondary" style={{ fontSize: "0.82rem" }} title={subtitle}>
+                        {subtitle}
+                      </div>
+                    );
+                  })()}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span className="badge-stack">
                     <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
                     {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}

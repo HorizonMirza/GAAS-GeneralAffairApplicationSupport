@@ -39,7 +39,7 @@ export default function RoomMultiSelect({ id, rooms, excludeRoom, selected, onCh
       <button
         type="button"
         id={id}
-        className="room-multiselect-trigger"
+        className={`room-multiselect-trigger${readOnly ? " room-multiselect-trigger-readonly" : ""}`}
         aria-expanded={open}
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
