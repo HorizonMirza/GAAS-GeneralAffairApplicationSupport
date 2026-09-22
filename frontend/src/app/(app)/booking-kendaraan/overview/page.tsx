@@ -12,6 +12,7 @@ import {
   bookingStatusBorderClass,
   isBookingOriginRole,
   isKendaraanDeletableByOrigin,
+  buildVehicleBookingDuplicateInitial,
   isKendaraanEditableByOrigin,
   isKendaraanPdfAvailable,
   canGaKoreksiKendaraan,
@@ -411,7 +412,7 @@ export default function VehicleBookingOverviewPage() {
                   })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
+                  <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isKendaraan />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -458,6 +459,17 @@ export default function VehicleBookingOverviewPage() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
+        onDuplicate={
+          isOrigin
+            ? () => {
+                const item = rowMenu.menuItem;
+                rowMenu.close();
+                if (!item) return;
+                setFormInitial(buildVehicleBookingDuplicateInitial(item));
+                setFormOpen(true);
+              }
+            : undefined
+        }
         canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
         onKoreksi={() => {
           const item = rowMenu.menuItem;

@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
+import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
 // Single badge, always "Status: Role" so whoever is currently holding it (on-approval) or who
 // stopped it (rejected) is visible at a glance without a second sub-badge or the Stepper. SUBMITTED
@@ -381,6 +381,22 @@ export function buildRoomBookingDuplicateInitial(item: BookingRuang): Partial<Bo
     jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
     catatan: item.catatan,
     tipe: item.tipe,
+  };
+}
+
+export function buildVehicleBookingDuplicateInitial(item: BookingKendaraan): Partial<BookingKendaraanCreatePayload> {
+  return {
+    keperluan: item.keperluan,
+    pic: item.pic,
+    noTeleponPic: item.noTeleponPic || "",
+    divisi: item.divisi || undefined,
+    departemen: item.departemen ?? "",
+    namaKendaraan: item.namaKendaraan,
+    jumlahPenumpang: item.jumlahPenumpang,
+    isWholeDay: item.isWholeDay,
+    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
+    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
+    catatan: item.catatan,
   };
 }
 

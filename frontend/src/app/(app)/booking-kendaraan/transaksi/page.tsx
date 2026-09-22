@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
+  buildVehicleBookingDuplicateInitial,
   canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
@@ -18,7 +19,7 @@ import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
-import type { BookingKendaraan, BookingStatus, VehicleOption } from "@/lib/types";
+import type { BookingKendaraan, BookingKendaraanCreatePayload, BookingStatus, VehicleOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
@@ -68,6 +69,7 @@ function VehicleBookingTransaksiPageInner() {
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
   const [koreksiTarget, setKoreksiTarget] = useState<BookingKendaraan | null>(null);
@@ -252,7 +254,7 @@ function VehicleBookingTransaksiPageInner() {
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-kendaraan-search">Cari Pesanan</label>
-            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan, keperluan, PIC, kendaraan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
 
           <div className="field">
@@ -392,7 +394,7 @@ function VehicleBookingTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isKendaraan />
                           </span>
                           <button
                             type="button"
@@ -464,6 +466,17 @@ function VehicleBookingTransaksiPageInner() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
+        onDuplicate={
+          isOrigin
+            ? () => {
+                const item = rowMenu.menuItem;
+                rowMenu.close();
+                if (!item) return;
+                setFormInitial(buildVehicleBookingDuplicateInitial(item));
+                setFormOpen(true);
+              }
+            : undefined
+        }
         canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
         onKoreksi={() => {
           const item = rowMenu.menuItem;
@@ -494,7 +507,13 @@ function VehicleBookingTransaksiPageInner() {
       />
 
       {me && (
-        <VehicleBookingFormModal open={formOpen} me={me} onClose={() => setFormOpen(false)} onCreated={loadTable} />
+        <VehicleBookingFormModal
+          open={formOpen}
+          me={me}
+          initial={formInitial}
+          onClose={() => { setFormOpen(false); setFormInitial(undefined); }}
+          onCreated={loadTable}
+        />
       )}
 
       <VehicleBookingDetailModal

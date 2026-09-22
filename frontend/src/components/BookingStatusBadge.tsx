@@ -14,11 +14,13 @@ interface Props {
   // StatusBadge, just without a RejectTarget branch (there's only ever one destination).
   revisable?: boolean;
   isRoom?: boolean;
+  isKendaraan?: boolean;
 }
 
-export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false, isRoom = false }: Props) {
+export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
+  const isBooking = isRoom || isKendaraan;
   const label =
-    isRoom && status === "CANCELLED"
+    isBooking && status === "CANCELLED"
       ? "Rejected"
       : status === "CANCELLED" && cancelledByName
       ? `Cancel: ${cancelledByName}`
@@ -29,7 +31,7 @@ export default function BookingStatusBadge({ status, departemen = null, createdB
   // APPROVED_GA_APPROVAL is the true final/green status. Same enum name, different meaning, so
   // this one status gets its own class instead of colliding with Pengiriman's.
   const cls =
-    isRoom && status === "CANCELLED"
+    isBooking && status === "CANCELLED"
       ? "rejected"
       : status === "APPROVED_GA_APPROVAL"
       ? "booking-approved_ga_approval"

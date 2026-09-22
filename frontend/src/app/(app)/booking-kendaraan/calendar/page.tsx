@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import {
+  buildVehicleBookingDuplicateInitial,
   canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
@@ -426,6 +427,17 @@ function VehicleCalendarPageInner() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
+        onDuplicate={
+          isOrigin
+            ? () => {
+                const item = rowMenu.menuItem;
+                rowMenu.close();
+                if (!item) return;
+                setFormInitial(buildVehicleBookingDuplicateInitial(item));
+                setFormOpen(true);
+              }
+            : undefined
+        }
         canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
         onKoreksi={() => {
           const item = rowMenu.menuItem;
