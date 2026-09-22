@@ -262,7 +262,7 @@ public class BookingKendaraanController : ApiControllerBase
     private static string? ValidatePayload(BookingKendaraanCreate payload, bool isGaActor)
     {
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
-            return "Tujuan wajib diisi";
+            return "Nama Kegiatan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.Pic))
             return "PIC wajib diisi";
         if (!IsValidPhone(payload.NoTeleponPic ?? ""))

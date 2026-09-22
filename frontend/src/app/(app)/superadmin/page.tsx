@@ -1397,7 +1397,7 @@ export default function SuperAdminPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Tujuan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Kendaraan</th>
+                <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Kendaraan</th>
                 <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>

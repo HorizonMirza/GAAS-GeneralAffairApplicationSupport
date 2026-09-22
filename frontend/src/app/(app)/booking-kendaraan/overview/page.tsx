@@ -11,7 +11,6 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingStatusBorderClass,
   isBookingOriginRole,
-  isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
   isKendaraanPdfAvailable,
@@ -32,13 +31,12 @@ import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 
-type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED" | "CANCELLED";
+type StatusFilter = "ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED";
 
 // Vehicle Booking buka 07:00-18:00 (lihat OperatingStart/OperatingEnd di
 // BookingKendaraanController). "Penuh" hanya berarti benar-benar penuh sepanjang jam operasional -
@@ -223,7 +221,6 @@ export default function VehicleBookingOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -273,7 +270,6 @@ export default function VehicleBookingOverviewPage() {
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
     if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
     if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
-    if (statusFilter === "CANCELLED") return items.filter((i) => i.status === "CANCELLED");
     return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
@@ -372,16 +368,16 @@ export default function VehicleBookingOverviewPage() {
             id="overview-kendaraan-status-filter"
             value={statusFilter}
             onChange={(v) => setStatusFilter(v as StatusFilter)}
-            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED", "CANCELLED"]}
+            options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
             getLabel={(v) => ({
               ALL: "Semua Status",
               DRAFT: "Draft",
               ON_APPROVAL: "On-Approval",
               APPROVED: "Approved",
               REJECTED: "Rejected",
-              CANCELLED: "Cancelled",
             } as Record<string, string>)[v] || v}
             placeholder="Semua Status"
+            searchable={false}
           />
         </div>
       </div>
@@ -450,12 +446,6 @@ export default function VehicleBookingOverviewPage() {
           ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
-        canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
-        onCancel={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setCancelTargetId(item.id);
-        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -510,16 +500,17 @@ export default function VehicleBookingOverviewPage() {
       <RoomInfoModal
         open={!!infoVehicle}
         nama={infoVehicle?.nama ?? null}
-        kapasitas={infoVehicle?.kapasitas ?? null}
+        kapasitas={null}
         extraDetails={
           infoVehicle
             ? [
                 { label: "Merek", value: infoVehicle.merek || "-" },
-                { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
                 { label: "Warna", value: infoVehicle.warna || "-" },
                 { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
-                { label: "Nama Supir", value: infoVehicle.supir || "-" },
-                { label: "Telepon Supir", value: infoVehicle.nomorTeleponSupir || "-" },
+                { label: "Kapasitas", value: `${infoVehicle.kapasitas} orang` },
+                { label: "Plat Nomor", value: infoVehicle.platNomor || "-" },
+                { label: "Nama Pengemudi", value: infoVehicle.supir || "-" },
+                { label: "No Telepon Pengemudi", value: infoVehicle.nomorTeleponSupir || "-" },
               ]
             : []
         }
@@ -593,17 +584,6 @@ export default function VehicleBookingOverviewPage() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          load();
-        }}
-      />
-
-      <CancelBookingModal
-        open={cancelTargetId != null}
-        targetId={cancelTargetId}
-        targetType="kendaraan"
-        onClose={() => setCancelTargetId(null)}
-        onDone={() => {
-          setCancelTargetId(null);
           load();
         }}
       />

@@ -10,7 +10,6 @@ import {
   canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
-  isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
   isKendaraanPdfAvailable,
@@ -20,6 +19,7 @@ import type { BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, Veh
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
 import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
+import DateFilterPicker from "@/components/DateFilterPicker";
 import SearchableSelect from "@/components/SearchableSelect";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
@@ -29,7 +29,6 @@ import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal"
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
-import CancelBookingModal from "@/components/CancelBookingModal";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { nowWib } from "@/lib/format";
 
@@ -97,7 +96,6 @@ function VehicleCalendarPageInner() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarHeight, setSidebarHeight] = useState<number | undefined>(undefined);
@@ -281,7 +279,14 @@ function VehicleCalendarPageInner() {
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-date-input">Tanggal</label>
-            <input type="date" id="calendar-kendaraan-date-input" value={refDate} onChange={(e) => setRefDate(e.target.value)} />
+            <DateFilterPicker
+              id="calendar-kendaraan-date-input"
+              value={refDate}
+              onChange={(v) => {
+                if (v) setRefDate(v);
+              }}
+              clearable={false}
+            />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-search-input">Cari Pesanan</label>
@@ -289,7 +294,7 @@ function VehicleCalendarPageInner() {
               type="text"
               id="calendar-kendaraan-search-input"
               className="calendar-search-input"
-              placeholder="No Pesanan, keperluan, PIC, kendaraan"
+              placeholder="No Pesanan"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -402,12 +407,6 @@ function VehicleCalendarPageInner() {
           ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
-        canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
-        onCancel={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setCancelTargetId(item.id);
-        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -500,17 +499,6 @@ function VehicleCalendarPageInner() {
         onClose={() => setRejectTarget(null)}
         onDone={() => {
           setRejectTarget(null);
-          reloadAll();
-        }}
-      />
-
-      <CancelBookingModal
-        open={cancelTargetId != null}
-        targetId={cancelTargetId}
-        targetType="kendaraan"
-        onClose={() => setCancelTargetId(null)}
-        onDone={() => {
-          setCancelTargetId(null);
           reloadAll();
         }}
       />

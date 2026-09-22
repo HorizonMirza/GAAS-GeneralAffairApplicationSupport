@@ -78,7 +78,7 @@ export default function VehicleBookingKoreksiModal({ open, item, onClose, onSave
               <input type="text" id="kk-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="kk-keperluan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>
+              <label htmlFor="kk-keperluan">Nama Kegiatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="kk-keperluan" disabled value={item.keperluan} />
             </div>
             <div className="field">

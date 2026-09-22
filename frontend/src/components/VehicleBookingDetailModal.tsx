@@ -237,7 +237,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
       }
     }
     if (!form?.keperluan?.trim()) {
-      setError("Tujuan wajib diisi");
+      setError("Nama Kegiatan wajib diisi");
       return;
     }
     if (!form?.namaKendaraan) {
@@ -282,7 +282,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               <input type="text" id="bk-nomor-pemesanan" disabled value={item.nomorPemesanan || ""} />
             </div>
             <div className="field full">
-              <label htmlFor="bk-keperluan">Tujuan</label>
+              <label htmlFor="bk-keperluan">Nama Kegiatan</label>
               <input type="text" id="bk-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
             <div className="field">
@@ -423,7 +423,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             </div>
             <div className="field full">
               <label htmlFor="bk-catatan">Catatan</label>
-              <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Penjemputan di Lobby Utama / perjalanan dinas luar kota" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 
