@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, originActorLabel } from "@/lib/constants";
+import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, isValidPengirimanPhone, originActorLabel } from "@/lib/constants";
 import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
@@ -176,6 +176,14 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Harga Asuransi, dan Harga Ongkos Kirim." : "Lengkapi No Resi, Berat, dan Harga Ongkos Kirim.");
       return;
     }
+    if (!(Number(beratStr.replace(",", ".")) > 0)) {
+      setError("Berat barang harus lebih dari 0");
+      return;
+    }
+    if (!(Number(subTotalStr) > 0)) {
+      setError("Harga ongkos kirim harus lebih dari 0");
+      return;
+    }
     setBusy(true);
     try {
       await api.approveKpu(item!.id, {
@@ -205,6 +213,22 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     if (isEdit) {
       if (form!.jumlahItem <= 0) {
         setError("Jumlah barang harus lebih dari 0");
+        return;
+      }
+      if (!form!.namaPengirim.trim()) {
+        setError("Nama pengirim wajib diisi");
+        return;
+      }
+      if (!isValidPengirimanPhone(form!.noTeleponPengirim)) {
+        setError("Nomor telepon pengirim tidak valid");
+        return;
+      }
+      if (!form!.namaPenerima.trim()) {
+        setError("Nama penerima wajib diisi");
+        return;
+      }
+      if (!isValidPengirimanPhone(form!.noTeleponPenerima)) {
+        setError("Nomor telepon penerima tidak valid");
         return;
       }
       setBusy(true);

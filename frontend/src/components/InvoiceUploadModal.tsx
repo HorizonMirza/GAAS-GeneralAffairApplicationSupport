@@ -38,6 +38,13 @@ export default function InvoiceUploadModal({ open, onClose, onDone }: Props) {
   }
 
   function handleFileChange(picked: File | null) {
+    // The <input accept="application/pdf"> only filters the OS file-picker dialog - a file
+    // dropped via handleDrop bypasses it entirely, so the type still needs checking here.
+    if (picked && picked.type !== "application/pdf" && !picked.name.toLowerCase().endsWith(".pdf")) {
+      setError("File harus berformat PDF");
+      setFile(null);
+      return;
+    }
     if (picked && picked.size > MAX_INVOICE_FILE_SIZE_BYTES) {
       setError("File terlalu besar, maksimal 10 MB");
       setFile(null);

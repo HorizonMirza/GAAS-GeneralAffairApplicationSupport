@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
+import { isValidPengirimanPhone } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { KoreksiPengirimanPayload, Pengiriman } from "@/lib/types";
@@ -56,6 +57,22 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form!.namaPengirim.trim()) {
+      setError("Nama pengirim wajib diisi");
+      return;
+    }
+    if (!isValidPengirimanPhone(form!.noTeleponPengirim)) {
+      setError("Nomor telepon pengirim tidak valid");
+      return;
+    }
+    if (!form!.namaPenerima.trim()) {
+      setError("Nama penerima wajib diisi");
+      return;
+    }
+    if (!isValidPengirimanPhone(form!.noTeleponPenerima)) {
+      setError("Nomor telepon penerima tidak valid");
+      return;
+    }
     setBusy(true);
     try {
       await api.koreksiPengiriman(item!.id, form!);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { isValidPengirimanPhone } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { Asuransi, Me, PengirimanCreatePayload } from "@/lib/types";
@@ -93,6 +94,22 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
     }
     if (form.jumlahItem <= 0) {
       setError("Jumlah barang harus lebih dari 0");
+      return;
+    }
+    if (!form.namaPengirim.trim()) {
+      setError("Nama pengirim wajib diisi");
+      return;
+    }
+    if (!isValidPengirimanPhone(form.noTeleponPengirim)) {
+      setError("Nomor telepon pengirim tidak valid");
+      return;
+    }
+    if (!form.namaPenerima.trim()) {
+      setError("Nama penerima wajib diisi");
+      return;
+    }
+    if (!isValidPengirimanPhone(form.noTeleponPenerima)) {
+      setError("Nomor telepon penerima tidak valid");
       return;
     }
     setBusy(true);

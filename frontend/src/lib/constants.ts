@@ -203,6 +203,14 @@ export function canGaKoreksiPengiriman(item: Pengiriman, me: Me): boolean {
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
+// Mirrors PengirimanController.IsValidPhone exactly (digit count only, formatting stripped
+// first) - the form already restricts typed characters to digits/"+", but a value that's too
+// short/long still needs to be caught before submit instead of only surfacing as a backend 400.
+export function isValidPengirimanPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15;
+}
+
 export const INVOICE_STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
   PENDING: "On-Approval: Admin GA",
