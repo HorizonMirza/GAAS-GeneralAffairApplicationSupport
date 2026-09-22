@@ -10,6 +10,7 @@ import {
   bookingRoomsLabel,
   buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
+  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -22,6 +23,7 @@ import MiniMonthCalendar from "@/components/MiniMonthCalendar";
 import SearchableSelect from "@/components/SearchableSelect";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
+import CancelBookingModal from "@/components/CancelBookingModal";
 import RoomBookingFormModal from "@/components/RoomBookingFormModal";
 import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
 import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
@@ -85,6 +87,7 @@ function BookingCalendarPageInner() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   // Bulanan's grid has no row-based content to naturally match the sidebar's height the way
   // Harian/Mingguan's hour rows do, so its card is matched to the sidebar's real rendered height
@@ -396,6 +399,12 @@ function BookingCalendarPageInner() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -479,8 +488,20 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={reload}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="room"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
+          reload();
+        }}
+      />
 
       <RoomBookingRescheduleModal
         open={!!rescheduleTarget}

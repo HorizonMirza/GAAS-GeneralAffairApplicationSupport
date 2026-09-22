@@ -11,6 +11,7 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingStatusBorderClass,
   isBookingOriginRole,
+  isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   buildVehicleBookingDuplicateInitial,
   isKendaraanEditableByOrigin,
@@ -32,6 +33,7 @@ import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
@@ -222,6 +224,7 @@ export default function VehicleBookingOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -271,7 +274,7 @@ export default function VehicleBookingOverviewPage() {
     if (statusFilter === "DRAFT") return items.filter((i) => i.status === "DRAFT");
     if (statusFilter === "APPROVED") return items.filter((i) => i.status === "APPROVED_GA_APPROVAL");
     if (statusFilter === "ON_APPROVAL") return items.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
-    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+    return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status) || i.status === "CANCELLED");
   }, [items, statusFilter]);
 
   if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
@@ -447,6 +450,12 @@ export default function VehicleBookingOverviewPage() {
           ((isOrigin && isKendaraanEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleKendaraan(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -571,8 +580,20 @@ export default function VehicleBookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="kendaraan"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
+          load();
+        }}
+      />
 
       <VehicleBookingRescheduleModal
         open={!!rescheduleTarget}

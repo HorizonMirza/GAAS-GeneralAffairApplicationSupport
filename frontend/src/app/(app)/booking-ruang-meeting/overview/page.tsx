@@ -13,6 +13,7 @@ import {
   bookingStatusBorderClass,
   buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
+  isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
   isBookingEditableByOrigin,
   isBookingOriginRole,
@@ -22,6 +23,7 @@ import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/form
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
 import { isWeekend } from "@/components/RoomCalendarView";
+import CancelBookingModal from "@/components/CancelBookingModal";
 
 // Ruang Meeting buka 07:00-18:00 (lihat ClosedNotice di RoomCalendarView). "Penuh" hanya berarti
 // benar-benar penuh sepanjang hari - dihitung dari booking yang statusnya sudah APPROVED_GA_APPROVAL
@@ -229,6 +231,7 @@ export default function BookingOverviewPage() {
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -476,6 +479,12 @@ export default function BookingOverviewPage() {
           ((isOrigin && isBookingEditableByOrigin(rowMenu.menuItem, me)) || canGaRescheduleBooking(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
+        canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        onCancel={() => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (item) setCancelTargetId(item.id);
+        }}
         onDetail={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -586,8 +595,20 @@ export default function BookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
+          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
+
+      <CancelBookingModal
+        open={cancelTargetId != null}
+        targetId={cancelTargetId}
+        targetType="room"
+        onClose={() => setCancelTargetId(null)}
+        onDone={() => {
+          setCancelTargetId(null);
+          load();
+        }}
+      />
 
       <RoomBookingRescheduleModal
         open={!!rescheduleTarget}

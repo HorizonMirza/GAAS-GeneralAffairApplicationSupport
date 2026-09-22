@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
+  isKendaraanCancellableByOrigin,
   isKendaraanEditableByOrigin,
   isKendaraanGaActionable,
   kendaraanOriginActorLabel,
@@ -29,6 +30,7 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
+  onRequestCancel?: (id: number) => void;
 }
 
 function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
@@ -50,7 +52,7 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
   };
 }
 
-export default function VehicleBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+export default function VehicleBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onRequestCancel }: Props) {
   const [form, setForm] = useState<BookingKendaraanCreatePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
@@ -81,6 +83,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isKendaraanGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canCancel = !isEdit && isKendaraanCancellableByOrigin(item, me);
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
 
@@ -440,22 +443,36 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
           )}
 
           {error && <div className="error-text">{error}</div>}
-          <div className="modal-actions">
-            {canSubmitDraft && (
-              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
-            )}
-            {canL1Act && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-l1", kendaraanOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
-              </>
-            )}
-            {canGaAct && (
-              <>
-                <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga", kendaraanOriginActorLabel(item)); }}>Reject</button>
-                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
-              </>
-            )}
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit || (canCancel && !!onRequestCancel)) && (
+            <div className="modal-actions">
+              {canCancel && onRequestCancel && !canL1Act && !canGaAct && !canGaApprovalAct && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
+                  onClick={() => {
+                    onClose();
+                    onRequestCancel(item.id);
+                  }}
+                >
+                  Cancel Booking
+                </button>
+              )}
+              {canSubmitDraft && (
+                <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
+              )}
+              {canL1Act && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-l1", kendaraanOriginActorLabel(item)); }}>Reject</button>
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveL1}>Approve</button>
+                </>
+              )}
+              {canGaAct && (
+                <>
+                  <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga", kendaraanOriginActorLabel(item)); }}>Reject</button>
+                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApproveGa}>Approve</button>
+                </>
+              )}
             {canGaApprovalAct && (
               <>
                 <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => { onClose(); onRequestReject(item.id, "kendaraan-ga-approval", kendaraanOriginActorLabel(item)); }}>Reject</button>
@@ -466,6 +483,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
             )}
           </div>
+        )}
         </form>
       </div>
     </ModalOverlay>

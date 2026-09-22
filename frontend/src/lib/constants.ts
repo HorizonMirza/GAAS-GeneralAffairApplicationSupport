@@ -164,6 +164,7 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
   CORRECTED: { label: "Data Dikoreksi oleh GA", type: "neutral" },
+  CANCELLED: { label: "Booking Dibatalkan", type: "reject" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
   LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
   GAMBAR_DIBUAT: { label: "Gambar Rencana Perbaikan Dibuat", type: "neutral" },

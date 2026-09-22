@@ -55,7 +55,7 @@ public class BookingKendaraanExportController : ApiControllerBase
         ["APPROVED_GA"] = "On-Approval",
         ["REJECTED_GA_APPROVAL"] = "Rejected",
         ["APPROVED_GA_APPROVAL"] = "Approved",
-        ["CANCELLED"] = "Rejected",
+        ["CANCELLED"] = "Cancelled",
     };
 
     public BookingKendaraanExportController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)

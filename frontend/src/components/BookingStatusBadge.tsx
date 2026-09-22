@@ -18,12 +18,11 @@ interface Props {
 }
 
 export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
-  const isBooking = isRoom || isKendaraan;
   const label =
-    isBooking && status === "CANCELLED"
-      ? "Rejected"
-      : status === "CANCELLED" && cancelledByName
+    status === "CANCELLED" && cancelledByName
       ? `Cancel: ${cancelledByName}`
+      : status === "CANCELLED"
+      ? "Cancelled"
       : getBookingStatusLabel(status, departemen);
   const waitingLabel = revisable ? getSimpleWaitingLabel(status, { createdByRole, departemen }) : undefined;
   // Pengiriman's StatusBadge also renders an "approved_ga_approval" status, but that one isn't
@@ -31,8 +30,8 @@ export default function BookingStatusBadge({ status, departemen = null, createdB
   // APPROVED_GA_APPROVAL is the true final/green status. Same enum name, different meaning, so
   // this one status gets its own class instead of colliding with Pengiriman's.
   const cls =
-    isBooking && status === "CANCELLED"
-      ? "rejected"
+    status === "CANCELLED"
+      ? "cancelled"
       : status === "APPROVED_GA_APPROVAL"
       ? "booking-approved_ga_approval"
       : status.toLowerCase();
