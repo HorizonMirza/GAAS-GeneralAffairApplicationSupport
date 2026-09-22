@@ -1,6 +1,6 @@
 # Alur Kerja Pengembangan
 
-Proyek ini dikembangkan dengan bantuan Claude Code yang berjalan di sandbox terpisah, dengan akses langsung (via kredensial Git) ke repository GitHub milik user. Karena itu, setiap perubahan melalui siklus berikut:
+Proyek ini dikembangkan dengan bantuan beberapa AI coding assistant yang masing-masing berjalan di sandbox terpisah, dengan akses langsung (via kredensial Git) ke repository GitHub milik user — saat ini Claude Code, Antigravity, dan Codex. Karena itu, setiap perubahan melalui siklus berikut:
 
 1. **Revisi** — perubahan kode dilakukan di sandbox sesuai permintaan, setelah `git pull`/`git fetch` untuk memastikan sandbox bekerja dari state terbaru repo.
 2. **Verifikasi** — sebelum dianggap selesai:
@@ -12,6 +12,19 @@ Proyek ini dikembangkan dengan bantuan Claude Code yang berjalan di sandbox terp
    - `git pull` di komputer user.
    - Backend: `cd backend && dotnet run --launch-profile http` (tambahkan `-- resetdb` hanya kalau ada perubahan skema/model, atau `-- seed` untuk mengisi ulang akun tanpa drop tabel).
    - Frontend: `cd frontend && npm install` (kalau ada perubahan dependency) lalu `npm run dev`.
+
+## Penamaan Commit (Multi-Kontributor)
+
+Repo ini dikerjakan 4 pihak, jadi setiap commit dari AI assistant diberi prefix di awal pesan supaya riwayat commit gampang dipilah siapa yang mengerjakan apa:
+
+| Kontributor | Prefix | Contoh |
+|---|---|---|
+| User (manual) | *(tidak ada)* | `Fix typo di label Kategori` |
+| Claude Code | `[CLAUDIA]` | `[CLAUDIA] Audit and perfect expedition module` |
+| Antigravity | `[AGY]` | `[AGY] Audit and perfect expedition module` |
+| Codex | `[NOVA]` | `[NOVA] Audit and perfect expedition module` |
+
+Claude Code menambahkan `[CLAUDIA] ` di awal setiap commit message yang dibuatnya di repo ini (judul commit saja, bukan di body).
 
 ## Kenapa Alur Ini?
 
