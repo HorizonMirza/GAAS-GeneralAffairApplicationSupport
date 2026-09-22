@@ -116,7 +116,7 @@ export default function InvoiceHistoryPage() {
   }
 
   const invoiceTotalPages = Math.max(1, Math.ceil(invoiceTotal / invoiceLimit));
-  const invoicePageStart = Math.max(1, Math.min(invoicePage, invoiceTotalPages - 1));
+  const invoicePageStart = Math.min(Math.max(1, invoicePage), invoiceTotalPages);
   const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 1);
   const invoicePageButtons: number[] = [];
   for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);

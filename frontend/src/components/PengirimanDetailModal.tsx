@@ -203,6 +203,10 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     e.preventDefault();
     if (busy) return;
     if (isEdit) {
+      if (form!.jumlahItem <= 0) {
+        setError("Jumlah barang harus lebih dari 0");
+        return;
+      }
       setBusy(true);
       try {
         await api.updatePengiriman(item!.id, { ...form!, catatan: form!.catatan || null });

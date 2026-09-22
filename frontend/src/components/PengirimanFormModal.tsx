@@ -91,6 +91,10 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
         return;
       }
     }
+    if (form.jumlahItem <= 0) {
+      setError("Jumlah barang harus lebih dari 0");
+      return;
+    }
     setBusy(true);
     try {
       // "" (the explicit "Kebutuhan Divisi ini" choice) means no specific Departemen - translated
