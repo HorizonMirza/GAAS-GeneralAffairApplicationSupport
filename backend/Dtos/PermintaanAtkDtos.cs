@@ -52,6 +52,7 @@ public class PermintaanAtkOut
     public StatusEnum Status { get; set; }
     public string? RejectReason { get; set; }
     public SumberPembelianEnum? SumberPembelian { get; set; }
+    public decimal? TotalHargaBarang { get; set; }
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }
     public int? ApprovedByL1 { get; set; }
@@ -88,6 +89,7 @@ public class PermintaanAtkOut
         Status = p.Status,
         RejectReason = p.RejectReason,
         SumberPembelian = p.SumberPembelian,
+        TotalHargaBarang = p.TotalHargaBarang,
         CreatedBy = p.CreatedBy,
         CreatedByRole = p.CreatedByRole,
         ApprovedByL1 = p.ApprovedByL1,
@@ -118,8 +120,14 @@ public class PermintaanAtkStatsResponse
 
 // SumberPembelian is required here (not just optional) - Admin GA is the one who actually
 // executes procurement, so their own approval is the point where the purchase channel has to be
-// pinned down (see PermintaanAtkController.ApproveGa).
+// pinned down (see PermintaanAtkController.ApproveGa). Approval GA's own approval (see
+// ApproveGaApproval) reuses this same request shape to let them revise Admin GA's pick before
+// the final approval, rather than having to reject just to fix it.
 public record ApproveGaAtkRequest(SumberPembelianEnum? SumberPembelian);
+
+// Mitra's own approval (see PermintaanAtkController.ApproveKpu) - the total price they're
+// actually billing for, required since it's the one thing only Mitra can know.
+public record ApproveKpuAtkRequest(decimal? TotalHargaBarang);
 
 // Only relevant when Submit's self-skip logic (see PermintaanAtkController.Submit) lands the
 // item straight at APPROVED_GA or APPROVED_GA_APPROVAL - an Admin/Approval GA submitting their
@@ -127,12 +135,6 @@ public record ApproveGaAtkRequest(SumberPembelianEnum? SumberPembelian);
 // only place left to still capture SumberPembelian for that path.
 public record SubmitAtkRequest(SumberPembelianEnum? SumberPembelian);
 
-// Admin/Approval GA's narrow correction tool (see PermintaanAtkController.Koreksi): fixes
-// administrative typos in the requester's own contact details without touching what's actually
-// being requested (Keperluan/Items/Tanggal stay the origin creator's own, same principle as
-// Room/Vehicle Booking's Reschedule leaving Nama Kegiatan/Keperluan/PIC untouched).
-// SumberPembelian is the one exception - it's GA's own selection (not the requester's), so it's
-// correctable here too instead of forcing a reject just to fix GA's own pick.
 // Admin/Approval GA's own "Updates" tool - the requester's contact details, Tujuan, and the item
 // list, without touching Tanggal/Kategori (see PermintaanAtkController.UpdateByGa).
 public class AtkUpdateByGaRequest

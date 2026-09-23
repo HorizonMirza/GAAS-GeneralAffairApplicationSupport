@@ -589,6 +589,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
             e.Property(p => p.SumberPembelian).HasColumnName("sumber_pembelian").HasConversion<string>().HasMaxLength(20);
+            e.Property(p => p.TotalHargaBarang).HasColumnName("total_harga_barang").HasColumnType("decimal(14,2)");
 
             e.Property(p => p.CreatedBy).HasColumnName("created_by");
             e.Property(p => p.CreatedByRole).HasColumnName("created_by_role").HasConversion<string>().HasMaxLength(50).IsRequired();

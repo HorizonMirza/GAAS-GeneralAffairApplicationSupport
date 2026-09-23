@@ -615,6 +615,7 @@ export interface PermintaanAtk {
   status: Status;
   rejectReason: string | null;
   sumberPembelian: SumberPembelian | null;
+  totalHargaBarang: number | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;

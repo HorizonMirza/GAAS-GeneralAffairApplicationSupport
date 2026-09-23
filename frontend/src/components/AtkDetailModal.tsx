@@ -14,7 +14,7 @@ import {
   isAtkGaActionable,
   isAtkKpuActionable,
 } from "@/lib/constants";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import type { AtkKategori, Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload, SumberPembelian } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
@@ -66,6 +66,7 @@ function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
 export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<PermintaanAtkCreatePayload | null>(null);
   const [sumberPembelian, setSumberPembelian] = useState<SumberPembelian | "">("");
+  const [totalHargaBarang, setTotalHargaBarang] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
@@ -82,7 +83,8 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   useLayoutEffect(() => {
     if (!open || !item) return;
     setForm(toFormFields(item));
-    setSumberPembelian("");
+    setSumberPembelian(item.sumberPembelian || "");
+    setTotalHargaBarang(item.totalHargaBarang ? formatThousandSeparator(String(Math.round(item.totalHargaBarang))) : "");
     setError("");
     setBusy(false);
   }, [open, item]);
@@ -165,9 +167,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   }
 
   async function handleApproveGaApproval() {
+    if (!sumberPembelian) {
+      setError("Sumber pembelian wajib dipilih");
+      return;
+    }
     onClose();
     try {
-      await api.approveAtkGaApproval(item!.id);
+      await api.approveAtkGaApproval(item!.id, sumberPembelian);
       showToast("Pesanan berhasil di-approve, diteruskan ke Mitra");
       onSaved();
     } catch (err) {
@@ -176,9 +182,14 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   }
 
   async function handleApproveKpu() {
+    const digits = parseThousandSeparator(totalHargaBarang.trim());
+    if (!digits || Number(digits) <= 0) {
+      setError("Total harga barang wajib diisi");
+      return;
+    }
     onClose();
     try {
-      await api.approveAtkKpu(item!.id);
+      await api.approveAtkKpu(item!.id, Number(digits));
       showToast("Pesanan Kebutuhan Kantor berhasil disetujui");
       onSaved();
     } catch (err) {
@@ -316,13 +327,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label htmlFor="da-catatan">Catatan {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
-              <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder={isOriginEdit ? "Contoh: Stok Menipis, Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder="Contoh: Stok Menipis" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
 
-            {(canGaAct || submitNeedsSumberPembelian || item.sumberPembelian) && (
+            {(canGaAct || submitNeedsSumberPembelian || canGaApprovalAct || item.sumberPembelian) && (
               <>
                 <div className="field full form-grid-divider" />
-                {canGaAct || submitNeedsSumberPembelian ? (
+                {canGaAct || submitNeedsSumberPembelian || canGaApprovalAct ? (
                   <div className="field full">
                     <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
                     <SearchableSelect
@@ -343,6 +354,32 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                   )
                 )}
               </>
+            )}
+
+            {(canKpuAct || item.totalHargaBarang) && (
+              canKpuAct ? (
+                <div className="field full">
+                  <label htmlFor="da-total-harga-barang">Total Harga Barang</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    id="da-total-harga-barang"
+                    placeholder="Contoh: 150.000"
+                    value={totalHargaBarang}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setTotalHargaBarang(digits ? formatThousandSeparator(digits) : "");
+                    }}
+                  />
+                </div>
+              ) : (
+                item.totalHargaBarang && (
+                  <div className="field full">
+                    <label>Total Harga Barang</label>
+                    <input type="text" disabled value={formatThousandSeparator(String(Math.round(item.totalHargaBarang)))} />
+                  </div>
+                )
+              )
             )}
           </div>
 

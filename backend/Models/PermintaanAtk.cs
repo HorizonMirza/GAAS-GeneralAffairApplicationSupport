@@ -23,6 +23,9 @@ public class PermintaanAtk
     // Dipilih Admin GA/Approval GA saat approve di tier mereka sendiri (lihat
     // PermintaanAtkController.ApproveGa/Submit) - null sampai salah satu tier itu terlewati.
     public SumberPembelianEnum? SumberPembelian { get; set; }
+    // Diisi Mitra (KPU) saat approve di tier mereka sendiri (lihat
+    // PermintaanAtkController.ApproveKpu) - null sampai tier itu terlewati.
+    public decimal? TotalHargaBarang { get; set; }
 
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }

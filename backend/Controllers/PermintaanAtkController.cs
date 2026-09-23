@@ -806,7 +806,7 @@ public class PermintaanAtkController : ApiControllerBase
     }
 
     [HttpPatch("{itemId:int}/approve-ga-approval")]
-    public async Task<IActionResult> ApproveGaApproval(int itemId)
+    public async Task<IActionResult> ApproveGaApproval(int itemId, [FromBody] ApproveGaAtkRequest payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
@@ -815,8 +815,11 @@ public class PermintaanAtkController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsGaApprovalActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+        if (payload.SumberPembelian == null)
+            return BadRequest(new { detail = "Sumber pembelian wajib dipilih" });
 
         item.Status = StatusEnum.APPROVED_GA_APPROVAL;
+        item.SumberPembelian = payload.SumberPembelian;
         item.ApprovedByApprovalGa = user!.Id;
         item.ApprovedApprovalGaAt = DateTime.UtcNow;
         item.RejectReason = null;
@@ -850,7 +853,7 @@ public class PermintaanAtkController : ApiControllerBase
     }
 
     [HttpPatch("{itemId:int}/approve-kpu")]
-    public async Task<IActionResult> ApproveKpu(int itemId)
+    public async Task<IActionResult> ApproveKpu(int itemId, [FromBody] ApproveKpuAtkRequest payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
         if (roleError != null) return roleError;
@@ -859,8 +862,11 @@ public class PermintaanAtkController : ApiControllerBase
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
         if (!IsKpuActionable(item))
             return StatusCode(403, new { detail = "Data tidak dapat diapprove pada status ini" });
+        if (payload.TotalHargaBarang == null || payload.TotalHargaBarang <= 0)
+            return BadRequest(new { detail = "Total harga barang wajib diisi" });
 
         item.Status = StatusEnum.COMPLETED;
+        item.TotalHargaBarang = payload.TotalHargaBarang;
         item.ApprovedByKpu = user!.Id;
         item.ApprovedKpuAt = DateTime.UtcNow;
         item.RejectReason = null;

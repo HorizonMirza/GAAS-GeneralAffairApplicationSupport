@@ -540,11 +540,12 @@ export const api = {
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga`, { method: "PATCH", body: { sumberPembelian } }),
   rejectAtkGa: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga`, { method: "PATCH", body: { reason } }),
-  approveAtkGaApproval: (id: number) =>
-    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga-approval`, { method: "PATCH" }),
+  approveAtkGaApproval: (id: number, sumberPembelian: SumberPembelian) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-ga-approval`, { method: "PATCH", body: { sumberPembelian } }),
   rejectAtkGaApproval: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-ga-approval`, { method: "PATCH", body: { reason } }),
-  approveAtkKpu: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-kpu`, { method: "PATCH" }),
+  approveAtkKpu: (id: number, totalHargaBarang: number) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-kpu`, { method: "PATCH", body: { totalHargaBarang } }),
   rejectAtkKpu: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-kpu`, { method: "PATCH", body: { reason } }),
   getAtkLogs: (id: number) => apiRequest<PermintaanAtkLog[]>(`/permintaan-atk/${id}/logs`),
