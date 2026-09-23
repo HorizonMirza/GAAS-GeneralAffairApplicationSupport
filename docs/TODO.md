@@ -18,7 +18,7 @@ Daftar ide/fitur yang sudah didiskusikan tapi sengaja ditunda. Ditulis supaya ti
 - [x] Rename "Home" → "Dashboard" (route, sidebar, breadcrumb, redirect).
 - [x] Rename label modul placeholder ke Bahasa Inggris ringkas (Office Supplies, Vehicle Booking, Room Booking, Maintenance, Archive).
 - [x] Restrukturisasi folder: `api/` → `backend/`, `web/` → `frontend/`, dokumentasi dipindah ke `docs/`.
-- [x] Room Booking — kalender, deteksi konflik jadwal, series/recurring booking, laporan utilisasi ruang, export .ics.
+- [x] Room Booking — kalender, deteksi konflik jadwal, series/recurring booking, export .ics.
 - [x] Vehicle Booking — kalender ketersediaan kendaraan, alur approval sama dengan Room Booking.
 - [x] Office Supplies — permintaan ATK dengan approval berjenjang, satu permintaan bisa berisi banyak baris barang.
 - [x] Maintenance — laporan perbaikan sarana dengan kategori kerusakan & tingkat urgensi (urgensi tinggi diprioritaskan di daftar).

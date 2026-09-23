@@ -86,7 +86,7 @@ src/app/(app)/                         Halaman setelah login (route group, pakai
   ekspedisi/overview/, transaksi/,
     invoice-history/                     Expedition - dashboard, tabel transaksi, riwayat invoice (KPU)
   booking-ruang-meeting/overview/,
-    calendar/, transaksi/, laporan/       Room Booking - + kalender & laporan utilisasi ruang
+    calendar/, transaksi/                 Room Booking - + kalender
   booking-kendaraan/overview/,
     calendar/, transaksi/                 Vehicle Booking - + kalender ketersediaan kendaraan
   office-supplies/overview/, transaksi/  Office Supplies (permintaan ATK)
