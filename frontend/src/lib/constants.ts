@@ -535,7 +535,7 @@ export function canGaUpdateAtk(item: PermintaanAtk, me: Me): boolean {
 
 export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
   KPU: "KPU",
-  PADI: "PaDi (Eksternal)",
+  PADI: "PADI",
 };
 
 // Order is longest label to shortest (same display convention as KATEGORI_KERUSAKAN_LABEL below),

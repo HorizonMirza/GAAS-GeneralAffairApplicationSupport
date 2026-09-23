@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { ATK_CATALOG } from "@/lib/atkCatalog";
 import {
@@ -218,15 +219,15 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="da-nomor-permintaan">Nomor Pesanan</label>
+              <label htmlFor="da-nomor-permintaan">Nomor Pesanan {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="da-nomor-permintaan" disabled value={item.nomorPermintaan || ""} />
             </div>
             <div className="field">
-              <label htmlFor="da-tanggal">Tanggal</label>
+              <label htmlFor="da-tanggal">Tanggal {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <DateFilterPicker id="da-tanggal" disabled={!isOriginEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
-              <label htmlFor="da-kategori">Kategori</label>
+              <label htmlFor="da-kategori">Kategori {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <SearchableSelect
                 id="da-kategori"
                 disabled={!isOriginEdit}
@@ -238,20 +239,20 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               />
             </div>
             <div className="field">
-              <label htmlFor="da-nama-pemohon">Nama PIC</label>
+              <label htmlFor="da-nama-pemohon">Nama PIC {isGaEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
               <input type="text" id="da-nama-pemohon" required disabled={!isEdit} maxLength={255} value={form.namaPemohon} onChange={(e) => set("namaPemohon", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="da-no-telepon-pemohon">No. Telepon PIC</label>
+              <label htmlFor="da-no-telepon-pemohon">No. Telepon PIC {isGaEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
               <input type="text" id="da-no-telepon-pemohon" required disabled={!isEdit} maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
-              <label htmlFor="da-keperluan">Tujuan</label>
+              <label htmlFor="da-keperluan">Tujuan {isGaEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
               <input type="text" id="da-keperluan" required disabled={!isEdit} maxLength={150} value={form.keperluan} onChange={(e) => set("keperluan", e.target.value)} />
             </div>
 
             <div className="field full">
-              <label>Daftar Barang</label>
+              <label>Daftar Barang {isGaEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
               <div className="photo-drop-uploader">
                 <div className="item-row-list">
                   {form.items.map((row, idx) => (
@@ -314,34 +315,40 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
 
             <div className="field full">
-              <label htmlFor="da-catatan">Catatan</label>
+              <label htmlFor="da-catatan">Catatan {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder={isOriginEdit ? "Contoh: Stok Menipis, Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
+
+            {(canGaAct || submitNeedsSumberPembelian || item.sumberPembelian) && (
+              <>
+                <div className="field full form-grid-divider" />
+                {canGaAct || submitNeedsSumberPembelian ? (
+                  <div className="field full">
+                    <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
+                    <SearchableSelect
+                      id="da-sumber-pembelian"
+                      value={sumberPembelian}
+                      onChange={(v) => setSumberPembelian(v as SumberPembelian)}
+                      options={SUMBER_PEMBELIAN_OPTIONS}
+                      getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian]}
+                      placeholder="Pilih Sumber Pembelian"
+                    />
+                  </div>
+                ) : (
+                  item.sumberPembelian && (
+                    <div className="field full">
+                      <label>Sumber Pembelian</label>
+                      <input type="text" disabled value={SUMBER_PEMBELIAN_LABEL[item.sumberPembelian]} />
+                    </div>
+                  )
+                )}
+              </>
+            )}
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
-            </div>
-          )}
-
-          {(canGaAct || submitNeedsSumberPembelian) && (
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
-              <SearchableSelect
-                id="da-sumber-pembelian"
-                value={sumberPembelian}
-                onChange={(v) => setSumberPembelian(v as SumberPembelian)}
-                options={SUMBER_PEMBELIAN_OPTIONS}
-                getLabel={(v) => SUMBER_PEMBELIAN_LABEL[v as SumberPembelian]}
-                placeholder="Pilih sumber pembelian"
-              />
-            </div>
-          )}
-
-          {!canGaAct && !submitNeedsSumberPembelian && item.sumberPembelian && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
-              <strong>Sumber Pembelian:</strong> {SUMBER_PEMBELIAN_LABEL[item.sumberPembelian]}
             </div>
           )}
 
