@@ -11,6 +11,11 @@ import { useExclusivePanel } from "@/lib/exclusivePanel";
 // flashes downward for a frame before flipping.
 const PANEL_HEIGHT_ESTIMATE = 260;
 
+// Same span as DateFilterPicker's yearRange() - keeps the two pickers consistent and stops the
+// ‹/› buttons from being clicked into a nonsensical year (e.g. an Invoice Bulan of "0044-03").
+const MIN_YEAR = new Date().getFullYear() - 15;
+const MAX_YEAR = new Date().getFullYear() + 10;
+
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const MONTH_LONG = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -98,9 +103,9 @@ export default function MonthFilterPicker({ id, value, onChange, placeholder = "
           variants={sidebarVariants}
         >
           <motion.div className="month-picker-year-nav" variants={itemVariants}>
-            <button type="button" onClick={() => setViewYear((y) => y - 1)} aria-label="Tahun sebelumnya">‹</button>
+            <button type="button" onClick={() => setViewYear((y) => Math.max(MIN_YEAR, y - 1))} disabled={viewYear <= MIN_YEAR} aria-label="Tahun sebelumnya">‹</button>
             <span>{viewYear}</span>
-            <button type="button" onClick={() => setViewYear((y) => y + 1)} aria-label="Tahun berikutnya">›</button>
+            <button type="button" onClick={() => setViewYear((y) => Math.min(MAX_YEAR, y + 1))} disabled={viewYear >= MAX_YEAR} aria-label="Tahun berikutnya">›</button>
           </motion.div>
           <motion.div className="month-picker-grid" variants={itemVariants}>
             {MONTH_SHORT.map((label, idx) => {

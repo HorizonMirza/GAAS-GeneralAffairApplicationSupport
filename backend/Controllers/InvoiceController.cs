@@ -57,6 +57,18 @@ public class InvoiceController : ApiControllerBase
 
     private static readonly string[] MonthNamesId = { "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember" };
 
+    // Format-only ("^\d{4}-(0[1-9]|1[0-2])$") let through any 4-digit year at all, including
+    // nonsensical ones (e.g. "0044-03") - MonthFilterPicker's ‹/› year nav is bounded to this same
+    // span client-side, but an API call can skip the picker entirely, so it's enforced here too.
+    private static bool IsValidBulan(string? bulan)
+    {
+        if (string.IsNullOrEmpty(bulan) || !System.Text.RegularExpressions.Regex.IsMatch(bulan, @"^\d{4}-(0[1-9]|1[0-2])$"))
+            return false;
+        var year = int.Parse(bulan[..4]);
+        var nowYear = DateTime.UtcNow.Year;
+        return year >= nowYear - 15 && year <= nowYear + 10;
+    }
+
     // "search" matches both the sender name (Nama) and the invoice's displayed title ("Invoice
     // <bulan berbahasa Indonesia>") - the row title Invoice History actually shows. A raw ILike
     // on Bulan ("2026-01") would never match what someone types ("Invoice Januari 2026" or just
@@ -78,8 +90,8 @@ public class InvoiceController : ApiControllerBase
 
         if (string.IsNullOrWhiteSpace(nama))
             return StatusCode(400, new { detail = "Nama pengirim invoice wajib diisi" });
-        if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
-            return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
+        if (!IsValidBulan(bulan))
+            return StatusCode(400, new { detail = "Bulan tidak valid" });
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
         if (file.Length > MaxInvoiceFileSizeBytes)
@@ -157,8 +169,8 @@ public class InvoiceController : ApiControllerBase
 
         if (string.IsNullOrWhiteSpace(nama))
             return StatusCode(400, new { detail = "Nama pengirim invoice wajib diisi" });
-        if (!System.Text.RegularExpressions.Regex.IsMatch(bulan ?? "", @"^\d{4}-(0[1-9]|1[0-2])$"))
-            return StatusCode(400, new { detail = "Format bulan harus YYYY-MM" });
+        if (!IsValidBulan(bulan))
+            return StatusCode(400, new { detail = "Bulan tidak valid" });
         if (file == null || file.Length == 0)
             return StatusCode(400, new { detail = "File invoice wajib diunggah" });
         if (file.Length > MaxInvoiceFileSizeBytes)
