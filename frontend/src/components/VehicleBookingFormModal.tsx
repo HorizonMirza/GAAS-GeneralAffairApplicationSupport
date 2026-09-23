@@ -245,6 +245,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
     try {
       await api.createKendaraanBooking({
         ...form,
+        departemen: form.departemen || undefined,
         pic: form.pic || null,
         catatan: form.catatan || null,
         jamMulai: form.isWholeDay ? "07:00" : form.jamMulai,
@@ -285,7 +286,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                       setForm((f) => ({
                         ...f,
                         divisi: v || undefined,
-                        departemen: f.departemen && divisiNode?.departemen.includes(f.departemen) ? f.departemen : undefined,
+                        departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
                       }));
                     }}
                     options={orgStructure?.divisi || []}
@@ -296,14 +297,15 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                   <label htmlFor="fk-departemen">Departemen</label>
                   <SearchableSelect
                     id="fk-departemen"
-                    value={form.departemen || undefined}
+                    value={form.departemen}
                     onChange={(v) => {
-                      if (!v) { set("departemen", undefined); return; }
+                      if (!v) { set("departemen", v); return; }
                       const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(v))?.nama;
                       setForm((f) => ({ ...f, departemen: v, divisi: owningDivisi || f.divisi }));
                     }}
                     options={departemenOptions}
                     placeholder="Pilih Departemen"
+                    clearLabel="Kebutuhan Divisi"
                   />
                 </div>
               </>
