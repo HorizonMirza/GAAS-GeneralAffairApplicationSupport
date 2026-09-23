@@ -373,6 +373,8 @@ export interface BookingRuangReschedulePayload {
   additionalRooms?: string[];
   tanggal: string;
   jumlahPeserta?: number;
+  pic: string;
+  noTeleponPic: string;
   isWholeDay: boolean;
   jamMulai: string | null;
   jamSelesai: string | null;

@@ -41,6 +41,8 @@ public class BookingRuangReschedule
     public List<string>? AdditionalRooms { get; set; }
     public DateOnly Tanggal { get; set; }
     public int? JumlahPeserta { get; set; }
+    public string Pic { get; set; } = null!;
+    public string NoTeleponPic { get; set; } = null!;
     public bool IsWholeDay { get; set; }
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }

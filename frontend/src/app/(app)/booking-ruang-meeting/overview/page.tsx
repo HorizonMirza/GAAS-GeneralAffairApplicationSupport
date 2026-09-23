@@ -48,21 +48,6 @@ function nowMinutesLocal(): number {
   return now.getHours() * 60 + now.getMinutes();
 }
 
-// How much of today's operating hours are still ahead of "now" - the yardstick for "fully open"
-// has to shrink over the day too, since an already-elapsed hour was excluded from freeSlotsToday
-// and can no longer count toward a room being open the *whole* remaining day.
-function remainingHourSlotsToday(): { count: number; start: number } {
-  const now = nowMinutesLocal();
-  let count = 0;
-  let start = CLOSE_MIN;
-  for (let h = OPEN_MIN; h < CLOSE_MIN; h += 60) {
-    if (h < now) continue;
-    if (count === 0) start = h;
-    count++;
-  }
-  return { count, start };
-}
-
 // Placeholder room photos - filenames are the room name slugified, so replacing the look of a
 // room later is just overwriting /public/assets/rooms/<slug>.png with a real photo (same name,
 // no code change needed).
@@ -384,7 +369,6 @@ export default function BookingOverviewPage() {
                 ? "Full hari ini"
                 : "Available hari ini";
 
-            const isAvail = availability === "available";
             const slot = getRealRoomCurrentSlot(r.nama, todayEntries, closedToday);
 
             return (
@@ -408,7 +392,7 @@ export default function BookingOverviewPage() {
                   <div className="room-card-photo-footer">
                     <span className="room-title">{r.nama}</span>
                     <span className={`room-badge ${availability === "closed" ? "badge-closed" : availability === "full" ? "badge-full" : "badge-available"}`}>
-                      {availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available"}
+                      {availLabel}
                     </span>
                   </div>
                 </div>

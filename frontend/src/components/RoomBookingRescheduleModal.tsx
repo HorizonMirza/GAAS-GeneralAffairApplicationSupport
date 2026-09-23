@@ -48,17 +48,20 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
     additionalRooms: item.additionalRooms,
     tanggal: item.tanggal,
     jumlahPeserta: item.jumlahPeserta,
+    pic: item.pic || "",
+    noTeleponPic: item.noTeleponPic || "",
     isWholeDay,
     jamMulai,
     jamSelesai,
   };
 }
 
-// Admin/Approval GA's conflict-resolution tool: move an in-flight booking's room/date/time
-// without touching the rest of it (nama kegiatan, PIC, peserta stay the origin creator's own) -
-// separate from RoomBookingDetailModal's own "edit" mode, which is creator-only and DRAFT-only.
-// Laid out identically to the full booking form so it reads as "the same form, most of it locked"
-// rather than a separate mini-form - only Tanggal/Jam/Durasi/Ruangan/Ruangan Tambahan are live.
+// Admin/Approval GA's conflict-resolution tool: move an in-flight booking's room/date/time and
+// fix the PIC's name/phone (e.g. a typo), without touching nama kegiatan (stays the origin
+// creator's own) - separate from RoomBookingDetailModal's own "edit" mode, which is creator-only
+// and DRAFT-only. Laid out identically to the full booking form so it reads as "the same form,
+// most of it locked" rather than a separate mini-form - only Tanggal/Jam/Durasi/Ruangan/Ruangan
+// Tambahan/PIC are live.
 export default function RoomBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -233,12 +236,20 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
               <input type="text" id="rs-nama-kegiatan" disabled value={item.namaKegiatan} />
             </div>
             <div className="field">
-              <label htmlFor="rs-nama-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-nama-pic" disabled value={item.pic || "-"} />
+              <label htmlFor="rs-nama-pic">Nama PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input type="text" id="rs-nama-pic" required maxLength={50} value={form.pic} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="rs-no-telepon">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rs-no-telepon" disabled value={item.noTeleponPic || "-"} />
+              <label htmlFor="rs-no-telepon">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input
+                type="text"
+                inputMode="tel"
+                id="rs-no-telepon"
+                required
+                maxLength={20}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>

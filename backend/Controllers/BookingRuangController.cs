@@ -866,6 +866,10 @@ public class BookingRuangController : ApiControllerBase
             if (!MeetingRooms.IsValidRoom(room)) return "Ruang tambahan tidak ditemukan";
             if (room == payload.NamaRuang) return "Ruang tambahan tidak boleh sama dengan ruang utama";
         }
+        if (string.IsNullOrWhiteSpace(payload.Pic))
+            return "Nama PIC wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPic))
+            return "No. telepon PIC tidak valid";
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
 
@@ -910,10 +914,10 @@ public class BookingRuangController : ApiControllerBase
     }
 
     // Admin/Approval GA's dedicated conflict-resolution tool: move an in-flight booking's
-    // room/date/time without touching anything else about it (see IsGaReschedulable and
-    // BookingRuangReschedule) - deliberately separate from Update(), which stays creator-only and
-    // DRAFT-only. Not gated behind IsEditableByOrigin at all. Also the one way to clear
-    // HasConflict on a series occurrence that got flagged at creation/final-approval time.
+    // room/date/time and fix the PIC's name/phone (e.g. a typo), without touching Nama Kegiatan
+    // (see IsGaReschedulable and BookingRuangReschedule) - deliberately separate from Update(),
+    // which stays creator-only and DRAFT-only. Not gated behind IsEditableByOrigin at all. Also
+    // the one way to clear HasConflict on a series occurrence flagged at creation/final-approval.
     [HttpPatch("{itemId:int}/reschedule")]
     public async Task<IActionResult> Reschedule(int itemId, [FromBody] BookingRuangReschedule payload)
     {
@@ -951,6 +955,8 @@ public class BookingRuangController : ApiControllerBase
         {
             item.JumlahPeserta = Math.Min(payload.JumlahPeserta.Value, MaxJumlahPeserta);
         }
+        item.Pic = payload.Pic.Trim();
+        item.NoTeleponPic = payload.NoTeleponPic.Trim();
         item.IsWholeDay = payload.IsWholeDay;
         item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
         item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
