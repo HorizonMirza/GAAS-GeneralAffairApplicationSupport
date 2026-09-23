@@ -44,6 +44,11 @@ public class BookingRuang
     // BookingRuangController.Cancel) so the status badge can show who called it off without
     // an extra join. Null for every other status.
     public string? CancelledByName { get; set; }
+    // The canceller's role at the moment they cancelled - lets the frontend tell an Admin/Approval
+    // GA-initiated cancel (shown to users as "Delete"/"Rejected: <nama>") apart from the origin
+    // creator calling off their own booking (still shown as "Cancelled"). Null for every other
+    // status, same lifecycle as CancelledByName.
+    public RoleEnum? CancelledByRole { get; set; }
 
     public int CreatedBy { get; set; }
     public RoleEnum CreatedByRole { get; set; }

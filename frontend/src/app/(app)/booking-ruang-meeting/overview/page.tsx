@@ -18,6 +18,7 @@ import {
   isBookingEditableByOrigin,
   isBookingOriginRole,
   isBookingPdfAvailable,
+  isGaRole,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -232,6 +233,10 @@ export default function BookingOverviewPage() {
   const [chatItem, setChatItem] = useState<BookingRuang | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
+  // Forces a re-render every minute so the room cards' Available/Full/Close badge and "jam saat
+  // ini terisi" text keep advancing with real time (e.g. flipping to Close right at 18:00)
+  // instead of only updating whenever some unrelated state change happens to re-render the page.
+  const [, setClockTick] = useState(0);
 
   const rowMenu = useRowMenu(items);
 
@@ -258,6 +263,12 @@ export default function BookingOverviewPage() {
       // otherwise - shows every booking from this point on.
       const queue = await api.listBooking({ limit: 1000, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
       setItems(queue);
+      // Also re-drives the available/penuh strip on each room card below - it was previously
+      // fetched only once on mount, so cancelling/creating/approving a booking updated "Pesanan
+      // Terbaru Saya" but left the room availability cards showing stale data until a manual
+      // page reload.
+      const today = await api.getBookingSchedule(todayLocalDate()).catch(() => []);
+      setTodayEntries(today);
     } finally {
       setBusy(false);
     }
@@ -275,9 +286,8 @@ export default function BookingOverviewPage() {
   }, []);
 
   useEffect(() => {
-    // Drives the available/penuh strip on each room card below - fetched once on mount, same as
-    // rooms above, since "today" doesn't change without a page reload.
-    api.getBookingSchedule(todayLocalDate()).then(setTodayEntries).catch(() => setTodayEntries([]));
+    const id = setInterval(() => setClockTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -442,7 +452,7 @@ export default function BookingOverviewPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span className="badge-stack">
-                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
+                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
                     {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                   </span>
                   <button
@@ -461,7 +471,16 @@ export default function BookingOverviewPage() {
                   </button>
                 </div>
               </div>
-              <RoomBookingStepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
+              <RoomBookingStepper
+                status={item.status}
+                departemen={item.departemen}
+                rejectTarget={item.rejectTarget}
+                createdByRole={item.createdByRole}
+                cancelledByRole={item.cancelledByRole}
+                approvedByL1={item.approvedByL1}
+                approvedByGa={item.approvedByGa}
+                approvedByApprovalGa={item.approvedByApprovalGa}
+              />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}
@@ -480,6 +499,7 @@ export default function BookingOverviewPage() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -603,6 +623,7 @@ export default function BookingOverviewPage() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
+        variant={me && isGaRole(me.role) ? "delete" : "cancel"}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

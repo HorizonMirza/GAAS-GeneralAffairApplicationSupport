@@ -1280,7 +1280,7 @@ export default function SuperAdminPage() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <span className="badge-stack">
-                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
+                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
                           {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                         </span>
                       </td>

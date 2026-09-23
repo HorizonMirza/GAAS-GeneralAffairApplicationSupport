@@ -356,6 +356,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.Pic).HasColumnName("pic").HasMaxLength(255);
             e.Property(b => b.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
             e.Property(b => b.NamaRuang).HasColumnName("nama_ruang").HasMaxLength(100).IsRequired();
+            e.Property(b => b.CancelledByRole).HasColumnName("cancelled_by_role").HasConversion<string>().HasMaxLength(50);
             e.Property(b => b.KapasitasRuang).HasColumnName("kapasitas_ruang");
             e.Property(b => b.JumlahPeserta).HasColumnName("jumlah_peserta");
             e.Property(b => b.Tanggal).HasColumnName("tanggal");

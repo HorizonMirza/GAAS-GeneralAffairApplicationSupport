@@ -10,6 +10,7 @@ import {
   isBookingCancellableByOrigin,
   isBookingEditableByOrigin,
   isBookingGaActionable,
+  isGaRole,
   MAX_JUMLAH_PESERTA,
   RECURRENCE_FREQUENCY_LABELS,
   TIPE_BOOKING_LABELS,
@@ -94,7 +95,15 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isBookingEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  // Mirrors RequireL1ActorAsync on the backend: the approver's own unit must match the booking's
+  // unit, not just their role - GetSchedule/GetScheduleRange intentionally show bookings across
+  // every unit (room availability is shared), so without this check the Approve/Reject buttons
+  // would show up for a booking that belongs to a completely different Departemen/Divisi and
+  // only fail with a 403 once clicked.
+  const l1UnitMatches = item.departemen
+    ? me.role === "APPROVAL_DEPARTEMEN" && me.departemen === item.departemen
+    : me.role === "APPROVAL_DIVISI" && me.divisi === item.divisi;
+  const canL1Act = !isEdit && l1UnitMatches && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canCancel = !isEdit && isBookingCancellableByOrigin(item, me);
@@ -677,7 +686,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                     onRequestCancel(item.id);
                   }}
                 >
-                  Cancel Booking
+                  {isGaRole(me.role) ? "Delete Booking" : "Cancel Booking"}
                 </button>
               )}
               {canSubmitDraft && (

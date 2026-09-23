@@ -1343,6 +1343,7 @@ public class BookingRuangController : ApiControllerBase
                 await NotifyWaitlistAsync(member);
             member.Status = BookingStatusEnum.CANCELLED;
             member.CancelledByName = user!.Nama;
+            member.CancelledByRole = user!.Role;
             AddLog(member, "CANCELLED", user!, payload.Reason);
             cancelledAny = true;
         }

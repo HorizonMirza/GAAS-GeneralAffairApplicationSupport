@@ -14,13 +14,19 @@ interface Props {
   targetType: CancelBookingType | null;
   onClose: () => void;
   onDone: () => void;
+  // Room Booking only - when Admin/Approval GA is the one cancelling (not the origin creator),
+  // this reads "Delete Booking" instead of "Cancel Booking" (see isGaRole/BookingStatusBadge's
+  // matching "Rejected: <nama>" badge). Vehicle Booking never passes this, so it always stays
+  // "cancel" there.
+  variant?: "cancel" | "delete";
 }
 
 // Shared by Room Booking and Vehicle Booking's row menus - a separate small modal instead of
 // reusing RejectModal, since "Reject" is a different action from a different actor (the approval
 // chain refusing a request) with its own fixed wording; Cancel is the origin/GA calling off a
 // request that was never refused by anyone.
-export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone }: Props) {
+export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone, variant = "cancel" }: Props) {
+  const isDelete = variant === "delete";
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,7 +54,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     try {
       if (targetType === "room") await api.cancelBooking(targetId, reasonValue);
       else await api.cancelKendaraanBooking(targetId, reasonValue);
-      showToast("Booking dibatalkan");
+      showToast(isDelete ? "Booking dihapus" : "Booking dibatalkan");
       reset();
       onDone();
     } catch (err) {
@@ -61,7 +67,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>Cancel Booking</h3>
+          <h3>{isDelete ? "Delete Booking" : "Cancel Booking"}</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="field">
@@ -85,7 +91,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             onClick={handleConfirm}
             disabled={busy}
           >
-            Cancel
+            {isDelete ? "Delete" : "Cancel"}
           </button>
         </div>
       </div>

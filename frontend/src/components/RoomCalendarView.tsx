@@ -42,7 +42,14 @@ export function addDays(iso: string, days: number): string {
 
 export function addMonths(iso: string, months: number): string {
   const d = new Date(iso + "T00:00:00");
+  const day = d.getDate();
+  // Changing the month first while still on day 1 avoids the classic JS overflow bug (31 Jan +
+  // 1 month rolling into March instead of February) - then the target day is clamped to
+  // whatever the destination month actually has, mirroring .NET's DateOnly.AddMonths.
+  d.setDate(1);
   d.setMonth(d.getMonth() + months);
+  const daysInTargetMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, daysInTargetMonth));
   return toIso(d);
 }
 

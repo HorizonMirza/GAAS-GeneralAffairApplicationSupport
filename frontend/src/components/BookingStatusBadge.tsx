@@ -7,6 +7,11 @@ interface Props {
   departemen?: BookingRuang["departemen"];
   createdByRole?: BookingRuang["createdByRole"];
   cancelledByName?: BookingRuang["cancelledByName"];
+  // Room Booking only (Vehicle Booking never passes this) - when the canceller was Admin/Approval
+  // GA rather than the origin creator, the badge reads "Rejected: <nama>" instead of "Cancel:
+  // <nama>", matching how the "Cancel" action itself is relabeled "Delete" for those two roles
+  // (see RowMenuDropdown's cancelActionLabel and CancelBookingModal's variant prop).
+  cancelledByRole?: BookingRuang["cancelledByRole"];
   // Room/Vehicle Booking's reject is a genuine dead end (nothing is "waiting" on anyone once
   // rejected - see their IsEditableByOrigin), so this defaults to false and they never pass it.
   // Maintenance/Archive pass true - their reject always routes back to the same origin creator to
@@ -17,9 +22,12 @@ interface Props {
   isKendaraan?: boolean;
 }
 
-export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
+export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, cancelledByRole = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
+  const cancelledByGa = cancelledByRole === "ADMIN_GA" || cancelledByRole === "APPROVAL_GA";
   const label =
-    status === "CANCELLED" && cancelledByName
+    status === "CANCELLED" && cancelledByGa && cancelledByName
+      ? `Rejected: ${cancelledByName}`
+      : status === "CANCELLED" && cancelledByName
       ? `Cancel: ${cancelledByName}`
       : status === "CANCELLED"
       ? "Cancelled"

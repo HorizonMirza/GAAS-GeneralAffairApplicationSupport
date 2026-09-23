@@ -15,6 +15,7 @@ import {
   isBookingEditableByOrigin,
   isBookingOriginRole,
   isBookingPdfAvailable,
+  isGaRole,
   TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
@@ -411,7 +412,7 @@ function BookingTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isRoom />
+                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
                             {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                           </span>
                           <button
@@ -473,6 +474,7 @@ function BookingTransaksiPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -560,6 +562,7 @@ function BookingTransaksiPageInner() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
+        variant={isGaRole(me.role) ? "delete" : "cancel"}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

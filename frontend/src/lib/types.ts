@@ -333,6 +333,7 @@ export interface BookingRuang {
   rejectReason: string | null;
   rejectTarget: RejectTarget | null;
   cancelledByName: string | null;
+  cancelledByRole: Role | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;

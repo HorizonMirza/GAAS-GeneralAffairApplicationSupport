@@ -54,20 +54,50 @@ function XIcon() {
   );
 }
 
+// How far a booking actually got before an Admin/Approval GA cancel called it off - inferred from
+// which approval fields are set (Cancel() never clears them, unlike a real reject), since the
+// CANCELLED status name alone doesn't say which stage it was at. Mirrors the PROGRESS index each
+// approval field's own tier would land on.
+function reachedIdxFromApprovals(approvedByL1: number | null, approvedByGa: number | null, approvedByApprovalGa: number | null): number {
+  if (approvedByApprovalGa != null) return 3;
+  if (approvedByGa != null) return 2;
+  if (approvedByL1 != null) return 1;
+  return 0;
+}
+
 // rejectTarget is accepted (callers still pass it) but no longer read - it no longer routes a
 // reject anywhere different, see BookingRuangController.RejectGaApproval.
 export default function RoomBookingStepper({
   status,
   departemen = null,
   createdByRole = "ADMIN_DEPARTEMEN",
+  cancelledByRole = null,
+  approvedByL1 = null,
+  approvedByGa = null,
+  approvedByApprovalGa = null,
 }: {
   status: BookingStatus;
   departemen?: BookingRuang["departemen"];
   rejectTarget?: BookingRuang["rejectTarget"];
   createdByRole?: Role;
+  // Room Booking only - when set to Admin/Approval GA, a CANCELLED booking renders with the same
+  // animated red step/connector a real reject gets (see BookingStatusBadge's matching "Rejected:
+  // <nama>" badge for the same GA-cancel-reads-as-reject treatment), instead of staying neutral.
+  cancelledByRole?: BookingRuang["cancelledByRole"];
+  approvedByL1?: BookingRuang["approvedByL1"];
+  approvedByGa?: BookingRuang["approvedByGa"];
+  approvedByApprovalGa?: BookingRuang["approvedByApprovalGa"];
 }) {
-  const currentIdx = PROGRESS[status] ?? 0;
-  const rejectAt = REJECTED_IDX[status];
+  const isGaCancelled = status === "CANCELLED" && (cancelledByRole === "ADMIN_GA" || cancelledByRole === "APPROVAL_GA");
+  let currentIdx = PROGRESS[status] ?? 0;
+  let rejectAt: number | undefined = REJECTED_IDX[status];
+  if (isGaCancelled) {
+    const reached = reachedIdxFromApprovals(approvedByL1, approvedByGa, approvedByApprovalGa);
+    // Capped at 3 (there's no step past Approval GA) - a booking cancelled after already reaching
+    // full approval retroactively shows its last step as the X instead of leaving it "done".
+    rejectAt = Math.min(reached + 1, 3);
+    currentIdx = rejectAt - 1;
+  }
   const originIdx = originIdxForRole(createdByRole);
   const rejectFrom = rejectAt != null ? originIdx : null;
   const steps = buildSteps(departemen);

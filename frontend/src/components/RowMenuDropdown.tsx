@@ -41,6 +41,10 @@ interface Props {
   // isKendaraanCancellableByOrigin for what canCancel is actually computed from).
   onCancel?: () => void;
   canCancel?: boolean;
+  // Room Booking only - when Admin/Approval GA is the one cancelling (not the origin creator),
+  // the action reads "Delete" instead of "Cancel" (see isGaRole/BookingStatusBadge's matching
+  // "Rejected: <nama>" badge for the same distinction). Defaults to "Cancel".
+  cancelLabel?: string;
   // Room/Vehicle Booking only - Admin/Approval GA's PIC name/phone typo-fix (see
   // canGaKoreksiBooking/canGaKoreksiKendaraan). A separate slot from Updates because Updates is
   // already claimed by Reschedule in these two modules, unlike Ekspedisi/ATK/Maintenance/Arsip
@@ -67,6 +71,7 @@ export default function RowMenuDropdown({
   onIcsClick,
   onCancel,
   canCancel,
+  cancelLabel = "Cancel",
   onKoreksi,
   canKoreksi,
 }: Props) {
@@ -158,7 +163,7 @@ export default function RowMenuDropdown({
         <motion.div variants={itemVariants}>
           <button type="button" className="row-menu-item row-menu-item-danger" onClick={onCancel}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-            Cancel
+            {cancelLabel}
           </button>
         </motion.div>
       )}

@@ -756,6 +756,10 @@ using (var scope = app.Services.CreateScope())
     // BookingRuangController.Cancel/BookingKendaraanController.Cancel), not a User FK.
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_name VARCHAR(255)");
+    // Room Booking only - lets the frontend tell an Admin/Approval GA-initiated cancel (shown as
+    // "Delete"/"Rejected: <nama>") apart from the origin creator cancelling their own booking
+    // (still shown as "Cancelled"). See BookingRuangController.Cancel.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_role VARCHAR(50)");
 
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS invoices ADD COLUMN IF NOT EXISTS nama VARCHAR(255) NOT NULL DEFAULT ''");
 
