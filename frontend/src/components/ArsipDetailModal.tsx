@@ -253,7 +253,6 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 id="dr-tahun"
                 required
                 disabled={!isEdit}
-                placeholder="Contoh: 2018"
                 value={form.tahunArsip}
                 onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
               />
