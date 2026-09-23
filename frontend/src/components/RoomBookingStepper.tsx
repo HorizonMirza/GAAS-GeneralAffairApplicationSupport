@@ -89,16 +89,22 @@ export default function RoomBookingStepper({
   approvedByApprovalGa?: BookingRuang["approvedByApprovalGa"];
 }) {
   const isGaCancelled = status === "CANCELLED" && (cancelledByRole === "ADMIN_GA" || cancelledByRole === "APPROVAL_GA");
+  const originIdx = originIdxForRole(createdByRole);
   let currentIdx = PROGRESS[status] ?? 0;
   let rejectAt: number | undefined = REJECTED_IDX[status];
   if (isGaCancelled) {
-    const reached = reachedIdxFromApprovals(approvedByL1, approvedByGa, approvedByApprovalGa);
+    // approvedByL1/Ga/ApprovalGa stay null when the creator's own role IS that tier's approver -
+    // Submit()'s self-skip jumps the status straight to APPROVED_L1/GA/GA_APPROVAL without ever
+    // recording an explicit approval event (see BookingRuangController.Submit). Without this
+    // floor, a booking created by e.g. Approval Departemen (originIdx 1) and cancelled while
+    // still waiting on Admin GA would read reached=0 and misplace the X on Approval Departemen
+    // itself instead of Admin GA.
+    const reached = Math.max(reachedIdxFromApprovals(approvedByL1, approvedByGa, approvedByApprovalGa), originIdx);
     // Capped at 3 (there's no step past Approval GA) - a booking cancelled after already reaching
     // full approval retroactively shows its last step as the X instead of leaving it "done".
     rejectAt = Math.min(reached + 1, 3);
     currentIdx = rejectAt - 1;
   }
-  const originIdx = originIdxForRole(createdByRole);
   const rejectFrom = rejectAt != null ? originIdx : null;
   const steps = buildSteps(departemen);
 
