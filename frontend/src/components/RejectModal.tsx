@@ -41,6 +41,26 @@ interface Props {
 
 const NEEDS_TARGET_CHOICE: RejectType[] = ["ga-approval", "kpu"];
 
+function getRejectPlaceholder(type: RejectType | null): string {
+  if (!type) return "Alasan penolakan...";
+  if (type.startsWith("booking-")) {
+    return "Contoh: Ruangan dipakai Direksi";
+  }
+  if (type.startsWith("kendaraan-")) {
+    return "Contoh: Kendaraan sedang diservis";
+  }
+  if (type.startsWith("atk-")) {
+    return "Contoh: Stok gudang habis";
+  }
+  if (type.startsWith("sarana-")) {
+    return "Contoh: Bukan aset kantor";
+  }
+  if (type.startsWith("arsip-")) {
+    return "Contoh: Berkas tidak lengkap";
+  }
+  return "Contoh: Alamat tidak lengkap";
+}
+
 // For these two reject types, "send to GA" and "send to origin" collapse into the same person
 // whenever the item was input by Admin/Approval GA themselves (they are the origin) - showing
 // a choice between two identically-worded options for the same destination is just confusing,
@@ -170,7 +190,7 @@ export default function RejectModal({ open, targetId, targetType, originLabel, c
           <label htmlFor="reject-reason-input">Alasan (opsional)</label>
           <textarea
             id="reject-reason-input"
-            placeholder="Contoh: Barang fisik tidak ditemukan"
+            placeholder={getRejectPlaceholder(targetType)}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             onKeyDown={(e) => {

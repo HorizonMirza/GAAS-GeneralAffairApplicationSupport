@@ -177,14 +177,15 @@ public class PermintaanArsipController : ApiControllerBase
             var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
             query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
         }
-        // Menjangkau nomor pemindahan, nama arsip, lokasi penyimpanan, dan nama PIC - orang lebih
-        // sering ingat salah satu dari empat itu daripada nomor dokumennya.
+        // Menjangkau nomor pemindahan, nama arsip, lokasi penyimpanan, nama PIC, dan tahun arsip - orang lebih
+        // sering ingat salah satu dari itu daripada nomor dokumennya.
         if (!string.IsNullOrEmpty(search))
             query = query.Where(p =>
                 (p.NomorArsip != null && EF.Functions.ILike(p.NomorArsip, $"%{search}%")) ||
                 EF.Functions.ILike(p.NamaArsip, $"%{search}%") ||
                 EF.Functions.ILike(p.LokasiPenyimpanan, $"%{search}%") ||
-                (p.NamaPic != null && EF.Functions.ILike(p.NamaPic, $"%{search}%")));
+                (p.NamaPic != null && EF.Functions.ILike(p.NamaPic, $"%{search}%")) ||
+                EF.Functions.ILike(p.TahunArsip, $"%{search}%"));
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
         if (!string.IsNullOrEmpty(kategori))
         {
@@ -379,7 +380,7 @@ public class PermintaanArsipController : ApiControllerBase
         item.LokasiPenyimpanan = payload.LokasiPenyimpanan.Trim();
         item.NamaPic = payload.NamaPic.Trim();
         item.NoTeleponPic = payload.NoTeleponPic.Trim();
-        var koreksiDetail = $"Lokasi/PIC dikoreksi menjadi {item.LokasiPenyimpanan} / {item.NamaPic}";
+        var koreksiDetail = $"Lokasi/PIC diperbarui menjadi {item.LokasiPenyimpanan} / {item.NamaPic}";
         if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
         AddLog(item, "CORRECTED", user!, koreksiDetail);
 
@@ -671,7 +672,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> requestQuery;
         try
         {
-            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, null, false, tanggal);
+            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, search, false, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -679,7 +680,6 @@ public class PermintaanArsipController : ApiControllerBase
         }
 
         if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(search)) requestQuery = requestQuery.Where(p => EF.Functions.ILike(p.NamaArsip, $"%{search}%"));
 
         var total = await requestQuery.CountAsync();
         var rows = await requestQuery

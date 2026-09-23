@@ -63,7 +63,7 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
     setBusy(true);
     try {
       await api.koreksiSarana(item!.id, form!);
-      showToast("Data pelapor berhasil dikoreksi");
+      showToast("Data berhasil diperbarui");
       onClose();
       onSaved();
     } catch (err) {
@@ -141,23 +141,13 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
                 </div>
               </div>
             )}
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="ks-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="ks-catatan" disabled value={item.catatan || ""} />
             </div>
-            <div className="field full">
-              <label htmlFor="ks-alasan-koreksi">Alasan Koreksi (opsional)</label>
-              <textarea
-                id="ks-alasan-koreksi"
-                maxLength={255}
-                placeholder="Contoh: Nama PIC salah ketik"
-                value={form.catatan}
-                onChange={(e) => set("catatan", e.target.value)}
-              />
-            </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 12 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}

@@ -104,10 +104,9 @@ public class ArsipKatalogExportController : ApiControllerBase
         }
 
         var requestQuery = PermintaanArsipController.ApplyListFilters(
-            _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, null, false, tanggal);
+            _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, search, false, tanggal);
 
         if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
-        if (!string.IsNullOrEmpty(search)) requestQuery = requestQuery.Where(p => EF.Functions.ILike(p.NamaArsip, $"%{search}%"));
 
         BatasEkspor.Pastikan(await requestQuery.CountAsync());
         return await requestQuery

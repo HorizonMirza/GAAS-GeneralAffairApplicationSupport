@@ -243,7 +243,6 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 pattern="[0-9]*"
                 id="fr-tahun"
                 required
-                placeholder="Contoh: 2018"
                 value={form.tahunArsip}
                 onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
               />
