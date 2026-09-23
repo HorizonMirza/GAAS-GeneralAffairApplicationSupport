@@ -170,37 +170,3 @@ public class BulkRescheduleItemResult
     public string? Detail { get; set; }
 }
 
-// See BookingRuangController.JoinWaitlist - "notify me when this room+date(+time) frees up".
-public class JoinWaitlistRequest
-{
-    public string NamaRuang { get; set; } = null!;
-    public DateOnly Tanggal { get; set; }
-    public bool IsWholeDay { get; set; }
-    public TimeOnly? JamMulai { get; set; }
-    public TimeOnly? JamSelesai { get; set; }
-}
-
-public class WaitlistOut
-{
-    public int Id { get; set; }
-    public string NamaRuang { get; set; } = null!;
-    public DateOnly Tanggal { get; set; }
-    public bool IsWholeDay { get; set; }
-    public TimeOnly? JamMulai { get; set; }
-    public TimeOnly? JamSelesai { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? NotifiedAt { get; set; }
-
-    public static WaitlistOut From(BookingWaitlist w) => new()
-    {
-        Id = w.Id,
-        NamaRuang = w.NamaRuang,
-        Tanggal = w.Tanggal,
-        IsWholeDay = w.IsWholeDay,
-        JamMulai = w.JamMulai,
-        JamSelesai = w.JamSelesai,
-        CreatedAt = w.CreatedAt,
-        NotifiedAt = w.NotifiedAt,
-    };
-}
-

@@ -59,7 +59,6 @@ import type {
   Status,
   SumberPembelian,
   VehicleOption,
-  WaitlistEntry,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
@@ -395,10 +394,6 @@ export const api = {
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
   getRoomFeedUrl: (roomName: string) =>
     apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
-  joinWaitlist: (payload: { namaRuang: string; tanggal: string; isWholeDay: boolean; jamMulai?: string | null; jamSelesai?: string | null }) =>
-    apiRequest<WaitlistEntry>("/booking-ruang/waitlist", { method: "POST", body: payload }),
-  myWaitlist: () => apiRequest<WaitlistEntry[]>("/booking-ruang/waitlist/mine"),
-  leaveWaitlist: (id: number) => apiRequest(`/booking-ruang/waitlist/${id}`, { method: "DELETE" }),
   nextBookingNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi } }),
   getBookingSchedule: (tanggal: string) =>

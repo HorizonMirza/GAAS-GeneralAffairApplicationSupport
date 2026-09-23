@@ -275,17 +275,6 @@ export interface RoomOption {
   fasilitas?: string[];
 }
 
-export interface WaitlistEntry {
-  id: number;
-  namaRuang: string;
-  tanggal: string;
-  isWholeDay: boolean;
-  jamMulai: string | null;
-  jamSelesai: string | null;
-  createdAt: string;
-  notifiedAt: string | null;
-}
-
 export interface BulkRescheduleItemResult {
   id: number;
   tanggalLama: string;

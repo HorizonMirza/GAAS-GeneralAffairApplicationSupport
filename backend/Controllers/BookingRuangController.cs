@@ -192,25 +192,6 @@ public class BookingRuangController : ApiControllerBase
     private static List<string> RoomList(string primary, IEnumerable<string>? additional) =>
         new[] { primary }.Concat(additional ?? Enumerable.Empty<string>()).Distinct().ToList();
 
-    // Marks every still-unnotified BookingWaitlist row that overlaps this freed booking's room(s),
-    // date, and time as notified - called right before a booking that was actually occupying a
-    // slot (APPROVED_GA_APPROVAL) is deleted, so anyone who lost that exact room+time earlier (see
-    // AutoRejectLosingCompetitorsAsync) or joined by hand finds out it's open again. Doesn't
-    // SaveChanges itself - the caller's own save covers this too.
-    private async Task NotifyWaitlistAsync(BookingRuang freed)
-    {
-        var rooms = RoomList(freed);
-        var candidates = await _db.BookingWaitlists
-            .Where(w => w.NotifiedAt == null && w.Tanggal == freed.Tanggal && rooms.Contains(w.NamaRuang))
-            .ToListAsync();
-        var now = DateTime.UtcNow;
-        foreach (var w in candidates)
-        {
-            var overlaps = freed.IsWholeDay || w.IsWholeDay || (w.JamMulai < freed.JamSelesai && w.JamSelesai > freed.JamMulai);
-            if (overlaps) w.NotifiedAt = now;
-        }
-    }
-
     // Accepts either "YYYY-MM" (a specific month, used by the List/Report pages) or a bare
     // "YYYY" (the whole year, used by GetStats so the dashboard tiles reset every year instead
     // of carrying every request ever made) - both share this one filter since they're really the
@@ -592,74 +573,6 @@ public class BookingRuangController : ApiControllerBase
 
         var bytes = IcsService.GenerateFeed($"Jadwal {roomName}", items);
         return File(bytes, "text/calendar");
-    }
-
-    // "Notify me when this fills up" - joined by hand from a "Penuh" room, or auto-joined for the
-    // loser of an auto-reject-competitor race (see AutoRejectLosingCompetitorsAsync). No dedupe
-    // against an existing identical entry - re-joining just adds another row, which is harmless
-    // (NotifyWaitlistAsync marks every matching row, and Leave removes them individually).
-    [HttpPost("waitlist")]
-    public async Task<IActionResult> JoinWaitlist([FromBody] JoinWaitlistRequest payload)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-        if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
-            return BadRequest(new { detail = "Ruang tidak ditemukan" });
-
-        var nowWib = WaktuWib.Now;
-        var todayWib = DateOnly.FromDateTime(nowWib);
-        var currentTimeWib = TimeOnly.FromDateTime(nowWib);
-        if (payload.Tanggal < todayWib)
-            return BadRequest(new { detail = "Tanggal waitlist tidak boleh di masa lalu" });
-        if (payload.Tanggal == todayWib && !payload.IsWholeDay && payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
-            return BadRequest(new { detail = "Jam waitlist tidak boleh di masa lalu" });
-
-        if (!payload.IsWholeDay && (payload.JamMulai == null || payload.JamSelesai == null))
-            return BadRequest(new { detail = "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari" });
-
-        var entry = new BookingWaitlist
-        {
-            NamaRuang = payload.NamaRuang,
-            Tanggal = payload.Tanggal,
-            IsWholeDay = payload.IsWholeDay,
-            JamMulai = payload.IsWholeDay ? null : payload.JamMulai,
-            JamSelesai = payload.IsWholeDay ? null : payload.JamSelesai,
-            UserId = user!.Id,
-        };
-        _db.BookingWaitlists.Add(entry);
-        await _db.SaveChangesAsync();
-        return StatusCode(201, WaitlistOut.From(entry));
-    }
-
-    // Notified entries sort first so a badge/bell UI can show "N slot tersedia" without the user
-    // having to scroll past older still-waiting entries.
-    [HttpGet("waitlist/mine")]
-    public async Task<IActionResult> MyWaitlist()
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var items = await _db.BookingWaitlists
-            .Where(w => w.UserId == user!.Id)
-            .OrderByDescending(w => w.NotifiedAt != null)
-            .ThenByDescending(w => w.CreatedAt)
-            .ToListAsync();
-        return Ok(items.Select(WaitlistOut.From).ToList());
-    }
-
-    [HttpDelete("waitlist/{waitlistId:int}")]
-    public async Task<IActionResult> LeaveWaitlist(int waitlistId)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var entry = await _db.BookingWaitlists.FindAsync(waitlistId);
-        if (entry == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (entry.UserId != user!.Id) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-
-        _db.BookingWaitlists.Remove(entry);
-        await _db.SaveChangesAsync();
-        return NoContent();
     }
 
     [HttpGet("rooms")]
@@ -1232,12 +1145,6 @@ public class BookingRuangController : ApiControllerBase
         if (!IsDeletableByOrigin(item, user!))
             return StatusCode(403, new { detail = "Data tidak dapat dihapus pada tahap ini" });
 
-        // No NotifyWaitlistAsync here: only an APPROVED_GA_APPROVAL booking ever held a slot
-        // (FindConflictAsync blocks on nothing else), and IsDeletableByOrigin above has already
-        // refused that status - deleting only ever reaches DRAFT/rejected/cancelled bookings,
-        // which were not holding anything. Cancel is where an approved booking releases its slot,
-        // and that path does notify the waitlist.
-
         // A partial series (some occurrences deleted, others not) doesn't make sense - deleting
         // one occurrence removes the whole series with it, same "1 paket" convention as
         // Submit/Approve/Reject (see ApplyToSeriesAsync). Scoped to DRAFT/Rejected siblings only
@@ -1339,8 +1246,6 @@ public class BookingRuangController : ApiControllerBase
         foreach (var member in members)
         {
             if (!IsCancellableStatus(member.Status) || IsPastCancelDeadline(member)) continue;
-            if (member.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
-                await NotifyWaitlistAsync(member);
             member.Status = BookingStatusEnum.CANCELLED;
             member.CancelledByName = user!.Nama;
             member.CancelledByRole = user!.Role;

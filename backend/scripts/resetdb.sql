@@ -22,7 +22,6 @@ TRUNCATE TABLE
     booking_chat_messages,
     booking_chat_reads,
     room_booking_counters,
-    booking_waitlist,
 
     -- Vehicle Booking
     booking_kendaraan,

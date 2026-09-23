@@ -314,22 +314,10 @@ using (var scope = app.Services.CreateScope())
             UNIQUE (booking_ruang_id, user_id)
         )");
 
-    // Room availability waitlist - room name + tanggal are plain values (rooms aren't a DB table,
-    // see MeetingRooms), not a foreign key. Notified entries stay until the user dismisses them
-    // (BookingWaitlistController.Leave), so notified_at is a flag, not a delete trigger.
-    migrateDb.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS booking_waitlist (
-            id SERIAL PRIMARY KEY,
-            nama_ruang VARCHAR(100) NOT NULL,
-            tanggal DATE NOT NULL,
-            is_whole_day BOOLEAN NOT NULL,
-            jam_mulai TIME NULL,
-            jam_selesai TIME NULL,
-            user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            created_at TIMESTAMP NOT NULL,
-            notified_at TIMESTAMP NULL
-        )");
-    migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_waitlist_room_date ON booking_waitlist (nama_ruang, tanggal)");
+    // Room availability waitlist was removed as a feature (its frontend was never actually wired
+    // up, and Vehicle Booking never had an equivalent) - drop the leftover table from any
+    // database that still has it. Self-limiting like the other DROP TABLE above: a no-op once run.
+    migrateDb.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS booking_waitlist");
 
     // Backstops the app-level "one invoice per bulan per KPU" check against two uploads for the
     // same bulan racing each other. Wrapped so it's skipped (not a startup crash) on a database
@@ -803,7 +791,7 @@ if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_waitlist, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

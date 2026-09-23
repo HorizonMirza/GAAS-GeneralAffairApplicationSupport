@@ -11,7 +11,7 @@ using PengirimanApi.Services;
 namespace PengirimanApi.Controllers;
 
 // Same 3-stage approval workflow as Room Booking (Departemen/Divisi -> Admin GA -> Approval GA),
-// scaled down: one vehicle per booking, no recurring series, no waitlist, no ICS feed. A booking
+// scaled down: one vehicle per booking, no recurring series. A booking
 // only actually blocks its vehicle+slot once it reaches the final APPROVED_GA_APPROVAL status -
 // see FindConflictAsync - so, unlike a naive "block on any pending request", two requests for the
 // same vehicle+time are both allowed to go through approval and whichever is confirmed first wins.
