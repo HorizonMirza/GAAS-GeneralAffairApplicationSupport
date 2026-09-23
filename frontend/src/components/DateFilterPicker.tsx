@@ -56,6 +56,10 @@ interface Props {
   // own Tanggal) - days before it render muted and can't be picked, same treatment as an
   // out-of-month day.
   minDate?: string;
+  // Room/Vehicle Booking only - Sat/Sun are outside operating hours entirely (see OPEN_MIN/
+  // CLOSE_MIN's own Mon-Fri assumption), so those cells render muted and can't be picked, same
+  // treatment as a before-minDate day.
+  disableWeekends?: boolean;
 }
 
 // Replaces the plain <input type="date"> used for every "Filter Tanggal" across the app - same
@@ -64,7 +68,7 @@ interface Props {
 // jumping to a distant month or year doesn't take a long click-through, then a day grid below
 // reuses this app's existing MiniMonthCalendar day-cell styling (weekday header, muted outside-
 // month days, today/selected circle) for visual consistency with the rest of the app.
-export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal", disabled, clearable = true, minDate }: Props) {
+export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal", disabled, clearable = true, minDate, disableWeekends }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
@@ -118,21 +122,21 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
   const daysInThisMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
 
-  const cells: { iso: string; day: number; muted: boolean }[] = [];
+  const cells: { iso: string; day: number; muted: boolean; weekday: number }[] = [];
   for (let i = 0; i < startOffset; i++) {
     const day = daysInPrevMonth - startOffset + 1 + i;
     const m = viewMonth === 0 ? 11 : viewMonth - 1;
     const y = viewMonth === 0 ? viewYear - 1 : viewYear;
-    cells.push({ iso: toIso(y, m, day), day, muted: true });
+    cells.push({ iso: toIso(y, m, day), day, muted: true, weekday: new Date(y, m, day).getDay() });
   }
   for (let d = 1; d <= daysInThisMonth; d++) {
-    cells.push({ iso: toIso(viewYear, viewMonth, d), day: d, muted: false });
+    cells.push({ iso: toIso(viewYear, viewMonth, d), day: d, muted: false, weekday: new Date(viewYear, viewMonth, d).getDay() });
   }
   let nextDay = 1;
   const nextMonthIdx = viewMonth === 11 ? 0 : viewMonth + 1;
   const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
   while (cells.length < 42) {
-    cells.push({ iso: toIso(nextYear, nextMonthIdx, nextDay), day: nextDay, muted: true });
+    cells.push({ iso: toIso(nextYear, nextMonthIdx, nextDay), day: nextDay, muted: true, weekday: new Date(nextYear, nextMonthIdx, nextDay).getDay() });
     nextDay += 1;
   }
 
@@ -220,12 +224,14 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
               const isToday = c.iso === today;
               const isSelected = c.iso === value;
               const isBeforeMin = !!minDate && c.iso < minDate;
+              const isWeekend = !!disableWeekends && (c.weekday === 0 || c.weekday === 6);
+              const isBlocked = isBeforeMin || isWeekend;
               const cls = ["mini-calendar-day"];
-              if (c.muted || isBeforeMin) cls.push("mini-calendar-day-muted");
+              if (c.muted || isBlocked) cls.push("mini-calendar-day-muted");
               if (isSelected) cls.push("mini-calendar-day-selected");
               else if (isToday) cls.push("mini-calendar-day-today");
               return (
-                <button key={c.iso} type="button" className={cls.join(" ")} disabled={isBeforeMin} onClick={() => selectDay(c.iso)}>
+                <button key={c.iso} type="button" className={cls.join(" ")} disabled={isBlocked} onClick={() => selectDay(c.iso)}>
                   <span className="mini-calendar-day-circle">
                     <span className="mini-calendar-day-num">{c.day}</span>
                   </span>
@@ -237,7 +243,7 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
             <button
               type="button"
               className="filter-picker-link"
-              disabled={!!minDate && today < minDate}
+              disabled={(!!minDate && today < minDate) || (!!disableWeekends && [0, 6].includes(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10))).getDay()))}
               onClick={() => selectDay(today)}
             >
               Hari Ini

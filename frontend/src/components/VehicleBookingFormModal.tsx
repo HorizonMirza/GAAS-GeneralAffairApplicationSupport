@@ -98,9 +98,12 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
 
   if (!open) return null;
 
+  // Flattened once so both directions of the Divisi<->Departemen sync below can look either one
+  // up without re-walking direktoratTree per keystroke.
+  const allDivisiNodes = orgStructure?.direktoratTree.flatMap((d) => d.divisi) || [];
   const departemenOptions = form.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
-    : [];
+    ? allDivisiNodes.find((v) => v.nama === form.divisi)?.departemen || []
+    : orgStructure?.departemen || [];
 
   const unitName =
     me.departemen ||
@@ -277,7 +280,14 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                   <SearchableSelect
                     id="fk-divisi"
                     value={form.divisi || undefined}
-                    onChange={(v) => setForm((f) => ({ ...f, divisi: v || undefined, departemen: undefined }))}
+                    onChange={(v) => {
+                      const divisiNode = allDivisiNodes.find((d) => d.nama === v);
+                      setForm((f) => ({
+                        ...f,
+                        divisi: v || undefined,
+                        departemen: f.departemen && divisiNode?.departemen.includes(f.departemen) ? f.departemen : undefined,
+                      }));
+                    }}
                     options={orgStructure?.divisi || []}
                     placeholder="Pilih Divisi"
                   />
@@ -286,9 +296,12 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                   <label htmlFor="fk-departemen">Departemen</label>
                   <SearchableSelect
                     id="fk-departemen"
-                    disabled={!form.divisi}
                     value={form.departemen || undefined}
-                    onChange={(v) => set("departemen", v || undefined)}
+                    onChange={(v) => {
+                      if (!v) { set("departemen", undefined); return; }
+                      const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(v))?.nama;
+                      setForm((f) => ({ ...f, departemen: v, divisi: owningDivisi || f.divisi }));
+                    }}
                     options={departemenOptions}
                     placeholder="Pilih Departemen"
                   />
@@ -309,7 +322,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
-              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} />
+              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends />
             </div>
             <div className="field">
               <label htmlFor="fk-penumpang">Jumlah Penumpang</label>

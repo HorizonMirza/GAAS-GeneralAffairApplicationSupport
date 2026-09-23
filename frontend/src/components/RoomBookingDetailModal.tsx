@@ -447,6 +447,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 value={form.tanggal}
                 onChange={handleTanggalChange}
                 minDate={todayLocalDate()}
+                disableWeekends
               />
               {isEdit && item.seriesId && (
                 <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>

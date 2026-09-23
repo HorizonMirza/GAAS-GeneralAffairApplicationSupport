@@ -456,7 +456,7 @@ function VehicleBookingTransaksiPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
-        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Reject"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

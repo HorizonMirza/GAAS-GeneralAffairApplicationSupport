@@ -323,6 +323,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 value={form.tanggal}
                 onChange={handleTanggalChange}
                 minDate={todayLocalDate()}
+                disableWeekends
               />
             </div>
             <div className="field">

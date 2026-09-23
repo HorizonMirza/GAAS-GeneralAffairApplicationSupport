@@ -474,7 +474,7 @@ function BookingTransaksiPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
-        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Reject"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

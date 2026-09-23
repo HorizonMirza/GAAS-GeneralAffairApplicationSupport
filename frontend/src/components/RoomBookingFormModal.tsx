@@ -115,9 +115,12 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
 
   if (!open) return null;
 
+  // Flattened once so both directions of the Divisi<->Departemen sync below can look either one
+  // up without re-walking direktoratTree per keystroke.
+  const allDivisiNodes = orgStructure?.direktoratTree.flatMap((d) => d.divisi) || [];
   const departemenOptions = form.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)?.departemen || []
-    : [];
+    ? allDivisiNodes.find((v) => v.nama === form.divisi)?.departemen || []
+    : orgStructure?.departemen || [];
 
   const unitName =
     me.departemen ||
@@ -382,7 +385,16 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                   <SearchableSelect
                     id="f-divisi"
                     value={form.divisi}
-                    onChange={(next) => setForm((f) => ({ ...f, divisi: next, departemen: undefined }))}
+                    onChange={(next) => {
+                      const divisiNode = allDivisiNodes.find((d) => d.nama === next);
+                      setForm((f) => ({
+                        ...f,
+                        divisi: next,
+                        // "" (Kebutuhan Divisi) is a divisi-wide need, valid under any divisi - only
+                        // a specific department name gets reset when it no longer belongs here.
+                        departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
+                      }));
+                    }}
                     options={orgStructure?.divisi || []}
                     placeholder="Pilih Divisi"
                   />
@@ -392,11 +404,14 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                   <SearchableSelect
                     id="f-departemen"
                     value={form.departemen}
-                    onChange={(next) => set("departemen", next)}
+                    onChange={(next) => {
+                      if (!next) { set("departemen", next); return; }
+                      const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(next))?.nama;
+                      setForm((f) => ({ ...f, departemen: next, divisi: owningDivisi || f.divisi }));
+                    }}
                     options={departemenOptions}
                     placeholder="Pilih Departemen"
                     clearLabel="Kebutuhan Divisi"
-                    disabled={!form.divisi}
                   />
                 </div>
               </>
@@ -423,7 +438,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
-              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} />
+              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends />
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>

@@ -242,7 +242,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <DateFilterPicker id="rs-tanggal" clearable={false} value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} />
+              <DateFilterPicker id="rs-tanggal" clearable={false} value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} disableWeekends />
             </div>
             <div className="field">
               <label htmlFor="rs-peserta">Jumlah Peserta <Pencil className="field-edit-icon" width={12} height={12} /></label>

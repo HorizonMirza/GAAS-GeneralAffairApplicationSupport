@@ -259,7 +259,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
             </div>
             <div className="field">
               <label htmlFor="rk-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={handleTanggalChange} clearable={false} minDate={todayLocalDate()} />
+              <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={handleTanggalChange} clearable={false} minDate={todayLocalDate()} disableWeekends />
             </div>
             <div className="field">
               <label htmlFor="rk-penumpang">Jumlah Penumpang <Pencil className="field-edit-icon" width={12} height={12} /></label>

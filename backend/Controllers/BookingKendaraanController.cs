@@ -287,6 +287,9 @@ public class BookingKendaraanController : ApiControllerBase
             if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
                 return "Departemen tidak ditemukan pada divisi tersebut";
         }
+        if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "Kendaraan hanya bisa dipesan pada hari Senin - Jumat";
+
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
         var currentTimeWib = TimeOnly.FromDateTime(nowWib);
@@ -613,6 +616,8 @@ public class BookingKendaraanController : ApiControllerBase
             return "Nama PIC wajib diisi";
         if (!IsValidPhone(payload.NoTeleponPic))
             return "No. telepon PIC tidak valid";
+        if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "Kendaraan hanya bisa dipesan pada hari Senin - Jumat";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
