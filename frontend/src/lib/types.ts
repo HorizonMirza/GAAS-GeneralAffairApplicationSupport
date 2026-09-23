@@ -294,19 +294,6 @@ export interface BulkRescheduleItemResult {
   detail: string | null;
 }
 
-export interface RoomUtilizationItem {
-  namaRuang: string;
-  bookedHours: number;
-  approvedCount: number;
-  rejectedCount: number;
-  rejectionRate: number | null;
-}
-
-export interface UtilizationResponse {
-  rooms: RoomUtilizationItem[];
-  busyHours: Record<string, number>;
-}
-
 export interface BookingRuang {
   id: number;
   nomorPemesanan: string | null;

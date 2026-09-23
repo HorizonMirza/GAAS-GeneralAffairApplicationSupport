@@ -204,22 +204,3 @@ public class WaitlistOut
     };
 }
 
-public class RoomUtilizationItem
-{
-    public string NamaRuang { get; set; } = null!;
-    public double BookedHours { get; set; }
-    public int ApprovedCount { get; set; }
-    public int RejectedCount { get; set; }
-    // Share of resolved requests (approved+rejected) that ended in rejection - null (not 0) when
-    // there were no resolved requests at all in range, so the frontend can render "-" instead of
-    // a misleading 0%.
-    public double? RejectionRate { get; set; }
-}
-
-public class UtilizationResponse
-{
-    public List<RoomUtilizationItem> Rooms { get; set; } = new();
-    // Hour-of-day (7-17, each representing "HH:00-(HH+1):00") -> number of Approved bookings
-    // occupying any part of that hour, across every room combined.
-    public Dictionary<int, int> BusyHours { get; set; } = new();
-}

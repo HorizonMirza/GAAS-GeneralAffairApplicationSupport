@@ -59,7 +59,6 @@ import type {
   RoomOption,
   Status,
   SumberPembelian,
-  UtilizationResponse,
   VehicleOption,
   WaitlistEntry,
 } from "./types";
@@ -397,8 +396,6 @@ export const api = {
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
   getRoomFeedUrl: (roomName: string) =>
     apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
-  getRoomUtilization: (dateFrom: string, dateTo: string) =>
-    apiRequest<UtilizationResponse>("/booking-ruang/utilization", { params: { dateFrom, dateTo } }),
   joinWaitlist: (payload: { namaRuang: string; tanggal: string; isWholeDay: boolean; jamMulai?: string | null; jamSelesai?: string | null }) =>
     apiRequest<WaitlistEntry>("/booking-ruang/waitlist", { method: "POST", body: payload }),
   myWaitlist: () => apiRequest<WaitlistEntry[]>("/booking-ruang/waitlist/mine"),
