@@ -24,7 +24,7 @@ public class PermintaanAtkController : ApiControllerBase
     // PengirimanController for the full rationale) - 5/10/20/50 stay for the paginated
     // Transaksi table's page-size dropdown.
     private static readonly HashSet<int> AllowedLimits = new() { 5, 10, 20, 50, 1000 };
-    private const int MaxItemRows = 30;
+    private const int MaxItemRows = 10;
     private const int MaxJumlahPerItem = 9999;
 
     private static readonly RoleEnum[] OriginRoles =

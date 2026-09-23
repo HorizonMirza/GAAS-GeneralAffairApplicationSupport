@@ -49,7 +49,7 @@ interface Props {
 
 const KATEGORI_OPTIONS = Object.keys(KATEGORI_ATK_LABEL) as AtkKategori[];
 
-const MAX_ITEM_ROWS = 30;
+const MAX_ITEM_ROWS = 10;
 
 function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
   return {
