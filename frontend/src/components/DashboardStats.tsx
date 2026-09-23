@@ -118,7 +118,10 @@ export default function DashboardStats({
           waitingGa: kc.APPROVED_L1 ?? 0,
           waitingGaApproval: kc.APPROVED_GA ?? 0,
           completed: kc.APPROVED_GA_APPROVAL ?? 0,
-          rejected: (kc.REJECTED_L1 ?? 0) + (kc.REJECTED_GA ?? 0) + (kc.REJECTED_GA_APPROVAL ?? 0),
+          // Vehicle Booking's own "Rejected" table filter (RejectedStatuses on the backend) now
+          // counts CANCELLED alongside the 3 real reject statuses, matching Room Booking - this
+          // card needs to match that total.
+          rejected: (kc.REJECTED_L1 ?? 0) + (kc.REJECTED_GA ?? 0) + (kc.REJECTED_GA_APPROVAL ?? 0) + (kc.CANCELLED ?? 0),
         });
       })
       .catch(() => {

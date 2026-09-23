@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
-  isKendaraanCancellableByOrigin,
   isKendaraanEditableByOrigin,
   isKendaraanGaActionable,
   kendaraanOriginActorLabel,
@@ -30,7 +29,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
-  onRequestCancel?: (id: number) => void;
 }
 
 function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
@@ -52,7 +50,7 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanCreatePayload {
   };
 }
 
-export default function VehicleBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onRequestCancel }: Props) {
+export default function VehicleBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<BookingKendaraanCreatePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
@@ -80,10 +78,16 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isKendaraanEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  // Mirrors RequireL1ActorAsync on the backend: the approver's own unit must match the booking's
+  // unit, not just their role - bookings are visible across every unit here too, so without this
+  // check the Approve/Reject buttons would show up for a booking that belongs to a completely
+  // different Departemen/Divisi and only fail with a 403 once clicked.
+  const l1UnitMatches = item.departemen
+    ? me.role === "APPROVAL_DEPARTEMEN" && me.departemen === item.departemen
+    : me.role === "APPROVAL_DIVISI" && me.divisi === item.divisi;
+  const canL1Act = !isEdit && l1UnitMatches && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isKendaraanGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canCancel = !isEdit && isKendaraanCancellableByOrigin(item, me);
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
 
@@ -443,21 +447,8 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
           )}
 
           {error && <div className="error-text">{error}</div>}
-          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit || (canCancel && !!onRequestCancel)) && (
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit) && (
             <div className="modal-actions">
-              {canCancel && onRequestCancel && !canL1Act && !canGaAct && !canGaApprovalAct && (
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
-                  onClick={() => {
-                    onClose();
-                    onRequestCancel(item.id);
-                  }}
-                >
-                  Cancel Booking
-                </button>
-              )}
               {canSubmitDraft && (
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
               )}

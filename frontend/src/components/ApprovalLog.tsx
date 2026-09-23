@@ -25,13 +25,11 @@ export default function ApprovalLog({ logs, kind }: Props) {
           title = log.action === "APPROVED_L1" ? `Disetujui Approval ${track}` : `Ditolak Approval ${track}`;
         } else if (
           log.action === "CANCELLED" &&
-          kind !== "kendaraan" &&
           (log.actorRole === "ADMIN_GA" || log.actorRole === "APPROVAL_GA")
         ) {
-          // Room Booking only - matches BookingStatusBadge's "Rejected: <nama>" treatment for a
-          // GA-initiated cancel, so the same event doesn't read as "Booking Dibatalkan" here and
-          // "Rejected: <nama>" on the card. Vehicle Booking never got that badge treatment, so its
-          // history keeps the plain label (see the `kind` guard).
+          // Room and Vehicle Booking both - matches BookingStatusBadge's "Rejected: <nama>"
+          // treatment for a GA-initiated cancel, so the same event doesn't read as "Booking
+          // Dibatalkan" here and "Rejected: <nama>" on the card.
           title = `Ditolak (${log.actorRole === "ADMIN_GA" ? "Admin GA" : "Approval GA"})`;
         } else if (log.action === "RESCHEDULED" && kind === "kendaraan") {
           title = "Kendaraan/Jadwal Dipindahkan oleh GA";

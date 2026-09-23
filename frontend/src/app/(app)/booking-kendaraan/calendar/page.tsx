@@ -11,6 +11,7 @@ import {
   canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
+  isGaRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
@@ -412,6 +413,7 @@ function VehicleCalendarPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -495,7 +497,6 @@ function VehicleCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={reloadAll}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
 

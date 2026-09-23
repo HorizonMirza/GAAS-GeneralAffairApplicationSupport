@@ -43,9 +43,13 @@ public class BookingKendaraanController : ApiControllerBase
         BookingStatusEnum.APPROVED_GA, BookingStatusEnum.APPROVED_GA_APPROVAL,
     };
 
+    // The 3 distinct "rejected at some stage" statuses, plus CANCELLED (a booking called off
+    // never reads as functionally different from a reject once it's dead), collapsed into one
+    // "Rejected" option in the Status filter dropdown - mirrors Room Booking's own
+    // BookingRuangController.RejectedStatuses exactly.
     private static readonly BookingStatusEnum[] RejectedStatuses =
     {
-        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL,
+        BookingStatusEnum.REJECTED_L1, BookingStatusEnum.REJECTED_GA, BookingStatusEnum.REJECTED_GA_APPROVAL, BookingStatusEnum.CANCELLED,
     };
 
     // Same collapsing idea as RejectedStatuses above, for the "On-Approval" option -
@@ -738,8 +742,17 @@ public class BookingKendaraanController : ApiControllerBase
 
         item.Status = BookingStatusEnum.CANCELLED;
         item.CancelledByName = user!.Nama;
+        item.CancelledByRole = user!.Role;
+        // Only for a GA-initiated cancel (shown to users as "Rejected: <nama>", same as a real
+        // reject) - the note they typed needs to land on RejectReason too, not just the log,
+        // since that's the field the Overview/Detail "Catatan Penolakan" line already reads for
+        // every other reject. An origin creator's own self-cancel stays plain "Cancelled" with
+        // no such note. Mirrors BookingRuangController.Cancel.
+        if (IsGaActor(user))
+            item.RejectReason = payload.Reason;
         AddLog(item, "CANCELLED", user!, payload.Reason);
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "kendaraan", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), $"Dibatalkan ({MentionLabelForRole(user.Role) ?? user.Role.ToString()})");
         return Ok(BookingKendaraanOut.From(item));
     }
 

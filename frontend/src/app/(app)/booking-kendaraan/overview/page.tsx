@@ -11,6 +11,7 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingStatusBorderClass,
   isBookingOriginRole,
+  isGaRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   buildVehicleBookingDuplicateInitial,
@@ -183,21 +184,54 @@ function getRealVehicleCurrentSlot(
     };
   }
 
-  // No ongoing booking right now -> Vehicle is free right now!
-  // Find the next upcoming booking starting after now
-  const upcoming = vehicleBookings.find((b) => b.startMin > now && b.startMin < CLOSE_MIN);
-  if (upcoming) {
-    const untilHhmm = upcoming.jamMulai?.slice(0, 5) || "18:00";
-    return {
-      jam: `${startHhmm} - ${untilHhmm}`,
-      status: "free",
-      judul: "Available",
-    };
+  // No ongoing booking right now -> vehicle is free right now, but headlining "now until the very
+  // next booking" is misleading the moment that gap is trivial (e.g. a booking starting in 5
+  // minutes) while a much bigger free block sits right after it - so scan every gap between
+  // today's remaining bookings and headline the LARGEST one, not just the first one.
+  // Gap lengths are measured from the real "now" (not the rounded-down display hour) - rounding
+  // down here would inflate the very first gap by up to 59 minutes and could make it falsely win
+  // against a genuinely bigger block later today.
+  // Also floored at OPEN_MIN - viewing the page before 07:00 must not let the pre-opening minutes
+  // pad out the first gap's length either, or the same kind of false win can happen against a
+  // booking that starts shortly after opening.
+  const upcomingBookings = vehicleBookings.filter((b) => b.startMin > now);
+  const effectiveNow = Math.max(now, OPEN_MIN);
+  let cursor = effectiveNow;
+  let bestStart = effectiveNow;
+  let bestEnd = CLOSE_MIN;
+  let bestLen = -1;
+  for (const b of upcomingBookings) {
+    if (b.startMin > cursor) {
+      const len = b.startMin - cursor;
+      if (len > bestLen) {
+        bestLen = len;
+        bestStart = cursor;
+        bestEnd = b.startMin;
+      }
+    }
+    cursor = Math.max(cursor, b.endMin);
+  }
+  if (CLOSE_MIN > cursor) {
+    const len = CLOSE_MIN - cursor;
+    if (len > bestLen) {
+      bestLen = len;
+      bestStart = cursor;
+      bestEnd = CLOSE_MIN;
+    }
   }
 
-  // No more bookings today -> Available from current hour until 18:00
+  if (bestLen <= 0) {
+    // Booked solid from now through closing (back-to-back bookings with no real gap) - the vehicle
+    // isn't meaningfully "Available" even though "now" itself technically isn't inside a booking.
+    const next = upcomingBookings[0];
+    const jam = next.isWholeDay
+      ? "07:00 - 18:00"
+      : `${next.jamMulai?.slice(0, 5) || "07:00"} - ${next.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: next.keperluan || "Terisi" };
+  }
+
   return {
-    jam: `${startHhmm} - 18:00`,
+    jam: `${bestStart === effectiveNow ? startHhmm : minutesToHHMM(bestStart)} - ${minutesToHHMM(bestEnd)}`,
     status: "free",
     judul: "Available",
   };
@@ -415,7 +449,7 @@ export default function VehicleBookingOverviewPage() {
                   })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isKendaraan />
+                  <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -432,7 +466,15 @@ export default function VehicleBookingOverviewPage() {
                   </button>
                 </div>
               </div>
-              <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+              <RoomBookingStepper
+                status={item.status}
+                departemen={item.departemen}
+                createdByRole={item.createdByRole}
+                cancelledByRole={item.cancelledByRole}
+                approvedByL1={item.approvedByL1}
+                approvedByGa={item.approvedByGa}
+                approvedByApprovalGa={item.approvedByApprovalGa}
+              />
               {item.rejectReason && (
                 <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
                   <strong>Catatan Penolakan:</strong> {item.rejectReason}
@@ -451,6 +493,7 @@ export default function VehicleBookingOverviewPage() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -580,7 +623,6 @@ export default function VehicleBookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
 

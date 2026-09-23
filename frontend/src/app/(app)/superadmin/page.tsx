@@ -1429,7 +1429,7 @@ export default function SuperAdminPage() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <span className="badge-stack">
-                          <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} />
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                         </span>
                       </td>
                       <td>

@@ -483,6 +483,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.NoTeleponPic).HasColumnName("no_telepon_pic").HasMaxLength(50);
             e.Property(b => b.NamaKendaraan).HasColumnName("nama_kendaraan").HasMaxLength(100).IsRequired();
             e.Property(b => b.PlatNomor).HasColumnName("plat_nomor").HasMaxLength(20);
+            e.Property(b => b.CancelledByRole).HasColumnName("cancelled_by_role").HasConversion<string>().HasMaxLength(50);
             e.Property(b => b.KapasitasKendaraan).HasColumnName("kapasitas_kendaraan");
             e.Property(b => b.Supir).HasColumnName("supir").HasMaxLength(255);
             e.Property(b => b.JumlahPenumpang).HasColumnName("jumlah_penumpang");

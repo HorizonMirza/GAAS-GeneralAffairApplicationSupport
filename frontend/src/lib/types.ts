@@ -729,6 +729,7 @@ export interface BookingKendaraan {
   status: BookingStatus;
   rejectReason: string | null;
   cancelledByName: string | null;
+  cancelledByRole: Role | null;
   createdBy: number;
   createdByRole: Role;
   approvedByL1: number | null;

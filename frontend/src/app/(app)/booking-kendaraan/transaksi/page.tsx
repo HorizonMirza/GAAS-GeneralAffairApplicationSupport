@@ -11,6 +11,7 @@ import {
   canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
+  isGaRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   isKendaraanEditableByOrigin,
@@ -397,7 +398,7 @@ function VehicleBookingTransaksiPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} isKendaraan />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
                           </span>
                           <button
                             type="button"
@@ -458,6 +459,7 @@ function VehicleBookingTransaksiPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -533,7 +535,6 @@ function VehicleBookingTransaksiPageInner() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-        onRequestCancel={(id) => setCancelTargetId(id)}
       />
 
       <CancelBookingModal
