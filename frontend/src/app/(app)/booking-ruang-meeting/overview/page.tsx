@@ -146,9 +146,13 @@ function getRealRoomCurrentSlot(
   // down here would inflate the very first gap by up to 59 minutes and could make it falsely win
   // against a genuinely bigger block later today (e.g. "free" reading 09:00-10:00 when actually
   // only 5 minutes are left before the next booking, hiding a real 6-hour opening right after it).
+  // Also floored at OPEN_MIN - viewing the page before 07:00 must not let the pre-opening minutes
+  // pad out the first gap's length either, or the same kind of false win can happen against a
+  // booking that starts shortly after opening.
   const upcomingBookings = roomBookings.filter((b) => b.startMin > now);
-  let cursor = now;
-  let bestStart = now;
+  const effectiveNow = Math.max(now, OPEN_MIN);
+  let cursor = effectiveNow;
+  let bestStart = effectiveNow;
   let bestEnd = CLOSE_MIN;
   let bestLen = -1;
   for (const b of upcomingBookings) {
@@ -182,7 +186,7 @@ function getRealRoomCurrentSlot(
   }
 
   return {
-    jam: `${bestStart === now ? startHhmm : minutesToHHMM(bestStart)} - ${minutesToHHMM(bestEnd)}`,
+    jam: `${bestStart === effectiveNow ? startHhmm : minutesToHHMM(bestStart)} - ${minutesToHHMM(bestEnd)}`,
     status: "free",
     judul: "Available",
   };

@@ -9,8 +9,8 @@ interface Props {
   cancelledByName?: BookingRuang["cancelledByName"];
   // Room Booking only (Vehicle Booking never passes this) - when the canceller was Admin/Approval
   // GA rather than the origin creator, the badge reads "Rejected: <nama>" instead of "Cancel:
-  // <nama>", matching how the "Cancel" action itself is relabeled "Delete" for those two roles
-  // (see RowMenuDropdown's cancelActionLabel and CancelBookingModal's variant prop).
+  // <nama>", matching how the row menu's own Cancel action reads "Delete" for those two roles
+  // (see RowMenuDropdown's cancelLabel prop).
   cancelledByRole?: BookingRuang["cancelledByRole"];
   // Room/Vehicle Booking's reject is a genuine dead end (nothing is "waiting" on anyone once
   // rejected - see their IsEditableByOrigin), so this defaults to false and they never pass it.
