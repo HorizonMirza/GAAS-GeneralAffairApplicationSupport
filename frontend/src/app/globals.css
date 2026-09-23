@@ -4785,6 +4785,14 @@ table.data-table {
   gap: 8px;
 }
 
+/* Badges vary in width row to row ("Approved" vs "Rejected: Approval GA"), which used to shove
+   the Chat/Aksi buttons sideways with them - pinning the first button (always Chat, whichever
+   badge/module precedes it) to the right via auto margin keeps that pair flush against the cell's
+   right edge on every row, in every module that uses this shared .status-cell pattern. */
+.status-cell > button:first-of-type {
+  margin-left: auto;
+}
+
 .row-menu-btn {
   border: none;
   background: transparent;

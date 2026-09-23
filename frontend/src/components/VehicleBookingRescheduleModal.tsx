@@ -360,7 +360,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                   const v = vehicles.find((x) => x.supir === supir);
                   return v ? `${v.supir} - Kendaraan: ${v.nama}` : supir;
                 }}
-                placeholder="Pilih nama pengemudi"
+                placeholder="Pilih Nama Pengemudi"
               />
             </div>
             <div className="field full">

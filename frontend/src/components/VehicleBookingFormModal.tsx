@@ -393,7 +393,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                   const v = vehicles.find((x) => x.nama === nama);
                   return v ? `${v.nama} - ${v.platNomor} - Pengemudi: ${v.supir}` : nama;
                 }}
-                placeholder="Pilih kendaraan"
+                placeholder="Pilih Kendaraan"
               />
             </div>
             <div className="field full">
@@ -410,7 +410,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                   const v = vehicles.find((x) => x.supir === supir);
                   return v ? `${v.supir} - Kendaraan: ${v.nama}` : supir;
                 }}
-                placeholder="Pilih nama pengemudi"
+                placeholder="Pilih Nama Pengemudi"
               />
             </div>
             <div className="field full">
