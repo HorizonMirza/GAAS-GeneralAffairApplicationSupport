@@ -1,4 +1,4 @@
-import { getBookingStatusLabel, getSimpleWaitingLabel } from "@/lib/constants";
+import { getBookingStatusLabel, getSimpleWaitingLabel, ROLE_SHORT_LABEL } from "@/lib/constants";
 import type { BookingRuang, BookingStatus } from "@/lib/types";
 
 interface Props {
@@ -7,10 +7,11 @@ interface Props {
   departemen?: BookingRuang["departemen"];
   createdByRole?: BookingRuang["createdByRole"];
   cancelledByName?: BookingRuang["cancelledByName"];
-  // Room Booking only (Vehicle Booking never passes this) - when the canceller was Admin/Approval
-  // GA rather than the origin creator, the badge reads "Rejected: <nama>" instead of "Cancel:
-  // <nama>", matching how the row menu's own Cancel action reads "Delete" for those two roles
-  // (see RowMenuDropdown's cancelLabel prop).
+  // Room and Vehicle Booking both pass this - when the canceller was Admin/Approval GA rather than
+  // the origin creator, the badge reads "Rejected: Admin GA"/"Rejected: Approval GA" (the same
+  // generic role wording the formal Reject flow already uses for REJECTED_GA/REJECTED_GA_APPROVAL,
+  // not the actor's own name) instead of "Cancel: <nama>", matching how the row menu's own Cancel
+  // action reads "Delete" for those two roles (see RowMenuDropdown's cancelLabel prop).
   cancelledByRole?: BookingRuang["cancelledByRole"];
   // Room/Vehicle Booking's reject is a genuine dead end (nothing is "waiting" on anyone once
   // rejected - see their IsEditableByOrigin), so this defaults to false and they never pass it.
@@ -25,8 +26,8 @@ interface Props {
 export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, cancelledByRole = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
   const cancelledByGa = cancelledByRole === "ADMIN_GA" || cancelledByRole === "APPROVAL_GA";
   const label =
-    status === "CANCELLED" && cancelledByGa && cancelledByName
-      ? `Rejected: ${cancelledByName}`
+    status === "CANCELLED" && cancelledByGa
+      ? `Rejected: ${ROLE_SHORT_LABEL[cancelledByRole!]}`
       : status === "CANCELLED" && cancelledByName
       ? `Cancel: ${cancelledByName}`
       : status === "CANCELLED"

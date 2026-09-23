@@ -764,13 +764,6 @@ export interface BookingKendaraanLog {
   createdAt: string;
 }
 
-// Admin/Approval GA's narrow correction payload - see BookingKendaraanController.Koreksi.
-export interface KoreksiKendaraanPayload {
-  pic: string;
-  noTeleponPic: string;
-  catatan: string;
-}
-
 export interface BookingKendaraanCreatePayload {
   keperluan: string;
   pic: string | null;
@@ -786,10 +779,14 @@ export interface BookingKendaraanCreatePayload {
   catatan: string | null;
 }
 
-// Admin/Approval GA's conflict-resolution tool - deliberately narrower than
-// BookingKendaraanCreatePayload, only the fields that define the vehicle+slot.
+// Admin/Approval GA's single in-flight edit tool - the vehicle+slot, jumlahPenumpang (switching
+// vehicle can change the capacity it has to fit within), and the PIC's name/phone (e.g. fixing a
+// typo). keperluan/catatan stay the origin creator's own and aren't part of this payload.
 export interface BookingKendaraanReschedulePayload {
   namaKendaraan: string;
+  jumlahPenumpang: number;
+  pic: string;
+  noTeleponPic: string;
   tanggal: string;
   isWholeDay: boolean;
   jamMulai: string | null;

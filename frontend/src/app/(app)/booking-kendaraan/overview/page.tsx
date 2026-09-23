@@ -17,7 +17,6 @@ import {
   buildVehicleBookingDuplicateInitial,
   isKendaraanEditableByOrigin,
   isKendaraanPdfAvailable,
-  canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/format";
@@ -32,7 +31,6 @@ import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import RoomInfoModal from "@/components/RoomInfoModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
-import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
@@ -254,7 +252,6 @@ export default function VehicleBookingOverviewPage() {
   const [infoVehicle, setInfoVehicle] = useState<VehicleOption | null>(null);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
-  const [koreksiTarget, setKoreksiTarget] = useState<BookingKendaraan | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -522,12 +519,6 @@ export default function VehicleBookingOverviewPage() {
               }
             : undefined
         }
-        canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
-        onKoreksi={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setKoreksiTarget(item);
-        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -641,13 +632,6 @@ export default function VehicleBookingOverviewPage() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
-        onSaved={load}
-      />
-
-      <VehicleBookingKoreksiModal
-        open={!!koreksiTarget}
-        item={koreksiTarget}
-        onClose={() => setKoreksiTarget(null)}
         onSaved={load}
       />
 

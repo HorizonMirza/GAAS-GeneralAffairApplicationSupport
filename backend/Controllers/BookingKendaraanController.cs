@@ -602,6 +602,17 @@ public class BookingKendaraanController : ApiControllerBase
     {
         if (!Vehicles.IsValidVehicle(payload.NamaKendaraan))
             return "Kendaraan tidak ditemukan";
+        if (payload.JumlahPenumpang <= 0)
+            return "Jumlah penumpang harus lebih dari 0";
+        if (payload.JumlahPenumpang > MaxJumlahPenumpang)
+            return $"Jumlah penumpang maksimal {MaxJumlahPenumpang} orang";
+        var kapasitas = Vehicles.GetKapasitas(payload.NamaKendaraan) ?? 0;
+        if (payload.JumlahPenumpang > kapasitas)
+            return $"Jumlah penumpang melebihi kapasitas kendaraan ({kapasitas} orang)";
+        if (string.IsNullOrWhiteSpace(payload.Pic))
+            return "Nama PIC wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPic))
+            return "No. telepon PIC tidak valid";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
@@ -635,9 +646,9 @@ public class BookingKendaraanController : ApiControllerBase
         return null;
     }
 
-    // Admin/Approval GA's dedicated conflict-resolution tool: move an in-flight booking's
-    // vehicle/date/time without touching anything else about it. Not gated behind
-    // IsEditableByOrigin at all.
+    // Admin/Approval GA's dedicated in-flight edit tool: move an in-flight booking's vehicle/
+    // date/time/jumlah penumpang and fix the PIC's name/phone (e.g. a typo), without touching
+    // Keperluan/Catatan. Not gated behind IsEditableByOrigin at all.
     [HttpPatch("{itemId:int}/reschedule")]
     public async Task<IActionResult> Reschedule(int itemId, [FromBody] BookingKendaraanReschedule payload)
     {
@@ -667,6 +678,9 @@ public class BookingKendaraanController : ApiControllerBase
         item.PlatNomor = Vehicles.GetPlatNomor(payload.NamaKendaraan);
         item.KapasitasKendaraan = Vehicles.GetKapasitas(payload.NamaKendaraan) ?? 0;
         item.Supir = Vehicles.GetSupir(payload.NamaKendaraan);
+        item.JumlahPenumpang = payload.JumlahPenumpang;
+        item.Pic = payload.Pic.Trim();
+        item.NoTeleponPic = payload.NoTeleponPic.Trim();
         item.Tanggal = payload.Tanggal;
         item.IsWholeDay = payload.IsWholeDay;
         item.JamMulai = payload.IsWholeDay ? null : payload.JamMulai;
@@ -676,36 +690,6 @@ public class BookingKendaraanController : ApiControllerBase
             ? $"{item.Tanggal:dd/MM/yyyy} (Sepanjang Hari)"
             : $"{item.Tanggal:dd/MM/yyyy} {item.JamMulai:HH:mm}-{item.JamSelesai:HH:mm}";
         AddLog(item, "RESCHEDULED", user!, $"Dipindahkan ke {item.NamaKendaraan}, {jadwalText}");
-
-        await _db.SaveChangesAsync();
-        return Ok(BookingKendaraanOut.From(item));
-    }
-
-    // Admin/Approval GA's narrow correction tool: fix a typo in the PIC's name or phone number
-    // without touching anything else about the booking - same in-flight window and same principle
-    // as Reschedule leaving Keperluan/PIC untouched, just the other way around (this touches PIC,
-    // Reschedule touches the slot). Mirrors PerbaikanSaranaController.Koreksi.
-    [HttpPatch("{itemId:int}/koreksi")]
-    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiBookingKendaraanRequest payload)
-    {
-        var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
-        if (roleError != null) return roleError;
-
-        var item = await _db.BookingKendaraans.FirstOrDefaultAsync(b => b.Id == itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsGaReschedulable(item))
-            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
-        if (user!.Role == RoleEnum.APPROVAL_GA && item.Status != BookingStatusEnum.APPROVED_GA)
-            return StatusCode(403, new { detail = "Jadwal belum mencapai tahap Approval General Affair" });
-
-        if (string.IsNullOrWhiteSpace(payload.Pic)) return BadRequest(new { detail = "Nama PIC wajib diisi" });
-        if (!IsValidPhone(payload.NoTeleponPic)) return BadRequest(new { detail = "No. telepon PIC tidak valid" });
-
-        item.Pic = payload.Pic.Trim();
-        item.NoTeleponPic = payload.NoTeleponPic.Trim();
-        var koreksiDetail = $"Data PIC dikoreksi menjadi {item.Pic} / {item.NoTeleponPic}";
-        if (!string.IsNullOrWhiteSpace(payload.Catatan)) koreksiDetail += $": {payload.Catatan.Trim()}";
-        AddLog(item, "CORRECTED", user!, koreksiDetail);
 
         await _db.SaveChangesAsync();
         return Ok(BookingKendaraanOut.From(item));

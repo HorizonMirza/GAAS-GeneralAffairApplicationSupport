@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Copy, Download, FileText, ListChecks, MessageSquare, Pencil } from "lucide-react";
+import { Copy, Download, FileText, ListChecks, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 
@@ -45,12 +45,6 @@ interface Props {
   // the action reads "Delete" instead of "Cancel" (see isGaRole/BookingStatusBadge's matching
   // "Rejected: <nama>" badge for the same distinction). Defaults to "Cancel".
   cancelLabel?: string;
-  // Room/Vehicle Booking only - Admin/Approval GA's PIC name/phone typo-fix (see
-  // canGaKoreksiBooking/canGaKoreksiKendaraan). A separate slot from Updates because Updates is
-  // already claimed by Reschedule in these two modules, unlike Ekspedisi/ATK/Maintenance/Arsip
-  // where Updates itself branches between the origin's edit form and this same Koreksi flow.
-  onKoreksi?: () => void;
-  canKoreksi?: boolean;
 }
 
 export default function RowMenuDropdown({
@@ -72,8 +66,6 @@ export default function RowMenuDropdown({
   onCancel,
   canCancel,
   cancelLabel = "Cancel",
-  onKoreksi,
-  canKoreksi,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -126,14 +118,6 @@ export default function RowMenuDropdown({
           <button type="button" className="row-menu-item" onClick={onUpdates}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"></path></svg>
             Updates
-          </button>
-        </motion.div>
-      )}
-      {onKoreksi && canKoreksi && (
-        <motion.div variants={itemVariants}>
-          <button type="button" className="row-menu-item" onClick={onKoreksi}>
-            <Pencil width={16} height={16} />
-            Koreksi
           </button>
         </motion.div>
       )}

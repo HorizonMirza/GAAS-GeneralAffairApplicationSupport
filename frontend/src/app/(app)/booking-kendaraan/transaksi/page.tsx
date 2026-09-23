@@ -8,7 +8,6 @@ import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   buildVehicleBookingDuplicateInitial,
-  canGaKoreksiKendaraan,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
   isGaRole,
@@ -29,7 +28,6 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
 import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
-import VehicleBookingKoreksiModal from "@/components/VehicleBookingKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import CancelBookingModal from "@/components/CancelBookingModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
@@ -75,7 +73,6 @@ function VehicleBookingTransaksiPageInner() {
   const [formInitial, setFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
   const [detail, setDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<BookingKendaraan | null>(null);
-  const [koreksiTarget, setKoreksiTarget] = useState<BookingKendaraan | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<BookingKendaraan | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -488,12 +485,6 @@ function VehicleBookingTransaksiPageInner() {
               }
             : undefined
         }
-        canKoreksi={!!rowMenu.menuItem && canGaKoreksiKendaraan(rowMenu.menuItem, me)}
-        onKoreksi={() => {
-          const item = rowMenu.menuItem;
-          rowMenu.close();
-          if (item) setKoreksiTarget(item);
-        }}
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -552,13 +543,6 @@ function VehicleBookingTransaksiPageInner() {
         open={!!rescheduleTarget}
         item={rescheduleTarget}
         onClose={() => setRescheduleTarget(null)}
-        onSaved={loadTable}
-      />
-
-      <VehicleBookingKoreksiModal
-        open={!!koreksiTarget}
-        item={koreksiTarget}
-        onClose={() => setKoreksiTarget(null)}
         onSaved={loadTable}
       />
 

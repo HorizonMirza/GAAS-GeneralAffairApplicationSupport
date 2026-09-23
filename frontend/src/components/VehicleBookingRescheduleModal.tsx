@@ -45,6 +45,9 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanReschedulePayload
   }
   return {
     namaKendaraan: item.namaKendaraan,
+    jumlahPenumpang: item.jumlahPenumpang,
+    pic: item.pic || "",
+    noTeleponPic: item.noTeleponPic || "",
     tanggal: item.tanggal,
     isWholeDay,
     jamMulai,
@@ -52,9 +55,11 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanReschedulePayload
   };
 }
 
-// Admin/Approval GA's conflict-resolution tool: move an in-flight booking's kendaraan/date/time
-// without touching the rest of it (keperluan, PIC, penumpang stay the origin creator's own) -
-// separate from VehicleBookingDetailModal's own "edit" mode, which is creator-only and DRAFT-only.
+// Admin/Approval GA's single in-flight edit tool: move a booking's kendaraan/date/time, adjust
+// jumlah penumpang to match (a different vehicle can mean a different capacity), and fix the
+// PIC's name/phone (e.g. a typo) - keperluan/catatan stay the origin creator's own and are
+// untouched here. Separate from VehicleBookingDetailModal's own "edit" mode, which is
+// creator-only and DRAFT-only.
 export default function VehicleBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
   const [form, setForm] = useState<BookingKendaraanReschedulePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
@@ -73,6 +78,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
 
   if (!open || !item || !form) return null;
 
+  const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
   const availableStartHours = form ? getAvailableStartHours(form.tanggal) : [];
   const availableEndHours = form ? getAvailableEndHours(form.jamMulai) : [];
   const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
@@ -188,6 +194,14 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
       setError("Kendaraan wajib dipilih");
       return;
     }
+    if (!form.jumlahPenumpang) {
+      setError("Jumlah penumpang wajib diisi");
+      return;
+    }
+    if (selectedVehicle && form.jumlahPenumpang > selectedVehicle.kapasitas) {
+      setError(`Jumlah penumpang maksimal ${selectedVehicle.kapasitas} orang`);
+      return;
+    }
     setBusy(true);
     try {
       await api.rescheduleKendaraanBooking(item!.id, {
@@ -223,20 +237,41 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               <input type="text" id="rk-keperluan" disabled value={item.keperluan} />
             </div>
             <div className="field">
-              <label htmlFor="rk-pic">Nama PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rk-pic" disabled value={item.pic || ""} />
+              <label htmlFor="rk-pic">Nama PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input type="text" id="rk-pic" required maxLength={50} value={form.pic} onChange={(e) => set("pic", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="rk-telepon-pic">No. Telepon PIC <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rk-telepon-pic" disabled value={item.noTeleponPic || ""} />
+              <label htmlFor="rk-telepon-pic">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input
+                type="text"
+                inputMode="tel"
+                id="rk-telepon-pic"
+                required
+                maxLength={20}
+                value={form.noTeleponPic}
+                onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))}
+              />
             </div>
             <div className="field">
               <label htmlFor="rk-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={handleTanggalChange} clearable={false} minDate={todayLocalDate()} />
             </div>
             <div className="field">
-              <label htmlFor="rk-penumpang">Jumlah Penumpang <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rk-penumpang" disabled value={item.jumlahPenumpang ? `${item.jumlahPenumpang}` : ""} />
+              <label htmlFor="rk-penumpang">Jumlah Penumpang <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                id="rk-penumpang"
+                required
+                value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                  const cap = selectedVehicle?.kapasitas ?? 99;
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), cap);
+                  set("jumlahPenumpang", parsed);
+                }}
+              />
             </div>
             <div className="field">
               <label htmlFor="rk-jam-mulai">Jam Mulai <Pencil className="field-edit-icon" width={12} height={12} /></label>
@@ -308,8 +343,21 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
               />
             </div>
             <div className="field full">
-              <label htmlFor="rk-supir">Nama Pengemudi <Lock className="field-lock-icon" width={12} height={12} /></label>
-              <input type="text" id="rk-supir" disabled value={vehicles.find((v) => v.nama === form.namaKendaraan)?.supir ?? item.supir ?? ""} />
+              <label htmlFor="rk-supir">Nama Pengemudi <Pencil className="field-edit-icon" width={12} height={12} /></label>
+              <SearchableSelect
+                id="rk-supir"
+                value={selectedVehicle?.supir}
+                onChange={(supir) => {
+                  const matched = vehicles.find((v) => v.supir === supir);
+                  if (matched) set("namaKendaraan", matched.nama);
+                }}
+                options={vehicles.map((v) => v.supir)}
+                getLabel={(supir) => {
+                  const v = vehicles.find((x) => x.supir === supir);
+                  return v ? `${v.supir} - Kendaraan: ${v.nama}` : supir;
+                }}
+                placeholder="Pilih nama pengemudi"
+              />
             </div>
             <div className="field full">
               <label htmlFor="rk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>

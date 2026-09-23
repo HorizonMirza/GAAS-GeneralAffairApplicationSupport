@@ -496,12 +496,6 @@ export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolea
   return false;
 }
 
-// Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
-// the slot - see VehicleBookingKoreksiModal and BookingKendaraanController.Koreksi.
-export function canGaKoreksiKendaraan(item: BookingKendaraan, me: Me): boolean {
-  return canGaRescheduleKendaraan(item, me);
-}
-
 export function isKendaraanGaActionable(item: BookingKendaraan): boolean {
   return item.status === "APPROVED_L1";
 }

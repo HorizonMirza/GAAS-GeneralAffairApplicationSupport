@@ -321,7 +321,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
               />
             </div>
             <div className="field">
-              <label htmlFor="bk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>
+              <label htmlFor="bk-penumpang">Jumlah Penumpang</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -430,7 +430,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
             </div>
             <div className="field full">
               <label htmlFor="bk-catatan">Catatan</label>
-              <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Penjemputan di Lobby Utama / perjalanan dinas luar kota" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Penjemputan di lobby utama" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

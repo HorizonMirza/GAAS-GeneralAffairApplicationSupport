@@ -306,7 +306,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
               <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} />
             </div>
             <div className="field">
-              <label htmlFor="fk-penumpang">Jumlah Penumpang{selectedVehicle ? ` (maks ${selectedVehicle.kapasitas})` : ""}</label>
+              <label htmlFor="fk-penumpang">Jumlah Penumpang</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -410,7 +410,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             </div>
             <div className="field full">
               <label htmlFor="fk-catatan">Catatan</label>
-              <input type="text" id="fk-catatan" maxLength={255} placeholder="Contoh: Penjemputan di Lobby Utama / perjalanan dinas luar kota" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fk-catatan" maxLength={255} placeholder="Contoh: Penjemputan di lobby utama" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
           {error && <div className="error-text">{error}</div>}

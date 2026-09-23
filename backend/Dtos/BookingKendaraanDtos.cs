@@ -21,20 +21,20 @@ public class BookingKendaraanCreate
     public string? Catatan { get; set; }
 }
 
-// Deliberately narrower than BookingKendaraanCreate - Admin/Approval GA use this to resolve a
-// vehicle/time conflict on someone else's booking, so it only exposes the fields that actually
-// define the slot. Everything else (Keperluan, Pic, JumlahPenumpang, Catatan) stays the origin
-// creator's own and is untouched by a reschedule.
+// Admin/Approval GA's single edit tool for an in-flight booking: the vehicle/time slot, the
+// passenger count that has to fit the chosen vehicle's capacity, and the PIC's name/phone (e.g.
+// fixing a typo). Everything else (Keperluan, Catatan) stays the origin creator's own.
 public class BookingKendaraanReschedule
 {
     public string NamaKendaraan { get; set; } = null!;
+    public int JumlahPenumpang { get; set; }
+    public string Pic { get; set; } = null!;
+    public string NoTeleponPic { get; set; } = null!;
     public DateOnly Tanggal { get; set; }
     public bool IsWholeDay { get; set; }
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }
 }
-
-public record KoreksiBookingKendaraanRequest(string Pic, string NoTeleponPic, string? Catatan = null);
 
 public record BookingKendaraanLogOut(
     int Id,

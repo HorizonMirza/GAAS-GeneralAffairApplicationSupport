@@ -22,7 +22,6 @@ import type {
   KoreksiArsipPayload,
   KoreksiAtkPayload,
   KoreksiBookingPayload,
-  KoreksiKendaraanPayload,
   KoreksiPengirimanPayload,
   KoreksiSaranaPayload,
   InvoiceListResponse,
@@ -492,8 +491,6 @@ export const api = {
       method: "PATCH",
       body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
     }),
-  koreksiKendaraanBooking: (id: number, payload: KoreksiKendaraanPayload) =>
-    apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}/koreksi`, { method: "PATCH", body: payload }),
   deleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}`, { method: "DELETE" }),
   superAdminDeleteKendaraanBooking: (id: number) => apiRequest(`/booking-kendaraan/${id}/super-admin`, { method: "DELETE" }),
   cancelKendaraanBooking: (id: number, reason: string | null) =>

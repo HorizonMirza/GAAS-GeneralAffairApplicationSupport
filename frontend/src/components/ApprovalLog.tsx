@@ -27,9 +27,9 @@ export default function ApprovalLog({ logs, kind }: Props) {
           log.action === "CANCELLED" &&
           (log.actorRole === "ADMIN_GA" || log.actorRole === "APPROVAL_GA")
         ) {
-          // Room and Vehicle Booking both - matches BookingStatusBadge's "Rejected: <nama>"
-          // treatment for a GA-initiated cancel, so the same event doesn't read as "Booking
-          // Dibatalkan" here and "Rejected: <nama>" on the card.
+          // Room and Vehicle Booking both - matches BookingStatusBadge's "Rejected: Admin GA"/
+          // "Rejected: Approval GA" treatment for a GA-initiated cancel, so the same event doesn't
+          // read as "Booking Dibatalkan" here and "Rejected: Admin GA" on the card.
           title = `Ditolak (${log.actorRole === "ADMIN_GA" ? "Admin GA" : "Approval GA"})`;
         } else if (log.action === "RESCHEDULED" && kind === "kendaraan") {
           title = "Kendaraan/Jadwal Dipindahkan oleh GA";
