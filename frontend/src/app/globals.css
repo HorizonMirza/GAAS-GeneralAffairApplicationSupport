@@ -2108,21 +2108,6 @@ body.auth-ready .app-shell {
 
 .room-info-photo-icon { height: 240px; flex-shrink: 0; background-size: cover; background-position: center; }
 
-.room-info-slideshow {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.room-info-slideshow-track {
-  display: flex;
-  transition: transform 250ms ease;
-}
-
 .room-info-row {
   display: flex;
   align-items: center;

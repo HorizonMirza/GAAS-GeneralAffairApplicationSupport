@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
@@ -234,6 +235,10 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   function handleRecurrenceEndDateChange(v: string) {
     setForm((f) => {
       if (!f) return f;
+      // item.seriesId means this occurrence's own Tanggal is locked (see the Tanggal field above)
+      // to keep the rest of the series intact - the swap below would silently move it, so an
+      // end date earlier than Tanggal is simply rejected instead for an existing series member.
+      if (v && v < f.tanggal && item!.seriesId) return f;
       if (v && v < f.tanggal) {
         const newStart = v;
         const newEnd = f.recurrenceEndDate && f.recurrenceEndDate > f.tanggal ? f.recurrenceEndDate : f.tanggal;
@@ -431,8 +436,23 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
               />
             </div>
             <div className="field">
-              <label htmlFor="bv-tanggal">Tanggal</label>
-              <DateFilterPicker id="bv-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} />
+              <label htmlFor="bv-tanggal">
+                Tanggal
+                {item.seriesId && <Lock className="field-lock-icon" width={12} height={12} />}
+              </label>
+              <DateFilterPicker
+                id="bv-tanggal"
+                disabled={!isEdit || !!item.seriesId}
+                clearable={false}
+                value={form.tanggal}
+                onChange={handleTanggalChange}
+                minDate={todayLocalDate()}
+              />
+              {isEdit && item.seriesId && (
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                  * Tanggal jadwal berulang tidak bisa diubah lewat sini agar jadwal lain dalam seri ini tidak ikut terhapus. Gunakan Admin/Approval GA (fitur Reschedule) untuk memindahkan satu jadwal tertentu.
+                </span>
+              )}
             </div>
             <div className="field">
               <label htmlFor="bv-peserta">Jumlah Peserta</label>
@@ -586,7 +606,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                       <DateFilterPicker
                         id="bv-recurrence-end"
                         clearable={false}
-                        minDate={todayLocalDate()}
+                        minDate={item.seriesId ? form.tanggal : todayLocalDate()}
                         value={form.recurrenceEndDate || ""}
                         onChange={handleRecurrenceEndDateChange}
                       />

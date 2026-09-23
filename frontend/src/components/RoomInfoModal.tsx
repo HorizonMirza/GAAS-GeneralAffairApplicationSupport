@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import ModalOverlay from "./ModalOverlay";
 
 export type RoomInfoAvailability = "available" | "full" | "closed";
@@ -15,7 +14,8 @@ interface Props {
   // Real label/value rows shown below Kapasitas (e.g. Plat Nomor, Nama Supir for a vehicle) -
   // unlike facilities, this is actual data, not a placeholder.
   extraDetails?: { label: string; value: string }[];
-  // Up to 5 photos, shown as an auto-advancing slideshow (click also advances one slide).
+  // Only the first URL is actually displayed (a single static photo, no slideshow) - callers may
+  // still pass extra padding URLs, they're just ignored.
   photoUrls: string[];
   availability: RoomInfoAvailability;
   availLabel: string;
@@ -36,45 +36,16 @@ interface Props {
   bookLabel?: string;
 }
 
-const SLIDE_INTERVAL_MS = 1600;
-
-function PhotoSlideshow({ photoUrls }: { photoUrls: string[] }) {
-  const [index, setIndex] = useState(0);
-  const count = photoUrls.length;
-
-  // Auto-advance, paused/reset whenever the slide set changes (e.g. switching rooms) so a new
-  // room's modal always starts on its first photo instead of wherever the timer left off.
-  useEffect(() => {
-    setIndex(0);
-    if (count < 2) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % count), SLIDE_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [photoUrls, count]);
-
-  if (count === 0) return null;
+function RoomPhoto({ photoUrls }: { photoUrls: string[] }) {
+  const url = photoUrls[0];
+  if (!url) return null;
 
   return (
     <div style={{ borderRadius: 12, overflow: "hidden", marginBottom: 16 }}>
-      <button
-        type="button"
-        className="room-info-slideshow"
-        aria-label="Foto berikutnya"
-        onClick={() => setIndex((i) => (i + 1) % count)}
-        style={{ width: "100%", display: "block", border: "none", padding: 0, background: "none", cursor: "pointer" }}
-      >
-        <div
-          className="room-info-slideshow-track"
-          style={{ width: `${count * 100}%`, transform: `translateX(-${index * (100 / count)}%)`, display: "flex", transition: "transform 250ms ease" }}
-        >
-          {photoUrls.map((url, i) => (
-            <div
-              key={i}
-              className="room-info-photo-icon"
-              style={{ width: `${100 / count}%`, height: 220, flexShrink: 0, backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            />
-          ))}
-        </div>
-      </button>
+      <div
+        className="room-info-photo-icon"
+        style={{ width: "100%", height: 220, backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" }}
+      />
     </div>
   );
 }
@@ -106,7 +77,7 @@ export default function RoomInfoModal({
           <h3>{nama}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <PhotoSlideshow photoUrls={photoUrls} />
+        <RoomPhoto photoUrls={photoUrls} />
         {kapasitas != null && (
           <div className="room-info-row">
             <span className="text-secondary">Kapasitas</span>

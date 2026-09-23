@@ -393,7 +393,8 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_departemen ON booking_ruang (departemen)");
     migrateDb.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_booking_ruang_tanggal ON booking_ruang (tanggal)");
 
-    // Backfill: simplify competitor conflict reject reason and clear waitlist
+    // Backfill: simplify competitor conflict reject reason (WHERE-guarded, so it's a no-op once
+    // already applied - safe to run on every startup, unlike a plain DELETE would be).
     migrateDb.Database.ExecuteSqlRaw(@"
         UPDATE booking_ruang
         SET reject_reason = 'Ruang sudah dipesan oleh orang yang lebih dulu'
@@ -401,7 +402,6 @@ using (var scope = app.Services.CreateScope())
         UPDATE booking_ruang_logs
         SET reason = 'Ruang sudah dipesan oleh orang yang lebih dulu'
         WHERE reason = 'Ruang sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama';
-        DELETE FROM booking_waitlist;
     ");
 
     // Vehicle Booking: brand new tables (not a column backfill), same reasoning as the Room
