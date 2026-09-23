@@ -372,7 +372,7 @@ public class BookingKendaraanController : ApiControllerBase
         var losers = candidates.Where(b =>
             winner.IsWholeDay || b.IsWholeDay || (b.JamMulai < winner.JamSelesai && b.JamSelesai > winner.JamMulai));
 
-        const string reason = "Kendaraan sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama";
+        const string reason = "Kendaraan sudah dipesan oleh orang yang lebih dulu";
         foreach (var loser in losers)
         {
             var affected = await _db.Database.ExecuteSqlInterpolatedAsync($@"

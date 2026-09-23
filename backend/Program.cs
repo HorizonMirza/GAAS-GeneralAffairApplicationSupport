@@ -762,6 +762,17 @@ using (var scope = app.Services.CreateScope())
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_ruang ADD COLUMN IF NOT EXISTS cancelled_by_role VARCHAR(50)");
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS booking_kendaraan ADD COLUMN IF NOT EXISTS cancelled_by_role VARCHAR(50)");
 
+    // Same backfill as Room Booking's own competitor conflict reject reason above, for Vehicle
+    // Booking (WHERE-guarded, so it's a no-op once already applied).
+    migrateDb.Database.ExecuteSqlRaw(@"
+        UPDATE booking_kendaraan
+        SET reject_reason = 'Kendaraan sudah dipesan oleh orang yang lebih dulu'
+        WHERE reject_reason = 'Kendaraan sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama';
+        UPDATE booking_kendaraan_logs
+        SET reason = 'Kendaraan sudah dipesan oleh orang yang lebih dulu'
+        WHERE reason = 'Kendaraan sudah dipesan oleh orang yang lebih dulu memesan di jam yang sama';
+    ");
+
     migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS invoices ADD COLUMN IF NOT EXISTS nama VARCHAR(255) NOT NULL DEFAULT ''");
 
     // Notification sound settings - a single singleton row (id=1) Superadmin edits from the
