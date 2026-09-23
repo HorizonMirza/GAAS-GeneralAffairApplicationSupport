@@ -392,8 +392,6 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
-  getRoomFeedUrl: (roomName: string) =>
-    apiRequest<{ url: string; webcalUrl: string }>(`/booking-ruang/rooms/${encodeURIComponent(roomName)}/feed-url`),
   nextBookingNomor: (tanggal: string, divisi?: string) =>
     apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi } }),
   getBookingSchedule: (tanggal: string) =>

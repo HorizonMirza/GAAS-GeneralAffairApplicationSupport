@@ -156,25 +156,4 @@ public static class IcsService
         return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
     }
 
-    // Multi-event feed for a room's webcal subscription (BookingRuangController.DownloadRoomFeed)
-    // - same VEVENT format as a single booking's Generate() above, just many of them in one
-    // VCALENDAR so a calendar app can poll one URL instead of one download per booking.
-    public static byte[] GenerateFeed(string calendarName, IEnumerable<BookingRuang> items)
-    {
-        var lines = new List<string>
-        {
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//PGN Solution//Room Booking//ID",
-            "CALSCALE:GREGORIAN",
-            $"X-WR-CALNAME:{Escape(calendarName)}",
-            "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
-            "X-PUBLISHED-TTL:PT1H",
-        };
-        foreach (var item in items)
-            lines.AddRange(BuildEventLines(item));
-        lines.Add("END:VCALENDAR");
-
-        return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
-    }
 }

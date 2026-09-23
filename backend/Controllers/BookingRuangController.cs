@@ -83,19 +83,6 @@ public class BookingRuangController : ApiControllerBase
         return users.Where(u => CanAccessBookingRuang(u, item)).Select(u => u.Id).ToList();
     }
 
-    // Per-room webcal feed token: HMAC-SHA256(roomName) keyed on the same secret already used to
-    // sign login JWTs, so a calendar app can subscribe to /rooms/{room}/feed/{token}.ics without
-    // ever authenticating (webcal readers can't send a login cookie) while the URL itself stays
-    // unguessable - no new secret/table needed, and it's stable across restarts and deploys since
-    // it's derived, not stored.
-    private string ComputeRoomFeedToken(string roomName)
-    {
-        var secret = _config["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey missing");
-        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(secret));
-        var hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(roomName));
-        return Convert.ToHexString(hash).ToLowerInvariant();
-    }
-
     private static string EffectiveDivisi(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDivisiLabel : user.Divisi!;
 
@@ -519,60 +506,6 @@ public class BookingRuangController : ApiControllerBase
         var effectiveTanggal = tanggal ?? DateOnly.FromDateTime(WaktuWib.Now);
         var seq = await PeekNextNomorSequenceAsync(effectiveDivisi, effectiveTanggal.Year, effectiveTanggal.Month);
         return Ok(new { nomorPemesanan = BuildNomorPemesanan(effectiveDivisi, seq, effectiveTanggal) });
-    }
-
-    // Authenticated lookup of the webcal subscribe URL for a room - the token itself isn't secret
-    // from logged-in staff (they already see this room's schedule in-app), it only needs to be
-    // unguessable to an outsider who never had a session here. See DownloadRoomFeed below for the
-    // actual unauthenticated feed this URL points at.
-    [HttpGet("rooms/{roomName}/feed-url")]
-    public async Task<IActionResult> GetRoomFeedUrl(string roomName)
-    {
-        var (_, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-        if (!MeetingRooms.IsValidRoom(roomName)) return NotFound(new { detail = "Ruang tidak ditemukan" });
-
-        var token = ComputeRoomFeedToken(roomName);
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var path = $"/api/booking-ruang/rooms/{Uri.EscapeDataString(roomName)}/feed/{token}.ics";
-        return Ok(new { url = baseUrl + path, webcalUrl = "webcal://" + Request.Host + path });
-    }
-
-    // Unauthenticated on purpose - webcal-subscribing calendar apps (Google Calendar, Outlook,
-    // Apple Calendar) poll this URL periodically on their own and cannot send a login cookie or
-    // any header at all, so the token in the URL is the only access control available. Anyone with
-    // the exact link can read this room's schedule (event names, PIC, participant count) without
-    // logging in - that's the tradeoff inherent to webcal, not a bug; ComputeRoomFeedToken keeps
-    // it unguessable to anyone who was never handed the link via GetRoomFeedUrl above.
-    [HttpGet("rooms/{roomName}/feed/{token}")]
-    public async Task<IActionResult> DownloadRoomFeed(string roomName, string token)
-    {
-        if (!MeetingRooms.IsValidRoom(roomName)) return NotFound(new { detail = "Ruang tidak ditemukan" });
-
-        var suppliedToken = token.EndsWith(".ics", StringComparison.OrdinalIgnoreCase)
-            ? token[..^4]
-            : token;
-        var expectedToken = ComputeRoomFeedToken(roomName);
-        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-                System.Text.Encoding.UTF8.GetBytes(suppliedToken), System.Text.Encoding.UTF8.GetBytes(expectedToken)))
-            return NotFound();
-
-        // Same visibility as GetSchedule/GetScheduleRange - only statuses that actually occupy the
-        // room, no DRAFT (private) or REJECTED_* (dead) entries. Bounded to a rolling window (90
-        // days back, 180 days ahead) so the feed can't grow unbounded as bookings accumulate for
-        // years - a subscribed calendar app re-polls this URL periodically anyway, so old/far-future
-        // events dropping off here is expected, not a data loss.
-        var from = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-90));
-        var to = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(180));
-        var items = await _db.BookingRuangs
-            .Include(b => b.AdditionalRooms)
-            .Where(b => ActiveStatuses.Contains(b.Status) && b.Tanggal >= from && b.Tanggal <= to
-                && (b.NamaRuang == roomName || b.AdditionalRooms.Any(r => r.NamaRuang == roomName)))
-            .OrderBy(b => b.Tanggal)
-            .ToListAsync();
-
-        var bytes = IcsService.GenerateFeed($"Jadwal {roomName}", items);
-        return File(bytes, "text/calendar");
     }
 
     [HttpGet("rooms")]
