@@ -10,7 +10,7 @@ import {
   ON_APPROVAL_STATUSES,
   REJECTED_STATUSES,
   atkItemsSummary,
-  canGaKoreksiAtk,
+  canGaUpdateAtk,
   cardStatusBorderClass,
   isAtkEditableByOrigin,
   isAtkPdfAvailable,
@@ -25,7 +25,6 @@ import AtkStepper from "@/components/AtkStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
-import AtkKoreksiModal from "@/components/AtkKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
 import AtkChatModal from "@/components/AtkChatModal";
@@ -55,11 +54,10 @@ export default function OfficeSuppliesOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
-  const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" } | null>(null);
+  const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" | "ga-edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PermintaanAtk | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
-  const [koreksiTarget, setKoreksiTarget] = useState<PermintaanAtk | null>(null);
 
   const rowMenu = useRowMenu(items);
 
@@ -227,7 +225,7 @@ export default function OfficeSuppliesOverviewPage() {
         position={rowMenu.position}
         canEditDelete={
           !!rowMenu.menuItem &&
-          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiAtk(rowMenu.menuItem, me))
+          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaUpdateAtk(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
@@ -240,7 +238,7 @@ export default function OfficeSuppliesOverviewPage() {
           rowMenu.close();
           if (!item) return;
           if (isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
-          else if (canGaKoreksiAtk(item, me)) setKoreksiTarget(item);
+          else if (canGaUpdateAtk(item, me)) setDetail({ item, mode: "ga-edit" });
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;
@@ -280,13 +278,6 @@ export default function OfficeSuppliesOverviewPage() {
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
         />
       )}
-
-      <AtkKoreksiModal
-        open={!!koreksiTarget}
-        item={koreksiTarget}
-        onClose={() => setKoreksiTarget(null)}
-        onSaved={load}
-      />
 
       <RejectModal
         open={!!rejectTarget}

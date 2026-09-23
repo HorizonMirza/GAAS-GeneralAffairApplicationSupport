@@ -671,12 +671,12 @@ export interface PermintaanAtkCreatePayload {
   items: PermintaanAtkItemPayload[];
 }
 
-// Admin/Approval GA's narrow correction payload - see PermintaanAtkController.Koreksi.
-export interface KoreksiAtkPayload {
+// Admin/Approval GA's own edit payload - see PermintaanAtkController.UpdateByGa.
+export interface AtkGaUpdatePayload {
   namaPemohon: string;
   noTeleponPemohon: string;
-  sumberPembelian: SumberPembelian | null;
-  catatan: string;
+  keperluan: string;
+  items: PermintaanAtkItemPayload[];
 }
 
 export interface VehicleOption {

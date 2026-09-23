@@ -164,6 +164,7 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
   CORRECTED: { label: "Data Dikoreksi oleh GA", type: "neutral" },
+  UPDATED_BY_GA: { label: "Data Diperbarui oleh GA", type: "neutral" },
   CANCELLED: { label: "Booking Dibatalkan", type: "reject" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
   LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
@@ -520,16 +521,16 @@ export function isAtkKpuActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
-// Admin/Approval GA's narrow correction right: while still in flight (not yet finally approved,
-// not rejected), they can fix a typo in the requester's Nama/No. Telepon Pemohon or Catatan -
-// Keperluan/Items/Tanggal stay the origin creator's own. Mirrors
-// PermintaanAtkController.IsGaKoreksiable.
-export function isAtkGaKoreksiable(item: PermintaanAtk): boolean {
+// Admin/Approval GA's own edit right: while still in flight (not yet finally approved, not
+// rejected), they can update the requester's Nama/No. Telepon Pemohon, Tujuan, and Daftar Barang -
+// Tanggal/Kategori stay the origin creator's own. Mirrors
+// PermintaanAtkController.IsGaUpdatable.
+export function isAtkGaUpdatable(item: PermintaanAtk): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
-export function canGaKoreksiAtk(item: PermintaanAtk, me: Me): boolean {
-  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isAtkGaKoreksiable(item);
+export function canGaUpdateAtk(item: PermintaanAtk, me: Me): boolean {
+  return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isAtkGaUpdatable(item);
 }
 
 export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
@@ -769,6 +770,7 @@ export const RIWAYAT_ACTION_OPTIONS: string[] = [
   "CANCELLED",
   "RESCHEDULED",
   "CORRECTED",
+  "UPDATED_BY_GA",
   "LOKASI_DICEK",
   "GAMBAR_DIBUAT",
   "SELESAI",

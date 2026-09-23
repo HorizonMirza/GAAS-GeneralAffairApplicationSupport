@@ -15,12 +15,12 @@ import type {
   BookingRuangReschedulePayload,
   BulkRescheduleItemResult,
   BookingRuangStatsResponse,
+  AtkGaUpdatePayload,
   BookingStatus,
   ChatMessage,
   Invoice,
   KategoriKerusakan,
   KoreksiArsipPayload,
-  KoreksiAtkPayload,
   KoreksiPengirimanPayload,
   KoreksiSaranaPayload,
   InvoiceListResponse,
@@ -524,8 +524,8 @@ export const api = {
     apiRequest<PermintaanAtk>("/permintaan-atk", { method: "POST", body: payload }),
   updateAtk: (id: number, payload: PermintaanAtkCreatePayload) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`, { method: "PUT", body: payload }),
-  koreksiAtk: (id: number, payload: KoreksiAtkPayload) =>
-    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/koreksi`, { method: "PATCH", body: payload }),
+  updateAtkByGa: (id: number, payload: AtkGaUpdatePayload) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/updates`, { method: "PATCH", body: payload }),
   deleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}`, { method: "DELETE" }),
   superAdminDeleteAtk: (id: number) => apiRequest(`/permintaan-atk/${id}/super-admin`, { method: "DELETE" }),
   // sumberPembelian is only actually required by the backend when Submit's own self-skip logic

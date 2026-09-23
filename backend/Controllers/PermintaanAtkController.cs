@@ -370,9 +370,9 @@ public class PermintaanAtkController : ApiControllerBase
         return Ok(PermintaanAtkOut.From(item));
     }
 
-    // Same in-flight window as Room/Vehicle Booking's IsGaReschedulable - still correctable up to
+    // Same in-flight window as Room/Vehicle Booking's IsGaReschedulable - still updatable up to
     // the last tier before it's finally approved, closed off once Rejected or Completed.
-    private static bool IsGaKoreksiable(PermintaanAtk item) => item.Status is
+    private static bool IsGaUpdatable(PermintaanAtk item) => item.Status is
         StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA;
 
     // Accepts any real phone number without guessing a regional format, but still catches
@@ -380,34 +380,47 @@ public class PermintaanAtkController : ApiControllerBase
     private static bool IsValidPhone(string phone) =>
         Regex.Replace(phone, "[^0-9]", "") is { Length: >= 8 and <= 15 };
 
-    // Admin/Approval GA's narrow correction tool: fix a typo in the requester's own contact
-    // details (or Catatan) without touching what's actually being requested - Keperluan, Items
-    // and Tanggal stay the origin creator's own, same principle as Reschedule leaving Nama
-    // Kegiatan/PIC untouched in Room Booking.
-    [HttpPatch("{itemId:int}/koreksi")]
-    public async Task<IActionResult> Koreksi(int itemId, [FromBody] KoreksiAtkRequest payload)
+    // Admin/Approval GA's own edit tool: the requester's contact details, Tujuan, and the item
+    // list - Tanggal and Kategori stay the origin creator's own, same principle as Reschedule
+    // leaving Nama Kegiatan untouched in Room Booking.
+    [HttpPatch("{itemId:int}/updates")]
+    public async Task<IActionResult> UpdateByGa(int itemId, [FromBody] AtkUpdateByGaRequest payload)
     {
         var (user, roleError) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA);
         if (roleError != null) return roleError;
 
         var item = await _db.PermintaanAtks.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsGaKoreksiable(item))
-            return StatusCode(403, new { detail = "Data tidak dapat dikoreksi pada tahap ini" });
+        if (!IsGaUpdatable(item))
+            return StatusCode(403, new { detail = "Data tidak dapat diperbarui pada tahap ini" });
 
         if (string.IsNullOrWhiteSpace(payload.NamaPemohon)) return BadRequest(new { detail = "Nama pemohon wajib diisi" });
         if (!IsValidPhone(payload.NoTeleponPemohon)) return BadRequest(new { detail = "No. telepon pemohon tidak valid" });
+        if (string.IsNullOrWhiteSpace(payload.Keperluan)) return BadRequest(new { detail = "Tujuan wajib diisi" });
+        if (payload.Items.Count == 0) return BadRequest(new { detail = "Minimal satu barang harus diisi" });
+        if (payload.Items.Count > MaxItemRows) return BadRequest(new { detail = $"Maksimal {MaxItemRows} baris barang per permintaan" });
+        foreach (var row in payload.Items)
+        {
+            if (string.IsNullOrWhiteSpace(row.NamaBarang)) return BadRequest(new { detail = "Nama barang wajib diisi pada setiap baris" });
+            if (row.Jumlah <= 0) return BadRequest(new { detail = "Jumlah setiap barang harus lebih dari 0" });
+            if (row.Jumlah > MaxJumlahPerItem) return BadRequest(new { detail = $"Jumlah setiap barang maksimal {MaxJumlahPerItem}" });
+            if (string.IsNullOrWhiteSpace(row.Satuan)) return BadRequest(new { detail = "Satuan wajib diisi pada setiap baris" });
+        }
 
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
-        var detail = $"Nama/No. Telepon Pemohon dikoreksi menjadi {item.NamaPemohon} / {item.NoTeleponPemohon}";
-        if (payload.SumberPembelian.HasValue)
+        item.Keperluan = payload.Keperluan.Trim();
+        item.Items.Clear();
+        foreach (var row in payload.Items)
         {
-            item.SumberPembelian = payload.SumberPembelian;
-            detail += $"; Sumber Pembelian dikoreksi menjadi {item.SumberPembelian}";
+            item.Items.Add(new PermintaanAtkItem
+            {
+                NamaBarang = row.NamaBarang.Trim(),
+                Jumlah = row.Jumlah,
+                Satuan = row.Satuan.Trim(),
+            });
         }
-        if (!string.IsNullOrWhiteSpace(payload.Catatan)) detail += $": {payload.Catatan.Trim()}";
-        AddLog(item, "CORRECTED", user!, detail);
+        AddLog(item, "UPDATED_BY_GA", user!, $"Data pemohon, tujuan, dan daftar barang diperbarui oleh {user!.Nama}");
 
         await _db.SaveChangesAsync();
         return Ok(PermintaanAtkOut.From(item));

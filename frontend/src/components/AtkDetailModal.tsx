@@ -34,7 +34,11 @@ const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
 
 interface Props {
   open: boolean;
-  mode: "view" | "edit";
+  // "edit" is the origin creator's own DRAFT/REJECTED edit (every field live). "ga-edit" is
+  // Admin/Approval GA's own in-flight edit tool - Nama/No. Telepon Pemohon, Tujuan, and Daftar
+  // Barang only, Tanggal/Kategori/Catatan stay the origin creator's own (see
+  // PermintaanAtkController.UpdateByGa).
+  mode: "view" | "edit" | "ga-edit";
   item: PermintaanAtk | null;
   me: Me;
   onClose: () => void;
@@ -84,7 +88,9 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
   if (!open || !item || !form) return null;
 
-  const isEdit = mode === "edit";
+  const isOriginEdit = mode === "edit";
+  const isGaEdit = mode === "ga-edit";
+  const isEdit = isOriginEdit || isGaEdit;
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isAtkEditableByOrigin(item, me);
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isAtkGaActionable(item);
@@ -183,7 +189,16 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     e.preventDefault();
     setBusy(true);
     try {
-      await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
+      if (isGaEdit) {
+        await api.updateAtkByGa(item!.id, {
+          namaPemohon: form!.namaPemohon,
+          noTeleponPemohon: form!.noTeleponPemohon,
+          keperluan: form!.keperluan,
+          items: form!.items,
+        });
+      } else {
+        await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
+      }
       showToast("Pesanan berhasil diperbarui");
       onClose();
       onSaved();
@@ -208,13 +223,13 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
             <div className="field">
               <label htmlFor="da-tanggal">Tanggal</label>
-              <DateFilterPicker id="da-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
+              <DateFilterPicker id="da-tanggal" disabled={!isOriginEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
               <label htmlFor="da-kategori">Kategori</label>
               <SearchableSelect
                 id="da-kategori"
-                disabled={!isEdit}
+                disabled={!isOriginEdit}
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as AtkKategori)}
                 options={KATEGORI_OPTIONS}
@@ -300,7 +315,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label htmlFor="da-catatan">Catatan</label>
-              <input type="text" id="da-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Stok Menipis, Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder={isOriginEdit ? "Contoh: Stok Menipis, Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

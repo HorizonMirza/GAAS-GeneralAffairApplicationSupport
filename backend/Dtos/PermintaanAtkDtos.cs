@@ -133,4 +133,12 @@ public record SubmitAtkRequest(SumberPembelianEnum? SumberPembelian);
 // Room/Vehicle Booking's Reschedule leaving Nama Kegiatan/Keperluan/PIC untouched).
 // SumberPembelian is the one exception - it's GA's own selection (not the requester's), so it's
 // correctable here too instead of forcing a reject just to fix GA's own pick.
-public record KoreksiAtkRequest(string NamaPemohon, string NoTeleponPemohon, SumberPembelianEnum? SumberPembelian, string? Catatan = null);
+// Admin/Approval GA's own "Updates" tool - the requester's contact details, Tujuan, and the item
+// list, without touching Tanggal/Kategori (see PermintaanAtkController.UpdateByGa).
+public class AtkUpdateByGaRequest
+{
+    public string NamaPemohon { get; set; } = null!;
+    public string NoTeleponPemohon { get; set; } = null!;
+    public string Keperluan { get; set; } = null!;
+    public List<PermintaanAtkItemCreate> Items { get; set; } = new();
+}
