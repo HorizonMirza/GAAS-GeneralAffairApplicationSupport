@@ -79,6 +79,11 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
   if (!open || !item || !form) return null;
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
+  // See VehicleBookingFormModal's matching comment - falls back to the largest capacity across
+  // the real fleet (never a made-up number) while vehicles hasn't loaded yet or briefly doesn't
+  // match, not just whenever there happens to be no selectedVehicle.
+  const maxFleetCapacity = vehicles.length > 0 ? Math.max(...vehicles.map((v) => v.kapasitas)) : 99;
+  const penumpangCap = selectedVehicle?.kapasitas ?? maxFleetCapacity;
   const availableStartHours = form ? getAvailableStartHours(form.tanggal) : [];
   const availableEndHours = form ? getAvailableEndHours(form.jamMulai) : [];
   const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
@@ -264,12 +269,10 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 pattern="[0-9]*"
                 id="rk-penumpang"
                 required
-                disabled={!selectedVehicle}
                 value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
                 onChange={(e) => {
-                  if (!selectedVehicle) return;
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  const parsed = digits === "" ? 0 : Math.min(Number(digits), selectedVehicle.kapasitas);
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), penumpangCap);
                   set("jumlahPenumpang", parsed);
                 }}
               />

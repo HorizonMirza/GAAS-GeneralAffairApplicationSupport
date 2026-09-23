@@ -108,6 +108,12 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
     (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
+  // Jumlah Penumpang sits above Kendaraan in the form, so a user filling top-to-bottom hasn't
+  // picked a vehicle yet when they reach it - falls back to the largest capacity across the real
+  // fleet (never a made-up number like 99) so it's always bounded by an actual vehicle, then
+  // re-clamps to the specific vehicle's own capacity the moment one is chosen.
+  const maxFleetCapacity = vehicles.length > 0 ? Math.max(...vehicles.map((v) => v.kapasitas)) : 99;
+  const penumpangCap = selectedVehicle?.kapasitas ?? maxFleetCapacity;
 
   const availableStartHours = getAvailableStartHours(form.tanggal);
   const availableEndHours = getAvailableEndHours(form.jamMulai);
@@ -313,13 +319,10 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 pattern="[0-9]*"
                 id="fk-penumpang"
                 required
-                disabled={!selectedVehicle}
-                placeholder={selectedVehicle ? undefined : "Pilih kendaraan dahulu"}
                 value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
                 onChange={(e) => {
-                  if (!selectedVehicle) return;
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  const parsed = digits === "" ? 0 : Math.min(Number(digits), selectedVehicle.kapasitas);
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), penumpangCap);
                   set("jumlahPenumpang", parsed);
                 }}
               />

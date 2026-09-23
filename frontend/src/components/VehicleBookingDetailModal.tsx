@@ -90,6 +90,11 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
+  // See VehicleBookingFormModal's matching comment - falls back to the largest capacity across
+  // the real fleet (never a made-up number) while vehicles hasn't loaded yet or briefly doesn't
+  // match, not just whenever there happens to be no selectedVehicle.
+  const maxFleetCapacity = vehicles.length > 0 ? Math.max(...vehicles.map((v) => v.kapasitas)) : 99;
+  const penumpangCap = selectedVehicle?.kapasitas ?? maxFleetCapacity;
 
   function set<K extends keyof BookingKendaraanCreatePayload>(key: K, value: BookingKendaraanCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -328,12 +333,11 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 pattern="[0-9]*"
                 id="bk-penumpang"
                 required
-                disabled={!isEdit || !selectedVehicle}
+                disabled={!isEdit}
                 value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
                 onChange={(e) => {
-                  if (!selectedVehicle) return;
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  const parsed = digits === "" ? 0 : Math.min(Number(digits), selectedVehicle.kapasitas);
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), penumpangCap);
                   set("jumlahPenumpang", parsed);
                 }}
               />
