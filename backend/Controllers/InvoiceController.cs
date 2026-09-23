@@ -286,38 +286,6 @@ public class InvoiceController : ApiControllerBase
         return Ok(uploaders);
     }
 
-    // Reminder banner on Invoice History: which of the last `monthsBack` months this KPU account
-    // has not started an invoice for at all - any status (including DRAFT) counts as "not
-    // missing", this only flags a month nobody has touched yet. Newest-first would be less useful
-    // than oldest-first here (an old unfilled month is the one more likely to be forgotten).
-    [HttpGet("missing-months")]
-    public async Task<IActionResult> GetMissingMonths([FromQuery] int monthsBack = 6)
-    {
-        var (user, error) = await RequireRoleAsync(RoleEnum.KPU);
-        if (error != null) return error;
-        monthsBack = Math.Clamp(monthsBack, 1, 24);
-
-        var uploadedBulan = await _db.Invoices
-            .Where(i => i.UploadedBy == user!.Id)
-            .Select(i => i.Bulan)
-            .ToListAsync();
-        var uploadedSet = uploadedBulan.ToHashSet();
-
-        var missing = new List<string>();
-        // Daftar bulan yang invoice-nya belum diunggah - labelnya "YYYY-MM", jadi acuannya harus
-        // bulan kalender WIB. DateTime.UtcNow masih menunjuk bulan lalu sampai pukul 07:00 WIB di
-        // tanggal 1.
-        var cursor = WaktuWib.Now;
-        for (var i = 0; i < monthsBack; i++)
-        {
-            var bulan = $"{cursor.Year:0000}-{cursor.Month:00}";
-            if (!uploadedSet.Contains(bulan)) missing.Add(bulan);
-            cursor = cursor.AddMonths(-1);
-        }
-        missing.Reverse();
-        return Ok(missing);
-    }
-
     [HttpGet("{invoiceId}/file")]
     public async Task<IActionResult> DownloadInvoiceFile(int invoiceId, [FromQuery] bool download = false)
     {

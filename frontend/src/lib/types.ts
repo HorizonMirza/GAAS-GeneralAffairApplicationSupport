@@ -344,13 +344,6 @@ export interface BookingRuangLog {
   createdAt: string;
 }
 
-// Admin/Approval GA's narrow correction payload - see BookingRuangController.Koreksi.
-export interface KoreksiBookingPayload {
-  pic: string;
-  noTeleponPic: string;
-  catatan: string;
-}
-
 export interface BookingRuangCreatePayload {
   namaKegiatan: string;
   pic: string | null;

@@ -348,12 +348,6 @@ export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
   return false;
 }
 
-// Same in-flight window as Reschedule, but for fixing a typo in the PIC's name/phone instead of
-// the slot - see RoomBookingKoreksiModal and BookingRuangController.Koreksi.
-export function canGaKoreksiBooking(item: BookingRuang, me: Me): boolean {
-  return canGaRescheduleBooking(item, me);
-}
-
 // A confirmation PDF only exists once a booking reached the final Approved state.
 export function isBookingPdfAvailable(item: BookingRuang): boolean {
   return item.status === "APPROVED_GA_APPROVAL";

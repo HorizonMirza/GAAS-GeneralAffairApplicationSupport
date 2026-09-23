@@ -46,8 +46,6 @@ public class BookingRuangReschedule
     public TimeOnly? JamSelesai { get; set; }
 }
 
-public record KoreksiBookingRuangRequest(string Pic, string NoTeleponPic, string? Catatan = null);
-
 public record BookingRuangLogOut(
     int Id,
     string Action,

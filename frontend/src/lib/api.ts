@@ -21,7 +21,6 @@ import type {
   KategoriKerusakan,
   KoreksiArsipPayload,
   KoreksiAtkPayload,
-  KoreksiBookingPayload,
   KoreksiPengirimanPayload,
   KoreksiSaranaPayload,
   InvoiceListResponse,
@@ -308,8 +307,6 @@ export const api = {
   listInvoice: (params: ListInvoiceParams = {}) =>
     apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
   listInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/invoice/uploaders"),
-  getMissingInvoiceMonths: (monthsBack?: number) =>
-    apiRequest<string[]>("/invoice/missing-months", { params: { monthsBack } }),
   uploadInvoice: async (nama: string, bulan: string, file: File) => {
     const formData = new FormData();
     formData.append("nama", nama);
@@ -418,8 +415,6 @@ export const api = {
       method: "PATCH",
       body: { ...payload, jamMulai: normalizeTime(payload.jamMulai), jamSelesai: normalizeTime(payload.jamSelesai) },
     }),
-  koreksiBooking: (id: number, payload: KoreksiBookingPayload) =>
-    apiRequest<BookingRuang>(`/booking-ruang/${id}/koreksi`, { method: "PATCH", body: payload }),
   bulkRescheduleSeries: (seriesId: string, dayShift: number) =>
     apiRequest<BulkRescheduleItemResult[]>(`/booking-ruang/series/${seriesId}/bulk-reschedule`, {
       method: "PATCH",
