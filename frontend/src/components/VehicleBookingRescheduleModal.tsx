@@ -264,11 +264,12 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 pattern="[0-9]*"
                 id="rk-penumpang"
                 required
+                disabled={!selectedVehicle}
                 value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
                 onChange={(e) => {
+                  if (!selectedVehicle) return;
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  const cap = selectedVehicle?.kapasitas ?? 99;
-                  const parsed = digits === "" ? 0 : Math.min(Number(digits), cap);
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), selectedVehicle.kapasitas);
                   set("jumlahPenumpang", parsed);
                 }}
               />

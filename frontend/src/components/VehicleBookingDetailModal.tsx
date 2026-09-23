@@ -328,12 +328,12 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 pattern="[0-9]*"
                 id="bk-penumpang"
                 required
-                disabled={!isEdit}
+                disabled={!isEdit || !selectedVehicle}
                 value={form.jumlahPenumpang === 0 ? "" : String(form.jumlahPenumpang)}
                 onChange={(e) => {
+                  if (!selectedVehicle) return;
                   const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                  const cap = selectedVehicle?.kapasitas ?? 99;
-                  const parsed = digits === "" ? 0 : Math.min(Number(digits), cap);
+                  const parsed = digits === "" ? 0 : Math.min(Number(digits), selectedVehicle.kapasitas);
                   set("jumlahPenumpang", parsed);
                 }}
               />
