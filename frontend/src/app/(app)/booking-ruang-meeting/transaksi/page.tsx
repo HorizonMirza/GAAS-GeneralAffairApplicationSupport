@@ -555,14 +555,12 @@ function BookingTransaksiPageInner() {
         onClose={() => setDetail(null)}
         onSaved={loadTable}
         onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-        onRequestCancel={(id) => setCancelTargetId(id)}
       />
 
       <CancelBookingModal
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
-        variant={isGaRole(me.role) ? "delete" : "cancel"}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

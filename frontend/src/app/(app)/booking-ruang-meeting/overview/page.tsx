@@ -615,7 +615,6 @@ export default function BookingOverviewPage() {
           onClose={() => setDetail(null)}
           onSaved={load}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
 
@@ -623,7 +622,6 @@ export default function BookingOverviewPage() {
         open={cancelTargetId != null}
         targetId={cancelTargetId}
         targetType="room"
-        variant={me && isGaRole(me.role) ? "delete" : "cancel"}
         onClose={() => setCancelTargetId(null)}
         onDone={() => {
           setCancelTargetId(null);

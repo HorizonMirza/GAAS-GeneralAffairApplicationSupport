@@ -14,19 +14,16 @@ interface Props {
   targetType: CancelBookingType | null;
   onClose: () => void;
   onDone: () => void;
-  // Room Booking only - when Admin/Approval GA is the one cancelling (not the origin creator),
-  // this reads "Delete Booking" instead of "Cancel Booking" (see isGaRole/BookingStatusBadge's
-  // matching "Rejected: <nama>" badge). Vehicle Booking never passes this, so it always stays
-  // "cancel" there.
-  variant?: "cancel" | "delete";
 }
 
 // Shared by Room Booking and Vehicle Booking's row menus - a separate small modal instead of
 // reusing RejectModal, since "Reject" is a different action from a different actor (the approval
 // chain refusing a request) with its own fixed wording; Cancel is the origin/GA calling off a
-// request that was never refused by anyone.
-export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone, variant = "cancel" }: Props) {
-  const isDelete = variant === "delete";
+// request that was never refused by anyone. Always reads "Cancel" here even when Admin/Approval
+// GA is the one calling it off (the row menu shows "Delete" for that case instead - see
+// RowMenuDropdown's cancelLabel - and the resulting badge reads "Rejected: <nama>"), since this
+// dialog's own action is still the same underlying cancel, not a hard delete.
+export default function CancelBookingModal({ open, targetId, targetType, onClose, onDone }: Props) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,7 +51,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     try {
       if (targetType === "room") await api.cancelBooking(targetId, reasonValue);
       else await api.cancelKendaraanBooking(targetId, reasonValue);
-      showToast(isDelete ? "Booking dihapus" : "Booking dibatalkan");
+      showToast("Booking dibatalkan");
       reset();
       onDone();
     } catch (err) {
@@ -67,7 +64,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
     <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
       <div className="modal" style={{ maxWidth: 420 }} ref={containerRef}>
         <div className="modal-header">
-          <h3>{isDelete ? "Delete Booking" : "Cancel Booking"}</h3>
+          <h3>Cancel Booking</h3>
           <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
         </div>
         <div className="field">
@@ -78,7 +75,12 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") e.stopPropagation();
+              if (e.key !== "Enter") return;
+              e.stopPropagation();
+              if (!e.shiftKey) {
+                e.preventDefault();
+                if (!busy) handleConfirm();
+              }
             }}
           />
         </div>
@@ -91,7 +93,7 @@ export default function CancelBookingModal({ open, targetId, targetType, onClose
             onClick={handleConfirm}
             disabled={busy}
           >
-            {isDelete ? "Delete" : "Cancel"}
+            Cancel
           </button>
         </div>
       </div>

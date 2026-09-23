@@ -15,6 +15,7 @@ import {
   isBookingEditableByOrigin,
   isBookingOriginRole,
   isBookingPdfAvailable,
+  isGaRole,
 } from "@/lib/constants";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { BookingRuang, BookingRuangCreatePayload, RoomOption } from "@/lib/types";
@@ -400,6 +401,7 @@ function BookingCalendarPageInner() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
+        cancelLabel={isGaRole(me.role) ? "Delete" : "Cancel"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -488,7 +490,6 @@ function BookingCalendarPageInner() {
           onClose={() => setDetail(null)}
           onSaved={reload}
           onRequestReject={(id, type, originLabel) => setRejectTarget({ id, type, originLabel })}
-          onRequestCancel={(id) => setCancelTargetId(id)}
         />
       )}
 

@@ -7,10 +7,8 @@ import {
   BOOKING_L1_ACTIONABLE_STATUSES,
   bookingOriginActorLabel,
   bookingRecurrenceLabel,
-  isBookingCancellableByOrigin,
   isBookingEditableByOrigin,
   isBookingGaActionable,
-  isGaRole,
   MAX_JUMLAH_PESERTA,
   RECURRENCE_FREQUENCY_LABELS,
   TIPE_BOOKING_LABELS,
@@ -37,7 +35,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
-  onRequestCancel?: (id: number) => void;
 }
 
 function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
@@ -64,7 +61,7 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
   };
 }
 
-export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject, onRequestCancel }: Props) {
+export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -106,7 +103,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const canL1Act = !isEdit && l1UnitMatches && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canCancel = !isEdit && isBookingCancellableByOrigin(item, me);
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -674,21 +670,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
           )}
 
           {error && <div className="error-text">{error}</div>}
-          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit || (canCancel && !!onRequestCancel)) && (
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || isEdit) && (
             <div className="modal-actions">
-              {canCancel && onRequestCancel && !canL1Act && !canGaAct && !canGaApprovalAct && (
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  style={{ width: "auto", background: "#d64545", color: "#fff", border: "none" }}
-                  onClick={() => {
-                    onClose();
-                    onRequestCancel(item.id);
-                  }}
-                >
-                  {isGaRole(me.role) ? "Delete Booking" : "Cancel Booking"}
-                </button>
-              )}
               {canSubmitDraft && (
                 <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
               )}

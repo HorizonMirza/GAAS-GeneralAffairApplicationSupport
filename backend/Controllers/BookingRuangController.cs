@@ -1344,6 +1344,13 @@ public class BookingRuangController : ApiControllerBase
             member.Status = BookingStatusEnum.CANCELLED;
             member.CancelledByName = user!.Nama;
             member.CancelledByRole = user!.Role;
+            // Only for a GA-initiated cancel (shown to users as "Rejected: <nama>", same as a
+            // real reject) - the note they typed needs to land on RejectReason too, not just the
+            // log, since that's the field the Overview/Detail "Catatan Penolakan" line already
+            // reads for every other reject. An origin creator's own self-cancel stays plain
+            // "Cancelled" with no such note.
+            if (IsGaActor(user))
+                member.RejectReason = payload.Reason;
             AddLog(member, "CANCELLED", user!, payload.Reason);
             cancelledAny = true;
         }
