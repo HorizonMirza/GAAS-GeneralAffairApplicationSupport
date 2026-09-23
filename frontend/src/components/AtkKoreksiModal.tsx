@@ -97,7 +97,7 @@ export default function AtkKoreksiModal({ open, item, onClose, onSaved }: Props)
             </div>
             <div className="field">
               <label htmlFor="ka-no-telepon-pemohon">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="ka-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
+              <input type="text" id="ka-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field">
               <label htmlFor="ka-tujuan">Tujuan <Lock className="field-lock-icon" width={12} height={12} /></label>

@@ -284,7 +284,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
             </div>
             <div className="field">
               <label htmlFor="ds-no-telepon-pelapor">No. Telepon PIC</label>
-              <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
+              <input type="text" id="ds-no-telepon-pelapor" required disabled={!isEdit} maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="ds-deskripsi">Deskripsi Kerusakan</label>

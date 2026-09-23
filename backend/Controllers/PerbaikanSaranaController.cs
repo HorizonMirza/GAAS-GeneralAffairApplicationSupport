@@ -233,8 +233,8 @@ public class PerbaikanSaranaController : ApiControllerBase
             return "Kategori kerusakan tidak valid";
         if (string.IsNullOrWhiteSpace(payload.NamaPelapor))
             return "Nama pelapor wajib diisi";
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPelapor))
-            return "No. Telepon pelapor wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPelapor ?? ""))
+            return "No. Telepon pelapor tidak valid";
         return null;
     }
 

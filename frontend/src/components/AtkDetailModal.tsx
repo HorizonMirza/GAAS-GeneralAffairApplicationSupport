@@ -228,7 +228,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             </div>
             <div className="field">
               <label htmlFor="da-no-telepon-pemohon">No. Telepon PIC</label>
-              <input type="text" id="da-no-telepon-pemohon" required disabled={!isEdit} maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
+              <input type="text" id="da-no-telepon-pemohon" required disabled={!isEdit} maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="da-keperluan">Tujuan</label>

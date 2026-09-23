@@ -112,7 +112,7 @@ export default function SaranaKoreksiModal({ open, item, onClose, onSaved }: Pro
             </div>
             <div className="field">
               <label htmlFor="ks-no-telepon-pelapor">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="ks-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
+              <input type="text" id="ks-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="ks-deskripsi">Deskripsi Kerusakan <Lock className="field-lock-icon" width={12} height={12} /></label>

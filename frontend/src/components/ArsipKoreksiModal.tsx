@@ -96,7 +96,7 @@ export default function ArsipKoreksiModal({ open, item, onClose, onSaved }: Prop
             </div>
             <div className="field">
               <label htmlFor="ak-telepon-pic">No. Telepon PIC <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <input type="text" id="ak-telepon-pic" required maxLength={50} value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value)} />
+              <input type="text" id="ak-telepon-pic" required maxLength={50} value={form.noTeleponPic} onChange={(e) => set("noTeleponPic", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="ak-lokasi">Lokasi Penyimpanan Saat Ini <Pencil className="field-edit-icon" width={12} height={12} /></label>

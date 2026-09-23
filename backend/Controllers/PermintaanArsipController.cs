@@ -212,8 +212,8 @@ public class PermintaanArsipController : ApiControllerBase
             return "Jumlah arsip wajib diisi lebih dari 0";
         if (string.IsNullOrWhiteSpace(payload.NamaPic))
             return "Nama PIC wajib diisi";
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPic))
-            return "No. Telepon PIC wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPic ?? ""))
+            return "No. Telepon PIC tidak valid";
         if (string.IsNullOrWhiteSpace(payload.LokasiPenyimpanan))
             return "Lokasi penyimpanan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaArsip))

@@ -196,7 +196,7 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
             </div>
             <div className="field">
               <label htmlFor="fs-no-telepon-pelapor">No. Telepon PIC</label>
-              <input type="text" id="fs-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value)} />
+              <input type="text" id="fs-no-telepon-pelapor" required maxLength={50} value={form.noTeleponPelapor} onChange={(e) => set("noTeleponPelapor", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="fs-deskripsi">Deskripsi Kerusakan</label>

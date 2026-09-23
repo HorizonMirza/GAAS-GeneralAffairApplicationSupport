@@ -213,8 +213,8 @@ public class PermintaanAtkController : ApiControllerBase
             return "Tujuan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaPemohon))
             return "Nama pemohon wajib diisi";
-        if (string.IsNullOrWhiteSpace(payload.NoTeleponPemohon))
-            return "No. Telepon pemohon wajib diisi";
+        if (!IsValidPhone(payload.NoTeleponPemohon ?? ""))
+            return "No. Telepon pemohon tidak valid";
         if (payload.Items.Count == 0)
             return "Minimal satu barang harus diisi";
         if (payload.Items.Count > MaxItemRows)

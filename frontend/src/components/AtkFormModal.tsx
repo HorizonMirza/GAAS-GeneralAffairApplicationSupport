@@ -214,7 +214,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
             </div>
             <div className="field">
               <label htmlFor="fa-no-telepon-pemohon">No. Telepon PIC</label>
-              <input type="text" id="fa-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value)} />
+              <input type="text" id="fa-no-telepon-pemohon" required maxLength={50} value={form.noTeleponPemohon} onChange={(e) => set("noTeleponPemohon", e.target.value.replace(/[^0-9+]/g, ""))} />
             </div>
             <div className="field full">
               <label htmlFor="fa-keperluan">Tujuan</label>
