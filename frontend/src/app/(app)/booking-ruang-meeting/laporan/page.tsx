@@ -9,8 +9,14 @@ import { nowWib } from "@/lib/format";
 
 const REPORT_ROLES = new Set(["ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"]);
 
+// d here is always a nowWib()-shifted Date (its LOCAL getters read WIB, not its actual UTC
+// timestamp) - d.toISOString() would read that raw UTC timestamp instead, which drifts a day
+// behind between midnight and 07:00 WIB (exactly when the underlying timestamp is still
+// "yesterday" in UTC). Building the string from the local getters instead keeps it correct,
+// same pattern as RoomCalendarView's own toIso().
 function toIso(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function defaultDateFrom(): string {

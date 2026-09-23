@@ -97,7 +97,10 @@ export default function DashboardStats({
           waitingGa: bc.APPROVED_L1 ?? 0,
           waitingGaApproval: bc.APPROVED_GA ?? 0,
           completed: bc.APPROVED_GA_APPROVAL ?? 0,
-          rejected: (bc.REJECTED_L1 ?? 0) + (bc.REJECTED_GA ?? 0) + (bc.REJECTED_GA_APPROVAL ?? 0),
+          // Room Booking's own "Rejected" table filter (RejectedStatuses on the backend) counts
+          // CANCELLED alongside the 3 real reject statuses - this card needs to match that total
+          // or it undercounts next to what the Transaksi/Overview "Rejected" filter shows.
+          rejected: (bc.REJECTED_L1 ?? 0) + (bc.REJECTED_GA ?? 0) + (bc.REJECTED_GA_APPROVAL ?? 0) + (bc.CANCELLED ?? 0),
         });
       })
       .catch(() => {

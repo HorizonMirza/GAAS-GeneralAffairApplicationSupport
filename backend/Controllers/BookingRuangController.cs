@@ -1358,6 +1358,7 @@ public class BookingRuangController : ApiControllerBase
             return StatusCode(403, new { detail = "Booking sudah melewati jam mulai, tidak dapat dibatalkan" });
 
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "booking", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), $"Dibatalkan ({MentionLabelForRole(user.Role) ?? user.Role.ToString()})");
         return Ok(BookingRuangOut.From(item));
     }
 
