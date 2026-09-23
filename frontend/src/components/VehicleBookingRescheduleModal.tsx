@@ -199,7 +199,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
       return;
     }
     if (selectedVehicle && form.jumlahPenumpang > selectedVehicle.kapasitas) {
-      setError(`Jumlah penumpang maksimal ${selectedVehicle.kapasitas} orang`);
+      setError("Jumlah penumpang melebihi kapasitas kendaraan yang dipilih");
       return;
     }
     setBusy(true);
