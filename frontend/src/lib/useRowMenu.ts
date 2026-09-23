@@ -52,11 +52,15 @@ export function useRowMenu<T extends { id: number }>(items: T[]) {
     const top = spaceBelow < estimatedMenuHeight
       ? Math.max(8, rect.top - estimatedMenuHeight - 6)
       : rect.bottom + 6;
-    // MENU_WIDTH matches .row-menu-dropdown's own CSS width exactly - the previous 180px budget
-    // (170 + a bare 10px) left the menu's own border sitting right at the viewport edge whenever
-    // its trigger button was near the right side of the screen. EDGE_GUTTER gives it the same
-    // breathing room every other edge-anchored panel in the app keeps.
-    setPosition({ top, left: Math.min(rect.left, window.innerWidth - MENU_WIDTH - EDGE_GUTTER) });
+    // The "..." trigger is always the rightmost thing in its row/card, so the menu should open
+    // right-aligned to it (its own right edge at the button's right edge, opening leftward/below)
+    // - anchoring from rect.left instead, like before, made a 170px-wide menu balloon out well
+    // past the button itself for every trigger near the right edge of the screen, which is
+    // exactly the overflow this was meant to fix in the first place. The two Math.min/max clamps
+    // are just a safety net for a genuinely narrow viewport, not the normal case.
+    const rightAligned = rect.right - MENU_WIDTH;
+    const left = Math.max(EDGE_GUTTER, Math.min(rightAligned, window.innerWidth - MENU_WIDTH - EDGE_GUTTER));
+    setPosition({ top, left });
     setMenuItemId(id);
   }
 
