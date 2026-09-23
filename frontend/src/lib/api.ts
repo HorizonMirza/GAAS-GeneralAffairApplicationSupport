@@ -511,6 +511,7 @@ export const api = {
   sendKendaraanChatMessage: (id: number, message: string) =>
     apiRequest<ChatMessage>(`/booking-kendaraan/${id}/chat`, { method: "POST", body: { message } }),
   kendaraanPdfUrl: (id: number) => `${API_BASE}/booking-kendaraan/${id}/pdf`,
+  kendaraanIcsUrl: (id: number) => `${API_BASE}/booking-kendaraan/${id}/ics`,
   kendaraanExportUrl: (params: Record<string, string | undefined | null>) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]

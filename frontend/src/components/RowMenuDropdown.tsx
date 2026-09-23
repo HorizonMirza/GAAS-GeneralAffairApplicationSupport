@@ -41,11 +41,6 @@ interface Props {
   // isKendaraanCancellableByOrigin for what canCancel is actually computed from).
   onCancel?: () => void;
   canCancel?: boolean;
-  // Room/Vehicle Booking only - reads "Delete" when Admin/Approval GA is the one cancelling
-  // (not the origin creator), see isGaRole/BookingStatusBadge's matching "Rejected: <nama>" badge
-  // for the same distinction - or "Reject" for the origin creator cancelling their own booking.
-  // Both render with the trash icon (see the canCancel branch below). Defaults to "Reject".
-  cancelLabel?: string;
 }
 
 export default function RowMenuDropdown({
@@ -66,7 +61,6 @@ export default function RowMenuDropdown({
   onIcsClick,
   onCancel,
   canCancel,
-  cancelLabel = "Reject",
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -148,7 +142,7 @@ export default function RowMenuDropdown({
         <motion.div variants={itemVariants}>
           <button type="button" className="row-menu-item row-menu-item-danger" onClick={onCancel}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            {cancelLabel}
+            Delete
           </button>
         </motion.div>
       )}

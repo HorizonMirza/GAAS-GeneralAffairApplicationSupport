@@ -97,6 +97,65 @@ public static class IcsService
         return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
     }
 
+    private static List<string> BuildEventLines(BookingKendaraan item)
+    {
+        var location = item.NamaKendaraan + (string.IsNullOrWhiteSpace(item.PlatNomor) ? "" : $" ({item.PlatNomor})");
+
+        var descriptionLines = new List<string>
+        {
+            $"Nomor Pesanan: {item.NomorPemesanan ?? "-"}",
+            $"PIC: {item.Pic ?? "-"}",
+            $"Jumlah Penumpang: {item.JumlahPenumpang} orang",
+            $"Status: {StatusLabel(item.Status)}",
+        };
+        if (!string.IsNullOrWhiteSpace(item.Catatan)) descriptionLines.Add($"Catatan: {item.Catatan}");
+        var description = string.Join("\n", descriptionLines);
+
+        var lines = new List<string>
+        {
+            "BEGIN:VEVENT",
+            $"UID:booking-kendaraan-{item.Id}@pgmsolution",
+            $"DTSTAMP:{FormatDateTime(DateTime.UtcNow)}Z",
+        };
+
+        if (item.IsWholeDay)
+        {
+            lines.Add($"DTSTART;VALUE=DATE:{FormatDateOnly(item.Tanggal)}");
+            lines.Add($"DTEND;VALUE=DATE:{FormatDateOnly(item.Tanggal.AddDays(1))}");
+        }
+        else
+        {
+            var start = item.Tanggal.ToDateTime(item.JamMulai ?? TimeOnly.MinValue) - JakartaOffset;
+            var end = item.Tanggal.ToDateTime(item.JamSelesai ?? TimeOnly.MinValue) - JakartaOffset;
+            lines.Add($"DTSTART:{FormatDateTime(start)}Z");
+            lines.Add($"DTEND:{FormatDateTime(end)}Z");
+        }
+
+        lines.Add($"SUMMARY:{Escape(item.Keperluan)}");
+        lines.Add($"LOCATION:{Escape(location)}");
+        lines.Add($"DESCRIPTION:{Escape(description)}");
+        lines.Add("END:VEVENT");
+        return lines;
+    }
+
+    // Vehicle Booking's own single-event download - same principle as Generate(BookingRuang) above,
+    // just backed by BookingKendaraan's own fields (kendaraan+plat instead of ruang, keperluan
+    // instead of nama kegiatan). See BookingKendaraanController.DownloadIcs.
+    public static byte[] Generate(BookingKendaraan item)
+    {
+        var lines = new List<string>
+        {
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//PGN Solution//Vehicle Booking//ID",
+            "CALSCALE:GREGORIAN",
+        };
+        lines.AddRange(BuildEventLines(item));
+        lines.Add("END:VCALENDAR");
+
+        return Encoding.UTF8.GetBytes(string.Join("\r\n", lines) + "\r\n");
+    }
+
     // Multi-event feed for a room's webcal subscription (BookingRuangController.DownloadRoomFeed)
     // - same VEVENT format as a single booking's Generate() above, just many of them in one
     // VCALENDAR so a calendar app can poll one URL instead of one download per booking.

@@ -18,7 +18,6 @@ import {
   isBookingEditableByOrigin,
   isBookingOriginRole,
   isBookingPdfAvailable,
-  isGaRole,
 } from "@/lib/constants";
 import { currentYearMonth, formatDate, nowWib, todayLocalDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -533,7 +532,6 @@ export default function BookingOverviewPage() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isBookingDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isBookingCancellableByOrigin(rowMenu.menuItem, me)}
-        cancelLabel={isGaRole(me.role) ? "Delete" : "Reject"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

@@ -419,14 +419,6 @@ export function isBookingCancellableByOrigin(item: BookingRuang, me: Me): boolea
   return !isPastBookingStart(item.tanggal, item.jamMulai, item.isWholeDay);
 }
 
-// Room Booking only - Admin/Approval GA cancelling someone else's booking is shown to users as
-// "Delete" in the row menu with a "Rejected: <nama>" badge afterward, rather than
-// "Cancel"/"Cancelled" as it reads when the origin creator calls off their own booking. See
-// RowMenuDropdown's cancelLabel and BookingStatusBadge's cancelledByRole handling.
-export function isGaRole(role: Role): boolean {
-  return role === "ADMIN_GA" || role === "APPROVAL_GA";
-}
-
 export function isBookingGaActionable(item: BookingRuang): boolean {
   return item.status === "APPROVED_L1";
 }

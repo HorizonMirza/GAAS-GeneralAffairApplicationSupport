@@ -11,7 +11,6 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingStatusBorderClass,
   isBookingOriginRole,
-  isGaRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
   buildVehicleBookingDuplicateInitial,
@@ -490,7 +489,6 @@ export default function VehicleBookingOverviewPage() {
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isKendaraanDeletableByOrigin(rowMenu.menuItem, me)}
         canCancel={!!rowMenu.menuItem && isKendaraanCancellableByOrigin(rowMenu.menuItem, me)}
-        cancelLabel={isGaRole(me.role) ? "Delete" : "Reject"}
         onCancel={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();
@@ -536,6 +534,17 @@ export default function VehicleBookingOverviewPage() {
           if (!item) return;
           try {
             await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
+        }}
+        icsUrl={rowMenu.menuItem && isKendaraanPdfAvailable(rowMenu.menuItem) ? api.kendaraanIcsUrl(rowMenu.menuItem.id) : undefined}
+        onIcsClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.kendaraanIcsUrl(item.id), `Booking-Kendaraan-${item.nomorPemesanan || item.id}.ics`);
           } catch (err) {
             showToast((err as Error).message, "error");
           }

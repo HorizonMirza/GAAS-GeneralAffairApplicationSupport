@@ -1203,4 +1203,20 @@ public class BookingKendaraanController : ApiControllerBase
         var bytes = VehiclePdfService.Generate(item);
         return File(bytes, "application/pdf", $"Bukti-Booking-Kendaraan-{item.NomorPemesanan}.pdf");
     }
+
+    // Personal calendar reminder (.ics) - mirrors BookingRuangController.DownloadIcs, gated by the
+    // frontend to only offer it once Approved (see isKendaraanPdfAvailable), same as the PDF above.
+    [HttpGet("{itemId:int}/ics")]
+    public async Task<IActionResult> DownloadIcs(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.BookingKendaraans.FirstOrDefaultAsync(b => b.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessBookingKendaraan(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+
+        var bytes = IcsService.Generate(item);
+        return File(bytes, "text/calendar", $"Booking-Kendaraan-{item.NomorPemesanan ?? item.Id.ToString()}.ics");
+    }
 }
