@@ -138,21 +138,51 @@ function getRealRoomCurrentSlot(
     };
   }
 
-  // No ongoing booking right now -> Room is free right now!
-  // Find the next upcoming booking starting after now
-  const upcoming = roomBookings.find((b) => b.startMin > now && b.startMin < CLOSE_MIN);
-  if (upcoming) {
-    const untilHhmm = upcoming.jamMulai?.slice(0, 5) || "18:00";
-    return {
-      jam: `${startHhmm} - ${untilHhmm}`,
-      status: "free",
-      judul: "Available",
-    };
+  // No ongoing booking right now -> room is free right now, but headlining "now until the very
+  // next booking" is misleading the moment that gap is trivial (e.g. a booking starting in 5
+  // minutes) while a much bigger free block sits right after it - so scan every gap between
+  // today's remaining bookings and headline the LARGEST one, not just the first one.
+  // Gap lengths are measured from the real "now" (not the rounded-down display hour) - rounding
+  // down here would inflate the very first gap by up to 59 minutes and could make it falsely win
+  // against a genuinely bigger block later today (e.g. "free" reading 09:00-10:00 when actually
+  // only 5 minutes are left before the next booking, hiding a real 6-hour opening right after it).
+  const upcomingBookings = roomBookings.filter((b) => b.startMin > now);
+  let cursor = now;
+  let bestStart = now;
+  let bestEnd = CLOSE_MIN;
+  let bestLen = -1;
+  for (const b of upcomingBookings) {
+    if (b.startMin > cursor) {
+      const len = b.startMin - cursor;
+      if (len > bestLen) {
+        bestLen = len;
+        bestStart = cursor;
+        bestEnd = b.startMin;
+      }
+    }
+    cursor = Math.max(cursor, b.endMin);
+  }
+  if (CLOSE_MIN > cursor) {
+    const len = CLOSE_MIN - cursor;
+    if (len > bestLen) {
+      bestLen = len;
+      bestStart = cursor;
+      bestEnd = CLOSE_MIN;
+    }
   }
 
-  // No more bookings today -> Available from current hour until 18:00
+  if (bestLen <= 0) {
+    // Booked solid from now through closing (back-to-back bookings with no real gap) - the room
+    // isn't meaningfully "Available" even though "now" itself technically isn't inside a booking.
+    const next = upcomingBookings[0];
+    const jam = next.isWholeDay
+      ? "07:00 - 18:00"
+      : `${next.jamMulai?.slice(0, 5) || "07:00"} - ${next.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: next.namaKegiatan || "Terisi" };
+  }
+
   return {
-    jam: `${startHhmm} - 18:00`,
+    jam: `${bestStart === now ? startHhmm : minutesToHHMM(bestStart)} - ${minutesToHHMM(bestEnd)}`,
     status: "free",
     judul: "Available",
   };
