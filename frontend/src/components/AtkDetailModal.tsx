@@ -334,7 +334,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
 
             <div className="field full">
               <label htmlFor="da-catatan">Catatan {isGaEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
-              <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder="Contoh: Stok Menipis" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder={isOriginEdit ? "Contoh: Stok Menipis" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
 
             {(canEditSumberPembelian || item.sumberPembelian) && (
