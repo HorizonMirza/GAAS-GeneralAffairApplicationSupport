@@ -262,7 +262,7 @@ export default function BookingOverviewPage() {
 
   useEffect(() => {
     if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-    // KPU only deals with Expedition (see AppShell's KPU_HIDDEN_CATEGORIES) - Room Booking isn't
+    // KPU only deals with Expedition and Office Supplies (see AppShell's KPU_HIDDEN_CATEGORIES) - Room Booking isn't
     // part of their workflow, so a direct link/URL shouldn't land them here either.
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);

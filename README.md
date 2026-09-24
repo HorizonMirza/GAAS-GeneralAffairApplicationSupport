@@ -33,6 +33,17 @@ Semua dokumentasi detail ada di [`docs/`](./docs):
 
 Mulai dari [`docs/README.md`](./docs/README.md) untuk instruksi menjalankan proyek secara lokal.
 
+## Pengujian
+
+Jalankan automated test backend dari root repository:
+
+```powershell
+dotnet test backend.Tests/PengirimanApi.Tests.csproj
+```
+
+GitHub Actions menjalankan test backend dan build frontend secara otomatis pada setiap push ke
+`main` serta setiap pull request menuju `main`.
+
 ## Status
 
 Proyek internal PGN Solution — tidak untuk didistribusikan di luar organisasi.

@@ -1413,7 +1413,8 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedL1At = DateTime.UtcNow;
             member.RejectReason = null;
         });
-        await _db.SaveChangesAsync();
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "approval", "booking", item!.Id, ItemLabel(item!), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
@@ -1433,7 +1434,8 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedByL1 = null;
             member.ApprovedL1At = null;
         });
-        await _db.SaveChangesAsync();
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item!, user!.Id), "rejected", "booking", item!.Id, ItemLabel(item!), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Approval Departemen/Divisi)");
         return Ok(BookingRuangOut.From(item!));
     }
@@ -1457,7 +1459,8 @@ public class BookingRuangController : ApiControllerBase
             member.RejectReason = null;
             member.RejectTarget = null;
         });
-        await _db.SaveChangesAsync();
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "booking", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Disetujui (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }
@@ -1481,7 +1484,8 @@ public class BookingRuangController : ApiControllerBase
             member.ApprovedByGa = null;
             member.ApprovedGaAt = null;
         });
-        await _db.SaveChangesAsync();
+        var saveError = await TrySaveChangesAsync(_db);
+        if (saveError != null) return saveError;
         await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "rejected", "booking", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Ditolak (Admin GA)");
         return Ok(BookingRuangOut.From(item));
     }

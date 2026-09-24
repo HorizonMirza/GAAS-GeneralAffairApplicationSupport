@@ -67,7 +67,7 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     // Wraps SaveChangesAsync for approve/reject endpoints guarded by an IsConcurrencyToken
-    // property (Pengiriman.Status, Invoice.Status): if another request already changed that row
+    // status property: if another request already changed that row
     // between this request's read and its save, EF throws DbUpdateConcurrencyException instead
     // of silently overwriting - this turns that into a clean 409 the caller can show and retry
     // from, instead of a duplicate approval log or a lost update.
@@ -106,7 +106,7 @@ public abstract class ApiControllerBase : ControllerBase
 
     // Like RequireRoleAsync, but as a denylist instead of an allowlist - for endpoints meant to
     // stay open to "everyone except role X" (e.g. Room Booking read/chat endpoints excluding KPU,
-    // who only deals with Expedition per AppShell's KPU_HIDDEN_CATEGORIES) without having to spell
+    // whose workflows are Expedition and Office Supplies) without having to spell
     // out every other role by hand.
     protected async Task<(User? user, IActionResult? error)> RequireRoleExceptAsync(params RoleEnum[] excludedRoles)
     {

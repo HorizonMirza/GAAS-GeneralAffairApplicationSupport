@@ -91,14 +91,14 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, KendaraanGroup(bookingKendaraanId));
     }
 
-    // Same as JoinKendaraanChat, but for Office Supplies (Permintaan ATK) - also excludes KPU,
-    // matching PermintaanAtkChatController.List/Send.
+    // Office Supplies includes Mitra in its workflow, so this uses the same access rule as
+    // PermintaanAtkChatController.List/Send without excluding KPU.
     public async Task JoinAtkChat(int permintaanAtkId)
     {
         var user = await _currentUser.GetCurrentUserAsync();
-        if (user == null || user.Role == RoleEnum.KPU) return;
+        if (user == null) return;
         var item = await _db.PermintaanAtks.FindAsync(permintaanAtkId);
-        if (item == null || !ApiControllerBase.CanAccessPermintaanAtk(user, item)) return;
+        if (item == null || !CanJoinAtkChat(user, item)) return;
         await Groups.AddToGroupAsync(Context.ConnectionId, AtkGroup(permintaanAtkId));
     }
 
@@ -106,6 +106,9 @@ public class ChatHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, AtkGroup(permintaanAtkId));
     }
+
+    public static bool CanJoinAtkChat(AccessUser user, PermintaanAtk item) =>
+        ApiControllerBase.CanAccessPermintaanAtk(user, item);
 
     // Same as JoinAtkChat, but for Maintenance (Perbaikan Sarana) - also excludes KPU, matching
     // PerbaikanSaranaChatController.List/Send.
