@@ -11,6 +11,7 @@ import {
   SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
   canGaUpdateAtk,
+  canKoreksiHargaAtk,
   isAtkEditableByOrigin,
   isAtkPdfAvailable,
   isBookingOriginRole,
@@ -67,7 +68,7 @@ function OfficeSuppliesTransaksiPageInner() {
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
-  const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" | "ga-edit" } | null>(null);
+  const [detail, setDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" | "ga-edit" | "kpu-edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<PermintaanAtk | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
@@ -453,7 +454,7 @@ function OfficeSuppliesTransaksiPageInner() {
         position={rowMenu.position}
         canEditDelete={
           !!rowMenu.menuItem &&
-          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaUpdateAtk(rowMenu.menuItem, me))
+          ((isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)) || canGaUpdateAtk(rowMenu.menuItem, me) || canKoreksiHargaAtk(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isAtkEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
@@ -467,6 +468,7 @@ function OfficeSuppliesTransaksiPageInner() {
           if (!item) return;
           if (isOrigin && isAtkEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaUpdateAtk(item, me)) setDetail({ item, mode: "ga-edit" });
+          else if (canKoreksiHargaAtk(item, me)) setDetail({ item, mode: "kpu-edit" });
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;

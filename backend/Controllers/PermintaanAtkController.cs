@@ -923,6 +923,30 @@ public class PermintaanAtkController : ApiControllerBase
         return Ok(PermintaanAtkOut.From(item));
     }
 
+    // Lets Mitra fix their own typo in the Total Harga Barang they entered at ApproveKpu -
+    // reachable any time after COMPLETED (no deadline), since a mispriced request can otherwise
+    // never be corrected once it's the final, already-Approved state. Mirrors
+    // PengirimanController.KoreksiHarga.
+    [HttpPatch("{itemId:int}/koreksi-harga")]
+    public async Task<IActionResult> KoreksiHarga(int itemId, [FromBody] ApproveKpuAtkRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.PermintaanAtks.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (item.Status != StatusEnum.COMPLETED)
+            return StatusCode(403, new { detail = "Harga hanya dapat dikoreksi untuk permintaan yang sudah Approved" });
+        if (payload.TotalHargaBarang == null || payload.TotalHargaBarang <= 0)
+            return BadRequest(new { detail = "Total harga barang wajib diisi" });
+
+        var before = item.TotalHargaBarang;
+        item.TotalHargaBarang = payload.TotalHargaBarang;
+        AddLog(item, "KOREKSI_HARGA", user!, $"Total harga barang dikoreksi oleh {user!.Nama} dari Rp{before:N0} menjadi Rp{item.TotalHargaBarang:N0}");
+        await _db.SaveChangesAsync();
+        return Ok(PermintaanAtkOut.From(item));
+    }
+
     // Terminal, same as every other reject in this controller - unlike Pengiriman's own
     // reject-kpu, there is no RejectTarget/revision routing here.
     [HttpPatch("{itemId:int}/reject-kpu")]

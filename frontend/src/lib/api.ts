@@ -299,6 +299,8 @@ export const api = {
     apiRequest(`/pengiriman/${id}/approve-kpu`, { method: "PATCH", body: payload }),
   rejectKpu: (id: number, reason: string | null, target: RejectTarget) =>
     apiRequest(`/pengiriman/${id}/reject-kpu`, { method: "PATCH", body: { reason, target } }),
+  koreksiHargaPengiriman: (id: number, payload: ApproveKpuPayload) =>
+    apiRequest<Pengiriman>(`/pengiriman/${id}/koreksi-harga`, { method: "PATCH", body: payload }),
   getPengirimanLogs: (id: number) => apiRequest<PengirimanLog[]>(`/pengiriman/${id}/logs`),
   getChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/pengiriman/${id}/chat`),
   sendChatMessage: (id: number, message: string) =>
@@ -549,6 +551,8 @@ export const api = {
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/approve-kpu`, { method: "PATCH", body: { totalHargaBarang } }),
   rejectAtkKpu: (id: number, reason: string | null) =>
     apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/reject-kpu`, { method: "PATCH", body: { reason } }),
+  koreksiHargaAtk: (id: number, totalHargaBarang: number) =>
+    apiRequest<PermintaanAtk>(`/permintaan-atk/${id}/koreksi-harga`, { method: "PATCH", body: { totalHargaBarang } }),
   getAtkLogs: (id: number) => apiRequest<PermintaanAtkLog[]>(`/permintaan-atk/${id}/logs`),
   atkPdfUrl: (id: number) => `${API_BASE}/permintaan-atk/${id}/pdf`,
   getAtkChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-atk/${id}/chat`),

@@ -996,6 +996,44 @@ public class PengirimanController : ApiControllerBase
         return Ok(PengirimanOut.From(item));
     }
 
+    // Lets Mitra fix their own typo in the price figures they entered at ApproveKpu - reachable
+    // any time after COMPLETED (no deadline), since a mispriced shipment can otherwise never be
+    // corrected once it's the final, already-Approved state. Reuses ApproveKpuRequest's shape;
+    // Total is always re-derived here too, same invariant as ApproveKpu itself.
+    [HttpPatch("{itemId:int}/koreksi-harga")]
+    public async Task<IActionResult> KoreksiHarga(int itemId, [FromBody] ApproveKpuRequest payload)
+    {
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.KPU);
+        if (roleError != null) return roleError;
+
+        var item = await _db.Pengiriman.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (item.Status != StatusEnum.COMPLETED)
+            return StatusCode(403, new { detail = "Harga hanya dapat dikoreksi untuk pengiriman yang sudah Approved" });
+
+        if (string.IsNullOrWhiteSpace(payload.NoResi))
+            return StatusCode(400, new { detail = "No Resi wajib diisi" });
+        if (!IsValidResi(payload.NoResi))
+            return StatusCode(400, new { detail = "No Resi hanya boleh berisi huruf dan angka" });
+        if (payload.BeratBarangKg <= 0)
+            return StatusCode(400, new { detail = "Berat barang harus lebih dari 0" });
+        if (payload.AsuransiHarga < 0)
+            return StatusCode(400, new { detail = "Asuransi tidak boleh negatif" });
+        if (payload.SubTotal <= 0)
+            return StatusCode(400, new { detail = "Ongkos kirim harus lebih dari 0" });
+
+        var before = $"No Resi {item.NoResi}, Berat {item.BeratBarangKg} Kg, Asuransi Rp{item.AsuransiHarga:N0}, Ongkos Kirim Rp{item.SubTotal:N0}, Total Rp{item.Total:N0}";
+        item.NoResi = payload.NoResi;
+        item.BeratBarangKg = payload.BeratBarangKg;
+        item.AsuransiHarga = payload.AsuransiHarga;
+        item.SubTotal = payload.SubTotal;
+        item.Total = payload.SubTotal + payload.AsuransiHarga;
+        var after = $"No Resi {item.NoResi}, Berat {item.BeratBarangKg} Kg, Asuransi Rp{item.AsuransiHarga:N0}, Ongkos Kirim Rp{item.SubTotal:N0}, Total Rp{item.Total:N0}";
+        AddLog(item, "KOREKSI_HARGA", user!, $"Dikoreksi oleh {user!.Nama} dari [{before}] menjadi [{after}]");
+        await _db.SaveChangesAsync();
+        return Ok(PengirimanOut.From(item));
+    }
+
     [HttpGet("{itemId:int}/logs")]
     public async Task<IActionResult> GetLogs(int itemId)
     {

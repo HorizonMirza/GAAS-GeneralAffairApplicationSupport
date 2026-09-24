@@ -14,7 +14,10 @@ import SearchableSelect from "./SearchableSelect";
 
 interface Props {
   open: boolean;
-  mode: "view" | "edit";
+  // "kpu-edit" is Mitra's own post-Approved price-correction tool - only No. Resi/Berat/
+  // Asuransi/Ongkos Kirim are editable, everything else (including this module's own regular
+  // "edit" fields) stays the origin creator's own. See PengirimanController.KoreksiHarga.
+  mode: "view" | "edit" | "kpu-edit";
   item: Pengiriman | null;
   me: Me;
   onClose: () => void;
@@ -85,7 +88,9 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canKpuAct = !isEdit && me.role === "KPU" && item.status === "APPROVED_GA_APPROVAL";
-  const showKpuSection = canKpuAct || item.status === "COMPLETED";
+  const isKpuEdit = mode === "kpu-edit";
+  const showKpuSection = canKpuAct || isKpuEdit || item.status === "COMPLETED";
+  const hargaFieldsEditable = canKpuAct || isKpuEdit;
   const asuransiApplicable = item.asuransiStatus === "Ya";
 
   function set<K extends keyof PengirimanCreatePayload>(key: K, value: PengirimanCreatePayload[K]) {
@@ -202,6 +207,42 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     }
   }
 
+  async function handleKoreksiHarga() {
+    const noResi = kResi.trim();
+    const beratStr = kBerat.trim();
+    const asuransiStr = parseThousandSeparator(kAsuransi.trim());
+    const subTotalStr = parseThousandSeparator(kSubtotal.trim());
+    if (!noResi || !beratStr || subTotalStr === "" || (asuransiApplicable && asuransiStr === "")) {
+      setError(asuransiApplicable ? "Lengkapi No Resi, Berat, Harga Asuransi, dan Harga Ongkos Kirim." : "Lengkapi No Resi, Berat, dan Harga Ongkos Kirim.");
+      return;
+    }
+    if (!(Number(beratStr.replace(",", ".")) > 0)) {
+      setError("Berat barang harus lebih dari 0");
+      return;
+    }
+    if (!(Number(subTotalStr) > 0)) {
+      setError("Harga ongkos kirim harus lebih dari 0");
+      return;
+    }
+    const totalStr = parseThousandSeparator(kTotal.trim());
+    setBusy(true);
+    try {
+      await api.koreksiHargaPengiriman(item!.id, {
+        noResi,
+        beratBarangKg: Number(beratStr.replace(",", ".")),
+        asuransiHarga: Number(asuransiStr || "0"),
+        subTotal: Number(subTotalStr),
+        total: Number(totalStr || "0"),
+      });
+      showToast("Harga berhasil dikoreksi");
+      onClose();
+      onSaved();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
   // Every workflow action below is `type="submit"` (Reject stays `type="button"` - a destructive
   // action should never fire just because Enter was pressed in a text field), so this one handler
   // is what Enter actually triggers no matter which single action currently applies - Save in Edit
@@ -243,6 +284,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
       }
       return;
     }
+    if (isKpuEdit) return handleKoreksiHarga();
     if (canSubmitDraft) return handleSubmitDraft();
     if (canL1Act) return handleApproveL1();
     if (canGaAct) return handleApproveGa();
@@ -268,7 +310,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Data Barang" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Data Barang" : isKpuEdit ? "Koreksi Harga Pengiriman" : "Detail Data Barang"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
@@ -378,11 +420,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 <div className="field full form-grid-divider" />
                 <div className="field">
                   <label htmlFor="pv-k-resi">No. Resi</label>
-                  <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!canKpuAct} value={kResi} onChange={(e) => setKResi(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
+                  <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!hargaFieldsEditable} value={kResi} onChange={(e) => setKResi(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
                 </div>
                 <div className="field">
                   <label htmlFor="pv-k-berat">Berat Barang (Kg)</label>
-                  <input type="text" inputMode="decimal" id="pv-k-berat" placeholder="Contoh: 2,5" disabled={!canKpuAct} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
+                  <input type="text" inputMode="decimal" id="pv-k-berat" placeholder="Contoh: 2,5" disabled={!hargaFieldsEditable} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
                 </div>
                 <div className={`field ${asuransiApplicable ? "" : "field-strike"}`}>
                   <label htmlFor="pv-k-asuransi-harga">Harga Asuransi</label>
@@ -390,7 +432,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                     type="text"
                     inputMode="numeric"
                     id="pv-k-asuransi-harga"
-                    disabled={!canKpuAct || !asuransiApplicable}
+                    disabled={!hargaFieldsEditable || !asuransiApplicable}
                     placeholder={asuransiApplicable ? "" : "Anda tidak menggunakan asuransi"}
                     value={kAsuransi}
                     onChange={(e) => handleAsuransiChange(e.target.value)}
@@ -398,7 +440,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 </div>
                 <div className="field">
                   <label htmlFor="pv-k-subtotal">Harga Ongkos Kirim</label>
-                  <input type="text" inputMode="numeric" id="pv-k-subtotal" disabled={!canKpuAct} value={kSubtotal} onChange={(e) => handleSubtotalChange(e.target.value)} />
+                  <input type="text" inputMode="numeric" id="pv-k-subtotal" disabled={!hargaFieldsEditable} value={kSubtotal} onChange={(e) => handleSubtotalChange(e.target.value)} />
                 </div>
                 <div className="field full">
                   <label htmlFor="pv-k-total">Total</label>
@@ -421,8 +463,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           )}
 
           {error && <div className="error-text">{error}</div>}
-          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || canKpuAct || isEdit) && (
+          {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || canKpuAct || isEdit || isKpuEdit) && (
             <div className="modal-actions">
+              {isKpuEdit && (
+                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Simpan Koreksi</button>
+              )}
               {canSubmitDraft && (
                 <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Submit</button>
               )}

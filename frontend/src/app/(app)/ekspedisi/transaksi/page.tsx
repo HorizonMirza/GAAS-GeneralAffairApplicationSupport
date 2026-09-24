@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { canGaKoreksiPengiriman, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
+import { canGaKoreksiPengiriman, canKoreksiHargaPengiriman, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -59,7 +59,7 @@ function TransaksiPageInner() {
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
-  const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
+  const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" | "kpu-edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
@@ -449,7 +449,7 @@ function TransaksiPageInner() {
         position={rowMenu.position}
         canEditDelete={
           !!rowMenu.menuItem &&
-          ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me))
+          ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me) || canKoreksiHargaPengiriman(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
@@ -463,6 +463,7 @@ function TransaksiPageInner() {
           if (!item) return;
           if (isOrigin && isEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaKoreksiPengiriman(item, me)) setKoreksiTarget(item);
+          else if (canKoreksiHargaPengiriman(item, me)) setDetail({ item, mode: "kpu-edit" });
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;

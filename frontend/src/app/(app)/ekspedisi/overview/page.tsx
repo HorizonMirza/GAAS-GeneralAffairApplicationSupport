@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, canGaKoreksiPengiriman, cardStatusBorderClass, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
+import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, canGaKoreksiPengiriman, canKoreksiHargaPengiriman, cardStatusBorderClass, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
@@ -46,7 +46,7 @@ export default function OverviewPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [formOpen, setFormOpen] = useState(false);
-  const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" } | null>(null);
+  const [detail, setDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" | "kpu-edit" } | null>(null);
   const [statusItemId, setStatusItemId] = useState<number | null>(null);
   const [chatItem, setChatItem] = useState<Pengiriman | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
@@ -223,7 +223,7 @@ export default function OverviewPage() {
         position={rowMenu.position}
         canEditDelete={
           !!rowMenu.menuItem &&
-          ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me))
+          ((isOrigin && isEditableByOrigin(rowMenu.menuItem, me)) || canGaKoreksiPengiriman(rowMenu.menuItem, me) || canKoreksiHargaPengiriman(rowMenu.menuItem, me))
         }
         canDelete={!!rowMenu.menuItem && isOrigin && isEditableByOrigin(rowMenu.menuItem, me)}
         onDetail={() => {
@@ -237,6 +237,7 @@ export default function OverviewPage() {
           if (!item) return;
           if (isOrigin && isEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaKoreksiPengiriman(item, me)) setKoreksiTarget(item);
+          else if (canKoreksiHargaPengiriman(item, me)) setDetail({ item, mode: "kpu-edit" });
         }}
         onStatus={() => {
           const item = rowMenu.menuItem;

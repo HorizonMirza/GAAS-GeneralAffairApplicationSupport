@@ -38,8 +38,9 @@ interface Props {
   // "edit" is the origin creator's own DRAFT/REJECTED edit (every field live). "ga-edit" is
   // Admin/Approval GA's own in-flight edit tool - Nama/No. Telepon Pemohon, Tujuan, and Daftar
   // Barang only, Tanggal/Kategori/Catatan stay the origin creator's own (see
-  // PermintaanAtkController.UpdateByGa).
-  mode: "view" | "edit" | "ga-edit";
+  // PermintaanAtkController.UpdateByGa). "kpu-edit" is Mitra's own post-Approved price-correction
+  // tool - only Total Harga Barang is editable (see PermintaanAtkController.KoreksiHarga).
+  mode: "view" | "edit" | "ga-edit" | "kpu-edit";
   item: PermintaanAtk | null;
   me: Me;
   onClose: () => void;
@@ -99,6 +100,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isAtkGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   const canKpuAct = !isEdit && me.role === "KPU" && isAtkKpuActionable(item);
+  const isKpuEdit = mode === "kpu-edit";
   // Submit's own self-skip (see PermintaanAtkController.Submit) lands an Admin/Approval GA's own
   // draft straight past the tier where SumberPembelian is normally captured (ApproveGa), so this
   // is the only remaining place to still ask for it on that path.
@@ -202,6 +204,24 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     }
   }
 
+  async function handleKoreksiHarga() {
+    const digits = parseThousandSeparator(totalHargaBarang.trim());
+    if (!digits || Number(digits) <= 0) {
+      setError("Total harga barang wajib diisi");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.koreksiHargaAtk(item!.id, Number(digits));
+      showToast("Harga berhasil dikoreksi");
+      onClose();
+      onSaved();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
   async function handleUpdateSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -231,7 +251,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>{isEdit ? "Form Pesanan Kebutuhan Kantor" : "Detail Pesanan Kebutuhan Kantor"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
+          <h3>{isEdit ? "Form Pesanan Kebutuhan Kantor" : isKpuEdit ? "Koreksi Harga Kebutuhan Kantor" : "Detail Pesanan Kebutuhan Kantor"} {item.departemen || item.divisi ? `(${item.departemen || item.divisi})` : ""}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <form ref={formRef} onSubmit={handleUpdateSubmit} onKeyDown={focusNextFieldOnEnter}>
@@ -363,8 +383,8 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               </>
             )}
 
-            {(canKpuAct || item.totalHargaBarang) && (
-              canKpuAct ? (
+            {(canKpuAct || isKpuEdit || item.totalHargaBarang) && (
+              canKpuAct || isKpuEdit ? (
                 <div className="field full">
                   <label htmlFor="da-total-harga-barang">Total Harga Barang</label>
                   <input
@@ -432,6 +452,9 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
             )}
             {isEdit && (
               <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
+            )}
+            {isKpuEdit && (
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleKoreksiHarga} disabled={busy}>Simpan Koreksi</button>
             )}
           </div>
         </form>

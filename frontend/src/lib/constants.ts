@@ -165,6 +165,9 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
   CORRECTED: { label: "Data Diperbarui oleh GA", type: "neutral" },
   UPDATED_BY_GA: { label: "Data Diperbarui oleh GA", type: "neutral" },
+  // Mitra's own post-Approved price fix (Pengiriman's Resi/Berat/Asuransi/Ongkir, ATK's Total
+  // Harga Barang) - see PengirimanController.KoreksiHarga/PermintaanAtkController.KoreksiHarga.
+  KOREKSI_HARGA: { label: "Harga Dikoreksi oleh Mitra", type: "neutral" },
   CANCELLED: { label: "Booking Dibatalkan", type: "reject" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
   LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
@@ -205,6 +208,12 @@ export function canGaKoreksiPengiriman(item: Pengiriman, me: Me): boolean {
 // isAtkPdfAvailable, since both share the same 4-tier (...-> Approval GA -> Mitra) chain.
 export function isPengirimanPdfAvailable(item: Pengiriman): boolean {
   return item.status === "COMPLETED";
+}
+
+// Mitra's own right to fix a typo in the price figures they entered at ApproveKpu - available any
+// time once COMPLETED, no deadline (see PengirimanController.KoreksiHarga).
+export function canKoreksiHargaPengiriman(item: Pengiriman, me: Me): boolean {
+  return me.role === "KPU" && item.status === "COMPLETED";
 }
 
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
@@ -629,6 +638,12 @@ export function isSaranaPdfAvailable(item: PerbaikanSarana): boolean {
 // has one more tier after Approval GA - the request is only truly final once Mitra signs off.
 export function isAtkPdfAvailable(item: PermintaanAtk): boolean {
   return item.status === "COMPLETED";
+}
+
+// Mitra's own right to fix a typo in the Total Harga Barang they entered at ApproveKpu - available
+// any time once COMPLETED, no deadline (see PermintaanAtkController.KoreksiHarga).
+export function canKoreksiHargaAtk(item: PermintaanAtk, me: Me): boolean {
+  return me.role === "KPU" && item.status === "COMPLETED";
 }
 
 // --- Archive / Permintaan Arsip (pola yang sama dengan Booking & ATK di atas) ---
