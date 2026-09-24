@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, isValidPengirimanPhone, originActorLabel } from "@/lib/constants";
 import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
@@ -316,15 +317,15 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
         <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
           <div className="form-grid">
             <div className="field full">
-              <label htmlFor="pv-nomor-transmittal">Nomor Transmittal</label>
+              <label htmlFor="pv-nomor-transmittal">Nomor Transmittal {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-nomor-transmittal" disabled value={item.nomorTransmittal} />
             </div>
             <div className="field">
-              <label htmlFor="pv-tanggal">Tanggal</label>
+              <label htmlFor="pv-tanggal">Tanggal {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <DateFilterPicker id="pv-tanggal" disabled={!isEdit} clearable={false} value={form.tanggal} onChange={(v) => set("tanggal", v)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-jumlah-item">Jumlah Barang</label>
+              <label htmlFor="pv-jumlah-item">Jumlah Barang {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -340,11 +341,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field">
-              <label htmlFor="pv-pengirim">Nama Pengirim</label>
+              <label htmlFor="pv-pengirim">Nama Pengirim {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-pengirim" required disabled={!isEdit} maxLength={50} value={form.namaPengirim} onChange={(e) => set("namaPengirim", e.target.value.replace(/[^A-Za-z0-9\s.'-]/g, ""))} />
             </div>
             <div className="field">
-              <label htmlFor="pv-telepon-pengirim">No. Telepon Pengirim</label>
+              <label htmlFor="pv-telepon-pengirim">No. Telepon Pengirim {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input
                 type="text"
                 inputMode="tel"
@@ -357,15 +358,15 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field full">
-              <label htmlFor="pv-alamat-pengirim">Alamat Pengirim</label>
+              <label htmlFor="pv-alamat-pengirim">Alamat Pengirim {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <textarea id="pv-alamat-pengirim" required disabled={!isEdit} maxLength={255} value={form.alamatPengirim} onChange={(e) => set("alamatPengirim", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-penerima">Nama Penerima</label>
+              <label htmlFor="pv-penerima">Nama Penerima {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-penerima" required disabled={!isEdit} maxLength={50} value={form.namaPenerima} onChange={(e) => set("namaPenerima", e.target.value.replace(/[^A-Za-z0-9\s.'-]/g, ""))} />
             </div>
             <div className="field">
-              <label htmlFor="pv-telepon">No. Telepon Penerima</label>
+              <label htmlFor="pv-telepon">No. Telepon Penerima {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input
                 type="text"
                 inputMode="tel"
@@ -378,19 +379,19 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field full">
-              <label htmlFor="pv-alamat">Alamat Penerima</label>
+              <label htmlFor="pv-alamat">Alamat Penerima {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <textarea id="pv-alamat" required disabled={!isEdit} maxLength={255} value={form.alamatPenerima} onChange={(e) => set("alamatPenerima", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-tujuan">Tujuan</label>
+              <label htmlFor="pv-tujuan">Tujuan {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-tujuan" required disabled={!isEdit} maxLength={150} value={form.tujuanPenerimaan} onChange={(e) => set("tujuanPenerimaan", e.target.value)} />
             </div>
             <div className="field full">
-              <label htmlFor="pv-kode-program">Kode Program</label>
+              <label htmlFor="pv-kode-program">Kode Program {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-kode-program" required disabled={!isEdit} value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="pv-asuransi">Asuransi</label>
+              <label htmlFor="pv-asuransi">Asuransi {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <SearchableSelect
                 id="pv-asuransi"
                 disabled={!isEdit}
@@ -401,7 +402,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field">
-              <label htmlFor="pv-packing">Pengemasan Tambahan</label>
+              <label htmlFor="pv-packing">Pengemasan Tambahan {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <SearchableSelect
                 id="pv-packing"
                 disabled={!isEdit}
@@ -412,22 +413,22 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               />
             </div>
             <div className="field full">
-              <label htmlFor="pv-catatan">Catatan</label>
+              <label htmlFor="pv-catatan">Catatan {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value.replace(/[^A-Za-z0-9\s]/g, ""))} />
             </div>
             {showKpuSection && (
               <>
                 <div className="field full form-grid-divider" />
                 <div className="field">
-                  <label htmlFor="pv-k-resi">No. Resi</label>
+                  <label htmlFor="pv-k-resi">No. Resi {isKpuEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
                   <input type="text" id="pv-k-resi" placeholder="Contoh: AWB123456" disabled={!hargaFieldsEditable} value={kResi} onChange={(e) => setKResi(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
                 </div>
                 <div className="field">
-                  <label htmlFor="pv-k-berat">Berat Barang (Kg)</label>
+                  <label htmlFor="pv-k-berat">Berat Barang (Kg) {isKpuEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
                   <input type="text" inputMode="decimal" id="pv-k-berat" placeholder="Contoh: 2,5" disabled={!hargaFieldsEditable} value={kBerat} onChange={(e) => handleBeratChange(e.target.value)} />
                 </div>
                 <div className={`field ${asuransiApplicable ? "" : "field-strike"}`}>
-                  <label htmlFor="pv-k-asuransi-harga">Harga Asuransi</label>
+                  <label htmlFor="pv-k-asuransi-harga">Harga Asuransi {isKpuEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -439,11 +440,11 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="pv-k-subtotal">Harga Ongkos Kirim</label>
+                  <label htmlFor="pv-k-subtotal">Harga Ongkos Kirim {isKpuEdit && <Pencil className="field-edit-icon" width={12} height={12} />}</label>
                   <input type="text" inputMode="numeric" id="pv-k-subtotal" disabled={!hargaFieldsEditable} value={kSubtotal} onChange={(e) => handleSubtotalChange(e.target.value)} />
                 </div>
                 <div className="field full">
-                  <label htmlFor="pv-k-total">Total</label>
+                  <label htmlFor="pv-k-total">Total {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
                   <input type="text" id="pv-k-total" disabled value={kTotal} />
                 </div>
               </>
@@ -466,7 +467,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           {(canSubmitDraft || canL1Act || canGaAct || canGaApprovalAct || canKpuAct || isEdit || isKpuEdit) && (
             <div className="modal-actions">
               {isKpuEdit && (
-                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Simpan Koreksi</button>
+                <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
               )}
               {canSubmitDraft && (
                 <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Submit</button>
