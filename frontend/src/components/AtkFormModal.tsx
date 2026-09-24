@@ -282,7 +282,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
 
             <div className="field full">
               <label htmlFor="fa-catatan">Catatan</label>
-              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Stok Menipis, Mohon Segera Diproses" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
+              <input type="text" id="fa-catatan" maxLength={255} placeholder="Contoh: Stok Menipis" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
           </div>
 

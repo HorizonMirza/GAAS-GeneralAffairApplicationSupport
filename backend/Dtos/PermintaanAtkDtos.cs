@@ -23,6 +23,12 @@ public class PermintaanAtkCreate
     public string NoTeleponPemohon { get; set; } = null!;
     public string? Catatan { get; set; }
     public List<PermintaanAtkItemCreate> Items { get; set; } = new();
+
+    // Only ever honored by Update() when the actor is Admin/Approval GA and the item already has
+    // a SumberPembelian on it (see PermintaanAtkController.Update) - lets them fix a wrong pick
+    // while revising a request Approval GA/Mitra rejected. Ignored on Create and by every other
+    // role/state, since first-selection still only happens via ApproveGa/ApproveGaApproval.
+    public SumberPembelianEnum? SumberPembelian { get; set; }
 }
 
 public record PermintaanAtkItemOut(int Id, string NamaBarang, int Jumlah, string Satuan);
@@ -143,4 +149,8 @@ public class AtkUpdateByGaRequest
     public string NoTeleponPemohon { get; set; } = null!;
     public string Keperluan { get; set; } = null!;
     public List<PermintaanAtkItemCreate> Items { get; set; } = new();
+
+    // Lets Admin/Approval GA fix a wrong SumberPembelian pick while the item sits rejected after
+    // it - only honored when one was already chosen (see PermintaanAtkController.UpdateByGa).
+    public SumberPembelianEnum? SumberPembelian { get; set; }
 }

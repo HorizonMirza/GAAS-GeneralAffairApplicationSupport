@@ -521,12 +521,14 @@ export function isAtkKpuActionable(item: PermintaanAtk): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
 }
 
-// Admin/Approval GA's own edit right: while still in flight (not yet finally approved, not
-// rejected), they can update the requester's Nama/No. Telepon Pemohon, Tujuan, and Daftar Barang -
-// Tanggal/Kategori stay the origin creator's own. Mirrors
+// Admin/Approval GA's own edit right: while still in flight (not yet finally approved), they can
+// update the requester's Nama/No. Telepon Pemohon, Tujuan, and Daftar Barang - Tanggal/Kategori
+// stay the origin creator's own. Also reachable once rejected by Approval GA or Mitra (both only
+// happen after SumberPembelian was already picked, so it can still be fixed here). Mirrors
 // PermintaanAtkController.IsGaUpdatable.
 export function isAtkGaUpdatable(item: PermintaanAtk): boolean {
-  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
+  return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA"
+    || item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU";
 }
 
 export function canGaUpdateAtk(item: PermintaanAtk, me: Me): boolean {

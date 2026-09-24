@@ -103,6 +103,11 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   // draft straight past the tier where SumberPembelian is normally captured (ApproveGa), so this
   // is the only remaining place to still ask for it on that path.
   const submitNeedsSumberPembelian = canSubmitDraft && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA");
+  // Lets Admin/Approval GA fix a wrong SumberPembelian pick while revising a request (either as
+  // its origin creator or via the "Updates" tool) - only once one was already chosen, e.g. after
+  // Approval GA/Mitra rejects it (see PermintaanAtkController.Update/UpdateByGa).
+  const canFixSumberPembelian = isEdit && !!item.sumberPembelian && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA");
+  const canEditSumberPembelian = canGaAct || submitNeedsSumberPembelian || canGaApprovalAct || canFixSumberPembelian;
 
   function set<K extends keyof PermintaanAtkCreatePayload>(key: K, value: PermintaanAtkCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -201,15 +206,17 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
     e.preventDefault();
     setBusy(true);
     try {
+      const sumberPembelianPatch = canEditSumberPembelian && sumberPembelian ? { sumberPembelian } : {};
       if (isGaEdit) {
         await api.updateAtkByGa(item!.id, {
           namaPemohon: form!.namaPemohon,
           noTeleponPemohon: form!.noTeleponPemohon,
           keperluan: form!.keperluan,
           items: form!.items,
+          ...sumberPembelianPatch,
         });
       } else {
-        await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null });
+        await api.updateAtk(item!.id, { ...form!, catatan: form!.catatan || null, ...sumberPembelianPatch });
       }
       showToast("Pesanan berhasil diperbarui");
       onClose();
@@ -330,10 +337,10 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
               <input type="text" id="da-catatan" disabled={!isOriginEdit} maxLength={255} placeholder="Contoh: Stok Menipis" value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
 
-            {(canGaAct || submitNeedsSumberPembelian || canGaApprovalAct || item.sumberPembelian) && (
+            {(canEditSumberPembelian || item.sumberPembelian) && (
               <>
                 <div className="field full form-grid-divider" />
-                {canGaAct || submitNeedsSumberPembelian || canGaApprovalAct ? (
+                {canEditSumberPembelian ? (
                   <div className="field full">
                     <label htmlFor="da-sumber-pembelian">Sumber Pembelian</label>
                     <SearchableSelect
@@ -384,7 +391,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: -8 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}

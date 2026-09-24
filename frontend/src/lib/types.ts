@@ -670,6 +670,9 @@ export interface PermintaanAtkCreatePayload {
   noTeleponPemohon: string;
   catatan: string | null;
   items: PermintaanAtkItemPayload[];
+  // Only honored by the backend when Admin/Approval GA revises a request that already has a
+  // SumberPembelian on it (e.g. fixing a wrong pick after Approval GA/Mitra rejects it).
+  sumberPembelian?: SumberPembelian;
 }
 
 // Admin/Approval GA's own edit payload - see PermintaanAtkController.UpdateByGa.
@@ -678,6 +681,7 @@ export interface AtkGaUpdatePayload {
   noTeleponPemohon: string;
   keperluan: string;
   items: PermintaanAtkItemPayload[];
+  sumberPembelian?: SumberPembelian;
 }
 
 export interface VehicleOption {

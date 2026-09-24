@@ -360,20 +360,36 @@ public class PermintaanAtkController : ApiControllerBase
             item.NomorPermintaan = BuildNomorPermintaan(item.Divisi, seq, payload.Tanggal);
         }
 
+        // Only takes effect when Admin/Approval GA is revising a request that already has a
+        // SumberPembelian on it (set earlier by ApproveGa/ApproveGaApproval) - e.g. fixing a wrong
+        // pick after Approval GA/Mitra rejects it. Every other role/state leaves it untouched,
+        // since first-selection still only happens via those two approve endpoints.
+        var sumberPembelianChanged = false;
+        if (IsGaActor(user!) && item.SumberPembelian.HasValue && payload.SumberPembelian.HasValue)
+        {
+            if (!Enum.IsDefined(typeof(SumberPembelianEnum), payload.SumberPembelian.Value))
+                return BadRequest(new { detail = "Sumber pembelian tidak valid" });
+            sumberPembelianChanged = item.SumberPembelian != payload.SumberPembelian.Value;
+            item.SumberPembelian = payload.SumberPembelian.Value;
+        }
+
         ApplyCreatePayload(item, payload);
         if (wasRejected)
         {
             item.Status = StatusEnum.DRAFT;
-            AddLog(item, "REVISED", user!);
+            AddLog(item, "REVISED", user!, sumberPembelianChanged ? $"Sumber pembelian diubah menjadi {item.SumberPembelian}" : null);
         }
         await _db.SaveChangesAsync();
         return Ok(PermintaanAtkOut.From(item));
     }
 
     // Same in-flight window as Room/Vehicle Booking's IsGaReschedulable - still updatable up to
-    // the last tier before it's finally approved, closed off once Rejected or Completed.
+    // the last tier before it's finally approved. Also reachable once rejected by Approval GA or
+    // Mitra (REJECTED_GA_APPROVAL/REJECTED_KPU) - both only happen after SumberPembelian was
+    // already picked, so Admin/Approval GA can still fix it here before it's revised and resent.
     private static bool IsGaUpdatable(PermintaanAtk item) => item.Status is
-        StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA;
+        StatusEnum.DRAFT or StatusEnum.SUBMITTED or StatusEnum.APPROVED_L1 or StatusEnum.APPROVED_GA
+        or StatusEnum.REJECTED_GA_APPROVAL or StatusEnum.REJECTED_KPU;
 
     // Accepts any real phone number without guessing a regional format, but still catches
     // obviously-wrong values (empty, letters, a couple of stray digits).
@@ -407,6 +423,17 @@ public class PermintaanAtkController : ApiControllerBase
             if (string.IsNullOrWhiteSpace(row.Satuan)) return BadRequest(new { detail = "Satuan wajib diisi pada setiap baris" });
         }
 
+        // Same "only fix what's already been picked" rule as Update() above.
+        var sumberPembelianChanged = false;
+        if (payload.SumberPembelian.HasValue)
+        {
+            if (!item.SumberPembelian.HasValue) return BadRequest(new { detail = "Sumber pembelian belum pernah dipilih" });
+            if (!Enum.IsDefined(typeof(SumberPembelianEnum), payload.SumberPembelian.Value))
+                return BadRequest(new { detail = "Sumber pembelian tidak valid" });
+            sumberPembelianChanged = item.SumberPembelian != payload.SumberPembelian.Value;
+            item.SumberPembelian = payload.SumberPembelian.Value;
+        }
+
         item.NamaPemohon = payload.NamaPemohon.Trim();
         item.NoTeleponPemohon = payload.NoTeleponPemohon.Trim();
         item.Keperluan = payload.Keperluan.Trim();
@@ -420,7 +447,9 @@ public class PermintaanAtkController : ApiControllerBase
                 Satuan = row.Satuan.Trim(),
             });
         }
-        AddLog(item, "UPDATED_BY_GA", user!, $"Data pemohon, tujuan, dan daftar barang diperbarui oleh {user!.Nama}");
+        var updateDetail = $"Data pemohon, tujuan, dan daftar barang diperbarui oleh {user!.Nama}";
+        if (sumberPembelianChanged) updateDetail += $"; sumber pembelian diubah menjadi {item.SumberPembelian}";
+        AddLog(item, "UPDATED_BY_GA", user!, updateDetail);
 
         await _db.SaveChangesAsync();
         return Ok(PermintaanAtkOut.From(item));
