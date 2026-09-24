@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Session check on mount - genuinely synchronizing with an external system (the API/cookie),
     // not state derived from props, so the "no setState in effect" guidance doesn't apply here.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 

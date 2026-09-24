@@ -40,11 +40,11 @@ function renderPagination(total) {
   pagesEl.innerHTML = html;
 }
 
-function goToPage(page) {
+window.goToPage = function goToPage(page) {
   if (page < 1) return;
   state.page = page;
   loadTable();
-}
+};
 
 async function loadTable() {
   const tbody = document.getElementById("table-body");
@@ -96,7 +96,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
   await api.logout();
-  window.location.href = "index.html";
+  window.location.href = new URL("index.html", window.location.href).href;
 });
 
 async function init() {

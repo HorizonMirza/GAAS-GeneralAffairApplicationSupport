@@ -139,6 +139,7 @@ export default function ChatNotificationListener() {
 
   useEffect(() => {
     if (!me) return;
+    const activeTimers = timers.current;
     ensureStarted().catch(() => {});
     // Fetched once here (this component is always mounted for every logged-in page, see the
     // module comment above) rather than at every playChatNotificationSound() call - the setting
@@ -157,11 +158,11 @@ export default function ChatNotificationListener() {
       unsubSettings();
       unsubChat();
       unsubActivity();
-      timers.current.forEach((entry) => {
+      activeTimers.forEach((entry) => {
         clearTimeout(entry.leave);
         clearTimeout(entry.remove);
       });
-      timers.current.clear();
+      activeTimers.clear();
     };
   }, [me, show]);
 

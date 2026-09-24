@@ -45,7 +45,6 @@ export default function LoginPage() {
 
       <div className="login-outer">
         <div className="brand-logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/logo-pgn-solution.png"
             alt="PGN Solution"

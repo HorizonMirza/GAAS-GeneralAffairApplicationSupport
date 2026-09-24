@@ -18,7 +18,6 @@ import type {
   AtkGaUpdatePayload,
   BookingStatus,
   ChatMessage,
-  Invoice,
   KategoriKerusakan,
   KoreksiArsipPayload,
   KoreksiPengirimanPayload,
@@ -96,7 +95,7 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
 
   if (response.status === 401 && !isAuthCall) {
     if (typeof window !== "undefined" && window.location.pathname !== "/") {
-      window.location.href = "/";
+      window.location.href = window.location.origin;
     }
     throw new ApiError("Sesi berakhir, silakan login kembali", 401);
   }
@@ -130,7 +129,7 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
 export async function downloadFile(url: string, filename: string): Promise<void> {
   const response = await fetch(url, { credentials: "include" });
   if (response.status === 401) {
-    if (typeof window !== "undefined" && window.location.pathname !== "/") window.location.href = "/";
+    if (typeof window !== "undefined" && window.location.pathname !== "/") window.location.href = window.location.origin;
     throw new ApiError("Sesi berakhir, silakan login kembali", 401);
   }
   if (!response.ok) {

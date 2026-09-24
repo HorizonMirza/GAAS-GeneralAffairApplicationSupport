@@ -108,7 +108,6 @@ function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     const mql = window.matchMedia(query);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMatches(mql.matches);
     const onChange = () => setMatches(mql.matches);
     mql.addEventListener("change", onChange);
@@ -169,7 +168,6 @@ function AccountMenu() {
   useEffect(() => {
     // Reads the theme a pre-hydration inline script already stamped onto <html> - genuinely
     // synchronizing local state with that external DOM attribute, not state derived from props.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(document.documentElement.getAttribute("data-theme") || "light");
   }, []);
 
@@ -267,7 +265,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Deferred to the client on purpose - the server and the browser can format "now" into a
     // different string (timezone), so this runs after hydration to avoid a mismatch warning.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDateText(formatLongDate(new Date()));
   }, []);
 
@@ -280,7 +277,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     // match - otherwise every category would "match" on /superadmin and this would always pick
     // whichever one happens to be first in NAV_CATEGORIES.
     const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpenCategory(active ? active.label : null);
   }, [pathname]);
 
@@ -315,7 +311,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <GlobalChatModal />
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
         <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/assets/logo-pgn-solution.png" alt="PGN Solution" className="brand-logo-sidebar-img" />
         </Link>
 

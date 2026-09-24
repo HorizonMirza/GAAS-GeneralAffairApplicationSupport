@@ -4,6 +4,17 @@ export { todayLocalDate };
 export const OPERATING_START_HOUR = 7;
 export const OPERATING_END_HOUR = 18;
 
+function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function moveToWeekday(date: Date): Date {
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() + 1);
+  }
+  return date;
+}
+
 /**
  * Returns available start hours for a given date.
  * If date is today, start hours must be strictly after current WIB hour (or empty if >= 17).
@@ -75,7 +86,8 @@ export function isPastSlot(tanggal: string, hour: number): boolean {
 /**
  * Computes default date and time slots for initial form load.
  * E.g., at 14:35 WIB, default is today, 15:00 - 17:00.
- * If today has no slots left (after 17:00 WIB), it suggests tomorrow.
+ * If today has no slots left (after 17:00 WIB), it suggests the next weekday.
+ * Forms opened during a weekend also start on the following Monday.
  */
 export function getDefaultBookingSlot(initialDate?: string): {
   tanggal: string;
@@ -86,11 +98,12 @@ export function getDefaultBookingSlot(initialDate?: string): {
   const currentH = nowWib().getHours();
 
   let date = initialDate || today;
-  if (!initialDate && currentH >= OPERATING_END_HOUR - 1) {
-    // Today has no slots left, advance to tomorrow
+  if (!initialDate) {
     const d = nowWib();
-    d.setDate(d.getDate() + 1);
-    date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (currentH >= OPERATING_END_HOUR - 1) {
+      d.setDate(d.getDate() + 1);
+    }
+    date = formatLocalDate(moveToWeekday(d));
   }
 
   const availableStarts = getAvailableStartHours(date);

@@ -122,7 +122,6 @@ function VehicleCalendarPageInner() {
       setVehicles(list);
       setSelectedVehicle((current) => current || vehicleFromQuery || list[0]?.nama || "");
     }).catch(() => setVehicles([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleFromQuery]);
 
   // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
@@ -145,7 +144,6 @@ function VehicleCalendarPageInner() {
   }, [view, refDate, selectedVehicle]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSchedule();
   }, [loadSchedule]);
 
@@ -164,7 +162,6 @@ function VehicleCalendarPageInner() {
   }, [view, refDate]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAvail();
   }, [loadAvail]);
 
@@ -177,11 +174,9 @@ function VehicleCalendarPageInner() {
     } catch {
       setMiniEntries([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refDate, selectedVehicle]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMiniEntries();
   }, [loadMiniEntries]);
 

@@ -24,7 +24,10 @@ interface Props {
  */
 export default function ModalOverlay({ open, onClose, className, children }: Props) {
   const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;

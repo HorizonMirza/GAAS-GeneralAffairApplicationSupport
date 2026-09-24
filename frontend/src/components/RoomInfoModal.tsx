@@ -60,8 +60,6 @@ export default function RoomInfoModal({
   facilities,
   extraDetails,
   photoUrls,
-  availability,
-  availLabel,
   freeSlotsToday,
   closedLabel,
   fullyOpenLabel,

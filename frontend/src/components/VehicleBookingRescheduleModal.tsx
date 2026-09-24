@@ -12,8 +12,6 @@ import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
 
-const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => `${String(i + 7).padStart(2, "0")}:00`);
-
 interface Props {
   open: boolean;
   item: BookingKendaraan | null;

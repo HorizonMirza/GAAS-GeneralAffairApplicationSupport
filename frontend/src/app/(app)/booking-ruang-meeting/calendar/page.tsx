@@ -121,7 +121,6 @@ function BookingCalendarPageInner() {
       setRooms(list);
       setSelectedRoom((current) => current || roomFromQuery || list[0]?.nama || "");
     }).catch(() => setRooms([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomFromQuery]);
 
   // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
@@ -147,7 +146,6 @@ function BookingCalendarPageInner() {
   useEffect(() => {
     // Fetches from the API on mount/whenever view/date/room changes - genuinely synchronizing
     // with an external system, not state derived from a prop.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSchedule();
   }, [loadSchedule]);
 
@@ -168,7 +166,6 @@ function BookingCalendarPageInner() {
   useEffect(() => {
     // Fetches from the API on mount/whenever view/date changes - genuinely synchronizing with
     // an external system, not state derived from a prop.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAvail();
   }, [loadAvail]);
 

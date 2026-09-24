@@ -182,7 +182,6 @@ function BookingTransaksiPageInner() {
   useEffect(() => {
     // Fetches from the API on mount/whenever filters change - genuinely synchronizing with an
     // external system, not state derived from a prop.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTable();
   }, [loadTable]);
 
