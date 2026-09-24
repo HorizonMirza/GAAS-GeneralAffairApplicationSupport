@@ -38,6 +38,9 @@ function yearRange(): number[] {
   return years;
 }
 
+const MIN_YEAR = new Date().getFullYear() - 15;
+const MAX_YEAR = new Date().getFullYear() + 10;
+
 type Mode = "tanggal" | "bulan" | "tahun";
 
 interface Props {
@@ -291,9 +294,9 @@ export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, 
           {mode === "bulan" && (
             <>
               <motion.div className="month-picker-year-nav" variants={itemVariants}>
-                <button type="button" onClick={() => setBulanViewYear((y) => y - 1)} aria-label="Tahun sebelumnya">‹</button>
+                <button type="button" onClick={() => setBulanViewYear((y) => Math.max(MIN_YEAR, y - 1))} disabled={bulanViewYear <= MIN_YEAR} aria-label="Tahun sebelumnya">‹</button>
                 <span>{bulanViewYear}</span>
-                <button type="button" onClick={() => setBulanViewYear((y) => y + 1)} aria-label="Tahun berikutnya">›</button>
+                <button type="button" onClick={() => setBulanViewYear((y) => Math.min(MAX_YEAR, y + 1))} disabled={bulanViewYear >= MAX_YEAR} aria-label="Tahun berikutnya">›</button>
               </motion.div>
               <motion.div className="month-picker-grid" variants={itemVariants}>
                 {MONTH_SHORT.map((label, idx) => {
