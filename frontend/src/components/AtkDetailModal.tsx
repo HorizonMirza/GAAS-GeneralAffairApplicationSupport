@@ -371,7 +371,6 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                     type="text"
                     inputMode="numeric"
                     id="da-total-harga-barang"
-                    placeholder="Contoh: 150.000"
                     value={totalHargaBarang}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, "");
