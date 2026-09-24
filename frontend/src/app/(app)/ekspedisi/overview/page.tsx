@@ -4,9 +4,9 @@ import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, canGaKoreksiPengiriman, cardStatusBorderClass, isEditableByOrigin } from "@/lib/constants";
+import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, canGaKoreksiPengiriman, cardStatusBorderClass, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatDate } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import type { Pengiriman } from "@/lib/types";
@@ -247,6 +247,17 @@ export default function OverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isPengirimanPdfAvailable(rowMenu.menuItem) ? api.pengirimanPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.pengirimanPdfUrl(item.id), `Bukti-Pengiriman-${item.nomorTransmittal || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

@@ -1022,4 +1022,25 @@ public class PengirimanController : ApiControllerBase
 
         return Ok(result);
     }
+
+    // Proof-of-shipment certificate, only ever available once a shipment has actually won its
+    // final Mitra sign-off - mirrors PermintaanAtkController.DownloadBuktiPdf.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleAsync();
+        if (error != null) return error;
+
+        var item = await _db.Pengiriman.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPengiriman(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != StatusEnum.COMPLETED)
+            return StatusCode(403, new { detail = "Bukti pengiriman hanya tersedia untuk pengiriman yang sudah Approved" });
+
+        var actorNames = item.ApprovedByKpu.HasValue
+            ? await _db.Users.Where(u => u.Id == item.ApprovedByKpu.Value).ToDictionaryAsync(u => u.Id, u => u.Nama)
+            : new Dictionary<int, string>();
+        var bytes = PengirimanPdfService.Generate(item, actorNames);
+        return File(bytes, "application/pdf", $"Bukti-Pengiriman-{item.NomorTransmittal}.pdf");
+    }
 }

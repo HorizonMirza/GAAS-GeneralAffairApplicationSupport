@@ -15,7 +15,7 @@ import {
   isAtkPdfAvailable,
   isBookingOriginRole,
 } from "@/lib/constants";
-import { formatDate, formatDateTime, truncateText } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
@@ -60,6 +60,7 @@ function OfficeSuppliesTransaksiPageInner() {
   const [searchInput, setSearchInput] = useState("");
   const [items, setItems] = useState<PermintaanAtk[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalBulanIni, setTotalBulanIni] = useState<number | null>(null);
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -144,6 +145,7 @@ function OfficeSuppliesTransaksiPageInner() {
       }
       setItems(resultItems);
       setTotal(resultTotal);
+      setTotalBulanIni(result?.totalBulanIni ?? null);
     } catch (err) {
       if (reqId !== tableReqIdRef.current) return;
       setTableError((err as Error).message);
@@ -351,16 +353,16 @@ function OfficeSuppliesTransaksiPageInner() {
               <tr>
                 <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Total Harga Barang</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={16} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={17} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -383,6 +385,7 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>{item.noTeleponPemohon}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
+                      <td>{item.totalHargaBarang ? formatCurrency(item.totalHargaBarang) : "-"}</td>
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
@@ -411,6 +414,13 @@ function OfficeSuppliesTransaksiPageInner() {
             </tbody>
           </table>
         </div>
+
+        {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) && totalBulanIni != null && (
+          <div className="total-akumulasi-footer">
+            <span className="total-akumulasi-label">Total Akumulasi Biaya</span>
+            <span className="total-akumulasi-value">{totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}</span>
+          </div>
+        )}
 
         <div className="pagination">
           <div className="pagination-left">

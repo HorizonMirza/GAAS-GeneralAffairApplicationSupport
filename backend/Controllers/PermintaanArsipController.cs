@@ -871,4 +871,25 @@ public class PermintaanArsipController : ApiControllerBase
 
         return Ok(logs);
     }
+
+    // Proof-of-request certificate, only ever available once a request has actually won its final
+    // Approval GA sign-off - mirrors PerbaikanSaranaController.DownloadBuktiPdf.
+    [HttpGet("{itemId:int}/pdf")]
+    public async Task<IActionResult> DownloadBuktiPdf(int itemId)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        var item = await _db.PermintaanArsips.FirstOrDefaultAsync(p => p.Id == itemId);
+        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
+        if (!CanAccessPermintaanArsip(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
+        if (item.Status != BookingStatusEnum.APPROVED_GA_APPROVAL)
+            return StatusCode(403, new { detail = "Bukti pemindahan hanya tersedia untuk pemindahan yang sudah Approved" });
+
+        var actorNames = item.ApprovedByApprovalGa.HasValue
+            ? await _db.Users.Where(u => u.Id == item.ApprovedByApprovalGa.Value).ToDictionaryAsync(u => u.Id, u => u.Nama)
+            : new Dictionary<int, string>();
+        var bytes = ArsipPdfService.Generate(item, actorNames);
+        return File(bytes, "application/pdf", $"Bukti-Pemindahan-Arsip-{item.NomorArsip}.pdf");
+    }
 }

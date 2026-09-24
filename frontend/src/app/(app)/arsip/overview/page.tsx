@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   BOOKING_ON_APPROVAL_STATUSES,
@@ -12,6 +12,7 @@ import {
   bookingStatusBorderClass,
   canGaKoreksiArsip,
   isArsipEditableByOrigin,
+  isArsipPdfAvailable,
   isBookingOriginRole,
 } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatDate } from "@/lib/format";
@@ -247,6 +248,17 @@ export default function ArsipOverviewPage() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isArsipPdfAvailable(rowMenu.menuItem) ? api.arsipPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.arsipPdfUrl(item.id), `Bukti-Pemindahan-Arsip-${item.nomorArsip || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

@@ -4,12 +4,13 @@ import { MessageSquare } from "lucide-react";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   ARCHIVE_KATEGORI_LABEL,
   canGaKoreksiArsip,
   isArsipEditableByOrigin,
+  isArsipPdfAvailable,
   isBookingOriginRole,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, truncateText } from "@/lib/format";
@@ -462,6 +463,17 @@ function ArsipTransaksiPageInner() {
           const item = rowMenu.menuItem;
           rowMenu.close();
           if (item) handleDelete(item);
+        }}
+        pdfUrl={rowMenu.menuItem && isArsipPdfAvailable(rowMenu.menuItem) ? api.arsipPdfUrl(rowMenu.menuItem.id) : undefined}
+        onPdfClick={async () => {
+          const item = rowMenu.menuItem;
+          rowMenu.close();
+          if (!item) return;
+          try {
+            await downloadFile(api.arsipPdfUrl(item.id), `Bukti-Pemindahan-Arsip-${item.nomorArsip || item.id}.pdf`);
+          } catch (err) {
+            showToast((err as Error).message, "error");
+          }
         }}
       />
 

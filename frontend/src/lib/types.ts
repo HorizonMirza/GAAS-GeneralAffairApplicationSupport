@@ -637,6 +637,7 @@ export interface PermintaanAtkListResponse {
   total: number;
   page: number;
   limit: number;
+  totalBulanIni: number | null;
 }
 
 export interface PermintaanAtkStatsResponse {

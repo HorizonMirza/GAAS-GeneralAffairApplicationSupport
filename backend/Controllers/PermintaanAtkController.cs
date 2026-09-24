@@ -34,6 +34,14 @@ public class PermintaanAtkController : ApiControllerBase
         RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA,
     };
 
+    // Mirrors PengirimanController.TotalVisibleRoles - everyone who can see this list at all.
+    private static readonly RoleEnum[] TotalVisibleRoles =
+    {
+        RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
+        RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
+        RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN,
+    };
+
     // Same mixing as the booking modules - Admin/Approval GA accounts have no Divisi/Departemen
     // of their own, so requests they input are stamped with the real GA unit.
     private const string GaDivisiLabel = "Procurement and General Affair";
@@ -629,7 +637,15 @@ public class PermintaanAtkController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        var total = await query.CountAsync();
+        // Count and cost-sum share the same filtered query, so pull both from one grouped
+        // aggregate query instead of two separate round trips - mirrors PengirimanController.List.
+        var agg = await query
+            .GroupBy(p => 1)
+            .Select(g => new { Total = g.Count(), Sum = g.Sum(p => (decimal?)(p.TotalHargaBarang ?? 0)) })
+            .FirstOrDefaultAsync();
+        var total = agg?.Total ?? 0;
+        decimal? totalBulanIni = TotalVisibleRoles.Contains(user!.Role) ? (agg?.Sum ?? 0) : null;
+
         var items = await query
             .Include(p => p.Items)
             .OrderByDescending(p => p.CreatedAt)
@@ -686,6 +702,7 @@ public class PermintaanAtkController : ApiControllerBase
             Total = total,
             Page = page,
             Limit = limit,
+            TotalBulanIni = totalBulanIni,
         });
     }
 

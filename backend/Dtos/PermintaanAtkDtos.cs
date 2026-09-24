@@ -117,6 +117,10 @@ public class PermintaanAtkListResponse
     public int Total { get; set; }
     public int Page { get; set; }
     public int Limit { get; set; }
+    // Sum of TotalHargaBarang across every request matched by the current filters (not just the
+    // current page) - null for roles that shouldn't see cost figures. Mirrors
+    // PengirimanController.List's TotalBulanIni.
+    public decimal? TotalBulanIni { get; set; }
 }
 
 public class PermintaanAtkStatsResponse

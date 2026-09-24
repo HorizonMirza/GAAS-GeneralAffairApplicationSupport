@@ -374,6 +374,7 @@ export const api = {
     ).toString();
     return `${API_BASE}/pengiriman/export-pdf${query ? `?${query}` : ""}`;
   },
+  pengirimanPdfUrl: (id: number) => `${API_BASE}/pengiriman/${id}/pdf`,
 
   bookingExportUrl: (params: Record<string, string | undefined | null>) => {
     const query = new URLSearchParams(
@@ -741,6 +742,7 @@ export const api = {
     ).toString();
     return `${API_BASE}/permintaan-arsip/catalog/export-pdf${query ? `?${query}` : ""}`;
   },
+  arsipPdfUrl: (id: number) => `${API_BASE}/permintaan-arsip/${id}/pdf`,
   getArsipLogs: (id: number) => apiRequest<PermintaanArsipLog[]>(`/permintaan-arsip/${id}/logs`),
   getArsipChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/permintaan-arsip/${id}/chat`),
   sendArsipChatMessage: (id: number, message: string) =>

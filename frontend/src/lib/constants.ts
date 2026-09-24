@@ -201,6 +201,12 @@ export function canGaKoreksiPengiriman(item: Pengiriman, me: Me): boolean {
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isPengirimanGaKoreksiable(item);
 }
 
+// A confirmation PDF only exists once a shipment reached its final Mitra sign-off - mirrors
+// isAtkPdfAvailable, since both share the same 4-tier (...-> Approval GA -> Mitra) chain.
+export function isPengirimanPdfAvailable(item: Pengiriman): boolean {
+  return item.status === "COMPLETED";
+}
+
 export const L1_ACTIONABLE_STATUSES: Status[] = ["SUBMITTED"];
 export const GA_APPROVAL_ACTIONABLE_STATUSES: Status[] = ["APPROVED_GA"];
 
@@ -661,6 +667,12 @@ export function canGaKoreksiArsip(item: PermintaanArsip, me: Me): boolean {
 
 export function isArsipGaActionable(item: PermintaanArsip): boolean {
   return item.status === "APPROVED_L1";
+}
+
+// A confirmation PDF only exists once a request reached the final Approved state - mirrors
+// isBookingPdfAvailable/isSaranaPdfAvailable, since Arsip shares their 3-tier (no Mitra) chain.
+export function isArsipPdfAvailable(item: PermintaanArsip): boolean {
+  return item.status === "APPROVED_GA_APPROVAL";
 }
 
 // Ringkasan arsip untuk sel tabel/kartu: "Kontrak Vendor 2018-2019 - Kontrak, 2018 (5 arsip)".
