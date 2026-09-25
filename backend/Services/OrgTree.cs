@@ -1,126 +1,215 @@
+using Microsoft.EntityFrameworkCore;
+using PengirimanApi.Data;
+
 namespace PengirimanApi.Services;
 
-public record DepartemenNode(string Nama, string AdminUsername, string ApprovalUsername);
+// Usernames are derived from Nama rather than stored, following the exact same convention the
+// old hardcoded literal below used everywhere - see DbSeeder.BuildAccounts and
+// UsersAdminController's own auto-provisioning, both of which read these off a DivisiNode/
+// DepartemenNode the same way regardless of whether it came from SeedData or the database.
+public record DepartemenNode(string Nama)
+{
+    public string AdminUsername => $"{Nama} Admin";
+    public string ApprovalUsername => $"{Nama} Approval";
+}
 
-public record DivisiNode(string Nama, string AdminUsername, string ApprovalUsername, List<DepartemenNode> Departemen);
+public record DivisiNode(string Nama, List<DepartemenNode> Departemen)
+{
+    public string AdminUsername => $"{Nama} Admin Div";
+    public string ApprovalUsername => $"{Nama} Approval Div";
+}
 
 public record DirektoratNode(string Nama, List<DivisiNode> Divisi);
 
 public static class OrgTree
 {
-    public static readonly List<DirektoratNode> Tree = new()
+    // The org structure exactly as it was hardcoded before this feature existed. Used ONLY as
+    // one-time seed data for the org_direktorat/org_divisi/org_departemen tables the very first
+    // time this app boots against a database that doesn't have them yet (see the backfill block in
+    // Program.cs) - NOT read by anything else. Once that backfill has run, Tree/
+    // KodeSatuanKerjaByDivisi below are rebuilt from the database instead (see LoadFromDb), so an
+    // edit to this literal after go-live has no effect on a running deployment - the only way to
+    // change the org structure after that point is through OrgAdminController.
+    public static readonly List<DirektoratNode> SeedData = new()
     {
         new("Direktorat Utama", new()
         {
-            new("Corporate Secretary", "Corporate Secretary Admin Div", "Corporate Secretary Approval Div", new()
+            new("Corporate Secretary", new()
             {
-                new("Legal and Compliance", "Legal and Compliance Admin", "Legal and Compliance Approval"),
-                new("Communication Relation and CSR", "Communication Relation and CSR Admin", "Communication Relation and CSR Approval"),
-                new("BOD/BOC Support", "BOD/BOC Support Admin", "BOD/BOC Support Approval"),
+                new("Legal and Compliance"),
+                new("Communication Relation and CSR"),
+                new("BOD/BOC Support"),
             }),
-            new("Chief Audit Executive", "Chief Audit Executive Admin Div", "Chief Audit Executive Approval Div", new()
+            new("Chief Audit Executive", new()
             {
-                new("Audit Planning and Monitoring", "Audit Planning and Monitoring Admin", "Audit Planning and Monitoring Approval"),
-                new("Internal Auditor", "Internal Auditor Admin", "Internal Auditor Approval"),
+                new("Audit Planning and Monitoring"),
+                new("Internal Auditor"),
             }),
-            new("QHSSE", "QHSSE Admin Div", "QHSSE Approval Div", new()
+            new("QHSSE", new()
             {
-                new("Health, Safety, and Security", "Health, Safety, and Security Admin", "Health, Safety, and Security Approval"),
-                new("Environment", "Environment Admin", "Environment Approval"),
-                new("Quality Management", "Quality Management Admin", "Quality Management Approval"),
+                new("Health, Safety, and Security"),
+                new("Environment"),
+                new("Quality Management"),
             }),
-            new("Strategic Planning", "Strategic Planning Admin Div", "Strategic Planning Approval Div", new()
+            new("Strategic Planning", new()
             {
-                new("Business Strategy and Performance Monitoring", "Business Strategy and Performance Monitoring Admin", "Business Strategy and Performance Monitoring Approval"),
-                new("Business Development and Marketing", "Business Development and Marketing Admin", "Business Development and Marketing Approval"),
+                new("Business Strategy and Performance Monitoring"),
+                new("Business Development and Marketing"),
             }),
         }),
         new("Direktorat Teknik dan Pengembangan", new()
         {
-            new("EPC Commercial and Energy Equipment", "EPC Commercial and Energy Equipment Admin Div", "EPC Commercial and Energy Equipment Approval Div", new()
+            new("EPC Commercial and Energy Equipment", new()
             {
-                new("EPC Sales and Customer Relation", "EPC Sales and Customer Relation Admin", "EPC Sales and Customer Relation Approval"),
-                new("EPC Project Proposal", "EPC Project Proposal Admin", "EPC Project Proposal Approval"),
-                new("Energy Equipment", "Energy Equipment Admin", "Energy Equipment Approval"),
+                new("EPC Sales and Customer Relation"),
+                new("EPC Project Proposal"),
+                new("Energy Equipment"),
             }),
-            new("EPC Engineering and QA", "EPC Engineering and QA Admin Div", "EPC Engineering and QA Approval Div", new()
+            new("EPC Engineering and QA", new()
             {
-                new("Proposal Engineering - EPC", "Proposal Engineering - EPC Admin", "Proposal Engineering - EPC Approval"),
-                new("QA - EPC", "QA - EPC Admin", "QA - EPC Approval"),
+                new("Proposal Engineering - EPC"),
+                new("QA - EPC"),
             }),
-            new("EPC Project", "EPC Project Admin Div", "EPC Project Approval Div", new()
+            new("EPC Project", new()
             {
-                new("Engineering Project - EPC", "Engineering Project - EPC Admin", "Engineering Project - EPC Approval"),
-                new("QHSSE Project -EPC", "QHSSE Project -EPC Admin", "QHSSE Project -EPC Approval"),
-                new("Regional EPC Project I/II/III", "Regional EPC Project I/II/III Admin", "Regional EPC Project I/II/III Approval"),
-                new("EPC Project Support and Contract Management", "EPC Project Support and Contract Management Admin", "EPC Project Support and Contract Management Approval"),
+                new("Engineering Project - EPC"),
+                new("QHSSE Project -EPC"),
+                new("Regional EPC Project I/II/III"),
+                new("EPC Project Support and Contract Management"),
             }),
-            new("Jargas Project", "Jargas Project Admin Div", "Jargas Project Approval Div", new()
+            new("Jargas Project", new()
             {
-                new("Project Manager - Jargas", "Project Manager - Jargas Admin", "Project Manager - Jargas Approval"),
-                new("Jargas Project Support and Contract Management", "Jargas Project Support and Contract Management Admin", "Jargas Project Support and Contract Management Approval"),
+                new("Project Manager - Jargas"),
+                new("Jargas Project Support and Contract Management"),
             }),
         }),
         new("Direktorat Operasi", new()
         {
-            new("Operation Commercial Services", "Operation Commercial Services Admin Div", "Operation Commercial Services Approval Div", new()
+            new("Operation Commercial Services", new()
             {
-                new("Operation Sales and Customer Relation", "Operation Sales and Customer Relation Admin", "Operation Sales and Customer Relation Approval"),
-                new("Operation Project Proposal", "Operation Project Proposal Admin", "Operation Project Proposal Approval"),
+                new("Operation Sales and Customer Relation"),
+                new("Operation Project Proposal"),
             }),
-            new("Operation Engineering and QA", "Operation Engineering and QA Admin Div", "Operation Engineering and QA Approval Div", new()
+            new("Operation Engineering and QA", new()
             {
-                new("Proposal Engineering - Operation", "Proposal Engineering - Operation Admin", "Proposal Engineering - Operation Approval"),
-                new("QA - Operation", "QA - Operation Admin", "QA - Operation Approval"),
+                new("Proposal Engineering - Operation"),
+                new("QA - Operation"),
             }),
-            new("Operation Project", "Operation Project Admin Div", "Operation Project Approval Div", new()
+            new("Operation Project", new()
             {
-                new("QHSSE Project -Operation", "QHSSE Project -Operation Admin", "QHSSE Project -Operation Approval"),
-                new("Project Manager - SOR I/II/III", "Project Manager - SOR I/II/III Admin", "Project Manager - SOR I/II/III Approval"),
-                new("Project Manager - OMM", "Project Manager - OMM Admin", "Project Manager - OMM Approval"),
-                new("Project Manager - Operation", "Project Manager - Operation Admin", "Project Manager - Operation Approval"),
-                new("Operation Project Support and Contract Management", "Operation Project Support and Contract Management Admin", "Operation Project Support and Contract Management Approval"),
+                new("QHSSE Project -Operation"),
+                new("Project Manager - SOR I/II/III"),
+                new("Project Manager - OMM"),
+                new("Project Manager - Operation"),
+                new("Operation Project Support and Contract Management"),
             }),
-            new("Manufacture and Fabrication", "Manufacture and Fabrication Admin Div", "Manufacture and Fabrication Approval Div", new()
+            new("Manufacture and Fabrication", new()
             {
-                new("Manufacture", "Manufacture Admin", "Manufacture Approval"),
-                new("Fabrication", "Fabrication Admin", "Fabrication Approval"),
+                new("Manufacture"),
+                new("Fabrication"),
             }),
         }),
         new("Direktorat Keuangan Dan Dukungan Bisnis", new()
         {
-            new("Finance", "Finance Admin Div", "Finance Approval Div", new()
+            new("Finance", new()
             {
-                new("Budgeting and Accounting", "Budgeting and Accounting Admin", "Budgeting and Accounting Approval"),
-                new("Cash Management", "Cash Management Admin", "Cash Management Approval"),
-                new("Tax Management", "Tax Management Admin", "Tax Management Approval"),
-                new("Bad Debt", "Bad Debt Admin", "Bad Debt Approval"),
+                new("Budgeting and Accounting"),
+                new("Cash Management"),
+                new("Tax Management"),
+                new("Bad Debt"),
             }),
-            new("Procurement and General Affair", "Procurement and General Affair Admin Div", "Procurement and General Affair Approval Div", new()
+            new("Procurement and General Affair", new()
             {
-                new("Procurement System and Planning", "Procurement System and Planning Admin", "Procurement System and Planning Approval"),
-                new("Procurement Operational and Contract Administration", "Procurement Operational and Contract Administration Admin", "Procurement Operational and Contract Administration Approval"),
-                new("Asset Management and General Affair", "Asset Management and General Affair Admin", "Asset Management and General Affair Approval"),
+                new("Procurement System and Planning"),
+                new("Procurement Operational and Contract Administration"),
+                new("Asset Management and General Affair"),
             }),
-            new("Information and Communication Technology", "Information and Communication Technology Admin Div", "Information and Communication Technology Approval Div", new()
+            new("Information and Communication Technology", new()
             {
-                new("ICT Planning and Architecture", "ICT Planning and Architecture Admin", "ICT Planning and Architecture Approval"),
-                new("ICT Development", "ICT Development Admin", "ICT Development Approval"),
-                new("ICT Security Infrastructure and End User", "ICT Security Infrastructure and End User Admin", "ICT Security Infrastructure and End User Approval"),
+                new("ICT Planning and Architecture"),
+                new("ICT Development"),
+                new("ICT Security Infrastructure and End User"),
             }),
-            new("Human Capital Management", "Human Capital Management Admin Div", "Human Capital Management Approval Div", new()
+            new("Human Capital Management", new()
             {
-                new("Organization and Culture Management", "Organization and Culture Management Admin", "Organization and Culture Management Approval"),
-                new("Career and Talent Management", "Career and Talent Management Admin", "Career and Talent Management Approval"),
-                new("Reward and HC Services", "Reward and HC Services Admin", "Reward and HC Services Approval"),
-                new("Learning and Development", "Learning and Development Admin", "Learning and Development Approval"),
+                new("Organization and Culture Management"),
+                new("Career and Talent Management"),
+                new("Reward and HC Services"),
+                new("Learning and Development"),
             }),
-            new("Risk Management", "Risk Management Admin Div", "Risk Management Approval Div", new()
+            new("Risk Management", new()
             {
-                new("Risk Management", "Risk Management Admin", "Risk Management Approval"),
+                new("Risk Management"),
             }),
         }),
     };
+
+    public static readonly Dictionary<string, string> SeedKodeSatuanKerjaByDivisi = new()
+    {
+        ["Corporate Secretary"] = "Corsec",
+        ["Chief Audit Executive"] = "CAE",
+        ["QHSSE"] = "QHSSE",
+        ["Strategic Planning"] = "SP",
+        ["Operation Commercial Services"] = "OCS",
+        ["Operation Engineering and QA"] = "OEQA",
+        ["Operation Project"] = "OP",
+        ["Manufacture and Fabrication"] = "MF",
+        ["EPC Commercial and Energy Equipment"] = "EPCCEE",
+        ["EPC Engineering and QA"] = "EPCEQA",
+        ["EPC Project"] = "EPCP",
+        ["Jargas Project"] = "JP",
+        ["Finance"] = "FIN",
+        ["Procurement and General Affair"] = "PGA",
+        ["Information and Communication Technology"] = "ICT",
+        ["Human Capital Management"] = "HCM",
+        ["Risk Management"] = "RM",
+    };
+
+    // Single-process, in-memory cache of the DB-backed org structure (see Models/OrgDirektorat.cs/
+    // OrgDivisi.cs/OrgDepartemen.cs and Controllers/OrgAdminController.cs). Kept as a plain in-
+    // memory List/Dictionary - exactly like the hardcoded literal above that this replaces -
+    // rather than hitting the database from every one of the 37 existing call sites across the
+    // app's controllers, since those all sit on the hot path for ordinary create/list/approve
+    // actions and none of them need to see an org edit in the same instant it happens.
+    //
+    // Populated once at startup (Program.cs calls LoadFromDb right after the one-time backfill),
+    // and refreshed again, synchronously, at the end of every OrgAdminController write - so this
+    // same process's very next request already reflects the change. KNOWN, ACCEPTED LIMITATION:
+    // in a hypothetical multi-instance deployment another instance's copy of this cache would only
+    // catch up on its own next restart - there is deliberately no pub/sub or distributed cache
+    // built for this, since the app runs as a single instance.
+    public static List<DirektoratNode> Tree { get; private set; } = SeedData;
+    public static Dictionary<string, string> KodeSatuanKerjaByDivisi { get; private set; } = SeedKodeSatuanKerjaByDivisi;
+
+    // Rebuilds Tree/KodeSatuanKerjaByDivisi from whatever org_direktorat/org_divisi/org_departemen
+    // currently hold. Synchronous (matches the synchronous EnsureCreated()/ExecuteSqlRaw calls
+    // it's called alongside in Program.cs, and OrgAdminController's own request-scoped DbContext
+    // use) and safe to call repeatedly - each call fully replaces the previous snapshot rather
+    // than mutating it in place, so there's nothing left over from before an edit.
+    public static void LoadFromDb(AppDbContext db)
+    {
+        var direktorats = db.OrgDirektorats
+            .Include(d => d.Divisi).ThenInclude(v => v.Departemen)
+            .OrderBy(d => d.Id)
+            .ToList();
+
+        Tree = direktorats
+            .Select(d => new DirektoratNode(
+                d.Nama,
+                d.Divisi
+                    .OrderBy(v => v.Id)
+                    .Select(v => new DivisiNode(
+                        v.Nama,
+                        v.Departemen.OrderBy(dep => dep.Id).Select(dep => new DepartemenNode(dep.Nama)).ToList()
+                    ))
+                    .ToList()
+            ))
+            .ToList();
+
+        KodeSatuanKerjaByDivisi = direktorats
+            .SelectMany(d => d.Divisi)
+            .ToDictionary(v => v.Nama, v => v.KodeSatuanKerja);
+    }
 
     public static List<string> AllDirektorat => Tree.Select(d => d.Nama).ToList();
 
@@ -144,27 +233,6 @@ public static class OrgTree
 
     public static string? GetDirektoratForDivisi(string divisi) =>
         Tree.FirstOrDefault(d => d.Divisi.Any(v => v.Nama == divisi))?.Nama;
-
-    public static readonly Dictionary<string, string> KodeSatuanKerjaByDivisi = new()
-    {
-        ["Corporate Secretary"] = "Corsec",
-        ["Chief Audit Executive"] = "CAE",
-        ["QHSSE"] = "QHSSE",
-        ["Strategic Planning"] = "SP",
-        ["Operation Commercial Services"] = "OCS",
-        ["Operation Engineering and QA"] = "OEQA",
-        ["Operation Project"] = "OP",
-        ["Manufacture and Fabrication"] = "MF",
-        ["EPC Commercial and Energy Equipment"] = "EPCCEE",
-        ["EPC Engineering and QA"] = "EPCEQA",
-        ["EPC Project"] = "EPCP",
-        ["Jargas Project"] = "JP",
-        ["Finance"] = "FIN",
-        ["Procurement and General Affair"] = "PGA",
-        ["Information and Communication Technology"] = "ICT",
-        ["Human Capital Management"] = "HCM",
-        ["Risk Management"] = "RM",
-    };
 
     public static string GetKodeSatuanKerja(string divisi) =>
         KodeSatuanKerjaByDivisi.TryGetValue(divisi, out var kode) ? kode : "GA";

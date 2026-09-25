@@ -452,13 +452,14 @@ public class PerbaikanSaranaController : ApiControllerBase
     [HttpDelete("{itemId:int}/super-admin")]
     public async Task<IActionResult> SuperAdminDelete(int itemId)
     {
-        var (_, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (roleError != null) return roleError;
 
         var item = await _db.PerbaikanSaranas.Include(p => p.FotoKerusakan).FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
 
         var files = FileMilik(item).ToList();
+        LogDeletion(_db, "perbaikan-sarana", item.Id, item.NomorPerbaikan, user!);
         _db.PerbaikanSaranas.Remove(item);
         await _db.SaveChangesAsync();
         HapusFileDisk(files);
@@ -520,11 +521,20 @@ public class PerbaikanSaranaController : ApiControllerBase
         var files = await query
             .Select(p => new
             {
+                p.Id,
+                p.NomorPerbaikan,
                 p.GambarFilePath,
                 p.FotoSelesaiFilePath,
                 Foto = p.FotoKerusakan.Select(f => f.FilePath).ToList(),
             })
             .ToListAsync();
+
+        var filterSummary = BuildFilterSummary(
+            ("status", status), ("kategori", kategori), ("divisi", divisi), ("departemen", departemen),
+            ("direktorat", direktorat), ("bulan", bulan), ("search", search), ("tanggal", tanggal?.ToString()));
+        foreach (var row in files)
+            LogDeletion(_db, "perbaikan-sarana", row.Id, row.NomorPerbaikan, user!, filterSummary);
+        await _db.SaveChangesAsync();
 
         var deleted = await query.ExecuteDeleteAsync();
         HapusFileDisk(files

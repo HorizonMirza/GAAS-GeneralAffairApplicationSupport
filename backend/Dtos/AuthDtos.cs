@@ -4,6 +4,11 @@ namespace PengirimanApi.Dtos;
 
 public record LoginRequest(string Username, string Password);
 
+// MustChangePassword lets the frontend redirect straight to the forced change-password screen
+// instead of the dashboard - the session/JWT is still issued normally either way (see
+// AuthController.Login), the account really is logged in, it just can't do anything else yet.
+public record LoginResponse(string Message, string Role, bool MustChangePassword);
+
 public record MeResponse(
     int Id,
     string Username,
@@ -16,7 +21,11 @@ public record MeResponse(
     string? Email,
     bool HasPhoto,
     bool HasCoverPhoto,
-    string? CoverPreset
+    string? CoverPreset,
+    // Also surfaced here (not just Login's own response) so a page reload while the flag is still
+    // set - the person closed the tab mid-forced-change, say - keeps enforcing the screen instead
+    // of only checking it once, right after login.
+    bool MustChangePassword
 )
 {
     public static MeResponse From(User user) => new(
@@ -31,7 +40,8 @@ public record MeResponse(
         user.Email,
         user.PhotoPath != null,
         user.CoverPhotoPath != null,
-        user.CoverPreset
+        user.CoverPreset,
+        user.MustChangePassword
     );
 }
 

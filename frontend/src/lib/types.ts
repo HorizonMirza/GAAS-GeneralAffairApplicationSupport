@@ -60,6 +60,10 @@ export interface Me {
   hasPhoto: boolean;
   hasCoverPhoto: boolean;
   coverPreset: string | null;
+  // Set by Super Admin on account creation/password reset (see UsersAdminController) - true blocks
+  // every page behind the forced change-password screen ((app)/layout.tsx) until a real password
+  // replaces it, which clears this the same way it always has (ProfileController.ChangePassword).
+  mustChangePassword: boolean;
 }
 
 export interface DivisiNode {
@@ -797,7 +801,10 @@ export type RiwayatModul =
   | "permintaan-atk"
   | "perbaikan-sarana"
   | "permintaan-arsip"
-  | "invoice";
+  | "invoice"
+  // 8th source (see backend's RiwayatAktivitasController) - a Super Admin delete, sourced
+  // straight from deletion_log instead of one of the other seven modules' own *_logs table.
+  | "deleted";
 
 export interface RiwayatAktivitas {
   modul: RiwayatModul;
@@ -824,4 +831,109 @@ export interface RiwayatAktor {
   id: number;
   nama: string;
   role: string;
+}
+
+// ---------------------------------------------------------------------------
+// Organisasi (Super Admin org-admin endpoints) - see backend's OrgAdminController and
+// Services/OrgTree.cs. Distinct from OrgStructure above (which every role reads, name-only, to
+// populate dropdowns) - these carry the row ids Super Admin's editor needs to rename/delete a
+// specific node.
+// ---------------------------------------------------------------------------
+
+export interface OrgDepartemenNode {
+  id: number;
+  nama: string;
+}
+
+export interface OrgDivisiNode {
+  id: number;
+  nama: string;
+  kodeSatuanKerja: string;
+  departemen: OrgDepartemenNode[];
+}
+
+export interface OrgDirektoratNode {
+  id: number;
+  nama: string;
+  divisi: OrgDivisiNode[];
+}
+
+export interface OrgTreeResponse {
+  direktorat: OrgDirektoratNode[];
+}
+
+// A one-time plaintext password - only ever present in the direct response of the create/reset
+// call that generated it, never stored or retrievable again afterward.
+export interface ProvisionedAccountCredential {
+  username: string;
+  nama: string;
+  role: Role;
+  password: string;
+}
+
+export interface CreateDivisiResult {
+  divisi: OrgDivisiNode;
+  accounts: ProvisionedAccountCredential[];
+}
+
+export interface CreateDepartemenResult {
+  departemen: OrgDepartemenNode;
+  accounts: ProvisionedAccountCredential[];
+}
+
+// ---------------------------------------------------------------------------
+// Users Admin (Super Admin users-admin endpoints) - see backend's UsersAdminController.
+// ---------------------------------------------------------------------------
+
+export interface AdminUserListItem {
+  id: number;
+  username: string;
+  nama: string;
+  role: Role;
+  direktorat: string | null;
+  divisi: string | null;
+  departemen: string | null;
+  email: string | null;
+  noHp: string | null;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserListResponse {
+  items: AdminUserListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface CreateUserPayload {
+  username: string;
+  nama: string;
+  role: Role;
+  direktorat?: string | null;
+  divisi?: string | null;
+  departemen?: string | null;
+  email?: string | null;
+  noHp?: string | null;
+}
+
+// Partial update - a field left out is left untouched server-side (see UsersAdminController.
+// Update's own comment), so callers only ever send the fields the Edit form actually changed.
+export interface UpdateUserPayload {
+  nama?: string;
+  email?: string | null;
+  noHp?: string | null;
+  role?: Role;
+  divisi?: string | null;
+  departemen?: string | null;
+}
+
+export interface CreatedUserResult {
+  user: AdminUserListItem;
+  password: string;
+}
+
+export interface ResetPasswordResult {
+  password: string;
 }

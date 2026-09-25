@@ -505,12 +505,13 @@ public class PengirimanController : ApiControllerBase
     [HttpDelete("{itemId:int}/super-admin")]
     public async Task<IActionResult> SuperAdminDelete(int itemId)
     {
-        var (_, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (roleError != null) return roleError;
 
         var item = await _db.Pengiriman.FindAsync(itemId);
         if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
 
+        LogDeletion(_db, "ekspedisi", item.Id, item.NomorTransmittal, user!);
         _db.Pengiriman.Remove(item);
         await _db.SaveChangesAsync();
         return NoContent();
@@ -557,6 +558,14 @@ public class PengirimanController : ApiControllerBase
         {
             return BadRequest(new { detail = ex.Message });
         }
+
+        var filterSummary = BuildFilterSummary(
+            ("status", status), ("divisi", divisi), ("departemen", departemen), ("direktorat", direktorat),
+            ("bulan", bulan), ("sejakBulan", sejakBulan), ("nomorTransmittal", nomorTransmittal), ("tanggal", tanggal?.ToString()));
+        var toDelete = await query.Select(p => new { p.Id, p.NomorTransmittal }).ToListAsync();
+        foreach (var row in toDelete)
+            LogDeletion(_db, "ekspedisi", row.Id, row.NomorTransmittal, user!, filterSummary);
+        await _db.SaveChangesAsync();
 
         var deleted = await query.ExecuteDeleteAsync();
         return Ok(new { deleted });

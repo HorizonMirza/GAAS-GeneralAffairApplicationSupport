@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -23,11 +23,14 @@ import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
-import { Calendar, Car, ClipboardList, Folder, Layers, Shield, Wrench } from "lucide-react";
+import PeriodFilterPicker from "@/components/PeriodFilterPicker";
+import { Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
+import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
+import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users";
 
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "overview", label: "Ringkasan & Audit", icon: <Shield width={16} height={16} /> },
@@ -37,6 +40,8 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
+  { key: "organisasi", label: "Organisasi", icon: <Building2 width={16} height={16} /> },
+  { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
 ];
 
 interface BookingFilterState {
@@ -77,11 +82,12 @@ interface ArsipFilterState {
   bulan: string;
   search: string;
   status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
+  kategori: ArchiveKategori | "";
   divisi: string;
   departemen: string;
 }
 
-const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "" };
+const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", kategori: "", divisi: "", departemen: "" };
 
 interface AtkFilterState {
   page: number;
@@ -114,6 +120,7 @@ const EMPTY_SARANA_FILTERS: SaranaFilterState = { page: 1, limit: 10, bulan: "",
 interface FilterState {
   page: number;
   limit: number;
+  tanggal: string;
   bulan: string;
   search: string;
   status: Status | "REJECTED" | "ON_APPROVAL" | "";
@@ -122,7 +129,7 @@ interface FilterState {
   direktorat: string;
 }
 
-const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
+const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
 
 export default function SuperAdminPage() {
   const { me, orgStructure, loading } = useAuth();
@@ -222,6 +229,7 @@ export default function SuperAdminPage() {
       const result = await api.listPengiriman({
         page: filters.page,
         limit: filters.limit,
+        tanggal: filters.tanggal,
         bulan: filters.bulan,
         nomorTransmittal: filters.search,
         status: filters.status,
@@ -341,6 +349,7 @@ export default function SuperAdminPage() {
         limit: arsipFilters.limit,
         bulan: arsipFilters.bulan,
         status: arsipFilters.status,
+        kategori: arsipFilters.kategori,
         divisi: arsipFilters.divisi,
         departemen: arsipFilters.departemen,
         search: arsipFilters.search,
@@ -524,6 +533,79 @@ export default function SuperAdminPage() {
 
   function bulanText(bulan: string): string {
     return bulan ? invoiceBulanLabel(bulan) : "";
+  }
+
+  function ekspedisiExportParams() {
+    return {
+      tanggal: filters.tanggal,
+      bulan: filters.bulan,
+      status: filters.status,
+      divisi: filters.divisi,
+      departemen: filters.departemen,
+      direktorat: filters.direktorat,
+      nomor_transmittal: filters.search,
+    };
+  }
+
+  function arsipExportParams() {
+    return {
+      bulan: arsipFilters.bulan,
+      status: arsipFilters.status,
+      kategori: arsipFilters.kategori,
+      divisi: arsipFilters.divisi,
+      departemen: arsipFilters.departemen,
+      search: arsipFilters.search,
+    };
+  }
+
+  function bookingExportParams() {
+    return {
+      bulan: undefined,
+      tanggal: bookingFilters.tanggal,
+      status: bookingFilters.status,
+      divisi: bookingFilters.divisi,
+      departemen: bookingFilters.departemen,
+      nama_ruang: bookingFilters.namaRuang,
+      search: undefined,
+    };
+  }
+
+  function kendaraanExportParams() {
+    return {
+      bulan: undefined,
+      tanggal: kendaraanFilters.tanggal,
+      status: kendaraanFilters.status,
+      divisi: kendaraanFilters.divisi,
+      departemen: kendaraanFilters.departemen,
+      nama_kendaraan: kendaraanFilters.namaKendaraan,
+      search: undefined,
+    };
+  }
+
+  function atkExportParams() {
+    return {
+      bulan: atkFilters.bulan,
+      tanggal: undefined,
+      status: atkFilters.status,
+      divisi: atkFilters.divisi,
+      departemen: atkFilters.departemen,
+      direktorat: atkFilters.direktorat,
+      search: atkFilters.search,
+      sumberPembelian: atkFilters.sumberPembelian,
+    };
+  }
+
+  function saranaExportParams() {
+    return {
+      bulan: saranaFilters.bulan,
+      tanggal: undefined,
+      status: saranaFilters.status,
+      kategori: saranaFilters.kategori,
+      divisi: saranaFilters.divisi,
+      departemen: saranaFilters.departemen,
+      direktorat: saranaFilters.direktorat,
+      search: saranaFilters.search,
+    };
   }
 
   // Wraps the per-section call so every one of them reports the real number the server deleted
@@ -907,8 +989,8 @@ export default function SuperAdminPage() {
             <input type="text" id="filter-search" placeholder="No Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-bulan">Filter Bulan</label>
-            <MonthFilterPicker id="filter-bulan" value={filters.bulan} onChange={(v) => updateFilter({ bulan: v })} />
+            <label htmlFor="filter-bulan">Filter Periode</label>
+            <PeriodFilterPicker id="filter-bulan" bulan={filters.bulan} tanggal={filters.tanggal} onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })} />
           </div>
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
@@ -972,13 +1054,21 @@ export default function SuperAdminPage() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={tableBusy || total === 0}
-            onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.pdfUrl(ekspedisiExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.exportUrl(ekspedisiExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={tableBusy || total === 0}
+              onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Tanggal", filters.tanggal], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1235,13 +1325,21 @@ export default function SuperAdminPage() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={bookingBusy || bookingTotal === 0}
-            onClick={() => askBulkDelete("Room Booking", "booking", bookingTotal, activeFilters([["Tanggal", bookingFilters.tanggal], ["Status", statusText(bookingFilters.status)], ["Ruang", bookingFilters.namaRuang], ["Divisi", bookingFilters.divisi], ["Departemen", bookingFilters.departemen]]), () => api.superAdminBulkDeleteBooking(bookingFilters), loadBookings)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.bookingExportPdfUrl(bookingExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.bookingExportUrl(bookingExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={bookingBusy || bookingTotal === 0}
+              onClick={() => askBulkDelete("Room Booking", "booking", bookingTotal, activeFilters([["Tanggal", bookingFilters.tanggal], ["Status", statusText(bookingFilters.status)], ["Ruang", bookingFilters.namaRuang], ["Divisi", bookingFilters.divisi], ["Departemen", bookingFilters.departemen]]), () => api.superAdminBulkDeleteBooking(bookingFilters), loadBookings)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1384,13 +1482,21 @@ export default function SuperAdminPage() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={kendaraanBusy || kendaraanTotal === 0}
-            onClick={() => askBulkDelete("Vehicle Booking", "booking", kendaraanTotal, activeFilters([["Tanggal", kendaraanFilters.tanggal], ["Status", statusText(kendaraanFilters.status)], ["Kendaraan", kendaraanFilters.namaKendaraan], ["Divisi", kendaraanFilters.divisi], ["Departemen", kendaraanFilters.departemen]]), () => api.superAdminBulkDeleteKendaraanBooking(kendaraanFilters), loadKendaraanBookings)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.kendaraanExportPdfUrl(kendaraanExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.kendaraanExportUrl(kendaraanExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={kendaraanBusy || kendaraanTotal === 0}
+              onClick={() => askBulkDelete("Vehicle Booking", "booking", kendaraanTotal, activeFilters([["Tanggal", kendaraanFilters.tanggal], ["Status", statusText(kendaraanFilters.status)], ["Kendaraan", kendaraanFilters.namaKendaraan], ["Divisi", kendaraanFilters.divisi], ["Departemen", kendaraanFilters.departemen]]), () => api.superAdminBulkDeleteKendaraanBooking(kendaraanFilters), loadKendaraanBookings)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1514,6 +1620,18 @@ export default function SuperAdminPage() {
             />
           </div>
           <div className="field">
+            <label htmlFor="filter-arsip-kategori">Kategori</label>
+            <SearchableSelect
+              id="filter-arsip-kategori"
+              value={arsipFilters.kategori}
+              onChange={(v) => updateArsipFilter({ kategori: v as ArchiveKategori | "" })}
+              options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
+              getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+              clearLabel="Semua Kategori"
+              placeholder="Semua Kategori"
+            />
+          </div>
+          <div className="field">
             <label htmlFor="filter-arsip-departemen">Departemen</label>
             <SearchableSelect
               id="filter-arsip-departemen"
@@ -1525,13 +1643,21 @@ export default function SuperAdminPage() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={arsipBusy || arsipTotal === 0}
-            onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportPdfUrl(arsipExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportUrl(arsipExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={arsipBusy || arsipTotal === 0}
+              onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Kategori", arsipFilters.kategori ? ARCHIVE_KATEGORI_LABEL[arsipFilters.kategori] : ""], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1698,13 +1824,21 @@ export default function SuperAdminPage() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetAtkFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={atkBusy || atkTotal === 0}
-            onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.atkExportPdfUrl(atkExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.atkExportUrl(atkExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={atkBusy || atkTotal === 0}
+              onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1873,13 +2007,21 @@ export default function SuperAdminPage() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetSaranaFilters}>Hapus Filter</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={saranaBusy || saranaTotal === 0}
-            onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
-          >
-            Hapus Semua
-          </button>
+          <div className="toolbar-actions">
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.saranaExportPdfUrl(saranaExportParams()), "_blank")}>
+              ⬇ Download PDF
+            </button>
+            <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.saranaExportUrl(saranaExportParams()), "_blank")}>
+              ⬇ Download Excel
+            </button>
+            <button
+              className="btn btn-bulk-delete"
+              disabled={saranaBusy || saranaTotal === 0}
+              onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
+            >
+              Hapus Semua
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
@@ -1954,6 +2096,10 @@ export default function SuperAdminPage() {
         </div>
       </div>
       )}
+
+      {activeTab === "organisasi" && <SuperAdminOrgTab />}
+
+      {activeTab === "users" && <SuperAdminUsersTab orgStructure={orgStructure} />}
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}

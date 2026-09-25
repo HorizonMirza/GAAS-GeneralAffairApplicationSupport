@@ -40,6 +40,31 @@ public class RiwayatAktivitasController : ApiControllerBase
         ["invoice"] = ("invoice_logs", "invoice_id", "invoices", "bulan"),
     };
 
+    // 8th source (Part 4): a Super Admin delete, straight from deletion_log - it doesn't fit the
+    // Log/Fk/Parent/Nomor join shape above (there's no parent row left to join to, that's the
+    // whole point of the table), so it's a fixed literal SQL fragment instead, no user-supplied
+    // text anywhere in it. Its own Modul column snapshots which of the seven modules above the
+    // deleted item actually belonged to (see DeletionLog.Modul) - this key ("deleted") is only the
+    // Aksi-feed's own filterable label for "any delete", independent of that.
+    private const string DeletedSourceKey = "deleted";
+    private const string DeletedSql = """
+      SELECT 'deleted' AS modul, dl.item_id AS item_id, dl.item_nomor::text AS nomor,
+             'DELETED' AS action,
+             (CASE
+               WHEN dl.filter_summary IS NOT NULL AND dl.filter_summary <> ''
+                 THEN COALESCE(dl.item_nomor, '') || CASE WHEN dl.item_nomor IS NOT NULL THEN ' - ' ELSE '' END || dl.filter_summary
+               ELSE dl.item_nomor
+             END)::text AS reason,
+             dl.deleted_by AS actor_id, dl.deleted_by_nama::text AS actor_nama, u.role::text AS actor_role,
+             dl.created_at
+      FROM deletion_log dl
+      LEFT JOIN users u ON u.id = dl.deleted_by
+      """;
+
+    // Every modul key BuildUnion/List/Aktor accept - the seven per-module log sources plus the
+    // deletion_log-backed "deleted" feed.
+    private static readonly HashSet<string> AllModuls = new(Sources.Keys) { DeletedSourceKey };
+
     private readonly AppDbContext _db;
 
     public RiwayatAktivitasController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
@@ -48,10 +73,12 @@ public class RiwayatAktivitasController : ApiControllerBase
     }
 
     // One SELECT per module, UNION ALL-ed. Every value the caller supplies travels as a parameter;
-    // the only interpolated text is table/column names taken from Sources above.
+    // the only interpolated text is table/column names taken from Sources above (or the fixed
+    // DeletedSql literal for "deleted").
     private static string BuildUnion(IEnumerable<string> moduls) =>
         string.Join("\n  UNION ALL\n", moduls.Select(m =>
         {
+            if (m == DeletedSourceKey) return DeletedSql;
             var s = Sources[m];
             return $"""
               SELECT '{m}' AS modul, l.{s.Fk} AS item_id, p.{s.Nomor}::text AS nomor,
@@ -80,10 +107,10 @@ public class RiwayatAktivitasController : ApiControllerBase
         if (!AllowedLimits.Contains(limit))
             return BadRequest(new { detail = $"Limit harus salah satu dari {string.Join(",", AllowedLimits)}" });
 
-        var moduls = Sources.Keys.AsEnumerable();
+        var moduls = AllModuls.AsEnumerable();
         if (!string.IsNullOrEmpty(modul))
         {
-            if (!Sources.ContainsKey(modul)) return BadRequest(new { detail = "Modul tidak valid" });
+            if (!AllModuls.Contains(modul)) return BadRequest(new { detail = "Modul tidak valid" });
             moduls = new[] { modul };
         }
 
@@ -166,7 +193,7 @@ public class RiwayatAktivitasController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
-        var union = BuildUnion(Sources.Keys);
+        var union = BuildUnion(AllModuls);
         var sql = $"""
             SELECT DISTINCT actor_id, actor_nama, actor_role
             FROM (

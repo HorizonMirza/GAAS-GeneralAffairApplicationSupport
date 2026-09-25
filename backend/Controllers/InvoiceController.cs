@@ -345,6 +345,11 @@ public class InvoiceController : ApiControllerBase
         // (not just the current one) needs to be removed here or it's orphaned on disk forever.
         var filesToDelete = item.Logs.Select(l => l.FilePath).Append(item.FilePath).Where(f => f != null).Distinct().ToList();
 
+        // Only a Super Admin delete is an audited "someone else's data disappeared" event - KPU
+        // deleting their own still-Draft/Rejected invoice is an ordinary part of that workflow
+        // (same reasoning DeleteInvoice's own role check above already draws between the two).
+        if (user.Role == RoleEnum.SUPER_ADMIN)
+            LogDeletion(_db, "invoice", item.Id, item.Bulan, user);
         _db.Invoices.Remove(item);
         await _db.SaveChangesAsync();
         // Files are only removed once the DB row is actually gone - if SaveChangesAsync above
@@ -372,7 +377,7 @@ public class InvoiceController : ApiControllerBase
         [FromQuery] string? search = null,
         [FromQuery] int? uploadedBy = null)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         // Mirrors ListInvoice's non-KPU branch - Super Admin never sees anyone's DRAFT, so
@@ -390,6 +395,10 @@ public class InvoiceController : ApiControllerBase
             .Where(f => f != null)
             .Distinct()
             .ToList();
+
+        var filterSummary = BuildFilterSummary(("bulan", bulan), ("search", search), ("uploadedBy", uploadedBy?.ToString()));
+        foreach (var i in items)
+            LogDeletion(_db, "invoice", i.Id, i.Bulan, user!, filterSummary);
 
         _db.Invoices.RemoveRange(items);
         await _db.SaveChangesAsync();

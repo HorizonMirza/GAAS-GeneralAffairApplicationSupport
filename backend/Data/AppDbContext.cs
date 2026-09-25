@@ -44,6 +44,10 @@ public class AppDbContext : DbContext
     public DbSet<PermintaanArsipChatRead> PermintaanArsipChatReads => Set<PermintaanArsipChatRead>();
     public DbSet<ArsipCounter> ArsipCounters => Set<ArsipCounter>();
     public DbSet<NotificationSoundSettings> NotificationSoundSettings => Set<NotificationSoundSettings>();
+    public DbSet<OrgDirektorat> OrgDirektorats => Set<OrgDirektorat>();
+    public DbSet<OrgDivisi> OrgDivisis => Set<OrgDivisi>();
+    public DbSet<OrgDepartemen> OrgDepartemens => Set<OrgDepartemen>();
+    public DbSet<DeletionLog> DeletionLogs => Set<DeletionLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -138,6 +142,22 @@ public class AppDbContext : DbContext
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
+        foreach (var entry in ChangeTracker.Entries<OrgDirektorat>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<OrgDivisi>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<OrgDepartemen>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<DeletionLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
         return base.SaveChangesAsync(cancellationToken);
     }
 
@@ -167,6 +187,8 @@ public class AppDbContext : DbContext
             e.Property(u => u.CoverPreset).HasColumnName("cover_preset").HasMaxLength(50);
             e.Property(u => u.CreatedAt).HasColumnName("created_at");
             e.Property(u => u.PasswordChangedAt).HasColumnName("password_changed_at");
+            e.Property(u => u.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            e.Property(u => u.MustChangePassword).HasColumnName("must_change_password").HasDefaultValue(false);
         });
 
         modelBuilder.Entity<Pengiriman>(e =>
@@ -1045,6 +1067,70 @@ public class AppDbContext : DbContext
             e.Property(s => s.ChatSoundId).HasColumnName("chat_sound_id").HasMaxLength(30).IsRequired();
             e.Property(s => s.ActivitySoundId).HasColumnName("activity_sound_id").HasMaxLength(30).IsRequired();
             e.Property(s => s.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<OrgDirektorat>(e =>
+        {
+            e.ToTable("org_direktorat");
+            e.HasKey(d => d.Id);
+            e.Property(d => d.Id).HasColumnName("id");
+            e.Property(d => d.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.HasIndex(d => d.Nama).IsUnique();
+            e.Property(d => d.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<OrgDivisi>(e =>
+        {
+            e.ToTable("org_divisi");
+            e.HasKey(v => v.Id);
+            e.Property(v => v.Id).HasColumnName("id");
+            e.Property(v => v.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.HasIndex(v => v.Nama).IsUnique();
+            e.Property(v => v.DirektoratId).HasColumnName("direktorat_id");
+            e.Property(v => v.KodeSatuanKerja).HasColumnName("kode_satuan_kerja").HasMaxLength(20).IsRequired();
+            e.Property(v => v.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(v => v.Direktorat)
+                .WithMany(d => d.Divisi)
+                .HasForeignKey(v => v.DirektoratId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OrgDepartemen>(e =>
+        {
+            e.ToTable("org_departemen");
+            e.HasKey(dep => dep.Id);
+            e.Property(dep => dep.Id).HasColumnName("id");
+            e.Property(dep => dep.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.HasIndex(dep => dep.Nama).IsUnique();
+            e.Property(dep => dep.DivisiId).HasColumnName("divisi_id");
+            e.Property(dep => dep.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(dep => dep.Divisi)
+                .WithMany(v => v.Departemen)
+                .HasForeignKey(dep => dep.DivisiId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DeletionLog>(e =>
+        {
+            e.ToTable("deletion_log");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.Modul).HasColumnName("modul").HasMaxLength(30).IsRequired();
+            e.Property(l => l.ItemId).HasColumnName("item_id");
+            e.Property(l => l.ItemNomor).HasColumnName("item_nomor").HasMaxLength(100);
+            e.Property(l => l.DeletedBy).HasColumnName("deleted_by");
+            e.Property(l => l.DeletedByNama).HasColumnName("deleted_by_nama").HasMaxLength(255).IsRequired();
+            e.Property(l => l.FilterSummary).HasColumnName("filter_summary");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            // Deliberately NOT cascading from users, and no FK at all back to the deleted item's
+            // own table - see DeletionLog's own class comment for why.
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

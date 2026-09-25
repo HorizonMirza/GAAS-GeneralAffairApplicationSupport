@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using PengirimanApi.Data;
 using PengirimanApi.Dtos;
 using PengirimanApi.Hubs;
 using PengirimanApi.Models;
@@ -94,6 +95,34 @@ public abstract class ApiControllerBase : ControllerBase
     // protection at all, since Npgsql auto-commits a statement that isn't inside a BEGIN.
     protected static async Task LockResourceAsync(DbContext db, string resourceKey) =>
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({resourceKey}, 0))");
+
+    // Queues one deletion_log row (see Models/DeletionLog.cs) - called right before the row(s) it
+    // describes are actually removed, in every SuperAdminDelete/SuperAdminBulkDelete across the
+    // seven modules that have one. Not saved here - it rides along in the same SaveChangesAsync
+    // (or, for the six bulk deletes that use ExecuteDeleteAsync, the same request) as the deletion
+    // itself, so a failed delete never leaves an orphaned log row behind.
+    protected static void LogDeletion(AppDbContext db, string modul, int itemId, string? itemNomor, User actor, string? filterSummary = null)
+    {
+        db.DeletionLogs.Add(new DeletionLog
+        {
+            Modul = modul,
+            ItemId = itemId,
+            ItemNomor = itemNomor,
+            DeletedBy = actor.Id,
+            DeletedByNama = actor.Nama,
+            FilterSummary = filterSummary,
+        });
+    }
+
+    // Short human-readable summary of whatever filters a bulk-delete request actually carried
+    // ("status: REJECTED, divisi: Finance") - stored on each row's DeletionLog.FilterSummary so
+    // the cross-module activity feed (RiwayatAktivitasController) can show why a batch of items
+    // went, not just how many.
+    protected static string? BuildFilterSummary(params (string Key, string? Value)[] filters)
+    {
+        var parts = filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $"{f.Key}: {f.Value}").ToList();
+        return parts.Count > 0 ? string.Join(", ", parts) : null;
+    }
 
     protected async Task<(User? user, IActionResult? error)> RequireRoleAsync(params RoleEnum[] roles)
     {

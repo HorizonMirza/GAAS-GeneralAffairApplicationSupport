@@ -1,4 +1,6 @@
 import type {
+  AdminUserListItem,
+  AdminUserListResponse,
   ApproveKpuPayload,
   ArchiveKategori,
   BookingKendaraan,
@@ -18,6 +20,10 @@ import type {
   AtkGaUpdatePayload,
   BookingStatus,
   ChatMessage,
+  CreateDepartemenResult,
+  CreateDivisiResult,
+  CreatedUserResult,
+  CreateUserPayload,
   Invoice,
   KategoriKerusakan,
   KoreksiArsipPayload,
@@ -28,6 +34,7 @@ import type {
   Me,
   NotificationSoundSettings,
   OrgStructure,
+  OrgTreeResponse,
   Pengiriman,
   PengirimanCreatePayload,
   PengirimanListResponse,
@@ -51,12 +58,15 @@ import type {
   PermintaanAtkLog,
   PermintaanAtkStatsResponse,
   RejectTarget,
+  ResetPasswordResult,
   RiwayatAktivitasListResponse,
   RiwayatAktor,
   RiwayatModul,
+  Role,
   RoomOption,
   Status,
   SumberPembelian,
+  UpdateUserPayload,
   VehicleOption,
 } from "./types";
 
@@ -194,7 +204,7 @@ function listParams(p: ListPengirimanParams) {
 
 export const api = {
   login: (username: string, password: string) =>
-    apiRequest<{ message: string; role: string }>("/auth/login", {
+    apiRequest<{ message: string; role: string; mustChangePassword: boolean }>("/auth/login", {
       method: "POST",
       body: { username, password },
       isAuthCall: true,
@@ -777,7 +787,59 @@ export const api = {
     apiRequest<BulkDeleteResult>("/permintaan-arsip/super-admin/bulk", { method: "DELETE", params: arsipListParams(params) }),
   superAdminBulkDeleteInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
     apiRequest<BulkDeleteResult>("/invoice/super-admin/bulk", { method: "DELETE", params }),
+
+  // --- Organisasi (Super Admin only) ---
+  getOrgTree: () => apiRequest<OrgTreeResponse>("/org-admin/tree"),
+  createDirektorat: (nama: string) =>
+    apiRequest<{ id: number; nama: string }>("/org-admin/direktorat", { method: "POST", body: { nama } }),
+  renameDirektorat: (id: number, nama: string) =>
+    apiRequest<{ id: number; nama: string }>(`/org-admin/direktorat/${id}`, { method: "PATCH", body: { nama } }),
+  deleteDirektorat: (id: number) => apiRequest(`/org-admin/direktorat/${id}`, { method: "DELETE" }),
+  createDivisi: (direktoratId: number, nama: string, kodeSatuanKerja: string) =>
+    apiRequest<CreateDivisiResult>("/org-admin/divisi", { method: "POST", body: { direktoratId, nama, kodeSatuanKerja } }),
+  updateDivisi: (id: number, nama: string, kodeSatuanKerja: string) =>
+    apiRequest("/org-admin/divisi/" + id, { method: "PATCH", body: { nama, kodeSatuanKerja } }),
+  deleteDivisi: (id: number) => apiRequest(`/org-admin/divisi/${id}`, { method: "DELETE" }),
+  createDepartemen: (divisiId: number, nama: string) =>
+    apiRequest<CreateDepartemenResult>("/org-admin/departemen", { method: "POST", body: { divisiId, nama } }),
+  renameDepartemen: (id: number, nama: string) =>
+    apiRequest(`/org-admin/departemen/${id}`, { method: "PATCH", body: { nama } }),
+  deleteDepartemen: (id: number) => apiRequest(`/org-admin/departemen/${id}`, { method: "DELETE" }),
+
+  // --- Users Admin (Super Admin only) ---
+  listAdminUsers: (params: ListAdminUsersParams) =>
+    apiRequest<AdminUserListResponse>("/users-admin", { params: adminUsersListParams(params) }),
+  createAdminUser: (payload: CreateUserPayload) =>
+    apiRequest<CreatedUserResult>("/users-admin", { method: "POST", body: payload }),
+  updateAdminUser: (id: number, payload: UpdateUserPayload) =>
+    apiRequest<AdminUserListItem>(`/users-admin/${id}`, { method: "PATCH", body: payload }),
+  resetAdminUserPassword: (id: number) =>
+    apiRequest<ResetPasswordResult>(`/users-admin/${id}/reset-password`, { method: "POST" }),
+  deactivateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/deactivate`, { method: "POST" }),
+  activateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/activate`, { method: "POST" }),
 };
+
+export interface ListAdminUsersParams {
+  page?: number;
+  limit?: number;
+  role?: Role | "";
+  divisi?: string;
+  departemen?: string;
+  search?: string;
+  isActive?: boolean | "";
+}
+
+function adminUsersListParams(p: ListAdminUsersParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    role: p.role,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    search: p.search,
+    isActive: p.isActive === "" || p.isActive === undefined ? undefined : String(p.isActive),
+  };
+}
 
 export interface BulkDeleteResult {
   deleted: number;

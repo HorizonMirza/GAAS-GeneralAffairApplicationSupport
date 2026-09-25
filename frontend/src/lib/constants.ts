@@ -751,9 +751,11 @@ export const RIWAYAT_MODUL_LABEL: Record<RiwayatModul, string> = {
   "perbaikan-sarana": "Maintenance",
   "permintaan-arsip": "Archive",
   "invoice": "Invoice",
+  "deleted": "Dihapus (Super Admin)",
 };
 
-// Deep-link target per module, so a row can take Super Admin to the record it describes.
+// Deep-link target per module, so a row can take Super Admin to the record it describes. A
+// "deleted" row has no record left to link to - it goes back to the Super Admin overview itself.
 export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
   "ekspedisi": "/ekspedisi/transaksi",
   "booking-ruang": "/booking-ruang-meeting/transaksi",
@@ -762,6 +764,7 @@ export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
   "perbaikan-sarana": "/maintenance/transaksi",
   "permintaan-arsip": "/arsip/transaksi",
   "invoice": "/ekspedisi/invoice-history",
+  "deleted": "/superadmin",
 };
 
 // Two actions the backend writes that LOG_ACTION_META never got an entry for - the per-item
@@ -770,6 +773,7 @@ export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
 const RIWAYAT_EXTRA_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
   CANCELLED: { label: "Dibatalkan Pengaju", type: "reject" },
   EKSEKUSI_DIBATALKAN: { label: "Tahap Eksekusi Dimundurkan", type: "neutral" },
+  DELETED: { label: "Dihapus oleh Super Admin", type: "reject" },
 };
 
 // Invoice uses its own action vocabulary (UPLOADED/DRAFT_UPDATED, and a bare APPROVED/REJECTED
@@ -808,6 +812,7 @@ export const RIWAYAT_ACTION_OPTIONS: string[] = [
   "DRAFT_UPDATED",
   "APPROVED",
   "REJECTED",
+  "DELETED",
 ];
 
 // The Aksi dropdown has no module context, so a code that means different things in different

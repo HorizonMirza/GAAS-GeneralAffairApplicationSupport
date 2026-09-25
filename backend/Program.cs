@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Hubs;
+using PengirimanApi.Models;
 using PengirimanApi.Services;
 using QuestPDF.Infrastructure;
 
@@ -781,6 +782,88 @@ using (var scope = app.Services.CreateScope())
         VALUES (1, 'ding', 'pop', NOW())
         ON CONFLICT (id) DO NOTHING");
 
+    // DB-backed org structure (Part 1) - EnsureCreated() above only creates tables for a brand-new
+    // database, so an already-existing one needs these added directly, same reasoning as every
+    // other CREATE TABLE IF NOT EXISTS block in this file.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS org_direktorat (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL UNIQUE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS org_divisi (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL UNIQUE,
+            direktorat_id INT NOT NULL REFERENCES org_direktorat(id),
+            kode_satuan_kerja VARCHAR(20) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS org_departemen (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL UNIQUE,
+            divisi_id INT NOT NULL REFERENCES org_divisi(id),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+
+    // One-time backfill: seed org_direktorat/org_divisi/org_departemen from OrgTree.SeedData (the
+    // old hardcoded literal) so an existing deployment's org structure doesn't change at all on
+    // first upgrade. Guarded on the whole table being empty (rather than a per-row NOT EXISTS
+    // check like the username backfill above) - Nama is already UNIQUE, so once this has run once
+    // the table is never empty again and every later boot skips the block entirely.
+    if (!migrateDb.OrgDirektorats.Any())
+    {
+        foreach (var direktorat in OrgTree.SeedData)
+        {
+            var direktoratRow = new OrgDirektorat { Nama = direktorat.Nama };
+            migrateDb.OrgDirektorats.Add(direktoratRow);
+            migrateDb.SaveChanges();
+
+            foreach (var divisi in direktorat.Divisi)
+            {
+                var divisiRow = new OrgDivisi
+                {
+                    Nama = divisi.Nama,
+                    DirektoratId = direktoratRow.Id,
+                    KodeSatuanKerja = OrgTree.SeedKodeSatuanKerjaByDivisi.TryGetValue(divisi.Nama, out var kode) ? kode : "GA",
+                };
+                migrateDb.OrgDivisis.Add(divisiRow);
+                migrateDb.SaveChanges();
+
+                foreach (var departemen in divisi.Departemen)
+                {
+                    migrateDb.OrgDepartemens.Add(new OrgDepartemen { Nama = departemen.Nama, DivisiId = divisiRow.Id });
+                }
+                migrateDb.SaveChanges();
+            }
+        }
+    }
+
+    // Loads Tree/KodeSatuanKerjaByDivisi from the tables just created/backfilled above, so this
+    // process's very first request already reflects the database instead of OrgTree.SeedData -
+    // every one of the 37 existing OrgTree.* call sites across the app reads through this cache.
+    OrgTree.LoadFromDb(migrateDb);
+
+    // Super Admin account management (Part 3) - deactivation instead of hard delete, and a forced
+    // password-change flag for accounts created/reset by Super Admin (see UsersAdminController).
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE");
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE");
+
+    // Delete audit trail (Part 4) - deliberately no FK to any of the seven business tables it
+    // records, see DeletionLog's own class comment for why.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS deletion_log (
+            id SERIAL PRIMARY KEY,
+            modul VARCHAR(30) NOT NULL,
+            item_id INT NOT NULL,
+            item_nomor VARCHAR(100),
+            deleted_by INT REFERENCES users(id),
+            deleted_by_nama VARCHAR(255) NOT NULL,
+            filter_summary TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+
     // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
     // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
     // restart, instead of silently requiring the seed command to be run by hand. Insert-if-
@@ -792,7 +875,11 @@ if (args.Contains("resetdb"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, users CASCADE;");
+    // deletion_log/org_departemen/org_divisi/org_direktorat are this feature's own new tables,
+    // appended here so they don't inherit the same "left off resetdb's list" gap that
+    // notification_sound_settings and perbaikan_sarana_foto_kerusakan already have above (a
+    // pre-existing bug in this same list, left untouched per product owner instruction).
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, org_departemen, org_divisi, org_direktorat, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

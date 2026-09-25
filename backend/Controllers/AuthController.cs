@@ -28,6 +28,11 @@ public class AuthController : ApiControllerBase
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == payload.Username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(payload.Password, user.PasswordHash))
             return StatusCode(401, new { detail = "Username atau password salah" });
+        // Checked only after the password itself verifies, same non-committal spirit as the
+        // combined "Username atau password salah" above - a deactivated account doesn't leak
+        // anything about whether the password was even right, it just gets its own clear reason.
+        if (!user.IsActive)
+            return StatusCode(401, new { detail = "Akun ini telah dinonaktifkan" });
 
         var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
         var cookieSecure = _config.GetValue<bool>("CookieSecure");
@@ -41,7 +46,7 @@ public class AuthController : ApiControllerBase
             Path = "/",
         });
 
-        return Ok(new { message = "Login berhasil", role = user.Role.ToString() });
+        return Ok(new LoginResponse("Login berhasil", user.Role.ToString(), user.MustChangePassword));
     }
 
     [HttpPost("auth/logout")]

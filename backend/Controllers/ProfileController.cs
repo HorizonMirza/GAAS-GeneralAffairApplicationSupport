@@ -137,6 +137,10 @@ public class ProfileController : ApiControllerBase
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
         user.PasswordChangedAt = DateTime.UtcNow;
+        // Clears the forced-change flag Super Admin set on create/reset-password (see
+        // UsersAdminController) - this is the one place it's ever cleared, so a Super
+        // Admin-issued password stops forcing the screen the moment a real one replaces it.
+        user.MustChangePassword = false;
         await _db.SaveChangesAsync();
 
         // Every OTHER session's token was minted before PasswordChangedAt above and stops

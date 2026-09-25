@@ -31,6 +31,19 @@ public class User
     // matches and is rejected, so changing the password actually revokes every session issued
     // with the old one instead of leaving them valid until they naturally expire.
     public DateTime? PasswordChangedAt { get; set; }
+    // Deactivating (UsersAdminController.Deactivate/Activate) is the only way Super Admin ever
+    // removes an account - every module's *_logs FK to users.Id with OnDelete(Restrict), so a
+    // real DELETE would either throw or orphan history. Login rejects a deactivated account
+    // outright (see AuthController.Login) rather than letting it sign in and hiding it some other
+    // way, so a deactivated account can never do anything again, without losing its history.
+    public bool IsActive { get; set; } = true;
+    // Set on account creation (UsersAdminController.Create) and password reset (ResetPassword) -
+    // the account can still log in normally with the generated password, but the frontend blocks
+    // every other page behind a forced change-password screen until this clears (see
+    // ProfileController.ChangePassword, which is the one place it's cleared again). Directly
+    // replaces DbSeeder's old shared DefaultPassword "123456789" as the answer to "how does an
+    // account ever get off the default password" - Super Admin can now roll a real one per account.
+    public bool MustChangePassword { get; set; }
 
     public ICollection<Pengiriman> PengirimanDibuat { get; set; } = new List<Pengiriman>();
 }
