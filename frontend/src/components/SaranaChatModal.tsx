@@ -62,7 +62,7 @@ function SendIcon() {
   );
 }
 
-export default function SaranaChatModal({ open, itemId, itemLabel, departemen, createdByRole, me, onClose, onRead }: Props) {
+export default function SaranaChatModal({ open, itemId, itemLabel, departemen, me, onClose, onRead }: Props) {
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [error, setError] = useState("");
   // Tracks senders whose photo failed to load (no photo uploaded, or a fetch error) - once

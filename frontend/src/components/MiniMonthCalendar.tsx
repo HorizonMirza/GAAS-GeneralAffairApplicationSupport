@@ -137,7 +137,6 @@ export default function MiniMonthCalendar({ selectedDate, onSelect, namaRuang, e
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeStart, rangeEnd, namaRuang, providedEntries]);
 
   const providedDotsByDate = useMemo(

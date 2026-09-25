@@ -11,7 +11,6 @@ export function WelcomeGreeting({ me }: { me: Me }) {
     // Deferred to the client on purpose - the server and the browser can disagree on local
     // time/hour, so this runs after hydration to avoid a mismatch warning (same reasoning as
     // AppShell's dateText).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTimeWord(greetingTimeWord());
   }, []);
 

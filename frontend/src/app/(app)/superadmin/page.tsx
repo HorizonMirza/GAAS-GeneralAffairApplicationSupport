@@ -56,9 +56,6 @@ interface BookingFilterState {
 
 const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
 
-// Repeated across every module section below - hoisted so the same style object is reused
-// instead of a fresh literal at each of the ~46 call sites.
-const SECTION_HEADING_STYLE = { margin: "24px 0 12px" };
 const AUTO_WIDTH_STYLE = { width: "auto" };
 const RESET_FILTER_BUTTON_STYLE = { width: "auto", alignSelf: "flex-end" };
 const FIELD_NO_MARGIN_STYLE = { marginBottom: 0 };

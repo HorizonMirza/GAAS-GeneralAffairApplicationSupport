@@ -23,7 +23,7 @@ interface Props {
   isKendaraan?: boolean;
 }
 
-export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, cancelledByRole = null, revisable = false, isRoom = false, isKendaraan = false }: Props) {
+export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, cancelledByRole = null, revisable = false }: Props) {
   const cancelledByGa = cancelledByRole === "ADMIN_GA" || cancelledByRole === "APPROVAL_GA";
   const label =
     status === "CANCELLED" && cancelledByGa

@@ -7,9 +7,7 @@ namespace PengirimanApi.Services;
 
 // Single-page proof-of-repair-report certificate for Maintenance (Perbaikan Sarana), generated on
 // demand (not stored) once a report has won its final Approval GA sign-off - mirrors
-// VehiclePdfService/BookingPdfService's layout, plus a physical-execution section (Cek Lokasi ->
-// Gambar Rencana -> Selesai) since that sub-workflow is unique to this module. See
-// PerbaikanSaranaController.DownloadBuktiPdf.
+// VehiclePdfService/BookingPdfService's layout. See PerbaikanSaranaController.DownloadBuktiPdf.
 public static class SaranaPdfService
 {
     private const string BorderColor = "#1A1A1A";
@@ -27,15 +25,6 @@ public static class SaranaPdfService
         ["GEDUNG"] = "Gedung / Bangunan",
         ["IT"] = "IT / Jaringan",
         ["LAINNYA"] = "Lainnya",
-    };
-
-    // Matches frontend's EXECUTION_STAGE_LABEL (lib/constants.ts) word-for-word.
-    private static readonly Dictionary<string, string> ExecutionStageLabel = new()
-    {
-        ["MENUNGGU"] = "Menunggu Eksekusi",
-        ["LOKASI_DICEK"] = "Lokasi Dicek",
-        ["GAMBAR_DIBUAT"] = "Gambar Dibuat",
-        ["SELESAI"] = "Selesai Dieksekusi",
     };
 
     private static byte[]? _logoBytes;
@@ -89,7 +78,7 @@ public static class SaranaPdfService
 
                     col.Item().PaddingTop(12).Element(c => BuildTable(c, item));
 
-                    col.Item().PaddingTop(10).Element(c => ExtraInfoBox(c, item, actorNames));
+                    col.Item().PaddingTop(10).Element(c => ExtraInfoBox(c, item));
 
                     col.Item().PaddingTop(20).Text("Menyetujui,").Bold();
                     col.Item().Text("Approval General Affair").Bold();
@@ -149,15 +138,12 @@ public static class SaranaPdfService
         });
     }
 
-    private static void ExtraInfoBox(IContainer container, PerbaikanSarana item, Dictionary<int, string> actorNames)
+    private static void ExtraInfoBox(IContainer container, PerbaikanSarana item)
     {
         container.Border(1).BorderColor(BorderColor).Background(ExtraBoxBg).Padding(10).Column(col =>
         {
             col.Item().Text("INFORMASI TAMBAHAN").Bold().FontSize(9.5f).FontColor(AccentBlue);
             col.Item().PaddingTop(6).Element(c => ExtraGrid(c, item));
-
-            col.Item().PaddingTop(10).Text("STATUS EKSEKUSI FISIK").Bold().FontSize(9.5f).FontColor(AccentBlue);
-            col.Item().PaddingTop(6).Element(c => ExecutionGrid(c, item, actorNames));
         });
     }
 
@@ -169,35 +155,6 @@ public static class SaranaPdfService
             ("Status", "Approved"),
             ("Diajukan Pada", WaktuWib.Panjang(item.CreatedAt)),
             ("Disetujui Pada", WaktuWib.Panjang(item.ApprovedApprovalGaAt)),
-        };
-
-        container.Column(col =>
-        {
-            col.Spacing(4);
-            foreach (var (label, value) in pairs)
-            {
-                col.Item().Row(row =>
-                {
-                    row.ConstantItem(150).Text(label).FontSize(9.5f);
-                    row.RelativeItem().Text(value).FontSize(9.5f).Bold();
-                });
-            }
-        });
-    }
-
-    private static void ExecutionGrid(IContainer container, PerbaikanSarana item, Dictionary<int, string> actorNames)
-    {
-        string ActorAndTime(int? actorId, DateTime? at) =>
-            actorId.HasValue && at.HasValue
-                ? $"{actorNames.GetValueOrDefault(actorId.Value, "-")} - {WaktuWib.From(at.Value):dd MMMM yyyy HH:mm} WIB"
-                : "-";
-
-        var pairs = new (string Label, string Value)[]
-        {
-            ("Tahap Saat Ini", ExecutionStageLabel.GetValueOrDefault(item.ExecutionStage.ToString(), item.ExecutionStage.ToString())),
-            ("Lokasi Dicek Oleh", ActorAndTime(item.LokasiDicekBy, item.LokasiDicekAt)),
-            ("Gambar Rencana Dibuat Oleh", ActorAndTime(item.GambarDibuatBy, item.GambarDibuatAt)),
-            ("Eksekusi Selesai Oleh", ActorAndTime(item.SelesaiBy, item.SelesaiAt)),
         };
 
         container.Column(col =>

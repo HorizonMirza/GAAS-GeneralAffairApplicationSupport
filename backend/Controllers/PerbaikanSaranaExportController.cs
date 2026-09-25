@@ -33,25 +33,9 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         ("departemen", "Departemen"),
         ("catatan", "Catatan"),
         ("status", "Status"),
-        ("execution_stage", "Status Eksekusi"),
-        ("lokasi_dicek_oleh", "Lokasi Dicek Oleh"),
-        ("lokasi_dicek_pada", "Lokasi Dicek Pada (WIB)"),
-        ("gambar_dibuat_oleh", "Gambar Dibuat Oleh"),
-        ("gambar_dibuat_pada", "Gambar Dibuat Pada (WIB)"),
-        ("selesai_oleh", "Selesai Oleh"),
-        ("selesai_pada", "Selesai Pada (WIB)"),
     };
 
-    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 65, 40, 40, 40, 40, 55, 45, 45, 40, 40, 40, 40, 40, 40 };
-
-    // Matches frontend's EXECUTION_STAGE_LABEL (lib/constants.ts) word-for-word.
-    private static readonly Dictionary<string, string> ExecutionStageLabel = new()
-    {
-        ["MENUNGGU"] = "Menunggu Eksekusi",
-        ["LOKASI_DICEK"] = "Lokasi Dicek",
-        ["GAMBAR_DIBUAT"] = "Gambar Dibuat",
-        ["SELESAI"] = "Selesai Dieksekusi",
-    };
+    private static readonly float[] PdfColWidths = { 34, 34, 26, 45, 30, 65, 40, 40, 40, 40, 55, 45 };
 
     // Matches the frontend's own 4-word collapse (STATUS_LABEL/BOOKING_STATUS_LABEL in
     // lib/constants.ts) - the exported document's Status column should read the same as the
@@ -84,7 +68,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         _db = db;
     }
 
-    private static object? GetFieldValue(PerbaikanSarana row, string field, Dictionary<int, string> actorNames) => field switch
+    private static object? GetFieldValue(PerbaikanSarana row, string field) => field switch
     {
         "nomor_perbaikan" => row.NomorPerbaikan ?? "-",
         "diajukan" => WaktuWib.Pendek(row.CreatedAt),
@@ -98,29 +82,8 @@ public class PerbaikanSaranaExportController : ApiControllerBase
         "departemen" => row.Departemen,
         "catatan" => row.Catatan,
         "status" => StatusLabel.GetValueOrDefault(row.Status.ToString(), row.Status.ToString()),
-        // Eksekusi fisik cuma berarti untuk laporan yang sudah Approved final - lihat komentar yang
-        // sama di PerbaikanSaranaController.GetStats.
-        "execution_stage" => row.Status == BookingStatusEnum.APPROVED_GA_APPROVAL
-            ? ExecutionStageLabel.GetValueOrDefault(row.ExecutionStage.ToString(), row.ExecutionStage.ToString())
-            : "-",
-        "lokasi_dicek_oleh" => row.LokasiDicekBy.HasValue ? actorNames.GetValueOrDefault(row.LokasiDicekBy.Value, "-") : "-",
-        "lokasi_dicek_pada" => WaktuWib.Pendek(row.LokasiDicekAt),
-        "gambar_dibuat_oleh" => row.GambarDibuatBy.HasValue ? actorNames.GetValueOrDefault(row.GambarDibuatBy.Value, "-") : "-",
-        "gambar_dibuat_pada" => WaktuWib.Pendek(row.GambarDibuatAt),
-        "selesai_oleh" => row.SelesaiBy.HasValue ? actorNames.GetValueOrDefault(row.SelesaiBy.Value, "-") : "-",
-        "selesai_pada" => WaktuWib.Pendek(row.SelesaiAt),
         _ => null,
     };
-
-    private async Task<Dictionary<int, string>> ResolveActorNamesAsync(List<PerbaikanSarana> rows)
-    {
-        var actorIds = rows
-            .SelectMany(r => new[] { r.LokasiDicekBy, r.GambarDibuatBy, r.SelesaiBy })
-            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
-        return actorIds.Count > 0
-            ? await _db.Users.Where(u => actorIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Nama)
-            : new Dictionary<int, string>();
-    }
 
     private static string Slugify(string text)
     {
@@ -191,8 +154,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        var actorNames = await ResolveActorNamesAsync(rows);
-
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Perbaikan Sarana");
 
@@ -219,7 +180,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
             ws.Cell(rowIdx, 1).Value = rowIdx - 1;
             for (var i = 0; i < Columns.Length; i++)
             {
-                var value = GetFieldValue(row, Columns[i].Field, actorNames);
+                var value = GetFieldValue(row, Columns[i].Field);
                 var cell = ws.Cell(rowIdx, i + 2);
                 if (value is int intVal) cell.Value = intVal;
                 else cell.Value = value?.ToString() ?? "";
@@ -286,7 +247,6 @@ public class PerbaikanSaranaExportController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        var actorNames = await ResolveActorNamesAsync(rows);
         var baseFilename = BuildFilename(bulan, statusFilter, onlyRejected, onlyOnApproval, divisi, departemen, direktorat, search, tanggal);
 
         var headerBg = "#1450C9";
@@ -313,7 +273,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
             rowCount++;
             colTexts[0].Add(rowCount.ToString());
             for (var i = 0; i < Columns.Length; i++)
-                colTexts[i + 1].Add(GetFieldValue(row, Columns[i].Field, actorNames)?.ToString() ?? "");
+                colTexts[i + 1].Add(GetFieldValue(row, Columns[i].Field)?.ToString() ?? "");
         }
 
         var fontScale = 1f;
@@ -362,7 +322,7 @@ public class PerbaikanSaranaExportController : ApiControllerBase
                         table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(idx.ToString());
                         foreach (var (field, _) in Columns)
                         {
-                            var value = GetFieldValue(row, field, actorNames);
+                            var value = GetFieldValue(row, field);
                             table.Cell().Background(bg).BorderColor(borderColor).Border(0.4f).Padding(2).Text(value?.ToString() ?? "");
                         }
                     }

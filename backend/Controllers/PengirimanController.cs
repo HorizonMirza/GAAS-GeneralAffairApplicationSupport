@@ -652,7 +652,7 @@ public class PengirimanController : ApiControllerBase
         var agg = await query
             .GroupBy(p => 1)
             .Select(g => new { Total = g.Count(), Sum = g.Sum(p => (decimal?)(p.Total ?? 0)) })
-            .FirstOrDefaultAsync();
+            .SingleOrDefaultAsync();
         var total = agg?.Total ?? 0;
         decimal? totalBulanIni = TotalVisibleRoles.Contains(user!.Role) ? (agg?.Sum ?? 0) : null;
 

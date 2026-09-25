@@ -23,7 +23,7 @@ No self-registration exists in GAAS; all accounts are seeded (`backend/Data/DbSe
 | `APPROVAL_DIVISI` | Approver L1 (Div) | Reviews and approves/rejects proposals from their own Division. |
 | `ADMIN_GA` | General Affair | Operates, reviews logistics, performs corrections, assigns drivers/vendors/rooms. |
 | `APPROVAL_GA` | GA Management | Final internal General Affair approval sign-off. |
-| `KPU` | Mitra / Ekspedisi | External expedition courier partner. Handles transmittal delivery verification and monthly vendor invoices. Only sees Ekspedisi. |
+| `KPU` | Mitra | Handles Expedition delivery verification and invoices, plus final Office Supplies approval and chat. |
 | `SUPER_ADMIN` | System Admin | Master access across all 6 modules, audit trails, and bulk data operations. |
 
 ## 2. Module Workflow State Machines

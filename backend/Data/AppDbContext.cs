@@ -391,7 +391,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.RecurrenceEndDate).HasColumnName("recurrence_end_date");
             e.Property(b => b.HasConflict).HasColumnName("has_conflict");
 
-            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(b => b.RejectReason).HasColumnName("reject_reason");
             e.Property(b => b.RejectTarget).HasColumnName("reject_target").HasConversion<string>().HasMaxLength(20);
             e.Property(b => b.CancelledByName).HasColumnName("cancelled_by_name").HasMaxLength(255);
@@ -491,7 +491,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(b => b.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
-            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(b => b.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(b => b.RejectReason).HasColumnName("reject_reason");
             e.Property(b => b.CancelledByName).HasColumnName("cancelled_by_name").HasMaxLength(255);
 
@@ -608,7 +608,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.NamaPemohon).HasColumnName("nama_pemohon").HasMaxLength(255).IsRequired();
             e.Property(p => p.NoTeleponPemohon).HasColumnName("no_telepon_pemohon").HasMaxLength(50).IsRequired();
 
-            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
             e.Property(p => p.SumberPembelian).HasColumnName("sumber_pembelian").HasConversion<string>().HasMaxLength(20);
             e.Property(p => p.TotalHargaBarang).HasColumnName("total_harga_barang").HasColumnType("decimal(14,2)");
@@ -745,7 +745,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
-            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
 
             e.Property(p => p.CreatedBy).HasColumnName("created_by");
@@ -895,7 +895,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.Divisi).HasColumnName("divisi").HasMaxLength(255).IsRequired();
             e.Property(p => p.Departemen).HasColumnName("departemen").HasMaxLength(255);
 
-            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50).IsRequired().IsConcurrencyToken();
             e.Property(p => p.RejectReason).HasColumnName("reject_reason");
 
             e.Property(p => p.CreatedBy).HasColumnName("created_by");

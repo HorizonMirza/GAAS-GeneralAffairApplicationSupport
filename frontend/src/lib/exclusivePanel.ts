@@ -23,13 +23,15 @@ function notifyPanelClosed(closeSelf: () => void) {
 // same "opening me closes everyone else" behavior.
 export function useExclusivePanel(open: boolean, close: () => void) {
   const closeRef = useRef(close);
-  closeRef.current = close;
+
+  useEffect(() => {
+    closeRef.current = close;
+  }, [close]);
 
   useEffect(() => {
     const closeSelf = () => closeRef.current();
     if (open) notifyPanelOpen(closeSelf);
     else notifyPanelClosed(closeSelf);
     return () => notifyPanelClosed(closeSelf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 }

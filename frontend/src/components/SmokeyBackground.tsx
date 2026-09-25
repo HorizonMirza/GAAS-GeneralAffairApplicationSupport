@@ -181,7 +181,6 @@ export function SmokeyBackground({ backdropBlurAmount = "sm", color = "#1E40AF",
       canvas.removeEventListener("mouseenter", handleMouseEnter);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHovering, mousePosition, color]);
 
   return (
