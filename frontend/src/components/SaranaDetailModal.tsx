@@ -6,10 +6,8 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
-  EXECUTION_STAGE_LABEL,
   KATEGORI_KERUSAKAN_LABEL,
   isSaranaEditableByOrigin,
-  isSaranaExecutionActor,
   isSaranaGaActionable,
   saranaOriginActorLabel,
 } from "@/lib/constants";
@@ -21,7 +19,6 @@ import ModalOverlay from "./ModalOverlay";
 import PhotoDropUploader from "./PhotoDropUploader";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
-import { useConfirm } from "./ui/ConfirmProvider";
 import { useToast } from "./ui/ToastProvider";
 
 interface Props {
@@ -53,14 +50,10 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [execNote, setExecNote] = useState("");
-  const [gambarFile, setGambarFile] = useState<File | null>(null);
-  const [fotoSelesaiFile, setFotoSelesaiFile] = useState<File | null>(null);
   const [fotoKerusakan, setFotoKerusakan] = useState<PerbaikanSaranaFotoKerusakan[]>([]);
   const [newFotoFiles, setNewFotoFiles] = useState<File[]>([]);
   const [removedFotoIds, setRemovedFotoIds] = useState<number[]>([]);
   const { showToast } = useToast();
-  const confirm = useConfirm();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, `${open}-${item?.id}-${mode}`);
 
@@ -76,9 +69,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     setForm(toFormFields(item));
     setError("");
     setBusy(false);
-    setExecNote("");
-    setGambarFile(null);
-    setFotoSelesaiFile(null);
     setNewFotoFiles([]);
     setRemovedFotoIds([]);
     api.listFotoKerusakanSarana(item.id).then(setFotoKerusakan).catch(() => setFotoKerusakan([]));
@@ -95,10 +85,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
   const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
   const canGaAct = !isEdit && me.role === "ADMIN_GA" && isSaranaGaActionable(item);
   const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  // Eksekusi fisik hanya tersedia setelah disetujui final, dan hanya untuk Admin GA/Approval GA -
-  // lihat isSaranaExecutionActor.
-  const canExecute = !isEdit && item.status === "APPROVED_GA_APPROVAL" && isSaranaExecutionActor(me);
-
   function set<K extends keyof PerbaikanSaranaCreatePayload>(key: K, value: PerbaikanSaranaCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
   }
@@ -147,71 +133,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
     } catch (err) {
       showToast((err as Error).message, "error");
     }
-  }
-
-  // Closes first, same convention as the approve/reject handlers above - the item snapshot this
-  // modal holds isn't refetched in place, so leaving it open after a stage change would keep
-  // showing the now-stale stage/buttons until the next open.
-  async function handleCekLokasi() {
-    const note = execNote.trim() || null;
-    onClose();
-    try {
-      await api.cekLokasiSarana(item!.id, note);
-      showToast("Lokasi ditandai sudah dicek");
-      onSaved();
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    }
-  }
-
-  async function handleUploadGambar() {
-    if (!gambarFile) {
-      setError("Pilih file gambar terlebih dahulu");
-      return;
-    }
-    const file = gambarFile;
-    const note = execNote.trim() || null;
-    onClose();
-    try {
-      await api.uploadGambarSarana(item!.id, file, note);
-      showToast("Gambar rencana perbaikan berhasil diunggah");
-      onSaved();
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    }
-  }
-
-  async function handleEksekusi() {
-    const note = execNote.trim() || null;
-    const file = fotoSelesaiFile;
-    onClose();
-    try {
-      await api.eksekusiSarana(item!.id, note, file);
-      showToast("Eksekusi perbaikan ditandai selesai");
-      onSaved();
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    }
-  }
-
-  // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
-  // (lihat PerbaikanSaranaController.ResetEksekusi). Confirm dulu karena foto/catatan tahap yang
-  // dibatalkan itu hilang begitu backend memprosesnya.
-  function handleResetEksekusi() {
-    confirm(
-      "Batalkan tahap eksekusi terakhir? Foto/catatan pada tahap ini akan hilang dan tahap akan mundur satu langkah.",
-      async () => {
-        onClose();
-        try {
-          await api.resetEksekusiSarana(item!.id, null);
-          showToast("Tahap eksekusi terakhir dibatalkan");
-          onSaved();
-        } catch (err) {
-          showToast((err as Error).message, "error");
-        }
-      },
-      "Batalkan"
-    );
   }
 
   async function handleUpdateSubmit(e: React.FormEvent) {
@@ -354,115 +275,6 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
           {item.rejectReason && (
             <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Catatan Penolakan:</strong> {item.rejectReason}
-            </div>
-          )}
-
-          {item.status === "APPROVED_GA_APPROVAL" && (
-            <div className="card" style={{ padding: 14, marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <div style={{ fontWeight: 600 }}>
-                  Eksekusi Perbaikan: {EXECUTION_STAGE_LABEL[item.executionStage]}
-                </div>
-                {canExecute && item.executionStage !== "MENUNGGU" && (
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    style={{ width: "auto", fontSize: "0.75rem", padding: "4px 10px" }}
-                    onClick={handleResetEksekusi}
-                  >
-                    Batalkan Tahap Terakhir
-                  </button>
-                )}
-              </div>
-              {item.gambarOriginalFilename && (
-                <div style={{ marginBottom: 8 }}>
-                  <a href={api.saranaGambarUrl(item.id)} target="_blank" rel="noopener noreferrer">
-                    Lihat Gambar Rencana Perbaikan
-                  </a>
-                </div>
-              )}
-              {item.fotoSelesaiOriginalFilename && (
-                <div style={{ marginBottom: 8 }}>
-                  <a href={api.saranaFotoSelesaiUrl(item.id)} target="_blank" rel="noopener noreferrer">
-                    Lihat Foto Hasil Perbaikan
-                  </a>
-                </div>
-              )}
-              {canExecute && item.executionStage === "MENUNGGU" && (
-                <>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label htmlFor="ds-exec-note-cek">Catatan Hasil Cek Lokasi</label>
-                    <textarea
-                      id="ds-exec-note-cek"
-                      placeholder="Opsional"
-                      value={execNote}
-                      onChange={(e) => setExecNote(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.stopPropagation();
-                      }}
-                    />
-                  </div>
-                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleCekLokasi}>
-                    Tandai Lokasi Sudah Dicek
-                  </button>
-                </>
-              )}
-              {canExecute && item.executionStage === "LOKASI_DICEK" && (
-                <>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label htmlFor="ds-exec-gambar">Gambar Rencana Perbaikan</label>
-                    <input
-                      type="file"
-                      id="ds-exec-gambar"
-                      accept="image/jpeg,image/png"
-                      onChange={(e) => setGambarFile(e.target.files?.[0] || null)}
-                    />
-                  </div>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label htmlFor="ds-exec-note-gambar">Catatan Gambar Rencana Perbaikan</label>
-                    <textarea
-                      id="ds-exec-note-gambar"
-                      placeholder="Opsional"
-                      value={execNote}
-                      onChange={(e) => setExecNote(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.stopPropagation();
-                      }}
-                    />
-                  </div>
-                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleUploadGambar}>
-                    Unggah Gambar
-                  </button>
-                </>
-              )}
-              {canExecute && item.executionStage === "GAMBAR_DIBUAT" && (
-                <>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label htmlFor="ds-exec-foto-selesai">Foto Hasil Perbaikan (opsional)</label>
-                    <input
-                      type="file"
-                      id="ds-exec-foto-selesai"
-                      accept="image/jpeg,image/png"
-                      onChange={(e) => setFotoSelesaiFile(e.target.files?.[0] || null)}
-                    />
-                  </div>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label htmlFor="ds-exec-note-selesai">Catatan Hasil Eksekusi</label>
-                    <textarea
-                      id="ds-exec-note-selesai"
-                      placeholder="Opsional"
-                      value={execNote}
-                      onChange={(e) => setExecNote(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.stopPropagation();
-                      }}
-                    />
-                  </div>
-                  <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleEksekusi}>
-                    Tandai Selesai Dieksekusi
-                  </button>
-                </>
-              )}
             </div>
           )}
 
