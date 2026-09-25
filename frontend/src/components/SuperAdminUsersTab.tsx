@@ -151,6 +151,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           role: form.role,
           divisi: form.divisi || null,
           departemen: form.departemen || null,
+          clearDivisi: !form.divisi,
+          clearDepartemen: !form.departemen,
           email: form.email.trim() || null,
           noHp: form.noHp.trim() || null,
         });

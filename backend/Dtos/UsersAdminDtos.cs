@@ -24,9 +24,17 @@ public record CreateUserRequest(
 // how every other field on the account it doesn't mention stays as it was. Username/PasswordHash
 // deliberately aren't here - those go through their own endpoints (UsersAdminController's own
 // convention, see its class comment).
+//
+// Divisi/Departemen can't reuse the same "null means untouched" convention as everything else
+// above, because null is also the value that means "this account belongs to no unit" (GA/KPU/
+// Super Admin accounts) - a caller sending null there is genuinely ambiguous between "leave it"
+// and "clear it". ClearDivisi/ClearDepartemen resolve that: explicitly true clears the field to
+// null regardless of what Divisi/Departemen itself carries, so the Edit form in SuperAdminUsersTab
+// can actually unassign a user's unit instead of that edit silently no-op'ing.
 public record UpdateUserRequest(
     string? Nama, string? Email, string? NoHp, RoleEnum? Role,
-    string? Direktorat, string? Divisi, string? Departemen);
+    string? Direktorat, string? Divisi, string? Departemen,
+    bool ClearDivisi = false, bool ClearDepartemen = false);
 
 // One-time plaintext password - see ProvisionedAccountOut's own comment in OrgAdminDtos.cs, same
 // idea.

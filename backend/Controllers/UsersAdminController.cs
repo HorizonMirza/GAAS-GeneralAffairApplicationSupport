@@ -118,10 +118,10 @@ public class UsersAdminController : ApiControllerBase
         if (payload.NoHp != null)
             user.NoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
 
-        if (payload.Divisi != null || payload.Departemen != null)
+        if (payload.Divisi != null || payload.Departemen != null || payload.ClearDivisi || payload.ClearDepartemen)
         {
-            var divisi = payload.Divisi ?? user.Divisi;
-            var departemen = payload.Departemen ?? user.Departemen;
+            var divisi = payload.ClearDivisi ? null : (payload.Divisi ?? user.Divisi);
+            var departemen = payload.ClearDepartemen ? null : (payload.Departemen ?? user.Departemen);
             var (orgError, validDirektorat, validDivisi, validDepartemen) = ValidateOrgFields(divisi, departemen);
             if (orgError != null) return StatusCode(400, new { detail = orgError });
             user.Direktorat = validDirektorat;

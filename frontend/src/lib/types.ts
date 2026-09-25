@@ -920,6 +920,8 @@ export interface CreateUserPayload {
 
 // Partial update - a field left out is left untouched server-side (see UsersAdminController.
 // Update's own comment), so callers only ever send the fields the Edit form actually changed.
+// divisi/departemen can't use "send null to clear" like the rest, since null there is also a
+// valid value (no unit) - set clearDivisi/clearDepartemen instead to actually unassign one.
 export interface UpdateUserPayload {
   nama?: string;
   email?: string | null;
@@ -927,6 +929,8 @@ export interface UpdateUserPayload {
   role?: Role;
   divisi?: string | null;
   departemen?: string | null;
+  clearDivisi?: boolean;
+  clearDepartemen?: boolean;
 }
 
 export interface CreatedUserResult {
