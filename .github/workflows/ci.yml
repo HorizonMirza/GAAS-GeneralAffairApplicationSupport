@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
-      - run: dotnet restore backend.Tests/PengirimanApi.Tests.csproj
-      - run: dotnet test backend.Tests/PengirimanApi.Tests.csproj --configuration Release --no-restore
+      - run: dotnet restore backend/backend.Tests/PengirimanApi.Tests.csproj
+      - run: dotnet test backend/backend.Tests/PengirimanApi.Tests.csproj --configuration Release --no-restore
 
   frontend-build:
     runs-on: ubuntu-latest

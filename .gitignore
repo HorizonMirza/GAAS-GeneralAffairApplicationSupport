@@ -9,8 +9,8 @@ Thumbs.db
 # .NET backend
 backend/bin/
 backend/obj/
-backend.Tests/bin/
-backend.Tests/obj/
+backend/backend.Tests/bin/
+backend/backend.Tests/obj/
 backend/appsettings.json
 backend/uploads/
 

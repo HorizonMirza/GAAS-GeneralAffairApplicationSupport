@@ -12,6 +12,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- backend.Tests/ lives inside this project's own folder (moved there to declutter the repo
+         root) - without this exclude, the SDK's default implicit glob would sweep its .cs files
+         into THIS project too, double-compiling them without the xunit package references they
+         need. -->
+    <Compile Remove="backend.Tests/**/*.cs" />
+    <Content Remove="backend.Tests/**/*" />
+    <None Remove="backend.Tests/**/*" />
+    <EmbeddedResource Remove="backend.Tests/**/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">

@@ -38,7 +38,7 @@ Mulai dari [`docs/README.md`](./docs/README.md) untuk instruksi menjalankan proy
 Jalankan automated test backend dari root repository:
 
 ```powershell
-dotnet test backend.Tests/PengirimanApi.Tests.csproj
+dotnet test backend/backend.Tests/PengirimanApi.Tests.csproj
 ```
 
 GitHub Actions menjalankan test backend dan build frontend secara otomatis pada setiap push ke
