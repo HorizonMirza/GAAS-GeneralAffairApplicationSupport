@@ -49,6 +49,8 @@ import ArsipChatModal from "@/components/ArsipChatModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
+import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
+import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -74,7 +76,7 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "ekspedisi", label: "Ekspedisi & Invoice", icon: <Layers width={16} height={16} /> },
   { key: "booking-ruang", label: "Room Booking", icon: <Calendar width={16} height={16} /> },
   { key: "booking-kendaraan", label: "Vehicle Booking", icon: <Car width={16} height={16} /> },
-  { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
+  { key: "atk", label: "Office Supplies & Invoice", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
   { key: "organisasi", label: "Organisasi", icon: <Building2 width={16} height={16} /> },
@@ -291,6 +293,16 @@ function SuperAdminPageInner() {
   const [atkChatItem, setAtkChatItem] = useState<PermintaanAtk | null>(null);
   const [atkRejectTarget, setAtkRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const atkRowMenu = useRowMenu(atkItems);
+  const [atkSubtab, setAtkSubtab] = useState<"pesanan" | "invoice">("pesanan");
+  const [atkInvoices, setAtkInvoices] = useState<Invoice[] | null>(null);
+  const [atkInvoiceTotal, setAtkInvoiceTotal] = useState(0);
+  const [atkInvoiceError, setAtkInvoiceError] = useState("");
+  const [atkInvoiceFilterBulan, setAtkInvoiceFilterBulan] = useState("");
+  const [atkInvoicePage, setAtkInvoicePage] = useState(1);
+  const [atkInvoiceLimit, setAtkInvoiceLimit] = useState(10);
+  const [atkInvoiceDetail, setAtkInvoiceDetail] = useState<Invoice | null>(null);
+  const [atkInvoiceHistoryId, setAtkInvoiceHistoryId] = useState<number | null>(null);
+  const atkInvoiceRowMenu = useRowMenu(atkInvoices ?? []);
 
   const [saranaFilters, setSaranaFilters] = useState<SaranaFilterState>(EMPTY_SARANA_FILTERS);
   const [saranaSearchInput, setSaranaSearchInput] = useState("");
@@ -318,6 +330,7 @@ function SuperAdminPageInner() {
   useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
   const tableReqIdRef = useRef(0);
   const invoiceReqIdRef = useRef(0);
+  const atkInvoiceReqIdRef = useRef(0);
   const bookingReqIdRef = useRef(0);
   const kendaraanReqIdRef = useRef(0);
   const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -391,6 +404,25 @@ function SuperAdminPageInner() {
       setInvoiceError((err as Error).message);
     }
   }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
+
+  const loadAtkInvoices = useCallback(async () => {
+    const reqId = ++atkInvoiceReqIdRef.current;
+    try {
+      const result = await api.listAtkInvoice({ page: atkInvoicePage, limit: atkInvoiceLimit, bulan: atkInvoiceFilterBulan });
+      if (reqId !== atkInvoiceReqIdRef.current) return;
+      const invoiceItems = result?.items ?? [];
+      const invoiceTotalCount = result?.total ?? 0;
+      if (invoiceItems.length === 0 && invoiceTotalCount > 0 && atkInvoicePage > 1) {
+        setAtkInvoicePage((p) => p - 1);
+        return;
+      }
+      setAtkInvoices(invoiceItems);
+      setAtkInvoiceTotal(invoiceTotalCount);
+    } catch (err) {
+      if (reqId !== atkInvoiceReqIdRef.current) return;
+      setAtkInvoiceError((err as Error).message);
+    }
+  }, [atkInvoicePage, atkInvoiceLimit, atkInvoiceFilterBulan]);
 
   const loadBookings = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++bookingReqIdRef.current;
@@ -599,6 +631,12 @@ function SuperAdminPageInner() {
   }, [activeTab, loadAtk]);
 
   useEffect(() => {
+    if (activeTab === "atk" && me?.role === "SUPER_ADMIN") {
+      loadAtkInvoices();
+    }
+  }, [activeTab, me, loadAtkInvoices]);
+
+  useEffect(() => {
     if (activeTab === "sarana") {
       loadSarana();
     }
@@ -785,6 +823,18 @@ function SuperAdminPageInner() {
     }, "Delete Permanent");
   }
 
+  function handleDeleteAtkInvoice(inv: Invoice) {
+    confirm("Yakin ingin menghapus Invoice ini secara permanen? Tindakan ini tidak dapat dibatalkan.", async () => {
+      try {
+        await api.deleteAtkInvoice(inv.id);
+        showToast("Invoice berhasil dihapus permanen");
+        loadAtkInvoices();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    }, "Delete Permanent");
+  }
+
   function updateBookingFilter(patch: Partial<BookingFilterState>) {
     setBookingFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
   }
@@ -950,6 +1000,12 @@ function SuperAdminPageInner() {
   const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 1);
   const invoicePageButtons: number[] = [];
   for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
+
+  const atkInvoiceTotalPages = Math.max(1, Math.ceil(atkInvoiceTotal / atkInvoiceLimit));
+  const atkInvoicePageStart = Math.min(Math.max(1, atkInvoicePage), atkInvoiceTotalPages);
+  const atkInvoicePageEnd = Math.min(atkInvoiceTotalPages, atkInvoicePageStart + 1);
+  const atkInvoicePageButtons: number[] = [];
+  for (let p = atkInvoicePageStart; p <= atkInvoicePageEnd; p++) atkInvoicePageButtons.push(p);
 
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
   const divisiOptions = selectedDirektoratNode
@@ -2383,6 +2439,25 @@ function SuperAdminPageInner() {
 
       {activeTab === "atk" && (
         <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${atkSubtab === "pesanan" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setAtkSubtab("pesanan")}
+            >
+              Pesanan Kebutuhan Kantor ({atkTotal})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${atkSubtab === "invoice" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setAtkSubtab("invoice")}
+            >
+              Vendor Invoices ({atkInvoiceTotal})
+            </button>
+          </div>
+
+          {atkSubtab === "pesanan" && (
+      <>
       <div className="card">
         <div className="card-header">
           <h3>Pesanan Kebutuhan Kantor</h3>
@@ -2661,6 +2736,115 @@ function SuperAdminPageInner() {
           />
 
           <AtkStatusHistoryModal open={atkStatusItemId != null} itemId={atkStatusItemId} onClose={() => setAtkStatusItemId(null)} />
+          </>
+          )}
+
+          {atkSubtab === "invoice" && (
+      <div className="card">
+        <div className="card-header">
+          <h3>History Invoice Pembiayaan</h3>
+        </div>
+
+        <div className="invoice-toolbar-slim">
+          <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
+            <label htmlFor="atk-invoice-filter-bulan">Filter Bulan</label>
+            <MonthFilterPicker
+              id="atk-invoice-filter-bulan"
+              value={atkInvoiceFilterBulan}
+              onChange={(v) => { setAtkInvoiceFilterBulan(v); setAtkInvoicePage(1); }}
+            />
+          </div>
+          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
+            <span className="field-label-spacer">Semua Invoice</span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={AUTO_WIDTH_STYLE}
+              onClick={() => { setAtkInvoiceFilterBulan(""); setAtkInvoicePage(1); }}
+            >
+              Semua Invoice
+            </button>
+          </div>
+          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
+            <span className="field-label-spacer">Hapus Semua</span>
+            <button
+              type="button"
+              className="btn btn-bulk-delete"
+              style={{ alignSelf: "auto" }}
+              disabled={atkInvoices == null || atkInvoiceTotal === 0}
+              onClick={() => askBulkDelete(
+                "Invoice",
+                "Invoice",
+                atkInvoiceTotal,
+                activeFilters([["Bulan", bulanText(atkInvoiceFilterBulan)]]),
+                () => api.superAdminBulkDeleteAtkInvoice({ bulan: atkInvoiceFilterBulan }),
+                loadAtkInvoices
+              )}
+            >
+              Hapus Semua
+            </button>
+          </div>
+        </div>
+
+        <div className="invoice-list">
+          {atkInvoiceError ? (
+            <p className="text-secondary">{atkInvoiceError}</p>
+          ) : atkInvoices == null ? (
+            <p className="text-secondary">Memuat data invoice...</p>
+          ) : atkInvoices.length === 0 ? (
+            <p className="text-secondary">{atkInvoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
+          ) : (
+            atkInvoices.map((inv) => (
+              <div className="invoice-row" key={inv.id}>
+                <div className="invoice-row-main">
+                  <div className="invoice-file-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  </div>
+                  <div className="invoice-row-info">
+                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)} - {inv.nama}</div>
+                    <div className="invoice-row-meta">Diunggah: {formatDateTime(inv.uploadedAt)}</div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
+                  </div>
+                </div>
+                <div className="invoice-row-actions">
+                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => atkInvoiceRowMenu.toggle(e, inv.id)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={FIELD_NO_MARGIN_STYLE}>
+              <label htmlFor="atk-invoice-limit">Tampilkan</label>
+              <SearchableSelect
+                id="atk-invoice-limit"
+                value={String(atkInvoiceLimit)}
+                onChange={(v) => { setAtkInvoiceLimit(Number(v)); setAtkInvoicePage(1); }}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} Invoice`}
+                placeholder={`${atkInvoiceLimit} Invoice`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {atkInvoiceTotal} Invoice · Halaman {atkInvoicePage} dari {atkInvoiceTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={atkInvoicePage <= 1} onClick={() => setAtkInvoicePage(atkInvoicePage - 1)}>‹</button>
+              {atkInvoicePageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === atkInvoicePage ? "active" : ""}`} onClick={() => setAtkInvoicePage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={atkInvoicePage >= atkInvoiceTotalPages} onClick={() => setAtkInvoicePage(atkInvoicePage + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+          )}
         </>
       )}
 
@@ -2993,6 +3177,46 @@ function SuperAdminPageInner() {
         open={invoiceHistoryId != null}
         invoiceId={invoiceHistoryId}
         onClose={() => setInvoiceHistoryId(null)}
+      />
+
+      <InvoiceRowMenuDropdown
+        position={atkInvoiceRowMenu.position}
+        showUpdates={false}
+        showDelete={!!atkInvoiceRowMenu.menuItem}
+        pdfViewUrl={atkInvoiceRowMenu.menuItem ? api.atkInvoiceFileUrl(atkInvoiceRowMenu.menuItem.id) : "#"}
+        pdfDownloadUrl={atkInvoiceRowMenu.menuItem ? api.atkInvoiceDownloadUrl(atkInvoiceRowMenu.menuItem.id) : "#"}
+        onDetail={() => {
+          const item = atkInvoiceRowMenu.menuItem;
+          atkInvoiceRowMenu.close();
+          if (item) setAtkInvoiceDetail(item);
+        }}
+        onUpdates={() => {}}
+        onRiwayat={() => {
+          const item = atkInvoiceRowMenu.menuItem;
+          atkInvoiceRowMenu.close();
+          if (item) setAtkInvoiceHistoryId(item.id);
+        }}
+        onDelete={() => {
+          const item = atkInvoiceRowMenu.menuItem;
+          atkInvoiceRowMenu.close();
+          if (item) handleDeleteAtkInvoice(item);
+        }}
+        onLinkClick={() => atkInvoiceRowMenu.close()}
+      />
+
+      <AtkInvoiceDetailModal
+        open={!!atkInvoiceDetail}
+        item={atkInvoiceDetail}
+        me={me}
+        onClose={() => setAtkInvoiceDetail(null)}
+        onRequestAction={() => {}}
+        onSubmitted={() => {}}
+      />
+
+      <AtkInvoiceHistoryModal
+        open={atkInvoiceHistoryId != null}
+        invoiceId={atkInvoiceHistoryId}
+        onClose={() => setAtkInvoiceHistoryId(null)}
       />
 
       <BulkDeleteModal target={bulkTarget} onClose={() => setBulkTarget(null)} />

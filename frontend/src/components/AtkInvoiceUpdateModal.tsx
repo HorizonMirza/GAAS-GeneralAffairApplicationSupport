@@ -1,0 +1,210 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, FileText, Trash2, UploadCloud } from "lucide-react";
+import { api } from "@/lib/api";
+import { MAX_INVOICE_FILE_SIZE_BYTES } from "@/lib/constants";
+import { formatFileSize } from "@/lib/format";
+import { useAutofocusFirstField } from "@/lib/formNav";
+import type { Invoice } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
+import MonthFilterPicker from "./MonthFilterPicker";
+import { useToast } from "./ui/ToastProvider";
+
+interface Props {
+  open: boolean;
+  item: Invoice | null;
+  onClose: () => void;
+  onDone: () => void;
+}
+
+export default function AtkInvoiceUpdateModal({ open, item, onClose, onDone }: Props) {
+  const [nama, setNama] = useState("");
+  const [bulan, setBulan] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [existingRemoved, setExistingRemoved] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const { showToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  useAutofocusFirstField(formRef, `${open}-${item?.id}`);
+
+  // This modal instance stays mounted across different invoices (only `open`/`item` change), so
+  // Nama/Bulan need to be re-synced from the invoice being opened rather than kept from whichever
+  // invoice was edited last.
+  useEffect(() => {
+    if (!open || !item) return;
+    setNama(item.nama);
+    setBulan(item.bulan);
+    setFile(null);
+    setExistingRemoved(false);
+    setError("");
+  }, [open, item]);
+
+  if (!open || !item) return null;
+
+  const isDraft = item.status === "DRAFT";
+
+  function handleClose() {
+    setFile(null);
+    setError("");
+    onClose();
+  }
+
+  function handleFileChange(picked: File | null) {
+    // The <input accept="application/pdf"> only filters the OS file-picker dialog - a file
+    // dropped via handleDrop bypasses it entirely, so the type still needs checking here.
+    if (picked && picked.type !== "application/pdf" && !picked.name.toLowerCase().endsWith(".pdf")) {
+      setError("File harus berformat PDF");
+      setFile(null);
+      return;
+    }
+    if (picked && picked.size > MAX_INVOICE_FILE_SIZE_BYTES) {
+      setError("File terlalu besar, maksimal 10 MB");
+      setFile(null);
+      return;
+    }
+    setError("");
+    setFile(picked);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+    handleFileChange(e.dataTransfer.files?.[0] || null);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!item) return;
+    if (!nama.trim()) {
+      setError("Nama pengirim invoice wajib diisi.");
+      return;
+    }
+    if (!bulan) {
+      setError("Bulan invoice wajib diisi.");
+      return;
+    }
+    if (!file) {
+      setError("Pilih file PDF pengganti untuk menyimpan pembaruan.");
+      return;
+    }
+    if (file.size > MAX_INVOICE_FILE_SIZE_BYTES) {
+      setError("File terlalu besar, maksimal 10 MB");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.updateAtkInvoice(item.id, nama.trim(), bulan, file);
+      showToast(isDraft ? "Draft Invoice berhasil diperbarui" : "Revisi Invoice tersimpan sebagai draft, kirim kembali lewat Detail");
+      setFile(null);
+      onDone();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalOverlay open={open} onClose={handleClose} className="modal-overlay modal-overlay-centered">
+      <div className="modal" style={{ maxWidth: 420 }}>
+        <div className="modal-header">
+          <h3>Update Invoice</h3>
+          <button type="button" className="modal-close" onClick={handleClose}>&times;</button>
+        </div>
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="atk-invoice-update-nama">Nama Pengirim Invoice</label>
+            <input
+              type="text"
+              id="atk-invoice-update-nama"
+              required
+              maxLength={255}
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="atk-invoice-update-bulan">Bulan Invoice</label>
+            <MonthFilterPicker id="atk-invoice-update-bulan" value={bulan} onChange={setBulan} placeholder="Pilih bulan" fillWidth />
+          </div>
+          <div className="field">
+            <label htmlFor="atk-invoice-update-file">File Invoice Baru (PDF)</label>
+            <div
+              className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <UploadCloud width={32} height={32} />
+              <div className="photo-drop-title">Pilih file atau Drag and Drop disini.</div>
+              <div className="photo-drop-caption">Format PDF, Max 10 MB</div>
+              <input
+                type="file"
+                id="atk-invoice-update-file"
+                accept="application/pdf"
+                className="file-dropzone-input"
+                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+              />
+            </div>
+            {!file && !existingRemoved && item.originalFilename && (
+              <div className="photo-drop-list">
+                <div className="photo-drop-item photo-drop-item-existing">
+                  <span className="photo-drop-item-index">1.</span>
+                  <a href={api.atkInvoiceFileUrl(item.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-thumb">
+                    <FileText width={18} height={18} />
+                  </a>
+                  <div className="photo-drop-item-info">
+                    <a href={api.atkInvoiceFileUrl(item.id)} target="_blank" rel="noopener noreferrer" className="photo-drop-item-name">
+                      {item.originalFilename}
+                    </a>
+                  </div>
+                  <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => setExistingRemoved(true)}>
+                    <Trash2 width={14} height={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+            {file && (
+              <div className="photo-drop-list">
+                <div className="photo-drop-item">
+                  <span className="photo-drop-item-index">1.</span>
+                  <div className="photo-drop-item-thumb">
+                    <FileText width={18} height={18} />
+                  </div>
+                  <div className="photo-drop-item-info">
+                    <span className="photo-drop-item-name">{file.name}</span>
+                    <span className="photo-drop-item-size">{formatFileSize(file.size)}</span>
+                  </div>
+                  <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => handleFileChange(null)}>
+                    <Trash2 width={14} height={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {error && <div className="error-text">{error}</div>}
+          <div className="modal-actions">
+            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={busy}>Save</button>
+          </div>
+        </form>
+      </div>
+    </ModalOverlay>
+  );
+}

@@ -379,6 +379,66 @@ export const api = {
   getInvoiceLogs: (id: number) => apiRequest<InvoiceLog[]>(`/invoice/${id}/logs`),
   invoiceLogFileUrl: (id: number, logId: number) => `${API_BASE}/invoice/${id}/logs/${logId}/file`,
   invoiceLogDownloadUrl: (id: number, logId: number) => `${API_BASE}/invoice/${id}/logs/${logId}/file?download=true`,
+
+  // --- Office Supplies Invoice (mirrors Invoice above exactly, own table/endpoint) ---
+  listAtkInvoice: (params: ListInvoiceParams = {}) =>
+    apiRequest<InvoiceListResponse>("/atk-invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
+  listAtkInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/atk-invoice/uploaders"),
+  uploadAtkInvoice: async (nama: string, bulan: string, file: File) => {
+    const formData = new FormData();
+    formData.append("nama", nama);
+    formData.append("bulan", bulan);
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/atk-invoice`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah invoice";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json();
+  },
+  updateAtkInvoice: async (id: number, nama: string, bulan: string, file: File) => {
+    const formData = new FormData();
+    formData.append("nama", nama);
+    formData.append("bulan", bulan);
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/atk-invoice/${id}`, {
+      method: "PATCH",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengirim ulang invoice";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return response.json();
+  },
+  submitAtkInvoice: (id: number) => apiRequest(`/atk-invoice/${id}/submit`, { method: "PATCH" }),
+  approveAtkInvoice: (id: number, catatan: string | null) =>
+    apiRequest(`/atk-invoice/${id}/approve`, { method: "PATCH", body: { catatan } }),
+  rejectAtkInvoice: (id: number, catatan: string | null) =>
+    apiRequest(`/atk-invoice/${id}/reject`, { method: "PATCH", body: { catatan } }),
+  deleteAtkInvoice: (id: number) => apiRequest(`/atk-invoice/${id}`, { method: "DELETE" }),
+  atkInvoiceFileUrl: (id: number) => `${API_BASE}/atk-invoice/${id}/file`,
+  atkInvoiceDownloadUrl: (id: number) => `${API_BASE}/atk-invoice/${id}/file?download=true`,
+  getAtkInvoiceLogs: (id: number) => apiRequest<InvoiceLog[]>(`/atk-invoice/${id}/logs`),
+  atkInvoiceLogFileUrl: (id: number, logId: number) => `${API_BASE}/atk-invoice/${id}/logs/${logId}/file`,
+  atkInvoiceLogDownloadUrl: (id: number, logId: number) => `${API_BASE}/atk-invoice/${id}/logs/${logId}/file?download=true`,
   exportUrl: (params: Record<string, string | undefined | null>) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
@@ -792,6 +852,8 @@ export const api = {
     apiRequest<BulkDeleteResult>("/permintaan-arsip/super-admin/bulk", { method: "DELETE", params: arsipListParams(params) }),
   superAdminBulkDeleteInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
     apiRequest<BulkDeleteResult>("/invoice/super-admin/bulk", { method: "DELETE", params }),
+  superAdminBulkDeleteAtkInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
+    apiRequest<BulkDeleteResult>("/atk-invoice/super-admin/bulk", { method: "DELETE", params }),
 
   // --- Organisasi (Super Admin only) ---
   getOrgTree: () => apiRequest<OrgTreeResponse>("/org-admin/tree"),

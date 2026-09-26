@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     public DbSet<PengirimanLog> PengirimanLogs => Set<PengirimanLog>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLog> InvoiceLogs => Set<InvoiceLog>();
+    public DbSet<AtkInvoice> AtkInvoices => Set<AtkInvoice>();
+    public DbSet<AtkInvoiceLog> AtkInvoiceLogs => Set<AtkInvoiceLog>();
     public DbSet<DivisiCounter> DivisiCounters => Set<DivisiCounter>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<ChatRead> ChatReads => Set<ChatRead>();
@@ -73,6 +75,14 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added && entry.Entity.UploadedAt == default) entry.Entity.UploadedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<InvoiceLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<AtkInvoice>())
+        {
+            if (entry.State == EntityState.Added && entry.Entity.UploadedAt == default) entry.Entity.UploadedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<AtkInvoiceLog>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -1054,6 +1064,60 @@ public class AppDbContext : DbContext
             e.HasOne(l => l.Invoice)
                 .WithMany(i => i.Logs)
                 .HasForeignKey(l => l.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AtkInvoice>(e =>
+        {
+            e.ToTable("atk_invoice");
+            e.HasKey(i => i.Id);
+            e.Property(i => i.Id).HasColumnName("id");
+            e.Property(i => i.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.Property(i => i.Bulan).HasColumnName("bulan").HasMaxLength(7).IsRequired();
+            e.Property(i => i.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired();
+            e.Property(i => i.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255).IsRequired();
+            // Same race guard as Invoice.Status above, for AtkInvoiceController's Approve/Reject.
+            e.Property(i => i.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired().IsConcurrencyToken();
+            e.Property(i => i.Catatan).HasColumnName("catatan");
+
+            e.Property(i => i.UploadedBy).HasColumnName("uploaded_by");
+            e.Property(i => i.ReviewedBy).HasColumnName("reviewed_by");
+
+            e.Property(i => i.UploadedAt).HasColumnName("uploaded_at");
+            e.Property(i => i.ReviewedAt).HasColumnName("reviewed_at");
+
+            e.HasOne(i => i.Pengunggah)
+                .WithMany()
+                .HasForeignKey(i => i.UploadedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(i => i.Peninjau)
+                .WithMany()
+                .HasForeignKey(i => i.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AtkInvoiceLog>(e =>
+        {
+            e.ToTable("atk_invoice_log");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.AtkInvoiceId).HasColumnName("atk_invoice_id");
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.Reason).HasColumnName("reason");
+            e.Property(l => l.FilePath).HasColumnName("file_path").HasMaxLength(500);
+            e.Property(l => l.OriginalFilename).HasColumnName("original_filename").HasMaxLength(255);
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            e.HasOne(l => l.AtkInvoice)
+                .WithMany(i => i.Logs)
+                .HasForeignKey(l => l.AtkInvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasOne(l => l.Aktor)

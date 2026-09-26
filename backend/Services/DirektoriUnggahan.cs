@@ -9,10 +9,12 @@ namespace PengirimanApi.Services;
 public static class DirektoriUnggahan
 {
     public const string KunciInvoice = "UploadDir";
+    public const string KunciAtkInvoice = "AtkInvoiceUploadDir";
     public const string KunciSarana = "SaranaUploadDir";
     public const string KunciFotoProfil = "ProfilePhotoUploadDir";
 
     public const string DefaultInvoice = "uploads/invoices";
+    public const string DefaultAtkInvoice = "uploads/atk-invoices";
     public const string DefaultSarana = "uploads/sarana";
     public const string DefaultFotoProfil = "uploads/profile-photos";
 

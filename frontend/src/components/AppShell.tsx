@@ -73,6 +73,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/office-supplies/overview" },
       { label: "Transaction", href: "/office-supplies/transaksi" },
+      { label: "Invoice", href: "/office-supplies/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"] },
     ],
   },
   {
@@ -106,7 +107,7 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "ekspedisi", label: "Ekspedisi & Invoice" },
   { key: "booking-ruang", label: "Room Booking" },
   { key: "booking-kendaraan", label: "Vehicle Booking" },
-  { key: "atk", label: "Office Supplies" },
+  { key: "atk", label: "Office Supplies & Invoice" },
   { key: "sarana", label: "Maintenance" },
   { key: "arsip", label: "Arsip" },
   { key: "organisasi", label: "Organisasi" },

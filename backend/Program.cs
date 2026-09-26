@@ -337,6 +337,38 @@ using (var scope = app.Services.CreateScope())
         END $$;
     ");
 
+    // Office Supplies' own vendor-invoice tables (AtkInvoiceController) - brand new, not a column
+    // backfill, so a plain CREATE TABLE IF NOT EXISTS is enough (EnsureCreated() above only adds
+    // tables for a fresh database). Mirrors invoices/invoice_logs exactly, including the same
+    // (uploaded_by, bulan) uniqueness guard baked directly into the table since there is no
+    // pre-existing data here that could already violate it.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS atk_invoice (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL,
+            bulan VARCHAR(7) NOT NULL,
+            file_path VARCHAR(500) NOT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+            catatan TEXT,
+            uploaded_by INT NOT NULL REFERENCES users(id),
+            reviewed_by INT REFERENCES users(id),
+            uploaded_at TIMESTAMP NOT NULL,
+            reviewed_at TIMESTAMP,
+            UNIQUE (uploaded_by, bulan)
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS atk_invoice_log (
+            id SERIAL PRIMARY KEY,
+            atk_invoice_id INT NOT NULL REFERENCES atk_invoice(id) ON DELETE CASCADE,
+            action VARCHAR(50) NOT NULL,
+            actor_id INT REFERENCES users(id),
+            reason TEXT,
+            file_path VARCHAR(500),
+            original_filename VARCHAR(255),
+            created_at TIMESTAMP NOT NULL
+        )");
+
     // One-time backfill: Admin/Approval GA items created before GaDivisiLabel/GaDepartemenLabel
     // pointed at the real org unit were stamped "General Affair" (no such Divisi actually
     // exists) with a "...GA..." NomorTransmittal. Move them onto the real Procurement and
@@ -964,7 +996,7 @@ if (args.Contains("resetdb"))
     // appended here so they don't inherit the same "left off resetdb's list" gap that
     // notification_sound_settings and perbaikan_sarana_foto_kerusakan already have above (a
     // pre-existing bug in this same list, left untouched per product owner instruction).
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, atk_invoice_log, atk_invoice, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

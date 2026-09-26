@@ -1,0 +1,121 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
+import type { Invoice, Me } from "@/lib/types";
+import ModalOverlay from "./ModalOverlay";
+import { useToast } from "./ui/ToastProvider";
+
+interface Props {
+  open: boolean;
+  item: Invoice | null;
+  me: Me;
+  onClose: () => void;
+  onRequestAction: (id: number) => void;
+  onSubmitted: () => void;
+}
+
+export default function AtkInvoiceDetailModal({ open, item, me, onClose, onRequestAction, onSubmitted }: Props) {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { showToast } = useToast();
+
+  // This modal instance stays mounted across different invoices (only `open`/`item` change), so
+  // without this, a `busy` left `true` by an earlier successful submit (see handleSubmitDraft's
+  // catch-only reset below) would leave the Approve button permanently disabled the next time a
+  // different invoice is opened.
+  useEffect(() => {
+    if (!open || !item) return;
+    setError("");
+    setBusy(false);
+  }, [open, item]);
+
+  if (!open || !item) return null;
+
+  const canReview = (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && item.status === "PENDING";
+  // Not a SUPER_ADMIN bypass here: AtkInvoiceController.SubmitInvoice keeps its own
+  // item.UploadedBy === user.Id ownership check with no exception, so this only actually succeeds
+  // for an invoice Super Admin uploaded under their own account.
+  const canSubmitDraft = (me.role === "KPU" || me.role === "SUPER_ADMIN") && item.status === "DRAFT" && item.uploadedBy === me.id;
+
+  async function handleSubmitDraft() {
+    if (!item) return;
+    setBusy(true);
+    try {
+      await api.submitAtkInvoice(item.id);
+      showToast("Invoice berhasil dikirim untuk approval");
+      onSubmitted();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  async function handleApprove() {
+    if (!item) return;
+    setBusy(true);
+    try {
+      await api.approveAtkInvoice(item.id, null);
+      showToast("Invoice disetujui");
+      onSubmitted();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalOverlay open={open} onClose={onClose} className="modal-overlay modal-overlay-centered">
+      <div className="modal" style={{ maxWidth: 460 }}>
+        <div className="modal-header">
+          <h3>Detail Invoice</h3>
+          <button type="button" className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+        <div className="detail-grid">
+          <div className="detail-row">
+            <span className="detail-label">Nama Pengirim Invoice</span>
+            <span className="detail-value">{item.nama}</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Bulan Invoice</span>
+            <span className="detail-value">{invoiceBulanLabel(item.bulan)}</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Status</span>
+            <span className="detail-value">{INVOICE_STATUS_LABEL[item.status] || item.status}</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Diunggah</span>
+            <span className="detail-value">{formatDateTime(item.uploadedAt)}</span>
+          </div>
+          {item.reviewedAt && (
+            <div className="detail-row">
+              <span className="detail-label">Ditinjau</span>
+              <span className="detail-value">{formatDateTime(item.reviewedAt)}</span>
+            </div>
+          )}
+          {item.catatan && (
+            <div className="detail-row" style={{ gridColumn: "1 / -1" }}>
+              <span className="detail-label">Catatan</span>
+              <span className="detail-value">{item.catatan}</span>
+            </div>
+          )}
+        </div>
+        {error && <div className="error-text">{error}</div>}
+        <div className="modal-actions">
+          {canReview && (
+            <>
+              <button type="button" className="btn btn-danger" style={{ width: "auto" }} onClick={() => onRequestAction(item.id)}>Reject</button>
+              <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleApprove} disabled={busy}>Approve</button>
+            </>
+          )}
+          {canSubmitDraft && (
+            <button type="button" className="btn btn-approve" style={{ width: "auto" }} onClick={handleSubmitDraft} disabled={busy}>Submit</button>
+          )}
+        </div>
+      </div>
+    </ModalOverlay>
+  );
+}

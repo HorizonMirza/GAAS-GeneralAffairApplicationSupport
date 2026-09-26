@@ -71,6 +71,14 @@ public static class PembersihFileYatim
             },
             new Cakupan
             {
+                Nama = "Office Supplies Invoice (file terkini + setiap revisi di atk_invoice_log)",
+                Folder = DirektoriUnggahan.Resolve(config, DirektoriUnggahan.KunciAtkInvoice, DirektoriUnggahan.DefaultAtkInvoice),
+                Terpakai = Gabung(
+                    await db.AtkInvoices.Select(i => (string?)i.FilePath).ToListAsync(),
+                    await db.AtkInvoiceLogs.Select(l => l.FilePath).ToListAsync()),
+            },
+            new Cakupan
+            {
                 Nama = "Foto profil (foto akun + cover)",
                 Folder = DirektoriUnggahan.Resolve(config, DirektoriUnggahan.KunciFotoProfil, DirektoriUnggahan.DefaultFotoProfil),
                 Terpakai = Gabung(

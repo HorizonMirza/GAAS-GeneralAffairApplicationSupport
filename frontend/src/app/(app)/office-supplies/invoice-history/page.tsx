@@ -1,0 +1,331 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
+import { formatDateTime, invoiceBulanLabel } from "@/lib/format";
+import { useRowMenu } from "@/lib/useRowMenu";
+import type { Invoice } from "@/lib/types";
+import AtkInvoiceActionModal from "@/components/AtkInvoiceActionModal";
+import AtkInvoiceUploadModal from "@/components/AtkInvoiceUploadModal";
+import AtkInvoiceUpdateModal from "@/components/AtkInvoiceUpdateModal";
+import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
+import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
+import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
+import { useToast } from "@/components/ui/ToastProvider";
+import SearchableSelect from "@/components/SearchableSelect";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+
+// Mirrors ekspedisi/invoice-history's own INVOICE_HISTORY_ROLES exactly - Admin GA uploads... no,
+// KPU uploads, Admin GA reviews, Approval GA/Super Admin oversee. Same 3 roles + Super Admin.
+const INVOICE_HISTORY_ROLES = ["ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"];
+
+export default function AtkInvoiceHistoryPage() {
+  const { me, loading } = useAuth();
+  const router = useRouter();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
+
+  const [invoices, setInvoices] = useState<Invoice[] | null>(null);
+  const [invoiceTotal, setInvoiceTotal] = useState(0);
+  const [invoiceError, setInvoiceError] = useState("");
+  const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
+  const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoiceLimit, setInvoiceLimit] = useState(10);
+  const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
+  const [invoiceRejectId, setInvoiceRejectId] = useState<number | null>(null);
+  const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
+  const [invoiceUpdateTarget, setInvoiceUpdateTarget] = useState<Invoice | null>(null);
+  const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
+
+  const invoiceRowMenu = useRowMenu(invoices ?? []);
+  const invoiceReqIdRef = useRef(0);
+  const invoiceSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleInvoiceSearchChange(value: string) {
+    setInvoiceSearchInput(value);
+    if (invoiceSearchDebounce.current) clearTimeout(invoiceSearchDebounce.current);
+    invoiceSearchDebounce.current = setTimeout(() => {
+      setInvoiceSearch(value.trim());
+      setInvoicePage(1);
+    }, 350);
+  }
+
+  useEffect(() => {
+    if (!loading && me && !INVOICE_HISTORY_ROLES.includes(me.role)) router.replace("/office-supplies/overview");
+  }, [loading, me, router]);
+
+  const loadInvoices = useCallback(async () => {
+    const reqId = ++invoiceReqIdRef.current;
+    try {
+      const result = await api.listAtkInvoice({
+        page: invoicePage,
+        limit: invoiceLimit,
+        bulan: invoiceFilterBulan,
+        search: invoiceSearch,
+        uploadedBy: invoiceFilterUploader === "" ? undefined : invoiceFilterUploader,
+      });
+      // A slower earlier request (e.g. the initial unfiltered load) can resolve after a newer
+      // one triggered by changing the filter - ignore it so it doesn't clobber fresher results.
+      if (reqId !== invoiceReqIdRef.current) return;
+      const invoiceItems = result?.items ?? [];
+      const invoiceTotalCount = result?.total ?? 0;
+      if (invoiceItems.length === 0 && invoiceTotalCount > 0 && invoicePage > 1) {
+        setInvoicePage((p) => p - 1);
+        return;
+      }
+      setInvoices(invoiceItems);
+      setInvoiceTotal(invoiceTotalCount);
+    } catch (err) {
+      if (reqId !== invoiceReqIdRef.current) return;
+      setInvoiceError((err as Error).message);
+    }
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch, invoiceFilterUploader]);
+
+  useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
+
+  useEffect(() => {
+    // Only Admin/Approval GA/Super Admin review invoices from more than one KPU account - KPU
+    // itself only ever sees its own uploads (see AtkInvoiceController.ListInvoice), so the filter
+    // wouldn't do anything for them.
+    if (!me || me.role === "KPU") return;
+    api.listAtkInvoiceUploaders().then(setInvoiceUploaders).catch(() => setInvoiceUploaders([]));
+  }, [me]);
+
+  if (!me || !INVOICE_HISTORY_ROLES.includes(me.role)) return null;
+
+  function handleDeleteInvoice(inv: Invoice) {
+    confirm("Yakin ingin menghapus Invoice ini?", async () => {
+      try {
+        await api.deleteAtkInvoice(inv.id);
+        showToast("Invoice berhasil dihapus");
+        loadInvoices();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
+  const invoiceTotalPages = Math.max(1, Math.ceil(invoiceTotal / invoiceLimit));
+  const invoicePageStart = Math.min(Math.max(1, invoicePage), invoiceTotalPages);
+  const invoicePageEnd = Math.min(invoiceTotalPages, invoicePageStart + 1);
+  const invoicePageButtons: number[] = [];
+  for (let p = invoicePageStart; p <= invoicePageEnd; p++) invoicePageButtons.push(p);
+
+  return (
+    <>
+      <div className="card">
+        <div className="invoice-toolbar-slim invoices-page-toolbar">
+          <div className="field invoice-search-field" style={{ marginBottom: 0 }}>
+            <label htmlFor="atk-invoice-filter-search">Cari Invoice</label>
+            <input
+              type="text"
+              id="atk-invoice-filter-search"
+              placeholder="Nama Invoice"
+              value={invoiceSearchInput}
+              onChange={(e) => handleInvoiceSearchChange(e.target.value)}
+            />
+          </div>
+          <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+            <label htmlFor="atk-invoice-filter-bulan">Filter Bulan</label>
+            <MonthFilterPicker
+              id="atk-invoice-filter-bulan"
+              value={invoiceFilterBulan}
+              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
+            />
+          </div>
+          {invoiceUploaders.length > 1 && (
+            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+              <label htmlFor="atk-invoice-filter-uploader">Diunggah Oleh</label>
+              <SearchableSelect
+                id="atk-invoice-filter-uploader"
+                value={String(invoiceFilterUploader)}
+                onChange={(v) => { setInvoiceFilterUploader(v === "" ? "" : Number(v)); setInvoicePage(1); }}
+                options={invoiceUploaders.map((u) => String(u.id))}
+                getLabel={(v) => invoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
+                clearLabel="Semua Mitra"
+                placeholder="Semua Mitra"
+              />
+            </div>
+          )}
+          <div className="field" style={{ marginBottom: 0 }}>
+            <span className="field-label-spacer">Semua Invoice</span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto" }}
+              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
+            >
+              Semua Invoice
+            </button>
+          </div>
+          {(me.role === "KPU" || me.role === "SUPER_ADMIN") && (
+            <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
+              + Input Invoice
+            </button>
+          )}
+        </div>
+
+        <div className="invoice-list">
+          {invoiceError ? (
+            <p className="text-secondary">{invoiceError}</p>
+          ) : invoices == null ? (
+            <p className="text-secondary">Memuat data invoice...</p>
+          ) : invoices.length === 0 ? (
+            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
+          ) : (
+            invoices.map((inv) => (
+              <div className="invoice-row" key={inv.id}>
+                <div className="invoice-row-main">
+                  <div className="invoice-file-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  </div>
+                  <div className="invoice-row-info">
+                    <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)} - {inv.nama}</div>
+                    <div className="invoice-row-meta">
+                      Diunggah: {formatDateTime(inv.uploadedAt)}
+                      {invoiceUploaders.length > 1 && inv.uploaderNama ? ` oleh ${inv.uploaderNama}` : ""}
+                    </div>
+                    {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
+                    {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
+                  </div>
+                </div>
+                <div className="invoice-row-actions">
+                  {inv.status === "REJECTED" ? (
+                    <div className="badge-stack">
+                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                      <span className="badge badge-waiting">Waiting: Mitra</span>
+                    </div>
+                  ) : (
+                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  )}
+                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="pagination">
+          <div className="pagination-left">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="atk-invoice-limit">Tampilkan</label>
+              <SearchableSelect
+                id="atk-invoice-limit"
+                value={String(invoiceLimit)}
+                onChange={(v) => { setInvoiceLimit(Number(v)); setInvoicePage(1); }}
+                options={["5", "10", "20", "50"]}
+                getLabel={(v) => `${v} Invoice`}
+                placeholder={`${invoiceLimit} Invoice`}
+              />
+            </div>
+          </div>
+          <div className="pagination-right">
+            <span className="text-secondary">Total {invoiceTotal} Invoice · Halaman {invoicePage} dari {invoiceTotalPages}</span>
+            <div className="pages">
+              <button className="page-btn" disabled={invoicePage <= 1} onClick={() => setInvoicePage(invoicePage - 1)}>‹</button>
+              {invoicePageButtons.map((p) => (
+                <button key={p} className={`page-btn ${p === invoicePage ? "active" : ""}`} onClick={() => setInvoicePage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={invoicePage >= invoiceTotalPages} onClick={() => setInvoicePage(invoicePage + 1)}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <InvoiceRowMenuDropdown
+        position={invoiceRowMenu.position}
+        // Updates re-uses AtkInvoiceController.UpdateInvoice, whose own item.UploadedBy === user.Id
+        // ownership check has no Super Admin exception - so this only actually succeeds for an
+        // invoice Super Admin uploaded under their own account.
+        showUpdates={!!invoiceRowMenu.menuItem && (me.role === "KPU" || (me.role === "SUPER_ADMIN" && invoiceRowMenu.menuItem.uploadedBy === me.id)) && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
+        // Unlike Updates, DeleteInvoice on the backend does special-case Super Admin (deletes any
+        // invoice regardless of owner/status, logged as an audited deletion) - so this one can
+        // bypass unconditionally.
+        showDelete={!!invoiceRowMenu.menuItem && (me.role === "KPU" ? (invoiceRowMenu.menuItem.status === "DRAFT" || invoiceRowMenu.menuItem.status === "REJECTED") : me.role === "SUPER_ADMIN")}
+        pdfViewUrl={invoiceRowMenu.menuItem ? api.atkInvoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
+        pdfDownloadUrl={invoiceRowMenu.menuItem ? api.atkInvoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
+        onDetail={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceDetail(item);
+        }}
+        onUpdates={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceUpdateTarget(item);
+        }}
+        onRiwayat={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceHistoryId(item.id);
+        }}
+        onDelete={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) handleDeleteInvoice(item);
+        }}
+        onLinkClick={() => invoiceRowMenu.close()}
+      />
+
+      <AtkInvoiceUploadModal
+        open={invoiceUploadOpen}
+        onClose={() => setInvoiceUploadOpen(false)}
+        onDone={() => {
+          setInvoiceUploadOpen(false);
+          loadInvoices();
+        }}
+      />
+
+      <AtkInvoiceDetailModal
+        open={!!invoiceDetail}
+        item={invoiceDetail}
+        me={me}
+        onClose={() => setInvoiceDetail(null)}
+        onRequestAction={(id) => setInvoiceRejectId(id)}
+        onSubmitted={() => {
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
+      />
+
+      <AtkInvoiceActionModal
+        open={invoiceRejectId != null}
+        invoiceId={invoiceRejectId}
+        onClose={() => setInvoiceRejectId(null)}
+        onDone={() => {
+          setInvoiceRejectId(null);
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
+      />
+
+      <AtkInvoiceUpdateModal
+        open={!!invoiceUpdateTarget}
+        item={invoiceUpdateTarget}
+        onClose={() => setInvoiceUpdateTarget(null)}
+        onDone={() => {
+          setInvoiceUpdateTarget(null);
+          loadInvoices();
+        }}
+      />
+
+      <AtkInvoiceHistoryModal
+        open={invoiceHistoryId != null}
+        invoiceId={invoiceHistoryId}
+        onClose={() => setInvoiceHistoryId(null)}
+      />
+    </>
+  );
+}
