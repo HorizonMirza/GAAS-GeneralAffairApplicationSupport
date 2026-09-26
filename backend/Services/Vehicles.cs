@@ -1,3 +1,5 @@
+using PengirimanApi.Data;
+
 namespace PengirimanApi.Services;
 
 public record VehicleOption(
@@ -13,13 +15,16 @@ public record VehicleOption(
     string LokasiParkir
 );
 
-// Placeholder fleet - 10 example vehicles so the module works end-to-end. Replace with the real
-// company fleet (and real assigned drivers) whenever the actual list is available (same
-// convention as MeetingRooms.Rooms) - Supir, NomorTeleponSupir, Tahun, Warna and LokasiParkir
-// below are all placeholder values, not real employee/asset records.
 public static class Vehicles
 {
-    public static readonly List<VehicleOption> Fleet = new()
+    // The fleet exactly as it was hardcoded before this feature existed. Used ONLY as one-time
+    // seed data for the vehicle table the very first time this app boots against a database that
+    // doesn't have it yet (see the backfill block in Program.cs) - NOT read by anything else.
+    // Once that backfill has run, Fleet below is rebuilt from the database instead (see
+    // LoadFromDb), so an edit to this literal after go-live has no effect on a running
+    // deployment - the only way to change the fleet after that point is through
+    // VehicleAdminController.
+    public static readonly List<VehicleOption> SeedData = new()
     {
         new("Toyota Avanza 1", "B 1234 ABC", 6, "Sutrisno", "Toyota", "Avanza", 2022, "Silver", "0812-3456-7801", "Parkir Basement B1 - Slot A1"),
         new("Toyota Avanza 2", "B 1235 ABC", 6, "Wahyudi", "Toyota", "Avanza", 2021, "Putih", "0812-3456-7802", "Parkir Basement B1 - Slot A2"),
@@ -32,6 +37,25 @@ public static class Vehicles
         new("Isuzu Elf (Minibus)", "B 8865 PQR", 15, "Hendra Gunawan", "Isuzu", "Elf NLR", 2021, "Putih", "0812-3456-7809", "Parkir Basement B2 - Slot B2"),
         new("Hyundai Staria", "B 9976 STU", 11, "Fajar Nugroho", "Hyundai", "Staria", 2023, "Abu-abu", "0812-3456-7810", "Parkir Basement B2 - Slot B3"),
     };
+
+    // Populated once at startup (Program.cs calls LoadFromDb right after the one-time backfill),
+    // then rebuilt on every VehicleAdminController write within that same request - see
+    // OrgTree.Tree for the identical pattern this mirrors.
+    public static List<VehicleOption> Fleet { get; private set; } = SeedData;
+
+    // Rebuilds Fleet from whatever vehicle rows exist right now - called once at startup and again
+    // after every add/edit/delete in VehicleAdminController, so every one of this class's own call
+    // sites (BookingKendaraanController) already reflects the change on its very next read,
+    // including this same process's very next request.
+    public static void LoadFromDb(AppDbContext db)
+    {
+        Fleet = db.Vehicles
+            .OrderBy(v => v.Id)
+            .AsEnumerable()
+            .Select(v => new VehicleOption(
+                v.Nama, v.PlatNomor, v.Kapasitas, v.Supir, v.Merek, v.Model, v.Tahun, v.Warna, v.NomorTeleponSupir, v.LokasiParkir))
+            .ToList();
+    }
 
     public static int? GetKapasitas(string namaKendaraan) =>
         Fleet.FirstOrDefault(v => v.Nama == namaKendaraan)?.Kapasitas;

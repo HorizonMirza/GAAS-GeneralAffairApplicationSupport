@@ -25,13 +25,15 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
+import { Building2, Calendar, Car, ClipboardList, DoorOpen, Folder, Layers, Shield, Truck, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
 import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
+import SuperAdminMeetingRoomTab from "@/components/SuperAdminMeetingRoomTab";
+import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users" | "meeting-room" | "vehicle";
 
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "overview", label: "Ringkasan & Audit", icon: <Shield width={16} height={16} /> },
@@ -43,6 +45,8 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
   { key: "organisasi", label: "Organisasi", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
+  { key: "meeting-room", label: "Ruang Meeting", icon: <DoorOpen width={16} height={16} /> },
+  { key: "vehicle", label: "Kendaraan", icon: <Truck width={16} height={16} /> },
 ];
 
 interface BookingFilterState {
@@ -2098,6 +2102,10 @@ export default function SuperAdminPage() {
       {activeTab === "organisasi" && <SuperAdminOrgTab />}
 
       {activeTab === "users" && <SuperAdminUsersTab orgStructure={orgStructure} />}
+
+      {activeTab === "meeting-room" && <SuperAdminMeetingRoomTab />}
+
+      {activeTab === "vehicle" && <SuperAdminVehicleTab />}
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}

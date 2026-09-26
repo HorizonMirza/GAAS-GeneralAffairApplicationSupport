@@ -882,6 +882,41 @@ export interface CreateDepartemenResult {
 }
 
 // ---------------------------------------------------------------------------
+// Meeting Room / Vehicle Admin (Super Admin meeting-room-admin/vehicle-admin endpoints) - see
+// backend's MeetingRoomAdminController/VehicleAdminController.
+// ---------------------------------------------------------------------------
+
+export interface MeetingRoomItem {
+  id: number;
+  nama: string;
+  kapasitas: number;
+  lantai: string;
+  fasilitas: string[];
+}
+
+export interface MeetingRoomListResult {
+  rooms: MeetingRoomItem[];
+}
+
+export interface VehicleItem {
+  id: number;
+  nama: string;
+  platNomor: string;
+  kapasitas: number;
+  supir: string;
+  merek: string;
+  model: string;
+  tahun: number;
+  warna: string;
+  nomorTeleponSupir: string;
+  lokasiParkir: string;
+}
+
+export interface VehicleListResult {
+  vehicles: VehicleItem[];
+}
+
+// ---------------------------------------------------------------------------
 // Users Admin (Super Admin users-admin endpoints) - see backend's UsersAdminController.
 // ---------------------------------------------------------------------------
 

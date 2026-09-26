@@ -48,6 +48,8 @@ public class AppDbContext : DbContext
     public DbSet<OrgDivisi> OrgDivisis => Set<OrgDivisi>();
     public DbSet<OrgDepartemen> OrgDepartemens => Set<OrgDepartemen>();
     public DbSet<DeletionLog> DeletionLogs => Set<DeletionLog>();
+    public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1131,6 +1133,38 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(l => l.DeletedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<MeetingRoom>(e =>
+        {
+            e.ToTable("meeting_room");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.HasIndex(r => r.Nama).IsUnique();
+            e.Property(r => r.Kapasitas).HasColumnName("kapasitas");
+            e.Property(r => r.Lantai).HasColumnName("lantai").HasMaxLength(50).IsRequired();
+            e.Property(r => r.FasilitasCsv).HasColumnName("fasilitas_csv").IsRequired();
+            e.Property(r => r.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<Vehicle>(e =>
+        {
+            e.ToTable("vehicle");
+            e.HasKey(v => v.Id);
+            e.Property(v => v.Id).HasColumnName("id");
+            e.Property(v => v.Nama).HasColumnName("nama").HasMaxLength(255).IsRequired();
+            e.HasIndex(v => v.Nama).IsUnique();
+            e.Property(v => v.PlatNomor).HasColumnName("plat_nomor").HasMaxLength(20).IsRequired();
+            e.Property(v => v.Kapasitas).HasColumnName("kapasitas");
+            e.Property(v => v.Supir).HasColumnName("supir").HasMaxLength(255).IsRequired();
+            e.Property(v => v.Merek).HasColumnName("merek").HasMaxLength(100).IsRequired();
+            e.Property(v => v.Model).HasColumnName("model").HasMaxLength(100).IsRequired();
+            e.Property(v => v.Tahun).HasColumnName("tahun");
+            e.Property(v => v.Warna).HasColumnName("warna").HasMaxLength(50).IsRequired();
+            e.Property(v => v.NomorTeleponSupir).HasColumnName("nomor_telepon_supir").HasMaxLength(30).IsRequired();
+            e.Property(v => v.LokasiParkir).HasColumnName("lokasi_parkir").HasMaxLength(255).IsRequired();
+            e.Property(v => v.CreatedAt).HasColumnName("created_at");
         });
     }
 }

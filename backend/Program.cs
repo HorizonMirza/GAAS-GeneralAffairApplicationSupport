@@ -864,6 +864,77 @@ using (var scope = app.Services.CreateScope())
             created_at TIMESTAMP NOT NULL DEFAULT NOW()
         )");
 
+    // Meeting room roster + vehicle fleet (Part 5) - DB-backed replacement for the hardcoded lists
+    // MeetingRooms.cs/Vehicles.cs used to carry, same "convert a static literal into a table +
+    // one-time backfill" shape as Part 1 above.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS meeting_room (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL UNIQUE,
+            kapasitas INT NOT NULL,
+            lantai VARCHAR(50) NOT NULL,
+            fasilitas_csv TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS vehicle (
+            id SERIAL PRIMARY KEY,
+            nama VARCHAR(255) NOT NULL UNIQUE,
+            plat_nomor VARCHAR(20) NOT NULL,
+            kapasitas INT NOT NULL,
+            supir VARCHAR(255) NOT NULL,
+            merek VARCHAR(100) NOT NULL,
+            model VARCHAR(100) NOT NULL,
+            tahun INT NOT NULL,
+            warna VARCHAR(50) NOT NULL,
+            nomor_telepon_supir VARCHAR(30) NOT NULL,
+            lokasi_parkir VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+
+    // One-time backfill, guarded the same way as Part 1's org tables above (Nama is UNIQUE, so
+    // once this has run once the table is never empty again).
+    if (!migrateDb.MeetingRooms.Any())
+    {
+        foreach (var room in MeetingRooms.SeedData)
+        {
+            migrateDb.MeetingRooms.Add(new MeetingRoom
+            {
+                Nama = room.Nama,
+                Kapasitas = room.Kapasitas,
+                Lantai = room.Lantai,
+                FasilitasCsv = string.Join(",", room.Fasilitas),
+            });
+        }
+        migrateDb.SaveChanges();
+    }
+    if (!migrateDb.Vehicles.Any())
+    {
+        foreach (var vehicle in Vehicles.SeedData)
+        {
+            migrateDb.Vehicles.Add(new Vehicle
+            {
+                Nama = vehicle.Nama,
+                PlatNomor = vehicle.PlatNomor,
+                Kapasitas = vehicle.Kapasitas,
+                Supir = vehicle.Supir,
+                Merek = vehicle.Merek,
+                Model = vehicle.Model,
+                Tahun = vehicle.Tahun,
+                Warna = vehicle.Warna,
+                NomorTeleponSupir = vehicle.NomorTeleponSupir,
+                LokasiParkir = vehicle.LokasiParkir,
+            });
+        }
+        migrateDb.SaveChanges();
+    }
+
+    // Loads Rooms/Fleet from the tables just created/backfilled above, same reasoning as
+    // OrgTree.LoadFromDb above - every BookingRuangController/BookingKendaraanController call site
+    // reads through this cache.
+    MeetingRooms.LoadFromDb(migrateDb);
+    Vehicles.LoadFromDb(migrateDb);
+
     // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
     // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
     // restart, instead of silently requiring the seed command to be run by hand. Insert-if-
@@ -879,7 +950,7 @@ if (args.Contains("resetdb"))
     // appended here so they don't inherit the same "left off resetdb's list" gap that
     // notification_sound_settings and perbaikan_sarana_foto_kerusakan already have above (a
     // pre-existing bug in this same list, left untouched per product owner instruction).
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, org_departemen, org_divisi, org_direktorat, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

@@ -31,6 +31,8 @@ import type {
   InvoiceListResponse,
   InvoiceLog,
   Me,
+  MeetingRoomItem,
+  MeetingRoomListResult,
   NotificationSoundSettings,
   OrgStructure,
   OrgTreeResponse,
@@ -66,6 +68,8 @@ import type {
   Status,
   SumberPembelian,
   UpdateUserPayload,
+  VehicleItem,
+  VehicleListResult,
   VehicleOption,
 } from "./types";
 
@@ -804,6 +808,22 @@ export const api = {
   renameDepartemen: (id: number, nama: string) =>
     apiRequest(`/org-admin/departemen/${id}`, { method: "PATCH", body: { nama } }),
   deleteDepartemen: (id: number) => apiRequest(`/org-admin/departemen/${id}`, { method: "DELETE" }),
+
+  // --- Meeting Room (Super Admin only) ---
+  listAdminMeetingRooms: () => apiRequest<MeetingRoomListResult>("/meeting-room-admin"),
+  createAdminMeetingRoom: (payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[] }) =>
+    apiRequest<MeetingRoomItem>("/meeting-room-admin", { method: "POST", body: payload }),
+  updateAdminMeetingRoom: (id: number, payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[] }) =>
+    apiRequest<MeetingRoomItem>(`/meeting-room-admin/${id}`, { method: "PATCH", body: payload }),
+  deleteAdminMeetingRoom: (id: number) => apiRequest(`/meeting-room-admin/${id}`, { method: "DELETE" }),
+
+  // --- Vehicle (Super Admin only) ---
+  listAdminVehicles: () => apiRequest<VehicleListResult>("/vehicle-admin"),
+  createAdminVehicle: (payload: Omit<VehicleItem, "id">) =>
+    apiRequest<VehicleItem>("/vehicle-admin", { method: "POST", body: payload }),
+  updateAdminVehicle: (id: number, payload: Omit<VehicleItem, "id">) =>
+    apiRequest<VehicleItem>(`/vehicle-admin/${id}`, { method: "PATCH", body: payload }),
+  deleteAdminVehicle: (id: number) => apiRequest(`/vehicle-admin/${id}`, { method: "DELETE" }),
 
   // --- Users Admin (Super Admin only) ---
   listAdminUsers: (params: ListAdminUsersParams) =>
