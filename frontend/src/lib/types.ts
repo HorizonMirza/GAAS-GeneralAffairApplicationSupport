@@ -204,6 +204,9 @@ export interface PengirimanCreatePayload {
   // home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See PengirimanFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   tanggal: string;
   jumlahItem: number;
   tujuanPenerimaan: string;

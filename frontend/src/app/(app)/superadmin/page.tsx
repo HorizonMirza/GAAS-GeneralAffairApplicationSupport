@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { MessageSquare } from "lucide-react";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiPengiriman, canKoreksiHargaPengiriman, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isEditableByOrigin, isPengirimanPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
 import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
@@ -13,6 +14,13 @@ import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
+import RowMenuDropdown from "@/components/RowMenuDropdown";
+import ChatModal from "@/components/ChatModal";
+import PengirimanFormModal from "@/components/PengirimanFormModal";
+import PengirimanDetailModal from "@/components/PengirimanDetailModal";
+import PengirimanKoreksiModal from "@/components/PengirimanKoreksiModal";
+import RejectModal, { type RejectType } from "@/components/RejectModal";
+import StatusHistoryModal from "@/components/StatusHistoryModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
@@ -151,6 +159,16 @@ export default function SuperAdminPage() {
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
+  // Ekspedisi tab's interactive-replica state (Detail/Chat/Reject/Koreksi/Status-history/row menu)
+  // - "ekspedisi"-prefixed since Room Booking/Vehicle/ATK/Maintenance/Arsip tabs each carry the
+  // same shape for their own module, all living in this one page component.
+  const [ekspedisiFormOpen, setEkspedisiFormOpen] = useState(false);
+  const [ekspedisiDetail, setEkspedisiDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" | "kpu-edit" } | null>(null);
+  const [ekspedisiStatusItemId, setEkspedisiStatusItemId] = useState<number | null>(null);
+  const [ekspedisiChatItem, setEkspedisiChatItem] = useState<Pengiriman | null>(null);
+  const [ekspedisiRejectTarget, setEkspedisiRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
+  const [ekspedisiKoreksiTarget, setEkspedisiKoreksiTarget] = useState<Pengiriman | null>(null);
+  const ekspedisiRowMenu = useRowMenu(items);
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
@@ -224,10 +242,12 @@ export default function SuperAdminPage() {
     if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
   }, [loading, me, router]);
 
-  const loadTable = useCallback(async () => {
+  const loadTable = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++tableReqIdRef.current;
-    setTableBusy(true);
-    setTableError("");
+    if (!opts?.silent) {
+      setTableBusy(true);
+      setTableError("");
+    }
     try {
       const result = await api.listPengiriman({
         page: filters.page,
@@ -255,9 +275,9 @@ export default function SuperAdminPage() {
       setTotal(pengirimanTotal);
     } catch (err) {
       if (reqId !== tableReqIdRef.current) return;
-      setTableError((err as Error).message);
+      if (!opts?.silent) setTableError((err as Error).message);
     } finally {
-      if (reqId === tableReqIdRef.current) setTableBusy(false);
+      if (reqId === tableReqIdRef.current && !opts?.silent) setTableBusy(false);
     }
   }, [filters]);
 
@@ -1067,6 +1087,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setEkspedisiFormOpen(true)}>+ Input Data Barang</button>
           </div>
         </div>
 
@@ -1077,16 +1098,16 @@ export default function SuperAdminPage() {
                 <th>No</th><th>No Transmittal</th><th>No Resi</th><th>Diajukan</th><th>Tanggal</th><th>Tujuan</th><th>Jumlah Barang</th><th>Divisi</th><th>Departemen</th>
                 <th>Nama Pengirim</th><th>No. Telepon Pengirim</th><th>Alamat Pengirim</th><th>Nama Penerima</th><th>No. Telepon Penerima</th><th>Alamat Penerima</th>
                 <th>Kode Program</th><th>Asuransi</th><th>Pengemasan Tambahan</th><th>Catatan</th>
-                <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th><th>Aksi</th>
+                <th>Berat Barang (Kg)</th><th>Harga Ongkos Kirim</th><th>Total</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableBusy ? (
-                <tr><td colSpan={24} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={23} className="table-empty">Memuat data...</td></tr>
               ) : tableError ? (
-                <tr><td colSpan={24} className="table-empty">{tableError}</td></tr>
+                <tr><td colSpan={23} className="table-empty">{tableError}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={24} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={23} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((item, index) => {
                   const rowNumber = (filters.page - 1) * filters.limit + index + 1;
@@ -1114,9 +1135,24 @@ export default function SuperAdminPage() {
                       <td>{item.beratBarangKg ?? "-"}</td>
                       <td>{item.subTotal ? formatCurrency(item.subTotal) : "-"}</td>
                       <td>{item.total ? formatCurrency(item.total) : "-"}</td>
-                      <td><StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDelete(item)}>Delete</button>
+                        <div className="status-cell">
+                          <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setEkspedisiChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => ekspedisiRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1153,6 +1189,94 @@ export default function SuperAdminPage() {
         </div>
       </div>
           )}
+
+          <RowMenuDropdown
+            position={ekspedisiRowMenu.position}
+            canEditDelete={
+              !!ekspedisiRowMenu.menuItem &&
+              (isEditableByOrigin(ekspedisiRowMenu.menuItem, me) || canGaKoreksiPengiriman(ekspedisiRowMenu.menuItem, me) || canKoreksiHargaPengiriman(ekspedisiRowMenu.menuItem, me))
+            }
+            canDelete={!!ekspedisiRowMenu.menuItem && isEditableByOrigin(ekspedisiRowMenu.menuItem, me)}
+            onDetail={() => {
+              const item = ekspedisiRowMenu.menuItem;
+              ekspedisiRowMenu.close();
+              if (item) setEkspedisiDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = ekspedisiRowMenu.menuItem;
+              ekspedisiRowMenu.close();
+              if (!item) return;
+              if (isEditableByOrigin(item, me)) setEkspedisiDetail({ item, mode: "edit" });
+              else if (canGaKoreksiPengiriman(item, me)) setEkspedisiKoreksiTarget(item);
+              else if (canKoreksiHargaPengiriman(item, me)) setEkspedisiDetail({ item, mode: "kpu-edit" });
+            }}
+            onStatus={() => {
+              const item = ekspedisiRowMenu.menuItem;
+              ekspedisiRowMenu.close();
+              if (item) setEkspedisiStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = ekspedisiRowMenu.menuItem;
+              ekspedisiRowMenu.close();
+              if (item) handleDelete(item);
+            }}
+            pdfUrl={ekspedisiRowMenu.menuItem && isPengirimanPdfAvailable(ekspedisiRowMenu.menuItem) ? api.pengirimanPdfUrl(ekspedisiRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = ekspedisiRowMenu.menuItem;
+              ekspedisiRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.pengirimanPdfUrl(item.id), `Bukti-Pengiriman-${item.nomorTransmittal || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <ChatModal
+            open={!!ekspedisiChatItem}
+            itemId={ekspedisiChatItem?.id ?? null}
+            itemLabel={ekspedisiChatItem ? `${ekspedisiChatItem.tujuanPenerimaan} - ${ekspedisiChatItem.nomorTransmittal}` : ""}
+            departemen={ekspedisiChatItem?.departemen ?? null}
+            createdByRole={ekspedisiChatItem?.createdByRole ?? null}
+            me={me}
+            onClose={() => setEkspedisiChatItem(null)}
+            onRead={() => loadTable({ silent: true })}
+          />
+
+          <PengirimanFormModal open={ekspedisiFormOpen} me={me} onClose={() => setEkspedisiFormOpen(false)} onCreated={loadTable} />
+
+          <PengirimanDetailModal
+            open={!!ekspedisiDetail}
+            mode={ekspedisiDetail?.mode || "view"}
+            item={ekspedisiDetail?.item || null}
+            me={me}
+            onClose={() => setEkspedisiDetail(null)}
+            onSaved={loadTable}
+            onRequestReject={(id, type, originLabel, createdByRole) => setEkspedisiRejectTarget({ id, type, originLabel, createdByRole })}
+          />
+
+          <RejectModal
+            open={!!ekspedisiRejectTarget}
+            targetId={ekspedisiRejectTarget?.id ?? null}
+            targetType={ekspedisiRejectTarget?.type ?? null}
+            originLabel={ekspedisiRejectTarget?.originLabel ?? ""}
+            createdByRole={ekspedisiRejectTarget?.createdByRole ?? null}
+            onClose={() => setEkspedisiRejectTarget(null)}
+            onDone={() => {
+              setEkspedisiRejectTarget(null);
+              loadTable();
+            }}
+          />
+
+          <PengirimanKoreksiModal
+            open={!!ekspedisiKoreksiTarget}
+            item={ekspedisiKoreksiTarget}
+            onClose={() => setEkspedisiKoreksiTarget(null)}
+            onSaved={loadTable}
+          />
+
+          <StatusHistoryModal open={ekspedisiStatusItemId != null} itemId={ekspedisiStatusItemId} onClose={() => setEkspedisiStatusItemId(null)} />
 
           {ekspedisiSubtab === "invoice" && (
       <div className="card">

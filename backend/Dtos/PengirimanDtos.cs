@@ -11,6 +11,11 @@ public class PengirimanCreate
     // send something on the Divisi's own behalf without naming a specific Departemen.
     public string? Divisi { get; set; }
     public string? Departemen { get; set; }
+    // Super Admin only: which origin role to stamp this item as (see
+    // PengirimanController.EffectiveOwner) - ignored for every other role, since they always
+    // create as themselves. Null keeps the old behavior (stamped as SUPER_ADMIN itself, same as
+    // any other GA-actor role).
+    public RoleEnum? AsRole { get; set; }
     public DateOnly Tanggal { get; set; }
     public string TujuanPenerimaan { get; set; } = null!;
     public int JumlahItem { get; set; }
