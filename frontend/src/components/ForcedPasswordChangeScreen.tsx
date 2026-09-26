@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
@@ -26,8 +27,10 @@ function meetsAllRequirements(password: string): boolean {
 // Admin just reset - see UsersAdminController). Blocks all navigation until a real password
 // replaces the one-time generated one: there is no "skip" or close button here on purpose.
 export default function ForcedPasswordChangeScreen() {
+  const router = useRouter();
   const { me, refresh } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -67,6 +70,19 @@ export default function ForcedPasswordChangeScreen() {
       setError((err as Error).message || "Gagal mengubah password");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // Escape hatch for someone who landed here by mistake (wrong account, or simply changed their
+  // mind) - without it, the only way out of this full-screen gate before setting a new password
+  // was closing the tab, which still leaves the session logged in.
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await api.logout();
+      router.replace("/");
+    } catch {
+      setLoggingOut(false);
     }
   }
 
@@ -148,6 +164,15 @@ export default function ForcedPasswordChangeScreen() {
 
             <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop: 24 }}>
               {submitting ? "Menyimpan..." : "Simpan Password Baru"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={submitting || loggingOut}
+              style={{ marginTop: 8 }}
+              onClick={handleLogout}
+            >
+              {loggingOut ? "Keluar..." : "Keluar / Salah Akun"}
             </button>
           </form>
         </div>

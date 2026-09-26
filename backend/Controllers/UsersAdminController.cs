@@ -77,6 +77,8 @@ public class UsersAdminController : ApiControllerBase
 
         var (orgError, direktorat, divisi, departemen) = ValidateOrgFields(payload.Divisi, payload.Departemen);
         if (orgError != null) return StatusCode(400, new { detail = orgError });
+        var consistencyError = ValidateRoleOrgConsistency(payload.Role, divisi, departemen);
+        if (consistencyError != null) return StatusCode(400, new { detail = consistencyError });
 
         var password = PasswordGenerator.Generate();
         var user = new User
@@ -118,17 +120,40 @@ public class UsersAdminController : ApiControllerBase
         if (payload.NoHp != null)
             user.NoHp = string.IsNullOrWhiteSpace(payload.NoHp) ? null : payload.NoHp.Trim();
 
+        // Effective Role/Divisi/Departemen this request would end up with - computed up front
+        // (rather than applied field-by-field) so the two checks below always see the FULL
+        // resulting combination, even when a request only touches one of the three (e.g. changing
+        // just Role against an untouched, already-stored Divisi/Departemen from before).
+        var effectiveRole = payload.Role ?? user.Role;
+        var direktorat = user.Direktorat;
+        var divisi = user.Divisi;
+        var departemen = user.Departemen;
         if (payload.Divisi != null || payload.Departemen != null || payload.ClearDivisi || payload.ClearDepartemen)
         {
-            var divisi = payload.ClearDivisi ? null : (payload.Divisi ?? user.Divisi);
-            var departemen = payload.ClearDepartemen ? null : (payload.Departemen ?? user.Departemen);
-            var (orgError, validDirektorat, validDivisi, validDepartemen) = ValidateOrgFields(divisi, departemen);
+            var newDivisi = payload.ClearDivisi ? null : (payload.Divisi ?? user.Divisi);
+            var newDepartemen = payload.ClearDepartemen ? null : (payload.Departemen ?? user.Departemen);
+            var (orgError, validDirektorat, validDivisi, validDepartemen) = ValidateOrgFields(newDivisi, newDepartemen);
             if (orgError != null) return StatusCode(400, new { detail = orgError });
-            user.Direktorat = validDirektorat;
-            user.Divisi = validDivisi;
-            user.Departemen = validDepartemen;
+            direktorat = validDirektorat;
+            divisi = validDivisi;
+            departemen = validDepartemen;
         }
-        if (payload.Role.HasValue) user.Role = payload.Role.Value;
+
+        // Lockout guard: with only one seeded Super Admin account and no other way back into
+        // /superadmin, letting that last account demote itself (or another Super Admin demote it)
+        // away from SUPER_ADMIN would strand the whole feature with no recovery path short of a
+        // manual database edit.
+        if (payload.Role.HasValue && payload.Role.Value != user.Role && user.Role == RoleEnum.SUPER_ADMIN
+            && await IsLastActiveSuperAdmin(_db, user))
+            return StatusCode(400, new { detail = "Tidak dapat mengubah role - ini satu-satunya akun Super Admin aktif" });
+
+        var consistencyError = ValidateRoleOrgConsistency(effectiveRole, divisi, departemen);
+        if (consistencyError != null) return StatusCode(400, new { detail = consistencyError });
+
+        user.Direktorat = direktorat;
+        user.Divisi = divisi;
+        user.Departemen = departemen;
+        user.Role = effectiveRole;
 
         await _db.SaveChangesAsync();
         return Ok(AdminUserOut.From(user));
@@ -164,6 +189,8 @@ public class UsersAdminController : ApiControllerBase
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
         if (user.Id == currentUser!.Id)
             return StatusCode(400, new { detail = "Tidak dapat menonaktifkan akun yang sedang digunakan" });
+        if (await IsLastActiveSuperAdmin(_db, user))
+            return StatusCode(400, new { detail = "Tidak dapat menonaktifkan - ini satu-satunya akun Super Admin aktif" });
 
         user.IsActive = false;
         await _db.SaveChangesAsync();
@@ -205,5 +232,52 @@ public class UsersAdminController : ApiControllerBase
 
         var resolvedDirektorat = normDivisi != null ? OrgTree.GetDirektoratForDivisi(normDivisi) : null;
         return (null, resolvedDirektorat, normDivisi, normDepartemen);
+    }
+
+    // true only when `target` is itself an active SUPER_ADMIN and no OTHER active SUPER_ADMIN
+    // account exists - called before demoting/deactivating a Super Admin account, never before
+    // any other change, so a role change into SUPER_ADMIN or an edit to a non-Super-Admin account
+    // never hits this check at all. Public static (db passed explicitly, like ChatHub's own
+    // Can...Chat helpers) so backend.Tests can exercise it directly against an in-memory
+    // AppDbContext without also standing up a real CurrentUserService/HttpContext.
+    public static async Task<bool> IsLastActiveSuperAdmin(AppDbContext db, User target)
+    {
+        if (target.Role != RoleEnum.SUPER_ADMIN || !target.IsActive) return false;
+        var othersActive = await db.Users.CountAsync(u => u.Id != target.Id && u.Role == RoleEnum.SUPER_ADMIN && u.IsActive);
+        return othersActive == 0;
+    }
+
+    // Blocks Role+Divisi/Departemen combinations that can't occur through normal seeding
+    // (DbSeeder.BuildAccounts) and that the rest of the app doesn't expect: ADMIN_GA/APPROVAL_GA/
+    // KPU/SUPER_ADMIN are never tied to any org unit; ADMIN_DIVISI/APPROVAL_DIVISI stop at Divisi
+    // (no Departemen); ADMIN_DEPARTEMEN/APPROVAL_DEPARTEMEN need both. Called with the FULL
+    // resulting Role+Divisi+Departemen a request would end up with, not just whichever fields it
+    // happened to touch - see the two call sites. Public for the same testability reason as
+    // IsLastActiveSuperAdmin above.
+    public static string? ValidateRoleOrgConsistency(RoleEnum role, string? divisi, string? departemen)
+    {
+        switch (role)
+        {
+            case RoleEnum.ADMIN_GA:
+            case RoleEnum.APPROVAL_GA:
+            case RoleEnum.KPU:
+            case RoleEnum.SUPER_ADMIN:
+                if (divisi != null || departemen != null)
+                    return "Role ini tidak terikat ke Divisi/Departemen manapun - kosongkan keduanya";
+                break;
+            case RoleEnum.ADMIN_DIVISI:
+            case RoleEnum.APPROVAL_DIVISI:
+                if (divisi == null)
+                    return "Role ini wajib memiliki Divisi";
+                if (departemen != null)
+                    return "Role ini tidak boleh memiliki Departemen (hanya sampai level Divisi)";
+                break;
+            case RoleEnum.ADMIN_DEPARTEMEN:
+            case RoleEnum.APPROVAL_DEPARTEMEN:
+                if (divisi == null || departemen == null)
+                    return "Role ini wajib memiliki Divisi dan Departemen";
+                break;
+        }
+        return null;
     }
 }

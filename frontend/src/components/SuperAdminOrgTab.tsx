@@ -13,29 +13,32 @@ const ICON_BTN_STYLE: React.CSSProperties = { width: "auto", padding: "3px 6px" 
 
 // Inline "type to rename" control shared by all three node levels - a plain text input that swaps
 // in for the node's label, Enter/blur saves, Escape cancels.
-function InlineRename({ initial, onSave, onCancel }: { initial: string; onSave: (value: string) => void; onCancel: () => void }) {
+function InlineRename({ initial, disabled, onSave, onCancel }: { initial: string; disabled?: boolean; onSave: (value: string) => void; onCancel: () => void }) {
   const [value, setValue] = useState(initial);
   return (
     <input
       autoFocus
       type="text"
       value={value}
+      disabled={disabled}
       style={{ maxWidth: 320 }}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
+        if (disabled) return;
         if (e.key === "Enter") onSave(value);
         if (e.key === "Escape") onCancel();
       }}
-      onBlur={() => onSave(value)}
+      onBlur={() => { if (!disabled) onSave(value); }}
     />
   );
 }
 
 // Inline "+ Tambah ..." row - a text input (plus, for a Divisi, a Kode Satuan Kerja input) that
 // appears under a node and submits on Enter, matching InlineRename's own interaction shape.
-function InlineAdd({ placeholder, withKode, onSubmit, onCancel }: {
+function InlineAdd({ placeholder, withKode, disabled, onSubmit, onCancel }: {
   placeholder: string;
   withKode?: boolean;
+  disabled?: boolean;
   onSubmit: (nama: string, kode: string) => void;
   onCancel: () => void;
 }) {
@@ -49,9 +52,11 @@ function InlineAdd({ placeholder, withKode, onSubmit, onCancel }: {
         type="text"
         placeholder={placeholder}
         value={nama}
+        disabled={disabled}
         style={{ maxWidth: 280 }}
         onChange={(e) => setNama(e.target.value)}
         onKeyDown={(e) => {
+          if (disabled) return;
           if (e.key === "Escape") onCancel();
           if (e.key === "Enter" && nama.trim() && (!withKode || kode.trim())) onSubmit(nama.trim(), kode.trim());
         }}
@@ -61,9 +66,11 @@ function InlineAdd({ placeholder, withKode, onSubmit, onCancel }: {
           type="text"
           placeholder="Kode Satuan Kerja"
           value={kode}
+          disabled={disabled}
           style={{ maxWidth: 160 }}
           onChange={(e) => setKode(e.target.value)}
           onKeyDown={(e) => {
+            if (disabled) return;
             if (e.key === "Escape") onCancel();
             if (e.key === "Enter" && nama.trim() && kode.trim()) onSubmit(nama.trim(), kode.trim());
           }}
@@ -73,12 +80,12 @@ function InlineAdd({ placeholder, withKode, onSubmit, onCancel }: {
         type="button"
         className="btn btn-primary"
         style={ICON_BTN_STYLE}
-        disabled={!nama.trim() || (withKode && !kode.trim())}
+        disabled={disabled || !nama.trim() || (withKode && !kode.trim())}
         onClick={() => onSubmit(nama.trim(), kode.trim())}
       >
         Tambah
       </button>
-      <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} onClick={onCancel}>Batal</button>
+      <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} disabled={disabled} onClick={onCancel}>Batal</button>
     </div>
   );
 }
@@ -92,6 +99,12 @@ export default function SuperAdminOrgTab() {
 
   const [tree, setTree] = useState<OrgDirektoratNode[] | null>(null);
   const [error, setError] = useState("");
+  // Shared busy flag across every add/rename/delete action below - this is a single-admin,
+  // low-frequency editor (not a hot path), so one flag disabling everything while any one
+  // mutation is in flight is simpler than threading a per-row submitting state through three
+  // nested levels, and just as effective at blocking a double-click/double-Enter from firing the
+  // same create/rename/delete twice before the first response comes back.
+  const [saving, setSaving] = useState(false);
   const [expandedDirektorat, setExpandedDirektorat] = useState<Set<number>>(new Set());
   const [expandedDivisi, setExpandedDivisi] = useState<Set<number>>(new Set());
 
@@ -129,6 +142,8 @@ export default function SuperAdminOrgTab() {
   }
 
   async function handleAddDirektorat(nama: string) {
+    if (saving) return;
+    setSaving(true);
     try {
       await api.createDirektorat(nama);
       setAddingDirektorat(false);
@@ -136,33 +151,45 @@ export default function SuperAdminOrgTab() {
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   async function handleRenameDirektorat(id: number, nama: string) {
+    if (saving) return;
     setRenaming(null);
+    setSaving(true);
     try {
       await api.renameDirektorat(id, nama);
       showToast("Direktorat berhasil diubah");
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   function handleDeleteDirektorat(id: number, nama: string) {
+    if (saving) return;
     confirm(`Hapus Direktorat "${nama}"?`, async () => {
+      setSaving(true);
       try {
         await api.deleteDirektorat(id);
         showToast("Direktorat berhasil dihapus");
         await load();
       } catch (err) {
         showToast(errorMessage(err), "error");
+      } finally {
+        setSaving(false);
       }
     });
   }
 
   async function handleAddDivisi(direktoratId: number, nama: string, kode: string) {
+    if (saving) return;
+    setSaving(true);
     try {
       const result = await api.createDivisi(direktoratId, nama, kode);
       setAddingDivisiUnder(null);
@@ -173,33 +200,45 @@ export default function SuperAdminOrgTab() {
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   async function handleRenameDivisi(divisi: OrgDivisiNode, nama: string) {
+    if (saving) return;
     setRenaming(null);
+    setSaving(true);
     try {
       await api.updateDivisi(divisi.id, nama, divisi.kodeSatuanKerja);
       showToast("Divisi berhasil diubah");
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   function handleDeleteDivisi(id: number, nama: string) {
+    if (saving) return;
     confirm(`Hapus Divisi "${nama}"?`, async () => {
+      setSaving(true);
       try {
         await api.deleteDivisi(id);
         showToast("Divisi berhasil dihapus");
         await load();
       } catch (err) {
         showToast(errorMessage(err), "error");
+      } finally {
+        setSaving(false);
       }
     });
   }
 
   async function handleAddDepartemen(divisiId: number, nama: string) {
+    if (saving) return;
+    setSaving(true);
     try {
       const result = await api.createDepartemen(divisiId, nama);
       setAddingDepartemenUnder(null);
@@ -210,28 +249,38 @@ export default function SuperAdminOrgTab() {
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   async function handleRenameDepartemen(id: number, nama: string) {
+    if (saving) return;
     setRenaming(null);
+    setSaving(true);
     try {
       await api.renameDepartemen(id, nama);
       showToast("Departemen berhasil diubah");
       await load();
     } catch (err) {
       showToast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
     }
   }
 
   function handleDeleteDepartemen(id: number, nama: string) {
+    if (saving) return;
     confirm(`Hapus Departemen "${nama}"?`, async () => {
+      setSaving(true);
       try {
         await api.deleteDepartemen(id);
         showToast("Departemen berhasil dihapus");
         await load();
       } catch (err) {
         showToast(errorMessage(err), "error");
+      } finally {
+        setSaving(false);
       }
     });
   }
@@ -261,14 +310,14 @@ export default function SuperAdminOrgTab() {
                   {expandedDirektorat.has(direktorat.id) ? <ChevronDown width={14} height={14} /> : <ChevronRight width={14} height={14} />}
                 </button>
                 {renaming?.level === "direktorat" && renaming.id === direktorat.id ? (
-                  <InlineRename initial={direktorat.nama} onSave={(v) => handleRenameDirektorat(direktorat.id, v)} onCancel={() => setRenaming(null)} />
+                  <InlineRename initial={direktorat.nama} disabled={saving} onSave={(v) => handleRenameDirektorat(direktorat.id, v)} onCancel={() => setRenaming(null)} />
                 ) : (
                   <strong style={{ flex: 1 }}>{direktorat.nama}</strong>
                 )}
-                <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" onClick={() => setRenaming({ level: "direktorat", id: direktorat.id })}>
+                <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" disabled={saving} onClick={() => setRenaming({ level: "direktorat", id: direktorat.id })}>
                   <Pencil width={14} height={14} />
                 </button>
-                <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => handleDeleteDirektorat(direktorat.id, direktorat.nama)}>
+                <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" disabled={saving} onClick={() => handleDeleteDirektorat(direktorat.id, direktorat.nama)}>
                   <Trash2 width={14} height={14} />
                 </button>
               </div>
@@ -282,14 +331,14 @@ export default function SuperAdminOrgTab() {
                           {expandedDivisi.has(divisi.id) ? <ChevronDown width={14} height={14} /> : <ChevronRight width={14} height={14} />}
                         </button>
                         {renaming?.level === "divisi" && renaming.id === divisi.id ? (
-                          <InlineRename initial={divisi.nama} onSave={(v) => handleRenameDivisi(divisi, v)} onCancel={() => setRenaming(null)} />
+                          <InlineRename initial={divisi.nama} disabled={saving} onSave={(v) => handleRenameDivisi(divisi, v)} onCancel={() => setRenaming(null)} />
                         ) : (
                           <span style={{ flex: 1 }}>{divisi.nama} <span className="text-secondary" style={{ fontSize: "0.8rem" }}>({divisi.kodeSatuanKerja})</span></span>
                         )}
-                        <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" onClick={() => setRenaming({ level: "divisi", id: divisi.id })}>
+                        <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" disabled={saving} onClick={() => setRenaming({ level: "divisi", id: divisi.id })}>
                           <Pencil width={14} height={14} />
                         </button>
-                        <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => handleDeleteDivisi(divisi.id, divisi.nama)}>
+                        <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" disabled={saving} onClick={() => handleDeleteDivisi(divisi.id, divisi.nama)}>
                           <Trash2 width={14} height={14} />
                         </button>
                       </div>
@@ -299,22 +348,22 @@ export default function SuperAdminOrgTab() {
                           {divisi.departemen.map((departemen) => (
                             <div key={departemen.id} style={ROW_STYLE}>
                               {renaming?.level === "departemen" && renaming.id === departemen.id ? (
-                                <InlineRename initial={departemen.nama} onSave={(v) => handleRenameDepartemen(departemen.id, v)} onCancel={() => setRenaming(null)} />
+                                <InlineRename initial={departemen.nama} disabled={saving} onSave={(v) => handleRenameDepartemen(departemen.id, v)} onCancel={() => setRenaming(null)} />
                               ) : (
                                 <span style={{ flex: 1 }}>{departemen.nama}</span>
                               )}
-                              <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" onClick={() => setRenaming({ level: "departemen", id: departemen.id })}>
+                              <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Ubah nama" disabled={saving} onClick={() => setRenaming({ level: "departemen", id: departemen.id })}>
                                 <Pencil width={14} height={14} />
                               </button>
-                              <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => handleDeleteDepartemen(departemen.id, departemen.nama)}>
+                              <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" disabled={saving} onClick={() => handleDeleteDepartemen(departemen.id, departemen.nama)}>
                                 <Trash2 width={14} height={14} />
                               </button>
                             </div>
                           ))}
                           {addingDepartemenUnder === divisi.id ? (
-                            <InlineAdd placeholder="Nama Departemen baru" onSubmit={(nama) => handleAddDepartemen(divisi.id, nama)} onCancel={() => setAddingDepartemenUnder(null)} />
+                            <InlineAdd placeholder="Nama Departemen baru" disabled={saving} onSubmit={(nama) => handleAddDepartemen(divisi.id, nama)} onCancel={() => setAddingDepartemenUnder(null)} />
                           ) : (
-                            <button type="button" className="btn btn-secondary" style={{ ...ICON_BTN_STYLE, marginTop: 4 }} onClick={() => setAddingDepartemenUnder(divisi.id)}>
+                            <button type="button" className="btn btn-secondary" style={{ ...ICON_BTN_STYLE, marginTop: 4 }} disabled={saving} onClick={() => setAddingDepartemenUnder(divisi.id)}>
                               <Plus width={14} height={14} /> Tambah Departemen
                             </button>
                           )}
@@ -323,9 +372,9 @@ export default function SuperAdminOrgTab() {
                     </div>
                   ))}
                   {addingDivisiUnder === direktorat.id ? (
-                    <InlineAdd placeholder="Nama Divisi baru" withKode onSubmit={(nama, kode) => handleAddDivisi(direktorat.id, nama, kode)} onCancel={() => setAddingDivisiUnder(null)} />
+                    <InlineAdd placeholder="Nama Divisi baru" withKode disabled={saving} onSubmit={(nama, kode) => handleAddDivisi(direktorat.id, nama, kode)} onCancel={() => setAddingDivisiUnder(null)} />
                   ) : (
-                    <button type="button" className="btn btn-secondary" style={{ ...ICON_BTN_STYLE, marginTop: 4 }} onClick={() => setAddingDivisiUnder(direktorat.id)}>
+                    <button type="button" className="btn btn-secondary" style={{ ...ICON_BTN_STYLE, marginTop: 4 }} disabled={saving} onClick={() => setAddingDivisiUnder(direktorat.id)}>
                       <Plus width={14} height={14} /> Tambah Divisi
                     </button>
                   )}
@@ -335,9 +384,9 @@ export default function SuperAdminOrgTab() {
           ))}
 
           {addingDirektorat ? (
-            <InlineAdd placeholder="Nama Direktorat baru" onSubmit={(nama) => handleAddDirektorat(nama)} onCancel={() => setAddingDirektorat(false)} />
+            <InlineAdd placeholder="Nama Direktorat baru" disabled={saving} onSubmit={(nama) => handleAddDirektorat(nama)} onCancel={() => setAddingDirektorat(false)} />
           ) : (
-            <button type="button" className="btn btn-primary" style={{ width: "auto", marginTop: 8 }} onClick={() => setAddingDirektorat(true)}>
+            <button type="button" className="btn btn-primary" style={{ width: "auto", marginTop: 8 }} disabled={saving} onClick={() => setAddingDirektorat(true)}>
               <Plus width={14} height={14} /> Tambah Direktorat
             </button>
           )}

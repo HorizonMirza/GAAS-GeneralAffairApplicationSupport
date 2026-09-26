@@ -91,6 +91,10 @@ public class OrgAdminController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Paired with the same lock in CreateDivisi above - see comment there.
+        await LockResourceAsync(_db, $"org-direktorat|{id}");
+
         var row = await _db.OrgDirektorats.Include(d => d.Divisi).FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Direktorat tidak ditemukan" });
         if (row.Divisi.Count > 0)
@@ -98,6 +102,7 @@ public class OrgAdminController : ApiControllerBase
 
         _db.OrgDirektorats.Remove(row);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
 
         return NoContent();
@@ -111,15 +116,22 @@ public class OrgAdminController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
-        var direktorat = await _db.OrgDirektorats.FirstOrDefaultAsync(d => d.Id == payload.DirektoratId);
-        if (direktorat == null) return StatusCode(400, new { detail = "Direktorat tidak ditemukan" });
-
         var nama = payload.Nama?.Trim() ?? "";
         var kode = payload.KodeSatuanKerja?.Trim() ?? "";
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama divisi wajib diisi" });
         if (kode.Length == 0)
             return StatusCode(400, new { detail = "Kode satuan kerja wajib diisi" });
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Paired with the same lock in DeleteDirektorat below - serializes this create against a
+        // concurrent delete of the SAME Direktorat, so one of the two always sees the other's
+        // committed result instead of racing (a Divisi created under a Direktorat mid-delete, or a
+        // Direktorat deleted out from under a Divisi that's mid-create).
+        await LockResourceAsync(_db, $"org-direktorat|{payload.DirektoratId}");
+
+        var direktorat = await _db.OrgDirektorats.FirstOrDefaultAsync(d => d.Id == payload.DirektoratId);
+        if (direktorat == null) return StatusCode(400, new { detail = "Direktorat tidak ditemukan" });
         if (await _db.OrgDivisis.AnyAsync(v => v.Nama == nama))
             return StatusCode(400, new { detail = "Nama divisi sudah dipakai" });
 
@@ -132,6 +144,7 @@ public class OrgAdminController : ApiControllerBase
             nama, RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
             direktorat: direktorat.Nama, divisi: nama, departemen: null);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
 
         return StatusCode(201, new CreateDivisiResponse(new OrgDivisiOut(row.Id, row.Nama, row.KodeSatuanKerja, new List<OrgDepartemenOut>()), accounts));
@@ -172,16 +185,29 @@ public class OrgAdminController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Paired with the same lock in CreateDepartemen above, fully closing that race. Also
+        // narrows - but, deliberately, does not fully close - the window against an ordinary
+        // create endpoint elsewhere in the app (Pengiriman, BookingRuang, ..., Users) stamping a
+        // new row with this Divisi's name at the exact same instant: those tables store Divisi as
+        // a plain string, not an FK to org_divisi (a rename never rewrites historical rows - see
+        // UpdateDivisi above), so nothing outside this controller takes this lock. Fully closing
+        // that residual window would mean every create endpoint across six modules + Users taking
+        // it too, which is disproportionate for how rare "delete this Divisi at the exact instant
+        // someone submits a new transaction under it" actually is for an admin-only action.
+        await LockResourceAsync(_db, $"org-divisi|{id}");
+
         var row = await _db.OrgDivisis.Include(v => v.Departemen).FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Divisi tidak ditemukan" });
         if (row.Departemen.Count > 0)
             return StatusCode(409, new { detail = "Divisi masih memiliki Departemen. Hapus atau pindahkan Departemen di dalamnya terlebih dahulu." });
 
-        if (await IsDivisiInUseAsync(row.Nama))
+        if (await IsDivisiInUse(_db, row.Nama))
             return StatusCode(409, new { detail = "Divisi masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
 
         _db.OrgDivisis.Remove(row);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
 
         return NoContent();
@@ -195,12 +221,16 @@ public class OrgAdminController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
-        var divisi = await _db.OrgDivisis.Include(v => v.Direktorat).FirstOrDefaultAsync(v => v.Id == payload.DivisiId);
-        if (divisi == null) return StatusCode(400, new { detail = "Divisi tidak ditemukan" });
-
         var nama = payload.Nama?.Trim() ?? "";
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama departemen wajib diisi" });
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Paired with the same lock in DeleteDivisi below - see comment there.
+        await LockResourceAsync(_db, $"org-divisi|{payload.DivisiId}");
+
+        var divisi = await _db.OrgDivisis.Include(v => v.Direktorat).FirstOrDefaultAsync(v => v.Id == payload.DivisiId);
+        if (divisi == null) return StatusCode(400, new { detail = "Divisi tidak ditemukan" });
         if (await _db.OrgDepartemens.AnyAsync(d => d.Nama == nama))
             return StatusCode(400, new { detail = "Nama departemen sudah dipakai" });
 
@@ -213,6 +243,7 @@ public class OrgAdminController : ApiControllerBase
             nama, RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
             direktorat: divisi.Direktorat.Nama, divisi: divisi.Nama, departemen: nama);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
 
         return StatusCode(201, new CreateDepartemenResponse(new OrgDepartemenOut(row.Id, row.Nama), accounts));
@@ -247,14 +278,21 @@ public class OrgAdminController : ApiControllerBase
         var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Same reasoning as DeleteDivisi above - no create-under-a-Departemen counterpart exists
+        // (Departemen is a leaf), so this only narrows the window against ordinary business-record
+        // creates, same residual scope as there.
+        await LockResourceAsync(_db, $"org-departemen|{id}");
+
         var row = await _db.OrgDepartemens.FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Departemen tidak ditemukan" });
 
-        if (await IsDepartemenInUseAsync(row.Nama))
+        if (await IsDepartemenInUse(_db, row.Nama))
             return StatusCode(409, new { detail = "Departemen masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
 
         _db.OrgDepartemens.Remove(row);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
 
         return NoContent();
@@ -263,25 +301,27 @@ public class OrgAdminController : ApiControllerBase
     // Checked before a Divisi delete - (a) any user account stamped with this Divisi, and (b) any
     // row in all six business tables with a matching Divisi column. AnyAsync per table rather than
     // one combined query: this is an admin-only, low-frequency action, not a hot path, and it
-    // keeps each check trivially readable.
-    private async Task<bool> IsDivisiInUseAsync(string nama) =>
-        await _db.Users.AnyAsync(u => u.Divisi == nama) ||
-        await _db.Pengiriman.AnyAsync(p => p.Divisi == nama) ||
-        await _db.BookingRuangs.AnyAsync(b => b.Divisi == nama) ||
-        await _db.BookingKendaraans.AnyAsync(b => b.Divisi == nama) ||
-        await _db.PermintaanAtks.AnyAsync(p => p.Divisi == nama) ||
-        await _db.PerbaikanSaranas.AnyAsync(p => p.Divisi == nama) ||
-        await _db.PermintaanArsips.AnyAsync(p => p.Divisi == nama);
+    // keeps each check trivially readable. Public static (db passed explicitly, like ChatHub's own
+    // Can...Chat helpers) so backend.Tests can exercise it directly against an in-memory
+    // AppDbContext without also standing up a real CurrentUserService/HttpContext.
+    public static async Task<bool> IsDivisiInUse(AppDbContext db, string nama) =>
+        await db.Users.AnyAsync(u => u.Divisi == nama) ||
+        await db.Pengiriman.AnyAsync(p => p.Divisi == nama) ||
+        await db.BookingRuangs.AnyAsync(b => b.Divisi == nama) ||
+        await db.BookingKendaraans.AnyAsync(b => b.Divisi == nama) ||
+        await db.PermintaanAtks.AnyAsync(p => p.Divisi == nama) ||
+        await db.PerbaikanSaranas.AnyAsync(p => p.Divisi == nama) ||
+        await db.PermintaanArsips.AnyAsync(p => p.Divisi == nama);
 
-    // Same idea as IsDivisiInUseAsync, for a Departemen delete.
-    private async Task<bool> IsDepartemenInUseAsync(string nama) =>
-        await _db.Users.AnyAsync(u => u.Departemen == nama) ||
-        await _db.Pengiriman.AnyAsync(p => p.Departemen == nama) ||
-        await _db.BookingRuangs.AnyAsync(b => b.Departemen == nama) ||
-        await _db.BookingKendaraans.AnyAsync(b => b.Departemen == nama) ||
-        await _db.PermintaanAtks.AnyAsync(p => p.Departemen == nama) ||
-        await _db.PerbaikanSaranas.AnyAsync(p => p.Departemen == nama) ||
-        await _db.PermintaanArsips.AnyAsync(p => p.Departemen == nama);
+    // Same idea as IsDivisiInUse, for a Departemen delete.
+    public static async Task<bool> IsDepartemenInUse(AppDbContext db, string nama) =>
+        await db.Users.AnyAsync(u => u.Departemen == nama) ||
+        await db.Pengiriman.AnyAsync(p => p.Departemen == nama) ||
+        await db.BookingRuangs.AnyAsync(b => b.Departemen == nama) ||
+        await db.BookingKendaraans.AnyAsync(b => b.Departemen == nama) ||
+        await db.PermintaanAtks.AnyAsync(p => p.Departemen == nama) ||
+        await db.PerbaikanSaranas.AnyAsync(p => p.Departemen == nama) ||
+        await db.PermintaanArsips.AnyAsync(p => p.Departemen == nama);
 
     // Mirrors DbSeeder.BuildAccounts' own username convention exactly ("{Nama} Admin Div"/
     // "{Nama} Approval Div" for a Divisi, "{Nama} Admin"/"{Nama} Approval" for a Departemen) -
