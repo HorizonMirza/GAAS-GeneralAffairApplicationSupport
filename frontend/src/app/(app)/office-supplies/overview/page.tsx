@@ -3,7 +3,6 @@
 import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -43,8 +42,7 @@ interface Stats {
 }
 
 export default function OfficeSuppliesOverviewPage() {
-  const { me, loading } = useAuth();
-  const router = useRouter();
+  const { me } = useAuth();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
@@ -62,10 +60,6 @@ export default function OfficeSuppliesOverviewPage() {
   const rowMenu = useRowMenu(items);
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
-
-  useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-  }, [loading, me, router]);
 
   const load = useCallback(async () => {
     if (!me) return;
@@ -107,7 +101,7 @@ export default function OfficeSuppliesOverviewPage() {
     return items.filter((i) => REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me) return null;
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"

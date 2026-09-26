@@ -3,7 +3,6 @@
 import { MessageSquare } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ON_APPROVAL_STATUSES, REJECTED_STATUSES, canGaKoreksiPengiriman, canKoreksiHargaPengiriman, cardStatusBorderClass, isEditableByOrigin, isPengirimanPdfAvailable } from "@/lib/constants";
@@ -35,8 +34,7 @@ interface Stats {
 }
 
 export default function OverviewPage() {
-  const { me, loading } = useAuth();
-  const router = useRouter();
+  const { me } = useAuth();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
@@ -55,12 +53,8 @@ export default function OverviewPage() {
   const rowMenu = useRowMenu(items);
 
   const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"].includes(me.role)
     : false;
-
-  useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-  }, [loading, me, router]);
 
   // `silent` skips the busy-flag toggle - used by the chat modal's onRead, which fires on every
   // incoming message while the modal is open and would otherwise unmount the card grid to
@@ -110,7 +104,7 @@ export default function OverviewPage() {
     return items.filter((i) => REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me) return null;
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"

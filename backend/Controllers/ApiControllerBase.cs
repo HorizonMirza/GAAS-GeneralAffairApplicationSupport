@@ -128,6 +128,11 @@ public abstract class ApiControllerBase : ControllerBase
     {
         var user = await CurrentUser.GetCurrentUserAsync();
         if (user == null) return (null, StatusCode(401, new { detail = "Belum login" }));
+        // Super Admin passes every allowlist unconditionally - the one deliberate exception to
+        // "allowlist means allowlist" in this whole app. This is what lets Super Admin perform any
+        // tier's action (approve/reject/create/edit/KPU fields) across every module without this
+        // method's ~90 call sites each needing their own bypass.
+        if (user.Role == RoleEnum.SUPER_ADMIN) return (user, null);
         if (roles.Length > 0 && !roles.Contains(user.Role))
             return (null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
         return (user, null);

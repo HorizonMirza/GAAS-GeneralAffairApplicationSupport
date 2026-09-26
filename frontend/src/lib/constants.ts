@@ -180,6 +180,7 @@ export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
 // "Origin" untuk revisi/reject-balik selalu pembuat aslinya - Admin atau Approval
 // Departemen/Divisi, siapapun yang menginput data ini pertama kali.
 export function isEditableByOrigin(item: Pengiriman, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (item.createdBy !== me.id) return false;
   if (item.status === "DRAFT" || item.status === "REJECTED_L1" || item.status === "REJECTED_GA") return true;
   if (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU") {
@@ -201,6 +202,7 @@ export function isPengirimanGaKoreksiable(item: Pengiriman): boolean {
 }
 
 export function canGaKoreksiPengiriman(item: Pengiriman, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isPengirimanGaKoreksiable(item);
 }
 
@@ -213,6 +215,7 @@ export function isPengirimanPdfAvailable(item: Pengiriman): boolean {
 // Mitra's own right to fix a typo in the price figures they entered at ApproveKpu - available any
 // time once COMPLETED, no deadline (see PengirimanController.KoreksiHarga).
 export function canKoreksiHargaPengiriman(item: Pengiriman, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return me.role === "KPU" && item.status === "COMPLETED";
 }
 
@@ -271,6 +274,7 @@ export const BOOKING_ORIGIN_ROLES: Role[] = [
 ];
 
 export function isBookingOriginRole(role: Role): boolean {
+  if (role === "SUPER_ADMIN") return true;
   return BOOKING_ORIGIN_ROLES.includes(role);
 }
 
@@ -330,6 +334,7 @@ export function bookingOriginActorLabel(item: BookingRuang): string {
 // by its creator is a never-submitted DRAFT. Mirrors the backend's
 // BookingRuangController.IsEditableByOrigin exactly.
 export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return item.status === "DRAFT" && item.createdBy === me.id;
 }
 
@@ -339,6 +344,7 @@ export function isBookingEditableByOrigin(item: BookingRuang, me: Me): boolean {
 // whoever created it or by Admin/Approval GA, who run the approval process it died in. Mirrors
 // the backend's BookingRuangController.IsDeletableByOrigin exactly.
 export function isBookingDeletableByOrigin(item: BookingRuang, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (isBookingEditableByOrigin(item, me)) return true;
   if (!BOOKING_REJECTED_STATUSES.includes(item.status) && item.status !== "CANCELLED") return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
@@ -355,6 +361,7 @@ export function isBookingGaReschedulable(item: BookingRuang): boolean {
 // this account on this item. Admin GA can update once it reaches them (APPROVED_L1 or APPROVED_GA),
 // while Approval GA can update once it reaches their approval stage (APPROVED_GA).
 export function canGaRescheduleBooking(item: BookingRuang, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (me.role === "ADMIN_GA") {
     return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
   }
@@ -423,6 +430,7 @@ export function buildVehicleBookingDuplicateInitial(item: BookingKendaraan): Par
 // that's still on-approval or already Approved - but only up until its own start time. Mirrors
 // the backend's BookingRuangController.IsCancellableByOrigin/IsPastCancelDeadline exactly.
 export function isBookingCancellableByOrigin(item: BookingRuang, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (!BOOKING_CANCELLABLE_STATUSES.includes(item.status)) return false;
   const allowed = item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
   if (!allowed) return false;
@@ -471,12 +479,14 @@ export function kendaraanOriginActorLabel(item: BookingKendaraan): string {
 // Same rule as isBookingEditableByOrigin - mirrors the backend's
 // BookingKendaraanController.IsEditableByOrigin exactly.
 export function isKendaraanEditableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return item.status === "DRAFT" && item.createdBy === me.id;
 }
 
 // Same rule as isBookingDeletableByOrigin - mirrors the backend's
 // BookingKendaraanController.IsDeletableByOrigin exactly.
 export function isKendaraanDeletableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (isKendaraanEditableByOrigin(item, me)) return true;
   if (!BOOKING_REJECTED_STATUSES.includes(item.status) && item.status !== "CANCELLED") return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
@@ -489,6 +499,7 @@ export function isKendaraanGaReschedulable(item: BookingKendaraan): boolean {
 }
 
 export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (me.role === "ADMIN_GA") {
     return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
   }
@@ -505,6 +516,7 @@ export function isKendaraanGaActionable(item: BookingKendaraan): boolean {
 // Same rule as isBookingCancellableByOrigin - mirrors
 // BookingKendaraanController.IsCancellableByOrigin/IsPastCancelDeadline.
 export function isKendaraanCancellableByOrigin(item: BookingKendaraan, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   if (!BOOKING_CANCELLABLE_STATUSES.includes(item.status)) return false;
   const allowed = item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
   if (!allowed) return false;
@@ -525,6 +537,7 @@ export function atkOriginActorLabel(item: PermintaanAtk): string {
 // Mirrors the backend's PermintaanAtkController.IsEditableByOrigin exactly - a rejected request
 // isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isAtkEditableByOrigin(item: PermintaanAtk, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (item.status === "DRAFT" || REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
@@ -547,6 +560,7 @@ export function isAtkGaUpdatable(item: PermintaanAtk): boolean {
 }
 
 export function canGaUpdateAtk(item: PermintaanAtk, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isAtkGaUpdatable(item);
 }
 
@@ -596,6 +610,7 @@ export function saranaOriginActorLabel(item: PerbaikanSarana): string {
 // Mirrors the backend's PerbaikanSaranaController.IsEditableByOrigin exactly - a rejected report
 // isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isSaranaEditableByOrigin(item: PerbaikanSarana, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
@@ -612,6 +627,7 @@ export function isSaranaGaKoreksiable(item: PerbaikanSarana): boolean {
 }
 
 export function canGaKoreksiSarana(item: PerbaikanSarana, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isSaranaGaKoreksiable(item);
 }
 
@@ -619,6 +635,7 @@ export function canGaKoreksiSarana(item: PerbaikanSarana, me: Me): boolean {
 // Admin GA dan Approval GA sama-sama bisa menjalankan tahap manapun (lihat
 // PerbaikanSaranaController's ExecutionRoles), tidak dibatasi harus orang yang sama.
 export function isSaranaExecutionActor(me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
 }
 
@@ -643,6 +660,7 @@ export function isAtkPdfAvailable(item: PermintaanAtk): boolean {
 // Mitra's own right to fix a typo in the Total Harga Barang they entered at ApproveKpu - available
 // any time once COMPLETED, no deadline (see PermintaanAtkController.KoreksiHarga).
 export function canKoreksiHargaAtk(item: PermintaanAtk, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return me.role === "KPU" && item.status === "COMPLETED";
 }
 
@@ -667,6 +685,7 @@ export function arsipOriginActorLabel(item: PermintaanArsip): string {
 // Mirrors the backend's PermintaanArsipController.IsEditableByOrigin exactly - a rejected request
 // isn't a dead end here, so REJECTED_* is editable by its origin too (goes back to Draft on save).
 export function isArsipEditableByOrigin(item: PermintaanArsip, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (item.status === "DRAFT" || BOOKING_REJECTED_STATUSES.includes(item.status)) && item.createdBy === me.id;
 }
 
@@ -677,6 +696,7 @@ export function isArsipGaKoreksiable(item: PermintaanArsip): boolean {
 }
 
 export function canGaKoreksiArsip(item: PermintaanArsip, me: Me): boolean {
+  if (me.role === "SUPER_ADMIN") return true;
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isArsipGaKoreksiable(item);
 }
 

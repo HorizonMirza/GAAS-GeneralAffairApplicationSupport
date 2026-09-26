@@ -70,7 +70,6 @@ export default function MaintenanceOverviewPage() {
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
   useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
@@ -129,7 +128,7 @@ export default function MaintenanceOverviewPage() {
     return items.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
   }, [items, statusFilter]);
 
-  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
+  if (!me || me.role === "KPU") return null;
 
   const waitingL1Label =
     me.role === "ADMIN_DEPARTEMEN" || me.role === "APPROVAL_DEPARTEMEN"

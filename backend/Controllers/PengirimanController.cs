@@ -72,7 +72,7 @@ public class PengirimanController : ApiControllerBase
     private static string? EffectiveDepartemen(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
 
-    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA or RoleEnum.SUPER_ADMIN;
 
     // Admin/Approval GA act like a superadmin for this module - they can input a shipment on
     // behalf of any divisi/departemen (payload.Divisi/Departemen), not just their own GA home
@@ -790,11 +790,13 @@ public class PengirimanController : ApiControllerBase
     {
         var user = await CurrentUser.GetCurrentUserAsync();
         if (user == null) return (null, null, StatusCode(401, new { detail = "Belum login" }));
-        if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
+        if (user.Role != RoleEnum.SUPER_ADMIN && user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
             return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
 
         var item = await _db.Pengiriman.FindAsync(itemId);
         if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
+
+        if (user.Role == RoleEnum.SUPER_ADMIN) return (user, item, null);
 
         // Routed by the item's own unit (not by who created it), so it works the same whether
         // the item was originally created by Admin (normal path) or is an Admin's revision of

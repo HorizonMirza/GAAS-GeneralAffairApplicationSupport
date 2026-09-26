@@ -101,9 +101,9 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const l1UnitMatches = item.departemen
     ? me.role === "APPROVAL_DEPARTEMEN" && me.departemen === item.departemen
     : me.role === "APPROVAL_DIVISI" && me.divisi === item.divisi;
-  const canL1Act = !isEdit && l1UnitMatches && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
-  const canGaAct = !isEdit && me.role === "ADMIN_GA" && isBookingGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "SUPER_ADMIN" || l1UnitMatches) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaAct = !isEdit && (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && isBookingGaActionable(item);
+  const canGaApprovalAct = !isEdit && (me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN") && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 
   function set<K extends keyof BookingRuangCreatePayload>(key: K, value: BookingRuangCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));

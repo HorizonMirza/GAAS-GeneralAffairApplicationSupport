@@ -91,7 +91,7 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static string? EffectiveDepartemen(User user) =>
         user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA ? GaDepartemenLabel : user.Departemen;
 
-    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA;
+    private static bool IsGaActor(User user) => user.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA or RoleEnum.SUPER_ADMIN;
 
     // Same on-behalf allowance as PengirimanController - Admin/Approval GA can request a repair
     // for any divisi/departemen (payload.Divisi/Departemen), not just their own GA home unit.
@@ -749,11 +749,13 @@ public class PerbaikanSaranaController : ApiControllerBase
     {
         var user = await CurrentUser.GetCurrentUserAsync();
         if (user == null) return (null, null, StatusCode(401, new { detail = "Belum login" }));
-        if (user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
+        if (user.Role != RoleEnum.SUPER_ADMIN && user.Role != RoleEnum.APPROVAL_DEPARTEMEN && user.Role != RoleEnum.APPROVAL_DIVISI)
             return (null, null, StatusCode(403, new { detail = "Tidak memiliki akses" }));
 
         var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
         if (item == null) return (null, null, NotFound(new { detail = "Data tidak ditemukan" }));
+
+        if (user.Role == RoleEnum.SUPER_ADMIN) return (user, item, null);
 
         var ok = item.Departemen != null
             ? user.Role == RoleEnum.APPROVAL_DEPARTEMEN && user.Departemen == item.Departemen

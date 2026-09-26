@@ -50,7 +50,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
 
-  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
 
   useEffect(() => {
     if (open) {

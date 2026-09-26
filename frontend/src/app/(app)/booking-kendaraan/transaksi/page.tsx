@@ -86,7 +86,6 @@ function VehicleBookingTransaksiPageInner() {
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
@@ -173,7 +172,7 @@ function VehicleBookingTransaksiPageInner() {
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
-  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
+  if (!me || me.role === "KPU") return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));

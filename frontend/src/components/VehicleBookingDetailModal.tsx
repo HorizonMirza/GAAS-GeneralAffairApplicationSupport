@@ -85,9 +85,9 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
   const l1UnitMatches = item.departemen
     ? me.role === "APPROVAL_DEPARTEMEN" && me.departemen === item.departemen
     : me.role === "APPROVAL_DIVISI" && me.divisi === item.divisi;
-  const canL1Act = !isEdit && l1UnitMatches && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
-  const canGaAct = !isEdit && me.role === "ADMIN_GA" && isKendaraanGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "SUPER_ADMIN" || l1UnitMatches) && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaAct = !isEdit && (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && isKendaraanGaActionable(item);
+  const canGaApprovalAct = !isEdit && (me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN") && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
 
   const selectedVehicle = vehicles.find((v) => v.nama === form.namaKendaraan);
   // See VehicleBookingFormModal's matching comment - falls back to the largest capacity across

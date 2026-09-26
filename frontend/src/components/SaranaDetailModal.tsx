@@ -82,9 +82,9 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
 
   const isEdit = mode === "edit";
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isSaranaEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
-  const canGaAct = !isEdit && me.role === "ADMIN_GA" && isSaranaGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI" || me.role === "SUPER_ADMIN") && BOOKING_L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaAct = !isEdit && (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && isSaranaGaActionable(item);
+  const canGaApprovalAct = !isEdit && (me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN") && BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
   function set<K extends keyof PerbaikanSaranaCreatePayload>(key: K, value: PerbaikanSaranaCreatePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
   }

@@ -83,12 +83,13 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
   const canSubmitDraft =
     !isEdit &&
     item.status === "DRAFT" &&
-    item.createdBy === me.id &&
-    ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
-  const canGaAct = !isEdit && me.role === "ADMIN_GA" && isGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canKpuAct = !isEdit && me.role === "KPU" && item.status === "APPROVED_GA_APPROVAL";
+    (me.role === "SUPER_ADMIN" ||
+      (item.createdBy === me.id &&
+        ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)));
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI" || me.role === "SUPER_ADMIN") && L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaAct = !isEdit && (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && isGaActionable(item);
+  const canGaApprovalAct = !isEdit && (me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN") && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canKpuAct = !isEdit && (me.role === "KPU" || me.role === "SUPER_ADMIN") && item.status === "APPROVED_GA_APPROVAL";
   const isKpuEdit = mode === "kpu-edit";
   const showKpuSection = canKpuAct || isKpuEdit || item.status === "COMPLETED";
   const hargaFieldsEditable = canKpuAct || isKpuEdit;

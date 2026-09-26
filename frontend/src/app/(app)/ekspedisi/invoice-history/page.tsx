@@ -20,8 +20,9 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 
 // Invoice pembiayaan history is only relevant to the 3 roles that ever touch it: Admin GA
-// uploads, Approval GA reviews, KPU is the final approver.
-const INVOICE_HISTORY_ROLES = ["ADMIN_GA", "APPROVAL_GA", "KPU"];
+// uploads, Approval GA reviews, KPU is the final approver - plus Super Admin, who bypasses
+// every tier gate and can act as any of them.
+const INVOICE_HISTORY_ROLES = ["ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"];
 
 export default function InvoiceHistoryPage() {
   const { me, loading } = useAuth();
@@ -168,7 +169,7 @@ export default function InvoiceHistoryPage() {
               Semua Invoice
             </button>
           </div>
-          {me.role === "KPU" && (
+          {(me.role === "KPU" || me.role === "SUPER_ADMIN") && (
             <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
               + Input Invoice
             </button>
@@ -246,8 +247,15 @@ export default function InvoiceHistoryPage() {
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
-        showUpdates={!!invoiceRowMenu.menuItem && me.role === "KPU" && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
-        showDelete={!!invoiceRowMenu.menuItem && me.role === "KPU" && (invoiceRowMenu.menuItem.status === "DRAFT" || invoiceRowMenu.menuItem.status === "REJECTED")}
+        // Updates re-uses InvoiceController.UpdateInvoice, whose own item.UploadedBy === user.Id
+        // ownership check has no Super Admin exception (Invoice wasn't part of the backend
+        // RequireRoleAsync bypass's per-module list) - so this only actually succeeds for an
+        // invoice Super Admin uploaded under their own account.
+        showUpdates={!!invoiceRowMenu.menuItem && (me.role === "KPU" || (me.role === "SUPER_ADMIN" && invoiceRowMenu.menuItem.uploadedBy === me.id)) && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
+        // Unlike Updates, DeleteInvoice on the backend does special-case Super Admin (deletes any
+        // invoice regardless of owner/status, logged as an audited deletion) - so this one can
+        // bypass unconditionally.
+        showDelete={!!invoiceRowMenu.menuItem && (me.role === "KPU" ? (invoiceRowMenu.menuItem.status === "DRAFT" || invoiceRowMenu.menuItem.status === "REJECTED") : me.role === "SUPER_ADMIN")}
         pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
         pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
         onDetail={() => {

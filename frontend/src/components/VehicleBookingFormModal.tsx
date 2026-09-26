@@ -76,7 +76,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
 
-  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
+  const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
 
   useEffect(() => {
     if (open) {

@@ -51,7 +51,7 @@ function defaultFilters(): FilterState {
 }
 
 function OfficeSuppliesTransaksiPageInner() {
-  const { me, orgStructure, loading } = useAuth();
+  const { me, orgStructure } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -80,10 +80,6 @@ function OfficeSuppliesTransaksiPageInner() {
   const tableReqIdRef = useRef(0);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-
-  useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-  }, [loading, me, router]);
 
   // A chat/activity notification banner's click lands here with ?chat=<itemId> - fetched
   // directly (not found-in-loaded-items, since the item may not be on whatever page/filter is
@@ -161,7 +157,7 @@ function OfficeSuppliesTransaksiPageInner() {
 
   const isOrigin = me ? isBookingOriginRole(me.role) : false;
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me) return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
@@ -415,7 +411,7 @@ function OfficeSuppliesTransaksiPageInner() {
           </table>
         </div>
 
-        {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) && totalBulanIni != null && (
+        {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"].includes(me.role) && totalBulanIni != null && (
           <div className="total-akumulasi-footer">
             <span className="total-akumulasi-label">Total Akumulasi Biaya</span>
             <span className="total-akumulasi-value">{totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}</span>

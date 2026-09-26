@@ -96,10 +96,10 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   const isGaEdit = mode === "ga-edit";
   const isEdit = isOriginEdit || isGaEdit;
   const canSubmitDraft = !isEdit && item.status === "DRAFT" && isAtkEditableByOrigin(item, me);
-  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI") && L1_ACTIONABLE_STATUSES.includes(item.status);
-  const canGaAct = !isEdit && me.role === "ADMIN_GA" && isAtkGaActionable(item);
-  const canGaApprovalAct = !isEdit && me.role === "APPROVAL_GA" && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
-  const canKpuAct = !isEdit && me.role === "KPU" && isAtkKpuActionable(item);
+  const canL1Act = !isEdit && (me.role === "APPROVAL_DEPARTEMEN" || me.role === "APPROVAL_DIVISI" || me.role === "SUPER_ADMIN") && L1_ACTIONABLE_STATUSES.includes(item.status);
+  const canGaAct = !isEdit && (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && isAtkGaActionable(item);
+  const canGaApprovalAct = !isEdit && (me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN") && GA_APPROVAL_ACTIONABLE_STATUSES.includes(item.status);
+  const canKpuAct = !isEdit && (me.role === "KPU" || me.role === "SUPER_ADMIN") && isAtkKpuActionable(item);
   const isKpuEdit = mode === "kpu-edit";
   // Submit's own self-skip (see PermintaanAtkController.Submit) lands an Admin/Approval GA's own
   // draft straight past the tier where SumberPembelian is normally captured (ApproveGa), so this
@@ -108,7 +108,7 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
   // Lets Admin/Approval GA fix a wrong SumberPembelian pick while revising a request (either as
   // its origin creator or via the "Updates" tool) - only once one was already chosen, e.g. after
   // Approval GA/Mitra rejects it (see PermintaanAtkController.Update/UpdateByGa).
-  const canFixSumberPembelian = isEdit && !!item.sumberPembelian && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA");
+  const canFixSumberPembelian = isEdit && !!item.sumberPembelian && (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN");
   const canEditSumberPembelian = canGaAct || submitNeedsSumberPembelian || canGaApprovalAct || canFixSumberPembelian;
 
   function set<K extends keyof PermintaanAtkCreatePayload>(key: K, value: PermintaanAtkCreatePayload[K]) {

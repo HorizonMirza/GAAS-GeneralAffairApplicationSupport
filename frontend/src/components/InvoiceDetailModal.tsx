@@ -34,8 +34,12 @@ export default function InvoiceDetailModal({ open, item, me, onClose, onRequestA
 
   if (!open || !item) return null;
 
-  const canReview = me.role === "ADMIN_GA" && item.status === "PENDING";
-  const canSubmitDraft = me.role === "KPU" && item.status === "DRAFT" && item.uploadedBy === me.id;
+  const canReview = (me.role === "ADMIN_GA" || me.role === "SUPER_ADMIN") && item.status === "PENDING";
+  // Not a SUPER_ADMIN bypass here: InvoiceController.SubmitInvoice keeps its own
+  // item.UploadedBy === user.Id ownership check with no exception (Invoice deliberately wasn't
+  // part of the backend RequireRoleAsync bypass's per-module list), so this only actually
+  // succeeds for an invoice Super Admin uploaded under their own account.
+  const canSubmitDraft = (me.role === "KPU" || me.role === "SUPER_ADMIN") && item.status === "DRAFT" && item.uploadedBy === me.id;
 
   async function handleSubmitDraft() {
     if (!item) return;

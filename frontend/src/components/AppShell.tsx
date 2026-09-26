@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Shield, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
@@ -20,7 +20,6 @@ import type { Role } from "@/lib/types";
 interface NavLeaf {
   label: string;
   href: string;
-  superAdminOnly?: boolean;
   roles?: Role[];
 }
 
@@ -47,7 +46,6 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/ekspedisi/overview" },
       { label: "Transaction", href: "/ekspedisi/transaksi" },
       { label: "Invoice", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -57,7 +55,6 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/booking-ruang-meeting/overview" },
       { label: "Calendar", href: "/booking-ruang-meeting/calendar" },
       { label: "Booking", href: "/booking-ruang-meeting/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -67,7 +64,6 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/booking-kendaraan/overview" },
       { label: "Calendar", href: "/booking-kendaraan/calendar" },
       { label: "Booking", href: "/booking-kendaraan/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -76,7 +72,6 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/office-supplies/overview" },
       { label: "Transaction", href: "/office-supplies/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -85,7 +80,6 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/maintenance/overview" },
       { label: "Transaction", href: "/maintenance/transaksi" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
   {
@@ -95,7 +89,6 @@ const NAV_CATEGORIES: NavCategory[] = [
       { label: "Overview", href: "/arsip/overview" },
       { label: "Transaction", href: "/arsip/transaksi" },
       { label: "Repository", href: "/arsip/katalog" },
-      { label: "Super Admin", href: "/superadmin", superAdminOnly: true },
     ],
   },
 ];
@@ -270,13 +263,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Syncs the expanded sidebar category to the current route on every navigation - moving to a
-    // page outside any category (Dashboard, Profile) or into a different one closes whatever was
-    // previously expanded, instead of leaving it open. The user can still expand/collapse by hand
-    // in between navigations, since this effect only re-runs when pathname changes.
-    // superAdminOnly items all share the same /superadmin href, so they're excluded from this
-    // match - otherwise every category would "match" on /superadmin and this would always pick
-    // whichever one happens to be first in NAV_CATEGORIES.
-    const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => !item.superAdminOnly && item.href === pathname));
+    // page outside any category (Dashboard, Profile, the standalone Super Admin link) or into a
+    // different one closes whatever was previously expanded, instead of leaving it open. The user
+    // can still expand/collapse by hand in between navigations, since this effect only re-runs
+    // when pathname changes.
+    const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => item.href === pathname));
     setOpenCategory(active ? active.label : null);
   }, [pathname]);
 
@@ -322,10 +313,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
             </Link>
 
             {NAV_CATEGORIES.filter((cat) => me.role !== "KPU" || !KPU_HIDDEN_CATEGORIES.has(cat.label)).map((cat) => {
-              // Same exclusion as the pathname-watching effect above - the shared /superadmin href
-              // must not count as "this category is active", or all 6 categories highlight/expand
-              // together on that page.
-              const hasActive = cat.items.some((item) => !item.superAdminOnly && item.href === pathname);
+              const hasActive = cat.items.some((item) => item.href === pathname);
               // Forced closed while collapsed to icons - there's no room for a submenu there, so
               // pressing the trigger navigates straight to the category's Overview page instead.
               const isOpen = !isIconCollapsed && (openCategory === cat.label || hasActive);
@@ -362,8 +350,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   </button>
                   <CollapsibleContent className="nav-category-submenu">
                     {cat.items.map((item) => {
-                      if (item.superAdminOnly && !isSuperAdmin) return null;
-                      if (!item.superAdminOnly && isSuperAdmin) return null;
                       if (item.roles && !item.roles.includes(me.role)) return null;
                       return (
                         <Link
@@ -379,6 +365,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 </Collapsible>
               );
             })}
+
+            {isSuperAdmin && (
+              <>
+                <div className="sidebar-divider" role="separator" />
+                <Link className={`nav-link ${pathname === "/superadmin" ? "active" : ""}`} href="/superadmin" title="Super Admin">
+                  <Shield width={20} height={20} />
+                  <span style={labelWidthStyle("Super Admin")}>Super Admin</span>
+                </Link>
+              </>
+            )}
           </div>
         </ScrollArea>
       </aside>

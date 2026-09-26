@@ -877,6 +877,17 @@ body.auth-ready .app-shell {
   padding-bottom: 4px;
 }
 
+/* Separates the standalone Super Admin link (Part 3 of the Super Admin bypass work) from the
+   module categories above it - a thin lighter line on the sidebar's own dark navy gradient,
+   matching the subtlety of nav-link's own rgba(255,255,255,...) tones rather than a fully opaque
+   border. */
+.sidebar-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
 /* Left-anchored, not centered, and clips its own overflow: the logo image itself never changes
    size - only this box's width does (100%, tracking the sidebar's own width same as the nav rows
    below) - so collapsing progressively covers the wordmark from its right edge inward, and

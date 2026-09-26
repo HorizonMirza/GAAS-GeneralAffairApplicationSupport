@@ -73,10 +73,6 @@ function TransaksiPageInner() {
   const tableReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
-  useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
-  }, [loading, me, router]);
-
   // An activity/chat notification banner's click lands here with ?chat=<itemId> - fetched
   // directly (not found-in-loaded-items, since the item may not be on whatever page/filter is
   // currently shown) so the thread opens regardless of pagination. The param is stripped right
@@ -161,10 +157,10 @@ function TransaksiPageInner() {
   }, [loadTable]);
 
   const isOrigin = me
-    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"].includes(me.role)
+    ? ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "SUPER_ADMIN"].includes(me.role)
     : false;
 
-  if (!me || me.role === "SUPER_ADMIN") return null;
+  if (!me) return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
@@ -228,6 +224,7 @@ function TransaksiPageInner() {
     "ADMIN_GA",
     "APPROVAL_GA",
     "KPU",
+    "SUPER_ADMIN",
   ].includes(me.role);
 
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
@@ -411,7 +408,7 @@ function TransaksiPageInner() {
           </table>
         </div>
 
-        {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU"].includes(me.role) && totalBulanIni != null && (
+        {["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"].includes(me.role) && totalBulanIni != null && (
           <div className="total-akumulasi-footer">
             <span className="total-akumulasi-label">Total Akumulasi Biaya</span>
             <span className="total-akumulasi-value">{totalBulanIni === 0 ? "–" : formatCurrency(totalBulanIni)}</span>

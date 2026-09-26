@@ -49,7 +49,6 @@ export default function ArsipKatalogPage() {
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
   useEffect(() => {
-    if (!loading && me?.role === "SUPER_ADMIN") router.replace("/superadmin");
     if (!loading && me?.role === "KPU") router.replace("/dashboard");
   }, [loading, me, router]);
 
@@ -74,7 +73,7 @@ export default function ArsipKatalogPage() {
     load();
   }, [load]);
 
-  if (!me || me.role === "SUPER_ADMIN" || me.role === "KPU") return null;
+  if (!me || me.role === "KPU") return null;
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
