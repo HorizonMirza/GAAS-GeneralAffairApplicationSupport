@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { ROLE_LABEL } from "@/lib/constants";
-import type { AdminUserListItem, OrgStructure, Role } from "@/lib/types";
+import type { AdminUserListItem, ImpersonationLogEntry, OrgStructure, Role } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
@@ -46,6 +48,8 @@ const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTE
 export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: OrgStructure | null }) {
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const { me, refresh } = useAuth();
+  const router = useRouter();
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -60,6 +64,13 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [saving, setSaving] = useState(false);
 
   const [credentials, setCredentials] = useState<{ title: string; accounts: RevealedCredential[] } | null>(null);
+
+  const [impersonating, setImpersonating] = useState<number | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logItems, setLogItems] = useState<ImpersonationLogEntry[]>([]);
+  const [logPage, setLogPage] = useState(1);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logBusy, setLogBusy] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -197,13 +208,59 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     }, user.isActive ? "Nonaktifkan" : "Aktifkan");
   }
 
+  // "Login As" - bertindak penuh sebagai akun ini (approve/reject/edit/buat baru, dst persis
+  // seperti akun tsb login sendiri). Lihat UsersAdminController.Impersonate untuk mekanismenya.
+  function handleImpersonate(user: AdminUserListItem) {
+    confirm(
+      `Login As akun "${user.nama}" (${user.username})? Anda akan bertindak penuh sebagai akun ini sampai memilih "Kembali ke Super Admin".`,
+      async () => {
+        setImpersonating(user.id);
+        try {
+          await api.impersonateUser(user.id);
+          await refresh();
+          router.push("/dashboard");
+        } catch (err) {
+          showToast(errorMessage(err), "error");
+        } finally {
+          setImpersonating(null);
+        }
+      },
+      "Login As"
+    );
+  }
+
+  const loadImpersonationLog = useCallback(async (page: number) => {
+    setLogBusy(true);
+    try {
+      const data = await api.listImpersonationLog({ page, limit: 20 });
+      setLogItems(data.items);
+      setLogTotal(data.total);
+      setLogPage(page);
+    } catch (err) {
+      showToast(errorMessage(err), "error");
+    } finally {
+      setLogBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function openImpersonationLog() {
+    setLogOpen(true);
+    loadImpersonationLog(1);
+  }
+
   return (
     <div className="card">
       <div className="card-header">
         <h3>Manajemen Akun</h3>
-        <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-          <UserPlus width={16} height={16} /> Tambah Akun
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={openImpersonationLog}>
+            Riwayat Login As
+          </button>
+          <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
+            <UserPlus width={16} height={16} /> Tambah Akun
+          </button>
+        </div>
       </div>
 
       <div className="toolbar transactions-page-toolbar">
@@ -312,6 +369,17 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                     >
                       {user.isActive ? "Nonaktifkan" : "Aktifkan"}
                     </button>
+                    {user.isActive && user.role !== "SUPER_ADMIN" && user.id !== me?.id && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ width: "auto", padding: "3px 8px" }}
+                        disabled={impersonating === user.id}
+                        onClick={() => handleImpersonate(user)}
+                      >
+                        {impersonating === user.id ? "Memuat..." : "Login As"}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
@@ -434,6 +502,48 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         title={credentials?.title || ""}
         accounts={credentials?.accounts || []}
       />
+
+      <ModalOverlay open={logOpen} onClose={() => setLogOpen(false)} className={`modal-overlay modal-overlay-centered ${logOpen ? "" : "hidden"}`}>
+        <div className="modal" style={{ maxWidth: 640 }}>
+          <div className="modal-header">
+            <h3>Riwayat Login As</h3>
+            <button type="button" className="modal-close" onClick={() => setLogOpen(false)}>&times;</button>
+          </div>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr><th>Super Admin</th><th>Login As</th><th>Mulai</th><th>Selesai</th></tr>
+              </thead>
+              <tbody>
+                {logBusy ? (
+                  <tr><td colSpan={4} className="table-empty">Memuat data...</td></tr>
+                ) : logItems.length === 0 ? (
+                  <tr><td colSpan={4} className="table-empty">Belum ada riwayat</td></tr>
+                ) : (
+                  logItems.map((entry) => (
+                    <tr key={entry.id}>
+                      <td>{entry.superAdminNama}</td>
+                      <td>{entry.targetNama} ({ROLE_LABEL[entry.targetRole] || entry.targetRole})</td>
+                      <td>{formatDateTime(entry.startedAt)}</td>
+                      <td>{entry.endedAt ? formatDateTime(entry.endedAt) : "Masih berlangsung"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="pagination">
+            <div className="pagination-left" />
+            <div className="pagination-right">
+              <span className="text-secondary">Total {logTotal} sesi · Halaman {logPage} dari {Math.max(1, Math.ceil(logTotal / 20))}</span>
+              <div className="pages">
+                <button className="page-btn" disabled={logPage <= 1} onClick={() => loadImpersonationLog(logPage - 1)}>‹</button>
+                <button className="page-btn" disabled={logPage >= Math.ceil(logTotal / 20)} onClick={() => loadImpersonationLog(logPage + 1)}>›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalOverlay>
     </div>
   );
 }

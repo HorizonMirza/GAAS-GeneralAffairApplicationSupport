@@ -12,6 +12,7 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
 import GlobalChatModal from "@/components/GlobalChatModal";
 import NotificationBell from "@/components/NotificationBell";
+import { useToast } from "@/components/ui/ToastProvider";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserProfileSidebar, type NavItem as MenuNavItem } from "@/components/ui/menu";
@@ -243,9 +244,11 @@ function AccountMenu() {
 }
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { me } = useAuth();
+  const { me, refresh } = useAuth();
+  const { showToast } = useToast();
   const pathname = usePathname();
   const router = useRouter();
+  const [endingImpersonation, setEndingImpersonation] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
@@ -275,6 +278,19 @@ export default function AppShell({ children }: { children: ReactNode }) {
     document.body.classList.toggle("auth-ready", !!me);
     return () => document.body.classList.remove("auth-ready");
   }, [me]);
+
+  async function handleEndImpersonation() {
+    setEndingImpersonation(true);
+    try {
+      await api.endImpersonation();
+      await refresh();
+      router.replace("/superadmin");
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setEndingImpersonation(false);
+    }
+  }
 
   if (!me) {
     return <div className="app-shell" />;
@@ -395,6 +411,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
             <NotificationBell />
           </div>
         </header>
+
+        {me.impersonatedBy && (
+          <div className="impersonation-banner">
+            <span>
+              Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
+            </span>
+            <button type="button" className="btn btn-secondary" disabled={endingImpersonation} onClick={handleEndImpersonation}>
+              Kembali ke Super Admin
+            </button>
+          </div>
+        )}
 
         <main className="page-body">{children}</main>
       </div>

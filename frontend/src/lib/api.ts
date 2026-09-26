@@ -24,6 +24,8 @@ import type {
   CreateDivisiResult,
   CreatedUserResult,
   CreateUserPayload,
+  ImpersonateResult,
+  ImpersonationLogListResponse,
   KategoriKerusakan,
   KoreksiArsipPayload,
   KoreksiPengirimanPayload,
@@ -836,6 +838,10 @@ export const api = {
     apiRequest<ResetPasswordResult>(`/users-admin/${id}/reset-password`, { method: "POST" }),
   deactivateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/deactivate`, { method: "POST" }),
   activateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/activate`, { method: "POST" }),
+  impersonateUser: (id: number) => apiRequest<ImpersonateResult>(`/users-admin/${id}/impersonate`, { method: "POST" }),
+  endImpersonation: () => apiRequest<{ message: string }>("/users-admin/impersonate/end", { method: "POST" }),
+  listImpersonationLog: (params: { page?: number; limit?: number }) =>
+    apiRequest<ImpersonationLogListResponse>("/users-admin/impersonation-log", { params }),
 };
 
 export interface ListAdminUsersParams {

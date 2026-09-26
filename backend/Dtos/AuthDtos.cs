@@ -9,6 +9,12 @@ public record LoginRequest(string Username, string Password);
 // AuthController.Login), the account really is logged in, it just can't do anything else yet.
 public record LoginResponse(string Message, string Role, bool MustChangePassword);
 
+// Set only while a Super Admin's "Login As" session is active on this cookie (see
+// UsersAdminController.Impersonate/EndImpersonation) - identifies the real Super Admin behind the
+// current session, purely so AppShell can render the "kembali ke Super Admin" banner. Never shown
+// to, or derivable by, the impersonated account itself in any other way.
+public record ImpersonatedByOut(int Id, string Nama);
+
 public record MeResponse(
     int Id,
     string Username,
@@ -25,10 +31,11 @@ public record MeResponse(
     // Also surfaced here (not just Login's own response) so a page reload while the flag is still
     // set - the person closed the tab mid-forced-change, say - keeps enforcing the screen instead
     // of only checking it once, right after login.
-    bool MustChangePassword
+    bool MustChangePassword,
+    ImpersonatedByOut? ImpersonatedBy = null
 )
 {
-    public static MeResponse From(User user) => new(
+    public static MeResponse From(User user, ImpersonatedByOut? impersonatedBy = null) => new(
         user.Id,
         user.Username,
         user.Nama,
@@ -41,7 +48,8 @@ public record MeResponse(
         user.PhotoPath != null,
         user.CoverPhotoPath != null,
         user.CoverPreset,
-        user.MustChangePassword
+        user.MustChangePassword,
+        impersonatedBy
     );
 }
 

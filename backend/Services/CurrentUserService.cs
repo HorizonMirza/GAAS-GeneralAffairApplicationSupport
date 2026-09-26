@@ -10,6 +10,10 @@ public class CurrentUserService
     private readonly AppDbContext _db;
 
     public const string CookieName = "access_token";
+    // Only ever set/read by UsersAdminController.Impersonate/EndImpersonation and AuthController.Me
+    // (the "Login As" feature) - GetCurrentUserAsync below never looks at it, so a "Login As"
+    // session is authenticated exactly like a normal one via CookieName alone.
+    public const string ImpersonatorCookieName = "impersonator_token";
 
     public CurrentUserService(IHttpContextAccessor accessor, JwtService jwt, AppDbContext db)
     {

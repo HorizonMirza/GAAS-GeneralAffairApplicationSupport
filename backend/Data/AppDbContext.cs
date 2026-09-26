@@ -50,6 +50,7 @@ public class AppDbContext : DbContext
     public DbSet<DeletionLog> DeletionLogs => Set<DeletionLog>();
     public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<ImpersonationLog> ImpersonationLogs => Set<ImpersonationLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1132,6 +1133,29 @@ public class AppDbContext : DbContext
             e.HasOne(l => l.Aktor)
                 .WithMany()
                 .HasForeignKey(l => l.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ImpersonationLog>(e =>
+        {
+            e.ToTable("impersonation_log");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.SuperAdminId).HasColumnName("super_admin_id");
+            e.Property(l => l.SuperAdminNama).HasColumnName("super_admin_nama").HasMaxLength(255).IsRequired();
+            e.Property(l => l.TargetUserId).HasColumnName("target_user_id");
+            e.Property(l => l.TargetNama).HasColumnName("target_nama").HasMaxLength(255).IsRequired();
+            e.Property(l => l.TargetRole).HasColumnName("target_role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            e.Property(l => l.StartedAt).HasColumnName("started_at");
+            e.Property(l => l.EndedAt).HasColumnName("ended_at");
+
+            e.HasOne(l => l.SuperAdmin)
+                .WithMany()
+                .HasForeignKey(l => l.SuperAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(l => l.TargetUser)
+                .WithMany()
+                .HasForeignKey(l => l.TargetUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

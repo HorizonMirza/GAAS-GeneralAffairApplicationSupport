@@ -18,10 +18,14 @@ public class UsersAdminController : ApiControllerBase
     private static readonly HashSet<int> AllowedLimits = new() { 10, 20, 50, 100 };
 
     private readonly AppDbContext _db;
+    private readonly JwtService _jwt;
+    private readonly IConfiguration _config;
 
-    public UsersAdminController(AppDbContext db, CurrentUserService currentUser) : base(currentUser)
+    public UsersAdminController(AppDbContext db, CurrentUserService currentUser, JwtService jwt, IConfiguration config) : base(currentUser)
     {
         _db = db;
+        _jwt = jwt;
+        _config = config;
     }
 
     [HttpGet]
@@ -219,6 +223,130 @@ public class UsersAdminController : ApiControllerBase
         user.IsActive = true;
         await _db.SaveChangesAsync();
         return Ok(AdminUserOut.From(user));
+    }
+
+    // "Login As" - Super Admin picks a real account and starts acting with that account's own
+    // full capabilities (create/approve/reject/edit/delete, everything that role can normally do)
+    // instead of a read-only preview. Every business table (CreatedBy, ApprovedBy, chat sender,
+    // etc.) keeps recording the impersonated account's own id exactly as if that account had
+    // logged in itself - deliberately NOT stamped as Super Admin anywhere, and the impersonated
+    // account is never notified. ImpersonationLog is the one place this is still traceable, and
+    // only Super Admin can ever read it (see GetImpersonationLog below).
+    //
+    // Mechanics: the caller's own token stays untouched in a second cookie (see
+    // CurrentUserService.ImpersonatorCookieName) so EndImpersonation can restore it later without
+    // needing the caller's password again; the
+    // main auth cookie is overwritten with a freshly minted token for the target account, so every
+    // other endpoint in the app needs zero changes - it just sees a normal session for that user.
+    [HttpPost("{id:int}/impersonate")]
+    public async Task<IActionResult> Impersonate(int id)
+    {
+        var (currentUser, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        if (Request.Cookies.ContainsKey(CurrentUserService.ImpersonatorCookieName))
+            return StatusCode(400, new { detail = "Sedang dalam mode Login As - kembali ke Super Admin dahulu" });
+        if (id == currentUser!.Id)
+            return StatusCode(400, new { detail = "Tidak dapat Login As ke akun sendiri" });
+
+        var target = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (target == null) return NotFound(new { detail = "Akun tidak ditemukan" });
+        if (target.Role == RoleEnum.SUPER_ADMIN)
+            return StatusCode(400, new { detail = "Tidak dapat Login As ke akun Super Admin lain" });
+        if (!target.IsActive)
+            return StatusCode(400, new { detail = "Akun ini telah dinonaktifkan" });
+
+        var ownToken = Request.Cookies[CurrentUserService.CookieName];
+        if (string.IsNullOrEmpty(ownToken))
+            return StatusCode(401, new { detail = "Sesi tidak valid" });
+
+        _db.ImpersonationLogs.Add(new ImpersonationLog
+        {
+            SuperAdminId = currentUser.Id,
+            SuperAdminNama = currentUser.Nama,
+            TargetUserId = target.Id,
+            TargetNama = target.Nama,
+            TargetRole = target.Role,
+            StartedAt = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync();
+
+        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = cookieSecure,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromMinutes(_jwt.ExpireMinutes),
+            Path = "/",
+        };
+        Response.Cookies.Append(CurrentUserService.ImpersonatorCookieName, ownToken, cookieOptions);
+        Response.Cookies.Append(CurrentUserService.CookieName, _jwt.CreateAccessToken(target.Id, target.Role, target.PasswordChangedAt), cookieOptions);
+
+        return Ok(new ImpersonateResponse("Login As berhasil", target.Role.ToString(), target.MustChangePassword));
+    }
+
+    // Restores the real Super Admin session that started the currently-active "Login As" - the
+    // active session at the moment this is called is the IMPERSONATED account, not Super Admin,
+    // so this can't gate on RequireRoleAsync(SUPER_ADMIN) like every other endpoint here. The
+    // ImpersonatorCookieName cookie itself (see CurrentUserService - only ever set by Impersonate
+    // above, signed with the same secret every other token is) is what proves this call is
+    // legitimate.
+    [HttpPost("impersonate/end")]
+    public async Task<IActionResult> EndImpersonation()
+    {
+        var impersonatorToken = Request.Cookies[CurrentUserService.ImpersonatorCookieName];
+        if (string.IsNullOrEmpty(impersonatorToken))
+            return StatusCode(400, new { detail = "Tidak sedang dalam mode Login As" });
+
+        var principal = _jwt.Validate(impersonatorToken);
+        var subClaim = principal?.FindFirst("sub")?.Value;
+        if (subClaim == null || !int.TryParse(subClaim, out var superAdminId))
+            return StatusCode(401, new { detail = "Sesi Super Admin tidak valid - silakan login ulang" });
+
+        var openLog = await _db.ImpersonationLogs
+            .Where(l => l.SuperAdminId == superAdminId && l.EndedAt == null)
+            .OrderByDescending(l => l.StartedAt)
+            .FirstOrDefaultAsync();
+        if (openLog != null)
+        {
+            openLog.EndedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+
+        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        Response.Cookies.Append(CurrentUserService.CookieName, impersonatorToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = cookieSecure,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromMinutes(_jwt.ExpireMinutes),
+            Path = "/",
+        });
+        Response.Cookies.Delete(CurrentUserService.ImpersonatorCookieName, new CookieOptions { Path = "/" });
+
+        return Ok(new { message = "Kembali ke Super Admin" });
+    }
+
+    [HttpGet("impersonation-log")]
+    public async Task<IActionResult> GetImpersonationLog([FromQuery] int page = 1, [FromQuery] int limit = 20)
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        if (page < 1) return BadRequest(new { detail = "Halaman tidak valid" });
+        if (!AllowedLimits.Contains(limit))
+            return BadRequest(new { detail = $"Limit harus salah satu dari {string.Join(",", AllowedLimits)}" });
+
+        var query = _db.ImpersonationLogs.OrderByDescending(l => l.StartedAt);
+        var total = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Select(l => ImpersonationLogOut.From(l))
+            .ToListAsync();
+
+        return Ok(new ImpersonationLogListResponse(items, total, page, limit));
     }
 
     // Light referential validation against the current org tree (OrgTree.Tree, DB-backed - see

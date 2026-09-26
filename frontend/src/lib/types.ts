@@ -64,6 +64,10 @@ export interface Me {
   // every page behind the forced change-password screen ((app)/layout.tsx) until a real password
   // replaces it, which clears this the same way it always has (ProfileController.ChangePassword).
   mustChangePassword: boolean;
+  // Present only while this session is a Super Admin's "Login As" session (see
+  // UsersAdminController.Impersonate) - identifies the real Super Admin behind it, purely so
+  // AppShell can render the "kembali ke Super Admin" banner. Absent for a normal session.
+  impersonatedBy: { id: number; nama: string } | null;
 }
 
 export interface DivisiNode {
@@ -993,4 +997,28 @@ export interface CreatedUserResult {
 
 export interface ResetPasswordResult {
   password: string;
+}
+
+// "Login As" - see UsersAdminController.Impersonate. Mirrors LoginResponse's shape so the
+// frontend can route it the same way (dashboard, or the forced change-password screen).
+export interface ImpersonateResult {
+  message: string;
+  role: Role;
+  mustChangePassword: boolean;
+}
+
+export interface ImpersonationLogEntry {
+  id: number;
+  superAdminNama: string;
+  targetNama: string;
+  targetRole: Role;
+  startedAt: string;
+  endedAt: string | null;
+}
+
+export interface ImpersonationLogListResponse {
+  items: ImpersonationLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
 }

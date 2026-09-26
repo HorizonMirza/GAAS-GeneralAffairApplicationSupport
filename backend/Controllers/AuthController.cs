@@ -45,6 +45,10 @@ public class AuthController : ApiControllerBase
             MaxAge = TimeSpan.FromMinutes(_jwt.ExpireMinutes),
             Path = "/",
         });
+        // A fresh login starts a clean slate - a stray leftover from a "Login As" session that
+        // never got ended (browser closed mid-session, say) must not silently attach to whoever
+        // logs in next on this same browser.
+        Response.Cookies.Delete(CurrentUserService.ImpersonatorCookieName, new CookieOptions { Path = "/" });
 
         return Ok(new LoginResponse("Login berhasil", user.Role.ToString(), user.MustChangePassword));
     }
@@ -53,6 +57,7 @@ public class AuthController : ApiControllerBase
     public IActionResult Logout()
     {
         Response.Cookies.Delete(CurrentUserService.CookieName, new CookieOptions { Path = "/" });
+        Response.Cookies.Delete(CurrentUserService.ImpersonatorCookieName, new CookieOptions { Path = "/" });
         return Ok(new { message = "Logout berhasil" });
     }
 
@@ -62,7 +67,20 @@ public class AuthController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        return Ok(MeResponse.From(user!));
+        ImpersonatedByOut? impersonatedBy = null;
+        var impersonatorToken = Request.Cookies[CurrentUserService.ImpersonatorCookieName];
+        if (!string.IsNullOrEmpty(impersonatorToken))
+        {
+            var principal = _jwt.Validate(impersonatorToken);
+            var subClaim = principal?.FindFirst("sub")?.Value;
+            if (subClaim != null && int.TryParse(subClaim, out var superAdminId))
+            {
+                var superAdmin = await _db.Users.FindAsync(superAdminId);
+                if (superAdmin != null) impersonatedBy = new ImpersonatedByOut(superAdmin.Id, superAdmin.Nama);
+            }
+        }
+
+        return Ok(MeResponse.From(user!, impersonatedBy));
     }
 
     [HttpGet("org-structure")]
