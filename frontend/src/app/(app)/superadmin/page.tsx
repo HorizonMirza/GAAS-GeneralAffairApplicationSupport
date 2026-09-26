@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -59,7 +59,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Building2, Calendar, Car, ClipboardList, DoorOpen, Folder, Layers, Shield, Truck, Users, Wrench } from "lucide-react";
+import { Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
@@ -67,7 +67,7 @@ import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
 import SuperAdminMeetingRoomTab from "@/components/SuperAdminMeetingRoomTab";
 import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users" | "meeting-room" | "vehicle";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users";
 
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "overview", label: "Ringkasan & Audit", icon: <Shield width={16} height={16} /> },
@@ -79,8 +79,6 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
   { key: "organisasi", label: "Organisasi", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
-  { key: "meeting-room", label: "Ruang Meeting", icon: <DoorOpen width={16} height={16} /> },
-  { key: "vehicle", label: "Kendaraan", icon: <Truck width={16} height={16} /> },
 ];
 
 interface BookingFilterState {
@@ -167,13 +165,32 @@ interface FilterState {
 
 const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
 
-export default function SuperAdminPage() {
+function SuperAdminPageInner() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
 
-  const [activeTab, setActiveTab] = useState<SuperAdminTab>("overview");
+  const [activeTab, setActiveTabState] = useState<SuperAdminTab>(() => {
+    const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
+    return fromUrl && TABS.some((t) => t.key === fromUrl) ? fromUrl : "overview";
+  });
+  // Keeps the URL's ?tab= in sync (so the sidebar submenu highlights the right item, and a
+  // refresh/shared link lands back on the same tab) - the only other way activeTab changes is the
+  // effect below reacting to a sidebar link's own navigation.
+  const selectTab = useCallback((tab: SuperAdminTab) => {
+    setActiveTabState(tab);
+    router.replace(`/superadmin?tab=${tab}`, { scroll: false });
+  }, [router]);
+  // Sidebar submenu links navigate with a plain <Link> (not selectTab), which changes
+  // searchParams without unmounting this page - sync activeTab from the URL whenever that happens
+  // from outside (a direct link, browser back/forward), not just from selectTab's own replace.
+  useEffect(() => {
+    const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
+    if (fromUrl && TABS.some((t) => t.key === fromUrl) && fromUrl !== activeTab) setActiveTabState(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"pengiriman" | "invoice">("pengiriman");
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
@@ -211,6 +228,9 @@ export default function SuperAdminPage() {
   const [bookingBusy, setBookingBusy] = useState(true);
   const [bookingError, setBookingError] = useState("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
+  // "Ruang Meeting" (roster management, formerly its own top-level tab) folded in as a sub-tab
+  // here instead - it's the room-side counterpart to this tab's own booking transactions.
+  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"transaksi" | "roster">("transaksi");
   // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
   // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel/Duplicate, no Koreksi).
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
@@ -229,6 +249,9 @@ export default function SuperAdminPage() {
   const [kendaraanBusy, setKendaraanBusy] = useState(true);
   const [kendaraanError, setKendaraanError] = useState("");
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
+  // "Kendaraan" (roster management, formerly its own top-level tab) folded in as a sub-tab here
+  // instead - it's the vehicle-side counterpart to this tab's own booking transactions.
+  const [kendaraanSubtab, setKendaraanSubtab] = useState<"transaksi" | "roster">("transaksi");
   // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
   // modals (Reschedule/Cancel/Duplicate, no Koreksi).
   const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
@@ -1037,7 +1060,7 @@ export default function SuperAdminPage() {
             key={tab.key}
             type="button"
             className={`superadmin-tab-btn ${activeTab === tab.key ? "superadmin-tab-btn-active" : ""}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => selectTab(tab.key)}
           >
             {tab.icon}
             {tab.label}
@@ -1470,6 +1493,27 @@ export default function SuperAdminPage() {
 
       {activeTab === "booking-ruang" && (
         <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${bookingRuangSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setBookingRuangSubtab("transaksi")}
+            >
+              Transaksi Booking ({bookingTotal})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${bookingRuangSubtab === "roster" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setBookingRuangSubtab("roster")}
+            >
+              Kelola Ruang Meeting
+            </button>
+          </div>
+
+          {bookingRuangSubtab === "roster" && <SuperAdminMeetingRoomTab />}
+
+          {bookingRuangSubtab === "transaksi" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Room Booking Meeting</h3>
@@ -1765,9 +1809,32 @@ export default function SuperAdminPage() {
 
           <BookingStatusHistoryModal open={bookingStatusItemId != null} itemId={bookingStatusItemId} onClose={() => setBookingStatusItemId(null)} />
         </>
+          )}
+        </>
       )}
 
       {activeTab === "booking-kendaraan" && (
+        <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${kendaraanSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setKendaraanSubtab("transaksi")}
+            >
+              Transaksi Booking ({kendaraanTotal})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${kendaraanSubtab === "roster" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setKendaraanSubtab("roster")}
+            >
+              Kelola Kendaraan
+            </button>
+          </div>
+
+          {kendaraanSubtab === "roster" && <SuperAdminVehicleTab />}
+
+          {kendaraanSubtab === "transaksi" && (
         <>
       <div className="card">
         <div className="card-header">
@@ -2062,6 +2129,8 @@ export default function SuperAdminPage() {
           />
 
           <VehicleBookingStatusHistoryModal open={kendaraanStatusItemId != null} itemId={kendaraanStatusItemId} onClose={() => setKendaraanStatusItemId(null)} />
+        </>
+          )}
         </>
       )}
 
@@ -2904,10 +2973,6 @@ export default function SuperAdminPage() {
 
       {activeTab === "users" && <SuperAdminUsersTab orgStructure={orgStructure} />}
 
-      {activeTab === "meeting-room" && <SuperAdminMeetingRoomTab />}
-
-      {activeTab === "vehicle" && <SuperAdminVehicleTab />}
-
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
         showUpdates={false}
@@ -2950,5 +3015,13 @@ export default function SuperAdminPage() {
 
       <BulkDeleteModal target={bulkTarget} onClose={() => setBulkTarget(null)} />
     </>
+  );
+}
+
+export default function SuperAdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <SuperAdminPageInner />
+    </Suspense>
   );
 }

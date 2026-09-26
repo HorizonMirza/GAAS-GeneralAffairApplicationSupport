@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Calendar, Car, Folder, LayoutGrid, Layers, Shield, Wrench } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
@@ -93,6 +93,42 @@ const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
 ];
+
+const SUPER_ADMIN_LABEL = "Super Admin";
+
+// Mirrors superadmin/page.tsx's own TABS (minus "Ruang Meeting"/"Kendaraan", folded into "Room
+// Booking"/"Vehicle Booking" as sub-tabs there instead of separate top-level ones) - kept as its
+// own small list here rather than importing that page's TABS const, which would pull that whole
+// ~3000-line page (and every modal it imports) into every route's bundle just for two label
+// strings.
+const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
+  { key: "overview", label: "Ringkasan & Audit" },
+  { key: "ekspedisi", label: "Ekspedisi & Invoice" },
+  { key: "booking-ruang", label: "Room Booking" },
+  { key: "booking-kendaraan", label: "Vehicle Booking" },
+  { key: "atk", label: "Office Supplies" },
+  { key: "sarana", label: "Maintenance" },
+  { key: "arsip", label: "Arsip" },
+  { key: "organisasi", label: "Organisasi" },
+  { key: "users", label: "Users" },
+];
+
+// Isolated into its own component so only this fragment (not the whole AppShell, mounted on every
+// page) needs a Suspense boundary for useSearchParams - the tab in the URL only matters for
+// highlighting which submenu item is active, not for anything else here.
+function SuperAdminSubmenuItems() {
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+  return (
+    <>
+      {SUPER_ADMIN_TABS.map((tab) => (
+        <Link key={tab.key} className={`nav-link ${activeTab === tab.key ? "active" : ""}`} href={`/superadmin?tab=${tab.key}`}>
+          {tab.label}
+        </Link>
+      ))}
+    </>
+  );
+}
 
 // Tracks a media query client-side, defaulting to false until mount so the server-rendered and
 // first client render agree (no hydration mismatch) - matches the 861px breakpoint the sidebar's
@@ -271,7 +307,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     // can still expand/collapse by hand in between navigations, since this effect only re-runs
     // when pathname changes.
     const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => item.href === pathname));
-    setOpenCategory(active ? active.label : null);
+    setOpenCategory(active ? active.label : pathname === "/superadmin" ? SUPER_ADMIN_LABEL : null);
   }, [pathname]);
 
   useEffect(() => {
@@ -385,10 +421,42 @@ export default function AppShell({ children }: { children: ReactNode }) {
             {isSuperAdmin && (
               <>
                 <div className="sidebar-divider" role="separator" />
-                <Link className={`nav-link ${pathname === "/superadmin" ? "active" : ""}`} href="/superadmin" title="Super Admin">
-                  <Shield width={20} height={20} />
-                  <span style={labelWidthStyle("Super Admin")}>Super Admin</span>
-                </Link>
+                {(() => {
+                  const hasActive = pathname === "/superadmin";
+                  const isOpen = !isIconCollapsed && (openCategory === SUPER_ADMIN_LABEL || hasActive);
+                  return (
+                    <Collapsible
+                      open={isOpen}
+                      onOpenChange={(next) => {
+                        if (!isIconCollapsed) setOpenCategory(next ? SUPER_ADMIN_LABEL : null);
+                      }}
+                      className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className={`nav-category-trigger ${isIconCollapsed && hasActive ? "has-active" : ""}`}
+                        title={SUPER_ADMIN_LABEL}
+                        aria-expanded={isOpen}
+                        onClick={() => {
+                          if (isIconCollapsed) {
+                            router.push("/superadmin");
+                          } else {
+                            setOpenCategory(isOpen ? null : SUPER_ADMIN_LABEL);
+                          }
+                        }}
+                      >
+                        <Shield width={20} height={20} />
+                        <span style={labelWidthStyle(SUPER_ADMIN_LABEL)}>{SUPER_ADMIN_LABEL}</span>
+                        <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      </button>
+                      <CollapsibleContent className="nav-category-submenu">
+                        <Suspense fallback={null}>
+                          <SuperAdminSubmenuItems />
+                        </Suspense>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })()}
               </>
             )}
           </div>

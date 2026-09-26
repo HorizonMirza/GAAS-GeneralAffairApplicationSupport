@@ -1926,6 +1926,12 @@ body.auth-ready .app-shell {
   border-color: var(--blue-500);
 }
 
+/* Otherwise .superadmin-subtab-btn:hover's color (same blue as this active background) wins on
+   specificity, making the label invisible while the mouse simply rests on the tab it just opened. */
+.superadmin-subtab-btn-active:hover {
+  color: #fff;
+}
+
 /* ---------- Room booking: room picker grid ---------- */
 .room-grid {
   display: grid;
