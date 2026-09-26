@@ -19,6 +19,7 @@ ASP.NET Core 8 Web API, project `PengirimanApi`.
 Controllers/   Endpoint HTTP per domain - satu controller "utama" + satu controller chat + satu controller export
                 per modul transaksional:
                   Auth, Profile, Users, NotificationSettings                (lintas modul)
+                  OrgAdmin, UsersAdmin                                       (Super Admin - lihat bagian tersendiri di bawah)
                   Pengiriman, Chat, Export                                  (Ekspedisi, + Invoice untuk invoice-nya)
                   BookingRuang, BookingChat, BookingRuangExport             (Room Booking)
                   BookingKendaraan, BookingKendaraanChat,
@@ -29,19 +30,22 @@ Controllers/   Endpoint HTTP per domain - satu controller "utama" + satu control
                   PermintaanArsip, PermintaanArsipChat, ArsipExport,
                     ArsipKatalogExport                                      (Archive - lihat catatan di bawah)
 Models/        Entity EF Core - satu grup per modul (item + Log + Counter nomor dokumen + ChatMessage/ChatRead),
-                ditambah User/Enums yang dipakai lintas modul. Lihat isi folder untuk daftar lengkap.
+                ditambah User/Enums yang dipakai lintas modul, OrgDirektorat/OrgDivisi/OrgDepartemen (struktur
+                organisasi, lihat bagian Super Admin), dan DeletionLog (jejak audit penghapusan, idem).
+                Lihat isi folder untuk daftar lengkap.
 Data/          AppDbContext (mapping tabel) + DbSeeder (akun & data awal)
 Dtos/          Bentuk request/response API (terpisah dari entity) - satu file per modul
 Hubs/          ChatHub (SignalR) - push real-time chat ke setiap modul transaksional, lihat bagian SignalR di bawah
 Services/      JwtService (buat/verifikasi token), CurrentUserService (ambil user dari cookie),
-                OrgTree (struktur Direktorat/Divisi/Departemen), MeetingRooms/Vehicles (data master ruang/kendaraan),
-                ChatImageStorage (simpan lampiran gambar chat), IcsService (export kalender .ics),
+                OrgTree (struktur Direktorat/Divisi/Departemen - DB-backed, lihat bagian Super Admin),
+                MeetingRooms/Vehicles (data master ruang/kendaraan), ChatImageStorage (simpan lampiran gambar chat),
+                IcsService (export kalender .ics), PasswordGenerator (password acak untuk akun baru, crypto RNG),
                 BookingPdfService/VehiclePdfService/AtkPdfService/SaranaPdfService (PDF konfirmasi/slip per modul)
 Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, switch resetdb/seed
 ```
 
 - ORM: Entity Framework Core dengan provider `Npgsql.EntityFrameworkCore.PostgreSQL`.
-- Export Excel via `ClosedXML`, export PDF via `QuestPDF` — tersedia di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive), lewat endpoint `export`/`export-pdf` di controller Export masing-masing. Room Booking, Vehicle Booking, Office Supplies, dan Maintenance juga punya endpoint `{id}/pdf` untuk cetak slip satu dokumen (beda dari `export-pdf` yang mencetak daftar hasil filter).
+- Export Excel via `ClosedXML`, export PDF via `QuestPDF` — tersedia di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive), lewat endpoint `export`/`export-pdf` di controller Export masing-masing. Semua modul transaksional juga punya endpoint `{id}/pdf` untuk cetak slip satu dokumen (beda dari `export-pdf` yang mencetak daftar hasil filter).
 - Password di-hash dengan `BCrypt.Net-Next`.
 - Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `database/` (lihat catatan di bagian Database).
 - Konfigurasi rahasia (connection string, JWT secret) ada di `appsettings.Development.json`, **tidak** masuk git — dikelola manual per environment.
@@ -67,6 +71,17 @@ Archive **bukan** penyimpanan file digital — modelnya (`PermintaanArsip`) tida
 
 Ada satu halaman tambahan yang modul lain tidak punya: **Catalog** (`arsip/katalog`, endpoint `GET /api/permintaan-arsip/catalog`) - registry read-only berisi arsip yang sudah lolos `APPROVED_GA_APPROVAL`, yaitu "apa saja yang benar-benar sedang ada di arsip inaktif sekarang", terpisah dari daftar permintaan (`arsip/transaksi`, disebut "Relocation" di sidebar) yang menampilkan seluruh permintaan apa pun hasilnya. `ArsipKatalogExportController` menyediakan export Excel/PDF khusus untuk daftar katalog ini.
 
+## Super Admin (`OrgAdminController`, `UsersAdminController`, role `SUPER_ADMIN`)
+
+Super Admin bukan modul transaksional seperti enam modul lain — perannya lintas-modul, dengan dua bagian:
+
+- **Akses penuh ke semua modul**: `SUPER_ADMIN` bisa melakukan aksi apa pun yang bisa dilakukan role mana pun, di tahap mana pun (create/edit/approve/reject/koreksi), tanpa perlu "berperan sebagai" role lain. Ini diimplementasikan lewat bypass terpusat di `ApiControllerBase.RequireRoleAsync` (lolos untuk kombinasi role apa pun), ditambah pengecualian eksplisit `SUPER_ADMIN` di helper per-modul yang tidak lewat method itu (`IsGaActor`, `RequireL1ActorAsync` di keenam controller modul) dan di helper frontend senama di `constants.ts`. Log riwayat approval tetap mencatat identitas asli Super Admin (bukan menyamar sebagai role lain). Di sidebar, Super Admin melihat tampilan yang sama seperti role lain (semua modul ter-expand) ditambah satu menu "Super Admin" di bagian bawah, dipisahkan garis.
+- **Kelola data master** (halaman `/superadmin`):
+  - **Organisasi** — CRUD Direktorat/Divisi/Departemen lewat `OrgAdminController`, disimpan di tabel `org_direktorat`/`org_divisi`/`org_departemen` (lihat `OrgTree` di bagian Services: struktur ini dulu hardcoded di kode, sekarang dibaca dari database dan di-cache di memori, di-rebuild tiap ada perubahan lewat `LoadFromDb`).
+  - **User** — CRUD akun lewat `UsersAdminController`: buat akun baru (password acak sekali-tampil via `CredentialsRevealModal`, generate oleh `PasswordGenerator`), edit (termasuk mengosongkan Divisi/Departemen lewat flag `ClearDivisi`/`ClearDepartemen` di `UpdateUserRequest` — field `string?` biasa tidak bisa membedakan "kosongkan" dari "tidak diubah"), reset password, nonaktifkan (`IsActive`). Akun yang di-reset password-nya wajib ganti password saat login berikutnya (`MustChangePassword`, digerbang lewat `ForcedPasswordChangeScreen` di frontend).
+  - **Jejak audit penghapusan** — setiap delete yang dilakukan Super Admin di modul mana pun dicatat ke tabel `deletion_log` (modul, id & nomor dokumen, siapa yang menghapus, ringkasan filter saat itu) - tabel ini sengaja tidak punya FK ke tabel item yang dihapus (item-nya sendiri sudah tidak ada), dan datanya ditampilkan sebagai sumber ke-8 di Riwayat Aktivitas Super Admin.
+  - Semua 7+ tab Super Admin (satu per modul + Organisasi + User) punya tombol export PDF/Excel yang sama seperti modul aslinya.
+
 ## SignalR (chat real-time)
 
 `ChatHub` (`backend/Hubs/ChatHub.cs`, di-map di `Program.cs` sebagai `/hubs/chat`) mem-broadcast pesan chat baru ke klien yang sedang membuka thread yang sama, menggantikan polling. Satu koneksi bisa join banyak "grup" (satu grup = satu item, mis. `pengiriman-chat-{id}`, `booking-chat-{id}`, `kendaraan-chat-{id}`, `atk-chat-{id}`, `sarana-chat-{id}`) lewat method `Join{Modul}Chat`/`Leave{Modul}Chat`, dipanggil dari frontend saat modal chat dibuka/ditutup (`frontend/src/lib/chatHub.ts`). Tidak ada middleware `[Authorize]` di aplikasi ini (lihat `CurrentUserService`), jadi setiap `Join{Modul}Chat` memvalidasi akses secara manual lewat method `CanAccess{Modul}` yang sama dengan yang dipakai controller REST-nya (`ApiControllerBase`), supaya aturan visibilitas tidak bisa dilewati lewat WebSocket.
@@ -82,7 +97,7 @@ src/app/(app)/                         Halaman setelah login (route group, pakai
   profile/                               Profil & ganti password
   bantuan/                               Help Center (FAQ statis, bukan dari backend)
   contact-person/                        Direktori kontak (data statis di constants.ts)
-  superadmin/                            Kelola data master (role SUPER_ADMIN)
+  superadmin/                            Akses penuh + kelola data master (role SUPER_ADMIN, lihat bagian Super Admin)
   ekspedisi/overview/, transaksi/,
     invoice-history/                     Expedition - dashboard, tabel transaksi, riwayat invoice (KPU)
   booking-ruang-meeting/overview/,
@@ -108,6 +123,8 @@ src/lib/                               api.ts (client HTTP ke backend, termasuk 
 ## Database
 
 PostgreSQL. Sumber kebenaran skema adalah `AppDbContext.OnModelCreating` + blok `CREATE TABLE IF NOT EXISTS`/`ALTER TABLE` di `Program.cs` (jalan otomatis tiap startup, non-destruktif) — **bukan** file mana pun di `database/`.
+
+Tabel lintas-modul yang menopang fitur Super Admin (lihat bagian tersendiri di atas): `org_direktorat`/`org_divisi`/`org_departemen` (struktur organisasi, backfill sekali dari `OrgTree.SeedData` saat pertama kali tabel ini dibuat) dan `deletion_log` (jejak audit penghapusan, tanpa FK ke tabel item manapun).
 
 `database/pengiriman_barang_postgres.sql` adalah dump `pg_dump` dari database user di titik waktu yang jauh lebih lama (hanya berisi 4 tabel: `users`, `pengiriman`, `pengiriman_logs`, `invoices` — dari sebelum fitur chat, semua modul booking, ATK, Maintenance, dan Archive ada). File ini **sudah sangat usang** dan tidak dipakai/dieksekusi oleh aplikasi; kalau butuh melihat skema aktual, baca `AppDbContext.cs` langsung, atau jalankan `pg_dump` baru dari database yang sudah di-`resetdb`.
 

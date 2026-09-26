@@ -22,7 +22,7 @@ Kantor membutuhkan sistem untuk mencatat pengiriman barang (ekspedisi) yang mela
 | `ADMIN_GA` | Cek fisik barang, approve/reject (tahap 2) |
 | `APPROVAL_GA` | Approve/reject final di sisi GA (tahap 3, dan status akhir untuk modul selain Ekspedisi) |
 | `KPU` (ditampilkan sebagai "Mitra" di UI) | Ekspedisi: approve final, cetak resi, isi biaya pengiriman. Office Supplies: sign-off final pembelian ATK (baik dibeli lewat KPU sendiri maupun kanal eksternal PaDi). Modul lain tidak melibatkan KPU sama sekali (lihat [KPU_HIDDEN_CATEGORIES](../frontend/src/components/AppShell.tsx) — Room Booking, Vehicle Booking, Maintenance, Archive disembunyikan dari sidebar KPU) |
-| `SUPER_ADMIN` | Kelola data master (lihat halaman Super Admin) |
+| `SUPER_ADMIN` | Akses penuh ke seluruh modul — bisa membuat/approve/reject/edit di tahap mana pun tanpa dibatasi role-gate, plus kelola data master lewat halaman Super Admin (Organisasi: Direktorat/Divisi/Departemen; User: buat/edit/reset password/nonaktifkan akun) dan jejak audit khusus untuk data yang dihapus. Detail mekanisme di [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian Super Admin |
 
 ## Alur Kerja (Ekspedisi)
 
@@ -67,9 +67,11 @@ Berbeda dari Ekspedisi, reject di tahap manapun (termasuk oleh KPU) adalah jalan
 - CRUD data dengan validasi field & nomor dokumen otomatis per divisi/bulan, di setiap modul transaksional.
 - Alur approval berjenjang (lihat bagian Alur Kerja di atas), dengan riwayat approval (log) per item.
 - Chat real-time per item (SignalR) di setiap modul transaksional — diskusi antar pihak terkait, dengan mention & notifikasi belum-dibaca.
-- Export data ke Excel & PDF, dengan filter (status/divisi/direktorat/pencarian) — di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive). Room Booking, Vehicle Booking, Office Supplies, dan Maintenance juga punya cetak slip PDF per dokumen.
+- Export data ke Excel & PDF, dengan filter (status/divisi/direktorat/pencarian) — di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive). Semua modul transaksional juga punya cetak slip PDF per dokumen (endpoint `{id}/pdf`).
 - Kalender ketersediaan (Room Booking, Vehicle Booking) dengan tampilan Harian/Mingguan/Bulanan.
-- Halaman Super Admin untuk kelola data master.
+- Koreksi Harga: KPU bisa mengoreksi field biaya (No. Resi/Berat/Asuransi/Subtotal/Total di Ekspedisi, Total Harga Barang di Office Supplies) pada dokumen yang sudah `COMPLETED`, lewat ikon kunci/pensil di modal Detail.
+- Total Akumulasi Biaya di overview Office Supplies — rekap total `Total Harga Barang` dari seluruh permintaan sesuai filter yang aktif.
+- Halaman Super Admin: akses penuh ke semua modul (melewati semua tahap approval), kelola Organisasi (Direktorat/Divisi/Departemen) dan User (buat/edit/reset password/nonaktifkan, dengan password sekali-tampil & wajib ganti password di login pertama), jejak audit khusus untuk data yang dihapus, dan export PDF/Excel di setiap tab.
 - Dashboard ringkas per role dengan status antrian & jumlah dokumen.
 - Tema terang/gelap pada aplikasi (di luar halaman login).
 

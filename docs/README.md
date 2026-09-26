@@ -65,7 +65,9 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 
 ## Peran (Role)
 
-`ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA`, `KPU`, `SUPER_ADMIN`. Tidak ada pendaftaran akun mandiri — semua akun dibuat lewat seed (`backend/Data/DbSeeder.cs`).
+`ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA`, `KPU`, `SUPER_ADMIN`. Tidak ada pendaftaran akun mandiri — akun awal dibuat lewat seed (`backend/Data/DbSeeder.cs`), akun berikutnya bisa dibuat lewat halaman Super Admin.
+
+`SUPER_ADMIN` adalah role lintas-modul: akses penuh ke semua modul (melewati semua tahap approval) ditambah halaman khusus untuk kelola Organisasi (Direktorat/Divisi/Departemen) dan User (buat/edit/reset password/nonaktifkan akun), lengkap dengan jejak audit untuk data yang dihapus. Detail mekanismenya di [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian Super Admin.
 
 ## Dokumen Lain
 
