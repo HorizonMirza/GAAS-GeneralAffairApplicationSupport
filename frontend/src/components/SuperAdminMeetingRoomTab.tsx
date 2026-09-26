@@ -77,7 +77,7 @@ export default function SuperAdminMeetingRoomTab() {
     if (!form.nama.trim()) { setFormError("Nama ruang wajib diisi"); return; }
     if (!form.lantai.trim()) { setFormError("Lantai wajib diisi"); return; }
     const kapasitas = Number(form.kapasitas);
-    if (!Number.isFinite(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus angka lebih dari 0"); return; }
+    if (!Number.isInteger(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus bilangan bulat lebih dari 0"); return; }
 
     const payload = {
       nama: form.nama.trim(),

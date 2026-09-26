@@ -96,6 +96,16 @@ public abstract class ApiControllerBase : ControllerBase
     protected static async Task LockResourceAsync(DbContext db, string resourceKey) =>
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({resourceKey}, 0))");
 
+    // true when `ex` is a Postgres unique-constraint violation (SqlState 23505) - the race that
+    // slips past an app-level "AnyAsync(name already exists)" pre-check: two requests can both
+    // pass that check before either commits, so the DB's own UNIQUE index is what actually
+    // catches the second one, as a thrown exception rather than a clean result. Callers wrap the
+    // SaveChangesAsync that follows a create/rename in a try/catch on DbUpdateException and check
+    // this before deciding it really is a duplicate-name conflict (a 400/409) rather than some
+    // other failure that should keep surfacing as an unhandled 500.
+    protected static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+        ex.InnerException is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation };
+
     // Queues one deletion_log row (see Models/DeletionLog.cs) - called right before the row(s) it
     // describes are actually removed, in every SuperAdminDelete/SuperAdminBulkDelete across the
     // seven modules that have one. Not saved here - it rides along in the same SaveChangesAsync

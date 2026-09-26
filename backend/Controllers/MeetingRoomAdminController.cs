@@ -62,7 +62,17 @@ public class MeetingRoomAdminController : ApiControllerBase
             FasilitasCsv = string.Join(",", (payload.Fasilitas ?? new()).Select(f => f.Trim()).Where(f => f.Length > 0)),
         };
         _db.MeetingRooms.Add(row);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Closes the race the AnyAsync check above can't: two requests can both pass it before
+            // either commits, so the table's own UNIQUE index is what actually catches the second
+            // one - as this exception, not a clean result.
+            return StatusCode(400, new { detail = "Nama ruang sudah dipakai" });
+        }
         MeetingRooms.LoadFromDb(_db);
 
         return StatusCode(201, MeetingRoomOut.From(row));
@@ -92,7 +102,14 @@ public class MeetingRoomAdminController : ApiControllerBase
         row.Kapasitas = payload.Kapasitas;
         row.Lantai = lantai;
         row.FasilitasCsv = string.Join(",", (payload.Fasilitas ?? new()).Select(f => f.Trim()).Where(f => f.Length > 0));
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama ruang sudah dipakai" });
+        }
         MeetingRooms.LoadFromDb(_db);
 
         return Ok(MeetingRoomOut.From(row));

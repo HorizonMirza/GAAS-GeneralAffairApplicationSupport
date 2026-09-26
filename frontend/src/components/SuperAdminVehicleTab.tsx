@@ -96,7 +96,7 @@ export default function SuperAdminVehicleTab() {
     if (!form.nama.trim()) { setFormError("Nama kendaraan wajib diisi"); return; }
     if (!form.platNomor.trim()) { setFormError("Plat nomor wajib diisi"); return; }
     const kapasitas = Number(form.kapasitas);
-    if (!Number.isFinite(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus angka lebih dari 0"); return; }
+    if (!Number.isInteger(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus bilangan bulat lebih dari 0"); return; }
     if (!form.supir.trim()) { setFormError("Nama supir wajib diisi"); return; }
     if (!form.merek.trim()) { setFormError("Merek wajib diisi"); return; }
     if (!form.model.trim()) { setFormError("Model wajib diisi"); return; }

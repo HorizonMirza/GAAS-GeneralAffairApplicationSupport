@@ -63,7 +63,15 @@ public class VehicleAdminController : ApiControllerBase
             LokasiParkir = payload.LokasiParkir.Trim(),
         };
         _db.Vehicles.Add(row);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Closes the race the AnyAsync check above can't - see MeetingRoomAdminController.Create.
+            return StatusCode(400, new { detail = "Nama kendaraan sudah dipakai" });
+        }
         Vehicles.LoadFromDb(_db);
 
         return StatusCode(201, VehicleOut.From(row));
@@ -96,7 +104,14 @@ public class VehicleAdminController : ApiControllerBase
         row.Warna = payload.Warna.Trim();
         row.NomorTeleponSupir = payload.NomorTeleponSupir.Trim();
         row.LokasiParkir = payload.LokasiParkir.Trim();
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama kendaraan sudah dipakai" });
+        }
         Vehicles.LoadFromDb(_db);
 
         return Ok(VehicleOut.From(row));
