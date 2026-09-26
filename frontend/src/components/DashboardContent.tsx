@@ -89,8 +89,7 @@ function drawGroupedBar(
   canvas: HTMLCanvasElement,
   groups: string[],
   layers: number[][],
-  colors: string[],
-  legends: string[]
+  colors: string[]
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -100,11 +99,11 @@ function drawGroupedBar(
   const txtStr  = dark ? "#eef4ff" : "#0b1a33";
   const grid    = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.05)";
   const W = canvas.width, H = canvas.height;
-  const p = { t: 10, r: 72, b: 30, l: 40 };
+  const p = { t: 12, r: 18, b: 34, l: 36 };
   const cW = W - p.l - p.r, cH = H - p.t - p.b;
   const maxV = Math.max(...layers.flat(), 1);
   const gW = cW / groups.length;
-  const bW = Math.min(gW * 0.22, 22);
+  const bW = Math.min(gW * 0.22, 24);
 
   ctx.save(); ctx.translate(p.l, p.t);
 
@@ -112,25 +111,20 @@ function drawGroupedBar(
     const y = cH - (i / 4) * cH;
     ctx.strokeStyle = grid; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
-    ctx.fillStyle = txtMut; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
-    ctx.fillText(String(Math.round((i / 4) * maxV)), -4, y + 3);
+    ctx.fillStyle = txtMut; ctx.font = "11px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(String(Math.round((i / 4) * maxV)), -6, y + 4);
   }
   groups.forEach((g, i) => {
-    const gX = i * gW + (gW - bW * layers.length - (layers.length - 1) * 2) / 2;
+    const gX = i * gW + (gW - bW * layers.length - (layers.length - 1) * 3) / 2;
     layers.forEach((layer, j) => {
       const bh = (layer[i] / maxV) * cH;
       ctx.fillStyle = colors[j];
       ctx.beginPath();
-      ctx.roundRect(gX + j * (bW + 2), cH - bh, bW, Math.max(bh, 1), [3, 3, 0, 0]);
+      ctx.roundRect(gX + j * (bW + 3), cH - bh, bW, Math.max(bh, 1), [3, 3, 0, 0]);
       ctx.fill();
     });
-    ctx.fillStyle = txtStr; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(g, i * gW + gW / 2, cH + 18);
-  });
-  legends.forEach((l, i) => {
-    ctx.fillStyle = colors[i]; ctx.fillRect(cW + 8, 8 + i * 20, 9, 9);
-    ctx.fillStyle = txtMut; ctx.font = "10px sans-serif"; ctx.textAlign = "left";
-    ctx.fillText(l, cW + 20, 17 + i * 20);
+    ctx.fillStyle = txtStr; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(g, i * gW + gW / 2, cH + 20);
   });
   ctx.restore();
 }
@@ -279,8 +273,7 @@ function PaneAll({ stats, isKpu }: { stats: AllStats; isKpu: boolean }) {
       barRef.current,
       labels,
       [get("completed"), get("pending"), get("rejected")],
-      ["#1c6dff", "#f59e0b", "#ef4444"],
-      ["Selesai", "Pending", "Tolak"]
+      ["#1c6dff", "#f59e0b", "#ef4444"]
     );
   }, [stats, isKpu]);
 
@@ -296,143 +289,64 @@ function PaneAll({ stats, isKpu }: { stats: AllStats; isKpu: boolean }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
         {/* Donut */}
-        <div className="card">
-          <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Status Keseluruhan</div>
-          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3, marginBottom: 16 }}>
-            {isKpu ? "2" : "6"} modul · {currentYearMonth()}
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Status Keseluruhan</div>
+            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3 }}>
+              {isKpu ? "2" : "6"} modul · {currentYearMonth()}
+            </div>
           </div>
-          <canvas ref={donutRef} width={220} height={185} style={{ display: "block", margin: "0 auto" }} />
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 9 }}>
-            {[
-              { label: "Selesai",  v: totalCompleted, dot: "#16a34a", cls: "badge-completed" },
-              { label: "Diproses", v: totalPending,   dot: "#f59e0b", cls: "badge-submitted" },
-              { label: "Ditolak",  v: totalRejected,  dot: "#dc2626", cls: "badge-rejected"  },
-            ].map((s) => (
-              <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
-                  {s.label}
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                  {s.v.toLocaleString()}
-                  {grandTotal > 0 && (
-                    <span className={`badge ${s.cls}`}>{Math.round((s.v / grandTotal) * 100)}%</span>
-                  )}
-                </span>
-              </div>
-            ))}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 180 }}>
+              <canvas ref={donutRef} width={200} height={180} style={{ display: "block" }} />
+            </div>
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 9 }}>
+              {[
+                { label: "Selesai",  v: totalCompleted, dot: "#16a34a", cls: "badge-completed" },
+                { label: "Diproses", v: totalPending,   dot: "#f59e0b", cls: "badge-submitted" },
+                { label: "Ditolak",  v: totalRejected,  dot: "#dc2626", cls: "badge-rejected"  },
+              ].map((s) => (
+                <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+                    {s.label}
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                    {s.v.toLocaleString()}
+                    {grandTotal > 0 && (
+                      <span className={`badge ${s.cls}`}>{Math.round((s.v / grandTotal) * 100)}%</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Bar */}
-        <div className="card">
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Perbandingan Antar Modul</div>
               <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3 }}>
                 Volume selesai · pending · ditolak bulan ini
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: "0.72rem" }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: "0.75rem", fontWeight: 600 }}>
               {(["#1c6dff", "#f59e0b", "#ef4444"] as const).map((c, i) => (
-                <span key={c} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span key={c} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ width: 9, height: 9, borderRadius: 2, background: c, display: "inline-block" }} />
                   {["Selesai", "Pending", "Tolak"][i]}
                 </span>
               ))}
             </div>
           </div>
-          <canvas ref={barRef} width={540} height={210} style={{ width: "100%", height: "auto", maxHeight: 210 }} />
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <canvas ref={barRef} width={580} height={260} style={{ width: "100%", height: "auto" }} />
+          </div>
         </div>
-      </div>
-
-      {/* Section label jadwal */}
-      <div style={{
-        fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)",
-        textTransform: "uppercase", letterSpacing: "0.7px",
-        display: "flex", alignItems: "center", gap: 10, margin: "24px 0 14px",
-      }}>
-        Akses Cepat per Modul
-        <span style={{ flex: 1, height: 1, background: "var(--border-subtle)", display: "block" }} />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr 1fr" : "repeat(3, 1fr)", gap: 14 }}>
-        <Link href="/ekspedisi/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 36, height: 36, borderRadius: 10, background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Layers width={18} height={18} color="#fff" />
-          </span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Ekspedisi</div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-              {stats.ekspedisi ? `${stats.ekspedisi.pending} menunggu` : "—"}
-            </div>
-          </div>
-        </Link>
-        {!isKpu && (
-          <Link href="/booking-ruang-meeting/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#10b981,#34d399)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Calendar width={18} height={18} color="#fff" />
-            </span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Room Booking</div>
-              <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                {stats.room ? `${stats.room.pending} menunggu` : "—"}
-              </div>
-            </div>
-          </Link>
-        )}
-        {!isKpu && (
-          <Link href="/booking-kendaraan/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Car width={18} height={18} color="#fff" />
-            </span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Vehicle Booking</div>
-              <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                {stats.vehicle ? `${stats.vehicle.pending} menunggu` : "—"}
-              </div>
-            </div>
-          </Link>
-        )}
-        <Link href="/office-supplies/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#8b5cf6,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <AtkIcon />
-          </span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Office Supplies</div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-              {stats.atk ? `${stats.atk.pending} menunggu` : "—"}
-            </div>
-          </div>
-        </Link>
-        {!isKpu && (
-          <Link href="/maintenance/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#ef4444,#f87171)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Wrench width={18} height={18} color="#fff" />
-            </span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Maintenance</div>
-              <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                {stats.maint ? `${stats.maint.pending} menunggu` : "—"}
-              </div>
-            </div>
-          </Link>
-        )}
-        {!isKpu && (
-          <Link href="/arsip/transaksi" className="card" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#06b6d4,#22d3ee)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Folder width={18} height={18} color="#fff" />
-            </span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>Archive</div>
-              <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                {stats.arsip ? `${stats.arsip.pending} menunggu` : "—"}
-              </div>
-            </div>
-          </Link>
-        )}
       </div>
     </>
   );
@@ -522,31 +436,49 @@ export default function DashboardContent({ me }: Props) {
 
   return (
     <>
-      {/* ── Tab bar ── */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 22 }}>
-        {visibleTabs.map((t) => {
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setActiveTab(t.key)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                padding: "8px 16px", borderRadius: 10,
-                fontSize: "0.85rem", fontWeight: 600,
-                cursor: "pointer", whiteSpace: "nowrap", transition: "all .15s",
-                background: isActive ? "var(--gradient-primary)" : "var(--bg-surface)",
-                color: isActive ? "#fff" : "var(--text-secondary)",
-                border: isActive ? "none" : "1px solid var(--border-subtle)",
-                boxShadow: isActive ? "0 4px 14px rgba(20,80,201,0.3)" : "none",
-              }}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          );
-        })}
+      {/* ── Tab bar — full-width 1 baris, responsive ── */}
+      <div style={{ width: "100%", overflowX: "auto", marginBottom: 22 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))`,
+            gap: 8,
+            width: "100%",
+            minWidth: visibleTabs.length > 3 ? 720 : "auto",
+          }}
+        >
+          {visibleTabs.map((t) => {
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setActiveTab(t.key)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "10px 10px",
+                  borderRadius: 10,
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all .15s",
+                  width: "100%",
+                  background: isActive ? "var(--gradient-primary)" : "var(--bg-surface)",
+                  color: isActive ? "#fff" : "var(--text-secondary)",
+                  border: isActive ? "none" : "1px solid var(--border-subtle)",
+                  boxShadow: isActive ? "0 4px 14px rgba(20,80,201,0.3)" : "none",
+                }}
+              >
+                {t.icon}
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Keseluruhan ── */}
