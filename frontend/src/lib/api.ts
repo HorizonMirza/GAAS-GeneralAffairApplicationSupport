@@ -405,8 +405,8 @@ export const api = {
   },
 
   listRooms: () => apiRequest<RoomOption[]>("/booking-ruang/rooms"),
-  nextBookingNomor: (tanggal: string, divisi?: string) =>
-    apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi } }),
+  nextBookingNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
+    apiRequest<{ nomorPemesanan: string }>("/booking-ruang/next-nomor", { params: { tanggal, divisi, asRole } }),
   getBookingSchedule: (tanggal: string) =>
     apiRequest<BookingRuang[]>("/booking-ruang/schedule", { params: { tanggal } }),
   getBookingScheduleRange: (tanggalMulai: string, tanggalSelesai: string, namaRuang?: string) =>
@@ -473,8 +473,8 @@ export const api = {
   bookingIcsUrl: (id: number) => `${API_BASE}/booking-ruang/${id}/ics`,
 
   listVehicles: () => apiRequest<VehicleOption[]>("/booking-kendaraan/vehicles"),
-  nextKendaraanNomor: (tanggal: string, divisi?: string) =>
-    apiRequest<{ nomorPemesanan: string }>("/booking-kendaraan/next-nomor", { params: { tanggal, divisi } }),
+  nextKendaraanNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
+    apiRequest<{ nomorPemesanan: string }>("/booking-kendaraan/next-nomor", { params: { tanggal, divisi, asRole } }),
   getKendaraanSchedule: (tanggal: string) =>
     apiRequest<BookingKendaraan[]>("/booking-kendaraan/schedule", { params: { tanggal } }),
   getKendaraanScheduleRange: (tanggalMulai: string, tanggalSelesai: string, namaKendaraan?: string) =>
@@ -529,8 +529,8 @@ export const api = {
     return `${API_BASE}/booking-kendaraan/export-pdf${query ? `?${query}` : ""}`;
   },
 
-  nextAtkNomor: (tanggal: string, divisi?: string) =>
-    apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal, divisi } }),
+  nextAtkNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
+    apiRequest<{ nomorPermintaan: string }>("/permintaan-atk/next-nomor", { params: { tanggal, divisi, asRole } }),
   listAtk: (params: ListAtkParams) =>
     apiRequest<PermintaanAtkListResponse>("/permintaan-atk", { params: atkListParams(params) }),
   getAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`),
@@ -584,8 +584,8 @@ export const api = {
     return `${API_BASE}/permintaan-atk/export-pdf${query ? `?${query}` : ""}`;
   },
 
-  nextSaranaNomor: (tanggal: string, divisi?: string) =>
-    apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal, divisi } }),
+  nextSaranaNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
+    apiRequest<{ nomorPerbaikan: string }>("/perbaikan-sarana/next-nomor", { params: { tanggal, divisi, asRole } }),
   listSarana: (params: ListSaranaParams) =>
     apiRequest<PerbaikanSaranaListResponse>("/perbaikan-sarana", { params: saranaListParams(params) }),
   getSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`),
@@ -707,8 +707,8 @@ export const api = {
   resetEksekusiSarana: (id: number, catatan: string | null) =>
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi/reset`, { method: "PATCH", body: { catatan } }),
 
-  nextArsipNomor: (tanggal: string, divisi?: string) =>
-    apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal, divisi } }),
+  nextArsipNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
+    apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal, divisi, asRole } }),
   listArsip: (params: ListArsipParams) =>
     apiRequest<PermintaanArsipListResponse>("/permintaan-arsip", { params: arsipListParams(params) }),
   getArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`),

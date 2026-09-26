@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { ArchiveKategori, Me, PermintaanArsipCreatePayload } from "@/lib/types";
+import type { ArchiveKategori, Me, PermintaanArsipCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
@@ -40,9 +40,15 @@ function emptyForm(): Omit<PermintaanArsipCreatePayload, "kategori"> & { kategor
 
 type FormState = ReturnType<typeof emptyForm>;
 
+// The 6 roles a real actor can create an Archive request as (PermintaanArsipController.OriginRoles
+// minus KPU/SUPER_ADMIN, which never create their own) - what Super Admin picks from in "Bertindak
+// Sebagai Role" to declare which origin identity a new request is created under.
+const AS_ROLE_OPTIONS: Role[] = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"];
+
 export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [asRole, setAsRole] = useState<Role | "">("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [nomorArsip, setNomorArsip] = useState("");
@@ -50,11 +56,18 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
 
+  const isSuperAdmin = me.role === "SUPER_ADMIN";
   const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
+  // Super Admin's chosen AsRole drives which org fields apply, mirroring that role's own real
+  // constraints (see backend AsRoleValidationError) - GA roles need neither, Divisi roles need
+  // only Divisi, Departemen roles need both.
+  const asRoleNeedsDivisi = isSuperAdmin && asRole !== "" && asRole !== "ADMIN_GA" && asRole !== "APPROVAL_GA";
+  const asRoleNeedsDepartemen = isSuperAdmin && (asRole === "ADMIN_DEPARTEMEN" || asRole === "APPROVAL_DEPARTEMEN");
 
   useEffect(() => {
     if (open) {
       setForm(emptyForm());
+      setAsRole("");
       setError("");
     }
   }, [open]);
@@ -62,11 +75,11 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextArsipNomor(form.tanggal, isGaActor ? form.divisi : undefined)
+      .nextArsipNomor(form.tanggal, isGaActor ? form.divisi : undefined, isSuperAdmin ? asRole || undefined : undefined)
       .then((r) => setNomorArsip(r.nomorArsip))
       .catch(() => setNomorArsip(""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.tanggal, form.divisi]);
+  }, [open, form.tanggal, form.divisi, asRole]);
 
   if (!open) return null;
 
@@ -89,7 +102,20 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (isGaActor) {
+    if (isSuperAdmin) {
+      if (!asRole) {
+        setError("Bertindak Sebagai Role wajib dipilih");
+        return;
+      }
+      if (asRoleNeedsDivisi && !form.divisi) {
+        setError("Divisi wajib dipilih untuk role ini");
+        return;
+      }
+      if (asRoleNeedsDepartemen && !form.departemen) {
+        setError("Departemen wajib dipilih untuk role ini");
+        return;
+      }
+    } else if (isGaActor) {
       if (!form.divisi) {
         setError("Divisi wajib dipilih");
         return;
@@ -112,6 +138,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
         kategori: form.kategori,
         departemen: form.departemen || undefined,
         catatan: form.catatan || null,
+        asRole: isSuperAdmin ? asRole || undefined : undefined,
       });
       showToast("Pemindahan Arsip berhasil disimpan sebagai Draft");
       onClose();
@@ -136,41 +163,58 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
               <label htmlFor="fr-nomor-arsip">Nomor Pemindahan Arsip</label>
               <input type="text" id="fr-nomor-arsip" disabled value={nomorArsip} />
             </div>
-            {isGaActor && (
-              <>
-                <div className="field">
-                  <label htmlFor="fr-divisi">Divisi</label>
-                  <SearchableSelect
-                    id="fr-divisi"
-                    value={form.divisi}
-                    onChange={(next) => {
-                      const divisiNode = allDivisiNodes.find((d) => d.nama === next);
-                      setForm((f) => ({
-                        ...f,
-                        divisi: next,
-                        departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
-                      }));
-                    }}
-                    options={orgStructure?.divisi || []}
-                    placeholder="Pilih Divisi"
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="fr-departemen">Departemen</label>
-                  <SearchableSelect
-                    id="fr-departemen"
-                    value={form.departemen}
-                    onChange={(next) => {
-                      if (!next) { set("departemen", next); return; }
-                      const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(next))?.nama;
-                      setForm((f) => ({ ...f, departemen: next, divisi: owningDivisi || f.divisi }));
-                    }}
-                    options={departemenOptions}
-                    placeholder="Pilih Departemen"
-                    clearLabel="Kebutuhan Divisi"
-                  />
-                </div>
-              </>
+            {isSuperAdmin && (
+              <div className="field full">
+                <label htmlFor="fr-as-role">Bertindak Sebagai Role</label>
+                <SearchableSelect
+                  id="fr-as-role"
+                  value={asRole}
+                  onChange={(next) => {
+                    setAsRole(next as Role);
+                    setForm((f) => ({ ...f, divisi: undefined, departemen: undefined }));
+                  }}
+                  options={AS_ROLE_OPTIONS}
+                  getLabel={(v) => ROLE_LABEL[v as Role]}
+                  placeholder="Pilih Role"
+                  searchable={false}
+                />
+              </div>
+            )}
+            {(asRoleNeedsDivisi || (isGaActor && !isSuperAdmin)) && (
+              <div className="field">
+                <label htmlFor="fr-divisi">Divisi</label>
+                <SearchableSelect
+                  id="fr-divisi"
+                  value={form.divisi}
+                  onChange={(next) => {
+                    const divisiNode = allDivisiNodes.find((d) => d.nama === next);
+                    setForm((f) => ({
+                      ...f,
+                      divisi: next,
+                      departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
+                    }));
+                  }}
+                  options={orgStructure?.divisi || []}
+                  placeholder="Pilih Divisi"
+                />
+              </div>
+            )}
+            {(asRoleNeedsDepartemen || (isGaActor && !isSuperAdmin)) && (
+              <div className="field">
+                <label htmlFor="fr-departemen">Departemen</label>
+                <SearchableSelect
+                  id="fr-departemen"
+                  value={form.departemen}
+                  onChange={(next) => {
+                    if (!next) { set("departemen", next); return; }
+                    const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(next))?.nama;
+                    setForm((f) => ({ ...f, departemen: next, divisi: owningDivisi || f.divisi }));
+                  }}
+                  options={departemenOptions}
+                  placeholder="Pilih Departemen"
+                  clearLabel="Kebutuhan Divisi"
+                />
+              </div>
             )}
             <div className="field">
               <label htmlFor="fr-tanggal">Tanggal</label>

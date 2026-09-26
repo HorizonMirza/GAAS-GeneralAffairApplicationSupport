@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiPengiriman, canKoreksiHargaPengiriman, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isEditableByOrigin, isPengirimanPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, buildRoomBookingDuplicateInitial, buildVehicleBookingDuplicateInitial, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -21,6 +21,31 @@ import PengirimanDetailModal from "@/components/PengirimanDetailModal";
 import PengirimanKoreksiModal from "@/components/PengirimanKoreksiModal";
 import RejectModal, { type RejectType } from "@/components/RejectModal";
 import StatusHistoryModal from "@/components/StatusHistoryModal";
+import RoomBookingFormModal from "@/components/RoomBookingFormModal";
+import RoomBookingDetailModal from "@/components/RoomBookingDetailModal";
+import RoomBookingRescheduleModal from "@/components/RoomBookingRescheduleModal";
+import CancelBookingModal from "@/components/CancelBookingModal";
+import BookingStatusHistoryModal from "@/components/BookingStatusHistoryModal";
+import RoomBookingChatModal from "@/components/RoomBookingChatModal";
+import VehicleBookingFormModal from "@/components/VehicleBookingFormModal";
+import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
+import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
+import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
+import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
+import AtkFormModal from "@/components/AtkFormModal";
+import AtkDetailModal from "@/components/AtkDetailModal";
+import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
+import AtkChatModal from "@/components/AtkChatModal";
+import SaranaFormModal from "@/components/SaranaFormModal";
+import SaranaDetailModal from "@/components/SaranaDetailModal";
+import SaranaKoreksiModal from "@/components/SaranaKoreksiModal";
+import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
+import SaranaChatModal from "@/components/SaranaChatModal";
+import ArsipFormModal from "@/components/ArsipFormModal";
+import ArsipDetailModal from "@/components/ArsipDetailModal";
+import ArsipKoreksiModal from "@/components/ArsipKoreksiModal";
+import ArsipStatusHistoryModal from "@/components/ArsipStatusHistoryModal";
+import ArsipChatModal from "@/components/ArsipChatModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
@@ -186,6 +211,17 @@ export default function SuperAdminPage() {
   const [bookingBusy, setBookingBusy] = useState(true);
   const [bookingError, setBookingError] = useState("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
+  // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
+  // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel/Duplicate, no Koreksi).
+  const [bookingFormOpen, setBookingFormOpen] = useState(false);
+  const [bookingFormInitial, setBookingFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
+  const [bookingDetail, setBookingDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [bookingRescheduleTarget, setBookingRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [bookingStatusItemId, setBookingStatusItemId] = useState<number | null>(null);
+  const [bookingChatItem, setBookingChatItem] = useState<BookingRuang | null>(null);
+  const [bookingRejectTarget, setBookingRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [bookingCancelTargetId, setBookingCancelTargetId] = useState<number | null>(null);
+  const bookingRowMenu = useRowMenu(bookingItems);
 
   const [kendaraanFilters, setKendaraanFilters] = useState<KendaraanFilterState>(EMPTY_KENDARAAN_FILTERS);
   const [kendaraanItems, setKendaraanItems] = useState<BookingKendaraan[]>([]);
@@ -193,6 +229,17 @@ export default function SuperAdminPage() {
   const [kendaraanBusy, setKendaraanBusy] = useState(true);
   const [kendaraanError, setKendaraanError] = useState("");
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
+  // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
+  // modals (Reschedule/Cancel/Duplicate, no Koreksi).
+  const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
+  const [kendaraanFormInitial, setKendaraanFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
+  const [kendaraanDetail, setKendaraanDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
+  const [kendaraanRescheduleTarget, setKendaraanRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [kendaraanStatusItemId, setKendaraanStatusItemId] = useState<number | null>(null);
+  const [kendaraanChatItem, setKendaraanChatItem] = useState<BookingKendaraan | null>(null);
+  const [kendaraanRejectTarget, setKendaraanRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [kendaraanCancelTargetId, setKendaraanCancelTargetId] = useState<number | null>(null);
+  const kendaraanRowMenu = useRowMenu(kendaraanItems);
 
   const [arsipFilters, setArsipFilters] = useState<ArsipFilterState>(EMPTY_ARSIP_FILTERS);
   const [arsipSearchInput, setArsipSearchInput] = useState("");
@@ -200,6 +247,14 @@ export default function SuperAdminPage() {
   const [arsipTotal, setArsipTotal] = useState(0);
   const [arsipBusy, setArsipBusy] = useState(true);
   const [arsipError, setArsipError] = useState("");
+  // Arsip tab's interactive-replica state - mirrors arsip/transaksi's own modals.
+  const [arsipFormOpen, setArsipFormOpen] = useState(false);
+  const [arsipDetail, setArsipDetail] = useState<{ item: PermintaanArsip; mode: "view" | "edit" } | null>(null);
+  const [arsipStatusItemId, setArsipStatusItemId] = useState<number | null>(null);
+  const [arsipChatItem, setArsipChatItem] = useState<PermintaanArsip | null>(null);
+  const [arsipRejectTarget, setArsipRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [arsipKoreksiTarget, setArsipKoreksiTarget] = useState<PermintaanArsip | null>(null);
+  const arsipRowMenu = useRowMenu(arsipItems);
 
   const [atkFilters, setAtkFilters] = useState<AtkFilterState>(EMPTY_ATK_FILTERS);
   const [atkSearchInput, setAtkSearchInput] = useState("");
@@ -207,6 +262,14 @@ export default function SuperAdminPage() {
   const [atkTotal, setAtkTotal] = useState(0);
   const [atkBusy, setAtkBusy] = useState(true);
   const [atkError, setAtkError] = useState("");
+  // Office Supplies tab's interactive-replica state - mirrors office-supplies/transaksi's own
+  // modals (its GA/KPU corrections are Detail modes, not a separate Koreksi modal).
+  const [atkFormOpen, setAtkFormOpen] = useState(false);
+  const [atkDetail, setAtkDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" | "ga-edit" | "kpu-edit" } | null>(null);
+  const [atkStatusItemId, setAtkStatusItemId] = useState<number | null>(null);
+  const [atkChatItem, setAtkChatItem] = useState<PermintaanAtk | null>(null);
+  const [atkRejectTarget, setAtkRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const atkRowMenu = useRowMenu(atkItems);
 
   const [saranaFilters, setSaranaFilters] = useState<SaranaFilterState>(EMPTY_SARANA_FILTERS);
   const [saranaSearchInput, setSaranaSearchInput] = useState("");
@@ -214,6 +277,14 @@ export default function SuperAdminPage() {
   const [saranaTotal, setSaranaTotal] = useState(0);
   const [saranaBusy, setSaranaBusy] = useState(true);
   const [saranaError, setSaranaError] = useState("");
+  // Maintenance tab's interactive-replica state - mirrors maintenance/transaksi's own modals.
+  const [saranaFormOpen, setSaranaFormOpen] = useState(false);
+  const [saranaDetail, setSaranaDetail] = useState<{ item: PerbaikanSarana; mode: "view" | "edit" } | null>(null);
+  const [saranaStatusItemId, setSaranaStatusItemId] = useState<number | null>(null);
+  const [saranaChatItem, setSaranaChatItem] = useState<PerbaikanSarana | null>(null);
+  const [saranaRejectTarget, setSaranaRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [saranaKoreksiTarget, setSaranaKoreksiTarget] = useState<PerbaikanSarana | null>(null);
+  const saranaRowMenu = useRowMenu(saranaItems);
 
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -300,10 +371,12 @@ export default function SuperAdminPage() {
     }
   }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
 
-  const loadBookings = useCallback(async () => {
+  const loadBookings = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++bookingReqIdRef.current;
-    setBookingBusy(true);
-    setBookingError("");
+    if (!opts?.silent) {
+      setBookingBusy(true);
+      setBookingError("");
+    }
     try {
       const result = await api.listBooking({
         page: bookingFilters.page,
@@ -325,16 +398,18 @@ export default function SuperAdminPage() {
       setBookingTotal(bookingTotalResult);
     } catch (err) {
       if (reqId !== bookingReqIdRef.current) return;
-      setBookingError((err as Error).message);
+      if (!opts?.silent) setBookingError((err as Error).message);
     } finally {
-      if (reqId === bookingReqIdRef.current) setBookingBusy(false);
+      if (reqId === bookingReqIdRef.current && !opts?.silent) setBookingBusy(false);
     }
   }, [bookingFilters]);
 
-  const loadKendaraanBookings = useCallback(async () => {
+  const loadKendaraanBookings = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++kendaraanReqIdRef.current;
-    setKendaraanBusy(true);
-    setKendaraanError("");
+    if (!opts?.silent) {
+      setKendaraanBusy(true);
+      setKendaraanError("");
+    }
     try {
       const result = await api.listKendaraanBooking({
         page: kendaraanFilters.page,
@@ -356,16 +431,18 @@ export default function SuperAdminPage() {
       setKendaraanTotal(kendaraanTotalResult);
     } catch (err) {
       if (reqId !== kendaraanReqIdRef.current) return;
-      setKendaraanError((err as Error).message);
+      if (!opts?.silent) setKendaraanError((err as Error).message);
     } finally {
-      if (reqId === kendaraanReqIdRef.current) setKendaraanBusy(false);
+      if (reqId === kendaraanReqIdRef.current && !opts?.silent) setKendaraanBusy(false);
     }
   }, [kendaraanFilters]);
 
-  const loadArsip = useCallback(async () => {
+  const loadArsip = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++arsipReqIdRef.current;
-    setArsipBusy(true);
-    setArsipError("");
+    if (!opts?.silent) {
+      setArsipBusy(true);
+      setArsipError("");
+    }
     try {
       const result = await api.listArsip({
         page: arsipFilters.page,
@@ -388,16 +465,18 @@ export default function SuperAdminPage() {
       setArsipTotal(arsipTotalResult);
     } catch (err) {
       if (reqId !== arsipReqIdRef.current) return;
-      setArsipError((err as Error).message);
+      if (!opts?.silent) setArsipError((err as Error).message);
     } finally {
-      if (reqId === arsipReqIdRef.current) setArsipBusy(false);
+      if (reqId === arsipReqIdRef.current && !opts?.silent) setArsipBusy(false);
     }
   }, [arsipFilters]);
 
-  const loadAtk = useCallback(async () => {
+  const loadAtk = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++atkReqIdRef.current;
-    setAtkBusy(true);
-    setAtkError("");
+    if (!opts?.silent) {
+      setAtkBusy(true);
+      setAtkError("");
+    }
     try {
       const result = await api.listAtk({
         page: atkFilters.page,
@@ -421,16 +500,18 @@ export default function SuperAdminPage() {
       setAtkTotal(atkTotalResult);
     } catch (err) {
       if (reqId !== atkReqIdRef.current) return;
-      setAtkError((err as Error).message);
+      if (!opts?.silent) setAtkError((err as Error).message);
     } finally {
-      if (reqId === atkReqIdRef.current) setAtkBusy(false);
+      if (reqId === atkReqIdRef.current && !opts?.silent) setAtkBusy(false);
     }
   }, [atkFilters]);
 
-  const loadSarana = useCallback(async () => {
+  const loadSarana = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++saranaReqIdRef.current;
-    setSaranaBusy(true);
-    setSaranaError("");
+    if (!opts?.silent) {
+      setSaranaBusy(true);
+      setSaranaError("");
+    }
     try {
       const result = await api.listSarana({
         page: saranaFilters.page,
@@ -454,9 +535,9 @@ export default function SuperAdminPage() {
       setSaranaTotal(saranaTotalResult);
     } catch (err) {
       if (reqId !== saranaReqIdRef.current) return;
-      setSaranaError((err as Error).message);
+      if (!opts?.silent) setSaranaError((err as Error).message);
     } finally {
-      if (reqId === saranaReqIdRef.current) setSaranaBusy(false);
+      if (reqId === saranaReqIdRef.current && !opts?.silent) setSaranaBusy(false);
     }
   }, [saranaFilters]);
 
@@ -1388,6 +1469,7 @@ export default function SuperAdminPage() {
       )}
 
       {activeTab === "booking-ruang" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Room Booking Meeting</h3>
@@ -1462,6 +1544,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setBookingFormOpen(true)}>+ Booking Ruang Meeting</button>
           </div>
         </div>
 
@@ -1470,16 +1553,16 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Ruangan</th>
-                <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Tipe</th><th>Jumlah Peserta</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {bookingBusy ? (
-                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : bookingError ? (
-                <tr><td colSpan={16} className="table-empty">{bookingError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{bookingError}</td></tr>
               ) : bookingItems.length === 0 ? (
-                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 bookingItems.map((item, index) => {
                   const rowNumber = (bookingFilters.page - 1) * bookingFilters.limit + index + 1;
@@ -1500,13 +1583,26 @@ export default function SuperAdminPage() {
                       <td>{item.jumlahPeserta}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
-                        <span className="badge-stack">
-                          <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
-                          {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
-                        </span>
-                      </td>
-                      <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteBooking(item)}>Delete</button>
+                        <div className="status-cell">
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
+                            {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setBookingChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => bookingRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1542,9 +1638,137 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+          <RowMenuDropdown
+            position={bookingRowMenu.position}
+            canEditDelete={
+              !!bookingRowMenu.menuItem &&
+              (isBookingEditableByOrigin(bookingRowMenu.menuItem, me) || canGaRescheduleBooking(bookingRowMenu.menuItem, me))
+            }
+            canDelete={!!bookingRowMenu.menuItem && isBookingDeletableByOrigin(bookingRowMenu.menuItem, me)}
+            canCancel={!!bookingRowMenu.menuItem && isBookingCancellableByOrigin(bookingRowMenu.menuItem, me)}
+            onCancel={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (item) setBookingCancelTargetId(item.id);
+            }}
+            onDetail={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (item) setBookingDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (!item) return;
+              if (isBookingEditableByOrigin(item, me)) setBookingDetail({ item, mode: "edit" });
+              else if (canGaRescheduleBooking(item, me)) setBookingRescheduleTarget(item);
+            }}
+            onDuplicate={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (!item) return;
+              setBookingFormInitial(buildRoomBookingDuplicateInitial(item));
+              setBookingFormOpen(true);
+            }}
+            onStatus={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (item) setBookingStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (item) handleDeleteBooking(item);
+            }}
+            pdfUrl={bookingRowMenu.menuItem && isBookingPdfAvailable(bookingRowMenu.menuItem) ? api.bookingPdfUrl(bookingRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+            icsUrl={bookingRowMenu.menuItem && isBookingPdfAvailable(bookingRowMenu.menuItem) ? api.bookingIcsUrl(bookingRowMenu.menuItem.id) : undefined}
+            onIcsClick={async () => {
+              const item = bookingRowMenu.menuItem;
+              bookingRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.bookingIcsUrl(item.id), `Booking-${item.nomorPemesanan || item.id}.ics`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <RoomBookingChatModal
+            open={!!bookingChatItem}
+            itemId={bookingChatItem?.id ?? null}
+            itemLabel={bookingChatItem ? `${bookingChatItem.namaKegiatan} - ${bookingRoomsLabel(bookingChatItem)} - ${bookingChatItem.nomorPemesanan || "-"}` : ""}
+            departemen={bookingChatItem?.departemen ?? null}
+            me={me}
+            onClose={() => setBookingChatItem(null)}
+            onRead={() => loadBookings({ silent: true })}
+          />
+
+          <RoomBookingFormModal
+            open={bookingFormOpen}
+            me={me}
+            initial={bookingFormInitial}
+            onClose={() => { setBookingFormOpen(false); setBookingFormInitial(undefined); }}
+            onCreated={loadBookings}
+          />
+
+          <RoomBookingDetailModal
+            open={!!bookingDetail}
+            mode={bookingDetail?.mode || "view"}
+            item={bookingDetail?.item || null}
+            me={me}
+            onClose={() => setBookingDetail(null)}
+            onSaved={loadBookings}
+            onRequestReject={(id, type, originLabel) => setBookingRejectTarget({ id, type, originLabel })}
+          />
+
+          <CancelBookingModal
+            open={bookingCancelTargetId != null}
+            targetId={bookingCancelTargetId}
+            targetType="room"
+            onClose={() => setBookingCancelTargetId(null)}
+            onDone={() => {
+              setBookingCancelTargetId(null);
+              loadBookings();
+            }}
+          />
+
+          <RoomBookingRescheduleModal
+            open={!!bookingRescheduleTarget}
+            item={bookingRescheduleTarget}
+            onClose={() => setBookingRescheduleTarget(null)}
+            onSaved={loadBookings}
+          />
+
+          <RejectModal
+            open={!!bookingRejectTarget}
+            targetId={bookingRejectTarget?.id ?? null}
+            targetType={bookingRejectTarget?.type ?? null}
+            originLabel={bookingRejectTarget?.originLabel ?? ""}
+            onClose={() => setBookingRejectTarget(null)}
+            onDone={() => {
+              setBookingRejectTarget(null);
+              loadBookings();
+            }}
+          />
+
+          <BookingStatusHistoryModal open={bookingStatusItemId != null} itemId={bookingStatusItemId} onClose={() => setBookingStatusItemId(null)} />
+        </>
       )}
 
       {activeTab === "booking-kendaraan" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Booking Kendaraan</h3>
@@ -1619,6 +1843,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setKendaraanFormOpen(true)}>+ Booking Kendaraan</button>
           </div>
         </div>
 
@@ -1627,16 +1852,16 @@ export default function SuperAdminPage() {
             <thead>
               <tr>
                 <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Jam</th><th>Nama Kegiatan</th><th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Kendaraan</th>
-                <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Nama Pengemudi</th><th>Jumlah Penumpang</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {kendaraanBusy ? (
-                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : kendaraanError ? (
-                <tr><td colSpan={16} className="table-empty">{kendaraanError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{kendaraanError}</td></tr>
               ) : kendaraanItems.length === 0 ? (
-                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 kendaraanItems.map((item, index) => {
                   const rowNumber = (kendaraanFilters.page - 1) * kendaraanFilters.limit + index + 1;
@@ -1657,12 +1882,25 @@ export default function SuperAdminPage() {
                       <td>{item.jumlahPenumpang}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
-                        <span className="badge-stack">
-                          <BookingStatusBadge status={item.status} departemen={item.departemen} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
-                        </span>
-                      </td>
-                      <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteKendaraanBooking(item)}>Delete</button>
+                        <div className="status-cell">
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setKendaraanChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => kendaraanRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1698,9 +1936,137 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+          <RowMenuDropdown
+            position={kendaraanRowMenu.position}
+            canEditDelete={
+              !!kendaraanRowMenu.menuItem &&
+              (isKendaraanEditableByOrigin(kendaraanRowMenu.menuItem, me) || canGaRescheduleKendaraan(kendaraanRowMenu.menuItem, me))
+            }
+            canDelete={!!kendaraanRowMenu.menuItem && isKendaraanDeletableByOrigin(kendaraanRowMenu.menuItem, me)}
+            canCancel={!!kendaraanRowMenu.menuItem && isKendaraanCancellableByOrigin(kendaraanRowMenu.menuItem, me)}
+            onCancel={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (item) setKendaraanCancelTargetId(item.id);
+            }}
+            onDetail={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (item) setKendaraanDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (!item) return;
+              if (isKendaraanEditableByOrigin(item, me)) setKendaraanDetail({ item, mode: "edit" });
+              else if (canGaRescheduleKendaraan(item, me)) setKendaraanRescheduleTarget(item);
+            }}
+            onDuplicate={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (!item) return;
+              setKendaraanFormInitial(buildVehicleBookingDuplicateInitial(item));
+              setKendaraanFormOpen(true);
+            }}
+            onStatus={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (item) setKendaraanStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (item) handleDeleteKendaraanBooking(item);
+            }}
+            pdfUrl={kendaraanRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanRowMenu.menuItem) ? api.kendaraanPdfUrl(kendaraanRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+            icsUrl={kendaraanRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanRowMenu.menuItem) ? api.kendaraanIcsUrl(kendaraanRowMenu.menuItem.id) : undefined}
+            onIcsClick={async () => {
+              const item = kendaraanRowMenu.menuItem;
+              kendaraanRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.kendaraanIcsUrl(item.id), `Booking-Kendaraan-${item.nomorPemesanan || item.id}.ics`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <VehicleBookingChatModal
+            open={!!kendaraanChatItem}
+            itemId={kendaraanChatItem?.id ?? null}
+            itemLabel={kendaraanChatItem ? `${kendaraanChatItem.keperluan} - ${kendaraanChatItem.namaKendaraan} - ${kendaraanChatItem.nomorPemesanan || "-"}` : ""}
+            departemen={kendaraanChatItem?.departemen ?? null}
+            me={me}
+            onClose={() => setKendaraanChatItem(null)}
+            onRead={() => loadKendaraanBookings({ silent: true })}
+          />
+
+          <VehicleBookingFormModal
+            open={kendaraanFormOpen}
+            me={me}
+            initial={kendaraanFormInitial}
+            onClose={() => { setKendaraanFormOpen(false); setKendaraanFormInitial(undefined); }}
+            onCreated={loadKendaraanBookings}
+          />
+
+          <VehicleBookingDetailModal
+            open={!!kendaraanDetail}
+            mode={kendaraanDetail?.mode || "view"}
+            item={kendaraanDetail?.item || null}
+            me={me}
+            onClose={() => setKendaraanDetail(null)}
+            onSaved={loadKendaraanBookings}
+            onRequestReject={(id, type, originLabel) => setKendaraanRejectTarget({ id, type, originLabel })}
+          />
+
+          <CancelBookingModal
+            open={kendaraanCancelTargetId != null}
+            targetId={kendaraanCancelTargetId}
+            targetType="kendaraan"
+            onClose={() => setKendaraanCancelTargetId(null)}
+            onDone={() => {
+              setKendaraanCancelTargetId(null);
+              loadKendaraanBookings();
+            }}
+          />
+
+          <VehicleBookingRescheduleModal
+            open={!!kendaraanRescheduleTarget}
+            item={kendaraanRescheduleTarget}
+            onClose={() => setKendaraanRescheduleTarget(null)}
+            onSaved={loadKendaraanBookings}
+          />
+
+          <RejectModal
+            open={!!kendaraanRejectTarget}
+            targetId={kendaraanRejectTarget?.id ?? null}
+            targetType={kendaraanRejectTarget?.type ?? null}
+            originLabel={kendaraanRejectTarget?.originLabel ?? ""}
+            onClose={() => setKendaraanRejectTarget(null)}
+            onDone={() => {
+              setKendaraanRejectTarget(null);
+              loadKendaraanBookings();
+            }}
+          />
+
+          <VehicleBookingStatusHistoryModal open={kendaraanStatusItemId != null} itemId={kendaraanStatusItemId} onClose={() => setKendaraanStatusItemId(null)} />
+        </>
       )}
 
       {activeTab === "arsip" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Pemindahan Arsip</h3>
@@ -1780,6 +2146,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setArsipFormOpen(true)}>+ Pemindahan Arsip</button>
           </div>
         </div>
 
@@ -1790,16 +2157,16 @@ export default function SuperAdminPage() {
                 <th>No</th><th>No Pemindahan</th><th>Diajukan</th><th>Tanggal</th><th>Jumlah Arsip</th>
                 <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
                 <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th>
-                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {arsipBusy ? (
-                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
               ) : arsipError ? (
-                <tr><td colSpan={16} className="table-empty">{arsipError}</td></tr>
+                <tr><td colSpan={15} className="table-empty">{arsipError}</td></tr>
               ) : arsipItems.length === 0 ? (
-                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 arsipItems.map((item, index) => {
                   const rowNumber = (arsipFilters.page - 1) * arsipFilters.limit + index + 1;
@@ -1819,9 +2186,26 @@ export default function SuperAdminPage() {
                       <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteArsip(item)}>Delete</button>
+                        <div className="status-cell">
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setArsipChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => arsipRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1857,9 +2241,97 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+          <RowMenuDropdown
+            position={arsipRowMenu.position}
+            canEditDelete={
+              !!arsipRowMenu.menuItem &&
+              (isArsipEditableByOrigin(arsipRowMenu.menuItem, me) || canGaKoreksiArsip(arsipRowMenu.menuItem, me))
+            }
+            canDelete={!!arsipRowMenu.menuItem && isArsipEditableByOrigin(arsipRowMenu.menuItem, me)}
+            onDetail={() => {
+              const item = arsipRowMenu.menuItem;
+              arsipRowMenu.close();
+              if (item) setArsipDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = arsipRowMenu.menuItem;
+              arsipRowMenu.close();
+              if (!item) return;
+              if (isArsipEditableByOrigin(item, me)) setArsipDetail({ item, mode: "edit" });
+              else if (canGaKoreksiArsip(item, me)) setArsipKoreksiTarget(item);
+            }}
+            onStatus={() => {
+              const item = arsipRowMenu.menuItem;
+              arsipRowMenu.close();
+              if (item) setArsipStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = arsipRowMenu.menuItem;
+              arsipRowMenu.close();
+              if (item) handleDeleteArsip(item);
+            }}
+            pdfUrl={arsipRowMenu.menuItem && isArsipPdfAvailable(arsipRowMenu.menuItem) ? api.arsipPdfUrl(arsipRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = arsipRowMenu.menuItem;
+              arsipRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.arsipPdfUrl(item.id), `Bukti-Pemindahan-Arsip-${item.nomorArsip || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <ArsipChatModal
+            open={!!arsipChatItem}
+            itemId={arsipChatItem?.id ?? null}
+            itemLabel={arsipChatItem ? `${arsipChatItem.namaArsip} - ${arsipChatItem.nomorArsip || "-"}` : ""}
+            departemen={arsipChatItem?.departemen ?? null}
+            createdByRole={arsipChatItem?.createdByRole ?? null}
+            me={me}
+            onClose={() => setArsipChatItem(null)}
+            onRead={() => loadArsip({ silent: true })}
+          />
+
+          <ArsipFormModal open={arsipFormOpen} me={me} onClose={() => setArsipFormOpen(false)} onCreated={loadArsip} />
+
+          <ArsipDetailModal
+            open={!!arsipDetail}
+            mode={arsipDetail?.mode || "view"}
+            item={arsipDetail?.item || null}
+            me={me}
+            onClose={() => setArsipDetail(null)}
+            onSaved={loadArsip}
+            onRequestReject={(id, type, originLabel) => setArsipRejectTarget({ id, type, originLabel })}
+          />
+
+          <RejectModal
+            open={!!arsipRejectTarget}
+            targetId={arsipRejectTarget?.id ?? null}
+            targetType={arsipRejectTarget?.type ?? null}
+            originLabel={arsipRejectTarget?.originLabel ?? ""}
+            onClose={() => setArsipRejectTarget(null)}
+            onDone={() => {
+              setArsipRejectTarget(null);
+              loadArsip();
+            }}
+          />
+
+          <ArsipKoreksiModal
+            open={!!arsipKoreksiTarget}
+            item={arsipKoreksiTarget}
+            onClose={() => setArsipKoreksiTarget(null)}
+            onSaved={loadArsip}
+          />
+
+          <ArsipStatusHistoryModal open={arsipStatusItemId != null} itemId={arsipStatusItemId} onClose={() => setArsipStatusItemId(null)} />
+        </>
       )}
 
       {activeTab === "atk" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Pesanan Kebutuhan Kantor</h3>
@@ -1961,6 +2433,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setAtkFormOpen(true)}>+ Pesan Kebutuhan Kantor</button>
           </div>
         </div>
 
@@ -1970,16 +2443,16 @@ export default function SuperAdminPage() {
               <tr>
                 <th>No</th><th>No Pesanan</th><th>Diajukan</th><th>Tanggal</th><th>Kategori</th>
                 <th>Tujuan</th><th>Daftar Barang</th><th>Jumlah Jenis</th><th>Total Kuantitas</th>
-                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th><th>Aksi</th>
+                <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Sumber Pembelian</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {atkBusy ? (
-                <tr><td colSpan={17} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={16} className="table-empty">Memuat data...</td></tr>
               ) : atkError ? (
-                <tr><td colSpan={17} className="table-empty">{atkError}</td></tr>
+                <tr><td colSpan={16} className="table-empty">{atkError}</td></tr>
               ) : atkItems.length === 0 ? (
-                <tr><td colSpan={17} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={16} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 atkItems.map((item, index) => {
                   const rowNumber = (atkFilters.page - 1) * atkFilters.limit + index + 1;
@@ -2002,9 +2475,26 @@ export default function SuperAdminPage() {
                       <td>{item.noTeleponPemohon}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>{item.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[item.sumberPembelian] : "-"}</td>
-                      <td><AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteAtk(item)}>Delete</button>
+                        <div className="status-cell">
+                          <span className="badge-stack">
+                            <AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setAtkChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => atkRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -2040,9 +2530,91 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+          <RowMenuDropdown
+            position={atkRowMenu.position}
+            canEditDelete={
+              !!atkRowMenu.menuItem &&
+              (isAtkEditableByOrigin(atkRowMenu.menuItem, me) || canGaUpdateAtk(atkRowMenu.menuItem, me) || canKoreksiHargaAtk(atkRowMenu.menuItem, me))
+            }
+            canDelete={!!atkRowMenu.menuItem && isAtkEditableByOrigin(atkRowMenu.menuItem, me)}
+            onDetail={() => {
+              const item = atkRowMenu.menuItem;
+              atkRowMenu.close();
+              if (item) setAtkDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = atkRowMenu.menuItem;
+              atkRowMenu.close();
+              if (!item) return;
+              if (isAtkEditableByOrigin(item, me)) setAtkDetail({ item, mode: "edit" });
+              else if (canGaUpdateAtk(item, me)) setAtkDetail({ item, mode: "ga-edit" });
+              else if (canKoreksiHargaAtk(item, me)) setAtkDetail({ item, mode: "kpu-edit" });
+            }}
+            onStatus={() => {
+              const item = atkRowMenu.menuItem;
+              atkRowMenu.close();
+              if (item) setAtkStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = atkRowMenu.menuItem;
+              atkRowMenu.close();
+              if (item) handleDeleteAtk(item);
+            }}
+            pdfUrl={atkRowMenu.menuItem && isAtkPdfAvailable(atkRowMenu.menuItem) ? api.atkPdfUrl(atkRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = atkRowMenu.menuItem;
+              atkRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.atkPdfUrl(item.id), `Bukti-Pesanan-Kebutuhan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <AtkChatModal
+            open={!!atkChatItem}
+            itemId={atkChatItem?.id ?? null}
+            itemLabel={atkChatItem ? `${atkChatItem.keperluan} - ${atkChatItem.nomorPermintaan || "-"}` : ""}
+            departemen={atkChatItem?.departemen ?? null}
+            createdByRole={atkChatItem?.createdByRole ?? null}
+            me={me}
+            onClose={() => setAtkChatItem(null)}
+            onRead={() => loadAtk({ silent: true })}
+          />
+
+          <AtkFormModal open={atkFormOpen} me={me} onClose={() => setAtkFormOpen(false)} onCreated={loadAtk} />
+
+          <AtkDetailModal
+            open={!!atkDetail}
+            mode={atkDetail?.mode || "view"}
+            item={atkDetail?.item || null}
+            me={me}
+            onClose={() => setAtkDetail(null)}
+            onSaved={loadAtk}
+            onRequestReject={(id, type, originLabel) => setAtkRejectTarget({ id, type, originLabel })}
+          />
+
+          <RejectModal
+            open={!!atkRejectTarget}
+            targetId={atkRejectTarget?.id ?? null}
+            targetType={atkRejectTarget?.type ?? null}
+            originLabel={atkRejectTarget?.originLabel ?? ""}
+            onClose={() => setAtkRejectTarget(null)}
+            onDone={() => {
+              setAtkRejectTarget(null);
+              loadAtk();
+            }}
+          />
+
+          <AtkStatusHistoryModal open={atkStatusItemId != null} itemId={atkStatusItemId} onClose={() => setAtkStatusItemId(null)} />
+        </>
       )}
 
       {activeTab === "sarana" && (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>Pengajuan Perbaikan Sarana</h3>
@@ -2144,6 +2716,7 @@ export default function SuperAdminPage() {
             >
               Hapus Semua
             </button>
+            <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setSaranaFormOpen(true)}>+ Ajukan Perbaikan</button>
           </div>
         </div>
 
@@ -2153,16 +2726,16 @@ export default function SuperAdminPage() {
               <tr>
                 <th>No</th><th>No Pengajuan</th><th>Diajukan</th><th>Tanggal Pengajuan</th><th>Lokasi</th><th>Kategori Kerusakan</th><th>Deskripsi Kerusakan</th>
                 <th>Divisi</th><th>Departemen</th><th>Nama PIC</th><th>No. Telepon PIC</th>
-                <th>Catatan</th><th>Status</th><th>Aksi</th>
+                <th>Catatan</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
               {saranaBusy ? (
-                <tr><td colSpan={14} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
               ) : saranaError ? (
-                <tr><td colSpan={14} className="table-empty">{saranaError}</td></tr>
+                <tr><td colSpan={13} className="table-empty">{saranaError}</td></tr>
               ) : saranaItems.length === 0 ? (
-                <tr><td colSpan={14} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 saranaItems.map((item, index) => {
                   const rowNumber = (saranaFilters.page - 1) * saranaFilters.limit + index + 1;
@@ -2180,9 +2753,29 @@ export default function SuperAdminPage() {
                       <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 18)}</td>
                       <td>{item.noTeleponPelapor}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
-                      <td><BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable /></td>
                       <td>
-                        <button type="button" className="btn btn-danger btn-sm" style={AUTO_WIDTH_STYLE} onClick={() => handleDeleteSarana(item)}>Delete</button>
+                        <div className="status-cell">
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                            {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
+                              <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setSaranaChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => saranaRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -2218,6 +2811,93 @@ export default function SuperAdminPage() {
           </div>
         </div>
       </div>
+
+          <RowMenuDropdown
+            position={saranaRowMenu.position}
+            canEditDelete={
+              !!saranaRowMenu.menuItem &&
+              (isSaranaEditableByOrigin(saranaRowMenu.menuItem, me) || canGaKoreksiSarana(saranaRowMenu.menuItem, me))
+            }
+            canDelete={!!saranaRowMenu.menuItem && isSaranaEditableByOrigin(saranaRowMenu.menuItem, me)}
+            onDetail={() => {
+              const item = saranaRowMenu.menuItem;
+              saranaRowMenu.close();
+              if (item) setSaranaDetail({ item, mode: "view" });
+            }}
+            onUpdates={() => {
+              const item = saranaRowMenu.menuItem;
+              saranaRowMenu.close();
+              if (!item) return;
+              if (isSaranaEditableByOrigin(item, me)) setSaranaDetail({ item, mode: "edit" });
+              else if (canGaKoreksiSarana(item, me)) setSaranaKoreksiTarget(item);
+            }}
+            onStatus={() => {
+              const item = saranaRowMenu.menuItem;
+              saranaRowMenu.close();
+              if (item) setSaranaStatusItemId(item.id);
+            }}
+            onDelete={() => {
+              const item = saranaRowMenu.menuItem;
+              saranaRowMenu.close();
+              if (item) handleDeleteSarana(item);
+            }}
+            pdfUrl={saranaRowMenu.menuItem && isSaranaPdfAvailable(saranaRowMenu.menuItem) ? api.saranaPdfUrl(saranaRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = saranaRowMenu.menuItem;
+              saranaRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Pengajuan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <SaranaChatModal
+            open={!!saranaChatItem}
+            itemId={saranaChatItem?.id ?? null}
+            itemLabel={saranaChatItem ? `${saranaChatItem.lokasi} - ${saranaChatItem.nomorPerbaikan || "-"}` : ""}
+            departemen={saranaChatItem?.departemen ?? null}
+            createdByRole={saranaChatItem?.createdByRole ?? null}
+            me={me}
+            onClose={() => setSaranaChatItem(null)}
+            onRead={() => loadSarana({ silent: true })}
+          />
+
+          <SaranaFormModal open={saranaFormOpen} me={me} onClose={() => setSaranaFormOpen(false)} onCreated={loadSarana} />
+
+          <SaranaDetailModal
+            open={!!saranaDetail}
+            mode={saranaDetail?.mode || "view"}
+            item={saranaDetail?.item || null}
+            me={me}
+            onClose={() => setSaranaDetail(null)}
+            onSaved={loadSarana}
+            onRequestReject={(id, type, originLabel) => setSaranaRejectTarget({ id, type, originLabel })}
+          />
+
+          <SaranaKoreksiModal
+            open={!!saranaKoreksiTarget}
+            item={saranaKoreksiTarget}
+            onClose={() => setSaranaKoreksiTarget(null)}
+            onSaved={loadSarana}
+          />
+
+          <RejectModal
+            open={!!saranaRejectTarget}
+            targetId={saranaRejectTarget?.id ?? null}
+            targetType={saranaRejectTarget?.type ?? null}
+            originLabel={saranaRejectTarget?.originLabel ?? ""}
+            onClose={() => setSaranaRejectTarget(null)}
+            onDone={() => {
+              setSaranaRejectTarget(null);
+              loadSarana();
+            }}
+          />
+
+          <SaranaStatusHistoryModal open={saranaStatusItemId != null} itemId={saranaStatusItemId} onClose={() => setSaranaStatusItemId(null)} />
+        </>
       )}
 
       {activeTab === "organisasi" && <SuperAdminOrgTab />}

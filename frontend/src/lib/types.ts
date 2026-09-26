@@ -359,6 +359,9 @@ export interface BookingRuangCreatePayload {
   // home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See RoomBookingFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   namaRuang: string;
   additionalRooms?: string[];
   jumlahPeserta: number;
@@ -478,6 +481,9 @@ export interface PermintaanArsipCreatePayload {
   // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See ArsipFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   tanggal: string;
   jumlahArsip: number;
   namaArsip: string;
@@ -570,6 +576,9 @@ export interface PerbaikanSaranaCreatePayload {
   // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See SaranaFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   tanggal: string;
   lokasi: string;
   kategori: KategoriKerusakan;
@@ -671,6 +680,9 @@ export interface PermintaanAtkCreatePayload {
   // GA home unit - ignored by the backend for every other role, and for GA too when left blank.
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See AtkFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   tanggal: string;
   kategori: AtkKategori;
   keperluan: string;
@@ -767,6 +779,9 @@ export interface BookingKendaraanCreatePayload {
   noTeleponPic: string | null;
   divisi?: string;
   departemen?: string;
+  // Super Admin only: which origin role to stamp this item as - ignored by the backend for every
+  // other role. See VehicleBookingFormModal's "Bertindak Sebagai Role" picker.
+  asRole?: Role;
   namaKendaraan: string;
   jumlahPenumpang: number;
   tanggal: string;

@@ -5,8 +5,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
-import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, Role, RoomOption } from "@/lib/types";
+import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -21,6 +21,11 @@ import {
 } from "@/lib/bookingTime";
 
 const RECURRENCE_OPTIONS: RecurrenceFrequency[] = ["DAILY", "WEEKLY", "MONTHLY"];
+
+// The 6 roles a real actor can create a Room Booking as (BookingRuangController.OriginRoles minus
+// KPU/SUPER_ADMIN, which never create their own) - what Super Admin picks from in "Bertindak
+// Sebagai Role" to declare which origin identity a new booking is created under.
+const AS_ROLE_OPTIONS: Role[] = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADMIN_DIVISI", "APPROVAL_DIVISI", "ADMIN_GA", "APPROVAL_GA"];
 
 interface Props {
   open: boolean;
@@ -85,6 +90,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
+  const [asRole, setAsRole] = useState<Role | "">("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -93,11 +99,18 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
 
+  const isSuperAdmin = me.role === "SUPER_ADMIN";
   const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
+  // Super Admin's chosen AsRole drives which org fields apply, mirroring that role's own real
+  // constraints (see backend AsRoleValidationError) - GA roles need neither, Divisi roles need
+  // only Divisi, Departemen roles need both.
+  const asRoleNeedsDivisi = isSuperAdmin && asRole !== "" && asRole !== "ADMIN_GA" && asRole !== "APPROVAL_GA";
+  const asRoleNeedsDepartemen = isSuperAdmin && (asRole === "ADMIN_DEPARTEMEN" || asRole === "APPROVAL_DEPARTEMEN");
 
   useEffect(() => {
     if (open) {
       setForm(emptyForm(initial));
+      setAsRole("");
       setError("");
       api.listRooms().then(setRooms).catch(() => setRooms([]));
     }
@@ -107,11 +120,11 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
   useEffect(() => {
     if (!open || !form.tanggal) return;
     api
-      .nextBookingNomor(form.tanggal, isGaActor ? form.divisi : undefined)
+      .nextBookingNomor(form.tanggal, isGaActor ? form.divisi : undefined, isSuperAdmin ? asRole || undefined : undefined)
       .then((r) => setNomorPemesanan(r.nomorPemesanan))
       .catch(() => setNomorPemesanan(""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.tanggal, form.divisi]);
+  }, [open, form.tanggal, form.divisi, asRole]);
 
   if (!open) return null;
 
@@ -285,7 +298,20 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isGaActor) {
+    if (isSuperAdmin) {
+      if (!asRole) {
+        setError("Bertindak Sebagai Role wajib dipilih");
+        return;
+      }
+      if (asRoleNeedsDivisi && !form.divisi) {
+        setError("Divisi wajib dipilih untuk role ini");
+        return;
+      }
+      if (asRoleNeedsDepartemen && !form.departemen) {
+        setError("Departemen wajib dipilih untuk role ini");
+        return;
+      }
+    } else if (isGaActor) {
       if (!form.divisi) {
         setError("Divisi wajib dipilih");
         return;
@@ -350,6 +376,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
         tipe: form.tipe!,
         recurrenceFrequency: form.isRecurring ? form.recurrenceFrequency : null,
         recurrenceEndDate: form.isRecurring ? form.recurrenceEndDate : null,
+        asRole: isSuperAdmin ? asRole || undefined : undefined,
       });
       showToast(
         created.length > 1
@@ -378,43 +405,60 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
               <label htmlFor="f-nomor-pemesanan">Nomor Pesanan Ruangan</label>
               <input type="text" id="f-nomor-pemesanan" disabled value={nomorPemesanan} />
             </div>
-            {isGaActor && (
-              <>
-                <div className="field">
-                  <label htmlFor="f-divisi">Divisi</label>
-                  <SearchableSelect
-                    id="f-divisi"
-                    value={form.divisi}
-                    onChange={(next) => {
-                      const divisiNode = allDivisiNodes.find((d) => d.nama === next);
-                      setForm((f) => ({
-                        ...f,
-                        divisi: next,
-                        // "" (Kebutuhan Divisi) is a divisi-wide need, valid under any divisi - only
-                        // a specific department name gets reset when it no longer belongs here.
-                        departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
-                      }));
-                    }}
-                    options={orgStructure?.divisi || []}
-                    placeholder="Pilih Divisi"
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="f-departemen">Departemen</label>
-                  <SearchableSelect
-                    id="f-departemen"
-                    value={form.departemen}
-                    onChange={(next) => {
-                      if (!next) { set("departemen", next); return; }
-                      const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(next))?.nama;
-                      setForm((f) => ({ ...f, departemen: next, divisi: owningDivisi || f.divisi }));
-                    }}
-                    options={departemenOptions}
-                    placeholder="Pilih Departemen"
-                    clearLabel="Kebutuhan Divisi"
-                  />
-                </div>
-              </>
+            {isSuperAdmin && (
+              <div className="field full">
+                <label htmlFor="f-as-role">Bertindak Sebagai Role</label>
+                <SearchableSelect
+                  id="f-as-role"
+                  value={asRole}
+                  onChange={(next) => {
+                    setAsRole(next as Role);
+                    setForm((f) => ({ ...f, divisi: undefined, departemen: undefined }));
+                  }}
+                  options={AS_ROLE_OPTIONS}
+                  getLabel={(v) => ROLE_LABEL[v as Role]}
+                  placeholder="Pilih Role"
+                  searchable={false}
+                />
+              </div>
+            )}
+            {(asRoleNeedsDivisi || (isGaActor && !isSuperAdmin)) && (
+              <div className="field">
+                <label htmlFor="f-divisi">Divisi</label>
+                <SearchableSelect
+                  id="f-divisi"
+                  value={form.divisi}
+                  onChange={(next) => {
+                    const divisiNode = allDivisiNodes.find((d) => d.nama === next);
+                    setForm((f) => ({
+                      ...f,
+                      divisi: next,
+                      // "" (Kebutuhan Divisi) is a divisi-wide need, valid under any divisi - only
+                      // a specific department name gets reset when it no longer belongs here.
+                      departemen: f.departemen === "" || (f.departemen && divisiNode?.departemen.includes(f.departemen)) ? f.departemen : undefined,
+                    }));
+                  }}
+                  options={orgStructure?.divisi || []}
+                  placeholder="Pilih Divisi"
+                />
+              </div>
+            )}
+            {(asRoleNeedsDepartemen || (isGaActor && !isSuperAdmin)) && (
+              <div className="field">
+                <label htmlFor="f-departemen">Departemen</label>
+                <SearchableSelect
+                  id="f-departemen"
+                  value={form.departemen}
+                  onChange={(next) => {
+                    if (!next) { set("departemen", next); return; }
+                    const owningDivisi = allDivisiNodes.find((d) => d.departemen.includes(next))?.nama;
+                    setForm((f) => ({ ...f, departemen: next, divisi: owningDivisi || f.divisi }));
+                  }}
+                  options={departemenOptions}
+                  placeholder="Pilih Departemen"
+                  clearLabel="Kebutuhan Divisi"
+                />
+              </div>
             )}
             <div className="field full">
               <label htmlFor="f-nama-kegiatan">Nama Kegiatan</label>

@@ -82,10 +82,40 @@ public class PermintaanArsipController : ApiControllerBase
     // archive move for any divisi/departemen (payload.Divisi/Departemen), not just their own GA
     // home unit. Every other role always requests as itself; GA requesting with no Divisi chosen
     // falls back to their own GA home unit, same as before this feature existed.
-    private static (string divisi, string? departemen) EffectiveOwner(User user, PermintaanArsipCreate payload) =>
-        IsGaActor(user) && !string.IsNullOrEmpty(payload.Divisi)
-            ? (payload.Divisi, payload.Departemen)
-            : (EffectiveDivisi(user), EffectiveDepartemen(user));
+    private static (string divisi, string? departemen, RoleEnum createdByRole) EffectiveOwner(User user, PermintaanArsipCreate payload)
+    {
+        // Super Admin creating "as" a specific origin role (see AsRoleValidationError below,
+        // checked before this runs) - stamps that role as the item's own origin instead of
+        // SUPER_ADMIN itself, exactly as if that role had logged in and created it. AsRole absent
+        // (old API callers, or Super Admin leaving it unset) falls through to the GA-actor branch
+        // below unchanged.
+        if (user.Role == RoleEnum.SUPER_ADMIN && payload.AsRole.HasValue)
+        {
+            var asRole = payload.AsRole.Value;
+            return asRole is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA
+                ? (GaDivisiLabel, GaDepartemenLabel, asRole)
+                : asRole is RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI
+                    ? (payload.Divisi!, null, asRole)
+                    : (payload.Divisi!, payload.Departemen, asRole);
+        }
+        return IsGaActor(user) && !string.IsNullOrEmpty(payload.Divisi)
+            ? (payload.Divisi, payload.Departemen, user.Role)
+            : (EffectiveDivisi(user), EffectiveDepartemen(user), user.Role);
+    }
+
+    // Checked before EffectiveOwner runs, only when Super Admin picked an explicit AsRole -
+    // mirrors each role's own real Divisi/Departemen requirement (see DbSeeder.BuildAccounts):
+    // GA roles need neither, Divisi roles need a Divisi but no Departemen, Departemen roles need
+    // both.
+    private static string? AsRoleValidationError(RoleEnum asRole, string? divisi, string? departemen) => asRole switch
+    {
+        RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA => null,
+        RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI => string.IsNullOrEmpty(divisi) ? "Divisi wajib dipilih untuk role ini" : null,
+        RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN =>
+            string.IsNullOrEmpty(divisi) ? "Divisi wajib dipilih untuk role ini" :
+            string.IsNullOrEmpty(departemen) ? "Departemen wajib dipilih untuk role ini" : null,
+        _ => "Role tidak valid untuk membuat data",
+    };
 
     // Unlike Room/Vehicle Booking, a rejected request here isn't a dead end - no other party fills
     // in authoritative data at approval time, so there's no need for RejectTarget-style routing.
@@ -156,6 +186,12 @@ public class PermintaanArsipController : ApiControllerBase
         else if (currentUser.Role is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA)
         {
             query = query.Where(p => p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == currentUser.Id);
+        }
+        else if (currentUser.Role == RoleEnum.SUPER_ADMIN)
+        {
+            // Full access (see IsGaActor/CanAccessPermintaanArsip) - no status or ownership
+            // restriction, including drafts created by any unit (or by Super Admin itself via
+            // AsRole in the Super Admin panel).
         }
         else
         {
@@ -264,13 +300,26 @@ public class PermintaanArsipController : ApiControllerBase
         $"{seq:D4}.{OrgTree.GetKodeSatuanKerja(divisi)}.{tanggal:MM}.{tanggal:yyyy}";
 
     [HttpGet("next-nomor")]
-    public async Task<IActionResult> NextNomor([FromQuery] DateOnly? tanggal, [FromQuery] string? divisi)
+    public async Task<IActionResult> NextNomor([FromQuery] DateOnly? tanggal, [FromQuery] string? divisi, [FromQuery] RoleEnum? asRole)
     {
         var (user, error) = await RequireRoleAsync(OriginRoles);
         if (error != null) return error;
-        var effectiveDivisi = IsGaActor(user!) && !string.IsNullOrEmpty(divisi) && OrgTree.AllDivisi.Contains(divisi)
-            ? divisi
-            : EffectiveDivisi(user!);
+        // Mirrors EffectiveOwner's branching so the preview matches what Create() will actually
+        // stamp - a Super Admin previewing "as" a GA role must resolve to the GA home unit even
+        // with no divisi picked (that role's form has no Divisi field at all).
+        string? effectiveDivisi;
+        if (user!.Role == RoleEnum.SUPER_ADMIN && asRole.HasValue)
+        {
+            effectiveDivisi = asRole.Value is RoleEnum.ADMIN_GA or RoleEnum.APPROVAL_GA
+                ? GaDivisiLabel
+                : !string.IsNullOrEmpty(divisi) && OrgTree.AllDivisi.Contains(divisi) ? divisi : null;
+        }
+        else
+        {
+            effectiveDivisi = IsGaActor(user!) && !string.IsNullOrEmpty(divisi) && OrgTree.AllDivisi.Contains(divisi)
+                ? divisi
+                : EffectiveDivisi(user!);
+        }
         if (string.IsNullOrEmpty(effectiveDivisi))
             return Ok(new { nomorArsip = "" });
 
@@ -290,15 +339,20 @@ public class PermintaanArsipController : ApiControllerBase
 
         var validationError = ValidatePayload(payload, IsGaActor(user!));
         if (validationError != null) return BadRequest(new { detail = validationError });
+        if (user!.Role == RoleEnum.SUPER_ADMIN && payload.AsRole.HasValue)
+        {
+            var asRoleError = AsRoleValidationError(payload.AsRole.Value, payload.Divisi, payload.Departemen);
+            if (asRoleError != null) return BadRequest(new { detail = asRoleError });
+        }
 
-        var (divisi, departemen) = EffectiveOwner(user!, payload);
+        var (divisi, departemen, createdByRole) = EffectiveOwner(user!, payload);
         if (string.IsNullOrEmpty(divisi))
             return StatusCode(403, new { detail = "Akun Anda belum terhubung dengan divisi/departemen manapun" });
 
         var item = new PermintaanArsip
         {
             CreatedBy = user!.Id,
-            CreatedByRole = user.Role,
+            CreatedByRole = createdByRole,
             Status = BookingStatusEnum.DRAFT,
             Divisi = divisi,
             Departemen = departemen,
