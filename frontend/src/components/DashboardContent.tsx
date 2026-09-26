@@ -209,22 +209,6 @@ function ModuleStatCard({
   );
 }
 
-// ─── QuickLinks ────────────────────────────────────────────────────────────────
-function QuickLinks({ links }: { links: { href: string; label: string }[] }) {
-  return (
-    <div className="card">
-      <div style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 12 }}>Akses Cepat</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {links.map((l) => (
-          <Link key={l.href} href={l.href} style={{ color: "var(--blue-500)", fontSize: "0.85rem", textDecoration: "none" }}>
-            {l.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Keseluruhan pane ──────────────────────────────────────────────────────────
 function PaneAll({ stats, isKpu }: { stats: AllStats; isKpu: boolean }) {
   const donutRef = useRef<HTMLCanvasElement>(null);
@@ -291,7 +275,7 @@ function PaneAll({ stats, isKpu }: { stats: AllStats; isKpu: boolean }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
         {/* Donut */}
-        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
+        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%" }}>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Status Keseluruhan</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3 }}>
@@ -326,7 +310,7 @@ function PaneAll({ stats, isKpu }: { stats: AllStats; isKpu: boolean }) {
         </div>
 
         {/* Bar */}
-        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
+        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Perbandingan Antar Modul</div>
@@ -506,14 +490,7 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.room?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.room?.completed ?? 0) + (stats.room?.pending ?? 0) + (stats.room?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Room Booking" href="/booking-ruang-meeting/transaksi" stats={stats.room} loading={stats.loading} />
-            <QuickLinks links={[
-              { href: "/booking-ruang-meeting/calendar", label: "📅 Lihat Kalender Ruang Meeting →" },
-              { href: "/booking-ruang-meeting/transaksi", label: "📋 Semua Transaksi →" },
-              { href: "/booking-ruang-meeting/overview", label: "📊 Overview Permintaan Saya →" },
-            ]} />
-          </div>
+          <ModuleStatCard title="Room Booking" href="/booking-ruang-meeting/transaksi" stats={stats.room} loading={stats.loading} />
         </>
       )}
 
@@ -526,14 +503,7 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.vehicle?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.vehicle?.completed ?? 0) + (stats.vehicle?.pending ?? 0) + (stats.vehicle?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Vehicle Booking" href="/booking-kendaraan/transaksi" stats={stats.vehicle} loading={stats.loading} />
-            <QuickLinks links={[
-              { href: "/booking-kendaraan/calendar", label: "📅 Lihat Kalender Kendaraan →" },
-              { href: "/booking-kendaraan/transaksi", label: "📋 Semua Transaksi →" },
-              { href: "/booking-kendaraan/overview", label: "📊 Overview Permintaan Saya →" },
-            ]} />
-          </div>
+          <ModuleStatCard title="Vehicle Booking" href="/booking-kendaraan/transaksi" stats={stats.vehicle} loading={stats.loading} />
         </>
       )}
 
@@ -546,13 +516,7 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.atk?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Office Supplies" href="/office-supplies/transaksi" stats={stats.atk} loading={stats.loading} />
-            <QuickLinks links={[
-              { href: "/office-supplies/transaksi", label: "📋 Semua Transaksi →" },
-              { href: "/office-supplies/overview", label: "📊 Overview Permintaan Saya →" },
-            ]} />
-          </div>
+          <ModuleStatCard title="Office Supplies" href="/office-supplies/transaksi" stats={stats.atk} loading={stats.loading} />
         </>
       )}
 
@@ -565,13 +529,7 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.maint?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Maintenance" href="/maintenance/transaksi" stats={stats.maint} loading={stats.loading} />
-            <QuickLinks links={[
-              { href: "/maintenance/transaksi", label: "📋 Semua Transaksi →" },
-              { href: "/maintenance/overview", label: "📊 Overview Permintaan Saya →" },
-            ]} />
-          </div>
+          <ModuleStatCard title="Maintenance" href="/maintenance/transaksi" stats={stats.maint} loading={stats.loading} />
         </>
       )}
 
@@ -584,14 +542,7 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.arsip?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Archive" href="/arsip/transaksi" stats={stats.arsip} loading={stats.loading} />
-            <QuickLinks links={[
-              { href: "/arsip/transaksi", label: "📋 Semua Transaksi →" },
-              { href: "/arsip/overview", label: "📊 Overview Permintaan Saya →" },
-              { href: "/arsip/katalog", label: "📁 Repository Arsip →" },
-            ]} />
-          </div>
+          <ModuleStatCard title="Archive" href="/arsip/transaksi" stats={stats.arsip} loading={stats.loading} />
         </>
       )}
     </>
