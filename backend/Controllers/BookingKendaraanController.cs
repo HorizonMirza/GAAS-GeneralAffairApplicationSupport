@@ -975,14 +975,24 @@ public class BookingKendaraanController : ApiControllerBase
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
-        IQueryable<BookingKendaraan> query;
+        IQueryable<BookingKendaraan> query = _db.BookingKendaraans.AsQueryable();
         try
         {
-            query = ApplyListFilters(_db, _db.BookingKendaraans.AsQueryable(), user!, null, null, null, null, null, null, bulan);
+            query = ApplyBulanFilter(query, bulan);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
+        }
+
+        if (!string.IsNullOrEmpty(user!.Divisi) && user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN
+            or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            query = query.Where(b => b.Divisi == user.Divisi && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == user.Id));
+        }
+        else
+        {
+            query = query.Where(b => b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == user.Id);
         }
 
         var counts = await query

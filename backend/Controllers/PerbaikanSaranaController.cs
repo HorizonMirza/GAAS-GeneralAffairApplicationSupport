@@ -713,14 +713,24 @@ public class PerbaikanSaranaController : ApiControllerBase
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
 
-        IQueryable<PerbaikanSarana> query;
+        IQueryable<PerbaikanSarana> query = _db.PerbaikanSaranas.AsQueryable();
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, null, null, null, null, null, bulan);
+            query = ApplyBulanFilter(query, bulan);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
+        }
+
+        if (!string.IsNullOrEmpty(user!.Divisi) && user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN
+            or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            query = query.Where(p => p.Divisi == user.Divisi && (p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == user.Id));
+        }
+        else
+        {
+            query = query.Where(p => p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == user.Id);
         }
 
         var counts = await query
