@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, buildRoomBookingDuplicateInitial, buildVehicleBookingDuplicateInitial, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -232,9 +232,8 @@ function SuperAdminPageInner() {
   // here instead - it's the room-side counterpart to this tab's own booking transactions.
   const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"transaksi" | "roster">("transaksi");
   // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
-  // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel/Duplicate, no Koreksi).
+  // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel, no Koreksi).
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
-  const [bookingFormInitial, setBookingFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
   const [bookingDetail, setBookingDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
   const [bookingRescheduleTarget, setBookingRescheduleTarget] = useState<BookingRuang | null>(null);
   const [bookingStatusItemId, setBookingStatusItemId] = useState<number | null>(null);
@@ -253,9 +252,8 @@ function SuperAdminPageInner() {
   // instead - it's the vehicle-side counterpart to this tab's own booking transactions.
   const [kendaraanSubtab, setKendaraanSubtab] = useState<"transaksi" | "roster">("transaksi");
   // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
-  // modals (Reschedule/Cancel/Duplicate, no Koreksi).
+  // modals (Reschedule/Cancel, no Koreksi).
   const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
-  const [kendaraanFormInitial, setKendaraanFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
   const [kendaraanDetail, setKendaraanDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
   const [kendaraanRescheduleTarget, setKendaraanRescheduleTarget] = useState<BookingKendaraan | null>(null);
   const [kendaraanStatusItemId, setKendaraanStatusItemId] = useState<number | null>(null);
@@ -1708,13 +1706,6 @@ function SuperAdminPageInner() {
               if (isBookingEditableByOrigin(item, me)) setBookingDetail({ item, mode: "edit" });
               else if (canGaRescheduleBooking(item, me)) setBookingRescheduleTarget(item);
             }}
-            onDuplicate={() => {
-              const item = bookingRowMenu.menuItem;
-              bookingRowMenu.close();
-              if (!item) return;
-              setBookingFormInitial(buildRoomBookingDuplicateInitial(item));
-              setBookingFormOpen(true);
-            }}
             onStatus={() => {
               const item = bookingRowMenu.menuItem;
               bookingRowMenu.close();
@@ -1762,8 +1753,7 @@ function SuperAdminPageInner() {
           <RoomBookingFormModal
             open={bookingFormOpen}
             me={me}
-            initial={bookingFormInitial}
-            onClose={() => { setBookingFormOpen(false); setBookingFormInitial(undefined); }}
+            onClose={() => setBookingFormOpen(false)}
             onCreated={loadBookings}
           />
 
@@ -2029,13 +2019,6 @@ function SuperAdminPageInner() {
               if (isKendaraanEditableByOrigin(item, me)) setKendaraanDetail({ item, mode: "edit" });
               else if (canGaRescheduleKendaraan(item, me)) setKendaraanRescheduleTarget(item);
             }}
-            onDuplicate={() => {
-              const item = kendaraanRowMenu.menuItem;
-              kendaraanRowMenu.close();
-              if (!item) return;
-              setKendaraanFormInitial(buildVehicleBookingDuplicateInitial(item));
-              setKendaraanFormOpen(true);
-            }}
             onStatus={() => {
               const item = kendaraanRowMenu.menuItem;
               kendaraanRowMenu.close();
@@ -2083,8 +2066,7 @@ function SuperAdminPageInner() {
           <VehicleBookingFormModal
             open={kendaraanFormOpen}
             me={me}
-            initial={kendaraanFormInitial}
-            onClose={() => { setKendaraanFormOpen(false); setKendaraanFormInitial(undefined); }}
+            onClose={() => setKendaraanFormOpen(false)}
             onCreated={loadKendaraanBookings}
           />
 

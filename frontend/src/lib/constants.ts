@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
+import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
 
 // Single badge, always "Status: Role" so whoever is currently holding it (on-approval) or who
 // stopped it (rejected) is visible at a glance without a second sub-badge or the Stepper. SUBMITTED
@@ -379,51 +379,6 @@ export function isBookingPdfAvailable(item: BookingRuang): boolean {
 // Same rule as isBookingPdfAvailable, for Vehicle Booking's own proof-of-booking PDF.
 export function isKendaraanPdfAvailable(item: BookingKendaraan): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
-}
-
-// Powers Room Booking's "Duplikat" row action: copies the room/time/participants/PIC details of
-// an existing booking into a fresh create-form payload so the user only has to adjust the date
-// (and anything else that's actually different) instead of retyping a recurring-in-practice
-// meeting from scratch. Deliberately excludes tanggal (the whole point is picking a new one, so
-// the form's own today-default takes over) and every recurrence field (isRecurring/
-// recurrenceFrequency/recurrenceEndDate) - a duplicate always starts as a plain one-off booking,
-// never silently recreating the source's recurring series.
-export function buildRoomBookingDuplicateInitial(item: BookingRuang): Partial<BookingRuangCreatePayload> {
-  return {
-    namaKegiatan: item.namaKegiatan,
-    pic: item.pic,
-    noTeleponPic: item.noTeleponPic || "",
-    divisi: item.divisi || undefined,
-    // "" is the deliberate "Kebutuhan Divisi ini" choice (see SearchableSelect's clearLabel) -
-    // distinct from undefined, which SearchableSelect instead renders as unset/required. A null
-    // departemen from the source booking means that choice was made (or it's not a GA-actor
-    // booking at all), so it must carry over as "", not undefined.
-    departemen: item.departemen ?? "",
-    namaRuang: item.namaRuang,
-    additionalRooms: item.additionalRooms,
-    jumlahPeserta: item.jumlahPeserta,
-    isWholeDay: item.isWholeDay,
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
-    catatan: item.catatan,
-    tipe: item.tipe,
-  };
-}
-
-export function buildVehicleBookingDuplicateInitial(item: BookingKendaraan): Partial<BookingKendaraanCreatePayload> {
-  return {
-    keperluan: item.keperluan,
-    pic: item.pic,
-    noTeleponPic: item.noTeleponPic || "",
-    divisi: item.divisi || undefined,
-    departemen: item.departemen ?? "",
-    namaKendaraan: item.namaKendaraan,
-    jumlahPenumpang: item.jumlahPenumpang,
-    isWholeDay: item.isWholeDay,
-    jamMulai: item.jamMulai ? item.jamMulai.slice(0, 5) : item.jamMulai,
-    jamSelesai: item.jamSelesai ? item.jamSelesai.slice(0, 5) : item.jamSelesai,
-    catatan: item.catatan,
-  };
 }
 
 // Whoever created it, or Admin/Approval GA regardless of who created it, can cancel a booking

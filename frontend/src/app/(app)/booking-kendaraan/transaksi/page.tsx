@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  buildVehicleBookingDuplicateInitial,
   canGaRescheduleKendaraan,
   isBookingOriginRole,
   isKendaraanCancellableByOrigin,
@@ -470,17 +469,6 @@ function VehicleBookingTransaksiPageInner() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
-        onDuplicate={
-          isOrigin
-            ? () => {
-                const item = rowMenu.menuItem;
-                rowMenu.close();
-                if (!item) return;
-                setFormInitial(buildVehicleBookingDuplicateInitial(item));
-                setFormOpen(true);
-              }
-            : undefined
-        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

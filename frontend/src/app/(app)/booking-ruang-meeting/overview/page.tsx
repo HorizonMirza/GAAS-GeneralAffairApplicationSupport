@@ -11,7 +11,6 @@ import {
   BOOKING_REJECTED_STATUSES,
   bookingRoomsLabel,
   bookingStatusBorderClass,
-  buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -531,17 +530,6 @@ export default function BookingOverviewPage() {
           if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
-        onDuplicate={
-          isOrigin
-            ? () => {
-                const item = rowMenu.menuItem;
-                rowMenu.close();
-                if (!item) return;
-                setFormInitial(buildRoomBookingDuplicateInitial(item));
-                setFormOpen(true);
-              }
-            : undefined
-        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

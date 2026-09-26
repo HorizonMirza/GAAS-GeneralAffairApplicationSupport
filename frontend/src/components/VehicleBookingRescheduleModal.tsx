@@ -85,7 +85,6 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
   const availableStartHours = form ? getAvailableStartHours(form.tanggal) : [];
   const availableEndHours = form ? getAvailableEndHours(form.jamMulai) : [];
   const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
-  const isTodayPast = form ? (form.tanggal === todayLocalDate() && availableStartHours.length === 0) : false;
 
   function set<K extends keyof BookingKendaraanReschedulePayload>(key: K, value: BookingKendaraanReschedulePayload[K]) {
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -319,17 +318,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
                 </span>
                 Sepanjang Hari
               </button>
-              {!wholeDayAllowed && form.tanggal === todayLocalDate() && (
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                  * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
-                </span>
-              )}
             </div>
-            {isTodayPast && (
-              <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
-                Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.
-              </div>
-            )}
             <div className="field full">
               <label htmlFor="rk-kendaraan">Kendaraan <Pencil className="field-edit-icon" width={12} height={12} /></label>
               <SearchableSelect

@@ -399,7 +399,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
   const availableStartHours = form ? getAvailableStartHours(form.tanggal) : [];
   const availableEndHours = form ? getAvailableEndHours(form.jamMulai) : [];
   const wholeDayAllowed = form ? isWholeDayAllowed(form.tanggal) : true;
-  const isTodayPast = form ? (form.tanggal === todayLocalDate() && availableStartHours.length === 0) : false;
 
   return (
     <ModalOverlay open={open} onClose={onClose} className="modal-overlay">
@@ -517,16 +516,6 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                   </span>
                   Sepanjang Hari
                 </button>
-                {isEdit && !wholeDayAllowed && form.tanggal === todayLocalDate() && (
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                    * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
-                  </span>
-                )}
-              </div>
-            )}
-            {isEdit && isTodayPast && (
-              <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
-                Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.
               </div>
             )}
             <div className="field full">

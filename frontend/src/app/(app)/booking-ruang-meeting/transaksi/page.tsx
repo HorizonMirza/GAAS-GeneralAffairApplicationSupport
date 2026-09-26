@@ -8,7 +8,6 @@ import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   bookingRoomsLabel,
-  buildRoomBookingDuplicateInitial,
   canGaRescheduleBooking,
   isBookingCancellableByOrigin,
   isBookingDeletableByOrigin,
@@ -488,17 +487,6 @@ function BookingTransaksiPageInner() {
           if (isOrigin && isBookingEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleBooking(item, me)) setRescheduleTarget(item);
         }}
-        onDuplicate={
-          isOrigin
-            ? () => {
-                const item = rowMenu.menuItem;
-                rowMenu.close();
-                if (!item) return;
-                setFormInitial(buildRoomBookingDuplicateInitial(item));
-                setFormOpen(true);
-              }
-            : undefined
-        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

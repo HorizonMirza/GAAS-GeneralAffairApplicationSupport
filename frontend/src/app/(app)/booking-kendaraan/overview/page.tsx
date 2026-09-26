@@ -13,7 +13,6 @@ import {
   isBookingOriginRole,
   isKendaraanCancellableByOrigin,
   isKendaraanDeletableByOrigin,
-  buildVehicleBookingDuplicateInitial,
   isKendaraanEditableByOrigin,
   isKendaraanPdfAvailable,
   canGaRescheduleKendaraan,
@@ -504,17 +503,6 @@ export default function VehicleBookingOverviewPage() {
           if (isOrigin && isKendaraanEditableByOrigin(item, me)) setDetail({ item, mode: "edit" });
           else if (canGaRescheduleKendaraan(item, me)) setRescheduleTarget(item);
         }}
-        onDuplicate={
-          isOrigin
-            ? () => {
-                const item = rowMenu.menuItem;
-                rowMenu.close();
-                if (!item) return;
-                setFormInitial(buildVehicleBookingDuplicateInitial(item));
-                setFormOpen(true);
-              }
-            : undefined
-        }
         onStatus={() => {
           const item = rowMenu.menuItem;
           rowMenu.close();

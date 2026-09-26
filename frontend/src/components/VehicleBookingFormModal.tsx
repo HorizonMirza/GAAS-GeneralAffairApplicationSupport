@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
-import { getAvailableEndHours, getAvailableStartHours, isWholeDayAllowed } from "@/lib/bookingTime";
+import { getAvailableEndHours, getAvailableStartHours, getDefaultBookingSlot, isWholeDayAllowed } from "@/lib/bookingTime";
 import type { BookingKendaraanCreatePayload, Me, Role, VehicleOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -22,16 +22,17 @@ interface Props {
 }
 
 function emptyForm(initial?: Partial<BookingKendaraanCreatePayload>): BookingKendaraanCreatePayload {
+  const slot = getDefaultBookingSlot(initial?.tanggal);
   const base: BookingKendaraanCreatePayload = {
     keperluan: "",
     pic: "",
     noTeleponPic: "",
     namaKendaraan: "",
     jumlahPenumpang: 1,
-    tanggal: todayLocalDate(),
+    tanggal: slot.tanggal,
     isWholeDay: false,
-    jamMulai: "07:00",
-    jamSelesai: "09:00",
+    jamMulai: slot.jamMulai,
+    jamSelesai: slot.jamSelesai,
     catatan: "",
   };
 
@@ -135,7 +136,6 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
   const availableStartHours = getAvailableStartHours(form.tanggal);
   const availableEndHours = getAvailableEndHours(form.jamMulai);
   const wholeDayAllowed = isWholeDayAllowed(form.tanggal);
-  const isTodayPast = form.tanggal === todayLocalDate() && availableStartHours.length === 0;
 
   function set<K extends keyof BookingKendaraanCreatePayload>(key: K, value: BookingKendaraanCreatePayload[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -431,17 +431,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
                 </span>
                 Sepanjang Hari
               </button>
-              {!wholeDayAllowed && form.tanggal === todayLocalDate() && (
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                  * Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00).
-                </span>
-              )}
             </div>
-            {isTodayPast && (
-              <div className="field full" style={{ color: "var(--danger, #dc2626)", fontSize: "0.85rem", padding: "8px 12px", background: "var(--danger-bg, #fef2f2)", borderRadius: "6px", border: "1px solid var(--danger-border, #fecaca)" }}>
-                Jam operasional hari ini sudah selesai (07:00 - 18:00). Silakan pilih tanggal berikutnya untuk melakukan booking.
-              </div>
-            )}
             <div className="field full">
               <label htmlFor="fk-kendaraan">Kendaraan</label>
               <SearchableSelect
