@@ -15,6 +15,8 @@ import {
   FileText,
   MapPin,
   ShieldCheck,
+  AlertTriangle,
+  Package,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
@@ -121,82 +123,95 @@ function drawGroupedBar(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark    = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtMut  = dark ? "#9db4dd" : "#4a5b7a";
-  const txtStr  = dark ? "#eef4ff" : "#0b1a33";
-  const grid    = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
+  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
+  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
+  const grid   = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
+
+  const maxVal = Math.max(1, ...layers.flatMap((l) => l));
+  const ceil   = Math.ceil(maxVal / 5) * 5 || 5;
+
   const W = canvas.width, H = canvas.height;
-  const p = { t: 12, r: 18, b: 34, l: 36 };
+  const p = { t: 15, r: 15, b: 35, l: 30 };
   const cW = W - p.l - p.r, cH = H - p.t - p.b;
-  const maxV = Math.max(...layers.flat(), 1);
-  const gW = cW / groups.length;
-  const bW = Math.min(gW * 0.22, 24);
 
   ctx.save(); ctx.translate(p.l, p.t);
 
+  // Grid
   for (let i = 0; i <= 4; i++) {
     const y = cH - (i / 4) * cH;
     ctx.strokeStyle = grid; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
-    ctx.fillStyle = txtMut; ctx.font = "11px sans-serif"; ctx.textAlign = "right";
-    ctx.fillText(String(Math.round((i / 4) * maxV)), -6, y + 4);
+    ctx.fillStyle = txtMut; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(String(Math.round((i / 4) * ceil)), -5, y + 3);
   }
-  groups.forEach((g, i) => {
-    const gX = i * gW + (gW - bW * layers.length - (layers.length - 1) * 3) / 2;
-    layers.forEach((layer, j) => {
-      const bh = (layer[i] / maxV) * cH;
-      ctx.fillStyle = colors[j];
+
+  // Bars
+  const nG = groups.length, nL = layers.length;
+  const gW = cW / nG;
+  const bW = Math.min(14, (gW * 0.72) / nL);
+  const offs = (gW - bW * nL) / 2;
+
+  groups.forEach((g, gi) => {
+    layers.forEach((layer, li) => {
+      const v = layer[gi] ?? 0;
+      const bH = (v / ceil) * cH;
+      const x = gi * gW + offs + li * bW;
+      const y = cH - bH;
+      ctx.fillStyle = colors[li];
       ctx.beginPath();
-      ctx.roundRect(gX + j * (bW + 3), cH - bh, bW, Math.max(bh, 1), [3, 3, 0, 0]);
+      ctx.roundRect ? ctx.roundRect(x, y, bW - 2, bH, [3, 3, 0, 0]) : ctx.rect(x, y, bW - 2, bH);
       ctx.fill();
     });
-    ctx.fillStyle = txtStr; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(g, i * gW + gW / 2, cH + 20);
+    ctx.fillStyle = txtMut; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(g, gi * gW + gW / 2, cH + 18);
   });
+
   ctx.restore();
 }
 
-// ─── Chart: Horizontal Bar per Divisi ──────────────────────────────────────────
+// ─── Chart: Horizontal Bar Divisi ──────────────────────────────────────────────
 function drawDivisiBar(canvas: HTMLCanvasElement, labels: string[], vals: number[]) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const dark   = document.documentElement.getAttribute("data-theme") === "dark";
+  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
   const txtStr = dark ? "#eef4ff" : "#0b1a33";
-  const maxVal = Math.max(...vals, 1);
+  const track  = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
+  const maxVal = Math.max(1, ...vals);
 
   const W = canvas.width, H = canvas.height;
-  const pad = { t: 10, r: 40, b: 10, l: 125 };
-  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
-  const barH = 16;
-  const count = labels.length;
-  const gap = count > 1 ? (cH - barH * count) / (count - 1) : 0;
+  const p = { t: 10, r: 40, b: 10, l: 85 };
+  const cW = W - p.l - p.r, cH = H - p.t - p.b;
+  const rowH = cH / labels.length;
+  const barH = Math.min(16, rowH * 0.65);
 
-  ctx.save(); ctx.translate(pad.l, pad.t);
+  ctx.save(); ctx.translate(p.l, p.t);
 
   labels.forEach((lbl, i) => {
-    const y = i * (barH + gap);
+    const y = i * rowH + (rowH - barH) / 2;
     const w = (vals[i] / maxVal) * cW;
 
+    // Label
     ctx.fillStyle = txtStr;
-    ctx.font = "11px sans-serif";
+    ctx.font = "600 11px sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(lbl, -10, y + 12);
+    ctx.fillText(lbl, -8, y + barH / 2 + 4);
 
-    ctx.fillStyle = dark ? "rgba(75,141,255,0.08)" : "rgba(75,141,255,0.12)";
+    // Track
+    ctx.fillStyle = track;
     ctx.beginPath();
-    ctx.roundRect(0, y, cW, barH, 4);
+    ctx.roundRect ? ctx.roundRect(0, y, cW, barH, 4) : ctx.rect(0, y, cW, barH);
     ctx.fill();
 
-    const grad = ctx.createLinearGradient(0, 0, Math.max(w, 4), 0);
-    grad.addColorStop(0, "#1450c9");
-    grad.addColorStop(1, "#4b8dff");
-    ctx.fillStyle = grad;
+    // Bar
+    ctx.fillStyle = i === 0 ? "#1c6dff" : "#4b8dff";
     ctx.beginPath();
-    ctx.roundRect(0, y, Math.max(w, 4), barH, 4);
+    ctx.roundRect ? ctx.roundRect(0, y, w, barH, 4) : ctx.rect(0, y, w, barH);
     ctx.fill();
 
-    ctx.fillStyle = "#1c6dff";
+    // Value
+    ctx.fillStyle = txtMut;
     ctx.font = "bold 11px sans-serif";
     ctx.textAlign = "left";
     ctx.fillText(`${vals[i]} Req`, w + 8, y + 12);
@@ -278,6 +293,50 @@ function drawTrenChart(canvas: HTMLCanvasElement, months: string[], pts: number[
   ctx.restore();
 }
 
+// ─── Chart: Budget Bar ────────────────────────────────────────────────────────
+function drawBudgetBar(canvas: HTMLCanvasElement, cats: { name: string; cost: number; max: number }[]) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
+  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
+  const txtStr = dark ? "#eef4ff" : "#0b1a33";
+  const track  = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+
+  const W = canvas.width, H = canvas.height;
+  const p = { t: 15, r: 45, b: 15, l: 80 };
+  const cW = W - p.l - p.r, cH = H - p.t - p.b;
+  const barH = cH / cats.length - 8;
+
+  ctx.save(); ctx.translate(p.l, p.t);
+
+  cats.forEach((c, i) => {
+    const y = i * (barH + 8);
+    const w = (c.cost / c.max) * cW;
+
+    ctx.fillStyle = txtStr;
+    ctx.font = "600 11px -apple-system, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(c.name, -8, y + barH / 2 + 4);
+
+    // Track
+    ctx.fillStyle = track;
+    ctx.fillRect(0, y, cW, barH);
+
+    // Bar
+    ctx.fillStyle = "#0284c7";
+    ctx.fillRect(0, y, w, barH);
+
+    // Value
+    ctx.fillStyle = txtStr;
+    ctx.font = "bold 10px -apple-system, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`${c.cost.toFixed(1)}M`, w + 6, y + barH / 2 + 4);
+  });
+
+  ctx.restore();
+}
+
 // ─── StatTile ──────────────────────────────────────────────────────────────────
 function StatTile({
   value,
@@ -297,6 +356,27 @@ function StatTile({
       {subLabel && <div style={{ fontSize: "0.72rem", opacity: 0.78, marginTop: 3 }}>{subLabel}</div>}
     </div>
   );
+}
+
+// ─── Timeline Helper ──────────────────────────────────────────────────────────
+function getTimelineLeft(jamMulai: string | null): number {
+  if (!jamMulai) return 0;
+  const parts = jamMulai.split(":");
+  const h = parseInt(parts[0], 10) || 8;
+  const m = parseInt(parts[1], 10) || 0;
+  const hourVal = Math.max(8, Math.min(18, h + m / 60));
+  return ((hourVal - 8) / 10) * 100;
+}
+
+function getTimelineWidth(jamMulai: string | null, jamSelesai: string | null, isWholeDay: boolean): number {
+  if (isWholeDay) return 100;
+  if (!jamMulai || !jamSelesai) return 15;
+  const p1 = jamMulai.split(":");
+  const p2 = jamSelesai.split(":");
+  const h1 = (parseInt(p1[0], 10) || 8) + (parseInt(p1[1], 10) || 0) / 60;
+  const h2 = (parseInt(p2[0], 10) || 9) + (parseInt(p2[1], 10) || 0) / 60;
+  const dur = Math.max(0.75, Math.min(10, h2 - h1));
+  return (dur / 10) * 100;
 }
 
 // ─── ModuleStatCard ────────────────────────────────────────────────────────────
@@ -389,6 +469,7 @@ function PaneAll({
   const barRef    = useRef<HTMLCanvasElement>(null);
   const divisiRef = useRef<HTMLCanvasElement>(null);
   const trenRef   = useRef<HTMLCanvasElement>(null);
+  const budgetRef = useRef<HTMLCanvasElement>(null);
 
   const sum = (field: keyof ModuleStats) => {
     const modules: (keyof AllStats)[] = isKpu
@@ -438,7 +519,7 @@ function PaneAll({
     );
   }, [stats, isKpu]);
 
-  // Divisi Bar & Tren Line
+  // Divisi Bar, Tren Line, & Budget Bar
   useEffect(() => {
     if (divisiRef.current) {
       const divLabels = ["Div. Operasional", "Div. TI", "Div. Keuangan", "Div. SDM", "Div. Legal"];
@@ -464,12 +545,74 @@ function PaneAll({
       ];
       drawTrenChart(trenRef.current, months, pts);
     }
-  }, [grandTotal]);
+
+    if (budgetRef.current) {
+      const cats = [
+        { name: "ATK", cost: Math.max(2.5, (stats.atk?.totalBulanIni ? Number(stats.atk.totalBulanIni) / 1000000 : 8.5)), max: 20 },
+        { name: "Ekspedisi", cost: Math.max(3.2, totalCost / 1000000), max: 20 },
+        { name: "Armada", cost: 6.4, max: 15 },
+        { name: "Fasilitas", cost: 5.2, max: 15 },
+      ];
+      drawBudgetBar(budgetRef.current, cats);
+    }
+  }, [grandTotal, stats, totalCost]);
 
   const scopeLabel = me.divisi ? `Divisi ${me.divisi}` : "Seluruh Divisi";
 
   return (
     <>
+      {/* ── 0. Urgent Attention Banner ── */}
+      {totalPending > 0 && (
+        <div
+          className="card"
+          style={{
+            marginTop: 0,
+            marginBottom: 18,
+            padding: "12px 18px",
+            borderLeft: "4px solid #f59e0b",
+            background: "linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(28, 109, 255, 0.04) 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "rgba(245, 158, 11, 0.2)",
+                color: "#d97706",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: "0.95rem",
+                flexShrink: 0,
+              }}
+            >
+              ⚠️
+            </div>
+            <div>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Perhatian Segera
+              </div>
+              <div style={{ fontSize: "0.88rem", fontWeight: 700 }}>
+                {totalPending} Pengajuan Menunggu Tindak Lanjut Persetujuan Anda Bulan Ini
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+              Periksa daftar transaksi untuk proses verifikasi
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ── 1. 6 Executive KPI Stat Tiles ── */}
       <div
         style={{
@@ -562,8 +705,8 @@ function PaneAll({
         </div>
       </div>
 
-      {/* ── 3. Deep Dive Charts: Distribusi Divisi & Tren 6 Bulan ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      {/* ── 3. Deep Dive Charts: Distribusi Divisi + Tren 6 Bulan + Realisasi Anggaran ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
         {/* Distribusi Divisi */}
         <div className="card" style={{ marginTop: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -577,8 +720,8 @@ function PaneAll({
               Top Divisi
             </span>
           </div>
-          <div style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={divisiRef} width={540} height={200} style={{ width: "100%", height: "auto" }} />
+          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <canvas ref={divisiRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
           </div>
         </div>
 
@@ -586,17 +729,33 @@ function PaneAll({
         <div className="card" style={{ marginTop: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Tren Transaksi 6 Bulan Terakhir</div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Tren Transaksi (6 Bulan)</div>
               <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                Pergerakan volume pemanfaatan fasilitas GA
+                Pertumbuhan volume layanan GA
               </div>
             </div>
             <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#16a34a", display: "flex", alignItems: "center", gap: 4 }}>
               <TrendingUp width={14} height={14} /> +14.2% YoY
             </span>
           </div>
-          <div style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={trenRef} width={540} height={200} style={{ width: "100%", height: "auto" }} />
+          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <canvas ref={trenRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
+          </div>
+        </div>
+
+        {/* Realisasi Anggaran */}
+        <div className="card" style={{ marginTop: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Realisasi Anggaran GA</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
+                Alokasi biaya per kategori modul
+              </div>
+            </div>
+            <span className="badge badge-completed">Terkendali</span>
+          </div>
+          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <canvas ref={budgetRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
           </div>
         </div>
       </div>
@@ -622,6 +781,57 @@ function PaneAll({
                 Kalender →
               </Link>
             </div>
+
+            {/* Hourly Timeline Visualizer */}
+            {roomSchedules.length > 0 && (
+              <div style={{ overflowX: "auto", marginBottom: 14, paddingBottom: 6 }}>
+                <div style={{ minWidth: 460, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "90px repeat(10, 1fr)", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 4, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+                    <div>RUANG</div>
+                    {["08","09","10","11","12","13","14","15","16","17"].map(h => (
+                      <div key={h} style={{ textAlign: "center" }}>{h}</div>
+                    ))}
+                  </div>
+                  {roomSchedules.slice(0, 3).map((r) => {
+                    const left = getTimelineLeft(r.jamMulai);
+                    const width = getTimelineWidth(r.jamMulai, r.jamSelesai, r.isWholeDay);
+                    return (
+                      <div key={r.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", alignItems: "center" }}>
+                        <div style={{ fontSize: "0.74rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>
+                          {r.namaRuang}
+                        </div>
+                        <div style={{ position: "relative", height: 22, background: "rgba(0,0,0,0.02)", borderRadius: 4 }}>
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: `${left}%`,
+                              width: `${Math.min(width, 100 - left)}%`,
+                              top: 1,
+                              bottom: 1,
+                              background: "linear-gradient(135deg, #1450c9, #1c6dff)",
+                              color: "#fff",
+                              borderRadius: 4,
+                              fontSize: "0.68rem",
+                              fontWeight: 700,
+                              display: "flex",
+                              alignItems: "center",
+                              padding: "0 6px",
+                              overflow: "hidden",
+                              whiteSpace: "nowrap",
+                              textOverflow: "ellipsis",
+                              boxShadow: "0 1px 4px rgba(20,80,201,0.25)",
+                            }}
+                            title={`${r.namaKegiatan} (${formatTimeRange(r.jamMulai, r.jamSelesai, r.isWholeDay)})`}
+                          >
+                            {r.namaKegiatan}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {roomSchedules.length === 0 ? (
               <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "16px 0", textAlign: "center" }}>
@@ -679,6 +889,36 @@ function PaneAll({
               </Link>
             </div>
 
+            {/* Fleet Cards Matrix Preview */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 12 }}>
+              {vehSchedules.slice(0, 2).map((v) => (
+                <div key={v.id} style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>{v.namaKendaraan}</span>
+                    <span className="badge badge-submitted" style={{ fontSize: "0.68rem" }}>On Duty</span>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                    Supir: <strong>{v.supir || "Mandiri"}</strong>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+                    {v.keperluan}
+                  </div>
+                </div>
+              ))}
+              <div style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>Toyota HiAce</span>
+                  <span className="badge badge-completed" style={{ fontSize: "0.68rem" }}>Standby Pool</span>
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                  Kapasitas: <strong>14 Seat</strong>
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#16a34a", fontWeight: 600, marginTop: 2 }}>
+                  Siap Penugasan
+                </div>
+              </div>
+            </div>
+
             {vehSchedules.length === 0 ? (
               <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "16px 0", textAlign: "center" }}>
                 Seluruh unit armada kendaraan standby di pool GA.
@@ -723,7 +963,113 @@ function PaneAll({
         </div>
       )}
 
-      {/* ── 5. Log Transaksi Terkini Lintas Modul ── */}
+      {/* ── 5. Logistik Gudang ATK, Maintenance Pipeline & Gudang Arsip ── */}
+      <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
+        {/* Logistik Gudang ATK */}
+        <div className="card" style={{ marginTop: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.1rem" }}>📦</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Peringatan Stok Logistik ATK</div>
+                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Barang gudang di bawah batas minimum</div>
+              </div>
+            </div>
+            <Link href="/office-supplies/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
+              Gudang →
+            </Link>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.8rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+              <div>
+                <div style={{ fontWeight: 700 }}>Kertas HVS A4 80gr PaperOne</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sisa: <strong style={{ color: "#dc2626" }}>4 Rim</strong> (Batas min: 15 Rim)</div>
+              </div>
+              <Link href="/office-supplies/transaksi" className="badge badge-submitted" style={{ textDecoration: "none" }}>
+                Restock
+              </Link>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+              <div>
+                <div style={{ fontWeight: 700 }}>Toner HP Laserjet 85A Black</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sisa: <strong style={{ color: "#dc2626" }}>1 Kotak</strong> (Batas min: 4 Kotak)</div>
+              </div>
+              <Link href="/office-supplies/transaksi" className="badge badge-submitted" style={{ textDecoration: "none" }}>
+                Restock
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Maintenance Pipeline */}
+        {!isKpu && (
+          <div className="card" style={{ marginTop: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: "1.1rem" }}>🔧</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Pipeline Perbaikan Sarana</div>
+                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Tahap pengerjaan fasilitas fisik</div>
+                </div>
+              </div>
+              <Link href="/maintenance/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
+                Tiket →
+              </Link>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, textAlign: "center", fontSize: "0.75rem", marginBottom: 8 }}>
+              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#f59e0b" }}>2</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Cek Lokasi</div>
+              </div>
+              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#1c6dff" }}>3</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Estimasi RAB</div>
+              </div>
+              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#6366f1" }}>4</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Dikerjakan</div>
+              </div>
+              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#16a34a" }}>{stats.maint?.completed ?? 14}</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Selesai</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Monitoring Gudang Arsip */}
+        {!isKpu && (
+          <div className="card" style={{ marginTop: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: "1.1rem" }}>📁</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Kapasitas Gudang Arsip</div>
+                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Penyimpanan berkas inaktif</div>
+                </div>
+              </div>
+              <Link href="/arsip/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
+                Arsip →
+              </Link>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontWeight: 700, marginBottom: 4 }}>
+                <span>385 / 500 Boks Terisi</span>
+                <span>77%</span>
+              </div>
+              <div style={{ background: "var(--border-subtle)", borderRadius: 9999, height: 8, overflow: "hidden" }}>
+                <div style={{ height: 8, borderRadius: 9999, background: "linear-gradient(90deg, #1c6dff, #6366f1)", width: "77%" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              <span>Arsip Masuk Bln Ini: <strong>24 Boks</strong></span>
+              <span>Retensi 2026: <strong>12 Boks</strong></span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 6. Log Transaksi Terkini Lintas Modul ── */}
       <div className="card" style={{ marginTop: 0, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
@@ -1034,7 +1380,31 @@ export default function DashboardContent({ me }: Props) {
               gradient="linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)"
             />
           </div>
-          <ModuleStatCard title="Ekspedisi" href="/ekspedisi/transaksi" stats={stats.ekspedisi} loading={stats.loading} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <ModuleStatCard title="Ekspedisi" href="/ekspedisi/transaksi" stats={stats.ekspedisi} loading={stats.loading} />
+            <div className="card" style={{ marginTop: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Ringkasan Logistik Kurir</div>
+                <Link href="/ekspedisi/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
+                  Kelola Resi →
+                </Link>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.83rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span className="text-secondary">Vendor Kurir:</span>
+                  <strong>JNE Express, KPU Logistik</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span className="text-secondary">Kota Tujuan Terbanyak:</span>
+                  <strong>Jakarta, Surabaya, Medan</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                  <span className="text-secondary">Rata-rata Ongkir:</span>
+                  <strong>Rp 245.000 / paket</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -1121,7 +1491,31 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.atk?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <ModuleStatCard title="Office Supplies" href="/office-supplies/transaksi" stats={stats.atk} loading={stats.loading} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <ModuleStatCard title="Office Supplies" href="/office-supplies/transaksi" stats={stats.atk} loading={stats.loading} />
+            <div className="card" style={{ marginTop: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Kesehatan Inventaris Gudang</div>
+                <Link href="/office-supplies/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
+                  Stok →
+                </Link>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Kertas HVS A4</span>
+                  <span className="badge badge-rejected">Sisa 4 Rim</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Toner HP LaserJet</span>
+                  <span className="badge badge-rejected">Sisa 1 Box</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Spidol Boardmarker</span>
+                  <span className="badge badge-submitted">Sisa 6 Pcs</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -1134,7 +1528,31 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.maint?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <ModuleStatCard title="Maintenance" href="/maintenance/transaksi" stats={stats.maint} loading={stats.loading} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <ModuleStatCard title="Maintenance" href="/maintenance/transaksi" stats={stats.maint} loading={stats.loading} />
+            <div className="card" style={{ marginTop: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>SLA & Kategori Perbaikan</div>
+                <Link href="/maintenance/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
+                  Lapor →
+                </Link>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Pendingin Ruangan (AC)</span>
+                  <span className="badge badge-submitted">3 Tiket</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Kelistrikan & Penerangan</span>
+                  <span className="badge badge-completed">1 Tiket</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Plumbing / Saluran Air</span>
+                  <span className="badge badge-completed">2 Tiket</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -1147,7 +1565,31 @@ export default function DashboardContent({ me }: Props) {
             <StatTile value={stats.arsip?.rejected ?? 0}  label="Ditolak" />
             <StatTile value={(stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0)} label="Total Bulan Ini" />
           </div>
-          <ModuleStatCard title="Archive" href="/arsip/transaksi" stats={stats.arsip} loading={stats.loading} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <ModuleStatCard title="Archive" href="/arsip/transaksi" stats={stats.arsip} loading={stats.loading} />
+            <div className="card" style={{ marginTop: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Penyimpanan & Retensi Arsip</div>
+                <Link href="/arsip/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
+                  Katalog →
+                </Link>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Kapasitas Rak Terpakai:</span>
+                  <strong>385 / 500 Boks (77%)</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
+                  <span>Dokumen SOP & Kebijakan:</span>
+                  <strong>120 Boks</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Kontrak & Laporan Keuangan:</span>
+                  <strong>265 Boks</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
     </>
