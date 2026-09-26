@@ -95,7 +95,17 @@ public class UsersAdminController : ApiControllerBase
             MustChangePassword = true,
         };
         _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Closes the race the AnyAsync check above can't: two requests can both pass it
+            // before either commits, so the table's own UNIQUE index is what actually catches the
+            // second one - as this exception, not a clean result.
+            return StatusCode(400, new { detail = "Username sudah dipakai akun lain" });
+        }
 
         return StatusCode(201, new CreatedUserOut(AdminUserOut.From(user), password));
     }

@@ -52,7 +52,17 @@ public class OrgAdminController : ApiControllerBase
 
         var row = new OrgDirektorat { Nama = nama };
         _db.OrgDirektorats.Add(row);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Closes the race the AnyAsync check above can't: two requests can both pass it
+            // before either commits, so the table's own UNIQUE index is what actually catches the
+            // second one - as this exception, not a clean result.
+            return StatusCode(400, new { detail = "Nama direktorat sudah dipakai" });
+        }
         OrgTree.LoadFromDb(_db);
 
         return StatusCode(201, new OrgDirektoratOut(row.Id, row.Nama, new List<OrgDivisiOut>()));
@@ -79,7 +89,14 @@ public class OrgAdminController : ApiControllerBase
         // even there this deliberately leaves it as-is, same "renaming doesn't rewrite history"
         // rule OrgAdminController applies to Divisi/Departemen below).
         row.Nama = nama;
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama direktorat sudah dipakai" });
+        }
         OrgTree.LoadFromDb(_db);
 
         return Ok(OrgDirektoratOut.From(row));
@@ -137,7 +154,14 @@ public class OrgAdminController : ApiControllerBase
 
         var row = new OrgDivisi { Nama = nama, DirektoratId = direktorat.Id, KodeSatuanKerja = kode };
         _db.OrgDivisis.Add(row);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama divisi sudah dipakai" });
+        }
 
         var accounts = await ProvisionAccountsAsync(
             adminUsername: $"{nama} Admin Div", approvalUsername: $"{nama} Approval Div",
@@ -173,7 +197,14 @@ public class OrgAdminController : ApiControllerBase
         // have; only NEW records/dropdowns pick up the renamed value or the new kode.
         row.Nama = nama;
         row.KodeSatuanKerja = kode;
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama divisi sudah dipakai" });
+        }
         OrgTree.LoadFromDb(_db);
 
         return Ok(OrgDivisiOut.From(row));
@@ -236,7 +267,14 @@ public class OrgAdminController : ApiControllerBase
 
         var row = new OrgDepartemen { Nama = nama, DivisiId = divisi.Id };
         _db.OrgDepartemens.Add(row);
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama departemen sudah dipakai" });
+        }
 
         var accounts = await ProvisionAccountsAsync(
             adminUsername: $"{nama} Admin", approvalUsername: $"{nama} Approval",
@@ -266,7 +304,14 @@ public class OrgAdminController : ApiControllerBase
 
         // Same "does not touch history" rule as UpdateDivisi above.
         row.Nama = nama;
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return StatusCode(400, new { detail = "Nama departemen sudah dipakai" });
+        }
         OrgTree.LoadFromDb(_db);
 
         return Ok(OrgDepartemenOut.From(row));
