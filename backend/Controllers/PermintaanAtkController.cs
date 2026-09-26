@@ -737,14 +737,24 @@ public class PermintaanAtkController : ApiControllerBase
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
 
-        IQueryable<PermintaanAtk> query;
+        IQueryable<PermintaanAtk> query = _db.PermintaanAtks.AsQueryable();
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, null, null, null, null, bulan);
+            query = ApplyBulanFilter(query, bulan);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { detail = ex.Message });
+        }
+
+        if (!string.IsNullOrEmpty(user!.Divisi) && user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN
+            or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
+        {
+            query = query.Where(p => p.Divisi == user.Divisi && (p.Status != StatusEnum.DRAFT || p.CreatedBy == user.Id));
+        }
+        else
+        {
+            query = query.Where(p => p.Status != StatusEnum.DRAFT || p.CreatedBy == user.Id);
         }
 
         var counts = await query

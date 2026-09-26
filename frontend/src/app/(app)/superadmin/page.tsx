@@ -17,6 +17,7 @@ import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
+import DashboardContent from "@/components/DashboardContent";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import BulkDeleteModal, { type BulkDeleteTarget } from "@/components/BulkDeleteModal";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
@@ -944,7 +945,7 @@ export default function SuperAdminPage() {
 
       {activeTab === "overview" && (
         <>
-          <DashboardStats me={me} />
+          <DashboardContent me={me} />
 
           <div style={{ marginTop: 28 }}>
             <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
