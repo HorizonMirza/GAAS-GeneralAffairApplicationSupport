@@ -433,7 +433,7 @@ export default function VehicleBookingDetailModal({ open, mode, item, me, onClos
                 placeholder="Pilih Nama Pengemudi"
               />
             </div>
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="bk-catatan">Catatan</label>
               <input type="text" id="bk-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Penjemputan di lobby utama" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>

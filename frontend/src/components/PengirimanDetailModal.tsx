@@ -413,7 +413,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 placeholder="Tidak"
               />
             </div>
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="pv-catatan">Catatan {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Request JNE Instant" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value.replace(/[^A-Za-z0-9\s]/g, ""))} />
             </div>
@@ -453,7 +453,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
           </div>
 
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: -8 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}

@@ -644,7 +644,7 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 </div>
               </>
             )}
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="bv-catatan">Catatan</label>
               <input type="text" id="bv-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Segera di Approve" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>

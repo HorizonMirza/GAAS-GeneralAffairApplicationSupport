@@ -177,13 +177,13 @@ export default function PengirimanKoreksiModal({ open, item, onClose, onSaved }:
               <label htmlFor="pk-packing">Pengemasan Tambahan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <SearchableSelect id="pk-packing" disabled value={item.requestPacking} onChange={() => {}} options={["Tidak", "Tambahan Kayu"]} placeholder="Tidak" />
             </div>
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="pk-catatan">Catatan <Lock className="field-lock-icon" width={12} height={12} /></label>
               <input type="text" id="pk-catatan" disabled value={item.catatan || ""} />
             </div>
           </div>
           {["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL", "APPROVED_KPU", "COMPLETED"].includes(item.status) && (
-            <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: -8 }}>
+            <div className="text-secondary" style={{ fontSize: "0.85rem", marginBottom: 12 }}>
               <strong>Diajukan:</strong> {formatDateTime(item.createdAt)}
             </div>
           )}

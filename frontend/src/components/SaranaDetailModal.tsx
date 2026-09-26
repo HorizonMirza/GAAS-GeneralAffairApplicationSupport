@@ -260,7 +260,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
               </div>
               )}
             </div>
-            <div className="field full">
+            <div className="field full" style={{ marginBottom: 6 }}>
               <label htmlFor="ds-catatan">Catatan</label>
               <input type="text" id="ds-catatan" disabled={!isEdit} maxLength={255} placeholder={isEdit ? "Contoh: Mohon Segera Diproses" : ""} value={form.catatan || ""} onChange={(e) => set("catatan", e.target.value)} />
             </div>
