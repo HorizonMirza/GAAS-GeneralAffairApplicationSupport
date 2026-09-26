@@ -45,7 +45,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/ekspedisi/overview" },
       { label: "Transaction", href: "/ekspedisi/transaksi" },
-      { label: "Invoice", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU"] },
+      { label: "Invoice", href: "/ekspedisi/invoice-history", roles: ["ADMIN_GA", "APPROVAL_GA", "KPU", "SUPER_ADMIN"] },
     ],
   },
   {

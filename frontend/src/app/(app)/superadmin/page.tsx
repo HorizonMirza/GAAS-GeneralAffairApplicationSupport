@@ -18,6 +18,7 @@ import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import BulkDeleteModal, { type BulkDeleteTarget } from "@/components/BulkDeleteModal";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
@@ -925,12 +926,8 @@ export default function SuperAdminPage() {
 
   return (
     <>
-      <div className="superadmin-header">
-        <h1>
-          <Shield width={22} height={22} style={{ color: "var(--blue-500)" }} />
-          Super Admin GAAS
-        </h1>
-        <p>Panel kontrol master sistem, manajemen seluruh data transaksi, audit aktivitas, dan pengaturan global.</p>
+      <div className="card-header dashboard-welcome-header" style={{ marginBottom: 22 }}>
+        <WelcomeGreeting me={me} />
       </div>
 
       <div className="superadmin-tabs-nav">
