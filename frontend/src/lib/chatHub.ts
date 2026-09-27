@@ -141,22 +141,26 @@ export function onNotificationSettingsChanged(handler: (settings: NotificationSo
 // Where a ChatNotification/ActivityNotification's "kind" lands when clicked - shared by the topbar
 // toast (ChatNotificationListener) and the notification bell's history dropdown so the two can't
 // drift into linking the same kind to different pages.
-export const NOTIFICATION_TRANSAKSI_PATH: Record<ChatNotification["kind"], string> = {
+export const NOTIFICATION_TRANSAKSI_PATH: Record<ActivityNotification["kind"], string> = {
   pengiriman: "/ekspedisi/transaksi",
   booking: "/booking-ruang-meeting/transaksi",
   kendaraan: "/booking-kendaraan/transaksi",
   atk: "/office-supplies/transaksi",
   sarana: "/maintenance/transaksi",
   arsip: "/arsip/transaksi",
+  invoice: "/ekspedisi/invoice-history",
+  "atk-invoice": "/office-supplies/invoice-history",
 };
 
 // Module display name for a notification's "kind" - matches AppShell's sidebar nav labels
 // exactly, so the notification title reads the same name the user already sees in the menu.
-export const NOTIFICATION_KIND_LABEL: Record<ChatNotification["kind"], string> = {
+export const NOTIFICATION_KIND_LABEL: Record<ActivityNotification["kind"], string> = {
   pengiriman: "Expedition",
   booking: "Room Booking",
   kendaraan: "Vehicle Booking",
   atk: "Office Supplies",
   sarana: "Maintenance",
   arsip: "Archive",
+  invoice: "Expedition Invoice",
+  "atk-invoice": "Office Supplies Invoice",
 };

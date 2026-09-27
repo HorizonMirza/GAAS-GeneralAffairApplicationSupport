@@ -158,7 +158,7 @@ export interface ChatNotification {
 // (still in progress, orange), "approved" (final tier reached, green), "rejected" (red).
 export interface ActivityNotification {
   type: "created" | "approval" | "approved" | "rejected";
-  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip" | "invoice" | "atk-invoice";
   itemId: number;
   itemLabel: string;
   actorId: number;

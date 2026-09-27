@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 using System.Net.Mime;
@@ -22,12 +24,33 @@ public class AtkInvoiceController : ApiControllerBase
 
     private readonly AppDbContext _db;
     private readonly string _uploadDir;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public AtkInvoiceController(AppDbContext db, CurrentUserService currentUser, IConfiguration config)
+    public AtkInvoiceController(AppDbContext db, CurrentUserService currentUser, IConfiguration config, IHubContext<ChatHub> hub)
         : base(currentUser)
     {
         _db = db;
         _uploadDir = DirektoriUnggahan.ResolveDanBuat(config, DirektoriUnggahan.KunciAtkInvoice, DirektoriUnggahan.DefaultAtkInvoice);
+        _hub = hub;
+    }
+
+    // Label shown in the "transaksi baru"/"proses approval" notification banner - mirrors
+    // InvoiceController.ItemLabel exactly.
+    private static string ItemLabel(AtkInvoice item)
+    {
+        var parts = item.Bulan.Split('-');
+        var monthLabel = parts.Length == 2 && int.TryParse(parts[1], out var month) && month is >= 1 and <= 12
+            ? $"{MonthNamesId[month - 1]} {parts[0]}"
+            : item.Bulan;
+        return $"Invoice {monthLabel} - {item.Nama}";
+    }
+
+    // Mirrors InvoiceController.ActivityRecipientIdsAsync exactly, built on this controller's own
+    // CanViewInvoice/AtkInvoice.
+    private async Task<List<int>> ActivityRecipientIdsAsync(AtkInvoice item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanViewInvoice(item, u)).Select(u => u.Id).ToList();
     }
 
     // Same spoofable-Content-Type concern as InvoiceController.LooksLikePdfAsync - checking the
@@ -150,6 +173,7 @@ public class AtkInvoiceController : ApiControllerBase
         AddLog(item, "SUBMITTED", user);
 
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "atk-invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Dikirim untuk Approval");
         return Ok(AtkInvoiceOut.From(item));
     }
 
@@ -396,6 +420,7 @@ public class AtkInvoiceController : ApiControllerBase
 
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approved", "atk-invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Disetujui");
         return Ok(AtkInvoiceOut.From(item));
     }
 
@@ -419,6 +444,7 @@ public class AtkInvoiceController : ApiControllerBase
 
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "rejected", "atk-invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Ditolak");
         return Ok(AtkInvoiceOut.From(item));
     }
 

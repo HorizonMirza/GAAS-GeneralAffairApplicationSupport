@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
+using PengirimanApi.Hubs;
 using PengirimanApi.Models;
 using PengirimanApi.Services;
 using System.Net.Mime;
@@ -18,12 +20,34 @@ public class InvoiceController : ApiControllerBase
 
     private readonly AppDbContext _db;
     private readonly string _uploadDir;
+    private readonly IHubContext<ChatHub> _hub;
 
-    public InvoiceController(AppDbContext db, CurrentUserService currentUser, IConfiguration config)
+    public InvoiceController(AppDbContext db, CurrentUserService currentUser, IConfiguration config, IHubContext<ChatHub> hub)
         : base(currentUser)
     {
         _db = db;
         _uploadDir = DirektoriUnggahan.ResolveDanBuat(config, DirektoriUnggahan.KunciInvoice, DirektoriUnggahan.DefaultInvoice);
+        _hub = hub;
+    }
+
+    // Label shown in the "transaksi baru"/"proses approval" notification banner - "Invoice
+    // <bulan berbahasa Indonesia> - <nama>", same as the row title Invoice History itself shows.
+    private static string ItemLabel(Invoice item)
+    {
+        var parts = item.Bulan.Split('-');
+        var monthLabel = parts.Length == 2 && int.TryParse(parts[1], out var month) && month is >= 1 and <= 12
+            ? $"{MonthNamesId[month - 1]} {parts[0]}"
+            : item.Bulan;
+        return $"Invoice {monthLabel} - {item.Nama}";
+    }
+
+    // Every recipient of a workflow notification for this invoice: everyone CanViewInvoice already
+    // lets see it, minus the actor who just triggered the event - mirrors the other controllers'
+    // own ActivityRecipientIdsAsync, just built on CanViewInvoice instead of a CanAccessX check.
+    private async Task<List<int>> ActivityRecipientIdsAsync(Invoice item, int actorId)
+    {
+        var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
+        return users.Where(u => CanViewInvoice(item, u)).Select(u => u.Id).ToList();
     }
 
     // file.ContentType is just the multipart Content-Type header the client chose to send - not
@@ -158,6 +182,7 @@ public class InvoiceController : ApiControllerBase
         AddLog(item, "SUBMITTED", user);
 
         await _db.SaveChangesAsync();
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "created", "invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Dikirim untuk Approval");
         return Ok(InvoiceOut.From(item));
     }
 
@@ -431,6 +456,7 @@ public class InvoiceController : ApiControllerBase
 
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approved", "invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Disetujui");
         return Ok(InvoiceOut.From(item));
     }
 
@@ -454,6 +480,7 @@ public class InvoiceController : ApiControllerBase
 
         var conflict = await TrySaveChangesAsync(_db);
         if (conflict != null) return conflict;
+        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "rejected", "invoice", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Invoice Ditolak");
         return Ok(InvoiceOut.From(item));
     }
 
