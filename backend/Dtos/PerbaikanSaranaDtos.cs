@@ -133,3 +133,29 @@ public class PerbaikanSaranaStatsResponse
     // without having to open and manually count the Transaksi table.
     public Dictionary<string, int> ExecutionStageCounts { get; set; } = new();
 }
+
+// Repository (Katalog) row - mirrors PermintaanArsipCatalogItemOut exactly: a narrow, read-only
+// projection of only what's actually sitting in the finished-repairs repository, scoped to
+// APPROVED_GA_APPROVAL (see PerbaikanSaranaController.GetCatalog).
+public record PerbaikanSaranaCatalogItemOut(
+    int Id,
+    string? NomorPerbaikan,
+    DateOnly Tanggal,
+    string Lokasi,
+    KategoriKerusakanEnum Kategori,
+    string DeskripsiKerusakan,
+    string NamaPelapor,
+    string NoTeleponPelapor,
+    string Divisi,
+    string? Departemen,
+    string? Catatan,
+    DateTime? ApprovedApprovalGaAt
+);
+
+public class PerbaikanSaranaCatalogResponse
+{
+    public List<PerbaikanSaranaCatalogItemOut> Items { get; set; } = new();
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int Limit { get; set; }
+}

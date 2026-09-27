@@ -567,6 +567,28 @@ export interface PerbaikanSaranaStatsResponse {
   executionStageCounts: Partial<Record<ExecutionStage, number>>;
 }
 
+export interface PerbaikanSaranaCatalogItem {
+  id: number;
+  nomorPerbaikan: string | null;
+  tanggal: string;
+  lokasi: string;
+  kategori: KategoriKerusakan;
+  deskripsiKerusakan: string;
+  namaPelapor: string;
+  noTeleponPelapor: string;
+  divisi: string;
+  departemen: string | null;
+  catatan: string | null;
+  approvedApprovalGaAt: string | null;
+}
+
+export interface PerbaikanSaranaCatalogResponse {
+  items: PerbaikanSaranaCatalogItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface PerbaikanSaranaLog {
   id: number;
   action: string;

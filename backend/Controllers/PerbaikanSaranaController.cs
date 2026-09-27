@@ -745,6 +745,63 @@ public class PerbaikanSaranaController : ApiControllerBase
         });
     }
 
+    // Repository (Katalog) - mirrors PermintaanArsipController.GetCatalog exactly: a read-only
+    // view scoped to APPROVED_GA_APPROVAL only (what's actually sitting in the finished-repairs
+    // repository right now), not the full workflow-status list that List() above serves.
+    [HttpGet("catalog")]
+    public async Task<IActionResult> GetCatalog(
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? kategori = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
+        [FromQuery] string? direktorat = null,
+        [FromQuery] string? bulan = null,
+        [FromQuery] DateOnly? tanggal = null)
+    {
+        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
+        if (error != null) return error;
+
+        if (!AllowedLimits.Contains(limit))
+            return BadRequest(new { detail = "Limit harus salah satu dari 5,10,20,50,1000" });
+        if (page < 1)
+            return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
+
+        KategoriKerusakanEnum? kategoriFilter = null;
+        if (!string.IsNullOrEmpty(kategori))
+        {
+            if (!Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori))
+                return BadRequest(new { detail = "Kategori tidak valid" });
+            kategoriFilter = parsedKategori;
+        }
+
+        IQueryable<PerbaikanSarana> query;
+        try
+        {
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategoriFilter, direktorat, bulan, search, false, tanggal);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+
+        var total = await query.CountAsync();
+        var rows = await query
+            .OrderByDescending(p => p.ApprovedApprovalGaAt)
+            .ThenBy(p => p.Id)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Select(p => new PerbaikanSaranaCatalogItemOut(
+                p.Id, p.NomorPerbaikan, p.Tanggal, p.Lokasi, p.Kategori, p.DeskripsiKerusakan,
+                p.NamaPelapor, p.NoTeleponPelapor,
+                p.Divisi, p.Departemen, p.Catatan,
+                p.ApprovedApprovalGaAt))
+            .ToListAsync();
+
+        return Ok(new PerbaikanSaranaCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
+    }
+
     // Single-item fetch, independent of List's pagination/filters - lets a notification banner's
     // click deep-link straight into an item's chat (or its detail) even when that item isn't on
     // whatever page/filter the Transaksi table happens to be showing right now.

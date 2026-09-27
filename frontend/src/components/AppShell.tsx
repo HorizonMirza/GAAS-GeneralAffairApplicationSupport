@@ -82,6 +82,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { label: "Overview", href: "/maintenance/overview" },
       { label: "Transaction", href: "/maintenance/transaksi" },
+      { label: "Repository", href: "/maintenance/katalog" },
     ],
   },
   {

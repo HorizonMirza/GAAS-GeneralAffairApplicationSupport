@@ -45,6 +45,7 @@ import type {
   PengirimanLog,
   PengirimanStatsResponse,
   PerbaikanSarana,
+  PerbaikanSaranaCatalogResponse,
   PerbaikanSaranaCreatePayload,
   PerbaikanSaranaFotoKerusakan,
   PerbaikanSaranaListResponse,
@@ -702,6 +703,20 @@ export const api = {
     ).toString();
     return `${API_BASE}/perbaikan-sarana/export-pdf${query ? `?${query}` : ""}`;
   },
+  getSaranaCatalog: (params: ListSaranaCatalogParams) =>
+    apiRequest<PerbaikanSaranaCatalogResponse>("/perbaikan-sarana/catalog", { params: saranaCatalogParams(params) }),
+  saranaKatalogExportUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/perbaikan-sarana/catalog/export${query ? `?${query}` : ""}`;
+  },
+  saranaKatalogExportPdfUrl: (params: Record<string, string | undefined | null>) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]
+    ).toString();
+    return `${API_BASE}/perbaikan-sarana/catalog/export-pdf${query ? `?${query}` : ""}`;
+  },
   cekLokasiSarana: (id: number, catatan: string | null) =>
     apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/cek-lokasi`, { method: "PATCH", body: { catatan } }),
   uploadGambarSarana: async (id: number, file: File, catatan: string | null) => {
@@ -1046,6 +1061,32 @@ function saranaListParams(p: ListSaranaParams) {
     direktorat: p.direktorat,
     bulan: p.bulan,
     search: p.search,
+    tanggal: p.tanggal,
+  };
+}
+
+export interface ListSaranaCatalogParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  kategori?: KategoriKerusakan | "";
+  divisi?: string;
+  departemen?: string;
+  direktorat?: string;
+  bulan?: string;
+  tanggal?: string;
+}
+
+function saranaCatalogParams(p: ListSaranaCatalogParams) {
+  return {
+    page: p.page,
+    limit: p.limit,
+    search: p.search,
+    kategori: p.kategori,
+    divisi: p.divisi,
+    departemen: p.departemen,
+    direktorat: p.direktorat,
+    bulan: p.bulan,
     tanggal: p.tanggal,
   };
 }
