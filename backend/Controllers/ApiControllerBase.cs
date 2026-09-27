@@ -251,4 +251,16 @@ public abstract class ApiControllerBase : ControllerBase
             ? item.CreatedBy == user.Id
             : sameUnit;
     }
+
+    // Was InvoiceController's own private CanViewInvoice - promoted here (same reasoning as the
+    // CanAccessX methods above) so ChatHub's JoinInvoiceChat can reuse the exact same rule instead
+    // of duplicating it: KPU only ever sees their own uploads, everyone else (Admin/Approval GA,
+    // Super Admin) sees anything already out of Draft.
+    public static bool CanViewInvoice(AccessUser user, Invoice item) =>
+        user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
+
+    // Same rule as CanViewInvoice, for Office Supplies' own AtkInvoice - public for the same
+    // reason, reused by ChatHub's JoinAtkInvoiceChat.
+    public static bool CanViewInvoice(AccessUser user, AtkInvoice item) =>
+        user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
 }

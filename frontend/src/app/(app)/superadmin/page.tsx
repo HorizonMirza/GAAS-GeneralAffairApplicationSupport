@@ -51,6 +51,8 @@ import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
 import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
+import InvoiceChatModal from "@/components/InvoiceChatModal";
+import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -221,6 +223,7 @@ function SuperAdminPageInner() {
   const [invoiceLimit, setInvoiceLimit] = useState(10);
   const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
+  const [invoiceChatItem, setInvoiceChatItem] = useState<Invoice | null>(null);
   // One modal serves every section's "Hapus Semua" - whichever section set it describes itself.
   const [bulkTarget, setBulkTarget] = useState<BulkDeleteTarget | null>(null);
 
@@ -302,6 +305,7 @@ function SuperAdminPageInner() {
   const [atkInvoiceLimit, setAtkInvoiceLimit] = useState(10);
   const [atkInvoiceDetail, setAtkInvoiceDetail] = useState<Invoice | null>(null);
   const [atkInvoiceHistoryId, setAtkInvoiceHistoryId] = useState<number | null>(null);
+  const [atkInvoiceChatItem, setAtkInvoiceChatItem] = useState<Invoice | null>(null);
   const atkInvoiceRowMenu = useRowMenu(atkInvoices ?? []);
 
   const [saranaFilters, setSaranaFilters] = useState<SaranaFilterState>(EMPTY_SARANA_FILTERS);
@@ -1506,6 +1510,17 @@ function SuperAdminPageInner() {
                 </div>
                 <div className="invoice-row-actions">
                   <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button
+                    type="button"
+                    className={`card-icon-btn${inv.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                    aria-label="Chat"
+                    onClick={() => setInvoiceChatItem(inv)}
+                  >
+                    <MessageSquare width="17" height="17" />
+                    {inv.unreadChatCount > 0 && (
+                      <span className="chat-count-badge">{inv.unreadChatCount > 9 ? "9+" : inv.unreadChatCount}</span>
+                    )}
+                  </button>
                   <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
@@ -2809,6 +2824,17 @@ function SuperAdminPageInner() {
                 </div>
                 <div className="invoice-row-actions">
                   <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  <button
+                    type="button"
+                    className={`card-icon-btn${inv.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                    aria-label="Chat"
+                    onClick={() => setAtkInvoiceChatItem(inv)}
+                  >
+                    <MessageSquare width="17" height="17" />
+                    {inv.unreadChatCount > 0 && (
+                      <span className="chat-count-badge">{inv.unreadChatCount > 9 ? "9+" : inv.unreadChatCount}</span>
+                    )}
+                  </button>
                   <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => atkInvoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
@@ -3179,6 +3205,15 @@ function SuperAdminPageInner() {
         onClose={() => setInvoiceHistoryId(null)}
       />
 
+      <InvoiceChatModal
+        open={!!invoiceChatItem}
+        itemId={invoiceChatItem?.id ?? null}
+        itemLabel={invoiceChatItem ? `Invoice ${invoiceBulanLabel(invoiceChatItem.bulan)} - ${invoiceChatItem.nama}` : ""}
+        me={me}
+        onClose={() => setInvoiceChatItem(null)}
+        onRead={() => loadInvoices()}
+      />
+
       <InvoiceRowMenuDropdown
         position={atkInvoiceRowMenu.position}
         showUpdates={false}
@@ -3217,6 +3252,15 @@ function SuperAdminPageInner() {
         open={atkInvoiceHistoryId != null}
         invoiceId={atkInvoiceHistoryId}
         onClose={() => setAtkInvoiceHistoryId(null)}
+      />
+
+      <AtkInvoiceChatModal
+        open={!!atkInvoiceChatItem}
+        itemId={atkInvoiceChatItem?.id ?? null}
+        itemLabel={atkInvoiceChatItem ? `Invoice ${invoiceBulanLabel(atkInvoiceChatItem.bulan)} - ${atkInvoiceChatItem.nama}` : ""}
+        me={me}
+        onClose={() => setAtkInvoiceChatItem(null)}
+        onRead={() => loadAtkInvoices()}
       />
 
       <BulkDeleteModal target={bulkTarget} onClose={() => setBulkTarget(null)} />

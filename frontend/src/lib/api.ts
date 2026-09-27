@@ -30,6 +30,7 @@ import type {
   KoreksiArsipPayload,
   KoreksiPengirimanPayload,
   KoreksiSaranaPayload,
+  Invoice,
   InvoiceListResponse,
   InvoiceLog,
   Me,
@@ -439,6 +440,19 @@ export const api = {
   getAtkInvoiceLogs: (id: number) => apiRequest<InvoiceLog[]>(`/atk-invoice/${id}/logs`),
   atkInvoiceLogFileUrl: (id: number, logId: number) => `${API_BASE}/atk-invoice/${id}/logs/${logId}/file`,
   atkInvoiceLogDownloadUrl: (id: number, logId: number) => `${API_BASE}/atk-invoice/${id}/logs/${logId}/file?download=true`,
+
+  // Single-item lookup - only needed for GlobalChatModal to resolve a notification's invoice.
+  getInvoice: (id: number) => apiRequest<Invoice>(`/invoice/${id}`),
+  getAtkInvoice: (id: number) => apiRequest<Invoice>(`/atk-invoice/${id}`),
+
+  // --- Invoice chat (Ekspedisi & Office Supplies) - mirrors getAtkChatMessages/sendAtkChatMessage ---
+  getInvoiceChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/invoice/${id}/chat`),
+  sendInvoiceChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/invoice/${id}/chat`, { method: "POST", body: { message } }),
+  getAtkInvoiceChatMessages: (id: number) => apiRequest<ChatMessage[]>(`/atk-invoice/${id}/chat`),
+  sendAtkInvoiceChatMessage: (id: number, message: string) =>
+    apiRequest<ChatMessage>(`/atk-invoice/${id}/chat`, { method: "POST", body: { message } }),
+
   exportUrl: (params: Record<string, string | undefined | null>) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "") as [string, string][]

@@ -50,7 +50,7 @@ public class AtkInvoiceController : ApiControllerBase
     private async Task<List<int>> ActivityRecipientIdsAsync(AtkInvoice item, int actorId)
     {
         var users = await _db.Users.Where(u => u.Id != actorId).ToListAsync();
-        return users.Where(u => CanViewInvoice(item, u)).Select(u => u.Id).ToList();
+        return users.Where(u => CanViewInvoice(u, item)).Select(u => u.Id).ToList();
     }
 
     // Same spoofable-Content-Type concern as InvoiceController.LooksLikePdfAsync - checking the
@@ -74,9 +74,6 @@ public class AtkInvoiceController : ApiControllerBase
             OriginalFilename = originalFilename,
         });
     }
-
-    private static bool CanViewInvoice(AtkInvoice item, User user) =>
-        user.Role == RoleEnum.KPU ? item.UploadedBy == user.Id : item.Status != InvoiceStatusEnum.DRAFT;
 
     private static readonly string[] MonthNamesId = { "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember" };
 
@@ -281,13 +278,48 @@ public class AtkInvoiceController : ApiControllerBase
                 .ToListAsync();
         }
 
+        var outItems = items.Select(AtkInvoiceOut.From).ToList();
+        var itemIds = items.Select(i => i.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var messageTimes = await _db.AtkInvoiceChatMessages
+                .Where(m => itemIds.Contains(m.AtkInvoiceId) && m.SenderId != user!.Id)
+                .Select(m => new { m.AtkInvoiceId, m.CreatedAt })
+                .ToListAsync();
+            var lastReadAt = await _db.AtkInvoiceChatReads
+                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.AtkInvoiceId))
+                .ToDictionaryAsync(r => r.AtkInvoiceId, r => r.LastReadAt);
+            var outById = outItems.ToDictionary(o => o.Id);
+            foreach (var group in messageTimes.GroupBy(m => m.AtkInvoiceId))
+            {
+                if (!outById.TryGetValue(group.Key, out var outItem)) continue;
+                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+                outItem.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+            }
+        }
+
         return Ok(new AtkInvoiceListResponse
         {
-            Items = items.Select(AtkInvoiceOut.From).ToList(),
+            Items = outItems,
             Total = total,
             Page = page,
             Limit = limit,
         });
+    }
+
+    // Single-item lookup - only needed so GlobalChatModal can resolve an invoice's own label when
+    // a chat notification is clicked from somewhere other than Invoice History itself.
+    [HttpGet("{invoiceId:int}")]
+    public async Task<IActionResult> GetOne(int invoiceId)
+    {
+        var (user, error) = await RequireRoleAsync(RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA, RoleEnum.KPU, RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var item = await _db.AtkInvoices.Include(i => i.Pengunggah).FirstOrDefaultAsync(i => i.Id == invoiceId);
+        if (item == null) return NotFound(new { detail = "Invoice tidak ditemukan" });
+        if (!CanViewInvoice(user!, item)) return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
+
+        return Ok(AtkInvoiceOut.From(item));
     }
 
     [HttpGet("uploaders")]
@@ -314,7 +346,7 @@ public class AtkInvoiceController : ApiControllerBase
         var item = await _db.AtkInvoices.FindAsync(invoiceId);
         if (item == null)
             return NotFound(new { detail = "Invoice tidak ditemukan" });
-        if (!CanViewInvoice(item, user!))
+        if (!CanViewInvoice(user!, item))
             return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
 
         var path = Path.Combine(_uploadDir, item.FilePath);
@@ -459,7 +491,7 @@ public class AtkInvoiceController : ApiControllerBase
             .FirstOrDefaultAsync(i => i.Id == invoiceId);
         if (item == null)
             return NotFound(new { detail = "Invoice tidak ditemukan" });
-        if (!CanViewInvoice(item, user!))
+        if (!CanViewInvoice(user!, item))
             return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
 
         var result = item.Logs
@@ -487,7 +519,7 @@ public class AtkInvoiceController : ApiControllerBase
         var item = await _db.AtkInvoices.FindAsync(invoiceId);
         if (item == null)
             return NotFound(new { detail = "Invoice tidak ditemukan" });
-        if (!CanViewInvoice(item, user!))
+        if (!CanViewInvoice(user!, item))
             return StatusCode(403, new { detail = "Bukan invoice milik Anda" });
 
         var log = await _db.AtkInvoiceLogs.FirstOrDefaultAsync(l => l.Id == logId && l.AtkInvoiceId == invoiceId);

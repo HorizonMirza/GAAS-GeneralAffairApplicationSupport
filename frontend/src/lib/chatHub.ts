@@ -7,7 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/
 // off instead of hardcoding a second base URL.
 const HUB_URL = `${API_BASE.replace(/\/api\/?$/, "")}/hubs/chat`;
 
-export type ChatKind = "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
+export type ChatKind = "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip" | "invoice" | "atk-invoice";
 
 let connection: signalR.HubConnection | null = null;
 let startPromise: Promise<void> | null = null;
@@ -26,6 +26,8 @@ function joinMethod(kind: ChatKind): string {
   if (kind === "atk") return "JoinAtkChat";
   if (kind === "sarana") return "JoinSaranaChat";
   if (kind === "arsip") return "JoinArsipChat";
+  if (kind === "invoice") return "JoinInvoiceChat";
+  if (kind === "atk-invoice") return "JoinAtkInvoiceChat";
   return "JoinBookingChat";
 }
 
@@ -35,6 +37,8 @@ function leaveMethod(kind: ChatKind): string {
   if (kind === "atk") return "LeaveAtkChat";
   if (kind === "sarana") return "LeaveSaranaChat";
   if (kind === "arsip") return "LeaveArsipChat";
+  if (kind === "invoice") return "LeaveInvoiceChat";
+  if (kind === "atk-invoice") return "LeaveAtkInvoiceChat";
   return "LeaveBookingChat";
 }
 
@@ -106,6 +110,8 @@ export function onChatMessage(kind: ChatKind, handler: (message: ChatMessage) =>
     : kind === "atk" ? "ReceiveAtkMessage"
     : kind === "sarana" ? "ReceiveSaranaMessage"
     : kind === "arsip" ? "ReceiveArsipMessage"
+    : kind === "invoice" ? "ReceiveInvoiceMessage"
+    : kind === "atk-invoice" ? "ReceiveAtkInvoiceMessage"
     : "ReceiveBookingMessage";
   conn.on(event, handler);
   return () => conn.off(event, handler);

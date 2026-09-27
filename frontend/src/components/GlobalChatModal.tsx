@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { bookingRoomsLabel } from "@/lib/constants";
+import { invoiceBulanLabel } from "@/lib/format";
 import { onOpenGlobalChat } from "@/lib/globalChat";
 import type { ChatKind } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
@@ -13,6 +14,8 @@ import VehicleBookingChatModal from "./VehicleBookingChatModal";
 import AtkChatModal from "./AtkChatModal";
 import SaranaChatModal from "./SaranaChatModal";
 import ArsipChatModal from "./ArsipChatModal";
+import InvoiceChatModal from "./InvoiceChatModal";
+import AtkInvoiceChatModal from "./AtkInvoiceChatModal";
 
 interface ResolvedChat {
   kind: ChatKind;
@@ -80,7 +83,7 @@ export default function GlobalChatModal() {
             departemen: item.departemen ?? null,
             createdByRole: item.createdByRole,
           });
-        } else {
+        } else if (kind === "arsip") {
           const item = await api.getArsip(itemId);
           setResolved({
             kind,
@@ -88,6 +91,24 @@ export default function GlobalChatModal() {
             itemLabel: `${item.namaArsip} - ${item.nomorArsip || "-"}`,
             departemen: item.departemen ?? null,
             createdByRole: item.createdByRole,
+          });
+        } else if (kind === "invoice") {
+          const item = await api.getInvoice(itemId);
+          setResolved({
+            kind,
+            itemId,
+            itemLabel: `Invoice ${invoiceBulanLabel(item.bulan)} - ${item.nama}`,
+            departemen: null,
+            createdByRole: null,
+          });
+        } else {
+          const item = await api.getAtkInvoice(itemId);
+          setResolved({
+            kind,
+            itemId,
+            itemLabel: `Invoice ${invoiceBulanLabel(item.bulan)} - ${item.nama}`,
+            departemen: null,
+            createdByRole: null,
           });
         }
       } catch {
@@ -122,6 +143,10 @@ export default function GlobalChatModal() {
       return <SaranaChatModal {...common} open createdByRole={resolved.createdByRole} />;
     case "arsip":
       return <ArsipChatModal {...common} open createdByRole={resolved.createdByRole} />;
+    case "invoice":
+      return <InvoiceChatModal {...common} open />;
+    case "atk-invoice":
+      return <AtkInvoiceChatModal {...common} open />;
     default:
       return null;
   }

@@ -29,6 +29,9 @@ public class AtkInvoiceOut
     public int? ReviewedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    // Populated only by ListInvoice (mirrors InvoiceOut.UnreadChatCount) - the count of this
+    // invoice's own chat messages not yet marked read by whoever is asking.
+    public int UnreadChatCount { get; set; }
 
     public static AtkInvoiceOut From(AtkInvoice i) => new()
     {

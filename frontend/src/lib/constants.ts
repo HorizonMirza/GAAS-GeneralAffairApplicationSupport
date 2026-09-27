@@ -52,6 +52,11 @@ export function bookingChatParticipantLabels(departemen: string | null | undefin
   return [`Admin ${track}`, `Approval ${track}`, "Admin GA", "Approval GA"];
 }
 
+// Invoice's own chat (Ekspedisi & Office Supplies) has no Departemen/Divisi dimension at all -
+// only the 3 roles that ever touch an invoice (Admin GA, Approval GA, Mitra) plus Super Admin,
+// who bypasses every gate and needs no label of its own here.
+export const INVOICE_CHAT_PARTICIPANT_LABELS: string[] = ["Admin GA", "Approval GA", "Mitra"];
+
 export const ON_APPROVAL_STATUSES: Status[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
 export const REJECTED_STATUSES: Status[] = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"];
 

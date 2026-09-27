@@ -142,7 +142,7 @@ export interface ChatMessage {
 // can access - drives the global top-center notification banner + sound, independent of whether
 // the relevant chat thread (or that page at all) is open. `kind` matches chatHub.ts's ChatKind.
 export interface ChatNotification {
-  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip";
+  kind: "pengiriman" | "booking" | "kendaraan" | "atk" | "sarana" | "arsip" | "invoice" | "atk-invoice";
   itemId: number;
   itemLabel: string;
   senderId: number;
@@ -258,6 +258,7 @@ export interface Invoice {
   reviewedBy: number | null;
   uploadedAt: string;
   reviewedAt: string | null;
+  unreadChatCount: number;
 }
 
 export interface InvoiceListResponse {

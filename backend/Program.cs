@@ -20,7 +20,14 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSignalR();
+// Without this, SignalR's own JSON hub protocol (separate from MVC's AddJsonOptions above)
+// serializes enums as their raw integer ordinal - every live chat/activity broadcast would
+// carry senderRole as e.g. 6 instead of "KPU" until the page reloads and re-fetches over REST.
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -367,6 +374,41 @@ using (var scope = app.Services.CreateScope())
             file_path VARCHAR(500),
             original_filename VARCHAR(255),
             created_at TIMESTAMP NOT NULL
+        )");
+
+    // Invoice chat (Ekspedisi) and AtkInvoice chat (Office Supplies) - brand new tables, mirroring
+    // permintaan_atk_chat_messages/_reads exactly.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS invoice_chat_messages (
+            id SERIAL PRIMARY KEY,
+            invoice_id INT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS invoice_chat_reads (
+            id SERIAL PRIMARY KEY,
+            invoice_id INT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (invoice_id, user_id)
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS atk_invoice_chat_messages (
+            id SERIAL PRIMARY KEY,
+            atk_invoice_id INT NOT NULL REFERENCES atk_invoice(id) ON DELETE CASCADE,
+            sender_id INT NOT NULL REFERENCES users(id),
+            message TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS atk_invoice_chat_reads (
+            id SERIAL PRIMARY KEY,
+            atk_invoice_id INT NOT NULL REFERENCES atk_invoice(id) ON DELETE CASCADE,
+            user_id INT NOT NULL REFERENCES users(id),
+            last_read_at TIMESTAMP NOT NULL,
+            UNIQUE (atk_invoice_id, user_id)
         )");
 
     // One-time backfill: Admin/Approval GA items created before GaDivisiLabel/GaDepartemenLabel
@@ -996,7 +1038,7 @@ if (args.Contains("resetdb"))
     // appended here so they don't inherit the same "left off resetdb's list" gap that
     // notification_sound_settings and perbaikan_sarana_foto_kerusakan already have above (a
     // pre-existing bug in this same list, left untouched per product owner instruction).
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoices, atk_invoice_log, atk_invoice, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoice_chat_reads, invoice_chat_messages, invoices, atk_invoice_log, atk_invoice_chat_reads, atk_invoice_chat_messages, atk_invoice, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

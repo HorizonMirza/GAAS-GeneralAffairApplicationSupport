@@ -142,11 +142,45 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, ArsipGroup(permintaanArsipId));
     }
 
+    // Same idea as JoinAtkChat (includes KPU/Mitra, since Invoice's own workflow is built around
+    // them), scoped by CanViewInvoice instead of CanAccessX - matches InvoiceChatController.
+    public async Task JoinInvoiceChat(int invoiceId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null) return;
+        var item = await _db.Invoices.FindAsync(invoiceId);
+        if (item == null || !ApiControllerBase.CanViewInvoice(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, InvoiceGroup(invoiceId));
+    }
+
+    public async Task LeaveInvoiceChat(int invoiceId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, InvoiceGroup(invoiceId));
+    }
+
+    // Same as JoinInvoiceChat, but for Office Supplies' own AtkInvoice - matches
+    // AtkInvoiceChatController.
+    public async Task JoinAtkInvoiceChat(int invoiceId)
+    {
+        var user = await _currentUser.GetCurrentUserAsync();
+        if (user == null) return;
+        var item = await _db.AtkInvoices.FindAsync(invoiceId);
+        if (item == null || !ApiControllerBase.CanViewInvoice(user, item)) return;
+        await Groups.AddToGroupAsync(Context.ConnectionId, AtkInvoiceGroup(invoiceId));
+    }
+
+    public async Task LeaveAtkInvoiceChat(int invoiceId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, AtkInvoiceGroup(invoiceId));
+    }
+
     public static string PengirimanGroup(int pengirimanId) => $"pengiriman-chat-{pengirimanId}";
     public static string BookingGroup(int bookingRuangId) => $"booking-chat-{bookingRuangId}";
     public static string KendaraanGroup(int bookingKendaraanId) => $"kendaraan-chat-{bookingKendaraanId}";
     public static string AtkGroup(int permintaanAtkId) => $"atk-chat-{permintaanAtkId}";
     public static string SaranaGroup(int perbaikanSaranaId) => $"sarana-chat-{perbaikanSaranaId}";
     public static string ArsipGroup(int permintaanArsipId) => $"arsip-chat-{permintaanArsipId}";
+    public static string InvoiceGroup(int invoiceId) => $"invoice-chat-{invoiceId}";
+    public static string AtkInvoiceGroup(int invoiceId) => $"atk-invoice-chat-{invoiceId}";
     public static string UserGroup(int userId) => $"user-{userId}";
 }

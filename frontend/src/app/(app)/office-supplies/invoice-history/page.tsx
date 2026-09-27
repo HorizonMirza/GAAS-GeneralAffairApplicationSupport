@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL } from "@/lib/constants";
@@ -14,6 +15,7 @@ import AtkInvoiceUpdateModal from "@/components/AtkInvoiceUpdateModal";
 import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
 import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
+import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -44,6 +46,7 @@ export default function AtkInvoiceHistoryPage() {
   const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
   const [invoiceUpdateTarget, setInvoiceUpdateTarget] = useState<Invoice | null>(null);
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
+  const [invoiceChatItem, setInvoiceChatItem] = useState<Invoice | null>(null);
 
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const invoiceReqIdRef = useRef(0);
@@ -208,6 +211,17 @@ export default function AtkInvoiceHistoryPage() {
                   ) : (
                     <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
                   )}
+                  <button
+                    type="button"
+                    className={`card-icon-btn${inv.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                    aria-label="Chat"
+                    onClick={() => setInvoiceChatItem(inv)}
+                  >
+                    <MessageSquare width="17" height="17" />
+                    {inv.unreadChatCount > 0 && (
+                      <span className="chat-count-badge">{inv.unreadChatCount > 9 ? "9+" : inv.unreadChatCount}</span>
+                    )}
+                  </button>
                   <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
@@ -325,6 +339,15 @@ export default function AtkInvoiceHistoryPage() {
         open={invoiceHistoryId != null}
         invoiceId={invoiceHistoryId}
         onClose={() => setInvoiceHistoryId(null)}
+      />
+
+      <AtkInvoiceChatModal
+        open={!!invoiceChatItem}
+        itemId={invoiceChatItem?.id ?? null}
+        itemLabel={invoiceChatItem ? `Invoice ${invoiceBulanLabel(invoiceChatItem.bulan)} - ${invoiceChatItem.nama}` : ""}
+        me={me}
+        onClose={() => setInvoiceChatItem(null)}
+        onRead={() => loadInvoices()}
       />
     </>
   );
