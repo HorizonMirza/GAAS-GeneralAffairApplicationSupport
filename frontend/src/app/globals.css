@@ -3128,11 +3128,13 @@ body.auth-ready .app-shell {
 .invoices-page-toolbar .invoice-search-field,
 .invoices-page-toolbar .invoice-filter-field { flex: 0 0 auto; width: 160px; min-width: 0; max-width: none; }
 
-/* Height only (width untouched, see above): #invoice-filter-bulan is a native month input,
-   which renders taller than a text input/button under identical padding in some browsers - an
-   explicit height + border-box keeps it visually level with Cari Invoice and Semua Invoice. */
+/* Height only (width untouched, see above): #invoice-filter-bulan/#atk-invoice-filter-bulan
+   (Ekspedisi's and Office Supplies' own Invoice pages) is a native month input, which renders
+   taller than a text input/button under identical padding in some browsers - an explicit height
+   + border-box keeps it visually level with Cari Invoice and Semua Invoice. */
 .invoices-page-toolbar .invoice-search-field input,
 .invoices-page-toolbar #invoice-filter-bulan,
+.invoices-page-toolbar #atk-invoice-filter-bulan,
 .invoices-page-toolbar .field .btn {
   height: 38px;
   box-sizing: border-box;
