@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, ON_APPROVAL_STATUSES, REJECTED_STATUSES, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
-import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, truncateText } from "@/lib/format";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_ON_APPROVAL_STATUSES, BOOKING_REJECTED_STATUSES, BOOKING_STATUS_LABEL, bookingStatusBorderClass, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, ON_APPROVAL_STATUSES, REJECTED_STATUSES, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, todayLocalDate, truncateText } from "@/lib/format";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
 import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
@@ -17,6 +17,8 @@ import StatusBadge from "@/components/StatusBadge";
 import Stepper from "@/components/Stepper";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
+import AtkStepper from "@/components/AtkStepper";
+import RoomBookingStepper from "@/components/RoomBookingStepper";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
 import ChatModal from "@/components/ChatModal";
 import PengirimanFormModal from "@/components/PengirimanFormModal";
@@ -35,8 +37,9 @@ import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
-import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
+import RoomCalendarView, { addDays, addMonths, isWeekend, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
 import MiniMonthCalendar from "@/components/MiniMonthCalendar";
+import RoomInfoModal from "@/components/RoomInfoModal";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
 import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
@@ -52,8 +55,14 @@ import ArsipKoreksiModal from "@/components/ArsipKoreksiModal";
 import ArsipStatusHistoryModal from "@/components/ArsipStatusHistoryModal";
 import ArsipChatModal from "@/components/ArsipChatModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
+import InvoiceUploadModal from "@/components/InvoiceUploadModal";
+import InvoiceActionModal from "@/components/InvoiceActionModal";
+import InvoiceUpdateModal from "@/components/InvoiceUpdateModal";
 import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
+import AtkInvoiceUploadModal from "@/components/AtkInvoiceUploadModal";
+import AtkInvoiceActionModal from "@/components/AtkInvoiceActionModal";
+import AtkInvoiceUpdateModal from "@/components/AtkInvoiceUpdateModal";
 import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
 import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
 import InvoiceChatModal from "@/components/InvoiceChatModal";
@@ -82,7 +91,7 @@ export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "bookin
 // navigation UI now) - this array itself only validates ?tab= against known keys, since the pill
 // bar that used to render these was removed as redundant with that sidebar submenu.
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
-  { key: "overview", label: "Summary", icon: <Shield width={16} height={16} /> },
+  { key: "overview", label: "Dashboard", icon: <Shield width={16} height={16} /> },
   { key: "ekspedisi", label: "Expedition", icon: <Layers width={16} height={16} /> },
   { key: "booking-ruang", label: "Room Booking", icon: <Calendar width={16} height={16} /> },
   { key: "booking-kendaraan", label: "Vehicle Booking", icon: <Car width={16} height={16} /> },
@@ -151,6 +160,189 @@ function calMonthGridRange(refDate: string): { from: string; to: string } {
   const firstOfMonth = `${d.getFullYear()}-${calPad(d.getMonth() + 1)}-01`;
   const start = mondayOf(firstOfMonth);
   return { from: start, to: addDays(start, 41) };
+}
+
+// Room/Vehicle Booking Overview sub-tab - mirrors booking-ruang-meeting/overview and
+// booking-kendaraan/overview's own availability-grid helpers exactly (both pages define near-
+// identical copies of these; kept here as one shared set instead of duplicating twice more).
+const OV_OPEN_MIN = 7 * 60;
+const OV_CLOSE_MIN = 18 * 60;
+
+function ovToMinutes(hhmm: string): number {
+  return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+}
+
+function ovMinutesToHHMM(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function ovNowMinutesLocal(): number {
+  const now = nowWib();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+function roomPhotoUrl(roomName: string): string {
+  const slug = roomName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `/assets/rooms/${slug}.png`;
+}
+const DEMO_ROOM_PHOTOS = [
+  "/assets/rooms/ruang-eksternal-receptionist.png",
+  "/assets/rooms/ruang-eksternal-besar.png",
+  "/assets/rooms/ruang-eksternal-kecil.png",
+  "/assets/rooms/ruang-golf.png",
+  "/assets/rooms/ruang-open-space.png",
+];
+function roomPhotoUrls(roomName: string): string[] {
+  const own = roomPhotoUrl(roomName);
+  return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
+}
+
+function vehiclePhotoUrl(vehicleName: string): string {
+  const slug = vehicleName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `/assets/vehicles/${slug}.png`;
+}
+const DEMO_VEHICLE_PHOTOS = [
+  "/assets/vehicles/toyota-avanza-1.png",
+  "/assets/vehicles/toyota-innova.png",
+  "/assets/vehicles/honda-hr-v.png",
+  "/assets/vehicles/mitsubishi-xpander.png",
+  "/assets/vehicles/toyota-fortuner.png",
+];
+function vehiclePhotoUrls(vehicleName: string): string[] {
+  const own = vehiclePhotoUrl(vehicleName);
+  return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
+}
+
+function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
+  const booked: [number, number][] = [];
+  for (const entry of todayEntries) {
+    if (entry.status === "DRAFT") continue;
+    if (entry.namaRuang !== roomName && !entry.additionalRooms.includes(roomName)) continue;
+    if (entry.isWholeDay) { booked.push([OV_OPEN_MIN, OV_CLOSE_MIN]); continue; }
+    if (!entry.jamMulai || !entry.jamSelesai) continue;
+    const start = Math.max(OV_OPEN_MIN, ovToMinutes(entry.jamMulai));
+    const end = Math.min(OV_CLOSE_MIN, ovToMinutes(entry.jamSelesai));
+    if (end > start) booked.push([start, end]);
+  }
+  const now = ovNowMinutesLocal();
+  const free: [number, number][] = [];
+  for (let h = OV_OPEN_MIN; h < OV_CLOSE_MIN; h += 60) {
+    if (h < now) continue;
+    const slotEnd = h + 60;
+    const isBooked = booked.some(([bs, be]) => bs < slotEnd && be > h);
+    if (!isBooked) free.push([h, slotEnd]);
+  }
+  return free;
+}
+function isRoomFullyBookedToday(roomName: string, todayEntries: BookingRuang[]): boolean {
+  return roomFreeSlotsToday(roomName, todayEntries).length === 0;
+}
+function getRealRoomCurrentSlot(roomName: string, todayEntries: BookingRuang[], closed: boolean): { jam: string; status: "free" | "booked"; judul: string } {
+  if (closed) return { jam: "Tutup", status: "booked", judul: "Tutup" };
+  const now = ovNowMinutesLocal();
+  if (now >= OV_CLOSE_MIN) return { jam: "18:00", status: "booked", judul: "Tutup" };
+  const roomBookings = todayEntries
+    .filter((e) => e.status !== "DRAFT" && e.status !== "CANCELLED" && !e.status.startsWith("REJECTED") && (e.namaRuang === roomName || e.additionalRooms?.includes(roomName)))
+    .map((e) => {
+      const start = e.isWholeDay ? OV_OPEN_MIN : ovToMinutes(e.jamMulai || "07:00");
+      const end = e.isWholeDay ? OV_CLOSE_MIN : ovToMinutes(e.jamSelesai || "18:00");
+      return { ...e, startMin: start, endMin: end };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
+  const currentHour = now < OV_OPEN_MIN ? Math.floor(OV_OPEN_MIN / 60) : Math.floor(now / 60);
+  const startHhmm = `${String(currentHour).padStart(2, "0")}:00`;
+  const ongoing = roomBookings.find((b) => b.startMin <= now && b.endMin > now);
+  if (ongoing) {
+    const jam = ongoing.isWholeDay ? "07:00 - 18:00" : `${ongoing.jamMulai?.slice(0, 5) || "07:00"} - ${ongoing.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: ongoing.namaKegiatan || "Terisi" };
+  }
+  const upcomingBookings = roomBookings.filter((b) => b.startMin > now);
+  const effectiveNow = Math.max(now, OV_OPEN_MIN);
+  let cursor = effectiveNow, bestStart = effectiveNow, bestEnd = OV_CLOSE_MIN, bestLen = -1;
+  for (const b of upcomingBookings) {
+    if (b.startMin > cursor) {
+      const len = b.startMin - cursor;
+      if (len > bestLen) { bestLen = len; bestStart = cursor; bestEnd = b.startMin; }
+    }
+    cursor = Math.max(cursor, b.endMin);
+  }
+  if (OV_CLOSE_MIN > cursor) {
+    const len = OV_CLOSE_MIN - cursor;
+    if (len > bestLen) { bestLen = len; bestStart = cursor; bestEnd = OV_CLOSE_MIN; }
+  }
+  if (bestLen <= 0) {
+    const next = upcomingBookings[0];
+    const jam = next.isWholeDay ? "07:00 - 18:00" : `${next.jamMulai?.slice(0, 5) || "07:00"} - ${next.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: next.namaKegiatan || "Terisi" };
+  }
+  return { jam: `${bestStart === effectiveNow ? startHhmm : ovMinutesToHHMM(bestStart)} - ${ovMinutesToHHMM(bestEnd)}`, status: "free", judul: "Available" };
+}
+
+function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
+  const booked: [number, number][] = [];
+  for (const entry of todayEntries) {
+    if (entry.status === "DRAFT") continue;
+    if (entry.namaKendaraan !== vehicleName) continue;
+    if (entry.isWholeDay) { booked.push([OV_OPEN_MIN, OV_CLOSE_MIN]); continue; }
+    if (!entry.jamMulai || !entry.jamSelesai) continue;
+    const start = Math.max(OV_OPEN_MIN, ovToMinutes(entry.jamMulai));
+    const end = Math.min(OV_CLOSE_MIN, ovToMinutes(entry.jamSelesai));
+    if (end > start) booked.push([start, end]);
+  }
+  const now = ovNowMinutesLocal();
+  const free: [number, number][] = [];
+  for (let h = OV_OPEN_MIN; h < OV_CLOSE_MIN; h += 60) {
+    if (h < now) continue;
+    const slotEnd = h + 60;
+    const isBooked = booked.some(([bs, be]) => bs < slotEnd && be > h);
+    if (!isBooked) free.push([h, slotEnd]);
+  }
+  return free;
+}
+function isVehicleFullyBookedToday(vehicleName: string, todayEntries: BookingKendaraan[]): boolean {
+  return vehicleFreeSlotsToday(vehicleName, todayEntries).length === 0;
+}
+function getRealVehicleCurrentSlot(vehicleName: string, todayEntries: BookingKendaraan[], closed: boolean): { jam: string; status: "free" | "booked"; judul: string } {
+  if (closed) return { jam: "Tutup", status: "booked", judul: "Tutup" };
+  const now = ovNowMinutesLocal();
+  if (now >= OV_CLOSE_MIN) return { jam: "18:00", status: "booked", judul: "Tutup" };
+  const vehicleBookings = todayEntries
+    .filter((e) => e.status !== "DRAFT" && e.status !== "CANCELLED" && !e.status.startsWith("REJECTED") && e.namaKendaraan === vehicleName)
+    .map((e) => {
+      const start = e.isWholeDay ? OV_OPEN_MIN : ovToMinutes(e.jamMulai || "07:00");
+      const end = e.isWholeDay ? OV_CLOSE_MIN : ovToMinutes(e.jamSelesai || "18:00");
+      return { ...e, startMin: start, endMin: end };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
+  const currentHour = now < OV_OPEN_MIN ? Math.floor(OV_OPEN_MIN / 60) : Math.floor(now / 60);
+  const startHhmm = `${String(currentHour).padStart(2, "0")}:00`;
+  const ongoing = vehicleBookings.find((b) => b.startMin <= now && b.endMin > now);
+  if (ongoing) {
+    const jam = ongoing.isWholeDay ? "07:00 - 18:00" : `${ongoing.jamMulai?.slice(0, 5) || "07:00"} - ${ongoing.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: ongoing.keperluan || "Terisi" };
+  }
+  const upcomingBookings = vehicleBookings.filter((b) => b.startMin > now);
+  const effectiveNow = Math.max(now, OV_OPEN_MIN);
+  let cursor = effectiveNow, bestStart = effectiveNow, bestEnd = OV_CLOSE_MIN, bestLen = -1;
+  for (const b of upcomingBookings) {
+    if (b.startMin > cursor) {
+      const len = b.startMin - cursor;
+      if (len > bestLen) { bestLen = len; bestStart = cursor; bestEnd = b.startMin; }
+    }
+    cursor = Math.max(cursor, b.endMin);
+  }
+  if (OV_CLOSE_MIN > cursor) {
+    const len = OV_CLOSE_MIN - cursor;
+    if (len > bestLen) { bestLen = len; bestStart = cursor; bestEnd = OV_CLOSE_MIN; }
+  }
+  if (bestLen <= 0) {
+    const next = upcomingBookings[0];
+    const jam = next.isWholeDay ? "07:00 - 18:00" : `${next.jamMulai?.slice(0, 5) || "07:00"} - ${next.jamSelesai?.slice(0, 5) || "18:00"}`;
+    return { jam, status: "booked", judul: next.keperluan || "Terisi" };
+  }
+  return { jam: `${bestStart === effectiveNow ? startHhmm : ovMinutesToHHMM(bestStart)} - ${ovMinutesToHHMM(bestEnd)}`, status: "free", judul: "Available" };
 }
 
 interface ArsipFilterState {
@@ -297,12 +489,28 @@ function SuperAdminPageInner() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
+  const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
+  const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceLimit, setInvoiceLimit] = useState(10);
+  const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false);
+  const [invoiceRejectId, setInvoiceRejectId] = useState<number | null>(null);
   const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
+  const [invoiceUpdateTarget, setInvoiceUpdateTarget] = useState<Invoice | null>(null);
   const [invoiceHistoryId, setInvoiceHistoryId] = useState<number | null>(null);
   const [invoiceChatItem, setInvoiceChatItem] = useState<Invoice | null>(null);
+  const invoiceSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleInvoiceSearchChange(value: string) {
+    setInvoiceSearchInput(value);
+    if (invoiceSearchDebounce.current) clearTimeout(invoiceSearchDebounce.current);
+    invoiceSearchDebounce.current = setTimeout(() => {
+      setInvoiceSearch(value.trim());
+      setInvoicePage(1);
+    }, 350);
+  }
   // One modal serves every section's "Hapus Semua" - whichever section set it describes itself.
   const [bulkTarget, setBulkTarget] = useState<BulkDeleteTarget | null>(null);
 
@@ -314,7 +522,7 @@ function SuperAdminPageInner() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   // "Ruang Meeting" (roster management, formerly its own top-level tab) folded in as a sub-tab
   // here instead - it's the room-side counterpart to this tab's own booking transactions.
-  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"transaksi" | "roster" | "calendar">("transaksi");
+  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("transaksi");
   // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
   // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel, no Koreksi).
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
@@ -325,6 +533,24 @@ function SuperAdminPageInner() {
   const [bookingRejectTarget, setBookingRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [bookingCancelTargetId, setBookingCancelTargetId] = useState<number | null>(null);
   const bookingRowMenu = useRowMenu(bookingItems);
+
+  // Overview sub-tab - mirrors booking-ruang-meeting/overview/page.tsx (room availability grid +
+  // current-month queue), separate state from the Transaksi table above.
+  const [bookingOvItems, setBookingOvItems] = useState<BookingRuang[]>([]);
+  const [bookingOvTodayEntries, setBookingOvTodayEntries] = useState<BookingRuang[]>([]);
+  const [bookingOvBusy, setBookingOvBusy] = useState(true);
+  const [bookingOvStatusFilter, setBookingOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [bookingOvFormOpen, setBookingOvFormOpen] = useState(false);
+  const [bookingOvFormInitial, setBookingOvFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
+  const [bookingOvInfoRoom, setBookingOvInfoRoom] = useState<RoomOption | null>(null);
+  const [bookingOvDetail, setBookingOvDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [bookingOvRescheduleTarget, setBookingOvRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [bookingOvStatusItemId, setBookingOvStatusItemId] = useState<number | null>(null);
+  const [bookingOvChatItem, setBookingOvChatItem] = useState<BookingRuang | null>(null);
+  const [bookingOvRejectTarget, setBookingOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [bookingOvCancelTargetId, setBookingOvCancelTargetId] = useState<number | null>(null);
+  const [, setBookingOvClockTick] = useState(0);
+  const bookingOvRowMenu = useRowMenu(bookingOvItems);
 
   // Calendar sub-tab - separate state from the Transaksi table above since it's a wholly
   // different view (day/week/month grid + cross-room availability), mirroring
@@ -357,7 +583,7 @@ function SuperAdminPageInner() {
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   // "Kendaraan" (roster management, formerly its own top-level tab) folded in as a sub-tab here
   // instead - it's the vehicle-side counterpart to this tab's own booking transactions.
-  const [kendaraanSubtab, setKendaraanSubtab] = useState<"transaksi" | "roster" | "calendar">("transaksi");
+  const [kendaraanSubtab, setKendaraanSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("transaksi");
   // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
   // modals (Reschedule/Cancel, no Koreksi).
   const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
@@ -368,6 +594,23 @@ function SuperAdminPageInner() {
   const [kendaraanRejectTarget, setKendaraanRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [kendaraanCancelTargetId, setKendaraanCancelTargetId] = useState<number | null>(null);
   const kendaraanRowMenu = useRowMenu(kendaraanItems);
+
+  // Overview sub-tab - mirrors booking-kendaraan/overview/page.tsx (vehicle availability grid +
+  // current-month queue), separate state from the Transaksi table above.
+  const [kendaraanOvItems, setKendaraanOvItems] = useState<BookingKendaraan[]>([]);
+  const [kendaraanOvTodayEntries, setKendaraanOvTodayEntries] = useState<BookingKendaraan[]>([]);
+  const [kendaraanOvBusy, setKendaraanOvBusy] = useState(true);
+  const [kendaraanOvStatusFilter, setKendaraanOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [kendaraanOvFormOpen, setKendaraanOvFormOpen] = useState(false);
+  const [kendaraanOvFormInitial, setKendaraanOvFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
+  const [kendaraanOvInfoVehicle, setKendaraanOvInfoVehicle] = useState<VehicleOption | null>(null);
+  const [kendaraanOvDetail, setKendaraanOvDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
+  const [kendaraanOvRescheduleTarget, setKendaraanOvRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [kendaraanOvStatusItemId, setKendaraanOvStatusItemId] = useState<number | null>(null);
+  const [kendaraanOvChatItem, setKendaraanOvChatItem] = useState<BookingKendaraan | null>(null);
+  const [kendaraanOvRejectTarget, setKendaraanOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [kendaraanOvCancelTargetId, setKendaraanOvCancelTargetId] = useState<number | null>(null);
+  const kendaraanOvRowMenu = useRowMenu(kendaraanOvItems);
 
   // Calendar sub-tab - separate state from the Transaksi table above, mirroring
   // booking-kendaraan/calendar/page.tsx exactly.
@@ -406,6 +649,24 @@ function SuperAdminPageInner() {
   const [arsipRejectTarget, setArsipRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [arsipKoreksiTarget, setArsipKoreksiTarget] = useState<PermintaanArsip | null>(null);
   const arsipRowMenu = useRowMenu(arsipItems);
+  // Archive tab now switches between Overview/Transaction/Repository via sub-tab buttons, same
+  // pattern as Ekspedisi/ATK/Room/Vehicle Booking, instead of stacking both cards unconditionally.
+  const [arsipSubtab, setArsipSubtab] = useState<"overview" | "transaksi" | "katalog">("transaksi");
+
+  // Overview sub-tab - mirrors arsip/overview/page.tsx exactly.
+  const [arsipOvItems, setArsipOvItems] = useState<PermintaanArsip[]>([]);
+  const [arsipOvStats, setArsipOvStats] = useState<{
+    waitingL1: number; waitingGa: number; waitingGaApproval: number; approved: number;
+  } | null>(null);
+  const [arsipOvBusy, setArsipOvBusy] = useState(true);
+  const [arsipOvStatusFilter, setArsipOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [arsipOvFormOpen, setArsipOvFormOpen] = useState(false);
+  const [arsipOvDetail, setArsipOvDetail] = useState<{ item: PermintaanArsip; mode: "view" | "edit" } | null>(null);
+  const [arsipOvStatusItemId, setArsipOvStatusItemId] = useState<number | null>(null);
+  const [arsipOvChatItem, setArsipOvChatItem] = useState<PermintaanArsip | null>(null);
+  const [arsipOvRejectTarget, setArsipOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [arsipOvKoreksiTarget, setArsipOvKoreksiTarget] = useState<PermintaanArsip | null>(null);
+  const arsipOvRowMenu = useRowMenu(arsipOvItems);
 
   // Repository (Katalog) tab - separate state from the Transaction table above since it's a
   // wholly different read-only endpoint/filter shape (see arsip/katalog/page.tsx).
@@ -435,17 +696,47 @@ function SuperAdminPageInner() {
   const [atkChatItem, setAtkChatItem] = useState<PermintaanAtk | null>(null);
   const [atkRejectTarget, setAtkRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const atkRowMenu = useRowMenu(atkItems);
-  const [atkSubtab, setAtkSubtab] = useState<"pesanan" | "invoice">("pesanan");
+  const [atkSubtab, setAtkSubtab] = useState<"overview" | "pesanan" | "invoice">("pesanan");
+
+  // Overview sub-tab - mirrors office-supplies/overview/page.tsx exactly.
+  const [atkOvItems, setAtkOvItems] = useState<PermintaanAtk[]>([]);
+  const [atkOvStats, setAtkOvStats] = useState<{
+    waitingL1: number; waitingGa: number; waitingGaApproval: number; waitingKpu: number; approved: number;
+  } | null>(null);
+  const [atkOvBusy, setAtkOvBusy] = useState(true);
+  const [atkOvStatusFilter, setAtkOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [atkOvFormOpen, setAtkOvFormOpen] = useState(false);
+  const [atkOvDetail, setAtkOvDetail] = useState<{ item: PermintaanAtk; mode: "view" | "edit" | "ga-edit" | "kpu-edit" } | null>(null);
+  const [atkOvStatusItemId, setAtkOvStatusItemId] = useState<number | null>(null);
+  const [atkOvChatItem, setAtkOvChatItem] = useState<PermintaanAtk | null>(null);
+  const [atkOvRejectTarget, setAtkOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const atkOvRowMenu = useRowMenu(atkOvItems);
   const [atkInvoices, setAtkInvoices] = useState<Invoice[] | null>(null);
   const [atkInvoiceTotal, setAtkInvoiceTotal] = useState(0);
   const [atkInvoiceError, setAtkInvoiceError] = useState("");
+  const [atkInvoiceSearchInput, setAtkInvoiceSearchInput] = useState("");
+  const [atkInvoiceSearch, setAtkInvoiceSearch] = useState("");
   const [atkInvoiceFilterBulan, setAtkInvoiceFilterBulan] = useState("");
+  const [atkInvoiceUploaders, setAtkInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
+  const [atkInvoiceFilterUploader, setAtkInvoiceFilterUploader] = useState<number | "">("");
   const [atkInvoicePage, setAtkInvoicePage] = useState(1);
   const [atkInvoiceLimit, setAtkInvoiceLimit] = useState(10);
+  const [atkInvoiceUploadOpen, setAtkInvoiceUploadOpen] = useState(false);
+  const [atkInvoiceRejectId, setAtkInvoiceRejectId] = useState<number | null>(null);
   const [atkInvoiceDetail, setAtkInvoiceDetail] = useState<Invoice | null>(null);
+  const [atkInvoiceUpdateTarget, setAtkInvoiceUpdateTarget] = useState<Invoice | null>(null);
   const [atkInvoiceHistoryId, setAtkInvoiceHistoryId] = useState<number | null>(null);
   const [atkInvoiceChatItem, setAtkInvoiceChatItem] = useState<Invoice | null>(null);
   const atkInvoiceRowMenu = useRowMenu(atkInvoices ?? []);
+  const atkInvoiceSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleAtkInvoiceSearchChange(value: string) {
+    setAtkInvoiceSearchInput(value);
+    if (atkInvoiceSearchDebounce.current) clearTimeout(atkInvoiceSearchDebounce.current);
+    atkInvoiceSearchDebounce.current = setTimeout(() => {
+      setAtkInvoiceSearch(value.trim());
+      setAtkInvoicePage(1);
+    }, 350);
+  }
 
   const [saranaFilters, setSaranaFilters] = useState<SaranaFilterState>(EMPTY_SARANA_FILTERS);
   const [saranaSearchInput, setSaranaSearchInput] = useState("");
@@ -461,6 +752,25 @@ function SuperAdminPageInner() {
   const [saranaRejectTarget, setSaranaRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [saranaKoreksiTarget, setSaranaKoreksiTarget] = useState<PerbaikanSarana | null>(null);
   const saranaRowMenu = useRowMenu(saranaItems);
+  // Maintenance tab now switches between Overview/Transaction/Repository via sub-tab buttons,
+  // same pattern as Ekspedisi/ATK/Room/Vehicle Booking.
+  const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("transaksi");
+
+  // Overview sub-tab - mirrors maintenance/overview/page.tsx exactly.
+  const [saranaOvItems, setSaranaOvItems] = useState<PerbaikanSarana[]>([]);
+  const [saranaOvStats, setSaranaOvStats] = useState<{
+    waitingL1: number; waitingGa: number; waitingGaApproval: number; approved: number;
+    execMenunggu: number; execLokasiDicek: number; execGambarDibuat: number;
+  } | null>(null);
+  const [saranaOvBusy, setSaranaOvBusy] = useState(true);
+  const [saranaOvStatusFilter, setSaranaOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [saranaOvFormOpen, setSaranaOvFormOpen] = useState(false);
+  const [saranaOvDetail, setSaranaOvDetail] = useState<{ item: PerbaikanSarana; mode: "view" | "edit" } | null>(null);
+  const [saranaOvStatusItemId, setSaranaOvStatusItemId] = useState<number | null>(null);
+  const [saranaOvChatItem, setSaranaOvChatItem] = useState<PerbaikanSarana | null>(null);
+  const [saranaOvRejectTarget, setSaranaOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [saranaOvKoreksiTarget, setSaranaOvKoreksiTarget] = useState<PerbaikanSarana | null>(null);
+  const saranaOvRowMenu = useRowMenu(saranaOvItems);
 
   // Repository (Katalog) tab - separate state from the Transaction table above since it's a
   // wholly different read-only endpoint/filter shape (see maintenance/katalog/page.tsx).
@@ -605,7 +915,13 @@ function SuperAdminPageInner() {
   const loadInvoices = useCallback(async () => {
     const reqId = ++invoiceReqIdRef.current;
     try {
-      const result = await api.listInvoice({ page: invoicePage, limit: invoiceLimit, bulan: invoiceFilterBulan });
+      const result = await api.listInvoice({
+        page: invoicePage,
+        limit: invoiceLimit,
+        bulan: invoiceFilterBulan,
+        search: invoiceSearch,
+        uploadedBy: invoiceFilterUploader === "" ? undefined : invoiceFilterUploader,
+      });
       if (reqId !== invoiceReqIdRef.current) return;
       const invoiceItems = result?.items ?? [];
       const invoiceTotalCount = result?.total ?? 0;
@@ -619,12 +935,23 @@ function SuperAdminPageInner() {
       if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
-  }, [invoicePage, invoiceLimit, invoiceFilterBulan]);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch, invoiceFilterUploader]);
+
+  useEffect(() => {
+    if (activeTab !== "ekspedisi") return;
+    api.listInvoiceUploaders().then(setInvoiceUploaders).catch(() => setInvoiceUploaders([]));
+  }, [activeTab]);
 
   const loadAtkInvoices = useCallback(async () => {
     const reqId = ++atkInvoiceReqIdRef.current;
     try {
-      const result = await api.listAtkInvoice({ page: atkInvoicePage, limit: atkInvoiceLimit, bulan: atkInvoiceFilterBulan });
+      const result = await api.listAtkInvoice({
+        page: atkInvoicePage,
+        limit: atkInvoiceLimit,
+        bulan: atkInvoiceFilterBulan,
+        search: atkInvoiceSearch,
+        uploadedBy: atkInvoiceFilterUploader === "" ? undefined : atkInvoiceFilterUploader,
+      });
       if (reqId !== atkInvoiceReqIdRef.current) return;
       const invoiceItems = result?.items ?? [];
       const invoiceTotalCount = result?.total ?? 0;
@@ -638,7 +965,12 @@ function SuperAdminPageInner() {
       if (reqId !== atkInvoiceReqIdRef.current) return;
       setAtkInvoiceError((err as Error).message);
     }
-  }, [atkInvoicePage, atkInvoiceLimit, atkInvoiceFilterBulan]);
+  }, [atkInvoicePage, atkInvoiceLimit, atkInvoiceFilterBulan, atkInvoiceSearch, atkInvoiceFilterUploader]);
+
+  useEffect(() => {
+    if (activeTab !== "atk") return;
+    api.listAtkInvoiceUploaders().then(setAtkInvoiceUploaders).catch(() => setAtkInvoiceUploaders([]));
+  }, [activeTab]);
 
   const loadBookings = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++bookingReqIdRef.current;
@@ -673,6 +1005,53 @@ function SuperAdminPageInner() {
     }
   }, [bookingFilters]);
 
+  // Overview sub-tab - mirrors booking-ruang-meeting/overview/page.tsx's load() (current+future
+  // month queue + today's schedule for the room availability grid).
+  const loadBookingOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-ruang" || bookingRuangSubtab !== "overview") return;
+    if (!opts?.silent) setBookingOvBusy(true);
+    try {
+      const queue = await api.listBooking({ limit: 1000, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
+      setBookingOvItems(queue);
+      const today = await api.getBookingSchedule(todayLocalDate()).catch(() => []);
+      setBookingOvTodayEntries(today);
+    } finally {
+      if (!opts?.silent) setBookingOvBusy(false);
+    }
+  }, [activeTab, bookingRuangSubtab]);
+
+  useEffect(() => {
+    loadBookingOverview();
+  }, [loadBookingOverview]);
+
+  useEffect(() => {
+    const id = setInterval(() => setBookingOvClockTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const bookingOvFilteredItems = (() => {
+    if (bookingOvStatusFilter === "ALL") return bookingOvItems;
+    if (bookingOvStatusFilter === "DRAFT") return bookingOvItems.filter((i) => i.status === "DRAFT");
+    if (bookingOvStatusFilter === "APPROVED") return bookingOvItems.filter((i) => i.status === "APPROVED_GA_APPROVAL");
+    if (bookingOvStatusFilter === "ON_APPROVAL") return bookingOvItems.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    return bookingOvItems.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status) || i.status === "CANCELLED");
+  })();
+
+  function bookingOvHandleDelete(item: BookingRuang) {
+    const message = item.seriesId
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
+      : "Hapus booking ruangan ini secara permanen?";
+    confirm(message, async () => {
+      try {
+        await api.deleteBooking(item.id);
+        showToast("Booking berhasil dihapus");
+        loadBookingOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
   const loadKendaraanBookings = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++kendaraanReqIdRef.current;
     if (!opts?.silent) {
@@ -705,6 +1084,44 @@ function SuperAdminPageInner() {
       if (reqId === kendaraanReqIdRef.current && !opts?.silent) setKendaraanBusy(false);
     }
   }, [kendaraanFilters]);
+
+  // Overview sub-tab - mirrors booking-kendaraan/overview/page.tsx's load().
+  const loadKendaraanOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-kendaraan" || kendaraanSubtab !== "overview") return;
+    if (!opts?.silent) setKendaraanOvBusy(true);
+    try {
+      const queue = await api.listKendaraanBooking({ limit: 1000, page: 1, sejakBulan: currentYearMonth() }).then((r) => r.items);
+      setKendaraanOvItems(queue);
+      const today = await api.getKendaraanSchedule(todayLocalDate()).catch(() => []);
+      setKendaraanOvTodayEntries(today);
+    } finally {
+      if (!opts?.silent) setKendaraanOvBusy(false);
+    }
+  }, [activeTab, kendaraanSubtab]);
+
+  useEffect(() => {
+    loadKendaraanOverview();
+  }, [loadKendaraanOverview]);
+
+  const kendaraanOvFilteredItems = (() => {
+    if (kendaraanOvStatusFilter === "ALL") return kendaraanOvItems;
+    if (kendaraanOvStatusFilter === "DRAFT") return kendaraanOvItems.filter((i) => i.status === "DRAFT");
+    if (kendaraanOvStatusFilter === "APPROVED") return kendaraanOvItems.filter((i) => i.status === "APPROVED_GA_APPROVAL");
+    if (kendaraanOvStatusFilter === "ON_APPROVAL") return kendaraanOvItems.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    return kendaraanOvItems.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status) || i.status === "CANCELLED");
+  })();
+
+  function kendaraanOvHandleDelete(item: BookingKendaraan) {
+    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+      try {
+        await api.deleteKendaraanBooking(item.id);
+        showToast("Booking berhasil dihapus");
+        loadKendaraanOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
 
   // Room Booking Calendar sub-tab - loads only while that sub-tab is active, mirroring
   // booking-ruang-meeting/calendar/page.tsx's loadSchedule/loadAvail.
@@ -979,6 +1396,53 @@ function SuperAdminPageInner() {
     }
   }, [arsipFilters]);
 
+  // Overview sub-tab - mirrors arsip/overview/page.tsx's load().
+  const loadArsipOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "arsip" || arsipSubtab !== "overview") return;
+    if (!opts?.silent) setArsipOvBusy(true);
+    try {
+      const bulan = currentYearMonth();
+      const [queue, statsResp] = await Promise.all([
+        api.listArsip({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.getArsipStats(currentYear()),
+      ]);
+      const counts = statsResp.countsByStatus;
+      setArsipOvItems(queue);
+      setArsipOvStats({
+        waitingL1: counts.SUBMITTED ?? 0,
+        waitingGa: counts.APPROVED_L1 ?? 0,
+        waitingGaApproval: counts.APPROVED_GA ?? 0,
+        approved: counts.APPROVED_GA_APPROVAL ?? 0,
+      });
+    } finally {
+      if (!opts?.silent) setArsipOvBusy(false);
+    }
+  }, [activeTab, arsipSubtab]);
+
+  useEffect(() => {
+    loadArsipOverview();
+  }, [loadArsipOverview]);
+
+  const arsipOvFilteredItems = (() => {
+    if (arsipOvStatusFilter === "ALL") return arsipOvItems;
+    if (arsipOvStatusFilter === "DRAFT") return arsipOvItems.filter((i) => i.status === "DRAFT");
+    if (arsipOvStatusFilter === "APPROVED") return arsipOvItems.filter((i) => i.status === "APPROVED_GA_APPROVAL");
+    if (arsipOvStatusFilter === "ON_APPROVAL") return arsipOvItems.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    return arsipOvItems.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+  })();
+
+  function arsipOvHandleDelete(item: PermintaanArsip) {
+    confirm("Hapus Pemindahan Arsip ini secara permanen?", async () => {
+      try {
+        await api.deleteArsip(item.id);
+        showToast("Pemindahan berhasil dihapus");
+        loadArsipOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
   const loadArsipKatalog = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++arsipKatalogReqIdRef.current;
     if (!opts?.silent) {
@@ -1049,6 +1513,54 @@ function SuperAdminPageInner() {
     }
   }, [atkFilters]);
 
+  // Overview sub-tab - mirrors office-supplies/overview/page.tsx's load().
+  const loadAtkOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "atk" || atkSubtab !== "overview") return;
+    if (!opts?.silent) setAtkOvBusy(true);
+    try {
+      const bulan = currentYearMonth();
+      const [queue, statsResp] = await Promise.all([
+        api.listAtk({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.getAtkStats(currentYear()),
+      ]);
+      const counts = statsResp.countsByStatus;
+      setAtkOvItems(queue);
+      setAtkOvStats({
+        waitingL1: counts.SUBMITTED ?? 0,
+        waitingGa: counts.APPROVED_L1 ?? 0,
+        waitingGaApproval: counts.APPROVED_GA ?? 0,
+        waitingKpu: counts.APPROVED_GA_APPROVAL ?? 0,
+        approved: counts.COMPLETED ?? 0,
+      });
+    } finally {
+      if (!opts?.silent) setAtkOvBusy(false);
+    }
+  }, [activeTab, atkSubtab]);
+
+  useEffect(() => {
+    loadAtkOverview();
+  }, [loadAtkOverview]);
+
+  const atkOvFilteredItems = (() => {
+    if (atkOvStatusFilter === "ALL") return atkOvItems;
+    if (atkOvStatusFilter === "DRAFT") return atkOvItems.filter((i) => i.status === "DRAFT");
+    if (atkOvStatusFilter === "APPROVED") return atkOvItems.filter((i) => i.status === "COMPLETED");
+    if (atkOvStatusFilter === "ON_APPROVAL") return atkOvItems.filter((i) => ON_APPROVAL_STATUSES.includes(i.status));
+    return atkOvItems.filter((i) => REJECTED_STATUSES.includes(i.status));
+  })();
+
+  function atkOvHandleDelete(item: PermintaanAtk) {
+    confirm("Hapus Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
+      try {
+        await api.deleteAtk(item.id);
+        showToast("Pesanan berhasil dihapus");
+        loadAtkOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
   const loadSarana = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++saranaReqIdRef.current;
     if (!opts?.silent) {
@@ -1083,6 +1595,65 @@ function SuperAdminPageInner() {
       if (reqId === saranaReqIdRef.current && !opts?.silent) setSaranaBusy(false);
     }
   }, [saranaFilters]);
+
+  // Overview sub-tab - mirrors maintenance/overview/page.tsx's load() (merges the current
+  // month's queue with any still-executing approved report from an earlier month).
+  const loadSaranaOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "sarana" || saranaSubtab !== "overview") return;
+    if (!opts?.silent) setSaranaOvBusy(true);
+    try {
+      const bulan = currentYearMonth();
+      const [queue, activeExecuting, statsResp] = await Promise.all([
+        api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.listSarana({ limit: 1000, page: 1, status: "APPROVED_GA_APPROVAL" }).then((r) => r.items.filter((i) => i.executionStage !== "SELESAI")),
+        api.getSaranaStats(currentYear()),
+      ]);
+      const merged = new Map<number, PerbaikanSarana>();
+      for (const item of queue) merged.set(item.id, item);
+      for (const item of activeExecuting) merged.set(item.id, item);
+      const combined = Array.from(merged.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const counts = statsResp.countsByStatus;
+      const execCounts = statsResp.executionStageCounts;
+      setSaranaOvItems(combined);
+      setSaranaOvStats({
+        waitingL1: counts.SUBMITTED ?? 0,
+        waitingGa: counts.APPROVED_L1 ?? 0,
+        waitingGaApproval: counts.APPROVED_GA ?? 0,
+        approved: counts.APPROVED_GA_APPROVAL ?? 0,
+        execMenunggu: execCounts.MENUNGGU ?? 0,
+        execLokasiDicek: execCounts.LOKASI_DICEK ?? 0,
+        execGambarDibuat: execCounts.GAMBAR_DIBUAT ?? 0,
+      });
+    } finally {
+      if (!opts?.silent) setSaranaOvBusy(false);
+    }
+  }, [activeTab, saranaSubtab]);
+
+  useEffect(() => {
+    loadSaranaOverview();
+  }, [loadSaranaOverview]);
+
+  const saranaOvFilteredItems = (() => {
+    if (saranaOvStatusFilter === "ALL") return saranaOvItems;
+    if (saranaOvStatusFilter === "DRAFT") return saranaOvItems.filter((i) => i.status === "DRAFT");
+    if (saranaOvStatusFilter === "APPROVED") return saranaOvItems.filter((i) => i.status === "APPROVED_GA_APPROVAL");
+    if (saranaOvStatusFilter === "ON_APPROVAL") return saranaOvItems.filter((i) => BOOKING_ON_APPROVAL_STATUSES.includes(i.status));
+    return saranaOvItems.filter((i) => BOOKING_REJECTED_STATUSES.includes(i.status));
+  })();
+
+  function saranaOvHandleDelete(item: PerbaikanSarana) {
+    confirm("Hapus Pengajuan Perbaikan ini secara permanen?", async () => {
+      try {
+        await api.deleteSarana(item.id);
+        showToast("Pengajuan berhasil dihapus");
+        loadSaranaOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
 
   const loadSaranaKatalog = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++saranaKatalogReqIdRef.current;
@@ -1769,12 +2340,12 @@ function SuperAdminPageInner() {
 
   return (
     <>
-      <div className="card-header dashboard-welcome-header" style={{ marginBottom: 22 }}>
-        <WelcomeGreeting me={me} />
-      </div>
-
       {activeTab === "overview" && (
         <>
+          <div className="card-header dashboard-welcome-header" style={{ marginBottom: 22 }}>
+            <WelcomeGreeting me={me} />
+          </div>
+
           <DashboardContent me={me} />
 
           <div style={{ marginTop: 28 }}>
@@ -1819,7 +2390,7 @@ function SuperAdminPageInner() {
           {ekspedisiSubtab === "overview" && (
             <>
               <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
-                <h3 style={{ margin: 0 }}>Ringkasan Ekspedisi Bulan Ini</h3>
+                <WelcomeGreeting me={me} />
                 <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setEkspedisiOvFormOpen(true)}>
                   + Input Data Barang
                 </button>
@@ -1836,7 +2407,7 @@ function SuperAdminPageInner() {
               )}
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-                <h3 style={{ margin: 0 }}>Transaksi Bulan Ini</h3>
+                <h3 style={{ margin: 0 }}>Transaksi Terbaru</h3>
                 <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
                   <SearchableSelect
                     id="sa-ekspedisi-overview-status-filter"
@@ -2278,11 +2849,17 @@ function SuperAdminPageInner() {
 
           {ekspedisiSubtab === "invoice" && (
       <div className="card">
-        <div className="card-header">
-          <h3>History Invoice Pembiayaan</h3>
-        </div>
-
-        <div className="invoice-toolbar-slim">
+        <div className="invoice-toolbar-slim invoices-page-toolbar">
+          <div className="field invoice-search-field" style={FIELD_NO_MARGIN_STYLE}>
+            <label htmlFor="invoice-filter-search">Cari Invoice</label>
+            <input
+              type="text"
+              id="invoice-filter-search"
+              placeholder="Nama Invoice"
+              value={invoiceSearchInput}
+              onChange={(e) => handleInvoiceSearchChange(e.target.value)}
+            />
+          </div>
           <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
             <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
             <MonthFilterPicker
@@ -2291,13 +2868,27 @@ function SuperAdminPageInner() {
               onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
             />
           </div>
+          {invoiceUploaders.length > 1 && (
+            <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
+              <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
+              <SearchableSelect
+                id="invoice-filter-uploader"
+                value={String(invoiceFilterUploader)}
+                onChange={(v) => { setInvoiceFilterUploader(v === "" ? "" : Number(v)); setInvoicePage(1); }}
+                options={invoiceUploaders.map((u) => String(u.id))}
+                getLabel={(v) => invoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
+                clearLabel="Semua Mitra"
+                placeholder="Semua Mitra"
+              />
+            </div>
+          )}
           <div className="field" style={FIELD_NO_MARGIN_STYLE}>
             <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={AUTO_WIDTH_STYLE}
-              onClick={() => { setInvoiceFilterBulan(""); setInvoicePage(1); }}
+              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
             >
               Semua Invoice
             </button>
@@ -2321,6 +2912,9 @@ function SuperAdminPageInner() {
               Hapus Semua
             </button>
           </div>
+          <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setInvoiceUploadOpen(true)}>
+            + Input Invoice
+          </button>
         </div>
 
         <div className="invoice-list">
@@ -2339,13 +2933,23 @@ function SuperAdminPageInner() {
                   </div>
                   <div className="invoice-row-info">
                     <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)} - {inv.nama}</div>
-                    <div className="invoice-row-meta">Diunggah: {formatDateTime(inv.uploadedAt)}</div>
+                    <div className="invoice-row-meta">
+                      Diunggah: {formatDateTime(inv.uploadedAt)}
+                      {invoiceUploaders.length > 1 && inv.uploaderNama ? ` oleh ${inv.uploaderNama}` : ""}
+                    </div>
                     {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
                     {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
                 <div className="invoice-row-actions">
-                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  {inv.status === "REJECTED" ? (
+                    <div className="badge-stack">
+                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                      <span className="badge badge-waiting">Waiting: Mitra</span>
+                    </div>
+                  ) : (
+                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  )}
                   <button
                     type="button"
                     className={`card-icon-btn${inv.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
@@ -2401,6 +3005,13 @@ function SuperAdminPageInner() {
           <div className="superadmin-subtabs">
             <button
               type="button"
+              className={`superadmin-subtab-btn ${bookingRuangSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setBookingRuangSubtab("overview")}
+            >
+              Overview ({bookingOvItems.length})
+            </button>
+            <button
+              type="button"
               className={`superadmin-subtab-btn ${bookingRuangSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setBookingRuangSubtab("transaksi")}
             >
@@ -2421,6 +3032,311 @@ function SuperAdminPageInner() {
               Calendar
             </button>
           </div>
+
+          {bookingRuangSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 12 }}>
+                <WelcomeGreeting me={me} />
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setBookingOvFormOpen(true)}>
+                  + Booking Ruang Meeting
+                </button>
+              </div>
+
+              {rooms.length > 0 && (
+                <div className="room-grid" style={{ "--grid-cols": Math.ceil(rooms.length / 2) } as React.CSSProperties}>
+                  {rooms.map((r) => {
+                    const isWeekendToday = isWeekend(todayLocalDate());
+                    const isPastClosingToday = ovNowMinutesLocal() >= OV_CLOSE_MIN;
+                    const closedToday = isWeekendToday || isPastClosingToday;
+                    const availability: "available" | "full" | "closed" = closedToday
+                      ? "closed"
+                      : isRoomFullyBookedToday(r.nama, bookingOvTodayEntries)
+                      ? "full"
+                      : "available";
+                    const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
+                    const availTitle =
+                      availability === "closed"
+                        ? isWeekendToday ? "Close (akhir pekan)" : "Close (di luar jam operasional)"
+                        : availability === "full" ? "Full hari ini" : "Available hari ini";
+                    const slot = getRealRoomCurrentSlot(r.nama, bookingOvTodayEntries, closedToday);
+                    return (
+                      <div
+                        key={r.nama}
+                        onClick={() => setBookingOvInfoRoom(r)}
+                        className="room-card"
+                        title={availTitle}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setBookingOvInfoRoom(r); } }}
+                      >
+                        <div className="room-card-photo-banner">
+                          <img src={roomPhotoUrl(r.nama)} alt={r.nama} />
+                          <div className="room-card-photo-overlay" />
+                          <div className="room-card-photo-footer">
+                            <span className="room-title">{r.nama}</span>
+                            <span className={`room-badge ${availability === "closed" ? "badge-closed" : availability === "full" ? "badge-full" : "badge-available"}`}>
+                              {availLabel}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="room-card-body-exact">
+                          {availability !== "closed" ? (
+                            <div className="room-card-slots-exact">
+                              <div className={`room-card-slot-row-exact ${slot.status === "free" ? "slot-free" : "slot-booked"}`}>
+                                <span className="slot-time">{slot.jam}</span>
+                                <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="room-card-slots-exact" style={{ minHeight: 22 }} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 0 10px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Pesanan Terbaru</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-booking-overview-status-filter"
+                    value={bookingOvStatusFilter}
+                    onChange={(v) => setBookingOvStatusFilter(v as typeof bookingOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) => ({
+                      ALL: "Semua Status", DRAFT: "Draft", ON_APPROVAL: "On-Approval", APPROVED: "Approved", REJECTED: "Rejected",
+                    } as Record<string, string>)[v] || v}
+                    placeholder="Semua Status"
+                    searchable={false}
+                  />
+                </div>
+              </div>
+
+              {bookingOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : bookingOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                bookingOvFilteredItems.map((item) => {
+                  const borderClass = bookingStatusBorderClass(item.status);
+                  const isDraft = item.status === "DRAFT";
+                  return (
+                    <div
+                      className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
+                      style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
+                      onClick={isDraft ? () => setBookingOvDetail({ item, mode: "view" }) : undefined}
+                      key={item.id}
+                    >
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.namaKegiatan} - {item.nomorPemesanan || "-"}</strong>
+                          {(() => {
+                            const orgUnit = item.departemen || item.divisi;
+                            const subtitle = `${formatDate(item.tanggal)}${orgUnit ? ` · ${orgUnit}` : ""} · ${bookingRoomsLabel(item)}`;
+                            return <div className="text-secondary" style={{ fontSize: "0.82rem" }} title={subtitle}>{subtitle}</div>;
+                          })()}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          <span className="badge-stack">
+                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
+                            {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
+                          </span>
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={(e) => { e.stopPropagation(); setBookingOvChatItem(item); }}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); bookingOvRowMenu.toggle(e, item.id, 180); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <RoomBookingStepper
+                        status={item.status}
+                        departemen={item.departemen}
+                        rejectTarget={item.rejectTarget}
+                        createdByRole={item.createdByRole}
+                        cancelledByRole={item.cancelledByRole}
+                        approvedByL1={item.approvedByL1}
+                        approvedByGa={item.approvedByGa}
+                        approvedByApprovalGa={item.approvedByApprovalGa}
+                      />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={bookingOvRowMenu.position}
+                canEditDelete={
+                  !!bookingOvRowMenu.menuItem &&
+                  (isBookingEditableByOrigin(bookingOvRowMenu.menuItem, me!) || canGaRescheduleBooking(bookingOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!bookingOvRowMenu.menuItem && isBookingDeletableByOrigin(bookingOvRowMenu.menuItem, me!)}
+                canCancel={!!bookingOvRowMenu.menuItem && isBookingCancellableByOrigin(bookingOvRowMenu.menuItem, me!)}
+                onCancel={() => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (item) setBookingOvCancelTargetId(item.id);
+                }}
+                onDetail={() => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (item) setBookingOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isBookingEditableByOrigin(item, me)) setBookingOvDetail({ item, mode: "edit" });
+                  else if (canGaRescheduleBooking(item, me)) setBookingOvRescheduleTarget(item);
+                }}
+                onStatus={() => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (item) setBookingOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (item) bookingOvHandleDelete(item);
+                }}
+                pdfUrl={bookingOvRowMenu.menuItem && isBookingPdfAvailable(bookingOvRowMenu.menuItem) ? api.bookingPdfUrl(bookingOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+                icsUrl={bookingOvRowMenu.menuItem && isBookingPdfAvailable(bookingOvRowMenu.menuItem) ? api.bookingIcsUrl(bookingOvRowMenu.menuItem.id) : undefined}
+                onIcsClick={async () => {
+                  const item = bookingOvRowMenu.menuItem;
+                  bookingOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.bookingIcsUrl(item.id), `Booking-${item.nomorPemesanan || item.id}.ics`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <RoomBookingFormModal
+                  open={bookingOvFormOpen}
+                  me={me}
+                  initial={bookingOvFormInitial}
+                  onClose={() => { setBookingOvFormOpen(false); setBookingOvFormInitial(undefined); }}
+                  onCreated={loadBookingOverview}
+                />
+              )}
+
+              <RoomInfoModal
+                open={!!bookingOvInfoRoom}
+                nama={bookingOvInfoRoom?.nama ?? null}
+                kapasitas={bookingOvInfoRoom?.kapasitas ?? null}
+                extraDetails={bookingOvInfoRoom ? [{ label: "Lantai", value: bookingOvInfoRoom.lantai ?? "-" }] : []}
+                facilities={bookingOvInfoRoom ? bookingOvInfoRoom.fasilitas ?? [] : []}
+                photoUrls={bookingOvInfoRoom ? roomPhotoUrls(bookingOvInfoRoom.nama) : []}
+                availability={bookingOvInfoRoom ? (ovNowMinutesLocal() >= OV_CLOSE_MIN || isWeekend(todayLocalDate()) ? "closed" : isRoomFullyBookedToday(bookingOvInfoRoom.nama, bookingOvTodayEntries) ? "full" : "available") : "available"}
+                availLabel={
+                  bookingOvInfoRoom
+                    ? (isWeekend(todayLocalDate()) || ovNowMinutesLocal() >= OV_CLOSE_MIN)
+                      ? "Close"
+                      : isRoomFullyBookedToday(bookingOvInfoRoom.nama, bookingOvTodayEntries) ? "Full" : "Available"
+                    : ""
+                }
+                freeSlotsToday={
+                  bookingOvInfoRoom && ovNowMinutesLocal() < OV_CLOSE_MIN && !isWeekend(todayLocalDate())
+                    ? roomFreeSlotsToday(bookingOvInfoRoom.nama, bookingOvTodayEntries).map(([s, e]) => `${ovMinutesToHHMM(s)}–${ovMinutesToHHMM(e)}`)
+                    : []
+                }
+                closedLabel={
+                  isWeekend(todayLocalDate()) ? "Tutup (akhir pekan)" : ovNowMinutesLocal() >= OV_CLOSE_MIN ? "Tutup (di luar jam operasional)" : undefined
+                }
+                fullyOpenLabel={
+                  bookingOvInfoRoom && ovNowMinutesLocal() < OV_CLOSE_MIN && !isWeekend(todayLocalDate())
+                    ? getRealRoomCurrentSlot(bookingOvInfoRoom.nama, bookingOvTodayEntries, false).jam
+                    : undefined
+                }
+                bookLabel="Booking"
+                onClose={() => setBookingOvInfoRoom(null)}
+                onBook={() => {
+                  if (!bookingOvInfoRoom) return;
+                  const nama = bookingOvInfoRoom.nama;
+                  setBookingOvInfoRoom(null);
+                  router.push(`/booking-ruang-meeting/calendar?ruang=${encodeURIComponent(nama)}`);
+                }}
+              />
+
+              {me && (
+                <RoomBookingDetailModal
+                  open={!!bookingOvDetail}
+                  mode={bookingOvDetail?.mode || "view"}
+                  item={bookingOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setBookingOvDetail(null)}
+                  onSaved={loadBookingOverview}
+                  onRequestReject={(id, type, originLabel) => setBookingOvRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <CancelBookingModal
+                open={bookingOvCancelTargetId != null}
+                targetId={bookingOvCancelTargetId}
+                targetType="room"
+                onClose={() => setBookingOvCancelTargetId(null)}
+                onDone={() => { setBookingOvCancelTargetId(null); loadBookingOverview(); }}
+              />
+
+              <RoomBookingRescheduleModal
+                open={!!bookingOvRescheduleTarget}
+                item={bookingOvRescheduleTarget}
+                onClose={() => setBookingOvRescheduleTarget(null)}
+                onSaved={loadBookingOverview}
+              />
+
+              <RejectModal
+                open={!!bookingOvRejectTarget}
+                targetId={bookingOvRejectTarget?.id ?? null}
+                targetType={bookingOvRejectTarget?.type ?? null}
+                originLabel={bookingOvRejectTarget?.originLabel ?? ""}
+                onClose={() => setBookingOvRejectTarget(null)}
+                onDone={() => { setBookingOvRejectTarget(null); loadBookingOverview(); }}
+              />
+
+              <BookingStatusHistoryModal open={bookingOvStatusItemId != null} itemId={bookingOvStatusItemId} onClose={() => setBookingOvStatusItemId(null)} />
+
+              {me && (
+                <RoomBookingChatModal
+                  open={!!bookingOvChatItem}
+                  itemId={bookingOvChatItem?.id ?? null}
+                  itemLabel={bookingOvChatItem ? `${bookingOvChatItem.namaKegiatan} - ${bookingRoomsLabel(bookingOvChatItem)} - ${bookingOvChatItem.nomorPemesanan || "-"}` : ""}
+                  departemen={bookingOvChatItem?.departemen ?? null}
+                  me={me}
+                  onClose={() => setBookingOvChatItem(null)}
+                  onRead={() => loadBookingOverview({ silent: true })}
+                />
+              )}
+            </>
+          )}
 
           {bookingRuangSubtab === "roster" && <SuperAdminMeetingRoomTab />}
 
@@ -2991,6 +3907,13 @@ function SuperAdminPageInner() {
           <div className="superadmin-subtabs">
             <button
               type="button"
+              className={`superadmin-subtab-btn ${kendaraanSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setKendaraanSubtab("overview")}
+            >
+              Overview ({kendaraanOvItems.length})
+            </button>
+            <button
+              type="button"
               className={`superadmin-subtab-btn ${kendaraanSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setKendaraanSubtab("transaksi")}
             >
@@ -3011,6 +3934,317 @@ function SuperAdminPageInner() {
               Calendar
             </button>
           </div>
+
+          {kendaraanSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+                <WelcomeGreeting me={me} />
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setKendaraanOvFormOpen(true)}>
+                  + Booking Kendaraan
+                </button>
+              </div>
+
+              {vehicles.length > 0 && (
+                <div className="room-grid" style={{ "--grid-cols": Math.ceil(vehicles.length / 2) } as React.CSSProperties}>
+                  {vehicles.map((v) => {
+                    const isPastClosingToday = ovNowMinutesLocal() >= OV_CLOSE_MIN;
+                    const availability: "available" | "full" | "closed" = isPastClosingToday
+                      ? "closed"
+                      : isVehicleFullyBookedToday(v.nama, kendaraanOvTodayEntries)
+                      ? "full"
+                      : "available";
+                    const availLabel = availability === "closed" ? "Close" : availability === "full" ? "Full" : "Available";
+                    const availTitle = availability === "closed" ? "Close (di luar jam operasional)" : availability === "full" ? "Full hari ini" : "Available hari ini";
+                    const slot = getRealVehicleCurrentSlot(v.nama, kendaraanOvTodayEntries, isPastClosingToday);
+                    return (
+                      <div
+                        key={v.nama}
+                        onClick={() => setKendaraanOvInfoVehicle(v)}
+                        className="room-card"
+                        title={availTitle}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setKendaraanOvInfoVehicle(v); } }}
+                      >
+                        <div className="room-card-photo-banner">
+                          <img src={vehiclePhotoUrl(v.nama)} alt={v.nama} />
+                          <div className="room-card-photo-overlay" />
+                          <div className="room-card-photo-footer">
+                            <span className="room-title">{v.nama}</span>
+                            <span className={`room-badge ${availability === "closed" ? "badge-closed" : availability === "full" ? "badge-full" : "badge-available"}`}>
+                              {availLabel}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="room-card-body-exact">
+                          {availability !== "closed" ? (
+                            <div className="room-card-slots-exact">
+                              <div className={`room-card-slot-row-exact ${slot.status === "free" ? "slot-free" : "slot-booked"}`}>
+                                <span className="slot-time">{slot.jam}</span>
+                                <span className="slot-status">{slot.status === "free" ? "Available" : slot.judul || "Terisi"}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="room-card-slots-exact" style={{ minHeight: 22 }} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Pesanan Terbaru</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-kendaraan-overview-status-filter"
+                    value={kendaraanOvStatusFilter}
+                    onChange={(v) => setKendaraanOvStatusFilter(v as typeof kendaraanOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) => ({
+                      ALL: "Semua Status", DRAFT: "Draft", ON_APPROVAL: "On-Approval", APPROVED: "Approved", REJECTED: "Rejected",
+                    } as Record<string, string>)[v] || v}
+                    placeholder="Semua Status"
+                    searchable={false}
+                  />
+                </div>
+              </div>
+
+              {kendaraanOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : kendaraanOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                kendaraanOvFilteredItems.map((item) => {
+                  const isDraft = item.status === "DRAFT";
+                  const borderClass = bookingStatusBorderClass(item.status);
+                  return (
+                    <div
+                      className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
+                      style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
+                      onClick={isDraft ? () => setKendaraanOvDetail({ item, mode: "view" }) : undefined}
+                      key={item.id}
+                    >
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.keperluan} - {item.nomorPemesanan || "-"}</strong>
+                          {(() => {
+                            const orgUnit = item.departemen || item.divisi;
+                            const subtitle = `${formatDate(item.tanggal)}${orgUnit ? ` · ${orgUnit}` : ""} · ${item.namaKendaraan}`;
+                            return <div className="text-secondary" style={{ fontSize: "0.82rem" }} title={subtitle}>{subtitle}</div>;
+                          })()}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={(e) => { e.stopPropagation(); setKendaraanOvChatItem(item); }}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); kendaraanOvRowMenu.toggle(e, item.id, 180); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <RoomBookingStepper
+                        status={item.status}
+                        departemen={item.departemen}
+                        createdByRole={item.createdByRole}
+                        cancelledByRole={item.cancelledByRole}
+                        approvedByL1={item.approvedByL1}
+                        approvedByGa={item.approvedByGa}
+                        approvedByApprovalGa={item.approvedByApprovalGa}
+                      />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={kendaraanOvRowMenu.position}
+                canEditDelete={
+                  !!kendaraanOvRowMenu.menuItem &&
+                  (isKendaraanEditableByOrigin(kendaraanOvRowMenu.menuItem, me!) || canGaRescheduleKendaraan(kendaraanOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!kendaraanOvRowMenu.menuItem && isKendaraanDeletableByOrigin(kendaraanOvRowMenu.menuItem, me!)}
+                canCancel={!!kendaraanOvRowMenu.menuItem && isKendaraanCancellableByOrigin(kendaraanOvRowMenu.menuItem, me!)}
+                onCancel={() => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (item) setKendaraanOvCancelTargetId(item.id);
+                }}
+                onDetail={() => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (item) setKendaraanOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isKendaraanEditableByOrigin(item, me)) setKendaraanOvDetail({ item, mode: "edit" });
+                  else if (canGaRescheduleKendaraan(item, me)) setKendaraanOvRescheduleTarget(item);
+                }}
+                onStatus={() => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (item) setKendaraanOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (item) kendaraanOvHandleDelete(item);
+                }}
+                pdfUrl={kendaraanOvRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanOvRowMenu.menuItem) ? api.kendaraanPdfUrl(kendaraanOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+                icsUrl={kendaraanOvRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanOvRowMenu.menuItem) ? api.kendaraanIcsUrl(kendaraanOvRowMenu.menuItem.id) : undefined}
+                onIcsClick={async () => {
+                  const item = kendaraanOvRowMenu.menuItem;
+                  kendaraanOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.kendaraanIcsUrl(item.id), `Booking-Kendaraan-${item.nomorPemesanan || item.id}.ics`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <VehicleBookingFormModal
+                  open={kendaraanOvFormOpen}
+                  me={me}
+                  initial={kendaraanOvFormInitial}
+                  onClose={() => { setKendaraanOvFormOpen(false); setKendaraanOvFormInitial(undefined); }}
+                  onCreated={loadKendaraanOverview}
+                />
+              )}
+
+              <RoomInfoModal
+                open={!!kendaraanOvInfoVehicle}
+                nama={kendaraanOvInfoVehicle?.nama ?? null}
+                kapasitas={null}
+                extraDetails={
+                  kendaraanOvInfoVehicle
+                    ? [
+                        { label: "Merek", value: kendaraanOvInfoVehicle.merek || "-" },
+                        { label: "Warna", value: kendaraanOvInfoVehicle.warna || "-" },
+                        { label: "Tahun", value: kendaraanOvInfoVehicle.tahun ? String(kendaraanOvInfoVehicle.tahun) : "-" },
+                        { label: "Kapasitas", value: `${kendaraanOvInfoVehicle.kapasitas} orang` },
+                        { label: "Plat Nomor", value: kendaraanOvInfoVehicle.platNomor || "-" },
+                        { label: "Nama Pengemudi", value: kendaraanOvInfoVehicle.supir || "-" },
+                        { label: "No Telepon Pengemudi", value: kendaraanOvInfoVehicle.nomorTeleponSupir || "-" },
+                      ]
+                    : []
+                }
+                photoUrls={kendaraanOvInfoVehicle ? vehiclePhotoUrls(kendaraanOvInfoVehicle.nama) : []}
+                availability={
+                  kendaraanOvInfoVehicle
+                    ? ovNowMinutesLocal() >= OV_CLOSE_MIN
+                      ? "closed"
+                      : isVehicleFullyBookedToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries) ? "full" : "available"
+                    : "available"
+                }
+                availLabel={
+                  kendaraanOvInfoVehicle
+                    ? ovNowMinutesLocal() >= OV_CLOSE_MIN
+                      ? "Close"
+                      : isVehicleFullyBookedToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries) ? "Full" : "Available"
+                    : ""
+                }
+                freeSlotsToday={
+                  kendaraanOvInfoVehicle && ovNowMinutesLocal() < OV_CLOSE_MIN
+                    ? vehicleFreeSlotsToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries).map(([s, e]) => `${ovMinutesToHHMM(s)}–${ovMinutesToHHMM(e)}`)
+                    : []
+                }
+                closedLabel={ovNowMinutesLocal() >= OV_CLOSE_MIN ? "Tutup (di luar jam operasional)" : undefined}
+                fullyOpenLabel={
+                  kendaraanOvInfoVehicle && ovNowMinutesLocal() < OV_CLOSE_MIN && isVehicleFullyBookedToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries) === false && vehicleFreeSlotsToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries).length > 0
+                    ? "Tersedia"
+                    : undefined
+                }
+                bookLabel="Booking"
+                onClose={() => setKendaraanOvInfoVehicle(null)}
+                onBook={() => {
+                  if (!kendaraanOvInfoVehicle) return;
+                  const nama = kendaraanOvInfoVehicle.nama;
+                  setKendaraanOvInfoVehicle(null);
+                  router.push(`/booking-kendaraan/calendar?kendaraan=${encodeURIComponent(nama)}`);
+                }}
+              />
+
+              {me && (
+                <VehicleBookingDetailModal
+                  open={!!kendaraanOvDetail}
+                  mode={kendaraanOvDetail?.mode || "view"}
+                  item={kendaraanOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setKendaraanOvDetail(null)}
+                  onSaved={loadKendaraanOverview}
+                  onRequestReject={(id, type, originLabel) => setKendaraanOvRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <CancelBookingModal
+                open={kendaraanOvCancelTargetId != null}
+                targetId={kendaraanOvCancelTargetId}
+                targetType="kendaraan"
+                onClose={() => setKendaraanOvCancelTargetId(null)}
+                onDone={() => { setKendaraanOvCancelTargetId(null); loadKendaraanOverview(); }}
+              />
+
+              <VehicleBookingRescheduleModal
+                open={!!kendaraanOvRescheduleTarget}
+                item={kendaraanOvRescheduleTarget}
+                onClose={() => setKendaraanOvRescheduleTarget(null)}
+                onSaved={loadKendaraanOverview}
+              />
+
+              <RejectModal
+                open={!!kendaraanOvRejectTarget}
+                targetId={kendaraanOvRejectTarget?.id ?? null}
+                targetType={kendaraanOvRejectTarget?.type ?? null}
+                originLabel={kendaraanOvRejectTarget?.originLabel ?? ""}
+                onClose={() => setKendaraanOvRejectTarget(null)}
+                onDone={() => { setKendaraanOvRejectTarget(null); loadKendaraanOverview(); }}
+              />
+
+              <VehicleBookingStatusHistoryModal open={kendaraanOvStatusItemId != null} itemId={kendaraanOvStatusItemId} onClose={() => setKendaraanOvStatusItemId(null)} />
+
+              {me && (
+                <VehicleBookingChatModal
+                  open={!!kendaraanOvChatItem}
+                  itemId={kendaraanOvChatItem?.id ?? null}
+                  itemLabel={kendaraanOvChatItem ? `${kendaraanOvChatItem.keperluan} - ${kendaraanOvChatItem.namaKendaraan} - ${kendaraanOvChatItem.nomorPemesanan || "-"}` : ""}
+                  departemen={kendaraanOvChatItem?.departemen ?? null}
+                  me={me}
+                  onClose={() => setKendaraanOvChatItem(null)}
+                  onRead={() => loadKendaraanOverview({ silent: true })}
+                />
+              )}
+            </>
+          )}
 
           {kendaraanSubtab === "roster" && <SuperAdminVehicleTab />}
 
@@ -3575,6 +4809,208 @@ function SuperAdminPageInner() {
 
       {activeTab === "arsip" && (
         <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${arsipSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setArsipSubtab("overview")}
+            >
+              Overview ({arsipOvItems.length})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${arsipSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setArsipSubtab("transaksi")}
+            >
+              Transaction ({arsipTotal})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${arsipSubtab === "katalog" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setArsipSubtab("katalog")}
+            >
+              Repository ({arsipKatalogTotal})
+            </button>
+          </div>
+
+          {arsipSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+                <WelcomeGreeting me={me} />
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setArsipOvFormOpen(true)}>
+                  + Pemindahan Arsip
+                </button>
+              </div>
+
+              {arsipOvStats && (
+                <div className="stat-grid">
+                  <div className="stat-tile"><div className="value">{arsipOvStats.waitingL1}</div><div className="label">Approval Departemen/Divisi</div></div>
+                  <div className="stat-tile"><div className="value">{arsipOvStats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{arsipOvStats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{arsipOvStats.approved}</div><div className="label">Approved</div></div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Pemindahan Terbaru</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-arsip-overview-status-filter"
+                    value={arsipOvStatusFilter}
+                    onChange={(v) => setArsipOvStatusFilter(v as typeof arsipOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) => ({
+                      ALL: "Semua Status", DRAFT: "Draft", ON_APPROVAL: "On-Approval", APPROVED: "Approved", REJECTED: "Rejected",
+                    } as Record<string, string>)[v] || v}
+                    placeholder="Semua Status"
+                  />
+                </div>
+              </div>
+
+              {arsipOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : arsipOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                arsipOvFilteredItems.map((item) => {
+                  const isDraft = item.status === "DRAFT";
+                  const borderClass = bookingStatusBorderClass(item.status);
+                  return (
+                    <div
+                      className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
+                      style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
+                      onClick={isDraft ? () => setArsipOvDetail({ item, mode: "view" }) : undefined}
+                      key={item.id}
+                    >
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.namaArsip} - {item.nomorArsip || "-"}</strong>
+                          <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
+                            {formatDate(item.tanggal)} · {item.departemen || item.divisi}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={(e) => { e.stopPropagation(); setArsipOvChatItem(item); }}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); arsipOvRowMenu.toggle(e, item.id, 180); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={arsipOvRowMenu.position}
+                canEditDelete={
+                  !!arsipOvRowMenu.menuItem &&
+                  (isArsipEditableByOrigin(arsipOvRowMenu.menuItem, me!) || canGaKoreksiArsip(arsipOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!arsipOvRowMenu.menuItem && isArsipEditableByOrigin(arsipOvRowMenu.menuItem, me!)}
+                onDetail={() => {
+                  const item = arsipOvRowMenu.menuItem;
+                  arsipOvRowMenu.close();
+                  if (item) setArsipOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = arsipOvRowMenu.menuItem;
+                  arsipOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isArsipEditableByOrigin(item, me)) setArsipOvDetail({ item, mode: "edit" });
+                  else if (canGaKoreksiArsip(item, me)) setArsipOvKoreksiTarget(item);
+                }}
+                onStatus={() => {
+                  const item = arsipOvRowMenu.menuItem;
+                  arsipOvRowMenu.close();
+                  if (item) setArsipOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = arsipOvRowMenu.menuItem;
+                  arsipOvRowMenu.close();
+                  if (item) arsipOvHandleDelete(item);
+                }}
+                pdfUrl={arsipOvRowMenu.menuItem && isArsipPdfAvailable(arsipOvRowMenu.menuItem) ? api.arsipPdfUrl(arsipOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = arsipOvRowMenu.menuItem;
+                  arsipOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.arsipPdfUrl(item.id), `Bukti-Pemindahan-Arsip-${item.nomorArsip || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <ArsipFormModal open={arsipOvFormOpen} me={me} onClose={() => setArsipOvFormOpen(false)} onCreated={loadArsipOverview} />
+              )}
+
+              {me && (
+                <ArsipDetailModal
+                  open={!!arsipOvDetail}
+                  mode={arsipOvDetail?.mode || "view"}
+                  item={arsipOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setArsipOvDetail(null)}
+                  onSaved={loadArsipOverview}
+                  onRequestReject={(id, type, originLabel) => setArsipOvRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <RejectModal
+                open={!!arsipOvRejectTarget}
+                targetId={arsipOvRejectTarget?.id ?? null}
+                targetType={arsipOvRejectTarget?.type ?? null}
+                originLabel={arsipOvRejectTarget?.originLabel ?? ""}
+                onClose={() => setArsipOvRejectTarget(null)}
+                onDone={() => { setArsipOvRejectTarget(null); loadArsipOverview(); }}
+              />
+
+              <ArsipKoreksiModal
+                open={!!arsipOvKoreksiTarget}
+                item={arsipOvKoreksiTarget}
+                onClose={() => setArsipOvKoreksiTarget(null)}
+                onSaved={loadArsipOverview}
+              />
+
+              <ArsipStatusHistoryModal open={arsipOvStatusItemId != null} itemId={arsipOvStatusItemId} onClose={() => setArsipOvStatusItemId(null)} />
+
+              {me && (
+                <ArsipChatModal
+                  open={!!arsipOvChatItem}
+                  itemId={arsipOvChatItem?.id ?? null}
+                  itemLabel={arsipOvChatItem ? `${arsipOvChatItem.namaArsip} - ${arsipOvChatItem.nomorArsip || "-"}` : ""}
+                  departemen={arsipOvChatItem?.departemen ?? null}
+                  createdByRole={arsipOvChatItem?.createdByRole ?? null}
+                  me={me}
+                  onClose={() => setArsipOvChatItem(null)}
+                  onRead={loadArsipOverview}
+                />
+              )}
+            </>
+          )}
+
+          {arsipSubtab === "transaksi" && (
+      <>
       <div className="card">
         <div className="card-header">
           <h3>Pemindahan Arsip</h3>
@@ -3835,8 +5271,12 @@ function SuperAdminPageInner() {
           />
 
           <ArsipStatusHistoryModal open={arsipStatusItemId != null} itemId={arsipStatusItemId} onClose={() => setArsipStatusItemId(null)} />
+            </>
+          )}
 
-          <div className="card" style={{ marginTop: 20 }}>
+          {arsipSubtab === "katalog" && (
+            <>
+          <div className="card">
             <div className="card-header">
               <h3>Repository Arsip</h3>
             </div>
@@ -4058,12 +5498,21 @@ function SuperAdminPageInner() {
             onClose={() => setArsipKatalogChatItem(null)}
             onRead={loadArsipKatalog}
           />
+            </>
+          )}
         </>
       )}
 
       {activeTab === "atk" && (
         <>
           <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${atkSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setAtkSubtab("overview")}
+            >
+              Overview ({atkOvItems.length})
+            </button>
             <button
               type="button"
               className={`superadmin-subtab-btn ${atkSubtab === "pesanan" ? "superadmin-subtab-btn-active" : ""}`}
@@ -4079,6 +5528,177 @@ function SuperAdminPageInner() {
               Vendor Invoices ({atkInvoiceTotal})
             </button>
           </div>
+
+          {atkSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+                <WelcomeGreeting me={me} />
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setAtkOvFormOpen(true)}>
+                  + Pesan Kebutuhan Kantor
+                </button>
+              </div>
+
+              {atkOvStats && (
+                <div className="stat-grid">
+                  <div className="stat-tile"><div className="value">{atkOvStats.waitingL1}</div><div className="label">Approval Departemen/Divisi</div></div>
+                  <div className="stat-tile"><div className="value">{atkOvStats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{atkOvStats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{atkOvStats.waitingKpu}</div><div className="label">Mitra</div></div>
+                  <div className="stat-tile"><div className="value">{atkOvStats.approved}</div><div className="label">Approved</div></div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Pesanan Terbaru</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-atk-overview-status-filter"
+                    value={atkOvStatusFilter}
+                    onChange={(v) => setAtkOvStatusFilter(v as typeof atkOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) => ({
+                      ALL: "Semua Status", DRAFT: "Draft", ON_APPROVAL: "On-Approval", APPROVED: "Approved", REJECTED: "Rejected",
+                    } as Record<string, string>)[v] || v}
+                    placeholder="Semua Status"
+                  />
+                </div>
+              </div>
+
+              {atkOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : atkOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                atkOvFilteredItems.map((item) => {
+                  const isDraft = item.status === "DRAFT";
+                  const borderClass = cardStatusBorderClass(item.status);
+                  return (
+                    <div
+                      className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`}
+                      style={{ marginBottom: 14, cursor: isDraft ? "pointer" : undefined }}
+                      onClick={isDraft ? () => setAtkOvDetail({ item, mode: "view" }) : undefined}
+                      key={item.id}
+                    >
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.keperluan} - {item.nomorPermintaan || "-"}</strong>
+                          <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
+                            {formatDate(item.tanggal)} · {item.departemen || item.divisi}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <AtkStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={(e) => { e.stopPropagation(); setAtkOvChatItem(item); }}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); atkOvRowMenu.toggle(e, item.id, 180); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <AtkStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={atkOvRowMenu.position}
+                canEditDelete={
+                  !!atkOvRowMenu.menuItem &&
+                  (isAtkEditableByOrigin(atkOvRowMenu.menuItem, me!) || canGaUpdateAtk(atkOvRowMenu.menuItem, me!) || canKoreksiHargaAtk(atkOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!atkOvRowMenu.menuItem && isAtkEditableByOrigin(atkOvRowMenu.menuItem, me!)}
+                onDetail={() => {
+                  const item = atkOvRowMenu.menuItem;
+                  atkOvRowMenu.close();
+                  if (item) setAtkOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = atkOvRowMenu.menuItem;
+                  atkOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isAtkEditableByOrigin(item, me)) setAtkOvDetail({ item, mode: "edit" });
+                  else if (canGaUpdateAtk(item, me)) setAtkOvDetail({ item, mode: "ga-edit" });
+                  else if (canKoreksiHargaAtk(item, me)) setAtkOvDetail({ item, mode: "kpu-edit" });
+                }}
+                onStatus={() => {
+                  const item = atkOvRowMenu.menuItem;
+                  atkOvRowMenu.close();
+                  if (item) setAtkOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = atkOvRowMenu.menuItem;
+                  atkOvRowMenu.close();
+                  if (item) atkOvHandleDelete(item);
+                }}
+                pdfUrl={atkOvRowMenu.menuItem && isAtkPdfAvailable(atkOvRowMenu.menuItem) ? api.atkPdfUrl(atkOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = atkOvRowMenu.menuItem;
+                  atkOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.atkPdfUrl(item.id), `Bukti-Pesanan-Kebutuhan-Kantor-${item.nomorPermintaan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <AtkFormModal open={atkOvFormOpen} me={me} onClose={() => setAtkOvFormOpen(false)} onCreated={loadAtkOverview} />
+              )}
+
+              {me && (
+                <AtkDetailModal
+                  open={!!atkOvDetail}
+                  mode={atkOvDetail?.mode || "view"}
+                  item={atkOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setAtkOvDetail(null)}
+                  onSaved={loadAtkOverview}
+                  onRequestReject={(id, type, originLabel) => setAtkOvRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <RejectModal
+                open={!!atkOvRejectTarget}
+                targetId={atkOvRejectTarget?.id ?? null}
+                targetType={atkOvRejectTarget?.type ?? null}
+                originLabel={atkOvRejectTarget?.originLabel ?? ""}
+                onClose={() => setAtkOvRejectTarget(null)}
+                onDone={() => { setAtkOvRejectTarget(null); loadAtkOverview(); }}
+              />
+
+              <AtkStatusHistoryModal open={atkOvStatusItemId != null} itemId={atkOvStatusItemId} onClose={() => setAtkOvStatusItemId(null)} />
+
+              {me && (
+                <AtkChatModal
+                  open={!!atkOvChatItem}
+                  itemId={atkOvChatItem?.id ?? null}
+                  itemLabel={atkOvChatItem ? `${atkOvChatItem.keperluan} - ${atkOvChatItem.nomorPermintaan || "-"}` : ""}
+                  departemen={atkOvChatItem?.departemen ?? null}
+                  createdByRole={atkOvChatItem?.createdByRole ?? null}
+                  me={me}
+                  onClose={() => setAtkOvChatItem(null)}
+                  onRead={loadAtkOverview}
+                />
+              )}
+            </>
+          )}
 
           {atkSubtab === "pesanan" && (
       <>
@@ -4365,11 +5985,17 @@ function SuperAdminPageInner() {
 
           {atkSubtab === "invoice" && (
       <div className="card">
-        <div className="card-header">
-          <h3>History Invoice Pembiayaan</h3>
-        </div>
-
-        <div className="invoice-toolbar-slim">
+        <div className="invoice-toolbar-slim invoices-page-toolbar">
+          <div className="field invoice-search-field" style={FIELD_NO_MARGIN_STYLE}>
+            <label htmlFor="atk-invoice-filter-search">Cari Invoice</label>
+            <input
+              type="text"
+              id="atk-invoice-filter-search"
+              placeholder="Nama Invoice"
+              value={atkInvoiceSearchInput}
+              onChange={(e) => handleAtkInvoiceSearchChange(e.target.value)}
+            />
+          </div>
           <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
             <label htmlFor="atk-invoice-filter-bulan">Filter Bulan</label>
             <MonthFilterPicker
@@ -4378,13 +6004,27 @@ function SuperAdminPageInner() {
               onChange={(v) => { setAtkInvoiceFilterBulan(v); setAtkInvoicePage(1); }}
             />
           </div>
+          {atkInvoiceUploaders.length > 1 && (
+            <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
+              <label htmlFor="atk-invoice-filter-uploader">Diunggah Oleh</label>
+              <SearchableSelect
+                id="atk-invoice-filter-uploader"
+                value={String(atkInvoiceFilterUploader)}
+                onChange={(v) => { setAtkInvoiceFilterUploader(v === "" ? "" : Number(v)); setAtkInvoicePage(1); }}
+                options={atkInvoiceUploaders.map((u) => String(u.id))}
+                getLabel={(v) => atkInvoiceUploaders.find((u) => String(u.id) === v)?.nama || v}
+                clearLabel="Semua Mitra"
+                placeholder="Semua Mitra"
+              />
+            </div>
+          )}
           <div className="field" style={FIELD_NO_MARGIN_STYLE}>
             <span className="field-label-spacer">Semua Invoice</span>
             <button
               type="button"
               className="btn btn-secondary"
               style={AUTO_WIDTH_STYLE}
-              onClick={() => { setAtkInvoiceFilterBulan(""); setAtkInvoicePage(1); }}
+              onClick={() => { setAtkInvoiceSearchInput(""); setAtkInvoiceSearch(""); setAtkInvoiceFilterBulan(""); setAtkInvoiceFilterUploader(""); setAtkInvoicePage(1); }}
             >
               Semua Invoice
             </button>
@@ -4408,6 +6048,9 @@ function SuperAdminPageInner() {
               Hapus Semua
             </button>
           </div>
+          <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setAtkInvoiceUploadOpen(true)}>
+            + Input Invoice
+          </button>
         </div>
 
         <div className="invoice-list">
@@ -4426,13 +6069,23 @@ function SuperAdminPageInner() {
                   </div>
                   <div className="invoice-row-info">
                     <div className="invoice-row-title">Invoice {invoiceBulanLabel(inv.bulan)} - {inv.nama}</div>
-                    <div className="invoice-row-meta">Diunggah: {formatDateTime(inv.uploadedAt)}</div>
+                    <div className="invoice-row-meta">
+                      Diunggah: {formatDateTime(inv.uploadedAt)}
+                      {atkInvoiceUploaders.length > 1 && inv.uploaderNama ? ` oleh ${inv.uploaderNama}` : ""}
+                    </div>
                     {inv.reviewedAt && <div className="invoice-row-meta">Ditinjau: {formatDateTime(inv.reviewedAt)}</div>}
                     {inv.catatan && <div className="invoice-row-note"><strong>Catatan:</strong> {inv.catatan}</div>}
                   </div>
                 </div>
                 <div className="invoice-row-actions">
-                  <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  {inv.status === "REJECTED" ? (
+                    <div className="badge-stack">
+                      <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                      <span className="badge badge-waiting">Waiting: Mitra</span>
+                    </div>
+                  ) : (
+                    <span className={`badge ${INVOICE_STATUS_CLASS[inv.status] || ""}`}>{INVOICE_STATUS_LABEL[inv.status] || inv.status}</span>
+                  )}
                   <button
                     type="button"
                     className={`card-icon-btn${inv.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
@@ -4485,6 +6138,205 @@ function SuperAdminPageInner() {
 
       {activeTab === "sarana" && (
         <>
+          <div className="superadmin-subtabs">
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${saranaSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setSaranaSubtab("overview")}
+            >
+              Overview ({saranaOvItems.length})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${saranaSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setSaranaSubtab("transaksi")}
+            >
+              Transaction ({saranaTotal})
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${saranaSubtab === "katalog" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setSaranaSubtab("katalog")}
+            >
+              Repository ({saranaKatalogTotal})
+            </button>
+          </div>
+
+          {saranaSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+                <WelcomeGreeting me={me} />
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setSaranaOvFormOpen(true)}>
+                  + Ajukan Perbaikan
+                </button>
+              </div>
+
+              {saranaOvStats && (
+                <div className="stat-grid">
+                  <div className="stat-tile"><div className="value">{saranaOvStats.waitingL1}</div><div className="label">Approval Departemen/Divisi</div></div>
+                  <div className="stat-tile"><div className="value">{saranaOvStats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{saranaOvStats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{saranaOvStats.approved}</div><div className="label">Approved</div></div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Pengajuan Terbaru</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-sarana-overview-status-filter"
+                    value={saranaOvStatusFilter}
+                    onChange={(v) => setSaranaOvStatusFilter(v as typeof saranaOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) => ({
+                      ALL: "Semua Status", DRAFT: "Draft", ON_APPROVAL: "On-Approval", APPROVED: "Approved", REJECTED: "Rejected",
+                    } as Record<string, string>)[v] || v}
+                    placeholder="Semua Status"
+                  />
+                </div>
+              </div>
+
+              {saranaOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : saranaOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                saranaOvFilteredItems.map((item) => {
+                  const borderClass = bookingStatusBorderClass(item.status);
+                  return (
+                    <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.lokasi} - {item.nomorPerbaikan || "-"}</strong>
+                          <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
+                            {formatDate(item.tanggal)} · {item.departemen || item.divisi}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
+                          {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
+                            <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
+                          )}
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={(e) => { e.stopPropagation(); setSaranaOvChatItem(item); }}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => { e.stopPropagation(); saranaOvRowMenu.toggle(e, item.id, 180); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <RoomBookingStepper status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={saranaOvRowMenu.position}
+                canEditDelete={
+                  !!saranaOvRowMenu.menuItem &&
+                  (isSaranaEditableByOrigin(saranaOvRowMenu.menuItem, me!) || canGaKoreksiSarana(saranaOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!saranaOvRowMenu.menuItem && isSaranaEditableByOrigin(saranaOvRowMenu.menuItem, me!)}
+                onDetail={() => {
+                  const item = saranaOvRowMenu.menuItem;
+                  saranaOvRowMenu.close();
+                  if (item) setSaranaOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = saranaOvRowMenu.menuItem;
+                  saranaOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isSaranaEditableByOrigin(item, me)) setSaranaOvDetail({ item, mode: "edit" });
+                  else if (canGaKoreksiSarana(item, me)) setSaranaOvKoreksiTarget(item);
+                }}
+                onStatus={() => {
+                  const item = saranaOvRowMenu.menuItem;
+                  saranaOvRowMenu.close();
+                  if (item) setSaranaOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = saranaOvRowMenu.menuItem;
+                  saranaOvRowMenu.close();
+                  if (item) saranaOvHandleDelete(item);
+                }}
+                pdfUrl={saranaOvRowMenu.menuItem && isSaranaPdfAvailable(saranaOvRowMenu.menuItem) ? api.saranaPdfUrl(saranaOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = saranaOvRowMenu.menuItem;
+                  saranaOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Pengajuan-Perbaikan-${item.nomorPerbaikan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <SaranaFormModal open={saranaOvFormOpen} me={me} onClose={() => setSaranaOvFormOpen(false)} onCreated={loadSaranaOverview} />
+              )}
+
+              {me && (
+                <SaranaDetailModal
+                  open={!!saranaOvDetail}
+                  mode={saranaOvDetail?.mode || "view"}
+                  item={saranaOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setSaranaOvDetail(null)}
+                  onSaved={loadSaranaOverview}
+                  onRequestReject={(id, type, originLabel) => setSaranaOvRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <SaranaKoreksiModal
+                open={!!saranaOvKoreksiTarget}
+                item={saranaOvKoreksiTarget}
+                onClose={() => setSaranaOvKoreksiTarget(null)}
+                onSaved={loadSaranaOverview}
+              />
+
+              <RejectModal
+                open={!!saranaOvRejectTarget}
+                targetId={saranaOvRejectTarget?.id ?? null}
+                targetType={saranaOvRejectTarget?.type ?? null}
+                originLabel={saranaOvRejectTarget?.originLabel ?? ""}
+                onClose={() => setSaranaOvRejectTarget(null)}
+                onDone={() => { setSaranaOvRejectTarget(null); loadSaranaOverview(); }}
+              />
+
+              <SaranaStatusHistoryModal open={saranaOvStatusItemId != null} itemId={saranaOvStatusItemId} onClose={() => setSaranaOvStatusItemId(null)} />
+
+              {me && (
+                <SaranaChatModal
+                  open={!!saranaOvChatItem}
+                  itemId={saranaOvChatItem?.id ?? null}
+                  itemLabel={saranaOvChatItem ? `${saranaOvChatItem.lokasi} - ${saranaOvChatItem.nomorPerbaikan || "-"}` : ""}
+                  departemen={saranaOvChatItem?.departemen ?? null}
+                  createdByRole={saranaOvChatItem?.createdByRole ?? null}
+                  me={me}
+                  onClose={() => setSaranaOvChatItem(null)}
+                  onRead={loadSaranaOverview}
+                />
+              )}
+            </>
+          )}
+
+          {saranaSubtab === "transaksi" && (
+      <>
       <div className="card">
         <div className="card-header">
           <h3>Pengajuan Perbaikan Sarana</h3>
@@ -4767,8 +6619,12 @@ function SuperAdminPageInner() {
           />
 
           <SaranaStatusHistoryModal open={saranaStatusItemId != null} itemId={saranaStatusItemId} onClose={() => setSaranaStatusItemId(null)} />
+            </>
+          )}
 
-          <div className="card" style={{ marginTop: 20 }}>
+          {saranaSubtab === "katalog" && (
+            <>
+          <div className="card">
             <div className="card-header">
               <h3>Repository Maintenance</h3>
             </div>
@@ -4988,6 +6844,8 @@ function SuperAdminPageInner() {
             onClose={() => setSaranaKatalogChatItem(null)}
             onRead={loadSaranaKatalog}
           />
+            </>
+          )}
         </>
       )}
 
@@ -4997,7 +6855,13 @@ function SuperAdminPageInner() {
 
       <InvoiceRowMenuDropdown
         position={invoiceRowMenu.position}
-        showUpdates={false}
+        // Updates re-uses InvoiceController.UpdateInvoice, whose own item.UploadedBy === user.Id
+        // ownership check has no Super Admin exception (me.role is always SUPER_ADMIN on this
+        // page) - so this only actually succeeds for an invoice Super Admin uploaded themselves.
+        showUpdates={!!invoiceRowMenu.menuItem && !!me && invoiceRowMenu.menuItem.uploadedBy === me.id && (invoiceRowMenu.menuItem.status === "REJECTED" || invoiceRowMenu.menuItem.status === "DRAFT")}
+        // Unlike Updates, DeleteInvoice on the backend does special-case Super Admin (deletes any
+        // invoice regardless of owner/status, logged as an audited deletion) - so this bypasses
+        // unconditionally.
         showDelete={!!invoiceRowMenu.menuItem}
         pdfViewUrl={invoiceRowMenu.menuItem ? api.invoiceFileUrl(invoiceRowMenu.menuItem.id) : "#"}
         pdfDownloadUrl={invoiceRowMenu.menuItem ? api.invoiceDownloadUrl(invoiceRowMenu.menuItem.id) : "#"}
@@ -5006,7 +6870,11 @@ function SuperAdminPageInner() {
           invoiceRowMenu.close();
           if (item) setInvoiceDetail(item);
         }}
-        onUpdates={() => {}}
+        onUpdates={() => {
+          const item = invoiceRowMenu.menuItem;
+          invoiceRowMenu.close();
+          if (item) setInvoiceUpdateTarget(item);
+        }}
         onRiwayat={() => {
           const item = invoiceRowMenu.menuItem;
           invoiceRowMenu.close();
@@ -5020,13 +6888,46 @@ function SuperAdminPageInner() {
         onLinkClick={() => invoiceRowMenu.close()}
       />
 
+      <InvoiceUploadModal
+        open={invoiceUploadOpen}
+        onClose={() => setInvoiceUploadOpen(false)}
+        onDone={() => {
+          setInvoiceUploadOpen(false);
+          loadInvoices();
+        }}
+      />
+
       <InvoiceDetailModal
         open={!!invoiceDetail}
         item={invoiceDetail}
         me={me}
         onClose={() => setInvoiceDetail(null)}
-        onRequestAction={() => {}}
-        onSubmitted={() => {}}
+        onRequestAction={(id) => setInvoiceRejectId(id)}
+        onSubmitted={() => {
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
+      />
+
+      <InvoiceActionModal
+        open={invoiceRejectId != null}
+        invoiceId={invoiceRejectId}
+        onClose={() => setInvoiceRejectId(null)}
+        onDone={() => {
+          setInvoiceRejectId(null);
+          setInvoiceDetail(null);
+          loadInvoices();
+        }}
+      />
+
+      <InvoiceUpdateModal
+        open={!!invoiceUpdateTarget}
+        item={invoiceUpdateTarget}
+        onClose={() => setInvoiceUpdateTarget(null)}
+        onDone={() => {
+          setInvoiceUpdateTarget(null);
+          loadInvoices();
+        }}
       />
 
       <InvoiceHistoryModal
@@ -5046,7 +6947,7 @@ function SuperAdminPageInner() {
 
       <InvoiceRowMenuDropdown
         position={atkInvoiceRowMenu.position}
-        showUpdates={false}
+        showUpdates={!!atkInvoiceRowMenu.menuItem && !!me && atkInvoiceRowMenu.menuItem.uploadedBy === me.id && (atkInvoiceRowMenu.menuItem.status === "REJECTED" || atkInvoiceRowMenu.menuItem.status === "DRAFT")}
         showDelete={!!atkInvoiceRowMenu.menuItem}
         pdfViewUrl={atkInvoiceRowMenu.menuItem ? api.atkInvoiceFileUrl(atkInvoiceRowMenu.menuItem.id) : "#"}
         pdfDownloadUrl={atkInvoiceRowMenu.menuItem ? api.atkInvoiceDownloadUrl(atkInvoiceRowMenu.menuItem.id) : "#"}
@@ -5055,7 +6956,11 @@ function SuperAdminPageInner() {
           atkInvoiceRowMenu.close();
           if (item) setAtkInvoiceDetail(item);
         }}
-        onUpdates={() => {}}
+        onUpdates={() => {
+          const item = atkInvoiceRowMenu.menuItem;
+          atkInvoiceRowMenu.close();
+          if (item) setAtkInvoiceUpdateTarget(item);
+        }}
         onRiwayat={() => {
           const item = atkInvoiceRowMenu.menuItem;
           atkInvoiceRowMenu.close();
@@ -5069,13 +6974,46 @@ function SuperAdminPageInner() {
         onLinkClick={() => atkInvoiceRowMenu.close()}
       />
 
+      <AtkInvoiceUploadModal
+        open={atkInvoiceUploadOpen}
+        onClose={() => setAtkInvoiceUploadOpen(false)}
+        onDone={() => {
+          setAtkInvoiceUploadOpen(false);
+          loadAtkInvoices();
+        }}
+      />
+
       <AtkInvoiceDetailModal
         open={!!atkInvoiceDetail}
         item={atkInvoiceDetail}
         me={me}
         onClose={() => setAtkInvoiceDetail(null)}
-        onRequestAction={() => {}}
-        onSubmitted={() => {}}
+        onRequestAction={(id) => setAtkInvoiceRejectId(id)}
+        onSubmitted={() => {
+          setAtkInvoiceDetail(null);
+          loadAtkInvoices();
+        }}
+      />
+
+      <AtkInvoiceActionModal
+        open={atkInvoiceRejectId != null}
+        invoiceId={atkInvoiceRejectId}
+        onClose={() => setAtkInvoiceRejectId(null)}
+        onDone={() => {
+          setAtkInvoiceRejectId(null);
+          setAtkInvoiceDetail(null);
+          loadAtkInvoices();
+        }}
+      />
+
+      <AtkInvoiceUpdateModal
+        open={!!atkInvoiceUpdateTarget}
+        item={atkInvoiceUpdateTarget}
+        onClose={() => setAtkInvoiceUpdateTarget(null)}
+        onDone={() => {
+          setAtkInvoiceUpdateTarget(null);
+          loadAtkInvoices();
+        }}
       />
 
       <AtkInvoiceHistoryModal
