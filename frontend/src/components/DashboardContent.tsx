@@ -22,6 +22,7 @@ import {
   Phone,
   Star,
   X,
+  RotateCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
@@ -478,6 +479,9 @@ function PaneAll({
   const trenRef   = useRef<HTMLCanvasElement>(null);
   const budgetRef = useRef<HTMLCanvasElement>(null);
 
+  // Status Filter Chips for Table
+  const [tableStatusFilter, setTableStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED" | "REJECTED">("ALL");
+
   const sum = (field: keyof ModuleStats) => {
     const modules: (keyof AllStats)[] = isKpu
       ? ["ekspedisi", "atk"]
@@ -565,6 +569,37 @@ function PaneAll({
   }, [grandTotal, stats, totalCost]);
 
   const scopeLabel = me.divisi ? `Divisi ${me.divisi}` : "Seluruh Divisi";
+
+  // Filter activities for table
+  const pendingActivities = recentActivities.filter(
+    (a) =>
+      a.status.toLowerCase().includes("pending") ||
+      a.status.toLowerCase().includes("diproses") ||
+      a.status.toLowerCase().includes("submitted") ||
+      a.badgeClass.includes("submitted")
+  );
+  const completedActivities = recentActivities.filter(
+    (a) =>
+      a.status.toLowerCase().includes("selesai") ||
+      a.status.toLowerCase().includes("approved") ||
+      a.badgeClass.includes("completed")
+  );
+  const rejectedActivities = recentActivities.filter(
+    (a) =>
+      a.status.toLowerCase().includes("tolak") ||
+      a.status.toLowerCase().includes("reject") ||
+      a.status.toLowerCase().includes("batal") ||
+      a.badgeClass.includes("rejected")
+  );
+
+  const displayedActivities =
+    tableStatusFilter === "PENDING"
+      ? pendingActivities
+      : tableStatusFilter === "COMPLETED"
+      ? completedActivities
+      : tableStatusFilter === "REJECTED"
+      ? rejectedActivities
+      : recentActivities;
 
   return (
     <>
@@ -1184,20 +1219,53 @@ function PaneAll({
         )}
       </div>
 
-      {/* ── 7. Log Transaksi Terkini Lintas Modul ── */}
+      {/* ── 7. Log Transaksi Terkini Lintas Modul dengan Filter Chips ── */}
       <div className="card" style={{ marginTop: 0, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 10 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Aktivitas & Transaksi Terkini Lintas Modul</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
               Daftar pengajuan terbaru yang masuk ke sistem
             </div>
           </div>
+
+          {/* Quick Status Filter Chips */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {[
+              { key: "ALL", label: `Semua (${recentActivities.length})` },
+              { key: "PENDING", label: `Menunggu (${pendingActivities.length})` },
+              { key: "COMPLETED", label: `Selesai (${completedActivities.length})` },
+              { key: "REJECTED", label: `Ditolak (${rejectedActivities.length})` },
+            ].map((chip) => {
+              const active = tableStatusFilter === chip.key;
+              return (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => setTableStatusFilter(chip.key as any)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 20,
+                    fontSize: "0.74rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: active ? "none" : "1px solid var(--border-subtle)",
+                    background: active ? "var(--gradient-primary)" : "var(--bg-surface-alt)",
+                    color: active ? "#fff" : "var(--text-secondary)",
+                    boxShadow: active ? "0 2px 8px rgba(20,80,201,0.25)" : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {recentActivities.length === 0 ? (
-          <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "16px 0", textAlign: "center" }}>
-            Belum ada aktivitas transaksi terbaru.
+        {displayedActivities.length === 0 ? (
+          <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "20px 0", textAlign: "center" }}>
+            Tidak ada transaksi dengan status yang dipilih.
           </p>
         ) : (
           <div className="table-wrap">
@@ -1213,7 +1281,7 @@ function PaneAll({
                 </tr>
               </thead>
               <tbody>
-                {recentActivities.slice(0, 6).map((item) => (
+                {displayedActivities.slice(0, 8).map((item) => (
                   <tr key={`${item.modul}-${item.id}`}>
                     <td style={{ fontWeight: 700, fontFamily: "monospace" }}>
                       <Link href={item.href} style={{ color: "var(--blue-500)", textDecoration: "none" }}>
@@ -1276,7 +1344,7 @@ export default function DashboardContent({ me }: Props) {
   const [vehSchedules, setVehSchedules] = useState<BookingKendaraan[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
-  // Interactive header states
+  // Interactive header & features states
   const [selectedPeriod, setSelectedPeriod] = useState<string>("month");
   const [selectedDivisi, setSelectedDivisi] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1284,10 +1352,25 @@ export default function DashboardContent({ me }: Props) {
   const [searchModalResult, setSearchModalResult] = useState<RecentActivity | null>(null);
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
 
+  // Feature 1: Notice Board
+  const [showNotice, setShowNotice] = useState(true);
+  const [noticeText, setNoticeText] = useState(
+    "Pemberitahuan GA: Lift Gedung B sedang dalam perawatan berkala pukul 13:00 - 15:00 WIB. Pengambilan jatah ATK bulanan divisi dapat dilakukan di Gudang Logistik Lt. 1."
+  );
+
+  // Feature 3: Refresh Button & Last Updated Timestamp
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const loadStats = useCallback(async () => {
     const bulan = currentYearMonth();
     const today = todayLocalDate();
     setStats((prev) => ({ ...prev, loading: true }));
+
+    // Update timestamp
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")} WIB`;
+    setLastUpdated(timeStr);
 
     // Helper: convert countsByStatus to ModuleStats
     const toStats = (
@@ -1360,9 +1443,9 @@ export default function DashboardContent({ me }: Props) {
     // Load Recent Activity Streams
     try {
       const [ekspList, roomList, vehList] = await Promise.allSettled([
-        api.listPengiriman({ limit: 6 }),
-        api.listBooking({ limit: 6 }),
-        api.listKendaraanBooking({ limit: 6 }),
+        api.listPengiriman({ limit: 8 }),
+        api.listBooking({ limit: 8 }),
+        api.listKendaraanBooking({ limit: 8 }),
       ]);
 
       const items: RecentActivity[] = [];
@@ -1430,6 +1513,12 @@ export default function DashboardContent({ me }: Props) {
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadStats();
+    setTimeout(() => setIsRefreshing(false), 400);
+  };
+
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
     const q = searchQuery.toLowerCase().trim();
@@ -1447,7 +1536,72 @@ export default function DashboardContent({ me }: Props) {
 
   return (
     <>
-      {/* ── Top Controls: Search Bar, Period Filter, Divisi Filter, Quick Action Button ── */}
+      {/* ── Feature 1: GA Notice Board / Broadcast Announcement ── */}
+      {showNotice && (
+        <div
+          className="card"
+          style={{
+            marginTop: 0,
+            marginBottom: 16,
+            padding: "10px 16px",
+            background: "linear-gradient(90deg, rgba(28, 109, 255, 0.08) 0%, rgba(20, 80, 201, 0.03) 100%)",
+            borderLeft: "4px solid var(--blue-500)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 260 }}>
+            <span style={{ fontSize: "1.15rem" }}>📢</span>
+            <div style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>
+              <strong style={{ color: "var(--blue-500)", marginRight: 6 }}>Pengumuman GA:</strong>
+              {noticeText}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isGaAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  const newText = prompt("Ubah pengumuman broadcast GA:", noticeText);
+                  if (newText && newText.trim()) setNoticeText(newText.trim());
+                }}
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                }}
+              >
+                Ubah Teks
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowNotice(false)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-secondary)",
+                display: "flex",
+                alignItems: "center",
+              }}
+              title="Tutup Pengumuman"
+            >
+              <X width={16} height={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Top Controls: Search Bar, Period Filter, Divisi Filter, Refresh Button, Quick Action Button ── */}
       <div
         style={{
           display: "flex",
@@ -1511,6 +1665,33 @@ export default function DashboardContent({ me }: Props) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Feature 3: Timestamp & Manual Refresh Button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.76rem", color: "var(--text-secondary)" }}>
+            {lastUpdated && <span>Diperbarui: {lastUpdated}</span>}
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={stats.loading || isRefreshing}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "6px 11px",
+                borderRadius: 8,
+                fontSize: "0.76rem",
+                fontWeight: 600,
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+              }}
+              title="Perbarui data terbaru sekarang"
+            >
+              <RotateCw width={13} height={13} className={isRefreshing || stats.loading ? "animate-spin" : ""} />
+              <span>Refresh</span>
+            </button>
+          </div>
+
           {/* Period Filter */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
             <span>Periode:</span>
