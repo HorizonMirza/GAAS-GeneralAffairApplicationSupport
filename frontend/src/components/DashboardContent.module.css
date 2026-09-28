@@ -37,8 +37,6 @@
 }
 
 .moduleTabs button {
-  position: relative;
-  overflow: hidden;
   min-width: 145px;
   min-height: 42px;
   flex: 1 0 145px;
@@ -57,30 +55,12 @@
   transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, background 150ms ease;
 }
 
-.moduleTabs button::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 3px;
-  background: var(--blue-500);
-  content: "";
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 150ms ease;
-}
-
 .moduleTabs button:hover,
 .moduleTabs button:focus-visible {
   transform: translateY(-1px);
   border-color: var(--blue-400);
   color: var(--blue-500);
   box-shadow: 0 4px 12px rgba(20, 80, 201, 0.1);
-}
-
-.moduleTabs button:hover::before,
-.moduleTabs button:focus-visible::before {
-  transform: scaleX(1);
 }
 
 .moduleTabs .moduleTabActive {
@@ -95,10 +75,6 @@
   border-color: var(--blue-500);
   color: #fff;
   background: var(--blue-500);
-}
-
-.moduleTabs .moduleTabActive::before {
-  background: rgba(255, 255, 255, 0.92);
 }
 
 .monthFilter {
