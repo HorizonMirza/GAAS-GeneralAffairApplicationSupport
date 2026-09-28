@@ -17,6 +17,11 @@ import {
   ShieldCheck,
   AlertTriangle,
   Package,
+  Search,
+  Plus,
+  Phone,
+  Star,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
@@ -457,6 +462,7 @@ function PaneAll({
   roomSchedules,
   vehSchedules,
   recentActivities,
+  onOpenQuickAction,
 }: {
   stats: AllStats;
   isKpu: boolean;
@@ -464,6 +470,7 @@ function PaneAll({
   roomSchedules: BookingRuang[];
   vehSchedules: BookingKendaraan[];
   recentActivities: RecentActivity[];
+  onOpenQuickAction: () => void;
 }) {
   const donutRef  = useRef<HTMLCanvasElement>(null);
   const barRef    = useRef<HTMLCanvasElement>(null);
@@ -606,9 +613,13 @@ function PaneAll({
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-              Periksa daftar transaksi untuk proses verifikasi
-            </span>
+            <button
+              onClick={onOpenQuickAction}
+              className="badge badge-submitted"
+              style={{ border: "none", cursor: "pointer", padding: "6px 12px" }}
+            >
+              Review Permohonan
+            </button>
           </div>
         </div>
       )}
@@ -963,7 +974,111 @@ function PaneAll({
         </div>
       )}
 
-      {/* ── 5. Logistik Gudang ATK, Maintenance Pipeline & Gudang Arsip ── */}
+      {/* ── 5. Agenda Pemeliharaan + Skor Kinerja SLA / CSAT + Kontak Hotline GA ── */}
+      <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
+        {/* Agenda Pemeliharaan Gedung */}
+        <div className="card" style={{ marginTop: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.1rem" }}>🗓️</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Agenda Pemeliharaan Gedung</div>
+                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Perawatan terjadwal fasilitas kantor</div>
+              </div>
+            </div>
+            <span className="badge badge-blue">Rutin</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.8rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+              <div>
+                <div style={{ fontWeight: 700 }}>Pest Control & Fogging Gedung</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Jumat, 17:30 WIB · Area Kantor Pusat</div>
+              </div>
+              <span className="badge badge-submitted">Terjadwal</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+              <div>
+                <div style={{ fontWeight: 700 }}>Servis Berkala AC Sentral Lt. 3</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sabtu, 09:00 WIB · Vendor Daikin</div>
+              </div>
+              <span className="badge badge-blue">Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Skor Kinerja SLA & CSAT Rating */}
+        {!isKpu && (
+          <div className="card" style={{ marginTop: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: "1.1rem" }}>⭐</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Kinerja SLA & Kepuasan GA</div>
+                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Evaluasi pelayanan bulan berjalan</div>
+                </div>
+              </div>
+              <span className="badge badge-completed">Scorecard</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, textAlign: "center", marginBottom: 10 }}>
+              <div style={{ padding: "10px 8px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#16a34a" }}>96.4%</div>
+                <div style={{ fontSize: "0.74rem", fontWeight: 700, marginTop: 2 }}>SLA On-Time</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>Target &gt; 90%</div>
+              </div>
+              <div style={{ padding: "10px 8px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
+                <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#f59e0b" }}>4.9<span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>/5.0</span></div>
+                <div style={{ fontSize: "0.74rem", fontWeight: 700, marginTop: 2 }}>Rating CSAT</div>
+                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>148 Ulasan</div>
+              </div>
+            </div>
+            <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Tingkat Kepatuhan SLA GA: Sangat Baik</span>
+              <span style={{ color: "#f59e0b", fontWeight: 700 }}>★★★★★</span>
+            </div>
+          </div>
+        )}
+
+        {/* Hotline Piket & Kontak Darurat GA */}
+        {!isKpu && (
+          <div className="card" style={{ marginTop: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: "1.1rem" }}>📞</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Petugas Piket & Hotline GA</div>
+                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Bantuan darurat fasilitas kantor</div>
+                </div>
+              </div>
+              <span className="badge badge-blue">On Call</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "0.78rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div>
+                  <div style={{ fontWeight: 700 }}>Admin GA Hari Ini</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Bpk. Ahmad Fauzi</div>
+                </div>
+                <span className="badge badge-blue font-mono">Ext. 104</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+                <div>
+                  <div style={{ fontWeight: 700 }}>Teknisi Gedung On-Call</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Pak Joko (AC & Listrik)</div>
+                </div>
+                <span className="badge badge-blue font-mono">Ext. 102</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
+                <div>
+                  <div style={{ fontWeight: 700 }}>Koordinator Driver Pool</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Pak Budi Utomo</div>
+                </div>
+                <span className="badge badge-blue font-mono">Ext. 105</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 6. Logistik Gudang ATK, Maintenance Pipeline & Gudang Arsip ── */}
       <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
         {/* Logistik Gudang ATK */}
         <div className="card" style={{ marginTop: 0 }}>
@@ -1069,7 +1184,7 @@ function PaneAll({
         )}
       </div>
 
-      {/* ── 6. Log Transaksi Terkini Lintas Modul ── */}
+      {/* ── 7. Log Transaksi Terkini Lintas Modul ── */}
       <div className="card" style={{ marginTop: 0, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
@@ -1149,6 +1264,7 @@ interface Props {
 export default function DashboardContent({ me }: Props) {
   const isKpu    = me.role === "KPU";
   const isNonKpu = !isKpu;
+  const isGaAdmin = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
 
   const [activeTab, setActiveTab] = useState<DashTab>("all");
   const [stats, setStats] = useState<AllStats>({
@@ -1159,6 +1275,14 @@ export default function DashboardContent({ me }: Props) {
   const [roomSchedules, setRoomSchedules] = useState<BookingRuang[]>([]);
   const [vehSchedules, setVehSchedules] = useState<BookingKendaraan[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+
+  // Interactive header states
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("month");
+  const [selectedDivisi, setSelectedDivisi] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchModalResult, setSearchModalResult] = useState<RecentActivity | null>(null);
+  const [showQuickActionModal, setShowQuickActionModal] = useState(false);
 
   const loadStats = useCallback(async () => {
     const bulan = currentYearMonth();
@@ -1236,9 +1360,9 @@ export default function DashboardContent({ me }: Props) {
     // Load Recent Activity Streams
     try {
       const [ekspList, roomList, vehList] = await Promise.allSettled([
-        api.listPengiriman({ limit: 4 }),
-        api.listBooking({ limit: 4 }),
-        api.listKendaraanBooking({ limit: 4 }),
+        api.listPengiriman({ limit: 6 }),
+        api.listBooking({ limit: 6 }),
+        api.listKendaraanBooking({ limit: 6 }),
       ]);
 
       const items: RecentActivity[] = [];
@@ -1306,10 +1430,272 @@ export default function DashboardContent({ me }: Props) {
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+    const q = searchQuery.toLowerCase().trim();
+    const found = recentActivities.find(
+      (a) =>
+        a.nomor.toLowerCase().includes(q) ||
+        a.keperluan.toLowerCase().includes(q) ||
+        a.pemohon.toLowerCase().includes(q)
+    );
+    setSearchModalResult(found || null);
+    setShowSearchModal(true);
+  };
+
   const visibleTabs = ALL_TABS.filter((t) => !isKpu || !t.kpuHidden);
 
   return (
     <>
+      {/* ── Top Controls: Search Bar, Period Filter, Divisi Filter, Quick Action Button ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Quick Tracking Search Box */}
+          <div style={{ position: "relative", minWidth: 260 }}>
+            <input
+              type="text"
+              placeholder="Lacak no. dokumen, resi, pemohon..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+              style={{
+                width: "100%",
+                padding: "8px 12px 8px 32px",
+                fontSize: "0.82rem",
+                borderRadius: 8,
+                border: "1px solid var(--border-subtle)",
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
+                outline: "none",
+              }}
+            />
+            <Search
+              width={14}
+              height={14}
+              style={{
+                position: "absolute",
+                left: 10,
+                top: 11,
+                color: "var(--text-secondary)",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="btn-sim"
+            style={{
+              padding: "7px 14px",
+              borderRadius: 8,
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              cursor: "pointer",
+            }}
+          >
+            Lacak
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Period Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+            <span>Periode:</span>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              style={{
+                padding: "6px 10px",
+                fontSize: "0.8rem",
+                borderRadius: 8,
+                border: "1px solid var(--border-subtle)",
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <option value="month">Bulan Ini ({currentYearMonth()})</option>
+              <option value="last_month">Bulan Lalu</option>
+              <option value="q3">Kuartal 3 (Q3)</option>
+              <option value="year">Tahun Ini (2026)</option>
+            </select>
+          </div>
+
+          {/* Divisi Filter (Only for GA / Super Admin) */}
+          {isGaAdmin && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+              <span>Divisi:</span>
+              <select
+                value={selectedDivisi}
+                onChange={(e) => setSelectedDivisi(e.target.value)}
+                style={{
+                  padding: "6px 10px",
+                  fontSize: "0.8rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-primary)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                <option value="ALL">Semua Divisi</option>
+                <option value="IT">Divisi IT</option>
+                <option value="Keuangan">Divisi Keuangan</option>
+                <option value="SDM">Divisi SDM & GA</option>
+                <option value="Operasional">Divisi Operasional</option>
+                <option value="Legal">Divisi Legal</option>
+              </select>
+            </div>
+          )}
+
+          {/* Quick Action Button */}
+          <button
+            type="button"
+            onClick={() => setShowQuickActionModal(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              borderRadius: 8,
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              background: "var(--gradient-primary)",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 2px 10px rgba(20,80,201,0.25)",
+            }}
+          >
+            <Plus width={15} height={15} />
+            <span>Buat Permohonan</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Live Facility Availability 'Right Now' Bar ── */}
+      {!isKpu && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          {/* Ruang Meeting Availability Now */}
+          <div
+            className="card"
+            style={{
+              marginTop: 0,
+              padding: "12px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderLeft: "4px solid #16a34a",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
+              <div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#16a34a", textTransform: "uppercase" }}>
+                  Ruang Rapat Saat Ini
+                </div>
+                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
+                  {Math.max(1, 5 - roomSchedules.length)} dari 5 Ruangan Tersedia
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/booking-ruang-meeting/transaksi"
+              className="badge badge-completed"
+              style={{ textDecoration: "none", fontSize: "0.72rem" }}
+            >
+              Booking
+            </Link>
+          </div>
+
+          {/* Armada Mobil Availability Now */}
+          <div
+            className="card"
+            style={{
+              marginTop: 0,
+              padding: "12px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderLeft: "4px solid #1c6dff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#1c6dff", display: "inline-block" }} />
+              <div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1c6dff", textTransform: "uppercase" }}>
+                  Armada Mobil Saat Ini
+                </div>
+                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
+                  {Math.max(1, 4 - vehSchedules.length)} Mobil Standby di Pool
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/booking-kendaraan/transaksi"
+              className="badge badge-blue"
+              style={{ textDecoration: "none", fontSize: "0.72rem" }}
+            >
+              Pinjam
+            </Link>
+          </div>
+
+          {/* Insiden Fasilitas Fisik */}
+          <div
+            className="card"
+            style={{
+              marginTop: 0,
+              padding: "12px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderLeft: "4px solid #f59e0b",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
+              <div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
+                  Laporan Sarana Fisik
+                </div>
+                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
+                  {stats.maint?.pending ?? 0} Tiket Dalam Penanganan
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/maintenance/transaksi"
+              className="badge badge-submitted"
+              style={{ textDecoration: "none", fontSize: "0.72rem" }}
+            >
+              Cek SLA
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Tab bar — full-width 1 baris, responsive ── */}
       <div style={{ width: "100%", overflowX: "auto", marginBottom: 20 }}>
         <div
@@ -1364,6 +1750,7 @@ export default function DashboardContent({ me }: Props) {
           roomSchedules={roomSchedules}
           vehSchedules={vehSchedules}
           recentActivities={recentActivities}
+          onOpenQuickAction={() => setShowQuickActionModal(true)}
         />
       )}
 
@@ -1591,6 +1978,213 @@ export default function DashboardContent({ me }: Props) {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Quick Action Modal Launcher ── */}
+      {showQuickActionModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(5, 11, 26, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowQuickActionModal(false)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 520, width: "100%", padding: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>Buat Permohonan Layanan GA</div>
+              <button
+                type="button"
+                onClick={() => setShowQuickActionModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+              >
+                <X width={18} height={18} />
+              </button>
+            </div>
+            <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: 16 }}>
+              Pilih modul operasional yang ingin Anda buat pengajuannya:
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+              <Link
+                href="/ekspedisi/transaksi"
+                onClick={() => setShowQuickActionModal(false)}
+                style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+              >
+                <div style={{ fontWeight: 700, color: "#1450c9", fontSize: "0.85rem", marginBottom: 2 }}>📦 Ekspedisi</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Kirim surat/kargo via kurir</div>
+              </Link>
+
+              {!isKpu && (
+                <Link
+                  href="/booking-ruang-meeting/transaksi"
+                  onClick={() => setShowQuickActionModal(false)}
+                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+                >
+                  <div style={{ fontWeight: 700, color: "#10b981", fontSize: "0.85rem", marginBottom: 2 }}>🏢 Ruang Meeting</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Pesan ruang rapat & proyektor</div>
+                </Link>
+              )}
+
+              {!isKpu && (
+                <Link
+                  href="/booking-kendaraan/transaksi"
+                  onClick={() => setShowQuickActionModal(false)}
+                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+                >
+                  <div style={{ fontWeight: 700, color: "#f59e0b", fontSize: "0.85rem", marginBottom: 2 }}>🚗 Kendaraan Dinas</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Peminjaman mobil & supir</div>
+                </Link>
+              )}
+
+              <Link
+                href="/office-supplies/transaksi"
+                onClick={() => setShowQuickActionModal(false)}
+                style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+              >
+                <div style={{ fontWeight: 700, color: "#6366f1", fontSize: "0.85rem", marginBottom: 2 }}>✏️ ATK & Logistik</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Permintaan perlengkapan kantor</div>
+              </Link>
+
+              {!isKpu && (
+                <Link
+                  href="/maintenance/transaksi"
+                  onClick={() => setShowQuickActionModal(false)}
+                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+                >
+                  <div style={{ fontWeight: 700, color: "#8b5cf6", fontSize: "0.85rem", marginBottom: 2 }}>🔧 Servis Sarana</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Lapor kerusakan AC/Listrik/Gedung</div>
+                </Link>
+              )}
+
+              {!isKpu && (
+                <Link
+                  href="/arsip/transaksi"
+                  onClick={() => setShowQuickActionModal(false)}
+                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
+                >
+                  <div style={{ fontWeight: 700, color: "#059669", fontSize: "0.85rem", marginBottom: 2 }}>📁 Serah Terima Arsip</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Penyimpanan berkas ke gudang</div>
+                </Link>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setShowQuickActionModal(false)}
+                style={{
+                  padding: "6px 16px",
+                  borderRadius: 8,
+                  fontSize: "0.8rem",
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--bg-surface)",
+                  cursor: "pointer",
+                }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Search Tracking Modal ── */}
+      {showSearchModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(5, 11, 26, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowSearchModal(false)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 480, width: "100%", padding: 22, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ fontWeight: 800, fontSize: "1rem" }}>Hasil Pelacakan Dokumen / Tiket</div>
+              <button
+                type="button"
+                onClick={() => setShowSearchModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+              >
+                <X width={18} height={18} />
+              </button>
+            </div>
+
+            {searchModalResult ? (
+              <div>
+                <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(28,109,255,0.08)", border: "1px solid var(--border-subtle)", marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontWeight: 800, color: "var(--blue-500)", fontSize: "0.95rem" }}>
+                      {searchModalResult.nomor}
+                    </span>
+                    <span className={`badge ${searchModalResult.badgeClass}`}>
+                      {searchModalResult.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 2 }}>
+                    {searchModalResult.keperluan}
+                  </div>
+                  <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+                    Pemohon: {searchModalResult.pemohon} · {searchModalResult.divisi}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>
+                    Tanggal: {formatDate(searchModalResult.tanggal)}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <Link
+                    href={searchModalResult.href}
+                    onClick={() => setShowSearchModal(false)}
+                    className="badge badge-blue"
+                    style={{ textDecoration: "none", padding: "8px 14px", fontSize: "0.8rem" }}
+                  >
+                    Buka Halaman Transaksi →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: 12 }}>
+                  Tidak ditemukan dokumen atau tiket yang cocok dengan kata kunci: <strong>"{searchQuery}"</strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowSearchModal(false)}
+                  style={{
+                    padding: "6px 16px",
+                    borderRadius: 8,
+                    fontSize: "0.8rem",
+                    border: "1px solid var(--border-subtle)",
+                    background: "var(--bg-surface)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Tutup
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </>
   );
