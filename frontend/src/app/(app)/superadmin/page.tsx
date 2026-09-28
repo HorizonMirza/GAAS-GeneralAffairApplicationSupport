@@ -71,7 +71,6 @@ import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
-import BulkDeleteModal, { type BulkDeleteTarget } from "@/components/BulkDeleteModal";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
@@ -511,9 +510,6 @@ function SuperAdminPageInner() {
       setInvoicePage(1);
     }, 350);
   }
-  // One modal serves every section's "Hapus Semua" - whichever section set it describes itself.
-  const [bulkTarget, setBulkTarget] = useState<BulkDeleteTarget | null>(null);
-
   const [bookingFilters, setBookingFilters] = useState<BookingFilterState>(EMPTY_BOOKING_FILTERS);
   const [bookingItems, setBookingItems] = useState<BookingRuang[]>([]);
   const [bookingTotal, setBookingTotal] = useState(0);
@@ -1785,27 +1781,6 @@ function SuperAdminPageInner() {
   }
 
   // --- Hapus Semua per section ---------------------------------------------------------------
-  // The button deletes exactly what its own table is showing, across every page, which means the
-  // dialog has to say which filters are narrowing that set - "delete this month" and "delete
-  // everything" are one forgotten dropdown apart.
-
-  function activeFilters(entries: [string, string | null | undefined][]): string[] {
-    return entries.filter(([, v]) => !!v).map(([label, v]) => `${label}: ${v}`);
-  }
-
-  // "REJECTED"/"ON_APPROVAL" are the synthetic dropdown values covering every reject-stage or
-  // on-approval-stage status, so neither is a key in either status map.
-  function statusText(status: string): string {
-    if (!status) return "";
-    if (status === "REJECTED") return "Rejected";
-    if (status === "ON_APPROVAL") return "On-Approval";
-    return STATUS_LABEL[status as Status] || BOOKING_STATUS_LABEL[status as BookingStatus] || status;
-  }
-
-  function bulanText(bulan: string): string {
-    return bulan ? invoiceBulanLabel(bulan) : "";
-  }
-
   function ekspedisiExportParams() {
     return {
       tanggal: filters.tanggal,
@@ -1877,34 +1852,6 @@ function SuperAdminPageInner() {
       direktorat: saranaFilters.direktorat,
       search: saranaFilters.search,
     };
-  }
-
-  // Wraps the per-section call so every one of them reports the real number the server deleted
-  // (not the count the table happened to be showing) and reloads its own table afterwards.
-  function askBulkDelete(
-    section: string,
-    noun: string,
-    count: number,
-    filters: string[],
-    run: () => Promise<{ deleted: number }>,
-    reload: () => void
-  ) {
-    setBulkTarget({
-      section,
-      noun,
-      count,
-      filters,
-      onConfirm: async () => {
-        try {
-          const { deleted } = await run();
-          showToast(`${deleted} ${noun} berhasil dihapus permanen`);
-          reload();
-        } catch (err) {
-          showToast((err as Error).message, "error");
-          throw err;
-        }
-      },
-    });
   }
 
   function handleDelete(item: Pengiriman) {
@@ -2642,13 +2589,6 @@ function SuperAdminPageInner() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetFilters}>Semua Transaksi</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={tableBusy || total === 0}
-            onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Tanggal", filters.tanggal], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.pdfUrl(ekspedisiExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -2891,25 +2831,6 @@ function SuperAdminPageInner() {
               onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
             >
               Semua Invoice
-            </button>
-          </div>
-          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
-            <span className="field-label-spacer">Hapus Semua</span>
-            <button
-              type="button"
-              className="btn btn-bulk-delete"
-              style={{ alignSelf: "auto" }}
-              disabled={invoices == null || invoiceTotal === 0}
-              onClick={() => askBulkDelete(
-                "Invoice",
-                "Invoice",
-                invoiceTotal,
-                activeFilters([["Bulan", bulanText(invoiceFilterBulan)]]),
-                () => api.superAdminBulkDeleteInvoice({ bulan: invoiceFilterBulan }),
-                loadInvoices
-              )}
-            >
-              Hapus Semua
             </button>
           </div>
           <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setInvoiceUploadOpen(true)}>
@@ -3402,13 +3323,6 @@ function SuperAdminPageInner() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Semua Pesanan</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={bookingBusy || bookingTotal === 0}
-            onClick={() => askBulkDelete("Room Booking", "booking", bookingTotal, activeFilters([["Tanggal", bookingFilters.tanggal], ["Status", statusText(bookingFilters.status)], ["Ruang", bookingFilters.namaRuang], ["Divisi", bookingFilters.divisi], ["Departemen", bookingFilters.departemen]]), () => api.superAdminBulkDeleteBooking(bookingFilters), loadBookings)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.bookingExportPdfUrl(bookingExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -4310,13 +4224,6 @@ function SuperAdminPageInner() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Semua Pesanan</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={kendaraanBusy || kendaraanTotal === 0}
-            onClick={() => askBulkDelete("Vehicle Booking", "booking", kendaraanTotal, activeFilters([["Tanggal", kendaraanFilters.tanggal], ["Status", statusText(kendaraanFilters.status)], ["Kendaraan", kendaraanFilters.namaKendaraan], ["Divisi", kendaraanFilters.divisi], ["Departemen", kendaraanFilters.departemen]]), () => api.superAdminBulkDeleteKendaraanBooking(kendaraanFilters), loadKendaraanBookings)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.kendaraanExportPdfUrl(kendaraanExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -5076,13 +4983,6 @@ function SuperAdminPageInner() {
             />
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Semua Arsip</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={arsipBusy || arsipTotal === 0}
-            onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Kategori", arsipFilters.kategori ? ARCHIVE_KATEGORI_LABEL[arsipFilters.kategori] : ""], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportPdfUrl(arsipExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -5789,13 +5689,6 @@ function SuperAdminPageInner() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetAtkFilters}>Semua Pesanan</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={atkBusy || atkTotal === 0}
-            onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.atkExportPdfUrl(atkExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -6027,25 +5920,6 @@ function SuperAdminPageInner() {
               onClick={() => { setAtkInvoiceSearchInput(""); setAtkInvoiceSearch(""); setAtkInvoiceFilterBulan(""); setAtkInvoiceFilterUploader(""); setAtkInvoicePage(1); }}
             >
               Semua Invoice
-            </button>
-          </div>
-          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
-            <span className="field-label-spacer">Hapus Semua</span>
-            <button
-              type="button"
-              className="btn btn-bulk-delete"
-              style={{ alignSelf: "auto" }}
-              disabled={atkInvoices == null || atkInvoiceTotal === 0}
-              onClick={() => askBulkDelete(
-                "Invoice",
-                "Invoice",
-                atkInvoiceTotal,
-                activeFilters([["Bulan", bulanText(atkInvoiceFilterBulan)]]),
-                () => api.superAdminBulkDeleteAtkInvoice({ bulan: atkInvoiceFilterBulan }),
-                loadAtkInvoices
-              )}
-            >
-              Hapus Semua
             </button>
           </div>
           <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setAtkInvoiceUploadOpen(true)}>
@@ -6424,13 +6298,6 @@ function SuperAdminPageInner() {
             )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetSaranaFilters}>Semua Pengajuan</button>
-          <button
-            className="btn btn-bulk-delete"
-            disabled={saranaBusy || saranaTotal === 0}
-            onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
-          >
-            Hapus Semua
-          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.saranaExportPdfUrl(saranaExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -7030,8 +6897,6 @@ function SuperAdminPageInner() {
         onClose={() => setAtkInvoiceChatItem(null)}
         onRead={() => loadAtkInvoices()}
       />
-
-      <BulkDeleteModal target={bulkTarget} onClose={() => setBulkTarget(null)} />
     </>
   );
 }

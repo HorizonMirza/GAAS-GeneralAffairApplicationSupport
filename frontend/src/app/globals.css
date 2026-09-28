@@ -13,8 +13,6 @@
 
   --gradient-primary: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
   --gradient-primary-hover: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-300) 100%);
-  --gradient-danger: linear-gradient(135deg, var(--badge-rejected-bg) 0%, #f87171 100%);
-  --gradient-danger-hover: linear-gradient(135deg, #ef4444 0%, #fca5a5 100%);
   /* Original darker navy-to-blue gradient, kept only for the sidebar and cover banners (they
      stay as they were before --gradient-primary was brightened everywhere else). */
   --gradient-navy: linear-gradient(135deg, var(--navy-900) 0%, var(--blue-600) 55%, var(--blue-400) 100%);
@@ -1900,19 +1898,22 @@ body.auth-ready .app-shell {
 
 .superadmin-subtabs {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
   margin-bottom: 16px;
+  width: 100%;
 }
 
 .superadmin-subtab-btn {
-  padding: 6px 14px;
+  flex: 1 1 0;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   color: var(--text-secondary);
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-weight: 600;
+  text-align: center;
   cursor: pointer;
   transition: all 150ms ease;
 }
@@ -5969,11 +5970,8 @@ table.data-table {
 }
 
 
-/* --- Hapus Semua per section (Super Admin) --- */
-
-/* The scope box in BulkDeleteModal: says out loud what the delete is limited to, because the
-   difference between "this month" and "everything" is one filter the user may have forgotten
-   they set. Colours come from the theme tokens so both themes read correctly. */
+/* Scope box also reused by CredentialsRevealModal's one-time-reveal warning. Colours come from
+   the theme tokens so both themes read correctly. */
 .bulk-delete-scope {
   margin-top: 14px;
   padding: 10px 12px;
@@ -5991,34 +5989,7 @@ table.data-table {
   color: var(--text-primary);
 }
 
-.bulk-delete-scope-list {
-  margin: 6px 0 0;
-  padding-left: 18px;
-}
-
-.bulk-delete-scope-list li { margin-top: 2px; }
-
-/* No filter set means the button empties the whole module - that deserves to look different
-   from a scoped delete, not the same calm grey. */
 .bulk-delete-scope-danger {
   border-left-color: var(--badge-rejected-bg);
   background: color-mix(in srgb, var(--badge-rejected-bg) 8%, var(--bg-surface-alt));
 }
-
-/* Sits next to the reset-filter button in each section toolbar - same solid-gradient treatment as
-   .btn-primary, just in the reject colour, so it reads as a real (destructive) action rather than
-   just another filter control. */
-.btn-bulk-delete {
-  width: auto;
-  align-self: flex-end;
-  background: var(--gradient-danger);
-  color: #fff;
-  border: none;
-}
-
-.btn-bulk-delete:hover:not(:disabled) {
-  background: var(--gradient-danger-hover);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 18px rgba(255, 255, 255, 0.2);
-}
-
-.btn-bulk-delete:disabled { opacity: 0.45; }
