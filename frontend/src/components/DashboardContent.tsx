@@ -9,7 +9,7 @@ import {
   PackageCheck,
   RefreshCw,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import SearchableSelect from "@/components/SearchableSelect";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -48,6 +48,7 @@ type DashboardStatusFilter =
 type DashboardStatusSelection = "DRAFT" | "ON_APPROVAL" | "REJECTED" | "COMPLETED" | "";
 type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
 type ScheduleTab = "all" | "room" | "vehicle";
+type ChartStatusKey = "completed" | "pending" | "rejected";
 
 interface ModuleDefinition {
   key: ModuleKey;
@@ -359,6 +360,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
+  const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
   const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], errors: 0 });
@@ -516,11 +518,19 @@ export default function DashboardContent({ me }: { me: Me }) {
   const completedPercent = totals.total > 0 ? Math.round((totals.completed / totals.total) * 100) : 0;
   const pendingPercent = totals.total > 0 ? Math.round((totals.pending / totals.total) * 100) : 0;
   const rejectedPercent = totals.total > 0 ? Math.round((totals.rejected / totals.total) * 100) : 0;
-  const donutStyle = {
-    "--completed-angle": `${(totals.completed / Math.max(1, totals.total)) * 360}deg`,
-    "--pending-angle": `${((totals.completed + totals.pending) / Math.max(1, totals.total)) * 360}deg`,
-    "--rejected-angle": `${((totals.completed + totals.pending + totals.rejected) / Math.max(1, totals.total)) * 360}deg`,
-  } as CSSProperties;
+  const statusChartData = [
+    { key: "completed" as const, label: "Approved", value: totals.completed, percent: completedPercent, className: styles.completedSegment },
+    { key: "pending" as const, label: "On-Approval", value: totals.pending, percent: pendingPercent, className: styles.pendingSegment },
+    { key: "rejected" as const, label: "Rejected", value: totals.rejected, percent: rejectedPercent, className: styles.rejectedSegment },
+  ];
+  let donutOffset = 0;
+  const donutSegments = statusChartData.map((item) => {
+    const exactPercent = totals.total > 0 ? (item.value / totals.total) * 100 : 0;
+    const segment = { ...item, exactPercent, offset: donutOffset };
+    donutOffset += exactPercent;
+    return segment;
+  });
+  const hoveredStatus = statusChartData.find((item) => item.key === hoveredStatusKey) ?? null;
   const maxBarValue = Math.max(
     1,
     ...selectedModules.flatMap((module) => {
@@ -621,23 +631,52 @@ export default function DashboardContent({ me }: { me: Me }) {
 
       <section className={styles.analyticsGrid} aria-label="Analitik dashboard">
         <article className={styles.statusPanel}>
-          <header className={styles.panelHeader}><div><h2>Status Keseluruhan</h2><p>{activeModuleLabel} · {periodText}</p></div></header>
+          <header className={styles.panelHeader}><div><h2>Ringkasan Status Transaksi</h2><p>{activeView === "all" ? "Seluruh modul" : activeModuleLabel} pada {periodText.toLowerCase()}</p></div></header>
           <div className={styles.statusContent}>
-            <div className={styles.donut} style={donutStyle} role="img" aria-label={`${totals.completed} selesai, ${totals.pending} diproses, ${totals.rejected} ditolak`}>
+            <div className={styles.donut} aria-label={`${totals.completed} approved, ${totals.pending} on-approval, ${totals.rejected} rejected`}>
+              <svg className={styles.donutSvg} viewBox="0 0 120 120" role="group" aria-label="Distribusi status transaksi">
+                <circle className={styles.donutTrack} cx="60" cy="60" r="47" pathLength="100" />
+                {donutSegments.filter((item) => item.value > 0).map((item) => (
+                  <circle
+                    key={item.key}
+                    className={`${styles.donutSegment} ${item.className}`}
+                    cx="60"
+                    cy="60"
+                    r="47"
+                    pathLength="100"
+                    strokeDasharray={`${item.exactPercent} ${100 - item.exactPercent}`}
+                    strokeDashoffset={-item.offset}
+                    tabIndex={0}
+                    aria-label={`${item.label}: ${item.value.toLocaleString("id-ID")} (${item.percent}%)`}
+                    onMouseEnter={() => setHoveredStatusKey(item.key)}
+                    onMouseLeave={() => setHoveredStatusKey(null)}
+                    onFocus={() => setHoveredStatusKey(item.key)}
+                    onBlur={() => setHoveredStatusKey(null)}
+                  >
+                    <title>{`${item.label}: ${item.value.toLocaleString("id-ID")} (${item.percent}%)`}</title>
+                  </circle>
+                ))}
+              </svg>
               <div className={styles.donutCenter}><strong>{totals.total.toLocaleString("id-ID")}</strong><span>transaksi</span></div>
+              {hoveredStatus && (
+                <div className={styles.chartTooltip} role="status">
+                  <span>{hoveredStatus.label}</span>
+                  <strong>{hoveredStatus.value.toLocaleString("id-ID")} ({hoveredStatus.percent}%)</strong>
+                </div>
+              )}
             </div>
             <div className={styles.statusLegend}>
-              <div><span><i className={styles.completedDot} />Selesai</span><strong>{totals.completed.toLocaleString("id-ID")} <em>{completedPercent}%</em></strong></div>
-              <div><span><i className={styles.pendingDot} />Diproses</span><strong>{totals.pending.toLocaleString("id-ID")} <em>{pendingPercent}%</em></strong></div>
-              <div><span><i className={styles.rejectedDot} />Ditolak</span><strong>{totals.rejected.toLocaleString("id-ID")} <em>{rejectedPercent}%</em></strong></div>
+              <div><span><i className={styles.completedDot} />Approved</span><strong>{totals.completed.toLocaleString("id-ID")}</strong><em>{completedPercent}%</em></div>
+              <div><span><i className={styles.pendingDot} />On-Approval</span><strong>{totals.pending.toLocaleString("id-ID")}</strong><em>{pendingPercent}%</em></div>
+              <div><span><i className={styles.rejectedDot} />Rejected</span><strong>{totals.rejected.toLocaleString("id-ID")}</strong><em>{rejectedPercent}%</em></div>
             </div>
           </div>
         </article>
 
         <article className={styles.comparisonPanel}>
           <header className={styles.panelHeader}>
-            <div><h2>Perbandingan Antar Modul</h2><p>Volume selesai, diproses, dan ditolak · {periodText}</p></div>
-            <div className={styles.chartLegend} aria-label="Legenda grafik"><span><i className={styles.completedDot} />Selesai</span><span><i className={styles.pendingDot} />Diproses</span><span><i className={styles.rejectedDot} />Ditolak</span></div>
+            <div><h2>Perbandingan Status Modul</h2><p>Distribusi transaksi pada {periodText.toLowerCase()}</p></div>
+            <div className={styles.chartLegend} aria-label="Legenda grafik"><span><i className={styles.completedDot} />Approved</span><span><i className={styles.pendingDot} />On-Approval</span><span><i className={styles.rejectedDot} />Rejected</span></div>
           </header>
           <div className={styles.chartViewport}>
             <div className={styles.chartGrid} aria-hidden="true"><span /><span /><span /><span /></div>
@@ -645,16 +684,17 @@ export default function DashboardContent({ me }: { me: Me }) {
               {selectedModules.map((module) => {
                 const summary = state.summaries[module.key];
                 const values = [
-                  { key: "completed", value: summary.completed, className: styles.completedBar },
-                  { key: "pending", value: summary.pending, className: styles.pendingBar },
-                  { key: "rejected", value: summary.rejected, className: styles.rejectedBar },
+                  { key: "completed", label: "Approved", value: summary.completed, className: styles.completedBar },
+                  { key: "pending", label: "On-Approval", value: summary.pending, className: styles.pendingBar },
+                  { key: "rejected", label: "Rejected", value: summary.rejected, className: styles.rejectedBar },
                 ];
                 return (
                   <div className={styles.barGroup} key={module.key}>
                     <div className={styles.bars}>
                       {values.map((item) => (
-                        <span key={item.key} className={`${styles.bar} ${item.className}`} style={{ height: item.value > 0 ? `${Math.max(7, (item.value / maxBarValue) * 100)}%` : 0 }} title={`${module.label}: ${item.value.toLocaleString("id-ID")}`}>
+                        <span key={item.key} className={`${styles.bar} ${item.className}`} style={{ height: item.value > 0 ? `${Math.max(7, (item.value / maxBarValue) * 100)}%` : 0 }} tabIndex={item.value > 0 ? 0 : -1} aria-label={`${module.label}, ${item.label}: ${item.value.toLocaleString("id-ID")}`}>
                           {item.value > 0 && <small>{item.value.toLocaleString("id-ID")}</small>}
+                          {item.value > 0 && <span className={styles.barTooltip}>{module.label} · <strong>{item.label}: {item.value.toLocaleString("id-ID")}</strong></span>}
                         </span>
                       ))}
                     </div>
