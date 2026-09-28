@@ -49,6 +49,7 @@ type DashboardStatusSelection = "DRAFT" | "ON_APPROVAL" | "REJECTED" | "COMPLETE
 type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
 type ScheduleTab = "all" | "room" | "vehicle";
 type ChartStatusKey = "completed" | "pending" | "rejected";
+type OrganizationDimension = "direktorat" | "divisi" | "departemen";
 
 interface ModuleDefinition {
   key: ModuleKey;
@@ -382,6 +383,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
+  const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -530,6 +532,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     setDivisi("");
     setDepartemen("");
     setScheduleTab("all");
+    setOrganizationDimension("direktorat");
     setFilterOpen(false);
     setRefreshToken((value) => value + 1);
   }
@@ -568,9 +571,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     }),
   );
   const periodText = periodDescription(month, date);
-  const organizationContext = direktorat || divisi || departemen
-    ? [direktorat ? `Direktorat ${direktorat}` : "Semua direktorat", divisi ? `Divisi ${divisi}` : "Semua divisi", departemen ? `Departemen ${departemen}` : "Semua departemen"].join(" · ")
-    : "Semua direktorat/divisi/departemen";
+  const organizationContext = departemen || divisi || direktorat;
   const statusContext = status
     ? ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
     : "";
@@ -582,16 +583,40 @@ export default function DashboardContent({ me }: { me: Me }) {
     if (month) return itemDate.startsWith(month);
     return true;
   });
-  const divisionCounts = periodAnalytics.reduce<Record<string, number>>((counts, item) => {
-    const key = item.divisi || "Tanpa Divisi";
+  const scopedDirektoratNodes = direktorat
+    ? org?.direktoratTree.filter((node) => node.nama === direktorat) ?? []
+    : divisi
+      ? org?.direktoratTree.filter((node) => node.divisi.some((unit) => unit.nama === divisi)) ?? []
+      : departemen
+        ? org?.direktoratTree.filter((node) => node.divisi.some((unit) => unit.departemen.includes(departemen))) ?? []
+        : org?.direktoratTree ?? [];
+  const scopedDivisiNodes = scopedDirektoratNodes.flatMap((node) => node.divisi)
+    .filter((node) => !divisi || node.nama === divisi)
+    .filter((node) => !departemen || node.departemen.includes(departemen));
+  const organizationOptions = organizationDimension === "direktorat"
+    ? scopedDirektoratNodes.map((node) => node.nama)
+    : organizationDimension === "divisi"
+      ? scopedDivisiNodes.map((node) => node.nama)
+      : departemen
+        ? [departemen]
+        : scopedDivisiNodes.flatMap((node) => node.departemen);
+  const organizationCounts = periodAnalytics.reduce<Record<string, number>>((counts, item) => {
+    const key = organizationDimension === "direktorat"
+      ? org?.direktoratTree.find((node) => node.divisi.some((unit) => unit.nama === item.divisi))?.nama ?? "Tanpa Direktorat"
+      : organizationDimension === "divisi"
+        ? item.divisi || "Tanpa Divisi"
+        : item.departemen || "Tanpa Departemen";
     counts[key] = (counts[key] ?? 0) + 1;
     return counts;
   }, {});
-  const divisionVolumes = Object.entries(divisionCounts)
-    .map(([label, value]) => ({ label, value }))
-    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label))
-    .slice(0, 5);
-  const maxDivisionVolume = Math.max(1, ...divisionVolumes.map((item) => item.value));
+  const organizationVolumes = [
+    ...organizationOptions.map((label) => ({ label, value: organizationCounts[label] ?? 0 })),
+    ...Object.entries(organizationCounts)
+      .filter(([label]) => !organizationOptions.includes(label))
+      .map(([label, value]) => ({ label, value })),
+  ].sort((left, right) => right.value - left.value || left.label.localeCompare(right.label));
+  const maxOrganizationVolume = Math.max(1, ...organizationVolumes.map((item) => item.value));
+  const organizationDimensionLabel = ({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[organizationDimension];
   const trendReference = date
     ? new Date(`${date}T00:00:00`)
     : month
@@ -757,7 +782,6 @@ export default function DashboardContent({ me }: { me: Me }) {
             <div className={styles.yAxis} aria-hidden="true">
               {yAxisTicks.map((tick, index) => <span key={`${tick}-${index}`}>{tick.toLocaleString("id-ID")}</span>)}
             </div>
-            <span className={styles.yAxisTitle} aria-hidden="true">Transactions</span>
             <div className={styles.barGroups} style={{ gridTemplateColumns: `repeat(${selectedModules.length}, minmax(62px, 1fr))` }}>
               {selectedModules.map((module) => {
                 const summary = state.summaries[module.key];
@@ -781,7 +805,6 @@ export default function DashboardContent({ me }: { me: Me }) {
                 );
               })}
             </div>
-            <span className={styles.xAxisTitle} aria-hidden="true">Module</span>
           </div>
         </article>
       </section>
@@ -789,15 +812,27 @@ export default function DashboardContent({ me }: { me: Me }) {
       <section className={styles.insightGrid} aria-label="Analitik organisasi dan tren">
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
-            <div><h2>Distribusi Volume per Divisi</h2><p>{periodText} · {organizationContext}</p></div>
-            <span>Top Divisi</span>
+            <div><h2>Distribusi Volume per {organizationDimensionLabel}</h2><p>{[periodText, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
+            <div className={styles.organizationToggle} role="tablist" aria-label="Kelompok organisasi">
+              {(["direktorat", "divisi", "departemen"] as const).map((dimension) => (
+                <button
+                  key={dimension}
+                  type="button"
+                  role="tab"
+                  aria-selected={organizationDimension === dimension}
+                  className={organizationDimension === dimension ? styles.organizationToggleActive : ""}
+                  onClick={() => setOrganizationDimension(dimension)}
+                >
+                  {({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[dimension]}
+                </button>
+              ))}
+            </div>
           </header>
           <div className={styles.divisionChart}>
-            {divisionVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada data divisi pada filter ini.</div> : divisionVolumes.map((item) => (
+            {organizationVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada struktur organisasi pada filter ini.</div> : organizationVolumes.map((item) => (
               <div className={styles.divisionRow} key={item.label} title={`${item.label}: ${item.value.toLocaleString("id-ID")} transaksi`}>
-                <strong>{item.label}</strong>
-                <span className={styles.divisionTrack}><i style={{ width: `${Math.max(6, (item.value / maxDivisionVolume) * 100)}%` }} /></span>
-                <em>{item.value.toLocaleString("id-ID")}</em>
+                <div className={styles.divisionRowHeader}><strong title={item.label}>{item.label}</strong><em>{item.value.toLocaleString("id-ID")}</em></div>
+                <span className={styles.divisionTrack}><i style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxOrganizationVolume) * 100)}%` : 0 }} /></span>
               </div>
             ))}
           </div>
@@ -805,7 +840,7 @@ export default function DashboardContent({ me }: { me: Me }) {
 
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
-            <div><h2>Tren Transaksi (6 Bulan)</h2><p>{activeView === "all" ? "Seluruh modul" : activeModuleLabel} · {organizationContext}</p></div>
+            <div><h2>Tren Transaksi (6 Bulan)</h2><p>{[activeView === "all" ? "Seluruh modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
             {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
           </header>
           <div className={styles.trendChart}>

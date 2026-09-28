@@ -441,7 +441,7 @@
 .statusLegend > div {
   min-height: 32px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px 42px;
+  grid-template-columns: minmax(0, 1fr) 54px 54px;
   align-items: center;
   gap: 9px;
   border-bottom: 1px solid var(--border-subtle);
@@ -467,25 +467,27 @@
   text-align: right;
 }
 
-.statusLegend .statusCount {
+.statusLegend .statusCount,
+.statusLegend em {
   width: 54px;
   min-height: 24px;
   padding: 3px 8px;
-  justify-content: flex-end;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(75, 141, 255, 0.18);
   border-radius: 7px;
+  color: var(--text-primary);
   background: rgba(75, 141, 255, 0.08);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: center;
 }
 
 .statusLegend em {
-  width: 42px;
-  padding: 3px 6px;
-  border-radius: 7px;
-  color: var(--text-secondary);
-  background: var(--bg-surface-alt);
-  font-size: 0.68rem;
   font-style: normal;
-  text-align: center;
 }
 
 .completedDot,
@@ -512,14 +514,14 @@
 
 .chartViewport {
   position: relative;
-  min-height: 324px;
-  padding: 50px 24px 32px 58px;
+  min-height: 306px;
+  padding: 50px 24px 14px 48px;
   overflow-x: auto;
 }
 
 .chartGrid {
   position: absolute;
-  inset: 50px 24px 70px 58px;
+  inset: 50px 24px 52px 48px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -660,8 +662,8 @@
 .yAxis {
   position: absolute;
   top: 43px;
-  bottom: 64px;
-  left: 27px;
+  bottom: 47px;
+  left: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -672,36 +674,20 @@
   text-align: right;
 }
 
-.yAxisTitle {
-  position: absolute;
-  top: 50%;
-  left: 3px;
-  color: var(--text-secondary);
-  font-size: 0.61rem;
-  font-weight: 650;
-  letter-spacing: 0;
-  pointer-events: none;
-  transform: translateY(-50%) rotate(-90deg);
-}
-
-.xAxisTitle {
-  position: absolute;
-  right: 24px;
-  bottom: 8px;
-  left: 58px;
-  color: var(--text-secondary);
-  font-size: 0.61rem;
-  font-weight: 650;
-  pointer-events: none;
-  text-align: center;
-}
-
 .insightGrid {
   display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(480px, 1.45fr);
-  gap: 16px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 11px;
   align-items: stretch;
   margin-bottom: 18px;
+}
+
+.insightPanel:first-child {
+  grid-column: span 2;
+}
+
+.insightPanel:last-child {
+  grid-column: span 4;
 }
 
 .insightPanel {
@@ -719,6 +705,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 14px;
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -758,23 +745,68 @@
   background: rgba(220, 38, 38, 0.09);
 }
 
+.organizationToggle {
+  min-width: 0;
+  padding: 3px;
+  display: flex;
+  flex: none;
+  gap: 2px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface-alt);
+}
+
+.organizationToggle button {
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 650;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+  white-space: nowrap;
+}
+
+.organizationToggle button:hover,
+.organizationToggle button:focus-visible {
+  outline: none;
+  border-color: var(--blue-400);
+  color: var(--blue-500);
+  background: var(--bg-surface);
+}
+
+.organizationToggle .organizationToggleActive {
+  border-color: var(--blue-500);
+  color: #fff;
+  background: var(--blue-500);
+}
+
 .divisionChart {
-  min-height: 240px;
-  padding: 24px 20px;
+  height: 240px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 15px;
+  gap: 14px;
+  overflow-y: auto;
 }
 
 .divisionRow {
   display: grid;
-  grid-template-columns: minmax(88px, 0.7fr) minmax(120px, 1.7fr) 34px;
-  align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
-.divisionRow strong {
+.divisionRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.divisionRowHeader strong {
   overflow: hidden;
   color: var(--text-secondary);
   font-size: 0.7rem;
@@ -783,7 +815,8 @@
   white-space: nowrap;
 }
 
-.divisionRow em {
+.divisionRowHeader em {
+  flex: none;
   color: var(--text-primary);
   font-size: 0.7rem;
   font-style: normal;
@@ -793,7 +826,7 @@
 }
 
 .divisionTrack {
-  height: 11px;
+  height: 10px;
   overflow: hidden;
   border-radius: 4px;
   background: var(--bg-surface-alt);
@@ -1319,6 +1352,15 @@
   .moduleGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .insightGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .insightPanel:first-child,
+  .insightPanel:last-child {
+    grid-column: 1;
+  }
 }
 
 @media (max-width: 1320px) {
@@ -1441,8 +1483,15 @@
   }
 
   .divisionRow {
-    grid-template-columns: minmax(82px, 0.8fr) minmax(100px, 1.5fr) 30px;
-    gap: 8px;
+    gap: 5px;
+  }
+
+  .organizationToggle {
+    width: 100%;
+  }
+
+  .organizationToggle button {
+    flex: 1;
   }
 
   .progressLegend {
