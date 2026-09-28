@@ -354,14 +354,16 @@ interface ArsipFilterState {
   page: number;
   limit: number;
   bulan: string;
+  tanggal: string;
   search: string;
   status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori: ArchiveKategori | "";
   divisi: string;
   departemen: string;
+  direktorat: string;
 }
 
-const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", kategori: "", divisi: "", departemen: "" };
+const EMPTY_ARSIP_FILTERS: ArsipFilterState = { page: 1, limit: 10, bulan: "", tanggal: "", search: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "" };
 
 interface AtkFilterState {
   page: number;
@@ -813,6 +815,8 @@ function SuperAdminPageInner() {
   const [saranaFilterOpen, setSaranaFilterOpen] = useState(false);
   const [bookingFilterOpen, setBookingFilterOpen] = useState(false);
   const [kendaraanFilterOpen, setKendaraanFilterOpen] = useState(false);
+  const [arsipFilterOpen, setArsipFilterOpen] = useState(false);
+  useExclusivePanel(arsipFilterOpen, () => setArsipFilterOpen(false));
   useExclusivePanel(atkFilterOpen, () => setAtkFilterOpen(false));
   useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
   useExclusivePanel(bookingFilterOpen, () => setBookingFilterOpen(false));
@@ -826,6 +830,7 @@ function SuperAdminPageInner() {
   const kendaraanReqIdRef = useRef(0);
   const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arsipReqIdRef = useRef(0);
+  const arsipFilterWrapRef = useRef<HTMLDivElement>(null);
   const arsipKatalogFilterWrapRef = useRef<HTMLDivElement>(null);
   const arsipKatalogSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arsipKatalogReqIdRef = useRef(0);
@@ -843,6 +848,7 @@ function SuperAdminPageInner() {
   useClickOutside([kendaraanFilterWrapRef], () => setKendaraanFilterOpen(false), kendaraanFilterOpen);
   useClickOutside([atkFilterWrapRef], () => setAtkFilterOpen(false), atkFilterOpen);
   useClickOutside([saranaFilterWrapRef], () => setSaranaFilterOpen(false), saranaFilterOpen);
+  useClickOutside([arsipFilterWrapRef], () => setArsipFilterOpen(false), arsipFilterOpen);
   useClickOutside([arsipKatalogFilterWrapRef], () => setArsipKatalogFilterOpen(false), arsipKatalogFilterOpen);
   useClickOutside([saranaKatalogFilterWrapRef], () => setSaranaKatalogFilterOpen(false), saranaKatalogFilterOpen);
 
@@ -1405,10 +1411,12 @@ function SuperAdminPageInner() {
         page: arsipFilters.page,
         limit: arsipFilters.limit,
         bulan: arsipFilters.bulan,
+        tanggal: arsipFilters.tanggal,
         status: arsipFilters.status,
         kategori: arsipFilters.kategori,
         divisi: arsipFilters.divisi,
         departemen: arsipFilters.departemen,
+        direktorat: arsipFilters.direktorat,
         search: arsipFilters.search,
       });
       if (reqId !== arsipReqIdRef.current) return;
@@ -1832,10 +1840,12 @@ function SuperAdminPageInner() {
   function arsipExportParams() {
     return {
       bulan: arsipFilters.bulan,
+      tanggal: arsipFilters.tanggal,
       status: arsipFilters.status,
       kategori: arsipFilters.kategori,
       divisi: arsipFilters.divisi,
       departemen: arsipFilters.departemen,
+      direktorat: arsipFilters.direktorat,
       search: arsipFilters.search,
     };
   }
@@ -2267,11 +2277,20 @@ function SuperAdminPageInner() {
   const arsipPageButtons: number[] = [];
   for (let p = arsipPageStart; p <= arsipPageEnd; p++) arsipPageButtons.push(p);
 
-  const arsipDivisiOptions = orgStructure?.divisi || [];
+  const arsipSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === arsipFilters.direktorat) || null;
+  const arsipDivisiOptions = arsipSelectedDirektoratNode
+    ? arsipSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
   const arsipSelectedDivisiNode = arsipFilters.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === arsipFilters.divisi)
+    ? (arsipSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === arsipFilters.divisi
+      )
     : null;
-  const arsipDepartemenOptions = arsipSelectedDivisiNode ? arsipSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+  const arsipDepartemenOptions = arsipSelectedDivisiNode
+    ? arsipSelectedDivisiNode.departemen
+    : arsipSelectedDirektoratNode
+      ? arsipSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
 
   const arsipKatalogTotalPages = Math.max(1, Math.ceil(arsipKatalogTotal / arsipKatalogFilters.limit));
   const arsipKatalogPageStart = Math.min(Math.max(1, arsipKatalogFilters.page), arsipKatalogTotalPages);
@@ -5040,70 +5059,93 @@ function SuperAdminPageInner() {
           {arsipSubtab === "transaksi" && (
       <>
       <div className="card">
-        <div className="card-header">
-          <h3>Pemindahan Arsip</h3>
-        </div>
-        <div className="toolbar">
-          <div className="field">
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
             <label htmlFor="filter-arsip-search">Cari Arsip</label>
             <input type="text" id="filter-arsip-search" placeholder="No Pemindahan" value={arsipSearchInput} onChange={(e) => handleArsipSearchChange(e.target.value)} />
           </div>
+
           <div className="field">
-            <label htmlFor="filter-arsip-bulan">Filter Bulan</label>
-            <MonthFilterPicker id="filter-arsip-bulan" value={arsipFilters.bulan} onChange={(v) => updateArsipFilter({ bulan: v })} />
+            <label htmlFor="filter-arsip-bulan">Filter Periode</label>
+            <PeriodFilterPicker id="filter-arsip-bulan" bulan={arsipFilters.bulan} tanggal={arsipFilters.tanggal} onChangeBulan={(v) => updateArsipFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateArsipFilter({ tanggal: v, bulan: "" })} />
           </div>
-          <div className="field">
-            <label htmlFor="filter-arsip-status">Status</label>
-            <SearchableSelect
-              id="filter-arsip-status"
-              value={arsipFilters.status}
-              onChange={(v) => updateArsipFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
-              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
-              getLabel={(v) => ({
-                DRAFT: "Draft",
-                ON_APPROVAL: "On-Approval",
-                REJECTED: "Rejected",
-                APPROVED_GA_APPROVAL: "Approved",
-              } as Record<string, string>)[v] || v}
-              clearLabel="Semua Status"
-              placeholder="Semua Status"
-            />
+
+          <div className="filter-dropdown-wrap" ref={arsipFilterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-arsip-toggle" style={{ width: "auto" }} onClick={() => setArsipFilterOpen((v) => !v)}>
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            {arsipFilterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="filter-arsip-status">Status</label>
+                  <SearchableSelect
+                    id="filter-arsip-status"
+                    value={arsipFilters.status}
+                    onChange={(v) => updateArsipFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      ON_APPROVAL: "On-Approval",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-arsip-kategori">Kategori</label>
+                  <SearchableSelect
+                    id="filter-arsip-kategori"
+                    value={arsipFilters.kategori}
+                    onChange={(v) => updateArsipFilter({ kategori: v as ArchiveKategori | "" })}
+                    options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
+                    getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                    clearLabel="Semua Kategori"
+                    placeholder="Semua Kategori"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-arsip-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="filter-arsip-direktorat"
+                    value={arsipFilters.direktorat}
+                    onChange={(v) => updateArsipFilter({ direktorat: v, divisi: "", departemen: "" })}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-arsip-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="filter-arsip-divisi"
+                    value={arsipFilters.divisi}
+                    onChange={(v) => updateArsipFilter({ divisi: v, departemen: "" })}
+                    options={arsipDivisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="filter-arsip-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="filter-arsip-departemen"
+                    value={arsipFilters.departemen}
+                    onChange={(v) => updateArsipFilter({ departemen: v })}
+                    options={arsipDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="field">
-            <label htmlFor="filter-arsip-divisi">Divisi</label>
-            <SearchableSelect
-              id="filter-arsip-divisi"
-              value={arsipFilters.divisi}
-              onChange={(v) => updateArsipFilter({ divisi: v, departemen: "" })}
-              options={arsipDivisiOptions}
-              clearLabel="Semua Divisi"
-              placeholder="Semua Divisi"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-arsip-kategori">Kategori</label>
-            <SearchableSelect
-              id="filter-arsip-kategori"
-              value={arsipFilters.kategori}
-              onChange={(v) => updateArsipFilter({ kategori: v as ArchiveKategori | "" })}
-              options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
-              getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
-              clearLabel="Semua Kategori"
-              placeholder="Semua Kategori"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-arsip-departemen">Departemen</label>
-            <SearchableSelect
-              id="filter-arsip-departemen"
-              value={arsipFilters.departemen}
-              onChange={(v) => updateArsipFilter({ departemen: v })}
-              options={arsipDepartemenOptions}
-              clearLabel="Semua Departemen"
-              placeholder="Semua Departemen"
-            />
-          </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Semua Arsip</button>
+
+          <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetArsipFilters}>Semua Arsip</button>
+
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportPdfUrl(arsipExportParams()), "_blank")}>
               ⬇ Download PDF
@@ -5724,9 +5766,6 @@ function SuperAdminPageInner() {
           {atkSubtab === "pesanan" && (
       <>
       <div className="card">
-        <div className="card-header">
-          <h3>Pesanan Kebutuhan Kantor</h3>
-        </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-atk-search">Cari Pesanan</label>
@@ -6333,9 +6372,6 @@ function SuperAdminPageInner() {
           {saranaSubtab === "transaksi" && (
       <>
       <div className="card">
-        <div className="card-header">
-          <h3>Pengajuan Perbaikan Sarana</h3>
-        </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-sarana-search">Cari Pengajuan</label>
@@ -6613,9 +6649,6 @@ function SuperAdminPageInner() {
           {saranaSubtab === "katalog" && (
             <>
           <div className="card">
-            <div className="card-header">
-              <h3>Repository Maintenance</h3>
-            </div>
             <div className="toolbar transactions-page-toolbar">
               <div className="field toolbar-search-field">
                 <label htmlFor="filter-sarana-katalog-search">Cari Laporan</label>
