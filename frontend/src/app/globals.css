@@ -3353,14 +3353,6 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
-/* Forces onto its own line below invoice-row-main/-actions, thanks to .invoice-row's own
-   flex-wrap - the stepper reads best spanning the row's full width, not squeezed beside them. */
-.invoice-row-stepper {
-  flex-basis: 100%;
-  max-width: 420px;
-  margin-top: 4px;
-}
-
 /* ---------- Table ---------- */
 .table-wrap {
   overflow-x: auto;
@@ -4835,24 +4827,6 @@ table.data-table {
    right edge on every row, in every module that uses this shared .status-cell pattern. */
 .status-cell > button:first-of-type {
   margin-left: auto;
-}
-
-.row-menu-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.row-menu-btn:hover {
-  background: var(--bg-surface-alt);
-  color: var(--blue-500);
 }
 
 .row-menu-dropdown {

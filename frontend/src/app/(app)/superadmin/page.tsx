@@ -53,7 +53,6 @@ import AtkInvoiceDetailModal from "@/components/AtkInvoiceDetailModal";
 import AtkInvoiceHistoryModal from "@/components/AtkInvoiceHistoryModal";
 import InvoiceChatModal from "@/components/InvoiceChatModal";
 import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
-import InvoiceStepper from "@/components/InvoiceStepper";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -1522,12 +1521,9 @@ function SuperAdminPageInner() {
                       <span className="chat-count-badge">{inv.unreadChatCount > 9 ? "9+" : inv.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
+                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
-                </div>
-                <div className="invoice-row-stepper">
-                  <InvoiceStepper status={inv.status} />
                 </div>
               </div>
             ))
@@ -2839,12 +2835,9 @@ function SuperAdminPageInner() {
                       <span className="chat-count-badge">{inv.unreadChatCount > 9 ? "9+" : inv.unreadChatCount}</span>
                     )}
                   </button>
-                  <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => atkInvoiceRowMenu.toggle(e, inv.id)}>
+                  <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => atkInvoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
-                </div>
-                <div className="invoice-row-stepper">
-                  <InvoiceStepper status={inv.status} />
                 </div>
               </div>
             ))
