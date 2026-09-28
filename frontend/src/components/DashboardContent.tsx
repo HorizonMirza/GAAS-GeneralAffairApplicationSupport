@@ -15,17 +15,17 @@ import {
   Layers,
   PackageCheck,
   Pencil,
-  Plus,
   RefreshCw,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import SearchableSelect from "@/components/SearchableSelect";
+import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import { api } from "@/lib/api";
 import { BOOKING_STATUS_LABEL, ROLE_LABEL_FULL, STATUS_LABEL } from "@/lib/constants";
-import { currentYearMonth, formatTimeRange, todayLocalDate } from "@/lib/format";
+import { formatTimeRange, todayLocalDate } from "@/lib/format";
 import type {
   BookingKendaraan,
   BookingRuang,
@@ -40,7 +40,6 @@ import type {
   Status,
   SumberPembelian,
 } from "@/lib/types";
-import { useClickOutside } from "@/lib/useClickOutside";
 import styles from "./DashboardContent.module.css";
 
 type ModuleKey = "expedition" | "room" | "vehicle" | "atk" | "maintenance" | "archive";
@@ -294,18 +293,6 @@ function unitLabel(value: string): string {
   return `${labels[type] ?? type} - ${name}`;
 }
 
-function roleCopy(role: Role): string {
-  if (role === "ADMIN_GA" || role === "APPROVAL_GA") return "Pantau antrean persetujuan dan operasi General Affair hari ini.";
-  if (role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI") return "Prioritaskan permohonan yang menunggu persetujuan Anda.";
-  if (role === "KPU") return "Pantau permintaan mitra yang menunggu tindak lanjut.";
-  if (role === "SUPER_ADMIN") return "Pantau kondisi operasional seluruh modul GAAS.";
-  return "Pantau progres pengajuan dan layanan General Affair Anda.";
-}
-
-function firstName(name: string): string {
-  return name.trim().split(/\s+/)[0] || name;
-}
-
 function relativeAge(milliseconds: number): string {
   const minutes = Math.floor(milliseconds / 60_000);
   if (minutes < 1) return "Baru saja";
@@ -341,16 +328,13 @@ function KpiCard({ label, value, helper, Icon, tone }: {
 }
 
 export default function DashboardContent({ me }: { me: Me }) {
-  const [month, setMonth] = useState(currentYearMonth());
+  const [month, setMonth] = useState("");
   const [unit, setUnit] = useState("");
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
-  const [quickOpen, setQuickOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
   const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], errors: 0 });
-  const quickRef = useRef<HTMLDivElement>(null);
-  useClickOutside([quickRef], () => setQuickOpen(false), quickOpen);
 
   const visibleModules = useMemo(() => MODULES.filter((module) => me.role !== "KPU" || !module.hiddenForKpu), [me.role]);
   const unitOptions = useMemo(() => {
@@ -475,30 +459,17 @@ export default function DashboardContent({ me }: { me: Me }) {
   return (
     <div className={styles.dashboard}>
       <section className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}>General Affair Command Center</span>
-          <h1>Selamat datang, {firstName(me.nama)}</h1>
-          <p>{roleCopy(me.role)}</p>
+        <div className={styles.greeting}>
+          <WelcomeGreeting me={me} />
         </div>
         <div className={styles.headerActions}>
           <div className={styles.monthFilter}><MonthFilterPicker id="dashboard-month" value={month} onChange={setMonth} placeholder="Semua Periode" /></div>
           <div className={styles.unitFilter}>
-            <SearchableSelect id="dashboard-unit" value={unit} onChange={setUnit} options={unitOptions} placeholder="Semua Unit" clearLabel="Semua Unit" getLabel={unitLabel} />
+            <SearchableSelect id="dashboard-unit" value={unit} onChange={setUnit} options={unitOptions} placeholder="Semua Filter" clearLabel="Semua Filter" getLabel={unitLabel} />
           </div>
           <button type="button" className={styles.refreshButton} onClick={() => setRefreshToken((value) => value + 1)} disabled={loading} title="Muat ulang data dashboard" aria-label="Muat ulang data dashboard">
             <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
           </button>
-          <div className={styles.quickAction} ref={quickRef}>
-            <button type="button" className={styles.primaryButton} onClick={() => setQuickOpen((value) => !value)} aria-expanded={quickOpen}><Plus aria-hidden="true" />Buat Pengajuan</button>
-            {quickOpen && (
-              <div className={styles.quickMenu}>
-                <div className={styles.quickMenuHeading}>Pilih modul pengajuan</div>
-                {visibleModules.map(({ key, label, Icon, transactionHref }) => (
-                  <Link key={key} href={transactionHref} onClick={() => setQuickOpen(false)}><span><Icon aria-hidden="true" /></span>{label}<ChevronRight aria-hidden="true" /></Link>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
