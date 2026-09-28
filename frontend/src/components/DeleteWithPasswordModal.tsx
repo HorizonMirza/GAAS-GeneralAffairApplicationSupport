@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import ModalOverlay from "./ModalOverlay";
 import PasswordField from "./PasswordField";
-
-const KATA_KUNCI = "HAPUS";
 
 interface Props {
   open: boolean;
@@ -19,30 +17,22 @@ interface Props {
   onClose: () => void;
 }
 
-// A permanent delete of a room/vehicle roster entry - gated the same way the old BulkDeleteModal
-// gated a bulk delete (type the keyword to unlock) plus a re-entered Super Admin password, since
-// unlike a bulk delete this can't be scoped down by a filter first.
+// A permanent delete of a room/vehicle roster entry - gated by re-entering the Super Admin's own
+// password (verified server-side), same styling as the Add/Edit forms in the same tab.
 export default function DeleteWithPasswordModal({ open, title, itemLabel, details, onConfirm, onClose }: Props) {
-  const [typed, setTyped] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setTyped("");
     setPassword("");
     setError("");
     setBusy(false);
-    const id = window.setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.clearTimeout(id);
   }, [open]);
 
-  const unlocked = typed.trim().toUpperCase() === KATA_KUNCI && password.length > 0;
-
   async function handleConfirm() {
-    if (!unlocked || busy) return;
+    if (!password || busy) return;
     setBusy(true);
     setError("");
     try {
@@ -78,23 +68,7 @@ export default function DeleteWithPasswordModal({ open, title, itemLabel, detail
           </div>
         )}
 
-        <div className="field" style={{ marginTop: 16 }}>
-          <label htmlFor="delete-confirm-keyword">
-            Ketik <strong>{KATA_KUNCI}</strong> untuk mengonfirmasi
-          </label>
-          <input
-            id="delete-confirm-keyword"
-            ref={inputRef}
-            type="text"
-            value={typed}
-            autoComplete="off"
-            disabled={busy}
-            placeholder={KATA_KUNCI}
-            onChange={(e) => setTyped(e.target.value)}
-          />
-        </div>
-
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 16 }}>
           <PasswordField
             id="delete-confirm-password"
             label="Password Super Admin"
@@ -107,8 +81,7 @@ export default function DeleteWithPasswordModal({ open, title, itemLabel, detail
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={onClose} disabled={busy}>Batal</button>
-          <button type="button" className="btn btn-confirm-danger" style={{ width: "auto" }} disabled={!unlocked || busy} onClick={handleConfirm}>
+          <button type="button" className="btn btn-confirm-danger" style={{ width: "auto" }} disabled={!password || busy} onClick={handleConfirm}>
             {busy ? "Menghapus..." : "Hapus"}
           </button>
         </div>

@@ -197,26 +197,27 @@ export default function SuperAdminVehicleTab() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nama</th><th>Plat Nomor</th><th>Kapasitas</th><th>Supir</th><th>Merek / Model</th><th>Tahun</th><th></th>
+              <th>No</th><th>Nama</th><th>Plat Nomor</th><th>Kapasitas</th><th>Supir</th><th>Merek / Model</th><th>Tahun</th><th></th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={7} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={8} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={7} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={8} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={8} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
-              items.map((item) => (
+              items.map((item, index) => (
                 <tr key={item.id}>
+                  <td>{index + 1}</td>
                   <td>{item.nama}</td>
                   <td>{item.platNomor}</td>
                   <td>{item.kapasitas}</td>
                   <td>{item.supir}</td>
                   <td>{item.merek} {item.model}</td>
                   <td>{item.tahun}</td>
-                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
                     </button>

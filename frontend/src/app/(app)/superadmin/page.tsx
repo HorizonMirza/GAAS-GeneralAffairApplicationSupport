@@ -454,7 +454,7 @@ function SuperAdminPageInner() {
     if (fromUrl && TABS.some((t) => t.key === fromUrl) && fromUrl !== activeTab) setActiveTabState(fromUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"overview" | "pengiriman" | "invoice">("pengiriman");
+  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"overview" | "pengiriman" | "invoice">("overview");
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -525,7 +525,7 @@ function SuperAdminPageInner() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   // "Ruang Meeting" (roster management, formerly its own top-level tab) folded in as a sub-tab
   // here instead - it's the room-side counterpart to this tab's own booking transactions.
-  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("transaksi");
+  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("overview");
   // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
   // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel, no Koreksi).
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
@@ -587,7 +587,7 @@ function SuperAdminPageInner() {
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   // "Kendaraan" (roster management, formerly its own top-level tab) folded in as a sub-tab here
   // instead - it's the vehicle-side counterpart to this tab's own booking transactions.
-  const [kendaraanSubtab, setKendaraanSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("transaksi");
+  const [kendaraanSubtab, setKendaraanSubtab] = useState<"overview" | "transaksi" | "roster" | "calendar">("overview");
   // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
   // modals (Reschedule/Cancel, no Koreksi).
   const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
@@ -655,7 +655,7 @@ function SuperAdminPageInner() {
   const arsipRowMenu = useRowMenu(arsipItems);
   // Archive tab now switches between Overview/Transaction/Repository via sub-tab buttons, same
   // pattern as Ekspedisi/ATK/Room/Vehicle Booking, instead of stacking both cards unconditionally.
-  const [arsipSubtab, setArsipSubtab] = useState<"overview" | "transaksi" | "katalog">("transaksi");
+  const [arsipSubtab, setArsipSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
 
   // Overview sub-tab - mirrors arsip/overview/page.tsx exactly.
   const [arsipOvItems, setArsipOvItems] = useState<PermintaanArsip[]>([]);
@@ -700,7 +700,7 @@ function SuperAdminPageInner() {
   const [atkChatItem, setAtkChatItem] = useState<PermintaanAtk | null>(null);
   const [atkRejectTarget, setAtkRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const atkRowMenu = useRowMenu(atkItems);
-  const [atkSubtab, setAtkSubtab] = useState<"overview" | "pesanan" | "invoice">("pesanan");
+  const [atkSubtab, setAtkSubtab] = useState<"overview" | "pesanan" | "invoice">("overview");
 
   // Overview sub-tab - mirrors office-supplies/overview/page.tsx exactly.
   const [atkOvItems, setAtkOvItems] = useState<PermintaanAtk[]>([]);
@@ -758,7 +758,19 @@ function SuperAdminPageInner() {
   const saranaRowMenu = useRowMenu(saranaItems);
   // Maintenance tab now switches between Overview/Transaction/Repository via sub-tab buttons,
   // same pattern as Ekspedisi/ATK/Room/Vehicle Booking.
-  const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("transaksi");
+  const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
+
+  // Pressing a module in the sidebar always lands on that module's own Overview sub-tab, even if
+  // a previous visit had left it on Transaction/Calendar/etc. - this only fires on an actual
+  // module switch (activeTab changing), not on re-renders while already on the module.
+  useEffect(() => {
+    if (activeTab === "ekspedisi") setEkspedisiSubtab("overview");
+    else if (activeTab === "booking-ruang") setBookingRuangSubtab("overview");
+    else if (activeTab === "booking-kendaraan") setKendaraanSubtab("overview");
+    else if (activeTab === "atk") setAtkSubtab("overview");
+    else if (activeTab === "sarana") setSaranaSubtab("overview");
+    else if (activeTab === "arsip") setArsipSubtab("overview");
+  }, [activeTab]);
 
   // Overview sub-tab - mirrors maintenance/overview/page.tsx exactly.
   const [saranaOvItems, setSaranaOvItems] = useState<PerbaikanSarana[]>([]);

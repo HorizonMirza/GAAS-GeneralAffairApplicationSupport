@@ -149,24 +149,25 @@ export default function SuperAdminMeetingRoomTab() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nama Ruang</th><th>Kapasitas</th><th>Lantai</th><th>Fasilitas</th><th></th>
+              <th>No</th><th>Nama Ruang</th><th>Kapasitas</th><th>Lantai</th><th>Fasilitas</th><th></th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={5} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={6} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={5} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={6} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={5} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
-              items.map((item) => (
+              items.map((item, index) => (
                 <tr key={item.id}>
+                  <td>{index + 1}</td>
                   <td>{item.nama}</td>
                   <td>{item.kapasitas}</td>
                   <td>{item.lantai}</td>
                   <td>{item.fasilitas.length > 0 ? item.fasilitas.join(", ") : "-"}</td>
-                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
                     </button>
