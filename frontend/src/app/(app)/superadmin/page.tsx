@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
-import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, truncateText } from "@/lib/format";
+import { isWholeDayAllowed } from "@/lib/bookingTime";
+import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
+import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -32,6 +34,8 @@ import VehicleBookingDetailModal from "@/components/VehicleBookingDetailModal";
 import VehicleBookingRescheduleModal from "@/components/VehicleBookingRescheduleModal";
 import VehicleBookingStatusHistoryModal from "@/components/VehicleBookingStatusHistoryModal";
 import VehicleBookingChatModal from "@/components/VehicleBookingChatModal";
+import RoomCalendarView, { addDays, addMonths, mondayOf, type CalendarViewMode } from "@/components/RoomCalendarView";
+import MiniMonthCalendar from "@/components/MiniMonthCalendar";
 import AtkFormModal from "@/components/AtkFormModal";
 import AtkDetailModal from "@/components/AtkDetailModal";
 import AtkStatusHistoryModal from "@/components/AtkStatusHistoryModal";
@@ -113,6 +117,37 @@ interface KendaraanFilterState {
 }
 
 const EMPTY_KENDARAAN_FILTERS: KendaraanFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaKendaraan: "" };
+
+// Calendar sub-tab (Room/Vehicle Booking) - mirrors booking-ruang-meeting/calendar and
+// booking-kendaraan/calendar's own date-range helpers exactly.
+const ALL_ROOMS_VALUE = "__all__";
+const ALL_VEHICLES_VALUE = "__all__";
+function calPad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+function calTodayIso(): string {
+  const d = nowWib();
+  return `${d.getFullYear()}-${calPad(d.getMonth() + 1)}-${calPad(d.getDate())}`;
+}
+function calRangeForView(view: CalendarViewMode, refDate: string): { from: string; to: string } {
+  if (view === "week") {
+    const monday = mondayOf(refDate);
+    return { from: monday, to: addDays(monday, 4) };
+  }
+  if (view === "month") {
+    const d = new Date(refDate + "T00:00:00");
+    const firstOfMonth = `${d.getFullYear()}-${calPad(d.getMonth() + 1)}-01`;
+    const start = mondayOf(firstOfMonth);
+    return { from: start, to: addDays(start, 41) };
+  }
+  return { from: refDate, to: refDate };
+}
+function calMonthGridRange(refDate: string): { from: string; to: string } {
+  const d = new Date(refDate + "T00:00:00");
+  const firstOfMonth = `${d.getFullYear()}-${calPad(d.getMonth() + 1)}-01`;
+  const start = mondayOf(firstOfMonth);
+  return { from: start, to: addDays(start, 41) };
+}
 
 interface ArsipFilterState {
   page: number;
@@ -265,7 +300,7 @@ function SuperAdminPageInner() {
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   // "Ruang Meeting" (roster management, formerly its own top-level tab) folded in as a sub-tab
   // here instead - it's the room-side counterpart to this tab's own booking transactions.
-  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"transaksi" | "roster">("transaksi");
+  const [bookingRuangSubtab, setBookingRuangSubtab] = useState<"transaksi" | "roster" | "calendar">("transaksi");
   // Room Booking tab's interactive-replica state - same idea as the Ekspedisi tab's above, but
   // mirroring booking-ruang-meeting/transaksi's own modals (Reschedule/Cancel, no Koreksi).
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
@@ -277,6 +312,29 @@ function SuperAdminPageInner() {
   const [bookingCancelTargetId, setBookingCancelTargetId] = useState<number | null>(null);
   const bookingRowMenu = useRowMenu(bookingItems);
 
+  // Calendar sub-tab - separate state from the Transaksi table above since it's a wholly
+  // different view (day/week/month grid + cross-room availability), mirroring
+  // booking-ruang-meeting/calendar/page.tsx exactly.
+  const [bookingCalView, setBookingCalView] = useState<CalendarViewMode>("avail");
+  const [bookingCalRefDate, setBookingCalRefDate] = useState<string>(calTodayIso());
+  const [bookingCalSelectedRoom, setBookingCalSelectedRoom] = useState("");
+  const [bookingCalEntries, setBookingCalEntries] = useState<BookingRuang[]>([]);
+  const [bookingCalAvailEntries, setBookingCalAvailEntries] = useState<BookingRuang[]>([]);
+  const [bookingCalAvailBusy, setBookingCalAvailBusy] = useState(true);
+  const [bookingCalScheduleBusy, setBookingCalScheduleBusy] = useState(true);
+  const [bookingCalSearch, setBookingCalSearch] = useState("");
+  const [bookingCalFormOpen, setBookingCalFormOpen] = useState(false);
+  const [bookingCalFormInitial, setBookingCalFormInitial] = useState<Partial<BookingRuangCreatePayload> | undefined>(undefined);
+  const [bookingCalDetail, setBookingCalDetail] = useState<{ item: BookingRuang; mode: "view" | "edit" } | null>(null);
+  const [bookingCalRescheduleTarget, setBookingCalRescheduleTarget] = useState<BookingRuang | null>(null);
+  const [bookingCalStatusItemId, setBookingCalStatusItemId] = useState<number | null>(null);
+  const [bookingCalChatItem, setBookingCalChatItem] = useState<BookingRuang | null>(null);
+  const [bookingCalRejectTarget, setBookingCalRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [bookingCalCancelTargetId, setBookingCalCancelTargetId] = useState<number | null>(null);
+  const bookingCalRowMenu = useRowMenu(bookingCalView === "avail" ? bookingCalAvailEntries : bookingCalEntries);
+  const bookingCalSidebarRef = useRef<HTMLDivElement>(null);
+  const [bookingCalSidebarHeight, setBookingCalSidebarHeight] = useState<number | undefined>(undefined);
+
   const [kendaraanFilters, setKendaraanFilters] = useState<KendaraanFilterState>(EMPTY_KENDARAAN_FILTERS);
   const [kendaraanItems, setKendaraanItems] = useState<BookingKendaraan[]>([]);
   const [kendaraanTotal, setKendaraanTotal] = useState(0);
@@ -285,7 +343,7 @@ function SuperAdminPageInner() {
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   // "Kendaraan" (roster management, formerly its own top-level tab) folded in as a sub-tab here
   // instead - it's the vehicle-side counterpart to this tab's own booking transactions.
-  const [kendaraanSubtab, setKendaraanSubtab] = useState<"transaksi" | "roster">("transaksi");
+  const [kendaraanSubtab, setKendaraanSubtab] = useState<"transaksi" | "roster" | "calendar">("transaksi");
   // Vehicle Booking tab's interactive-replica state - mirrors booking-kendaraan/transaksi's own
   // modals (Reschedule/Cancel, no Koreksi).
   const [kendaraanFormOpen, setKendaraanFormOpen] = useState(false);
@@ -296,6 +354,29 @@ function SuperAdminPageInner() {
   const [kendaraanRejectTarget, setKendaraanRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const [kendaraanCancelTargetId, setKendaraanCancelTargetId] = useState<number | null>(null);
   const kendaraanRowMenu = useRowMenu(kendaraanItems);
+
+  // Calendar sub-tab - separate state from the Transaksi table above, mirroring
+  // booking-kendaraan/calendar/page.tsx exactly.
+  const [kendaraanCalView, setKendaraanCalView] = useState<CalendarViewMode>("avail");
+  const [kendaraanCalRefDate, setKendaraanCalRefDate] = useState<string>(calTodayIso());
+  const [kendaraanCalSelectedVehicle, setKendaraanCalSelectedVehicle] = useState("");
+  const [kendaraanCalRawEntries, setKendaraanCalRawEntries] = useState<BookingKendaraan[]>([]);
+  const [kendaraanCalRawAvailEntries, setKendaraanCalRawAvailEntries] = useState<BookingKendaraan[]>([]);
+  const [kendaraanCalAvailBusy, setKendaraanCalAvailBusy] = useState(true);
+  const [kendaraanCalScheduleBusy, setKendaraanCalScheduleBusy] = useState(true);
+  const [kendaraanCalSearch, setKendaraanCalSearch] = useState("");
+  const [kendaraanCalMiniEntries, setKendaraanCalMiniEntries] = useState<BookingRuang[]>([]);
+  const [kendaraanCalFormOpen, setKendaraanCalFormOpen] = useState(false);
+  const [kendaraanCalFormInitial, setKendaraanCalFormInitial] = useState<Partial<BookingKendaraanCreatePayload> | undefined>(undefined);
+  const [kendaraanCalDetail, setKendaraanCalDetail] = useState<{ item: BookingKendaraan; mode: "view" | "edit" } | null>(null);
+  const [kendaraanCalRescheduleTarget, setKendaraanCalRescheduleTarget] = useState<BookingKendaraan | null>(null);
+  const [kendaraanCalStatusItemId, setKendaraanCalStatusItemId] = useState<number | null>(null);
+  const [kendaraanCalChatItem, setKendaraanCalChatItem] = useState<BookingKendaraan | null>(null);
+  const [kendaraanCalRejectTarget, setKendaraanCalRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
+  const [kendaraanCalCancelTargetId, setKendaraanCalCancelTargetId] = useState<number | null>(null);
+  const kendaraanCalRowMenu = useRowMenu(kendaraanCalView === "avail" ? kendaraanCalRawAvailEntries : kendaraanCalRawEntries);
+  const kendaraanCalSidebarRef = useRef<HTMLDivElement>(null);
+  const [kendaraanCalSidebarHeight, setKendaraanCalSidebarHeight] = useState<number | undefined>(undefined);
 
   const [arsipFilters, setArsipFilters] = useState<ArsipFilterState>(EMPTY_ARSIP_FILTERS);
   const [arsipSearchInput, setArsipSearchInput] = useState("");
@@ -561,6 +642,245 @@ function SuperAdminPageInner() {
       if (reqId === kendaraanReqIdRef.current && !opts?.silent) setKendaraanBusy(false);
     }
   }, [kendaraanFilters]);
+
+  // Room Booking Calendar sub-tab - loads only while that sub-tab is active, mirroring
+  // booking-ruang-meeting/calendar/page.tsx's loadSchedule/loadAvail.
+  const loadBookingCalSchedule = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-ruang" || bookingRuangSubtab !== "calendar") return;
+    if (!bookingCalSelectedRoom || bookingCalView === "avail") return;
+    if (!opts?.silent) setBookingCalScheduleBusy(true);
+    try {
+      const { from, to } = calRangeForView(bookingCalView, bookingCalRefDate);
+      const data = await api.getBookingScheduleRange(from, to, bookingCalSelectedRoom);
+      setBookingCalEntries(data);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setBookingCalScheduleBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, bookingRuangSubtab, bookingCalView, bookingCalRefDate, bookingCalSelectedRoom]);
+
+  useEffect(() => {
+    loadBookingCalSchedule();
+  }, [loadBookingCalSchedule]);
+
+  const loadBookingCalAvail = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-ruang" || bookingRuangSubtab !== "calendar" || bookingCalView !== "avail") return;
+    if (!opts?.silent) setBookingCalAvailBusy(true);
+    try {
+      const data = await api.getBookingSchedule(bookingCalRefDate);
+      setBookingCalAvailEntries(data);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setBookingCalAvailBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, bookingRuangSubtab, bookingCalView, bookingCalRefDate]);
+
+  useEffect(() => {
+    loadBookingCalAvail();
+  }, [loadBookingCalAvail]);
+
+  useEffect(() => {
+    if (bookingRuangSubtab === "calendar" && !bookingCalSelectedRoom && rooms.length > 0) {
+      setBookingCalSelectedRoom(rooms[0].nama);
+    }
+  }, [bookingRuangSubtab, bookingCalSelectedRoom, rooms]);
+
+  useEffect(() => {
+    const el = bookingCalSidebarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setBookingCalSidebarHeight(el.getBoundingClientRect().height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const bookingCalReload = bookingCalView === "avail" ? loadBookingCalAvail : loadBookingCalSchedule;
+
+  // Vehicle Booking Calendar sub-tab - mirrors booking-kendaraan/calendar/page.tsx's
+  // loadSchedule/loadAvail/loadMiniEntries.
+  const loadKendaraanCalSchedule = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-kendaraan" || kendaraanSubtab !== "calendar") return;
+    if (!kendaraanCalSelectedVehicle || kendaraanCalView === "avail") return;
+    if (!opts?.silent) setKendaraanCalScheduleBusy(true);
+    try {
+      const { from, to } = calRangeForView(kendaraanCalView, kendaraanCalRefDate);
+      const data = await api.getKendaraanScheduleRange(from, to, kendaraanCalSelectedVehicle);
+      setKendaraanCalRawEntries(data);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setKendaraanCalScheduleBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, kendaraanSubtab, kendaraanCalView, kendaraanCalRefDate, kendaraanCalSelectedVehicle]);
+
+  useEffect(() => {
+    loadKendaraanCalSchedule();
+  }, [loadKendaraanCalSchedule]);
+
+  const loadKendaraanCalAvail = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "booking-kendaraan" || kendaraanSubtab !== "calendar" || kendaraanCalView !== "avail") return;
+    if (!opts?.silent) setKendaraanCalAvailBusy(true);
+    try {
+      const data = await api.getKendaraanSchedule(kendaraanCalRefDate);
+      setKendaraanCalRawAvailEntries(data);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setKendaraanCalAvailBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, kendaraanSubtab, kendaraanCalView, kendaraanCalRefDate]);
+
+  useEffect(() => {
+    loadKendaraanCalAvail();
+  }, [loadKendaraanCalAvail]);
+
+  const loadKendaraanCalMiniEntries = useCallback(async () => {
+    if (activeTab !== "booking-kendaraan" || kendaraanSubtab !== "calendar" || !kendaraanCalSelectedVehicle) return;
+    try {
+      const { from, to } = calMonthGridRange(kendaraanCalRefDate);
+      const data = await api.getKendaraanScheduleRange(from, to, kendaraanCalSelectedVehicle);
+      setKendaraanCalMiniEntries(data.map(kendaraanAsBookingRuangShape));
+    } catch {
+      setKendaraanCalMiniEntries([]);
+    }
+  }, [activeTab, kendaraanSubtab, kendaraanCalRefDate, kendaraanCalSelectedVehicle]);
+
+  useEffect(() => {
+    loadKendaraanCalMiniEntries();
+  }, [loadKendaraanCalMiniEntries]);
+
+  useEffect(() => {
+    if (kendaraanSubtab === "calendar" && !kendaraanCalSelectedVehicle && vehicles.length > 0) {
+      setKendaraanCalSelectedVehicle(vehicles[0].nama);
+    }
+  }, [kendaraanSubtab, kendaraanCalSelectedVehicle, vehicles]);
+
+  useEffect(() => {
+    const el = kendaraanCalSidebarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setKendaraanCalSidebarHeight(el.getBoundingClientRect().height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  function kendaraanCalReloadAll(opts?: { silent?: boolean }) {
+    if (kendaraanCalView === "avail") loadKendaraanCalAvail(opts);
+    else loadKendaraanCalSchedule(opts);
+    if (!opts?.silent) loadKendaraanCalMiniEntries();
+  }
+
+  const kendaraanCalEntries = kendaraanCalRawEntries.map(kendaraanAsBookingRuangShape);
+  const kendaraanCalAvailEntries = kendaraanCalRawAvailEntries.map(kendaraanAsBookingRuangShape);
+
+  const bookingCalFilteredEntries = (() => {
+    const q = bookingCalSearch.trim().toLowerCase();
+    const list = bookingCalEntries;
+    if (!q) return list;
+    return list.filter((e) =>
+      (e.nomorPemesanan || "").toLowerCase().includes(q)
+      || e.namaKegiatan.toLowerCase().includes(q)
+      || (e.departemen || "").toLowerCase().includes(q)
+      || (e.divisi || "").toLowerCase().includes(q)
+    );
+  })();
+
+  const bookingCalFilteredAvailEntries = (() => {
+    const q = bookingCalSearch.trim().toLowerCase();
+    const list = bookingCalAvailEntries;
+    if (!q) return list;
+    return list.filter((e) =>
+      (e.nomorPemesanan || "").toLowerCase().includes(q)
+      || e.namaKegiatan.toLowerCase().includes(q)
+      || (e.departemen || "").toLowerCase().includes(q)
+      || (e.divisi || "").toLowerCase().includes(q)
+    );
+  })();
+
+  const kendaraanCalFilteredEntries = (() => {
+    const q = kendaraanCalSearch.trim().toLowerCase();
+    const list = kendaraanCalEntries;
+    if (!q) return list;
+    return list.filter((e) =>
+      (e.nomorPemesanan || "").toLowerCase().includes(q)
+      || e.namaKegiatan.toLowerCase().includes(q)
+      || (e.departemen || "").toLowerCase().includes(q)
+      || (e.divisi || "").toLowerCase().includes(q)
+    );
+  })();
+
+  const kendaraanCalFilteredAvailEntries = (() => {
+    const q = kendaraanCalSearch.trim().toLowerCase();
+    const list = kendaraanCalAvailEntries;
+    if (!q) return list;
+    return list.filter((e) =>
+      (e.nomorPemesanan || "").toLowerCase().includes(q)
+      || e.namaKegiatan.toLowerCase().includes(q)
+      || (e.departemen || "").toLowerCase().includes(q)
+      || (e.divisi || "").toLowerCase().includes(q)
+    );
+  })();
+
+  function bookingCalGoToday() { setBookingCalRefDate(calTodayIso()); }
+  function bookingCalGoPrev() {
+    if (bookingCalView === "week") setBookingCalRefDate((d) => addDays(d, -7));
+    else if (bookingCalView === "month") setBookingCalRefDate((d) => addMonths(d, -1));
+    else setBookingCalRefDate((d) => addDays(d, -1));
+  }
+  function bookingCalGoNext() {
+    if (bookingCalView === "week") setBookingCalRefDate((d) => addDays(d, 7));
+    else if (bookingCalView === "month") setBookingCalRefDate((d) => addMonths(d, 1));
+    else setBookingCalRefDate((d) => addDays(d, 1));
+  }
+  function bookingCalOpenCreateForm() {
+    setBookingCalFormInitial({ namaRuang: bookingCalSelectedRoom, tanggal: bookingCalRefDate });
+    setBookingCalFormOpen(true);
+  }
+  function bookingCalHandleDelete(item: BookingRuang) {
+    const message = item.seriesId
+      ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
+      : "Hapus booking ruangan ini secara permanen?";
+    confirm(message, async () => {
+      try {
+        await api.deleteBooking(item.id);
+        showToast("Booking berhasil dihapus");
+        bookingCalReload();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
+
+  function kendaraanCalGoToday() { setKendaraanCalRefDate(calTodayIso()); }
+  function kendaraanCalGoPrev() {
+    if (kendaraanCalView === "week") setKendaraanCalRefDate((d) => addDays(d, -7));
+    else if (kendaraanCalView === "month") setKendaraanCalRefDate((d) => addMonths(d, -1));
+    else setKendaraanCalRefDate((d) => addDays(d, -1));
+  }
+  function kendaraanCalGoNext() {
+    if (kendaraanCalView === "week") setKendaraanCalRefDate((d) => addDays(d, 7));
+    else if (kendaraanCalView === "month") setKendaraanCalRefDate((d) => addMonths(d, 1));
+    else setKendaraanCalRefDate((d) => addDays(d, 1));
+  }
+  function kendaraanCalOpenCreateForm() {
+    setKendaraanCalFormInitial({ namaKendaraan: kendaraanCalSelectedVehicle, tanggal: kendaraanCalRefDate });
+    setKendaraanCalFormOpen(true);
+  }
+  function kendaraanCalHandleDelete(item: BookingKendaraan) {
+    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+      try {
+        await api.deleteKendaraanBooking(item.id);
+        showToast("Booking berhasil dihapus");
+        kendaraanCalReloadAll();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
 
   const loadArsip = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++arsipReqIdRef.current;
@@ -1855,6 +2175,13 @@ function SuperAdminPageInner() {
             >
               Kelola Ruang Meeting
             </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${bookingRuangSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setBookingRuangSubtab("calendar")}
+            >
+              Calendar
+            </button>
           </div>
 
           {bookingRuangSubtab === "roster" && <SuperAdminMeetingRoomTab />}
@@ -2149,6 +2476,275 @@ function SuperAdminPageInner() {
           <BookingStatusHistoryModal open={bookingStatusItemId != null} itemId={bookingStatusItemId} onClose={() => setBookingStatusItemId(null)} />
         </>
           )}
+
+          {bookingRuangSubtab === "calendar" && (
+            <>
+              <div className="calendar-shell">
+                <div className="calendar-sidebar" ref={bookingCalSidebarRef}>
+                  {isBookingOriginRole(me?.role ?? "KPU") && (
+                    <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={bookingCalOpenCreateForm}>
+                      + Booking Ruang Meeting
+                    </button>
+                  )}
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-room-select">Ruangan</label>
+                    <SearchableSelect
+                      id="sa-calendar-room-select"
+                      value={bookingCalView === "avail" ? ALL_ROOMS_VALUE : bookingCalSelectedRoom}
+                      onChange={(v) => {
+                        if (v === ALL_ROOMS_VALUE) {
+                          setBookingCalView("avail");
+                        } else {
+                          setBookingCalSelectedRoom(v);
+                          if (bookingCalView === "avail") setBookingCalView("day");
+                        }
+                      }}
+                      options={[ALL_ROOMS_VALUE, ...rooms.map((r) => r.nama)]}
+                      getLabel={(v) => (v === ALL_ROOMS_VALUE ? "Ketersediaan Ruang" : v)}
+                      placeholder="Ketersediaan Ruang"
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-date-input">Tanggal</label>
+                    <DateFilterPicker
+                      id="sa-calendar-date-input"
+                      value={bookingCalRefDate}
+                      onChange={(v) => { if (v) setBookingCalRefDate(v); }}
+                      clearable={false}
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-search-input">Cari Pesanan</label>
+                    <input
+                      type="text"
+                      id="sa-calendar-search-input"
+                      className="calendar-search-input"
+                      placeholder="No Pesanan"
+                      value={bookingCalSearch}
+                      onChange={(e) => setBookingCalSearch(e.target.value)}
+                    />
+                  </div>
+                  <MiniMonthCalendar
+                    selectedDate={bookingCalRefDate}
+                    onSelect={setBookingCalRefDate}
+                    namaRuang={bookingCalView === "avail" ? undefined : bookingCalSelectedRoom}
+                    entries={bookingCalView === "month" ? bookingCalEntries : undefined}
+                  />
+                </div>
+
+                <div
+                  className={`calendar-main${bookingCalView === "month" ? " calendar-main-month" : ""}`}
+                  style={bookingCalView === "month" && bookingCalSidebarHeight ? { minHeight: bookingCalSidebarHeight } : undefined}
+                >
+                  <div className="calendar-topbar">
+                    <div className="calendar-topbar-left">
+                      <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={bookingCalGoToday}>Hari Ini</button>
+                      <div className="calendar-nav-arrows" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <button
+                          className="page-btn"
+                          onClick={bookingCalGoPrev}
+                          aria-label="Sebelumnya"
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 18 9 12 15 6" />
+                          </svg>
+                        </button>
+                        <button
+                          className="page-btn"
+                          onClick={bookingCalGoNext}
+                          aria-label="Berikutnya"
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="calendar-topbar-room">{bookingCalView === "avail" ? "Ketersediaan Ruang" : bookingCalSelectedRoom}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div className="calendar-view-toggle">
+                        {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            className={`calendar-view-btn${bookingCalView === v ? " calendar-view-btn-active" : ""}`}
+                            onClick={() => setBookingCalView(v)}
+                          >
+                            {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="calendar-view-toggle">
+                        <button
+                          type="button"
+                          className={`calendar-view-btn${bookingCalView === "avail" ? " calendar-view-btn-active" : ""}`}
+                          onClick={() => setBookingCalView("avail")}
+                        >
+                          Ketersediaan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(bookingCalView === "avail" ? bookingCalAvailBusy : bookingCalScheduleBusy) ? (
+                    <p className="text-secondary">Memuat jadwal...</p>
+                  ) : (
+                    <RoomCalendarView
+                      view={bookingCalView}
+                      refDate={bookingCalRefDate}
+                      entries={bookingCalView === "avail" ? bookingCalFilteredAvailEntries : bookingCalFilteredEntries}
+                      rooms={rooms}
+                      canCreate={isBookingOriginRole(me?.role ?? "KPU")}
+                      onSlotSelect={(date, startHour, endHour, room, additionalRooms) => {
+                        if (!isBookingOriginRole(me?.role ?? "KPU")) return;
+                        const isFullDay = startHour === 7 && endHour === 18 && isWholeDayAllowed(date);
+                        setBookingCalFormInitial({
+                          namaRuang: room || bookingCalSelectedRoom,
+                          additionalRooms: additionalRooms && additionalRooms.length > 0 ? additionalRooms : undefined,
+                          tanggal: date,
+                          jamMulai: `${String(startHour).padStart(2, "0")}:00`,
+                          jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
+                          isWholeDay: isFullDay,
+                        });
+                        setBookingCalFormOpen(true);
+                      }}
+                      onEntryMenuClick={(event, entry) => bookingCalRowMenu.toggle(event, entry.id, 220)}
+                      onJumpToDay={(date) => { setBookingCalRefDate(date); setBookingCalView("day"); }}
+                      onJumpToRoom={(room) => { setBookingCalSelectedRoom(room); setBookingCalView("day"); }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <RowMenuDropdown
+                position={bookingCalRowMenu.position}
+                canEditDelete={
+                  !!bookingCalRowMenu.menuItem &&
+                  ((isBookingOriginRole(me?.role ?? "KPU") && isBookingEditableByOrigin(bookingCalRowMenu.menuItem, me!)) || canGaRescheduleBooking(bookingCalRowMenu.menuItem, me!))
+                }
+                canDelete={!!bookingCalRowMenu.menuItem && isBookingOriginRole(me?.role ?? "KPU") && isBookingDeletableByOrigin(bookingCalRowMenu.menuItem, me!)}
+                canCancel={!!bookingCalRowMenu.menuItem && isBookingCancellableByOrigin(bookingCalRowMenu.menuItem, me!)}
+                onCancel={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (item) setBookingCalCancelTargetId(item.id);
+                }}
+                onDetail={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (item) setBookingCalDetail({ item, mode: "view" });
+                }}
+                onChat={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (item) setBookingCalChatItem(item);
+                }}
+                unreadChatCount={bookingCalRowMenu.menuItem?.unreadChatCount}
+                hasUnreadMention={bookingCalRowMenu.menuItem?.hasUnreadMention}
+                onUpdates={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (!item || !me) return;
+                  if (isBookingOriginRole(me.role) && isBookingEditableByOrigin(item, me)) setBookingCalDetail({ item, mode: "edit" });
+                  else if (canGaRescheduleBooking(item, me)) setBookingCalRescheduleTarget(item);
+                }}
+                onStatus={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (item) setBookingCalStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (item) bookingCalHandleDelete(item);
+                }}
+                pdfUrl={bookingCalRowMenu.menuItem && isBookingPdfAvailable(bookingCalRowMenu.menuItem) ? api.bookingPdfUrl(bookingCalRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.bookingPdfUrl(item.id), `Bukti-Booking-${item.nomorPemesanan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+                icsUrl={bookingCalRowMenu.menuItem && isBookingPdfAvailable(bookingCalRowMenu.menuItem) ? api.bookingIcsUrl(bookingCalRowMenu.menuItem.id) : undefined}
+                onIcsClick={async () => {
+                  const item = bookingCalRowMenu.menuItem;
+                  bookingCalRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.bookingIcsUrl(item.id), `Booking-${item.nomorPemesanan || item.id}.ics`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <RoomBookingFormModal
+                  open={bookingCalFormOpen}
+                  me={me}
+                  initial={bookingCalFormInitial}
+                  onClose={() => { setBookingCalFormOpen(false); setBookingCalFormInitial(undefined); }}
+                  onCreated={bookingCalReload}
+                />
+              )}
+
+              {me && (
+                <RoomBookingDetailModal
+                  open={!!bookingCalDetail}
+                  mode={bookingCalDetail?.mode || "view"}
+                  item={bookingCalDetail?.item || null}
+                  me={me}
+                  onClose={() => setBookingCalDetail(null)}
+                  onSaved={bookingCalReload}
+                  onRequestReject={(id, type, originLabel) => setBookingCalRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <CancelBookingModal
+                open={bookingCalCancelTargetId != null}
+                targetId={bookingCalCancelTargetId}
+                targetType="room"
+                onClose={() => setBookingCalCancelTargetId(null)}
+                onDone={() => { setBookingCalCancelTargetId(null); bookingCalReload(); }}
+              />
+
+              <RoomBookingRescheduleModal
+                open={!!bookingCalRescheduleTarget}
+                item={bookingCalRescheduleTarget}
+                onClose={() => setBookingCalRescheduleTarget(null)}
+                onSaved={bookingCalReload}
+              />
+
+              <RejectModal
+                open={!!bookingCalRejectTarget}
+                targetId={bookingCalRejectTarget?.id ?? null}
+                targetType={bookingCalRejectTarget?.type ?? null}
+                originLabel={bookingCalRejectTarget?.originLabel ?? ""}
+                onClose={() => setBookingCalRejectTarget(null)}
+                onDone={() => { setBookingCalRejectTarget(null); bookingCalReload(); }}
+              />
+
+              <BookingStatusHistoryModal open={bookingCalStatusItemId != null} itemId={bookingCalStatusItemId} onClose={() => setBookingCalStatusItemId(null)} />
+
+              {me && (
+                <RoomBookingChatModal
+                  open={!!bookingCalChatItem}
+                  itemId={bookingCalChatItem?.id ?? null}
+                  itemLabel={bookingCalChatItem ? `${bookingCalChatItem.namaKegiatan} - ${bookingRoomsLabel(bookingCalChatItem)} - ${bookingCalChatItem.nomorPemesanan || "-"}` : ""}
+                  departemen={bookingCalChatItem?.departemen ?? null}
+                  me={me}
+                  onClose={() => setBookingCalChatItem(null)}
+                  onRead={() => bookingCalReload({ silent: true })}
+                />
+              )}
+            </>
+          )}
         </>
       )}
 
@@ -2168,6 +2764,13 @@ function SuperAdminPageInner() {
               onClick={() => setKendaraanSubtab("roster")}
             >
               Kelola Kendaraan
+            </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${kendaraanSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setKendaraanSubtab("calendar")}
+            >
+              Calendar
             </button>
           </div>
 
@@ -2461,6 +3064,273 @@ function SuperAdminPageInner() {
 
           <VehicleBookingStatusHistoryModal open={kendaraanStatusItemId != null} itemId={kendaraanStatusItemId} onClose={() => setKendaraanStatusItemId(null)} />
         </>
+          )}
+
+          {kendaraanSubtab === "calendar" && (
+            <>
+              <div className="calendar-shell">
+                <div className="calendar-sidebar" ref={kendaraanCalSidebarRef}>
+                  {isBookingOriginRole(me?.role ?? "KPU") && (
+                    <button type="button" className="btn btn-primary btn-header-action calendar-sidebar-create-btn" onClick={kendaraanCalOpenCreateForm}>
+                      + Booking Kendaraan
+                    </button>
+                  )}
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-kendaraan-select">Kendaraan</label>
+                    <SearchableSelect
+                      id="sa-calendar-kendaraan-select"
+                      value={kendaraanCalView === "avail" ? ALL_VEHICLES_VALUE : kendaraanCalSelectedVehicle}
+                      onChange={(v) => {
+                        if (v === ALL_VEHICLES_VALUE) {
+                          setKendaraanCalView("avail");
+                        } else {
+                          setKendaraanCalSelectedVehicle(v);
+                          if (kendaraanCalView === "avail") setKendaraanCalView("day");
+                        }
+                      }}
+                      options={[ALL_VEHICLES_VALUE, ...vehicles.map((v) => v.nama)]}
+                      getLabel={(v) => (v === ALL_VEHICLES_VALUE ? "Ketersediaan Kendaraan" : v)}
+                      placeholder="Ketersediaan Kendaraan"
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-kendaraan-date-input">Tanggal</label>
+                    <DateFilterPicker
+                      id="sa-calendar-kendaraan-date-input"
+                      value={kendaraanCalRefDate}
+                      onChange={(v) => { if (v) setKendaraanCalRefDate(v); }}
+                      clearable={false}
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label htmlFor="sa-calendar-kendaraan-search-input">Cari Pesanan</label>
+                    <input
+                      type="text"
+                      id="sa-calendar-kendaraan-search-input"
+                      className="calendar-search-input"
+                      placeholder="No Pesanan"
+                      value={kendaraanCalSearch}
+                      onChange={(e) => setKendaraanCalSearch(e.target.value)}
+                    />
+                  </div>
+                  <MiniMonthCalendar
+                    selectedDate={kendaraanCalRefDate}
+                    onSelect={setKendaraanCalRefDate}
+                    entries={kendaraanCalMiniEntries}
+                  />
+                </div>
+
+                <div
+                  className={`calendar-main${kendaraanCalView === "month" ? " calendar-main-month" : ""}`}
+                  style={kendaraanCalView === "month" && kendaraanCalSidebarHeight ? { minHeight: kendaraanCalSidebarHeight } : undefined}
+                >
+                  <div className="calendar-topbar">
+                    <div className="calendar-topbar-left">
+                      <button type="button" className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={kendaraanCalGoToday}>Hari Ini</button>
+                      <div className="calendar-nav-arrows" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <button
+                          className="page-btn"
+                          onClick={kendaraanCalGoPrev}
+                          aria-label="Sebelumnya"
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 18 9 12 15 6" />
+                          </svg>
+                        </button>
+                        <button
+                          className="page-btn"
+                          onClick={kendaraanCalGoNext}
+                          aria-label="Berikutnya"
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: 8, padding: 0 }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="calendar-topbar-room">{kendaraanCalView === "avail" ? "Ketersediaan Kendaraan" : kendaraanCalSelectedVehicle}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div className="calendar-view-toggle">
+                        {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            className={`calendar-view-btn${kendaraanCalView === v ? " calendar-view-btn-active" : ""}`}
+                            onClick={() => setKendaraanCalView(v)}
+                          >
+                            {v === "day" ? "Harian" : v === "week" ? "Mingguan" : "Bulanan"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="calendar-view-toggle">
+                        <button
+                          type="button"
+                          className={`calendar-view-btn${kendaraanCalView === "avail" ? " calendar-view-btn-active" : ""}`}
+                          onClick={() => setKendaraanCalView("avail")}
+                        >
+                          Ketersediaan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(kendaraanCalView === "avail" ? kendaraanCalAvailBusy : kendaraanCalScheduleBusy) ? (
+                    <p className="text-secondary">Memuat jadwal...</p>
+                  ) : (
+                    <RoomCalendarView
+                      view={kendaraanCalView}
+                      refDate={kendaraanCalRefDate}
+                      entries={kendaraanCalView === "avail" ? kendaraanCalFilteredAvailEntries : kendaraanCalFilteredEntries}
+                      rooms={vehicles}
+                      canCreate={isBookingOriginRole(me?.role ?? "KPU")}
+                      onSlotSelect={(date, startHour, endHour, kendaraan) => {
+                        if (!isBookingOriginRole(me?.role ?? "KPU")) return;
+                        const isFullDay = startHour === 7 && endHour === 18 && isWholeDayAllowed(date);
+                        setKendaraanCalFormInitial({
+                          namaKendaraan: kendaraan || kendaraanCalSelectedVehicle,
+                          tanggal: date,
+                          jamMulai: `${String(startHour).padStart(2, "0")}:00`,
+                          jamSelesai: `${String(endHour).padStart(2, "0")}:00`,
+                          isWholeDay: isFullDay,
+                        });
+                        setKendaraanCalFormOpen(true);
+                      }}
+                      onEntryMenuClick={(event, entry) => kendaraanCalRowMenu.toggle(event, entry.id, 220)}
+                      onJumpToDay={(date) => { setKendaraanCalRefDate(date); setKendaraanCalView("day"); }}
+                      onJumpToRoom={(kendaraan) => { setKendaraanCalSelectedVehicle(kendaraan); setKendaraanCalView("day"); }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <RowMenuDropdown
+                position={kendaraanCalRowMenu.position}
+                canEditDelete={
+                  !!kendaraanCalRowMenu.menuItem &&
+                  ((isBookingOriginRole(me?.role ?? "KPU") && isKendaraanEditableByOrigin(kendaraanCalRowMenu.menuItem, me!)) || canGaRescheduleKendaraan(kendaraanCalRowMenu.menuItem, me!))
+                }
+                canDelete={!!kendaraanCalRowMenu.menuItem && isBookingOriginRole(me?.role ?? "KPU") && isKendaraanDeletableByOrigin(kendaraanCalRowMenu.menuItem, me!)}
+                canCancel={!!kendaraanCalRowMenu.menuItem && isKendaraanCancellableByOrigin(kendaraanCalRowMenu.menuItem, me!)}
+                onCancel={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (item) setKendaraanCalCancelTargetId(item.id);
+                }}
+                onDetail={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (item) setKendaraanCalDetail({ item, mode: "view" });
+                }}
+                onChat={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (item) setKendaraanCalChatItem(item);
+                }}
+                unreadChatCount={kendaraanCalRowMenu.menuItem?.unreadChatCount}
+                hasUnreadMention={kendaraanCalRowMenu.menuItem?.hasUnreadMention}
+                onUpdates={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (!item || !me) return;
+                  if (isBookingOriginRole(me.role) && isKendaraanEditableByOrigin(item, me)) setKendaraanCalDetail({ item, mode: "edit" });
+                  else if (canGaRescheduleKendaraan(item, me)) setKendaraanCalRescheduleTarget(item);
+                }}
+                onStatus={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (item) setKendaraanCalStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (item) kendaraanCalHandleDelete(item);
+                }}
+                pdfUrl={kendaraanCalRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanCalRowMenu.menuItem) ? api.kendaraanPdfUrl(kendaraanCalRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.kendaraanPdfUrl(item.id), `Bukti-Booking-Kendaraan-${item.nomorPemesanan || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+                icsUrl={kendaraanCalRowMenu.menuItem && isKendaraanPdfAvailable(kendaraanCalRowMenu.menuItem) ? api.kendaraanIcsUrl(kendaraanCalRowMenu.menuItem.id) : undefined}
+                onIcsClick={async () => {
+                  const item = kendaraanCalRowMenu.menuItem;
+                  kendaraanCalRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.kendaraanIcsUrl(item.id), `Booking-Kendaraan-${item.nomorPemesanan || item.id}.ics`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <VehicleBookingFormModal
+                  open={kendaraanCalFormOpen}
+                  me={me}
+                  initial={kendaraanCalFormInitial}
+                  onClose={() => setKendaraanCalFormOpen(false)}
+                  onCreated={kendaraanCalReloadAll}
+                />
+              )}
+
+              {me && (
+                <VehicleBookingDetailModal
+                  open={!!kendaraanCalDetail}
+                  mode={kendaraanCalDetail?.mode || "view"}
+                  item={kendaraanCalDetail?.item || null}
+                  me={me}
+                  onClose={() => setKendaraanCalDetail(null)}
+                  onSaved={kendaraanCalReloadAll}
+                  onRequestReject={(id, type, originLabel) => setKendaraanCalRejectTarget({ id, type, originLabel })}
+                />
+              )}
+
+              <CancelBookingModal
+                open={kendaraanCalCancelTargetId != null}
+                targetId={kendaraanCalCancelTargetId}
+                targetType="kendaraan"
+                onClose={() => setKendaraanCalCancelTargetId(null)}
+                onDone={() => { setKendaraanCalCancelTargetId(null); kendaraanCalReloadAll(); }}
+              />
+
+              <VehicleBookingRescheduleModal
+                open={!!kendaraanCalRescheduleTarget}
+                item={kendaraanCalRescheduleTarget}
+                onClose={() => setKendaraanCalRescheduleTarget(null)}
+                onSaved={kendaraanCalReloadAll}
+              />
+
+              <RejectModal
+                open={!!kendaraanCalRejectTarget}
+                targetId={kendaraanCalRejectTarget?.id ?? null}
+                targetType={kendaraanCalRejectTarget?.type ?? null}
+                originLabel={kendaraanCalRejectTarget?.originLabel ?? ""}
+                onClose={() => setKendaraanCalRejectTarget(null)}
+                onDone={() => { setKendaraanCalRejectTarget(null); kendaraanCalReloadAll(); }}
+              />
+
+              <VehicleBookingStatusHistoryModal open={kendaraanCalStatusItemId != null} itemId={kendaraanCalStatusItemId} onClose={() => setKendaraanCalStatusItemId(null)} />
+
+              {me && (
+                <VehicleBookingChatModal
+                  open={!!kendaraanCalChatItem}
+                  itemId={kendaraanCalChatItem?.id ?? null}
+                  itemLabel={kendaraanCalChatItem ? `${kendaraanCalChatItem.keperluan} - ${kendaraanCalChatItem.namaKendaraan} - ${kendaraanCalChatItem.nomorPemesanan || "-"}` : ""}
+                  departemen={kendaraanCalChatItem?.departemen ?? null}
+                  me={me}
+                  onClose={() => setKendaraanCalChatItem(null)}
+                  onRead={() => kendaraanCalReloadAll({ silent: true })}
+                />
+              )}
+            </>
           )}
         </>
       )}
