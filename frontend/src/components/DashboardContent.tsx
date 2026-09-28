@@ -638,7 +638,8 @@ export default function DashboardContent({ me }: { me: Me }) {
   ].sort((left, right) => right.value - left.value || left.label.localeCompare(right.label));
   const maxOrganizationVolume = Math.max(1, ...organizationVolumes.map((item) => item.value));
   const organizationDimensionLabel = ({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[organizationDimension];
-  const distributionContext = [activeView === "all" ? "Seluruh" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
+  const distributionPeriodText = periodText === "Semua periode" ? "Semua Periode" : periodText;
+  const distributionContext = [activeView === "all" ? "" : activeModuleLabel, distributionPeriodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const spendingRows = ([
     { key: "expedition" as const, label: "Expedition" },
     { key: "atk" as const, label: "Office Supplies" },
@@ -665,11 +666,11 @@ export default function DashboardContent({ me }: { me: Me }) {
   const trendMax = Math.max(1, ...trendData.map((item) => item.value));
   const trendPoints = trendData.map((item, index) => ({
     ...item,
-    x: 40 + (index * 520) / Math.max(1, trendData.length - 1),
-    y: 20 + (1 - item.value / trendMax) * 120,
+    x: 36 + (index * 448) / Math.max(1, trendData.length - 1),
+    y: 20 + (1 - item.value / trendMax) * 170,
   }));
   const trendLinePoints = trendPoints.map((point) => `${point.x},${point.y}`).join(" ");
-  const trendAreaPoints = `40,140 ${trendLinePoints} 560,140`;
+  const trendAreaPoints = `36,190 ${trendLinePoints} 484,190`;
   const previousTrendValue = trendData.at(-2)?.value ?? 0;
   const latestTrendValue = trendData.at(-1)?.value ?? 0;
   const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
@@ -866,20 +867,20 @@ export default function DashboardContent({ me }: { me: Me }) {
             {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
           </header>
           <div className={styles.trendChart}>
-            <svg viewBox="0 0 600 180" role="img" aria-label="Tren volume transaksi enam bulan terakhir">
+            <svg viewBox="0 0 520 235" role="img" aria-label="Tren volume transaksi enam bulan terakhir">
               <title>Tren volume transaksi enam bulan terakhir</title>
               {[0, 1, 2, 3].map((line) => {
-                const y = 20 + line * 40;
+                const y = 20 + (line * 170) / 3;
                 const value = Math.round(trendMax * (1 - line / 3));
-                return <g key={line}><line className={styles.trendGridLine} x1="40" x2="560" y1={y} y2={y} /><text className={styles.trendAxisText} x="30" y={y + 3} textAnchor="end">{value}</text></g>;
+                return <g key={line}><line className={styles.trendGridLine} x1="36" x2="484" y1={y} y2={y} /><text className={styles.trendAxisText} x="27" y={y + 4} textAnchor="end">{value}</text></g>;
               })}
               <polygon className={styles.trendArea} points={trendAreaPoints} />
               <polyline className={styles.trendLine} points={trendLinePoints} />
               {trendPoints.map((point) => (
                 <g className={styles.trendPoint} key={point.key} tabIndex={0} aria-label={`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}>
                   <circle cx={point.x} cy={point.y} r="5" />
-                  <text x={point.x} y={Math.max(12, point.y - 10)} textAnchor="middle">{point.value}</text>
-                  <text className={styles.trendMonthLabel} x={point.x} y="165" textAnchor="middle">{point.label}</text>
+                  <text x={point.x} y={Math.max(13, point.y - 11)} textAnchor="middle">{point.value}</text>
+                  <text className={styles.trendMonthLabel} x={point.x} y="220" textAnchor="middle">{point.label}</text>
                   <title>{`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
                 </g>
               ))}
