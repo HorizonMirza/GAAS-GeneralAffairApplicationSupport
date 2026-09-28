@@ -134,6 +134,7 @@ interface AnalyticsItem {
   divisi: string;
   departemen: string | null;
   createdAt: string;
+  amount: number;
 }
 
 const MODULES: ModuleDefinition[] = [
@@ -372,6 +373,20 @@ function recentMonthBuckets(reference: Date, count: number) {
   });
 }
 
+function analyticsAmount(moduleKey: ModuleKey, item: SourceItem): number {
+  if (moduleKey === "expedition") return (item as Pengiriman).total ?? 0;
+  if (moduleKey === "atk") return (item as PermintaanAtk).totalHargaBarang ?? 0;
+  return 0;
+}
+
+function formatRupiah(value: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export default function DashboardContent({ me }: { me: Me }) {
   const [activeView, setActiveView] = useState<DashboardView>("all");
   const [month, setMonth] = useState("");
@@ -383,7 +398,6 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
-  const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -454,7 +468,13 @@ export default function DashboardContent({ me }: { me: Me }) {
         queue: filteredQueue.map((item) => adaptItem(module, item)),
         recent: recentResult.status === "fulfilled" ? recentResult.value.items.map((item) => adaptItem(module, item)) : [],
         analytics: analyticsResult.status === "fulfilled"
-          ? analyticsResult.value.items.map<AnalyticsItem>((item) => ({ moduleKey: module.key, divisi: item.divisi, departemen: item.departemen, createdAt: item.createdAt }))
+          ? analyticsResult.value.items.map<AnalyticsItem>((item) => ({
+            moduleKey: module.key,
+            divisi: item.divisi,
+            departemen: item.departemen,
+            createdAt: item.createdAt,
+            amount: analyticsAmount(module.key, item),
+          }))
           : [],
         errors: [statsResult, queueResult, recentResult, analyticsResult].filter((result) => result.status === "rejected").length,
       };
@@ -532,7 +552,6 @@ export default function DashboardContent({ me }: { me: Me }) {
     setDivisi("");
     setDepartemen("");
     setScheduleTab("all");
-    setOrganizationDimension("direktorat");
     setFilterOpen(false);
     setRefreshToken((value) => value + 1);
   }
@@ -576,13 +595,15 @@ export default function DashboardContent({ me }: { me: Me }) {
     ? ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
     : "";
   const analyticsContext = [activeView === "all" ? "Seluruh modul" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
+  const organizationDimension: OrganizationDimension = departemen ? "departemen" : divisi ? "divisi" : "direktorat";
   const selectedAnalytics = state.analytics.filter((item) => activeView === "all" || item.moduleKey === activeView);
-  const periodAnalytics = selectedAnalytics.filter((item) => {
+  const periodScopedAnalytics = state.analytics.filter((item) => {
     const itemDate = item.createdAt.slice(0, 10);
     if (date) return itemDate === date;
     if (month) return itemDate.startsWith(month);
     return true;
   });
+  const periodAnalytics = periodScopedAnalytics.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const scopedDirektoratNodes = direktorat
     ? org?.direktoratTree.filter((node) => node.nama === direktorat) ?? []
     : divisi
@@ -617,6 +638,21 @@ export default function DashboardContent({ me }: { me: Me }) {
   ].sort((left, right) => right.value - left.value || left.label.localeCompare(right.label));
   const maxOrganizationVolume = Math.max(1, ...organizationVolumes.map((item) => item.value));
   const organizationDimensionLabel = ({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[organizationDimension];
+  const distributionContext = [activeView === "all" ? "Seluruh" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
+  const spendingRows = ([
+    { key: "expedition" as const, label: "Expedition" },
+    { key: "atk" as const, label: "Office Supplies" },
+  ]).map((module) => {
+    const items = periodScopedAnalytics.filter((item) => item.moduleKey === module.key && item.amount > 0);
+    return {
+      ...module,
+      count: items.length,
+      value: items.reduce((total, item) => total + item.amount, 0),
+    };
+  });
+  const totalSpending = spendingRows.reduce((total, item) => total + item.value, 0);
+  const maxSpending = Math.max(1, ...spendingRows.map((item) => item.value));
+  const spendingContext = ["Expedition & Office Supplies", periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const trendReference = date
     ? new Date(`${date}T00:00:00`)
     : month
@@ -812,21 +848,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       <section className={styles.insightGrid} aria-label="Analitik organisasi dan tren">
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
-            <div><h2>Distribusi Volume per {organizationDimensionLabel}</h2><p>{[periodText, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
-            <div className={styles.organizationToggle} role="tablist" aria-label="Kelompok organisasi">
-              {(["direktorat", "divisi", "departemen"] as const).map((dimension) => (
-                <button
-                  key={dimension}
-                  type="button"
-                  role="tab"
-                  aria-selected={organizationDimension === dimension}
-                  className={organizationDimension === dimension ? styles.organizationToggleActive : ""}
-                  onClick={() => setOrganizationDimension(dimension)}
-                >
-                  {({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[dimension]}
-                </button>
-              ))}
-            </div>
+            <div><h2>Distribusi Volume {organizationDimensionLabel}</h2><p>{distributionContext}</p></div>
           </header>
           <div className={styles.divisionChart}>
             {organizationVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada struktur organisasi pada filter ini.</div> : organizationVolumes.map((item) => (
@@ -840,7 +862,7 @@ export default function DashboardContent({ me }: { me: Me }) {
 
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
-            <div><h2>Tren Transaksi (6 Bulan)</h2><p>{[activeView === "all" ? "Seluruh modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
+            <div><h2>Tren Transaksi</h2><p>{[activeView === "all" ? "Seluruh modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
             {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
           </header>
           <div className={styles.trendChart}>
@@ -861,10 +883,27 @@ export default function DashboardContent({ me }: { me: Me }) {
                   <title>{`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
                 </g>
               ))}
-              <text className={styles.trendAxisTitle} x="300" y="179" textAnchor="middle">Month</text>
             </svg>
           </div>
         </article>
+      </section>
+
+      <section className={styles.spendingPanel} aria-label="Uang keluar Expedition dan Office Supplies">
+        <header className={styles.spendingHeader}>
+          <div><h2>Uang Keluar</h2><p>{spendingContext}</p></div>
+          <div className={styles.spendingTotal}><span>Total</span><strong>{formatRupiah(totalSpending)}</strong></div>
+        </header>
+        <div className={styles.spendingBreakdown}>
+          {spendingRows.map((item) => (
+            <div className={styles.spendingItem} key={item.key}>
+              <div className={styles.spendingItemHeader}>
+                <div><strong>{item.label}</strong><span>{item.count.toLocaleString("id-ID")} transaksi berbiaya</span></div>
+                <strong>{formatRupiah(item.value)}</strong>
+              </div>
+              <span className={styles.spendingTrack}><i className={item.key === "atk" ? styles.spendingAtk : ""} style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <div className={`${styles.workspace} ${me.role === "KPU" ? styles.workspaceKpu : ""}`}>
