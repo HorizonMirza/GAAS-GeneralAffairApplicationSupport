@@ -4899,7 +4899,7 @@ function SuperAdminPageInner() {
               )}
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
-                <h3 style={{ margin: 0 }}>Pemindahan Terbaru</h3>
+                <h3 style={{ margin: 0 }}>Pemindahan Arsip Terbaru</h3>
                 <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
                   <SearchableSelect
                     id="sa-arsip-overview-status-filter"
@@ -5340,9 +5340,6 @@ function SuperAdminPageInner() {
           {arsipSubtab === "katalog" && (
             <>
           <div className="card">
-            <div className="card-header">
-              <h3>Repository Arsip</h3>
-            </div>
             <div className="toolbar transactions-page-toolbar">
               <div className="field toolbar-search-field">
                 <label htmlFor="filter-arsip-katalog-search">Cari Arsip</label>
@@ -5581,14 +5578,14 @@ function SuperAdminPageInner() {
               className={`superadmin-subtab-btn ${atkSubtab === "pesanan" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setAtkSubtab("pesanan")}
             >
-              Pesanan Kebutuhan Kantor ({atkTotal})
+              Transaction ({atkTotal})
             </button>
             <button
               type="button"
               className={`superadmin-subtab-btn ${atkSubtab === "invoice" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setAtkSubtab("invoice")}
             >
-              Vendor Invoices ({atkInvoiceTotal})
+              Invoice ({atkInvoiceTotal})
             </button>
           </div>
 
