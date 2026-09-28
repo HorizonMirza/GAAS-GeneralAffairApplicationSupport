@@ -8,18 +8,17 @@ import PasswordField from "./PasswordField";
 interface Props {
   open: boolean;
   title: string;
-  // e.g. `ruang meeting "Ruang Golf"` - read as a sentence continuing "Anda akan menghapus ...".
-  itemLabel: string;
-  // Read-only summary of the item being removed (Nama/Kapasitas/Lantai/... etc.) - reuses the
-  // same .detail-grid/.detail-row treatment every other Detail modal in the app uses.
-  details?: { label: string; value: string }[];
+  // The item's own fields, rendered exactly like its Add/Edit form (disabled inputs) so this
+  // reads as "the same form, but for deleting" rather than a different kind of dialog.
+  children?: React.ReactNode;
   onConfirm: (password: string) => Promise<void>;
   onClose: () => void;
 }
 
 // A permanent delete of a room/vehicle roster entry - gated by re-entering the Super Admin's own
-// password (verified server-side), same styling as the Add/Edit forms in the same tab.
-export default function DeleteWithPasswordModal({ open, title, itemLabel, details, onConfirm, onClose }: Props) {
+// password (verified server-side). Same modal chrome and field layout as the Add/Edit form in the
+// same tab, just with disabled fields and a red "Hapus" button instead of green "Save".
+export default function DeleteWithPasswordModal({ open, title, children, onConfirm, onClose }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -46,29 +45,15 @@ export default function DeleteWithPasswordModal({ open, title, itemLabel, detail
 
   return (
     <ModalOverlay open={open} onClose={busy ? () => {} : onClose} className={`modal-overlay modal-overlay-centered ${open ? "" : "hidden"}`}>
-      <div className="modal" style={{ maxWidth: 440 }}>
+      <div className="modal" style={{ maxWidth: 480 }}>
         <div className="modal-header">
           <h3>{title}</h3>
           <button type="button" className="modal-close" onClick={onClose} disabled={busy}>&times;</button>
         </div>
 
-        <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-          Anda akan menghapus <strong style={{ color: "var(--text-primary)" }}>{itemLabel}</strong> secara
-          permanen. Tindakan ini tidak dapat dibatalkan.
-        </p>
+        {children}
 
-        {details && details.length > 0 && (
-          <div className="detail-grid" style={{ marginTop: 12, maxHeight: "none", overflowY: "visible" }}>
-            {details.map((d) => (
-              <div className="detail-row" key={d.label}>
-                <span className="detail-label">{d.label}</span>
-                <span className="detail-value">{d.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 12 }}>
           <PasswordField
             id="delete-confirm-password"
             label="Password Super Admin"

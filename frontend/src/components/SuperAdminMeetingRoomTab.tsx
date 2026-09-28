@@ -237,16 +237,30 @@ export default function SuperAdminMeetingRoomTab() {
       <DeleteWithPasswordModal
         open={!!deleteTarget}
         title="Hapus Ruang Meeting"
-        itemLabel={`ruang meeting "${deleteTarget?.nama ?? ""}"`}
-        details={deleteTarget ? [
-          { label: "Nama Ruang", value: deleteTarget.nama },
-          { label: "Kapasitas", value: String(deleteTarget.kapasitas) },
-          { label: "Lantai", value: deleteTarget.lantai },
-          { label: "Fasilitas", value: deleteTarget.fasilitas.length > 0 ? deleteTarget.fasilitas.join(", ") : "-" },
-        ] : []}
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
-      />
+      >
+        {deleteTarget && (
+          <>
+            <div className="field">
+              <label htmlFor="delete-room-nama">Nama Ruang</label>
+              <input id="delete-room-nama" type="text" value={deleteTarget.nama} disabled readOnly />
+            </div>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label htmlFor="delete-room-kapasitas">Kapasitas</label>
+              <input id="delete-room-kapasitas" type="text" value={String(deleteTarget.kapasitas)} disabled readOnly />
+            </div>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label htmlFor="delete-room-lantai">Lantai</label>
+              <input id="delete-room-lantai" type="text" value={deleteTarget.lantai} disabled readOnly />
+            </div>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label htmlFor="delete-room-fasilitas">Fasilitas</label>
+              <input id="delete-room-fasilitas" type="text" value={deleteTarget.fasilitas.length > 0 ? deleteTarget.fasilitas.join(", ") : "-"} disabled readOnly />
+            </div>
+          </>
+        )}
+      </DeleteWithPasswordModal>
     </div>
   );
 }

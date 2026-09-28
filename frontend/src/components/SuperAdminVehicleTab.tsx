@@ -64,12 +64,12 @@ function routeApiError(message: string): VehicleFormErrors {
   if (/nama kendaraan/i.test(message)) return { nama: message };
   if (/plat nomor/i.test(message)) return { platNomor: message };
   if (/kapasitas/i.test(message)) return { kapasitas: message };
-  if (/supir/i.test(message)) return { supir: message };
   if (/merek/i.test(message)) return { merek: message };
   if (/model/i.test(message)) return { model: message };
   if (/tahun/i.test(message)) return { tahun: message };
   if (/warna/i.test(message)) return { warna: message };
   if (/telepon/i.test(message)) return { nomorTeleponSupir: message };
+  if (/pengemudi/i.test(message)) return { supir: message };
   if (/lokasi parkir/i.test(message)) return { lokasiParkir: message };
   if (/password/i.test(message)) return { password: message };
   return { general: message };
@@ -133,14 +133,12 @@ export default function SuperAdminVehicleTab() {
     if (!form.platNomor.trim()) errs.platNomor = "Plat nomor wajib diisi";
     const kapasitas = Number(form.kapasitas);
     if (!Number.isInteger(kapasitas) || kapasitas <= 0) errs.kapasitas = "Kapasitas harus bilangan bulat lebih dari 0";
-    if (!form.supir.trim()) errs.supir = "Nama supir wajib diisi";
+    if (!form.supir.trim()) errs.supir = "Nama pengemudi wajib diisi";
     if (!form.merek.trim()) errs.merek = "Merek wajib diisi";
-    if (!form.model.trim()) errs.model = "Model wajib diisi";
     const tahun = Number(form.tahun);
     if (!Number.isInteger(tahun) || tahun < 1900 || tahun > 2100) errs.tahun = "Tahun tidak valid";
     if (!form.warna.trim()) errs.warna = "Warna wajib diisi";
-    if (!form.nomorTeleponSupir.trim()) errs.nomorTeleponSupir = "No. telepon supir wajib diisi";
-    if (!form.lokasiParkir.trim()) errs.lokasiParkir = "Lokasi parkir wajib diisi";
+    if (!form.nomorTeleponSupir.trim()) errs.nomorTeleponSupir = "No. telepon pengemudi wajib diisi";
     if (!form.password) errs.password = "Password wajib diisi";
     if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
     setFormErrors({});
@@ -197,26 +195,30 @@ export default function SuperAdminVehicleTab() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th><th>Nama</th><th>Plat Nomor</th><th>Kapasitas</th><th>Supir</th><th>Merek / Model</th><th>Tahun</th><th></th>
+              <th>No</th><th>Nama</th><th>Merek</th><th>Model</th><th>Warna</th><th>Tahun</th><th>Kapasitas</th><th>Plat Nomor</th><th>Pengemudi</th><th>No. Telepon Pengemudi</th><th>Lokasi Parkir</th><th></th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={8} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={8} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={12} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={8} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>
                   <td>{index + 1}</td>
                   <td>{item.nama}</td>
-                  <td>{item.platNomor}</td>
-                  <td>{item.kapasitas}</td>
-                  <td>{item.supir}</td>
-                  <td>{item.merek} {item.model}</td>
+                  <td>{item.merek}</td>
+                  <td>{item.model || "-"}</td>
+                  <td>{item.warna}</td>
                   <td>{item.tahun}</td>
+                  <td>{item.kapasitas}</td>
+                  <td>{item.platNomor}</td>
+                  <td>{item.supir}</td>
+                  <td>{item.nomorTeleponSupir}</td>
+                  <td>{item.lokasiParkir || "-"}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
@@ -251,34 +253,14 @@ export default function SuperAdminVehicleTab() {
                 {formErrors.nama && <div className="field-error-text">{formErrors.nama}</div>}
               </div>
               <div className="field">
-                <label htmlFor="vehicle-form-plat">Plat Nomor</label>
-                <input id="vehicle-form-plat" type="text" required value={form.platNomor} onChange={(e) => setForm((f) => ({ ...f, platNomor: e.target.value }))} />
-                {formErrors.platNomor && <div className="field-error-text">{formErrors.platNomor}</div>}
-              </div>
-              <div className="field">
-                <label htmlFor="vehicle-form-kapasitas">Kapasitas</label>
-                <input id="vehicle-form-kapasitas" type="number" min={1} required value={form.kapasitas} onChange={(e) => setForm((f) => ({ ...f, kapasitas: e.target.value }))} />
-                {formErrors.kapasitas && <div className="field-error-text">{formErrors.kapasitas}</div>}
-              </div>
-              <div className="field">
-                <label htmlFor="vehicle-form-supir">Nama Supir</label>
-                <input id="vehicle-form-supir" type="text" required value={form.supir} onChange={(e) => setForm((f) => ({ ...f, supir: e.target.value }))} />
-                {formErrors.supir && <div className="field-error-text">{formErrors.supir}</div>}
-              </div>
-              <div className="field">
-                <label htmlFor="vehicle-form-notelp">No. Telepon Supir</label>
-                <input id="vehicle-form-notelp" type="text" required value={form.nomorTeleponSupir} onChange={(e) => setForm((f) => ({ ...f, nomorTeleponSupir: e.target.value }))} />
-                {formErrors.nomorTeleponSupir && <div className="field-error-text">{formErrors.nomorTeleponSupir}</div>}
-              </div>
-              <div className="field">
                 <label htmlFor="vehicle-form-merek">Merek</label>
                 <input id="vehicle-form-merek" type="text" required value={form.merek} onChange={(e) => setForm((f) => ({ ...f, merek: e.target.value }))} />
                 {formErrors.merek && <div className="field-error-text">{formErrors.merek}</div>}
               </div>
               <div className="field">
-                <label htmlFor="vehicle-form-model">Model</label>
-                <input id="vehicle-form-model" type="text" required value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} />
-                {formErrors.model && <div className="field-error-text">{formErrors.model}</div>}
+                <label htmlFor="vehicle-form-warna">Warna</label>
+                <input id="vehicle-form-warna" type="text" required value={form.warna} onChange={(e) => setForm((f) => ({ ...f, warna: e.target.value }))} />
+                {formErrors.warna && <div className="field-error-text">{formErrors.warna}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-tahun">Tahun</label>
@@ -286,14 +268,24 @@ export default function SuperAdminVehicleTab() {
                 {formErrors.tahun && <div className="field-error-text">{formErrors.tahun}</div>}
               </div>
               <div className="field">
-                <label htmlFor="vehicle-form-warna">Warna</label>
-                <input id="vehicle-form-warna" type="text" required value={form.warna} onChange={(e) => setForm((f) => ({ ...f, warna: e.target.value }))} />
-                {formErrors.warna && <div className="field-error-text">{formErrors.warna}</div>}
+                <label htmlFor="vehicle-form-kapasitas">Kapasitas</label>
+                <input id="vehicle-form-kapasitas" type="number" min={1} required value={form.kapasitas} onChange={(e) => setForm((f) => ({ ...f, kapasitas: e.target.value }))} />
+                {formErrors.kapasitas && <div className="field-error-text">{formErrors.kapasitas}</div>}
               </div>
-              <div className="field full">
-                <label htmlFor="vehicle-form-lokasi">Lokasi Parkir</label>
-                <input id="vehicle-form-lokasi" type="text" required value={form.lokasiParkir} onChange={(e) => setForm((f) => ({ ...f, lokasiParkir: e.target.value }))} />
-                {formErrors.lokasiParkir && <div className="field-error-text">{formErrors.lokasiParkir}</div>}
+              <div className="field">
+                <label htmlFor="vehicle-form-plat">Plat Nomor</label>
+                <input id="vehicle-form-plat" type="text" required value={form.platNomor} onChange={(e) => setForm((f) => ({ ...f, platNomor: e.target.value }))} />
+                {formErrors.platNomor && <div className="field-error-text">{formErrors.platNomor}</div>}
+              </div>
+              <div className="field">
+                <label htmlFor="vehicle-form-supir">Nama Pengemudi</label>
+                <input id="vehicle-form-supir" type="text" required value={form.supir} onChange={(e) => setForm((f) => ({ ...f, supir: e.target.value }))} />
+                {formErrors.supir && <div className="field-error-text">{formErrors.supir}</div>}
+              </div>
+              <div className="field">
+                <label htmlFor="vehicle-form-notelp">No. Telepon Pengemudi</label>
+                <input id="vehicle-form-notelp" type="text" required value={form.nomorTeleponSupir} onChange={(e) => setForm((f) => ({ ...f, nomorTeleponSupir: e.target.value }))} />
+                {formErrors.nomorTeleponSupir && <div className="field-error-text">{formErrors.nomorTeleponSupir}</div>}
               </div>
             </div>
 
@@ -321,18 +313,46 @@ export default function SuperAdminVehicleTab() {
       <DeleteWithPasswordModal
         open={!!deleteTarget}
         title="Hapus Kendaraan"
-        itemLabel={`kendaraan "${deleteTarget?.nama ?? ""}"`}
-        details={deleteTarget ? [
-          { label: "Nama Kendaraan", value: deleteTarget.nama },
-          { label: "Plat Nomor", value: deleteTarget.platNomor },
-          { label: "Kapasitas", value: String(deleteTarget.kapasitas) },
-          { label: "Supir", value: deleteTarget.supir },
-          { label: "Merek / Model", value: `${deleteTarget.merek} ${deleteTarget.model}` },
-          { label: "Tahun", value: String(deleteTarget.tahun) },
-        ] : []}
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
-      />
+      >
+        {deleteTarget && (
+          <div className="form-grid">
+            <div className="field full">
+              <label htmlFor="delete-vehicle-nama">Nama Kendaraan</label>
+              <input id="delete-vehicle-nama" type="text" value={deleteTarget.nama} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-merek">Merek</label>
+              <input id="delete-vehicle-merek" type="text" value={deleteTarget.merek} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-warna">Warna</label>
+              <input id="delete-vehicle-warna" type="text" value={deleteTarget.warna} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-tahun">Tahun</label>
+              <input id="delete-vehicle-tahun" type="text" value={String(deleteTarget.tahun)} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-kapasitas">Kapasitas</label>
+              <input id="delete-vehicle-kapasitas" type="text" value={String(deleteTarget.kapasitas)} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-plat">Plat Nomor</label>
+              <input id="delete-vehicle-plat" type="text" value={deleteTarget.platNomor} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-supir">Nama Pengemudi</label>
+              <input id="delete-vehicle-supir" type="text" value={deleteTarget.supir} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-notelp">No. Telepon Pengemudi</label>
+              <input id="delete-vehicle-notelp" type="text" value={deleteTarget.nomorTeleponSupir} disabled readOnly />
+            </div>
+          </div>
+        )}
+      </DeleteWithPasswordModal>
     </div>
   );
 }
