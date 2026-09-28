@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
-import type { BookingKendaraan, BookingRuang, Me, Pengiriman } from "@/lib/types";
+import type { BookingKendaraan, BookingRuang, Me, OrgStructure, Pengiriman } from "@/lib/types";
 
 // ─── Tab type ─────────────────────────────────────────────────────────────────
 type DashTab = "all" | "ekspedisi" | "room" | "vehicle" | "atk" | "maint" | "arsip";
@@ -464,6 +464,13 @@ function PaneAll({
   vehSchedules,
   recentActivities,
   onOpenQuickAction,
+  selectedModul,
+  setSelectedModul,
+  selectedDirektorat,
+  onDirektoratChange,
+  selectedDivisi,
+  onDivisiChange,
+  orgData,
 }: {
   stats: AllStats;
   isKpu: boolean;
@@ -472,6 +479,13 @@ function PaneAll({
   vehSchedules: BookingKendaraan[];
   recentActivities: RecentActivity[];
   onOpenQuickAction: () => void;
+  selectedModul: string;
+  setSelectedModul: (m: string) => void;
+  selectedDirektorat: string;
+  onDirektoratChange: (d: string) => void;
+  selectedDivisi: string;
+  onDivisiChange: (v: string) => void;
+  orgData: OrgStructure | null;
 }) {
   const donutRef  = useRef<HTMLCanvasElement>(null);
   const barRef    = useRef<HTMLCanvasElement>(null);
@@ -481,6 +495,20 @@ function PaneAll({
 
   // Status Filter Chips for Table
   const [tableStatusFilter, setTableStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED" | "REJECTED">("ALL");
+
+  const availableDivisi = useMemo(() => {
+    if (!orgData) return [];
+    if (selectedDirektorat === "ALL") return orgData.divisi;
+    const dirNode = orgData.direktoratTree?.find((d) => d.nama === selectedDirektorat);
+    return dirNode ? dirNode.divisi.map((v) => v.nama) : orgData.divisi;
+  }, [orgData, selectedDirektorat]);
+
+  const activeDivisionText =
+    selectedDivisi !== "ALL"
+      ? `Divisi ${selectedDivisi}`
+      : selectedDirektorat !== "ALL"
+      ? selectedDirektorat
+      : me.divisi ? `Divisi ${me.divisi}` : "Seluruh Divisi";
 
   const sum = (field: keyof ModuleStats) => {
     const modules: (keyof AllStats)[] = isKpu
@@ -498,15 +526,34 @@ function PaneAll({
   const grandTotal     = totalPending + totalCompleted + totalRejected;
   const totalCost      = stats.ekspedisi?.totalBulanIni ?? 0;
 
+  // Donut data based on selectedModul
+  let donutCompleted = 0;
+  let donutPending = 0;
+  let donutRejected = 0;
+
+  if (selectedModul === "ALL") {
+    donutCompleted = totalCompleted;
+    donutPending = totalPending;
+    donutRejected = totalRejected;
+  } else {
+    const s = stats[selectedModul as keyof AllStats] as ModuleStats | null;
+    if (s) {
+      donutCompleted = s.completed;
+      donutPending = s.pending;
+      donutRejected = s.rejected;
+    }
+  }
+  const donutTotal = donutCompleted + donutPending + donutRejected;
+
   // Donut
   useEffect(() => {
     if (!donutRef.current) return;
     drawDonut(donutRef.current, [
-      { v: totalCompleted, c: "#16a34a" },
-      { v: totalPending,   c: "#f59e0b" },
-      { v: totalRejected,  c: "#dc2626" },
-    ], grandTotal);
-  }, [totalCompleted, totalPending, totalRejected, grandTotal]);
+      { v: donutCompleted, c: "#16a34a" },
+      { v: donutPending,   c: "#f59e0b" },
+      { v: donutRejected,  c: "#dc2626" },
+    ], donutTotal);
+  }, [donutCompleted, donutPending, donutRejected, donutTotal]);
 
   // Bar Modul
   useEffect(() => {
@@ -659,66 +706,232 @@ function PaneAll({
         </div>
       )}
 
-      {/* ── 1. 6 Executive KPI Stat Tiles ── */}
+      {/* ── 1. Module Stat Cards (Gambar 2: Warna sama semua, total transaksi 6 modul sesuai role dibagi divisi) ── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gridTemplateColumns: isKpu ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(180px, 1fr))",
           gap: 14,
           marginBottom: 20,
         }}
       >
-        <StatTile value={grandTotal} label="Total Permintaan" subLabel={scopeLabel} />
-        <StatTile value={totalPending} label="Menunggu Approval" subLabel="Membutuhkan tindakan" />
-        <StatTile value={totalCompleted} label="Selesai Bulan Ini" subLabel="Telah tereksekusi" />
-        <StatTile
-          value={grandTotal > 0 ? `${Math.round((totalCompleted / grandTotal) * 100)}%` : "—"}
-          label="Completion Rate"
-          subLabel="Tingkat efisiensi"
-        />
-        <StatTile
-          value={totalCost > 0 ? formatCurrency(totalCost) : "Rp 0"}
-          label="Biaya Pengiriman"
-          subLabel="Total ekspedisi bulan ini"
-          gradient="linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)"
-        />
-        <StatTile
-          value="1.4 Hari"
-          label="Rata-rata Lead Time"
-          subLabel="SLA respon approval"
-          gradient="linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)"
-        />
+        {[
+          {
+            key: "ekspedisi",
+            label: "Ekspedisi",
+            icon: <Layers width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+            total: (stats.ekspedisi?.completed ?? 0) + (stats.ekspedisi?.pending ?? 0) + (stats.ekspedisi?.rejected ?? 0),
+            completed: stats.ekspedisi?.completed ?? 0,
+            pending: stats.ekspedisi?.pending ?? 0,
+            href: "/ekspedisi/transaksi",
+          },
+          ...(!isKpu
+            ? [
+                {
+                  key: "room",
+                  label: "Room Booking",
+                  icon: <Calendar width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  total: (stats.room?.completed ?? 0) + (stats.room?.pending ?? 0) + (stats.room?.rejected ?? 0),
+                  completed: stats.room?.completed ?? 0,
+                  pending: stats.room?.pending ?? 0,
+                  href: "/booking-ruang-meeting/transaksi",
+                },
+                {
+                  key: "vehicle",
+                  label: "Vehicle Booking",
+                  icon: <Car width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  total: (stats.vehicle?.completed ?? 0) + (stats.vehicle?.pending ?? 0) + (stats.vehicle?.rejected ?? 0),
+                  completed: stats.vehicle?.completed ?? 0,
+                  pending: stats.vehicle?.pending ?? 0,
+                  href: "/booking-kendaraan/transaksi",
+                },
+              ]
+            : []),
+          {
+            key: "atk",
+            label: "Office Supplies",
+            icon: <span style={{ color: "var(--blue-500)" }}><AtkIcon /></span>,
+            total: (stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0),
+            completed: stats.atk?.completed ?? 0,
+            pending: stats.atk?.pending ?? 0,
+            href: "/office-supplies/transaksi",
+          },
+          ...(!isKpu
+            ? [
+                {
+                  key: "maint",
+                  label: "Maintenance",
+                  icon: <Wrench width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  total: (stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0),
+                  completed: stats.maint?.completed ?? 0,
+                  pending: stats.maint?.pending ?? 0,
+                  href: "/maintenance/transaksi",
+                },
+                {
+                  key: "arsip",
+                  label: "Archive",
+                  icon: <Folder width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  total: (stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0),
+                  completed: stats.arsip?.completed ?? 0,
+                  pending: stats.arsip?.pending ?? 0,
+                  href: "/arsip/transaksi",
+                },
+              ]
+            : []),
+        ].map((m) => (
+          <div
+            key={m.key}
+            className="card"
+            style={{
+              marginTop: 0,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: 115,
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 12,
+              boxShadow: "0 2px 8px rgba(15, 40, 90, 0.04)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
+                {m.icon}
+                <span>{m.label}</span>
+              </span>
+              <Link href={m.href} style={{ fontSize: "0.72rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
+                Buka →
+              </Link>
+            </div>
+            <div>
+              <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.15 }}>
+                {m.total.toLocaleString()}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 6 }}>
+                <span>{m.completed} Selesai · {m.pending} Menunggu</span>
+                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{activeDivisionText}</span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ── 2. Main Row: Status Donut + Perbandingan Antar Modul ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
-        {/* Donut */}
-        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.95fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
+        {/* Donut Card (Gambar 3 - Rapih & Filter Lengkap: Modul, Direktorat, Divisi) */}
+        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%", padding: "18px 20px" }}>
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Status Keseluruhan</div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3 }}>
-              {isKpu ? "2" : "6"} modul · {scopeLabel} · {currentYearMonth()}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>Status Keseluruhan</div>
+                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
+                  {selectedModul === "ALL" ? `${isKpu ? 2 : 6} Modul` : selectedModul.toUpperCase()} · {activeDivisionText} · {currentYearMonth()}
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Filters: Modul, Direktorat, Divisi */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))", gap: 8 }}>
+              {/* Filter 1: Per Modul */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Modul</span>
+                <select
+                  value={selectedModul}
+                  onChange={(e) => setSelectedModul(e.target.value)}
+                  style={{
+                    padding: "6px 8px",
+                    fontSize: "0.76rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border-subtle)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="ALL">Semua Modul</option>
+                  <option value="ekspedisi">Ekspedisi</option>
+                  {!isKpu && <option value="room">Room Booking</option>}
+                  {!isKpu && <option value="vehicle">Vehicle Booking</option>}
+                  <option value="atk">Office Supplies</option>
+                  {!isKpu && <option value="maint">Maintenance</option>}
+                  {!isKpu && <option value="arsip">Archive</option>}
+                </select>
+              </div>
+
+              {/* Filter 2: Per Direktorat */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Direktorat</span>
+                <select
+                  value={selectedDirektorat}
+                  onChange={(e) => onDirektoratChange(e.target.value)}
+                  style={{
+                    padding: "6px 8px",
+                    fontSize: "0.76rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border-subtle)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="ALL">Semua Direktorat</option>
+                  {orgData?.direktorat?.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter 3: Per Divisi */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Divisi</span>
+                <select
+                  value={selectedDivisi}
+                  onChange={(e) => onDivisiChange(e.target.value)}
+                  style={{
+                    padding: "6px 8px",
+                    fontSize: "0.76rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border-subtle)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="ALL">Semua Divisi</option>
+                  {availableDivisi.map((div) => (
+                    <option key={div} value={div}>{div}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
+
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 180 }}>
               <canvas ref={donutRef} width={200} height={180} style={{ display: "block" }} />
             </div>
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 9 }}>
               {[
-                { label: "Selesai",  v: totalCompleted, dot: "#16a34a", cls: "badge-completed" },
-                { label: "Diproses", v: totalPending,   dot: "#f59e0b", cls: "badge-submitted" },
-                { label: "Ditolak",  v: totalRejected,  dot: "#dc2626", cls: "badge-rejected"  },
+                { label: "Selesai",  v: donutCompleted, dot: "#16a34a", cls: "badge-completed" },
+                { label: "Diproses", v: donutPending,   dot: "#f59e0b", cls: "badge-submitted" },
+                { label: "Ditolak",  v: donutRejected,  dot: "#dc2626", cls: "badge-rejected"  },
               ].map((s) => (
                 <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
                     <span style={{ width: 9, height: 9, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
-                    {s.label}
+                    <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{s.label}</span>
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                    {s.v.toLocaleString()}
-                    {grandTotal > 0 && (
-                      <span className={`badge ${s.cls}`}>{Math.round((s.v / grandTotal) * 100)}%</span>
+                    <span style={{ color: "var(--text-primary)" }}>{s.v.toLocaleString()}</span>
+                    {donutTotal > 0 && (
+                      <span className={`badge ${s.cls}`}>{Math.round((s.v / donutTotal) * 100)}%</span>
                     )}
                   </span>
                 </div>
@@ -1344,33 +1557,24 @@ export default function DashboardContent({ me }: Props) {
   const [vehSchedules, setVehSchedules] = useState<BookingKendaraan[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
-  // Interactive header & features states
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("month");
+  // Interactive filters states
   const [selectedDivisi, setSelectedDivisi] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchModal, setShowSearchModal] = useState(false);
-  const [searchModalResult, setSearchModalResult] = useState<RecentActivity | null>(null);
+  const [selectedDirektorat, setSelectedDirektorat] = useState<string>("ALL");
+  const [selectedModul, setSelectedModul] = useState<string>("ALL");
+  const [orgData, setOrgData] = useState<OrgStructure | null>(null);
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
 
-  // Feature 1: Notice Board
-  const [showNotice, setShowNotice] = useState(true);
-  const [noticeText, setNoticeText] = useState(
-    "Pemberitahuan GA: Lift Gedung B sedang dalam perawatan berkala pukul 13:00 - 15:00 WIB. Pengambilan jatah ATK bulanan divisi dapat dilakukan di Gudang Logistik Lt. 1."
-  );
+  useEffect(() => {
+    api.orgStructure().then(setOrgData).catch(() => {});
+  }, []);
 
-  // Feature 3: Refresh Button & Last Updated Timestamp
-  const [lastUpdated, setLastUpdated] = useState<string>("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (customDiv?: string, customDir?: string) => {
     const bulan = currentYearMonth();
     const today = todayLocalDate();
     setStats((prev) => ({ ...prev, loading: true }));
 
-    // Update timestamp
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")} WIB`;
-    setLastUpdated(timeStr);
+    const activeDiv = customDiv !== undefined ? (customDiv === "ALL" ? undefined : customDiv) : (selectedDivisi === "ALL" ? undefined : selectedDivisi);
+    const activeDir = customDir !== undefined ? (customDir === "ALL" ? undefined : customDir) : (selectedDirektorat === "ALL" ? undefined : selectedDirektorat);
 
     // Helper: convert countsByStatus to ModuleStats
     const toStats = (
@@ -1389,8 +1593,8 @@ export default function DashboardContent({ me }: Props) {
     const bookingRejected   = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
 
     const [ekspRes, atkRes] = await Promise.allSettled([
-      api.getPengirimanStats(bulan),
-      api.getAtkStats(bulan),
+      api.getPengirimanStats(bulan, activeDiv, activeDir),
+      api.getAtkStats(bulan, activeDiv, activeDir),
     ]);
 
     const ekspStats: ModuleStats | null = ekspRes.status === "fulfilled"
@@ -1412,10 +1616,10 @@ export default function DashboardContent({ me }: Props) {
     }
 
     const [roomRes, vehRes, maintRes, arsipRes] = await Promise.allSettled([
-      api.getBookingStats(bulan),
-      api.getKendaraanStats(bulan),
-      api.getSaranaStats(bulan),
-      api.getArsipStats(bulan),
+      api.getBookingStats(bulan, activeDiv, activeDir),
+      api.getKendaraanStats(bulan, activeDiv, activeDir),
+      api.getSaranaStats(bulan, activeDiv, activeDir),
+      api.getArsipStats(bulan, activeDiv, activeDir),
     ]);
 
     setStats({
@@ -1443,9 +1647,9 @@ export default function DashboardContent({ me }: Props) {
     // Load Recent Activity Streams
     try {
       const [ekspList, roomList, vehList] = await Promise.allSettled([
-        api.listPengiriman({ limit: 8 }),
-        api.listBooking({ limit: 8 }),
-        api.listKendaraanBooking({ limit: 8 }),
+        api.listPengiriman({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
+        api.listBooking({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
+        api.listKendaraanBooking({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
       ]);
 
       const items: RecentActivity[] = [];
@@ -1509,374 +1713,25 @@ export default function DashboardContent({ me }: Props) {
     } catch {
       // ignore
     }
-  }, [isNonKpu]);
+  }, [isNonKpu, selectedDivisi, selectedDirektorat]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadStats();
-    setTimeout(() => setIsRefreshing(false), 400);
+  const handleDivisiChange = (newDiv: string) => {
+    setSelectedDivisi(newDiv);
+    loadStats(newDiv, selectedDirektorat);
   };
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return;
-    const q = searchQuery.toLowerCase().trim();
-    const found = recentActivities.find(
-      (a) =>
-        a.nomor.toLowerCase().includes(q) ||
-        a.keperluan.toLowerCase().includes(q) ||
-        a.pemohon.toLowerCase().includes(q)
-    );
-    setSearchModalResult(found || null);
-    setShowSearchModal(true);
+  const handleDirektoratChange = (newDir: string) => {
+    setSelectedDirektorat(newDir);
+    setSelectedDivisi("ALL");
+    loadStats("ALL", newDir);
   };
 
   const visibleTabs = ALL_TABS.filter((t) => !isKpu || !t.kpuHidden);
 
   return (
     <>
-      {/* ── Feature 1: GA Notice Board / Broadcast Announcement ── */}
-      {showNotice && (
-        <div
-          className="card"
-          style={{
-            marginTop: 0,
-            marginBottom: 16,
-            padding: "10px 16px",
-            background: "linear-gradient(90deg, rgba(28, 109, 255, 0.08) 0%, rgba(20, 80, 201, 0.03) 100%)",
-            borderLeft: "4px solid var(--blue-500)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 260 }}>
-            <span style={{ fontSize: "1.15rem" }}>📢</span>
-            <div style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>
-              <strong style={{ color: "var(--blue-500)", marginRight: 6 }}>Pengumuman GA:</strong>
-              {noticeText}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {isGaAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  const newText = prompt("Ubah pengumuman broadcast GA:", noticeText);
-                  if (newText && newText.trim()) setNoticeText(newText.trim());
-                }}
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 6,
-                  padding: "4px 8px",
-                  fontSize: "0.72rem",
-                  fontWeight: 600,
-                  color: "var(--text-secondary)",
-                  cursor: "pointer",
-                }}
-              >
-                Ubah Teks
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowNotice(false)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--text-secondary)",
-                display: "flex",
-                alignItems: "center",
-              }}
-              title="Tutup Pengumuman"
-            >
-              <X width={16} height={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Top Controls: Search Bar, Period Filter, Divisi Filter, Refresh Button, Quick Action Button ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {/* Quick Tracking Search Box */}
-          <div style={{ position: "relative", minWidth: 260 }}>
-            <input
-              type="text"
-              placeholder="Lacak no. dokumen, resi, pemohon..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
-              }}
-              style={{
-                width: "100%",
-                padding: "8px 12px 8px 32px",
-                fontSize: "0.82rem",
-                borderRadius: 8,
-                border: "1px solid var(--border-subtle)",
-                background: "var(--bg-surface)",
-                color: "var(--text-primary)",
-                outline: "none",
-              }}
-            />
-            <Search
-              width={14}
-              height={14}
-              style={{
-                position: "absolute",
-                left: 10,
-                top: 11,
-                color: "var(--text-secondary)",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="btn-sim"
-            style={{
-              padding: "7px 14px",
-              borderRadius: 8,
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              cursor: "pointer",
-            }}
-          >
-            Lacak
-          </button>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {/* Feature 3: Timestamp & Manual Refresh Button */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.76rem", color: "var(--text-secondary)" }}>
-            {lastUpdated && <span>Diperbarui: {lastUpdated}</span>}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={stats.loading || isRefreshing}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "6px 11px",
-                borderRadius: 8,
-                fontSize: "0.76rem",
-                fontWeight: 600,
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-              }}
-              title="Perbarui data terbaru sekarang"
-            >
-              <RotateCw width={13} height={13} className={isRefreshing || stats.loading ? "animate-spin" : ""} />
-              <span>Refresh</span>
-            </button>
-          </div>
-
-          {/* Period Filter */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-            <span>Periode:</span>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              style={{
-                padding: "6px 10px",
-                fontSize: "0.8rem",
-                borderRadius: 8,
-                border: "1px solid var(--border-subtle)",
-                background: "var(--bg-surface)",
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              <option value="month">Bulan Ini ({currentYearMonth()})</option>
-              <option value="last_month">Bulan Lalu</option>
-              <option value="q3">Kuartal 3 (Q3)</option>
-              <option value="year">Tahun Ini (2026)</option>
-            </select>
-          </div>
-
-          {/* Divisi Filter (Only for GA / Super Admin) */}
-          {isGaAdmin && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-              <span>Divisi:</span>
-              <select
-                value={selectedDivisi}
-                onChange={(e) => setSelectedDivisi(e.target.value)}
-                style={{
-                  padding: "6px 10px",
-                  fontSize: "0.8rem",
-                  borderRadius: 8,
-                  border: "1px solid var(--border-subtle)",
-                  background: "var(--bg-surface)",
-                  color: "var(--text-primary)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                <option value="ALL">Semua Divisi</option>
-                <option value="IT">Divisi IT</option>
-                <option value="Keuangan">Divisi Keuangan</option>
-                <option value="SDM">Divisi SDM & GA</option>
-                <option value="Operasional">Divisi Operasional</option>
-                <option value="Legal">Divisi Legal</option>
-              </select>
-            </div>
-          )}
-
-          {/* Quick Action Button */}
-          <button
-            type="button"
-            onClick={() => setShowQuickActionModal(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "7px 14px",
-              borderRadius: 8,
-              fontSize: "0.82rem",
-              fontWeight: 700,
-              background: "var(--gradient-primary)",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 2px 10px rgba(20,80,201,0.25)",
-            }}
-          >
-            <Plus width={15} height={15} />
-            <span>Buat Permohonan</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Live Facility Availability 'Right Now' Bar ── */}
-      {!isKpu && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          {/* Ruang Meeting Availability Now */}
-          <div
-            className="card"
-            style={{
-              marginTop: 0,
-              padding: "12px 16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderLeft: "4px solid #16a34a",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
-              <div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#16a34a", textTransform: "uppercase" }}>
-                  Ruang Rapat Saat Ini
-                </div>
-                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
-                  {Math.max(1, 5 - roomSchedules.length)} dari 5 Ruangan Tersedia
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/booking-ruang-meeting/transaksi"
-              className="badge badge-completed"
-              style={{ textDecoration: "none", fontSize: "0.72rem" }}
-            >
-              Booking
-            </Link>
-          </div>
-
-          {/* Armada Mobil Availability Now */}
-          <div
-            className="card"
-            style={{
-              marginTop: 0,
-              padding: "12px 16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderLeft: "4px solid #1c6dff",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#1c6dff", display: "inline-block" }} />
-              <div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1c6dff", textTransform: "uppercase" }}>
-                  Armada Mobil Saat Ini
-                </div>
-                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
-                  {Math.max(1, 4 - vehSchedules.length)} Mobil Standby di Pool
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/booking-kendaraan/transaksi"
-              className="badge badge-blue"
-              style={{ textDecoration: "none", fontSize: "0.72rem" }}
-            >
-              Pinjam
-            </Link>
-          </div>
-
-          {/* Insiden Fasilitas Fisik */}
-          <div
-            className="card"
-            style={{
-              marginTop: 0,
-              padding: "12px 16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderLeft: "4px solid #f59e0b",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
-              <div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
-                  Laporan Sarana Fisik
-                </div>
-                <div style={{ fontSize: "0.86rem", fontWeight: 800 }}>
-                  {stats.maint?.pending ?? 0} Tiket Dalam Penanganan
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/maintenance/transaksi"
-              className="badge badge-submitted"
-              style={{ textDecoration: "none", fontSize: "0.72rem" }}
-            >
-              Cek SLA
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* ── Tab bar — full-width 1 baris, responsive ── */}
       <div style={{ width: "100%", overflowX: "auto", marginBottom: 20 }}>
         <div
@@ -1932,6 +1787,13 @@ export default function DashboardContent({ me }: Props) {
           vehSchedules={vehSchedules}
           recentActivities={recentActivities}
           onOpenQuickAction={() => setShowQuickActionModal(true)}
+          selectedModul={selectedModul}
+          setSelectedModul={setSelectedModul}
+          selectedDirektorat={selectedDirektorat}
+          onDirektoratChange={handleDirektoratChange}
+          selectedDivisi={selectedDivisi}
+          onDivisiChange={handleDivisiChange}
+          orgData={orgData}
         />
       )}
 
@@ -2277,96 +2139,8 @@ export default function DashboardContent({ me }: Props) {
           </div>
         </div>
       )}
-
-      {/* ── Search Tracking Modal ── */}
-      {showSearchModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(5, 11, 26, 0.6)",
-            backdropFilter: "blur(4px)",
-            zIndex: 999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-          onClick={() => setShowSearchModal(false)}
-        >
-          <div
-            className="card"
-            style={{ maxWidth: 480, width: "100%", padding: 22, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontWeight: 800, fontSize: "1rem" }}>Hasil Pelacakan Dokumen / Tiket</div>
-              <button
-                type="button"
-                onClick={() => setShowSearchModal(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
-              >
-                <X width={18} height={18} />
-              </button>
-            </div>
-
-            {searchModalResult ? (
-              <div>
-                <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(28,109,255,0.08)", border: "1px solid var(--border-subtle)", marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontWeight: 800, color: "var(--blue-500)", fontSize: "0.95rem" }}>
-                      {searchModalResult.nomor}
-                    </span>
-                    <span className={`badge ${searchModalResult.badgeClass}`}>
-                      {searchModalResult.status}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: 2 }}>
-                    {searchModalResult.keperluan}
-                  </div>
-                  <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
-                    Pemohon: {searchModalResult.pemohon} · {searchModalResult.divisi}
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>
-                    Tanggal: {formatDate(searchModalResult.tanggal)}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                  <Link
-                    href={searchModalResult.href}
-                    onClick={() => setShowSearchModal(false)}
-                    className="badge badge-blue"
-                    style={{ textDecoration: "none", padding: "8px 14px", fontSize: "0.8rem" }}
-                  >
-                    Buka Halaman Transaksi →
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: 12 }}>
-                  Tidak ditemukan dokumen atau tiket yang cocok dengan kata kunci: <strong>"{searchQuery}"</strong>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowSearchModal(false)}
-                  style={{
-                    padding: "6px 16px",
-                    borderRadius: 8,
-                    fontSize: "0.8rem",
-                    border: "1px solid var(--border-subtle)",
-                    background: "var(--bg-surface)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Tutup
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }
+
+

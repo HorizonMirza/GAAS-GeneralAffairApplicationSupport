@@ -1407,7 +1407,7 @@ public class BookingRuangController : ApiControllerBase
     // count instead of paginated rows - powers the dashboard's stat tiles without pulling full item
     // lists just to count them. Mirrors PengirimanController.GetStats.
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -1429,6 +1429,12 @@ public class BookingRuangController : ApiControllerBase
         }
         else
         {
+            if (!string.IsNullOrEmpty(divisi)) query = query.Where(b => b.Divisi == divisi);
+            else if (!string.IsNullOrEmpty(direktorat))
+            {
+                var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+                query = query.Where(b => divisiInDirektorat.Contains(b.Divisi));
+            }
             query = query.Where(b => b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == user.Id);
         }
 

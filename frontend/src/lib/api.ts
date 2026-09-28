@@ -290,8 +290,8 @@ export const api = {
   listPengiriman: (params: ListPengirimanParams) =>
     apiRequest<PengirimanListResponse>("/pengiriman", { params: listParams(params) }),
   getPengiriman: (id: number) => apiRequest<Pengiriman>(`/pengiriman/${id}`),
-  getPengirimanStats: (bulan: string) =>
-    apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan } }),
+  getPengirimanStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<PengirimanStatsResponse>("/pengiriman/stats", { params: { bulan, divisi, direktorat } }),
   createPengiriman: (payload: PengirimanCreatePayload) =>
     apiRequest("/pengiriman", { method: "POST", body: payload }),
   updatePengiriman: (id: number, payload: PengirimanCreatePayload) =>
@@ -495,8 +495,8 @@ export const api = {
   // Single-item fetch independent of List's pagination/filters - used to deep-link a notification
   // banner click straight to an item's chat even when it isn't on whatever page is loaded.
   getBooking: (id: number) => apiRequest<BookingRuang>(`/booking-ruang/${id}`),
-  getBookingStats: (bulan: string) =>
-    apiRequest<BookingRuangStatsResponse>("/booking-ruang/stats", { params: { bulan } }),
+  getBookingStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<BookingRuangStatsResponse>("/booking-ruang/stats", { params: { bulan, divisi, direktorat } }),
   // Create always returns a list of occurrences, even a single non-recurring booking (one-item
   // list) - a recurring series comes back as one BookingRuang per occurrence date.
   createBooking: (payload: BookingRuangCreatePayload) =>
@@ -561,8 +561,8 @@ export const api = {
   listKendaraanBooking: (params: ListKendaraanBookingParams) =>
     apiRequest<BookingKendaraanListResponse>("/booking-kendaraan", { params: kendaraanListParams(params) }),
   getKendaraanBooking: (id: number) => apiRequest<BookingKendaraan>(`/booking-kendaraan/${id}`),
-  getKendaraanStats: (bulan: string) =>
-    apiRequest<BookingKendaraanStatsResponse>("/booking-kendaraan/stats", { params: { bulan } }),
+  getKendaraanStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<BookingKendaraanStatsResponse>("/booking-kendaraan/stats", { params: { bulan, divisi, direktorat } }),
   createKendaraanBooking: (payload: BookingKendaraanCreatePayload) =>
     apiRequest<BookingKendaraan>("/booking-kendaraan", { method: "POST", body: normalizeKendaraanPayload(payload) }),
   updateKendaraanBooking: (id: number, payload: BookingKendaraanCreatePayload) =>
@@ -611,8 +611,8 @@ export const api = {
   listAtk: (params: ListAtkParams) =>
     apiRequest<PermintaanAtkListResponse>("/permintaan-atk", { params: atkListParams(params) }),
   getAtk: (id: number) => apiRequest<PermintaanAtk>(`/permintaan-atk/${id}`),
-  getAtkStats: (bulan: string) =>
-    apiRequest<PermintaanAtkStatsResponse>("/permintaan-atk/stats", { params: { bulan } }),
+  getAtkStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<PermintaanAtkStatsResponse>("/permintaan-atk/stats", { params: { bulan, divisi, direktorat } }),
   createAtk: (payload: PermintaanAtkCreatePayload) =>
     apiRequest<PermintaanAtk>("/permintaan-atk", { method: "POST", body: payload }),
   updateAtk: (id: number, payload: PermintaanAtkCreatePayload) =>
@@ -666,8 +666,8 @@ export const api = {
   listSarana: (params: ListSaranaParams) =>
     apiRequest<PerbaikanSaranaListResponse>("/perbaikan-sarana", { params: saranaListParams(params) }),
   getSarana: (id: number) => apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}`),
-  getSaranaStats: (bulan: string) =>
-    apiRequest<PerbaikanSaranaStatsResponse>("/perbaikan-sarana/stats", { params: { bulan } }),
+  getSaranaStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<PerbaikanSaranaStatsResponse>("/perbaikan-sarana/stats", { params: { bulan, divisi, direktorat } }),
   createSarana: (payload: PerbaikanSaranaCreatePayload) =>
     apiRequest<PerbaikanSarana>("/perbaikan-sarana", { method: "POST", body: payload }),
   updateSarana: (id: number, payload: PerbaikanSaranaCreatePayload) =>
@@ -803,8 +803,8 @@ export const api = {
   listArsip: (params: ListArsipParams) =>
     apiRequest<PermintaanArsipListResponse>("/permintaan-arsip", { params: arsipListParams(params) }),
   getArsip: (id: number) => apiRequest<PermintaanArsip>(`/permintaan-arsip/${id}`),
-  getArsipStats: (bulan: string) =>
-    apiRequest<PermintaanArsipStatsResponse>("/permintaan-arsip/stats", { params: { bulan } }),
+  getArsipStats: (bulan: string, divisi?: string, direktorat?: string) =>
+    apiRequest<PermintaanArsipStatsResponse>("/permintaan-arsip/stats", { params: { bulan, divisi, direktorat } }),
   createArsip: (payload: PermintaanArsipCreatePayload) =>
     apiRequest<PermintaanArsip>("/permintaan-arsip", { method: "POST", body: payload }),
   updateArsip: (id: number, payload: PermintaanArsipCreatePayload) =>

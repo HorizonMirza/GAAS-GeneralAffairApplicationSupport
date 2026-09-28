@@ -838,7 +838,7 @@ public class PerbaikanSaranaController : ApiControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -860,6 +860,12 @@ public class PerbaikanSaranaController : ApiControllerBase
         }
         else
         {
+            if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
+            else if (!string.IsNullOrEmpty(direktorat))
+            {
+                var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
+                query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
+            }
             query = query.Where(p => p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == user.Id);
         }
 
