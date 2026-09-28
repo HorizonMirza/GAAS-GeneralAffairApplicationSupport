@@ -886,24 +886,24 @@ export default function DashboardContent({ me }: { me: Me }) {
             </svg>
           </div>
         </article>
-      </section>
 
-      <section className={styles.spendingPanel} aria-label="Uang keluar Expedition dan Office Supplies">
-        <header className={styles.spendingHeader}>
-          <div><h2>Uang Keluar</h2><p>{spendingContext}</p></div>
-          <div className={styles.spendingTotal}><span>Total</span><strong>{formatRupiah(totalSpending)}</strong></div>
-        </header>
-        <div className={styles.spendingBreakdown}>
-          {spendingRows.map((item) => (
-            <div className={styles.spendingItem} key={item.key}>
-              <div className={styles.spendingItemHeader}>
-                <div><strong>{item.label}</strong><span>{item.count.toLocaleString("id-ID")} transaksi berbiaya</span></div>
-                <strong>{formatRupiah(item.value)}</strong>
+        <article className={`${styles.insightPanel} ${styles.spendingPanel}`} aria-label="Uang keluar Expedition dan Office Supplies">
+          <header className={styles.spendingHeader}>
+            <div><h2>Uang Keluar</h2><p>{spendingContext}</p></div>
+            <div className={styles.spendingTotal}><span>Total</span><strong>{formatRupiah(totalSpending)}</strong></div>
+          </header>
+          <div className={styles.spendingBreakdown}>
+            {spendingRows.map((item) => (
+              <div className={styles.spendingItem} key={item.key}>
+                <div className={styles.spendingItemHeader}>
+                  <div><strong>{item.label}</strong><span>{item.count.toLocaleString("id-ID")} transaksi berbiaya</span></div>
+                  <strong>{formatRupiah(item.value)}</strong>
+                </div>
+                <span className={styles.spendingTrack}><i className={item.key === "atk" ? styles.spendingAtk : ""} style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
               </div>
-              <span className={styles.spendingTrack}><i className={item.key === "atk" ? styles.spendingAtk : ""} style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </article>
       </section>
 
       <div className={`${styles.workspace} ${me.role === "KPU" ? styles.workspaceKpu : ""}`}>

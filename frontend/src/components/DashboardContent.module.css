@@ -684,18 +684,10 @@
 
 .insightGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 11px;
   align-items: stretch;
   margin-bottom: 18px;
-}
-
-.insightPanel:first-child {
-  grid-column: span 2;
-}
-
-.insightPanel:last-child {
-  grid-column: span 4;
 }
 
 .insightPanel {
@@ -898,13 +890,8 @@
 }
 
 .spendingPanel {
-  margin-bottom: 18px;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
 }
 
 .spendingHeader {
@@ -950,9 +937,11 @@
 }
 
 .spendingBreakdown {
+  min-height: 240px;
   padding: 20px 18px 22px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
+  align-content: center;
   gap: 24px;
 }
 
@@ -1448,15 +1437,12 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .analyticsGrid,
-  .insightGrid {
+  .analyticsGrid {
     grid-template-columns: 1fr;
   }
 
   .statusPanel,
-  .comparisonPanel,
-  .insightPanel:first-child,
-  .insightPanel:last-child {
+  .comparisonPanel {
     grid-column: 1;
   }
 }
