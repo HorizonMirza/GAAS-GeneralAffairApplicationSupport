@@ -47,7 +47,7 @@ public class VehicleAdminController : ApiControllerBase
         if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
             return StatusCode(400, new { detail = "Password salah" });
 
-        var validationError = ValidatePayload(payload.Nama, payload.PlatNomor, payload.Kapasitas, payload.Supir, payload.Merek, payload.Model, payload.Tahun, payload.Warna, payload.NomorTeleponSupir, payload.LokasiParkir);
+        var validationError = ValidatePayload(payload.Nama, payload.PlatNomor, payload.Kapasitas, payload.Supir, payload.Merek, payload.Model, payload.Tahun, payload.Warna, payload.NomorTeleponSupir);
         if (validationError != null) return StatusCode(400, new { detail = validationError });
         if (await _db.Vehicles.AnyAsync(v => v.Nama == payload.Nama.Trim()))
             return StatusCode(400, new { detail = "Nama kendaraan sudah dipakai" });
@@ -63,7 +63,6 @@ public class VehicleAdminController : ApiControllerBase
             Tahun = payload.Tahun,
             Warna = payload.Warna.Trim(),
             NomorTeleponSupir = payload.NomorTeleponSupir.Trim(),
-            LokasiParkir = payload.LokasiParkir.Trim(),
         };
         _db.Vehicles.Add(row);
         try
@@ -92,7 +91,7 @@ public class VehicleAdminController : ApiControllerBase
         var row = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Kendaraan tidak ditemukan" });
 
-        var validationError = ValidatePayload(payload.Nama, payload.PlatNomor, payload.Kapasitas, payload.Supir, payload.Merek, payload.Model, payload.Tahun, payload.Warna, payload.NomorTeleponSupir, payload.LokasiParkir);
+        var validationError = ValidatePayload(payload.Nama, payload.PlatNomor, payload.Kapasitas, payload.Supir, payload.Merek, payload.Model, payload.Tahun, payload.Warna, payload.NomorTeleponSupir);
         if (validationError != null) return StatusCode(400, new { detail = validationError });
         if (await _db.Vehicles.AnyAsync(v => v.Id != id && v.Nama == payload.Nama.Trim()))
             return StatusCode(400, new { detail = "Nama kendaraan sudah dipakai" });
@@ -109,7 +108,6 @@ public class VehicleAdminController : ApiControllerBase
         row.Tahun = payload.Tahun;
         row.Warna = payload.Warna.Trim();
         row.NomorTeleponSupir = payload.NomorTeleponSupir.Trim();
-        row.LokasiParkir = payload.LokasiParkir.Trim();
         try
         {
             await _db.SaveChangesAsync();
@@ -149,19 +147,17 @@ public class VehicleAdminController : ApiControllerBase
     public static async Task<bool> IsVehicleInUse(AppDbContext db, string nama) =>
         await db.BookingKendaraans.AnyAsync(b => b.NamaKendaraan == nama && !DeadEndStatuses.Contains(b.Status));
 
-    private static string? ValidatePayload(string? nama, string? platNomor, int kapasitas, string? supir, string? merek, string? model, int tahun, string? warna, string? noTeleponSupir, string? lokasiParkir)
+    private static string? ValidatePayload(string? nama, string? platNomor, int kapasitas, string? supir, string? merek, string? model, int tahun, string? warna, string? noTeleponSupir)
     {
         if (string.IsNullOrWhiteSpace(nama)) return "Nama kendaraan wajib diisi";
         if (string.IsNullOrWhiteSpace(platNomor)) return "Plat nomor wajib diisi";
         if (kapasitas <= 0) return "Kapasitas harus lebih dari 0";
         if (string.IsNullOrWhiteSpace(supir)) return "Nama pengemudi wajib diisi";
         if (string.IsNullOrWhiteSpace(merek)) return "Merek wajib diisi";
+        if (string.IsNullOrWhiteSpace(model)) return "Model wajib diisi";
         if (tahun < 1900 || tahun > 2100) return "Tahun tidak valid";
         if (string.IsNullOrWhiteSpace(warna)) return "Warna wajib diisi";
         if (string.IsNullOrWhiteSpace(noTeleponSupir)) return "No. telepon pengemudi wajib diisi";
-        // Model dan Lokasi Parkir tidak lagi diminta lewat form Super Admin (lihat
-        // SuperAdminVehicleTab.tsx) - kolomnya tetap ada untuk data lama/entri dari modul lain,
-        // jadi boleh kosong di sini saja.
         return null;
     }
 }

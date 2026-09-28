@@ -19,7 +19,6 @@ interface VehicleFormState {
   tahun: string;
   warna: string;
   nomorTeleponSupir: string;
-  lokasiParkir: string;
   password: string;
 }
 
@@ -33,13 +32,12 @@ interface VehicleFormErrors {
   tahun?: string;
   warna?: string;
   nomorTeleponSupir?: string;
-  lokasiParkir?: string;
   password?: string;
   general?: string;
 }
 
 const EMPTY_FORM: VehicleFormState = {
-  nama: "", platNomor: "", kapasitas: "", supir: "", merek: "", model: "", tahun: "", warna: "", nomorTeleponSupir: "", lokasiParkir: "", password: "",
+  nama: "", platNomor: "", kapasitas: "", supir: "", merek: "", model: "", tahun: "", warna: "", nomorTeleponSupir: "", password: "",
 };
 
 function toFormFields(item: VehicleItem): VehicleFormState {
@@ -53,7 +51,6 @@ function toFormFields(item: VehicleItem): VehicleFormState {
     tahun: String(item.tahun),
     warna: item.warna,
     nomorTeleponSupir: item.nomorTeleponSupir,
-    lokasiParkir: item.lokasiParkir,
     password: "",
   };
 }
@@ -70,7 +67,6 @@ function routeApiError(message: string): VehicleFormErrors {
   if (/warna/i.test(message)) return { warna: message };
   if (/telepon/i.test(message)) return { nomorTeleponSupir: message };
   if (/pengemudi/i.test(message)) return { supir: message };
-  if (/lokasi parkir/i.test(message)) return { lokasiParkir: message };
   if (/password/i.test(message)) return { password: message };
   return { general: message };
 }
@@ -135,6 +131,7 @@ export default function SuperAdminVehicleTab() {
     if (!Number.isInteger(kapasitas) || kapasitas <= 0) errs.kapasitas = "Kapasitas harus bilangan bulat lebih dari 0";
     if (!form.supir.trim()) errs.supir = "Nama pengemudi wajib diisi";
     if (!form.merek.trim()) errs.merek = "Merek wajib diisi";
+    if (!form.model.trim()) errs.model = "Model wajib diisi";
     const tahun = Number(form.tahun);
     if (!Number.isInteger(tahun) || tahun < 1900 || tahun > 2100) errs.tahun = "Tahun tidak valid";
     if (!form.warna.trim()) errs.warna = "Warna wajib diisi";
@@ -153,7 +150,6 @@ export default function SuperAdminVehicleTab() {
       tahun,
       warna: form.warna.trim(),
       nomorTeleponSupir: form.nomorTeleponSupir.trim(),
-      lokasiParkir: form.lokasiParkir.trim(),
       password: form.password,
     };
 
@@ -195,16 +191,16 @@ export default function SuperAdminVehicleTab() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th><th>Nama</th><th>Merek</th><th>Model</th><th>Warna</th><th>Tahun</th><th>Kapasitas</th><th>Plat Nomor</th><th>Pengemudi</th><th>No. Telepon Pengemudi</th><th>Lokasi Parkir</th><th></th>
+              <th>No</th><th>Nama</th><th>Merek</th><th>Model</th><th>Warna</th><th>Tahun</th><th>Kapasitas</th><th>Plat Nomor</th><th>Pengemudi</th><th>No. Telepon Pengemudi</th><th></th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={12} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={11} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>
@@ -218,7 +214,6 @@ export default function SuperAdminVehicleTab() {
                   <td>{item.platNomor}</td>
                   <td>{item.supir}</td>
                   <td>{item.nomorTeleponSupir}</td>
-                  <td>{item.lokasiParkir || "-"}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
@@ -256,6 +251,11 @@ export default function SuperAdminVehicleTab() {
                 <label htmlFor="vehicle-form-merek">Merek</label>
                 <input id="vehicle-form-merek" type="text" required value={form.merek} onChange={(e) => setForm((f) => ({ ...f, merek: e.target.value }))} />
                 {formErrors.merek && <div className="field-error-text">{formErrors.merek}</div>}
+              </div>
+              <div className="field">
+                <label htmlFor="vehicle-form-model">Model</label>
+                <input id="vehicle-form-model" type="text" required value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} />
+                {formErrors.model && <div className="field-error-text">{formErrors.model}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-warna">Warna</label>
@@ -325,6 +325,10 @@ export default function SuperAdminVehicleTab() {
             <div className="field">
               <label htmlFor="delete-vehicle-merek">Merek</label>
               <input id="delete-vehicle-merek" type="text" value={deleteTarget.merek} disabled readOnly />
+            </div>
+            <div className="field">
+              <label htmlFor="delete-vehicle-model">Model</label>
+              <input id="delete-vehicle-model" type="text" value={deleteTarget.model} disabled readOnly />
             </div>
             <div className="field">
               <label htmlFor="delete-vehicle-warna">Warna</label>

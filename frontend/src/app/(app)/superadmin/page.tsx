@@ -4160,6 +4160,7 @@ function SuperAdminPageInner() {
                   kendaraanOvInfoVehicle
                     ? [
                         { label: "Merek", value: kendaraanOvInfoVehicle.merek || "-" },
+                        { label: "Model", value: kendaraanOvInfoVehicle.model || "-" },
                         { label: "Warna", value: kendaraanOvInfoVehicle.warna || "-" },
                         { label: "Tahun", value: kendaraanOvInfoVehicle.tahun ? String(kendaraanOvInfoVehicle.tahun) : "-" },
                         { label: "Kapasitas", value: `${kendaraanOvInfoVehicle.kapasitas} orang` },

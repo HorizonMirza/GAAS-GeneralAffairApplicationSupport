@@ -555,6 +555,7 @@ export default function VehicleBookingOverviewPage() {
           infoVehicle
             ? [
                 { label: "Merek", value: infoVehicle.merek || "-" },
+                { label: "Model", value: infoVehicle.model || "-" },
                 { label: "Warna", value: infoVehicle.warna || "-" },
                 { label: "Tahun", value: infoVehicle.tahun ? String(infoVehicle.tahun) : "-" },
                 { label: "Kapasitas", value: `${infoVehicle.kapasitas} orang` },

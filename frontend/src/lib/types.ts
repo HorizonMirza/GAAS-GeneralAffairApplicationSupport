@@ -743,7 +743,6 @@ export interface VehicleOption {
   tahun: number;
   warna: string;
   nomorTeleponSupir: string;
-  lokasiParkir: string;
 }
 
 export interface BookingKendaraan {
@@ -956,7 +955,6 @@ export interface VehicleItem {
   tahun: number;
   warna: string;
   nomorTeleponSupir: string;
-  lokasiParkir: string;
 }
 
 export interface VehicleListResult {

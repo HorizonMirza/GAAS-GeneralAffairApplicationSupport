@@ -976,9 +976,11 @@ using (var scope = app.Services.CreateScope())
             tahun INT NOT NULL,
             warna VARCHAR(50) NOT NULL,
             nomor_telepon_supir VARCHAR(30) NOT NULL,
-            lokasi_parkir VARCHAR(255) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT NOW()
         )");
+    // Lokasi Parkir was dropped from the Super Admin vehicle form - remove the column from
+    // databases that already created it back when it was still required.
+    migrateDb.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS vehicle DROP COLUMN IF EXISTS lokasi_parkir");
 
     // One-time backfill, guarded the same way as Part 1's org tables above (Nama is UNIQUE, so
     // once this has run once the table is never empty again).
@@ -1011,7 +1013,6 @@ using (var scope = app.Services.CreateScope())
                 Tahun = vehicle.Tahun,
                 Warna = vehicle.Warna,
                 NomorTeleponSupir = vehicle.NomorTeleponSupir,
-                LokasiParkir = vehicle.LokasiParkir,
             });
         }
         migrateDb.SaveChanges();

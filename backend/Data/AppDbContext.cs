@@ -1347,7 +1347,6 @@ public class AppDbContext : DbContext
             e.Property(v => v.Tahun).HasColumnName("tahun");
             e.Property(v => v.Warna).HasColumnName("warna").HasMaxLength(50).IsRequired();
             e.Property(v => v.NomorTeleponSupir).HasColumnName("nomor_telepon_supir").HasMaxLength(30).IsRequired();
-            e.Property(v => v.LokasiParkir).HasColumnName("lokasi_parkir").HasMaxLength(255).IsRequired();
             e.Property(v => v.CreatedAt).HasColumnName("created_at");
         });
     }

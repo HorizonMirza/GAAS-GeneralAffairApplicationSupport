@@ -17,6 +17,5 @@ public class Vehicle
     public int Tahun { get; set; }
     public string Warna { get; set; } = null!;
     public string NomorTeleponSupir { get; set; } = null!;
-    public string LokasiParkir { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
 }
