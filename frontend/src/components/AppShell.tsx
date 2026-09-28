@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, Shield, Wrench } from "lucide-react";
+import { Building2, Calendar, Car, ClipboardList, Folder, LayoutGrid, Layers, Shield, Users as UsersIcon, Wrench } from "lucide-react";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
@@ -103,16 +103,16 @@ const SUPER_ADMIN_LABEL = "Super Admin";
 // own small list here rather than importing that page's TABS const, which would pull that whole
 // ~3000-line page (and every modal it imports) into every route's bundle just for two label
 // strings.
-const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
-  { key: "overview", label: "Ringkasan & Audit" },
-  { key: "ekspedisi", label: "Ekspedisi & Invoice" },
-  { key: "booking-ruang", label: "Room Booking" },
-  { key: "booking-kendaraan", label: "Vehicle Booking" },
-  { key: "atk", label: "Office Supplies & Invoice" },
-  { key: "sarana", label: "Maintenance" },
-  { key: "arsip", label: "Arsip" },
-  { key: "organisasi", label: "Organisasi" },
-  { key: "users", label: "Users" },
+const SUPER_ADMIN_TABS: { key: string; label: string; icon: ReactNode }[] = [
+  { key: "overview", label: "Summary", icon: <Shield width={16} height={16} /> },
+  { key: "ekspedisi", label: "Expedition", icon: <Layers width={16} height={16} /> },
+  { key: "booking-ruang", label: "Room Booking", icon: <Calendar width={16} height={16} /> },
+  { key: "booking-kendaraan", label: "Vehicle Booking", icon: <Car width={16} height={16} /> },
+  { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
+  { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
+  { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
+  { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
+  { key: "users", label: "Users", icon: <UsersIcon width={16} height={16} /> },
 ];
 
 // Isolated into its own component so only this fragment (not the whole AppShell, mounted on every
@@ -125,6 +125,7 @@ function SuperAdminSubmenuItems() {
     <>
       {SUPER_ADMIN_TABS.map((tab) => (
         <Link key={tab.key} className={`nav-link ${activeTab === tab.key ? "active" : ""}`} href={`/superadmin?tab=${tab.key}`}>
+          {tab.icon}
           {tab.label}
         </Link>
       ))}

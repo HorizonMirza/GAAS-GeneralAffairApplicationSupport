@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
-import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, truncateText } from "@/lib/format";
+import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, ON_APPROVAL_STATUSES, REJECTED_STATUSES, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, truncateText } from "@/lib/format";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
 import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
@@ -14,6 +14,7 @@ import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
 import StatusBadge from "@/components/StatusBadge";
+import Stepper from "@/components/Stepper";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -77,15 +78,18 @@ import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
 
 export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users";
 
+// Labels/icons here mirror AppShell's SUPER_ADMIN_TABS (the sidebar submenu that's the actual
+// navigation UI now) - this array itself only validates ?tab= against known keys, since the pill
+// bar that used to render these was removed as redundant with that sidebar submenu.
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
-  { key: "overview", label: "Ringkasan & Audit", icon: <Shield width={16} height={16} /> },
-  { key: "ekspedisi", label: "Ekspedisi & Invoice", icon: <Layers width={16} height={16} /> },
+  { key: "overview", label: "Summary", icon: <Shield width={16} height={16} /> },
+  { key: "ekspedisi", label: "Expedition", icon: <Layers width={16} height={16} /> },
   { key: "booking-ruang", label: "Room Booking", icon: <Calendar width={16} height={16} /> },
   { key: "booking-kendaraan", label: "Vehicle Booking", icon: <Car width={16} height={16} /> },
-  { key: "atk", label: "Office Supplies & Invoice", icon: <ClipboardList width={16} height={16} /> },
+  { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
-  { key: "arsip", label: "Arsip", icon: <Folder width={16} height={16} /> },
-  { key: "organisasi", label: "Organisasi", icon: <Building2 width={16} height={16} /> },
+  { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
+  { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
 ];
 
@@ -245,22 +249,15 @@ function SuperAdminPageInner() {
     const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
     return fromUrl && TABS.some((t) => t.key === fromUrl) ? fromUrl : "overview";
   });
-  // Keeps the URL's ?tab= in sync (so the sidebar submenu highlights the right item, and a
-  // refresh/shared link lands back on the same tab) - the only other way activeTab changes is the
-  // effect below reacting to a sidebar link's own navigation.
-  const selectTab = useCallback((tab: SuperAdminTab) => {
-    setActiveTabState(tab);
-    router.replace(`/superadmin?tab=${tab}`, { scroll: false });
-  }, [router]);
-  // Sidebar submenu links navigate with a plain <Link> (not selectTab), which changes
-  // searchParams without unmounting this page - sync activeTab from the URL whenever that happens
-  // from outside (a direct link, browser back/forward), not just from selectTab's own replace.
+  // Sidebar submenu links navigate with a plain <Link>, which changes searchParams without
+  // unmounting this page - sync activeTab from the URL whenever that happens (a direct link,
+  // browser back/forward, or the sidebar's own navigation).
   useEffect(() => {
     const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
     if (fromUrl && TABS.some((t) => t.key === fromUrl) && fromUrl !== activeTab) setActiveTabState(fromUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"pengiriman" | "invoice">("pengiriman");
+  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"overview" | "pengiriman" | "invoice">("pengiriman");
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -280,6 +277,23 @@ function SuperAdminPageInner() {
   const [ekspedisiRejectTarget, setEkspedisiRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
   const [ekspedisiKoreksiTarget, setEkspedisiKoreksiTarget] = useState<Pengiriman | null>(null);
   const ekspedisiRowMenu = useRowMenu(items);
+
+  // Overview sub-tab - separate state from the Transaction table above since it's a wholly
+  // different view (stat tiles + current-month card list with Stepper), mirroring
+  // ekspedisi/overview/page.tsx exactly.
+  const [ekspedisiOvItems, setEkspedisiOvItems] = useState<Pengiriman[]>([]);
+  const [ekspedisiOvStats, setEkspedisiOvStats] = useState<{
+    waitingL1: number; waitingGa: number; waitingGaApproval: number; waitingKpu: number; completed: number;
+  } | null>(null);
+  const [ekspedisiOvBusy, setEkspedisiOvBusy] = useState(true);
+  const [ekspedisiOvStatusFilter, setEkspedisiOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
+  const [ekspedisiOvFormOpen, setEkspedisiOvFormOpen] = useState(false);
+  const [ekspedisiOvDetail, setEkspedisiOvDetail] = useState<{ item: Pengiriman; mode: "view" | "edit" | "kpu-edit" } | null>(null);
+  const [ekspedisiOvStatusItemId, setEkspedisiOvStatusItemId] = useState<number | null>(null);
+  const [ekspedisiOvChatItem, setEkspedisiOvChatItem] = useState<Pengiriman | null>(null);
+  const [ekspedisiOvRejectTarget, setEkspedisiOvRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string; createdByRole: string } | null>(null);
+  const [ekspedisiOvKoreksiTarget, setEkspedisiOvKoreksiTarget] = useState<Pengiriman | null>(null);
+  const ekspedisiOvRowMenu = useRowMenu(ekspedisiOvItems);
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoiceError, setInvoiceError] = useState("");
@@ -538,6 +552,55 @@ function SuperAdminPageInner() {
       if (reqId === tableReqIdRef.current && !opts?.silent) setTableBusy(false);
     }
   }, [filters]);
+
+  // Overview sub-tab - loads only while that sub-tab is active, mirroring
+  // ekspedisi/overview/page.tsx's own load() (current month's queue + this year's stat tiles).
+  const loadEkspedisiOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    if (activeTab !== "ekspedisi" || ekspedisiSubtab !== "overview") return;
+    if (!opts?.silent) setEkspedisiOvBusy(true);
+    try {
+      const bulan = currentYearMonth();
+      const [queue, statsResp] = await Promise.all([
+        api.listPengiriman({ limit: 1000, page: 1, bulan }).then((r) => r.items),
+        api.getPengirimanStats(currentYear()),
+      ]);
+      const counts = statsResp.countsByStatus;
+      setEkspedisiOvItems(queue);
+      setEkspedisiOvStats({
+        waitingL1: statsResp.waitingL1,
+        waitingGa: statsResp.waitingGa,
+        waitingGaApproval: statsResp.waitingGaApproval,
+        waitingKpu: statsResp.waitingKpu,
+        completed: counts.COMPLETED ?? 0,
+      });
+    } finally {
+      if (!opts?.silent) setEkspedisiOvBusy(false);
+    }
+  }, [activeTab, ekspedisiSubtab]);
+
+  useEffect(() => {
+    loadEkspedisiOverview();
+  }, [loadEkspedisiOverview]);
+
+  const ekspedisiOvFilteredItems = (() => {
+    if (ekspedisiOvStatusFilter === "ALL") return ekspedisiOvItems;
+    if (ekspedisiOvStatusFilter === "DRAFT") return ekspedisiOvItems.filter((i) => i.status === "DRAFT");
+    if (ekspedisiOvStatusFilter === "APPROVED") return ekspedisiOvItems.filter((i) => i.status === "COMPLETED");
+    if (ekspedisiOvStatusFilter === "ON_APPROVAL") return ekspedisiOvItems.filter((i) => ON_APPROVAL_STATUSES.includes(i.status));
+    return ekspedisiOvItems.filter((i) => REJECTED_STATUSES.includes(i.status));
+  })();
+
+  function ekspedisiOvHandleDelete(item: Pengiriman) {
+    confirm("Hapus data pengiriman ini secara permanen?", async () => {
+      try {
+        await api.deletePengiriman(item.id);
+        showToast("Data berhasil dihapus");
+        loadEkspedisiOverview();
+      } catch (err) {
+        showToast((err as Error).message, "error");
+      }
+    });
+  }
 
   const loadInvoices = useCallback(async () => {
     const reqId = ++invoiceReqIdRef.current;
@@ -1710,20 +1773,6 @@ function SuperAdminPageInner() {
         <WelcomeGreeting me={me} />
       </div>
 
-      <div className="superadmin-tabs-nav">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            className={`superadmin-tab-btn ${activeTab === tab.key ? "superadmin-tab-btn-active" : ""}`}
-            onClick={() => selectTab(tab.key)}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {activeTab === "overview" && (
         <>
           <DashboardContent me={me} />
@@ -1746,19 +1795,208 @@ function SuperAdminPageInner() {
           <div className="superadmin-subtabs">
             <button
               type="button"
+              className={`superadmin-subtab-btn ${ekspedisiSubtab === "overview" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setEkspedisiSubtab("overview")}
+            >
+              Overview ({ekspedisiOvItems.length})
+            </button>
+            <button
+              type="button"
               className={`superadmin-subtab-btn ${ekspedisiSubtab === "pengiriman" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setEkspedisiSubtab("pengiriman")}
             >
-              Transaksi Pengiriman ({total})
+              Transaction ({total})
             </button>
             <button
               type="button"
               className={`superadmin-subtab-btn ${ekspedisiSubtab === "invoice" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setEkspedisiSubtab("invoice")}
             >
-              Vendor Invoices ({invoiceTotal})
+              Invoices ({invoiceTotal})
             </button>
           </div>
+
+          {ekspedisiSubtab === "overview" && (
+            <>
+              <div className="card-header dashboard-welcome-header" style={{ marginBottom: 18 }}>
+                <h3 style={{ margin: 0 }}>Ringkasan Ekspedisi Bulan Ini</h3>
+                <button className="btn btn-primary btn-header-action" style={{ width: "auto" }} onClick={() => setEkspedisiOvFormOpen(true)}>
+                  + Input Data Barang
+                </button>
+              </div>
+
+              {ekspedisiOvStats && (
+                <div className="stat-grid">
+                  <div className="stat-tile"><div className="value">{ekspedisiOvStats.waitingL1}</div><div className="label">Approval Departemen/Divisi</div></div>
+                  <div className="stat-tile"><div className="value">{ekspedisiOvStats.waitingGa}</div><div className="label">Admin General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{ekspedisiOvStats.waitingGaApproval}</div><div className="label">Approval General Affair</div></div>
+                  <div className="stat-tile"><div className="value">{ekspedisiOvStats.waitingKpu}</div><div className="label">Mitra</div></div>
+                  <div className="stat-tile"><div className="value">{ekspedisiOvStats.completed}</div><div className="label">Approved</div></div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 12px", gap: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Transaksi Bulan Ini</h3>
+                <div className="field overview-status-filter-field" style={{ marginBottom: 0, width: 160 }}>
+                  <SearchableSelect
+                    id="sa-ekspedisi-overview-status-filter"
+                    value={ekspedisiOvStatusFilter}
+                    onChange={(v) => setEkspedisiOvStatusFilter(v as typeof ekspedisiOvStatusFilter)}
+                    options={["ALL", "DRAFT", "ON_APPROVAL", "APPROVED", "REJECTED"]}
+                    getLabel={(v) =>
+                      ({
+                        ALL: "Semua Status",
+                        DRAFT: "Draft",
+                        ON_APPROVAL: "On-Approval",
+                        APPROVED: "Approved",
+                        REJECTED: "Rejected",
+                      } as Record<string, string>)[v] || v
+                    }
+                    placeholder="Semua Status"
+                  />
+                </div>
+              </div>
+
+              {ekspedisiOvBusy ? (
+                <p className="text-secondary">Memuat data...</p>
+              ) : ekspedisiOvFilteredItems.length === 0 ? (
+                <div className="card table-empty">Tidak Ada Data</div>
+              ) : (
+                ekspedisiOvFilteredItems.map((item) => {
+                  const borderClass = cardStatusBorderClass(item.status);
+                  return (
+                    <div className={`card item-row-card${borderClass ? ` ${borderClass}` : ""}`} style={{ marginBottom: 14 }} key={item.id}>
+                      <div className="card-header">
+                        <div className="card-header-title">
+                          <strong>{item.tujuanPenerimaan} - {item.nomorTransmittal}</strong>
+                          <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
+                            {formatDate(item.tanggal)} · {item.departemen || item.divisi}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <StatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} />
+                          <button
+                            type="button"
+                            className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
+                            aria-label="Chat"
+                            onClick={() => setEkspedisiOvChatItem(item)}
+                          >
+                            <MessageSquare width="17" height="17" />
+                            {item.unreadChatCount > 0 && (
+                              <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                            )}
+                          </button>
+                          <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => ekspedisiOvRowMenu.toggle(e, item.id, 180)}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <Stepper status={item.status} departemen={item.departemen} rejectTarget={item.rejectTarget} createdByRole={item.createdByRole} />
+                      {item.rejectReason && (
+                        <div className="text-secondary" style={{ fontSize: "0.85rem", marginTop: 10 }}>
+                          <strong>Catatan Penolakan:</strong> {item.rejectReason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <RowMenuDropdown
+                position={ekspedisiOvRowMenu.position}
+                canEditDelete={
+                  !!ekspedisiOvRowMenu.menuItem &&
+                  (isEditableByOrigin(ekspedisiOvRowMenu.menuItem, me!) || canGaKoreksiPengiriman(ekspedisiOvRowMenu.menuItem, me!) || canKoreksiHargaPengiriman(ekspedisiOvRowMenu.menuItem, me!))
+                }
+                canDelete={!!ekspedisiOvRowMenu.menuItem && isEditableByOrigin(ekspedisiOvRowMenu.menuItem, me!)}
+                onDetail={() => {
+                  const item = ekspedisiOvRowMenu.menuItem;
+                  ekspedisiOvRowMenu.close();
+                  if (item) setEkspedisiOvDetail({ item, mode: "view" });
+                }}
+                onUpdates={() => {
+                  const item = ekspedisiOvRowMenu.menuItem;
+                  ekspedisiOvRowMenu.close();
+                  if (!item || !me) return;
+                  if (isEditableByOrigin(item, me)) setEkspedisiOvDetail({ item, mode: "edit" });
+                  else if (canGaKoreksiPengiriman(item, me)) setEkspedisiOvKoreksiTarget(item);
+                  else if (canKoreksiHargaPengiriman(item, me)) setEkspedisiOvDetail({ item, mode: "kpu-edit" });
+                }}
+                onStatus={() => {
+                  const item = ekspedisiOvRowMenu.menuItem;
+                  ekspedisiOvRowMenu.close();
+                  if (item) setEkspedisiOvStatusItemId(item.id);
+                }}
+                onDelete={() => {
+                  const item = ekspedisiOvRowMenu.menuItem;
+                  ekspedisiOvRowMenu.close();
+                  if (item) ekspedisiOvHandleDelete(item);
+                }}
+                pdfUrl={ekspedisiOvRowMenu.menuItem && isPengirimanPdfAvailable(ekspedisiOvRowMenu.menuItem) ? api.pengirimanPdfUrl(ekspedisiOvRowMenu.menuItem.id) : undefined}
+                onPdfClick={async () => {
+                  const item = ekspedisiOvRowMenu.menuItem;
+                  ekspedisiOvRowMenu.close();
+                  if (!item) return;
+                  try {
+                    await downloadFile(api.pengirimanPdfUrl(item.id), `Bukti-Pengiriman-${item.nomorTransmittal || item.id}.pdf`);
+                  } catch (err) {
+                    showToast((err as Error).message, "error");
+                  }
+                }}
+              />
+
+              {me && (
+                <PengirimanFormModal open={ekspedisiOvFormOpen} me={me} onClose={() => setEkspedisiOvFormOpen(false)} onCreated={loadEkspedisiOverview} />
+              )}
+
+              {me && (
+                <PengirimanDetailModal
+                  open={!!ekspedisiOvDetail}
+                  mode={ekspedisiOvDetail?.mode || "view"}
+                  item={ekspedisiOvDetail?.item || null}
+                  me={me}
+                  onClose={() => setEkspedisiOvDetail(null)}
+                  onSaved={loadEkspedisiOverview}
+                  onRequestReject={(id, type, originLabel, createdByRole) => setEkspedisiOvRejectTarget({ id, type, originLabel, createdByRole })}
+                />
+              )}
+
+              <PengirimanKoreksiModal
+                open={!!ekspedisiOvKoreksiTarget}
+                item={ekspedisiOvKoreksiTarget}
+                onClose={() => setEkspedisiOvKoreksiTarget(null)}
+                onSaved={loadEkspedisiOverview}
+              />
+
+              <RejectModal
+                open={!!ekspedisiOvRejectTarget}
+                targetId={ekspedisiOvRejectTarget?.id ?? null}
+                targetType={ekspedisiOvRejectTarget?.type ?? null}
+                originLabel={ekspedisiOvRejectTarget?.originLabel ?? ""}
+                createdByRole={ekspedisiOvRejectTarget?.createdByRole ?? null}
+                onClose={() => setEkspedisiOvRejectTarget(null)}
+                onDone={() => {
+                  setEkspedisiOvRejectTarget(null);
+                  loadEkspedisiOverview();
+                }}
+              />
+
+              <StatusHistoryModal open={ekspedisiOvStatusItemId != null} itemId={ekspedisiOvStatusItemId} onClose={() => setEkspedisiOvStatusItemId(null)} />
+
+              {me && (
+                <ChatModal
+                  open={!!ekspedisiOvChatItem}
+                  itemId={ekspedisiOvChatItem?.id ?? null}
+                  itemLabel={ekspedisiOvChatItem ? `${ekspedisiOvChatItem.tujuanPenerimaan} - ${ekspedisiOvChatItem.nomorTransmittal}` : ""}
+                  departemen={ekspedisiOvChatItem?.departemen ?? null}
+                  createdByRole={ekspedisiOvChatItem?.createdByRole ?? null}
+                  me={me}
+                  onClose={() => setEkspedisiOvChatItem(null)}
+                  onRead={() => loadEkspedisiOverview({ silent: true })}
+                />
+              )}
+            </>
+          )}
 
           {ekspedisiSubtab === "pengiriman" && (
             <div className="card">
@@ -1832,20 +2070,20 @@ function SuperAdminPageInner() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetFilters}>Semua Transaksi</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={tableBusy || total === 0}
+            onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Tanggal", filters.tanggal], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.pdfUrl(ekspedisiExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.exportUrl(ekspedisiExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={tableBusy || total === 0}
-              onClick={() => askBulkDelete("Expedition", "Transaksi", total, activeFilters([["Cari", filters.search], ["Tanggal", filters.tanggal], ["Bulan", bulanText(filters.bulan)], ["Status", statusText(filters.status)], ["Direktorat", filters.direktorat], ["Divisi", filters.divisi], ["Departemen", filters.departemen]]), () => api.superAdminBulkDeletePengiriman({ ...filters, nomorTransmittal: filters.search }), loadTable)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setEkspedisiFormOpen(true)}>+ Input Data Barang</button>
           </div>
@@ -2247,20 +2485,20 @@ function SuperAdminPageInner() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Semua Pesanan</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={bookingBusy || bookingTotal === 0}
+            onClick={() => askBulkDelete("Room Booking", "booking", bookingTotal, activeFilters([["Tanggal", bookingFilters.tanggal], ["Status", statusText(bookingFilters.status)], ["Ruang", bookingFilters.namaRuang], ["Divisi", bookingFilters.divisi], ["Departemen", bookingFilters.departemen]]), () => api.superAdminBulkDeleteBooking(bookingFilters), loadBookings)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.bookingExportPdfUrl(bookingExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.bookingExportUrl(bookingExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={bookingBusy || bookingTotal === 0}
-              onClick={() => askBulkDelete("Room Booking", "booking", bookingTotal, activeFilters([["Tanggal", bookingFilters.tanggal], ["Status", statusText(bookingFilters.status)], ["Ruang", bookingFilters.namaRuang], ["Divisi", bookingFilters.divisi], ["Departemen", bookingFilters.departemen]]), () => api.superAdminBulkDeleteBooking(bookingFilters), loadBookings)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setBookingFormOpen(true)}>+ Booking Ruang Meeting</button>
           </div>
@@ -2837,20 +3075,20 @@ function SuperAdminPageInner() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Semua Pesanan</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={kendaraanBusy || kendaraanTotal === 0}
+            onClick={() => askBulkDelete("Vehicle Booking", "booking", kendaraanTotal, activeFilters([["Tanggal", kendaraanFilters.tanggal], ["Status", statusText(kendaraanFilters.status)], ["Kendaraan", kendaraanFilters.namaKendaraan], ["Divisi", kendaraanFilters.divisi], ["Departemen", kendaraanFilters.departemen]]), () => api.superAdminBulkDeleteKendaraanBooking(kendaraanFilters), loadKendaraanBookings)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.kendaraanExportPdfUrl(kendaraanExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.kendaraanExportUrl(kendaraanExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={kendaraanBusy || kendaraanTotal === 0}
-              onClick={() => askBulkDelete("Vehicle Booking", "booking", kendaraanTotal, activeFilters([["Tanggal", kendaraanFilters.tanggal], ["Status", statusText(kendaraanFilters.status)], ["Kendaraan", kendaraanFilters.namaKendaraan], ["Divisi", kendaraanFilters.divisi], ["Departemen", kendaraanFilters.departemen]]), () => api.superAdminBulkDeleteKendaraanBooking(kendaraanFilters), loadKendaraanBookings)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setKendaraanFormOpen(true)}>+ Booking Kendaraan</button>
           </div>
@@ -3401,20 +3639,20 @@ function SuperAdminPageInner() {
               placeholder="Semua Departemen"
             />
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetArsipFilters}>Semua Arsip</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={arsipBusy || arsipTotal === 0}
+            onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Kategori", arsipFilters.kategori ? ARCHIVE_KATEGORI_LABEL[arsipFilters.kategori] : ""], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportPdfUrl(arsipExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.arsipExportUrl(arsipExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={arsipBusy || arsipTotal === 0}
-              onClick={() => askBulkDelete("Archive", "Permintaan", arsipTotal, activeFilters([["Cari", arsipFilters.search], ["Bulan", bulanText(arsipFilters.bulan)], ["Status", statusText(arsipFilters.status)], ["Kategori", arsipFilters.kategori ? ARCHIVE_KATEGORI_LABEL[arsipFilters.kategori] : ""], ["Divisi", arsipFilters.divisi], ["Departemen", arsipFilters.departemen]]), () => api.superAdminBulkDeleteArsip(arsipFilters), loadArsip)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setArsipFormOpen(true)}>+ Pemindahan Arsip</button>
           </div>
@@ -3930,20 +4168,20 @@ function SuperAdminPageInner() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetAtkFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetAtkFilters}>Semua Pesanan</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={atkBusy || atkTotal === 0}
+            onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.atkExportPdfUrl(atkExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.atkExportUrl(atkExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={atkBusy || atkTotal === 0}
-              onClick={() => askBulkDelete("Office Supplies", "Pesanan", atkTotal, activeFilters([["Cari", atkFilters.search], ["Bulan", bulanText(atkFilters.bulan)], ["Status", statusText(atkFilters.status)], ["Sumber Pembelian", atkFilters.sumberPembelian ? SUMBER_PEMBELIAN_LABEL[atkFilters.sumberPembelian] : ""], ["Direktorat", atkFilters.direktorat], ["Divisi", atkFilters.divisi], ["Departemen", atkFilters.departemen]]), () => api.superAdminBulkDeleteAtk(atkFilters), loadAtk)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setAtkFormOpen(true)}>+ Pesan Kebutuhan Kantor</button>
           </div>
@@ -4333,20 +4571,20 @@ function SuperAdminPageInner() {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetSaranaFilters}>Hapus Filter</button>
+          <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetSaranaFilters}>Semua Pengajuan</button>
+          <button
+            className="btn btn-bulk-delete"
+            disabled={saranaBusy || saranaTotal === 0}
+            onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
+          >
+            Hapus Semua
+          </button>
           <div className="toolbar-actions">
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.saranaExportPdfUrl(saranaExportParams()), "_blank")}>
               ⬇ Download PDF
             </button>
             <button className="btn btn-secondary" style={AUTO_WIDTH_STYLE} onClick={() => window.open(api.saranaExportUrl(saranaExportParams()), "_blank")}>
               ⬇ Download Excel
-            </button>
-            <button
-              className="btn btn-bulk-delete"
-              disabled={saranaBusy || saranaTotal === 0}
-              onClick={() => askBulkDelete("Maintenance", "Pengajuan", saranaTotal, activeFilters([["Cari", saranaFilters.search], ["Bulan", bulanText(saranaFilters.bulan)], ["Status", statusText(saranaFilters.status)], ["Kategori", saranaFilters.kategori ? KATEGORI_KERUSAKAN_LABEL[saranaFilters.kategori] : ""], ["Direktorat", saranaFilters.direktorat], ["Divisi", saranaFilters.divisi], ["Departemen", saranaFilters.departemen]]), () => api.superAdminBulkDeleteSarana(saranaFilters), loadSarana)}
-            >
-              Hapus Semua
             </button>
             <button className="btn btn-primary" style={AUTO_WIDTH_STYLE} onClick={() => setSaranaFormOpen(true)}>+ Ajukan Perbaikan</button>
           </div>

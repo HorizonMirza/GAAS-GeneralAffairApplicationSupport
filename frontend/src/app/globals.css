@@ -13,6 +13,8 @@
 
   --gradient-primary: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-400) 100%);
   --gradient-primary-hover: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-300) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--badge-rejected-bg) 0%, #f87171 100%);
+  --gradient-danger-hover: linear-gradient(135deg, #ef4444 0%, #fca5a5 100%);
   /* Original darker navy-to-blue gradient, kept only for the sidebar and cover banners (they
      stay as they were before --gradient-primary was brightened everywhere else). */
   --gradient-navy: linear-gradient(135deg, var(--navy-900) 0%, var(--blue-600) 55%, var(--blue-400) 100%);
@@ -6003,20 +6005,20 @@ table.data-table {
   background: color-mix(in srgb, var(--badge-rejected-bg) 8%, var(--bg-surface-alt));
 }
 
-/* Sits next to "Hapus Filter" in each section toolbar - same size as its neighbours, but outlined
-   in the reject colour so it never reads as just another filter control. */
+/* Sits next to the reset-filter button in each section toolbar - same solid-gradient treatment as
+   .btn-primary, just in the reject colour, so it reads as a real (destructive) action rather than
+   just another filter control. */
 .btn-bulk-delete {
   width: auto;
   align-self: flex-end;
-  background: transparent;
-  color: var(--badge-rejected-bg);
-  border: 1px solid color-mix(in srgb, var(--badge-rejected-bg) 45%, transparent);
+  background: var(--gradient-danger);
+  color: #fff;
+  border: none;
 }
 
 .btn-bulk-delete:hover:not(:disabled) {
-  background: var(--badge-rejected-bg);
-  color: var(--badge-rejected-fg);
-  border-color: var(--badge-rejected-bg);
+  background: var(--gradient-danger-hover);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 18px rgba(255, 255, 255, 0.2);
 }
 
 .btn-bulk-delete:disabled { opacity: 0.45; }
