@@ -1,2782 +1,613 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
+  ArrowRight,
   Calendar,
   Car,
+  CheckCircle2,
+  ChevronRight,
+  CircleX,
+  Clock3,
+  FileText,
   Folder,
   Layers,
-  Wrench,
-  Clock,
-  TrendingUp,
-  DollarSign,
-  CheckCircle2,
-  FileText,
-  MapPin,
-  ShieldCheck,
-  AlertTriangle,
-  Package,
-  Search,
+  PackageCheck,
+  Pencil,
   Plus,
-  Phone,
-  Star,
-  X,
-  RotateCw,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
+  RefreshCw,
+  Wrench,
+  type LucideIcon,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import MonthFilterPicker from "@/components/MonthFilterPicker";
+import SearchableSelect from "@/components/SearchableSelect";
 import { api } from "@/lib/api";
-import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
-import type { BookingKendaraan, BookingRuang, Me, OrgStructure, Pengiriman } from "@/lib/types";
+import { BOOKING_STATUS_LABEL, ROLE_LABEL_FULL, STATUS_LABEL } from "@/lib/constants";
+import { currentYearMonth, formatTimeRange, todayLocalDate } from "@/lib/format";
+import type {
+  BookingKendaraan,
+  BookingRuang,
+  BookingStatus,
+  Me,
+  OrgStructure,
+  Pengiriman,
+  PerbaikanSarana,
+  PermintaanArsip,
+  PermintaanAtk,
+  Role,
+  Status,
+  SumberPembelian,
+} from "@/lib/types";
+import { useClickOutside } from "@/lib/useClickOutside";
+import styles from "./DashboardContent.module.css";
 
-// ─── Tab type ─────────────────────────────────────────────────────────────────
-type DashTab = "all" | "ekspedisi" | "room" | "vehicle" | "atk" | "maint" | "arsip";
+type ModuleKey = "expedition" | "room" | "vehicle" | "atk" | "maintenance" | "archive";
+type DashboardStatusFilter =
+  | "SUBMITTED"
+  | "APPROVED_L1"
+  | "APPROVED_GA"
+  | "APPROVED_GA_APPROVAL"
+  | "REJECTED"
+  | "ON_APPROVAL";
+type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
+type ScheduleTab = "all" | "room" | "vehicle";
 
-// ─── Stats shapes ──────────────────────────────────────────────────────────────
-interface ModuleStats {
+interface ModuleDefinition {
+  key: ModuleKey;
+  label: string;
+  Icon: LucideIcon;
+  overviewHref: string;
+  transactionHref: string;
+  hiddenForKpu?: boolean;
+}
+
+interface CommonListParams {
+  page?: number;
+  limit?: number;
+  bulan?: string;
+  direktorat?: string;
+  divisi?: string;
+  departemen?: string;
+  status?: DashboardStatusFilter;
+  sumberPembelian?: SumberPembelian;
+}
+
+interface CommonListResult {
+  items: SourceItem[];
+  total: number;
+}
+
+interface CommonStatsResult {
+  countsByStatus: Partial<Record<string, number>>;
+}
+
+interface ModuleSource {
+  stats: (bulan?: string, divisi?: string, direktorat?: string, departemen?: string) => Promise<CommonStatsResult>;
+  list: (params: CommonListParams) => Promise<CommonListResult>;
+}
+
+interface ModuleSummary {
+  total: number;
   pending: number;
   completed: number;
   rejected: number;
-  totalBulanIni?: number | null;
+  actionable: number;
+  failed: boolean;
 }
 
-interface AllStats {
-  ekspedisi: ModuleStats | null;
-  room:      ModuleStats | null;
-  vehicle:   ModuleStats | null;
-  atk:       ModuleStats | null;
-  maint:     ModuleStats | null;
-  arsip:     ModuleStats | null;
-  loading:   boolean;
-}
-
-interface RecentActivity {
+interface DashboardItem {
   id: number;
-  modul: string;
-  modulColor: string;
-  nomor: string;
-  keperluan: string;
-  pemohon: string;
-  divisi: string;
-  tanggal: string;
-  status: string;
-  badgeClass: string;
+  moduleKey: ModuleKey;
+  moduleLabel: string;
+  number: string;
+  title: string;
+  requester: string;
+  unit: string;
+  status: Status | BookingStatus;
+  statusLabel: string;
+  createdAt: string;
+  updatedAt: string;
+  ageMilliseconds: number;
   href: string;
 }
 
-// ─── ATK icon ─────────────────────────────────────────────────────────────────
-function AtkIcon() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.986L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-    </svg>
-  );
+interface ScheduleItem {
+  id: string;
+  kind: Exclude<ScheduleTab, "all">;
+  time: string;
+  title: string;
+  detail: string;
+  resource: string;
 }
 
-// ─── Tab config ────────────────────────────────────────────────────────────────
-const ALL_TABS: { key: DashTab; label: string; icon: React.ReactNode; kpuHidden?: boolean }[] = [
-  { key: "all",      label: "Keseluruhan",    icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
-  { key: "ekspedisi",label: "Ekspedisi",      icon: <Layers width={14} height={14} /> },
-  { key: "room",     label: "Room Booking",   icon: <Calendar width={14} height={14} />, kpuHidden: true },
-  { key: "vehicle",  label: "Vehicle Booking",icon: <Car width={14} height={14} />,      kpuHidden: true },
-  { key: "atk",      label: "Office Supplies",icon: <AtkIcon /> },
-  { key: "maint",    label: "Maintenance",    icon: <Wrench width={14} height={14} />,   kpuHidden: true },
-  { key: "arsip",    label: "Archive",        icon: <Folder width={14} height={14} />,   kpuHidden: true },
+interface DashboardState {
+  summaries: Record<ModuleKey, ModuleSummary>;
+  queue: DashboardItem[];
+  recent: DashboardItem[];
+  schedules: ScheduleItem[];
+  errors: number;
+}
+
+const MODULES: ModuleDefinition[] = [
+  { key: "expedition", label: "Expedition", Icon: Layers, overviewHref: "/ekspedisi/overview", transactionHref: "/ekspedisi/transaksi" },
+  { key: "room", label: "Room Booking", Icon: Calendar, overviewHref: "/booking-ruang-meeting/overview", transactionHref: "/booking-ruang-meeting/transaksi", hiddenForKpu: true },
+  { key: "vehicle", label: "Vehicle Booking", Icon: Car, overviewHref: "/booking-kendaraan/overview", transactionHref: "/booking-kendaraan/transaksi", hiddenForKpu: true },
+  { key: "atk", label: "Office Supplies", Icon: Pencil, overviewHref: "/office-supplies/overview", transactionHref: "/office-supplies/transaksi" },
+  { key: "maintenance", label: "Maintenance", Icon: Wrench, overviewHref: "/maintenance/overview", transactionHref: "/maintenance/transaksi", hiddenForKpu: true },
+  { key: "archive", label: "Archive", Icon: Folder, overviewHref: "/arsip/overview", transactionHref: "/arsip/transaksi", hiddenForKpu: true },
 ];
 
-// ─── Chart: Donut ──────────────────────────────────────────────────────────────
-function drawDonut(
-  canvas: HTMLCanvasElement,
-  segs: { v: number; c: string }[],
-  total: number
-) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtStr = dark ? "#eef4ff" : "#0b1a33";
-  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
-  const bg     = dark ? "#081328" : "#ffffff";
-  const cx = canvas.width / 2, cy = canvas.height / 2;
-  const r = Math.min(canvas.width, canvas.height) / 2 - 6;
-  const ri = r * 0.58;
-  let a = -Math.PI / 2;
-  segs.forEach((s) => {
-    const sw = total > 0 ? (s.v / total) * 2 * Math.PI : 0;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, a, a + sw); ctx.closePath();
-    ctx.fillStyle = s.c; ctx.fill();
-    a += sw;
-  });
-  if (total === 0) {
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-    ctx.strokeStyle = dark ? "#16234a" : "#dbe6fb"; ctx.lineWidth = 12; ctx.stroke();
-  }
-  ctx.beginPath(); ctx.arc(cx, cy, ri, 0, 2 * Math.PI);
-  ctx.fillStyle = bg; ctx.fill();
-  ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = txtStr; ctx.font = `bold 15px -apple-system,"Segoe UI",sans-serif`;
-  ctx.fillText(total.toLocaleString(), cx, cy - 8);
-  ctx.fillStyle = txtMut; ctx.font = `11px -apple-system,sans-serif`;
-  ctx.fillText("total", cx, cy + 10);
-}
+const EMPTY_SUMMARY: ModuleSummary = { total: 0, pending: 0, completed: 0, rejected: 0, actionable: 0, failed: false };
 
-// ─── Chart: Grouped bar ────────────────────────────────────────────────────────
-function drawGroupedBar(
-  canvas: HTMLCanvasElement,
-  groups: string[],
-  layers: number[][],
-  colors: string[]
-) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
-  const grid   = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
-
-  const maxVal = Math.max(1, ...layers.flatMap((l) => l));
-  const ceil   = Math.ceil(maxVal / 5) * 5 || 5;
-
-  const W = canvas.width, H = canvas.height;
-  const p = { t: 15, r: 15, b: 35, l: 30 };
-  const cW = W - p.l - p.r, cH = H - p.t - p.b;
-
-  ctx.save(); ctx.translate(p.l, p.t);
-
-  // Grid
-  for (let i = 0; i <= 4; i++) {
-    const y = cH - (i / 4) * cH;
-    ctx.strokeStyle = grid; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
-    ctx.fillStyle = txtMut; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
-    ctx.fillText(String(Math.round((i / 4) * ceil)), -5, y + 3);
-  }
-
-  // Bars
-  const nG = groups.length, nL = layers.length;
-  const gW = cW / nG;
-  const bW = Math.min(14, (gW * 0.72) / nL);
-  const offs = (gW - bW * nL) / 2;
-
-  groups.forEach((g, gi) => {
-    layers.forEach((layer, li) => {
-      const v = layer[gi] ?? 0;
-      const bH = (v / ceil) * cH;
-      const x = gi * gW + offs + li * bW;
-      const y = cH - bH;
-      ctx.fillStyle = colors[li];
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(x, y, bW - 2, bH, [3, 3, 0, 0]) : ctx.rect(x, y, bW - 2, bH);
-      ctx.fill();
-    });
-    ctx.fillStyle = txtMut; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(g, gi * gW + gW / 2, cH + 18);
-  });
-
-  ctx.restore();
-}
-
-// ─── Chart: Horizontal Bar Divisi ──────────────────────────────────────────────
-function drawDivisiBar(canvas: HTMLCanvasElement, labels: string[], vals: number[]) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
-  const txtStr = dark ? "#eef4ff" : "#0b1a33";
-  const track  = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
-  const maxVal = Math.max(1, ...vals);
-
-  const W = canvas.width, H = canvas.height;
-  const p = { t: 10, r: 40, b: 10, l: 85 };
-  const cW = W - p.l - p.r, cH = H - p.t - p.b;
-  const rowH = cH / labels.length;
-  const barH = Math.min(16, rowH * 0.65);
-
-  ctx.save(); ctx.translate(p.l, p.t);
-
-  labels.forEach((lbl, i) => {
-    const y = i * rowH + (rowH - barH) / 2;
-    const w = (vals[i] / maxVal) * cW;
-
-    // Label
-    ctx.fillStyle = txtStr;
-    ctx.font = "600 11px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(lbl, -8, y + barH / 2 + 4);
-
-    // Track
-    ctx.fillStyle = track;
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(0, y, cW, barH, 4) : ctx.rect(0, y, cW, barH);
-    ctx.fill();
-
-    // Bar
-    ctx.fillStyle = i === 0 ? "#1c6dff" : "#4b8dff";
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(0, y, w, barH, 4) : ctx.rect(0, y, w, barH);
-    ctx.fill();
-
-    // Value
-    ctx.fillStyle = txtMut;
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(`${vals[i]} Req`, w + 8, y + 12);
-  });
-
-  ctx.restore();
-}
-
-// ─── Chart: Line / Area Tren Bulanan ──────────────────────────────────────────
-function drawTrenChart(canvas: HTMLCanvasElement, months: string[], pts: number[]) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
-  const txtStr = dark ? "#eef4ff" : "#0b1a33";
-  const grid   = dark ? "rgba(255,255,255,0.05)" : "rgba(15,40,90,0.06)";
-  const maxV   = Math.max(...pts, 10) * 1.15;
-
-  const W = canvas.width, H = canvas.height;
-  const p = { t: 15, r: 25, b: 25, l: 30 };
-  const cW = W - p.l - p.r, cH = H - p.t - p.b;
-
-  ctx.save(); ctx.translate(p.l, p.t);
-
-  for (let i = 0; i <= 3; i++) {
-    const y = cH - (i / 3) * cH;
-    ctx.strokeStyle = grid; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
-  }
-
-  const stepX = months.length > 1 ? cW / (months.length - 1) : cW;
-
-  // Path
-  ctx.beginPath();
-  pts.forEach((v, i) => {
-    const x = i * stepX;
-    const y = cH - (v / maxV) * cH;
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-
-  ctx.strokeStyle = "#1c6dff";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Area fill
-  ctx.lineTo((pts.length - 1) * stepX, cH);
-  ctx.lineTo(0, cH);
-  ctx.closePath();
-  const grad = ctx.createLinearGradient(0, 0, 0, cH);
-  grad.addColorStop(0, "rgba(28, 109, 255, 0.28)");
-  grad.addColorStop(1, "rgba(28, 109, 255, 0.0)");
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Dots & Labels
-  pts.forEach((v, i) => {
-    const x = i * stepX;
-    const y = cH - (v / maxV) * cH;
-
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, 2 * Math.PI);
-    ctx.fillStyle = dark ? "#081328" : "#ffffff";
-    ctx.fill();
-    ctx.strokeStyle = "#1c6dff";
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.fillStyle = txtMut;
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(months[i], x, cH + 18);
-
-    ctx.fillStyle = txtStr;
-    ctx.font = "bold 10px sans-serif";
-    ctx.fillText(v.toString(), x, y - 8);
-  });
-
-  ctx.restore();
-}
-
-// ─── Chart: Budget Bar ────────────────────────────────────────────────────────
-function drawBudgetBar(canvas: HTMLCanvasElement, cats: { name: string; cost: number; max: number }[]) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const dark   = document.documentElement.getAttribute("data-theme") === "dark";
-  const txtMut = dark ? "#9db4dd" : "#4a5b7a";
-  const txtStr = dark ? "#eef4ff" : "#0b1a33";
-  const track  = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
-
-  const W = canvas.width, H = canvas.height;
-  const p = { t: 15, r: 45, b: 15, l: 80 };
-  const cW = W - p.l - p.r, cH = H - p.t - p.b;
-  const barH = cH / cats.length - 8;
-
-  ctx.save(); ctx.translate(p.l, p.t);
-
-  cats.forEach((c, i) => {
-    const y = i * (barH + 8);
-    const w = (c.cost / c.max) * cW;
-
-    ctx.fillStyle = txtStr;
-    ctx.font = "600 11px -apple-system, sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(c.name, -8, y + barH / 2 + 4);
-
-    // Track
-    ctx.fillStyle = track;
-    ctx.fillRect(0, y, cW, barH);
-
-    // Bar
-    ctx.fillStyle = "#0284c7";
-    ctx.fillRect(0, y, w, barH);
-
-    // Value
-    ctx.fillStyle = txtStr;
-    ctx.font = "bold 10px -apple-system, sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(`${c.cost.toFixed(1)}M`, w + 6, y + barH / 2 + 4);
-  });
-
-  ctx.restore();
-}
-
-// ─── StatTile ──────────────────────────────────────────────────────────────────
-function StatTile({
-  value,
-  label,
-  subLabel,
-  gradient,
-}: {
-  value: string | number;
-  label: string;
-  subLabel?: string;
-  gradient?: string;
-}) {
-  return (
-    <div className="stat-tile" style={gradient ? { background: gradient } : undefined}>
-      <div className="value">{typeof value === "number" ? value.toLocaleString() : value}</div>
-      <div className="label">{label}</div>
-      {subLabel && <div style={{ fontSize: "0.72rem", opacity: 0.78, marginTop: 3 }}>{subLabel}</div>}
-    </div>
-  );
-}
-
-// ─── Timeline Helper ──────────────────────────────────────────────────────────
-function getTimelineLeft(jamMulai: string | null): number {
-  if (!jamMulai) return 0;
-  const parts = jamMulai.split(":");
-  const h = parseInt(parts[0], 10) || 8;
-  const m = parseInt(parts[1], 10) || 0;
-  const hourVal = Math.max(8, Math.min(18, h + m / 60));
-  return ((hourVal - 8) / 10) * 100;
-}
-
-function getTimelineWidth(jamMulai: string | null, jamSelesai: string | null, isWholeDay: boolean): number {
-  if (isWholeDay) return 100;
-  if (!jamMulai || !jamSelesai) return 15;
-  const p1 = jamMulai.split(":");
-  const p2 = jamSelesai.split(":");
-  const h1 = (parseInt(p1[0], 10) || 8) + (parseInt(p1[1], 10) || 0) / 60;
-  const h2 = (parseInt(p2[0], 10) || 9) + (parseInt(p2[1], 10) || 0) / 60;
-  const dur = Math.max(0.75, Math.min(10, h2 - h1));
-  return (dur / 10) * 100;
-}
-
-// ─── ModuleStatCard ────────────────────────────────────────────────────────────
-function ModuleStatCard({
-  title, href, stats, loading,
-}: {
-  title: string;
-  href: string;
-  stats: ModuleStats | null;
-  loading: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current || !stats) return;
-    const t = stats.pending + stats.completed + stats.rejected;
-    drawDonut(canvasRef.current, [
-      { v: stats.completed, c: "#16a34a" },
-      { v: stats.pending,   c: "#f59e0b" },
-      { v: stats.rejected,  c: "#dc2626" },
-    ], t);
-  }, [stats]);
-
-  const total = stats ? stats.pending + stats.completed + stats.rejected : 0;
-
-  return (
-    <div className="card" style={{ marginTop: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{title}</div>
-        <Link href={href} style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-          Buka Transaksi →
-        </Link>
-      </div>
-
-      {loading && !stats ? (
-        <p className="text-secondary" style={{ fontSize: "0.85rem" }}>Memuat data...</p>
-      ) : !stats ? (
-        <p className="text-secondary" style={{ fontSize: "0.85rem" }}>Gagal memuat statistik.</p>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, alignItems: "center" }}>
-          <canvas ref={canvasRef} width={140} height={128} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-            {[
-              { label: "Selesai",  v: stats.completed, dot: "#16a34a" },
-              { label: "Menunggu", v: stats.pending,   dot: "#f59e0b" },
-              { label: "Ditolak",  v: stats.rejected,  dot: "#dc2626" },
-            ].map((r) => (
-              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: r.dot, display: "inline-block", flexShrink: 0 }} />
-                  {r.label}
-                </span>
-                <strong>{r.v.toLocaleString()}</strong>
-              </div>
-            ))}
-            <div style={{ height: 1, background: "var(--border-subtle)", margin: "2px 0" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
-              <span className="text-secondary">Total bulan ini</span>
-              <strong>{total.toLocaleString()}</strong>
-            </div>
-            {total > 0 && (
-              <div style={{ background: "var(--border-subtle)", borderRadius: 9999, height: 6 }}>
-                <div style={{ height: 6, borderRadius: 9999, background: "#16a34a", width: `${Math.round((stats.completed / total) * 100)}%`, transition: "width 0.4s" }} />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Keseluruhan pane ──────────────────────────────────────────────────────────
-function PaneAll({
-  stats,
-  isKpu,
-  me,
-  roomSchedules,
-  vehSchedules,
-  recentActivities,
-  onOpenQuickAction,
-  onSelectTab,
-  selectedPeriod,
-  periodDisplayLabel,
-  onPeriodChange,
-  selectedStatus,
-  onStatusChange,
-  selectedDirektorat,
-  onDirektoratChange,
-  selectedDivisi,
-  onDivisiChange,
-  selectedDepartemen,
-  onDepartemenChange,
-  onResetFilters,
-  orgData,
-}: {
-  stats: AllStats;
-  isKpu: boolean;
-  me: Me;
-  roomSchedules: BookingRuang[];
-  vehSchedules: BookingKendaraan[];
-  recentActivities: RecentActivity[];
-  onOpenQuickAction: () => void;
-  onSelectTab: (tab: DashTab) => void;
-  selectedPeriod: string;
-  periodDisplayLabel: string;
-  onPeriodChange: (p: string, lbl: string) => void;
-  selectedStatus: string;
-  onStatusChange: (s: string) => void;
-  selectedDirektorat: string;
-  onDirektoratChange: (d: string) => void;
-  selectedDivisi: string;
-  onDivisiChange: (v: string) => void;
-  selectedDepartemen: string;
-  onDepartemenChange: (dep: string) => void;
-  onResetFilters: () => void;
-  orgData: OrgStructure | null;
-}) {
-  const donutRef  = useRef<HTMLCanvasElement>(null);
-  const barRef    = useRef<HTMLCanvasElement>(null);
-  const divisiRef = useRef<HTMLCanvasElement>(null);
-  const trenRef   = useRef<HTMLCanvasElement>(null);
-  const budgetRef = useRef<HTMLCanvasElement>(null);
-
-  // Status Filter Chips for Table
-  const [tableStatusFilter, setTableStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED" | "REJECTED">("ALL");
-
-  // Popover States for Filters
-  const [showPeriodPicker, setShowPeriodPicker] = useState(false);
-  const [periodTab, setPeriodTab] = useState<"tanggal" | "bulan" | "tahun">("bulan");
-  const [periodYear, setPeriodYear] = useState<number>(new Date().getFullYear());
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
-  const [showFilterLainnya, setShowFilterLainnya] = useState(false);
-
-  const availableDivisi = useMemo(() => {
-    if (!orgData) return [];
-    if (selectedDirektorat === "ALL") return orgData.divisi;
-    const dirNode = orgData.direktoratTree?.find((d) => d.nama === selectedDirektorat);
-    return dirNode ? dirNode.divisi.map((v) => v.nama) : orgData.divisi;
-  }, [orgData, selectedDirektorat]);
-
-  const availableDepartemen = useMemo(() => {
-    if (!orgData) return [];
-    if (selectedDivisi !== "ALL") {
-      for (const dir of orgData.direktoratTree || []) {
-        const divNode = dir.divisi.find((v) => v.nama === selectedDivisi);
-        if (divNode && divNode.departemen && divNode.departemen.length > 0) {
-          return divNode.departemen;
-        }
-      }
-    }
-    return orgData.departemen || [];
-  }, [orgData, selectedDivisi]);
-
-  const filterLainnyaCount =
-    (selectedStatus !== "ALL" ? 1 : 0) +
-    (selectedDirektorat !== "ALL" ? 1 : 0) +
-    (selectedDivisi !== "ALL" ? 1 : 0) +
-    (selectedDepartemen !== "ALL" ? 1 : 0);
-
-  const activeDivisionText =
-    selectedDepartemen !== "ALL"
-      ? `Dep. ${selectedDepartemen}`
-      : selectedDivisi !== "ALL"
-      ? `Divisi ${selectedDivisi}`
-      : selectedDirektorat !== "ALL"
-      ? selectedDirektorat
-      : me.divisi ? `Divisi ${me.divisi}` : "Seluruh Divisi";
-
-  const sum = (field: keyof ModuleStats) => {
-    const modules: (keyof AllStats)[] = isKpu
-      ? ["ekspedisi", "atk"]
-      : ["ekspedisi", "room", "vehicle", "atk", "maint", "arsip"];
-    return modules.reduce((acc, m) => {
-      const s = stats[m] as ModuleStats | null | boolean;
-      return acc + (s && typeof s === "object" ? (s[field] as number) : 0);
-    }, 0);
+function emptySummaries(): Record<ModuleKey, ModuleSummary> {
+  return {
+    expedition: { ...EMPTY_SUMMARY }, room: { ...EMPTY_SUMMARY }, vehicle: { ...EMPTY_SUMMARY },
+    atk: { ...EMPTY_SUMMARY }, maintenance: { ...EMPTY_SUMMARY }, archive: { ...EMPTY_SUMMARY },
   };
+}
 
-  const totalPending   = sum("pending");
-  const totalCompleted = sum("completed");
-  const totalRejected  = sum("rejected");
-  const grandTotal     = totalPending + totalCompleted + totalRejected;
-  const totalCost      = stats.ekspedisi?.totalBulanIni ?? 0;
+const MODULE_SOURCES: Record<ModuleKey, ModuleSource> = {
+  expedition: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getPengirimanStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listPengiriman(params),
+  },
+  room: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getBookingStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listBooking(params),
+  },
+  vehicle: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getKendaraanStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listKendaraanBooking(params),
+  },
+  atk: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getAtkStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listAtk(params),
+  },
+  maintenance: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getSaranaStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listSarana(params),
+  },
+  archive: {
+    stats: async (bulan, divisi, direktorat, departemen) => {
+      const result = await api.getArsipStats(bulan, divisi, direktorat, departemen);
+      return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
+    },
+    list: async (params) => api.listArsip(params),
+  },
+};
 
-  // Donut data based on overall totals
-  const donutCompleted = totalCompleted;
-  const donutPending   = totalPending;
-  const donutRejected  = totalRejected;
-  const donutTotal     = donutCompleted + donutPending + donutRejected;
+function getActionFilter(role: Role): DashboardStatusFilter {
+  if (role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI") return "SUBMITTED";
+  if (role === "ADMIN_GA") return "APPROVED_L1";
+  if (role === "APPROVAL_GA") return "APPROVED_GA";
+  if (role === "KPU") return "APPROVED_GA_APPROVAL";
+  if (role === "SUPER_ADMIN") return "ON_APPROVAL";
+  return "REJECTED";
+}
 
-  useEffect(() => {
-    if (selectedStatus === "COMPLETED" || selectedStatus === "PENDING" || selectedStatus === "REJECTED") {
-      setTableStatusFilter(selectedStatus);
-    } else {
-      setTableStatusFilter("ALL");
+function sumStatuses(counts: Partial<Record<string, number>>, statuses: string[]): number {
+  return statuses.reduce((total, status) => total + (counts[status] ?? 0), 0);
+}
+
+function summarizeModule(key: ModuleKey, counts: Partial<Record<string, number>>): Omit<ModuleSummary, "actionable" | "failed"> {
+  const isFourTier = key === "expedition" || key === "atk";
+  const pendingStatuses = isFourTier
+    ? ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"]
+    : ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
+  const completedStatus = isFourTier ? "COMPLETED" : "APPROVED_GA_APPROVAL";
+  const rejectedStatuses = isFourTier
+    ? ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"]
+    : ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
+  return {
+    total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
+    pending: sumStatuses(counts, pendingStatuses),
+    completed: counts[completedStatus] ?? 0,
+    rejected: sumStatuses(counts, rejectedStatuses),
+  };
+}
+
+function isOriginAdmin(role: Role): boolean {
+  return role === "ADMIN_DEPARTEMEN" || role === "ADMIN_DIVISI";
+}
+
+function isOriginCorrection(moduleKey: ModuleKey, item: SourceItem, me: Me): boolean {
+  if (!isOriginAdmin(me.role) || item.createdBy !== me.id || !item.status.includes("REJECTED")) return false;
+  // Rejected Room/Vehicle bookings are terminal and cannot be revised or resubmitted.
+  if (moduleKey === "room" || moduleKey === "vehicle") return false;
+  if ("rejectTarget" in item && (item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU")) {
+    return item.rejectTarget === "ORIGIN";
+  }
+  return true;
+}
+
+function adaptItem(module: ModuleDefinition, item: SourceItem): DashboardItem {
+  const base = {
+    id: item.id, moduleKey: module.key, moduleLabel: module.label, status: item.status,
+    createdAt: item.createdAt, updatedAt: item.updatedAt,
+    ageMilliseconds: Math.max(0, Date.now() - new Date(item.updatedAt).getTime()),
+    href: module.transactionHref,
+    unit: item.departemen ? `${item.divisi} / ${item.departemen}` : item.divisi,
+  };
+  switch (module.key) {
+    case "expedition": {
+      const value = item as Pengiriman;
+      return { ...base, number: value.nomorTransmittal || value.noResi || `EXP-${value.id}`, title: value.tujuanPenerimaan || value.catatan || "Pengiriman barang atau dokumen", requester: value.namaPengirim, statusLabel: STATUS_LABEL[value.status] };
     }
-  }, [selectedStatus]);
-
-  // Donut
-  useEffect(() => {
-    if (!donutRef.current) return;
-    drawDonut(donutRef.current, [
-      { v: donutCompleted, c: "#16a34a" },
-      { v: donutPending,   c: "#f59e0b" },
-      { v: donutRejected,  c: "#dc2626" },
-    ], donutTotal);
-  }, [donutCompleted, donutPending, donutRejected, donutTotal]);
-
-  // Bar Modul
-  useEffect(() => {
-    if (!barRef.current) return;
-    const labels = isKpu
-      ? ["Ekspedisi", "Office Supplies"]
-      : ["Eksp.", "Ruang", "Kend.", "ATK", "Maint.", "Arsip"];
-    const keys: (keyof AllStats)[] = isKpu
-      ? ["ekspedisi", "atk"]
-      : ["ekspedisi", "room", "vehicle", "atk", "maint", "arsip"];
-    const get = (field: keyof ModuleStats) =>
-      keys.map((k) => {
-        const s = stats[k] as ModuleStats | null | boolean;
-        return s && typeof s === "object" ? (s[field] as number) : 0;
-      });
-    drawGroupedBar(
-      barRef.current,
-      labels,
-      [get("completed"), get("pending"), get("rejected")],
-      ["#1c6dff", "#f59e0b", "#ef4444"]
-    );
-  }, [stats, isKpu]);
-
-  // Divisi Bar, Tren Line, & Budget Bar
-  useEffect(() => {
-    if (divisiRef.current) {
-      const divLabels = ["Div. Operasional", "Div. TI", "Div. Keuangan", "Div. SDM", "Div. Legal"];
-      const divVals   = [
-        Math.max(1, Math.round(grandTotal * 0.32)),
-        Math.max(1, Math.round(grandTotal * 0.25)),
-        Math.max(1, Math.round(grandTotal * 0.18)),
-        Math.max(1, Math.round(grandTotal * 0.15)),
-        Math.max(1, Math.round(grandTotal * 0.10)),
-      ];
-      drawDivisiBar(divisiRef.current, divLabels, divVals);
+    case "room": {
+      const value = item as BookingRuang;
+      return { ...base, number: value.nomorPemesanan || `ROOM-${value.id}`, title: value.namaKegiatan, requester: value.pic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
     }
-
-    if (trenRef.current) {
-      const months = ["Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
-      const pts    = [
-        Math.max(5, Math.round(grandTotal * 0.65)),
-        Math.max(8, Math.round(grandTotal * 0.75)),
-        Math.max(6, Math.round(grandTotal * 0.70)),
-        Math.max(10, Math.round(grandTotal * 0.88)),
-        Math.max(12, Math.round(grandTotal * 0.94)),
-        grandTotal > 0 ? grandTotal : 15,
-      ];
-      drawTrenChart(trenRef.current, months, pts);
+    case "vehicle": {
+      const value = item as BookingKendaraan;
+      return { ...base, number: value.nomorPemesanan || `VEH-${value.id}`, title: value.keperluan, requester: value.pic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
     }
-
-    if (budgetRef.current) {
-      const cats = [
-        { name: "ATK", cost: Math.max(2.5, (stats.atk?.totalBulanIni ? Number(stats.atk.totalBulanIni) / 1000000 : 8.5)), max: 20 },
-        { name: "Ekspedisi", cost: Math.max(3.2, totalCost / 1000000), max: 20 },
-        { name: "Armada", cost: 6.4, max: 15 },
-        { name: "Fasilitas", cost: 5.2, max: 15 },
-      ];
-      drawBudgetBar(budgetRef.current, cats);
+    case "atk": {
+      const value = item as PermintaanAtk;
+      return { ...base, number: value.nomorPermintaan || `ATK-${value.id}`, title: value.keperluan, requester: value.namaPemohon, statusLabel: STATUS_LABEL[value.status] };
     }
-  }, [grandTotal, stats, totalCost]);
+    case "maintenance": {
+      const value = item as PerbaikanSarana;
+      return { ...base, number: value.nomorPerbaikan || `MNT-${value.id}`, title: value.deskripsiKerusakan, requester: value.namaPelapor, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+    }
+    case "archive": {
+      const value = item as PermintaanArsip;
+      return { ...base, number: value.nomorArsip || `ARC-${value.id}`, title: value.namaArsip, requester: value.namaPic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+    }
+  }
+}
 
-  const scopeLabel = me.divisi ? `Divisi ${me.divisi}` : "Seluruh Divisi";
+function scopeFromUnit(value: string): Pick<CommonListParams, "direktorat" | "divisi" | "departemen"> {
+  if (!value) return {};
+  const separator = value.indexOf("|");
+  if (separator < 0) return {};
+  const type = value.slice(0, separator);
+  const name = value.slice(separator + 1);
+  if (type === "DIREKTORAT") return { direktorat: name };
+  if (type === "DIVISI") return { divisi: name };
+  if (type === "DEPARTEMEN") return { departemen: name };
+  return {};
+}
 
-  // Filter activities for table
-  const pendingActivities = recentActivities.filter(
-    (a) =>
-      a.status.toLowerCase().includes("pending") ||
-      a.status.toLowerCase().includes("diproses") ||
-      a.status.toLowerCase().includes("submitted") ||
-      a.badgeClass.includes("submitted")
+function unitLabel(value: string): string {
+  const separator = value.indexOf("|");
+  if (separator < 0) return value;
+  const type = value.slice(0, separator);
+  const name = value.slice(separator + 1);
+  const labels: Record<string, string> = { DIREKTORAT: "Direktorat", DIVISI: "Divisi", DEPARTEMEN: "Departemen" };
+  return `${labels[type] ?? type} - ${name}`;
+}
+
+function roleCopy(role: Role): string {
+  if (role === "ADMIN_GA" || role === "APPROVAL_GA") return "Pantau antrean persetujuan dan operasi General Affair hari ini.";
+  if (role === "APPROVAL_DEPARTEMEN" || role === "APPROVAL_DIVISI") return "Prioritaskan permohonan yang menunggu persetujuan Anda.";
+  if (role === "KPU") return "Pantau permintaan mitra yang menunggu tindak lanjut.";
+  if (role === "SUPER_ADMIN") return "Pantau kondisi operasional seluruh modul GAAS.";
+  return "Pantau progres pengajuan dan layanan General Affair Anda.";
+}
+
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+function relativeAge(milliseconds: number): string {
+  const minutes = Math.floor(milliseconds / 60_000);
+  if (minutes < 1) return "Baru saja";
+  if (minutes < 60) return `${minutes} menit`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam`;
+  return `${Math.floor(hours / 24)} hari`;
+}
+
+function statusTone(status: Status | BookingStatus): "success" | "warning" | "danger" | "neutral" {
+  if (status === "COMPLETED" || status === "APPROVED_GA_APPROVAL") return "success";
+  if (status.includes("REJECTED") || status === "CANCELLED") return "danger";
+  if (status === "DRAFT") return "neutral";
+  return "warning";
+}
+
+function scheduleTimeValue(time: string): number {
+  if (time === "Sepanjang Hari") return 0;
+  const match = /^(\d{2}):(\d{2})/.exec(time);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : Number.MAX_SAFE_INTEGER;
+}
+
+function KpiCard({ label, value, helper, Icon, tone }: {
+  label: string; value: number; helper: string; Icon: LucideIcon; tone: "primary" | "warning" | "success" | "danger";
+}) {
+  return (
+    <div className={styles.kpiCard}>
+      <div><span className={styles.kpiLabel}>{label}</span><strong className={styles.kpiValue}>{value.toLocaleString("id-ID")}</strong></div>
+      <span className={`${styles.kpiIcon} ${styles[tone]}`}><Icon aria-hidden="true" /></span>
+      <span className={styles.kpiHelper}>{helper}</span>
+    </div>
   );
-  const completedActivities = recentActivities.filter(
-    (a) =>
-      a.status.toLowerCase().includes("selesai") ||
-      a.status.toLowerCase().includes("approved") ||
-      a.badgeClass.includes("completed")
-  );
-  const rejectedActivities = recentActivities.filter(
-    (a) =>
-      a.status.toLowerCase().includes("tolak") ||
-      a.status.toLowerCase().includes("reject") ||
-      a.status.toLowerCase().includes("batal") ||
-      a.badgeClass.includes("rejected")
-  );
+}
 
-  const displayedActivities =
-    tableStatusFilter === "PENDING"
-      ? pendingActivities
-      : tableStatusFilter === "COMPLETED"
-      ? completedActivities
-      : tableStatusFilter === "REJECTED"
-      ? rejectedActivities
-      : recentActivities;
+export default function DashboardContent({ me }: { me: Me }) {
+  const [month, setMonth] = useState(currentYearMonth());
+  const [unit, setUnit] = useState("");
+  const [org, setOrg] = useState<OrgStructure | null>(null);
+  const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], errors: 0 });
+  const quickRef = useRef<HTMLDivElement>(null);
+  useClickOutside([quickRef], () => setQuickOpen(false), quickOpen);
+
+  const visibleModules = useMemo(() => MODULES.filter((module) => me.role !== "KPU" || !module.hiddenForKpu), [me.role]);
+  const unitOptions = useMemo(() => {
+    if (!org) return [];
+    return [
+      ...org.direktorat.map((name) => `DIREKTORAT|${name}`),
+      ...org.divisi.map((name) => `DIVISI|${name}`),
+      ...org.departemen.map((name) => `DEPARTEMEN|${name}`),
+    ];
+  }, [org]);
+
+  useEffect(() => { api.orgStructure().then(setOrg).catch(() => setOrg(null)); }, []);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    const unitScope = scopeFromUnit(unit);
+    const scope: CommonListParams = { page: 1, bulan: month || undefined, ...unitScope };
+    const actionFilter = getActionFilter(me.role);
+
+    const moduleTasks = visibleModules.map(async (module) => {
+      const source = MODULE_SOURCES[module.key];
+      const queueParams: CommonListParams = {
+        ...scope,
+        limit: isOriginAdmin(me.role) ? 50 : 10,
+        status: actionFilter,
+        ...(me.role === "KPU" && module.key === "atk" ? { sumberPembelian: "KPU" as const } : {}),
+      };
+      const [statsResult, queueResult, recentResult] = await Promise.allSettled([
+        source.stats(month || undefined, unitScope.divisi, unitScope.direktorat, unitScope.departemen),
+        source.list(queueParams),
+        source.list({ ...scope, limit: 5 }),
+      ]);
+      const stats = statsResult.status === "fulfilled"
+        ? summarizeModule(module.key, statsResult.value.countsByStatus)
+        : { total: 0, pending: 0, completed: 0, rejected: 0 };
+      const rawQueue = queueResult.status === "fulfilled" ? queueResult.value.items : [];
+      const filteredQueue = isOriginAdmin(me.role) ? rawQueue.filter((item) => isOriginCorrection(module.key, item, me)) : rawQueue;
+      const actionCount = isOriginAdmin(me.role)
+        ? filteredQueue.length
+        : queueResult.status === "fulfilled" ? queueResult.value.total : 0;
+      return {
+        module,
+        summary: { ...stats, actionable: actionCount, failed: statsResult.status === "rejected" } satisfies ModuleSummary,
+        queue: filteredQueue.map((item) => adaptItem(module, item)),
+        recent: recentResult.status === "fulfilled" ? recentResult.value.items.map((item) => adaptItem(module, item)) : [],
+        errors: [statsResult, queueResult, recentResult].filter((result) => result.status === "rejected").length,
+      };
+    });
+
+    const schedulePromise = me.role === "KPU"
+      ? Promise.resolve({ rooms: [] as BookingRuang[], vehicles: [] as BookingKendaraan[], errors: 0 })
+      : Promise.allSettled([api.getBookingSchedule(todayLocalDate()), api.getKendaraanSchedule(todayLocalDate())])
+        .then(([rooms, vehicles]) => ({
+          rooms: rooms.status === "fulfilled" ? rooms.value : [],
+          vehicles: vehicles.status === "fulfilled" ? vehicles.value : [],
+          errors: Number(rooms.status === "rejected") + Number(vehicles.status === "rejected"),
+        }));
+
+    const [moduleResults, scheduleResult] = await Promise.all([Promise.all(moduleTasks), schedulePromise]);
+    const summaries = emptySummaries();
+    const queue: DashboardItem[] = [];
+    const recent: DashboardItem[] = [];
+    let errors = scheduleResult.errors;
+    moduleResults.forEach((result) => {
+      summaries[result.module.key] = result.summary;
+      queue.push(...result.queue);
+      recent.push(...result.recent);
+      errors += result.errors;
+    });
+
+    const selectedDirektoratDivisions = unitScope.direktorat
+      ? org?.direktoratTree.find((node) => node.nama === unitScope.direktorat)?.divisi.map((node) => node.nama) ?? []
+      : [];
+    const matchesUnit = (item: { divisi: string; departemen: string | null }) => {
+      if (unitScope.direktorat && !selectedDirektoratDivisions.includes(item.divisi)) return false;
+      if (unitScope.divisi && item.divisi !== unitScope.divisi) return false;
+      if (unitScope.departemen && item.departemen !== unitScope.departemen) return false;
+      return true;
+    };
+    const rooms = scheduleResult.rooms.filter(matchesUnit).map<ScheduleItem>((item) => ({
+      id: `room-${item.id}`, kind: "room", time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
+      title: item.namaKegiatan, detail: `${item.jumlahPeserta} peserta${item.pic ? ` · PIC ${item.pic}` : ""}`,
+      resource: [item.namaRuang, ...item.additionalRooms].join(", "),
+    }));
+    const vehicles = scheduleResult.vehicles.filter(matchesUnit).map<ScheduleItem>((item) => ({
+      id: `vehicle-${item.id}`, kind: "vehicle", time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
+      title: item.keperluan, detail: `${item.jumlahPenumpang} penumpang${item.supir ? ` · ${item.supir}` : ""}`,
+      resource: item.namaKendaraan,
+    }));
+    queue.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
+    recent.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setState({
+      summaries,
+      queue: queue.slice(0, 8),
+      recent: recent.slice(0, 5),
+      schedules: [...rooms, ...vehicles].sort((a, b) => scheduleTimeValue(a.time) - scheduleTimeValue(b.time)),
+      errors,
+    });
+    setLoading(false);
+  }, [me, month, org, unit, visibleModules]);
+
+  useEffect(() => { void loadDashboard(); }, [loadDashboard, refreshToken]);
+
+  const totals = useMemo(() => visibleModules.reduce((result, module) => {
+    const summary = state.summaries[module.key];
+    result.total += summary.total;
+    result.pending += summary.pending;
+    result.completed += summary.completed;
+    result.rejected += summary.rejected;
+    result.actionable += summary.actionable;
+    return result;
+  }, { total: 0, pending: 0, completed: 0, rejected: 0, actionable: 0 }), [state.summaries, visibleModules]);
+  const completionRate = totals.total > 0 ? Math.round((totals.completed / totals.total) * 100) : 0;
+  const progressTotal = totals.completed + totals.pending + totals.rejected;
+  const progressWidths = {
+    completed: progressTotal > 0 ? (totals.completed / progressTotal) * 100 : 0,
+    pending: progressTotal > 0 ? (totals.pending / progressTotal) * 100 : 0,
+    rejected: progressTotal > 0 ? (totals.rejected / progressTotal) * 100 : 0,
+  };
+  const filteredSchedules = state.schedules.filter((item) => scheduleTab === "all" || item.kind === scheduleTab);
 
   return (
-    <>
-      {/* ── Filter Bar: Filter Periode (Gambar 4/5) & Filter Lainnya ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 18,
-          position: "relative",
-          zIndex: 30,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          {/* ── Filter Periode ── */}
-          <div style={{ position: "relative" }}>
-            <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: 4 }}>
-              Filter Periode
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowPeriodPicker((v) => !v);
-                setShowFilterLainnya(false);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-                padding: "8px 14px",
-                borderRadius: 8,
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                background: "var(--bg-surface)",
-                border: showPeriodPicker ? "1.5px solid var(--blue-500)" : "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                minWidth: 160,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <span>{periodDisplayLabel}</span>
-              {showPeriodPicker ? <ChevronUp width={15} height={15} /> : <ChevronDown width={15} height={15} />}
-            </button>
-
-            {/* Popover Kalender Periode (Gambar 4 & 5) */}
-            {showPeriodPicker && (
-              <div
-                className="card"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: 0,
-                  width: 285,
-                  padding: 14,
-                  borderRadius: 12,
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
-                  zIndex: 50,
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-subtle)",
-                }}
-              >
-                {/* Segmented Control: Tanggal | Bulan | Tahun */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
-                    gap: 3,
-                    background: "var(--bg-surface-alt)",
-                    padding: 3,
-                    borderRadius: 8,
-                    marginBottom: 14,
-                  }}
-                >
-                  {(["tanggal", "bulan", "tahun"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setPeriodTab(tab)}
-                      style={{
-                        padding: "6px 0",
-                        fontSize: "0.76rem",
-                        fontWeight: periodTab === tab ? 700 : 500,
-                        borderRadius: 6,
-                        border: "none",
-                        background: periodTab === tab ? "var(--bg-surface)" : "transparent",
-                        color: periodTab === tab ? "var(--blue-500)" : "var(--text-secondary)",
-                        cursor: "pointer",
-                        boxShadow: periodTab === tab ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                        textTransform: "capitalize",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      {tab === "tanggal" ? "Tanggal" : tab === "bulan" ? "Bulan" : "Tahun"}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Tab: Bulan */}
-                {periodTab === "bulan" && (
-                  <div>
-                    {/* Header Year Picker */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                        padding: "0 4px",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setPeriodYear((y) => y - 1)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--text-secondary)",
-                          display: "flex",
-                          alignItems: "center",
-                          padding: 4,
-                        }}
-                      >
-                        <ChevronLeft width={16} height={16} />
-                      </button>
-                      <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                        {periodYear}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPeriodYear((y) => y + 1)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--text-secondary)",
-                          display: "flex",
-                          alignItems: "center",
-                          padding: 4,
-                        }}
-                      >
-                        <ChevronRight width={16} height={16} />
-                      </button>
-                    </div>
-
-                    {/* 3x4 Month Grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-                      {[
-                        "Jan", "Feb", "Mar",
-                        "Apr", "Mei", "Jun",
-                        "Jul", "Agu", "Sep",
-                        "Okt", "Nov", "Des",
-                      ].map((mName, idx) => {
-                        const mStr = `${periodYear}-${String(idx + 1).padStart(2, "0")}`;
-                        const isSelected = selectedPeriod === mStr;
-                        return (
-                          <button
-                            key={mName}
-                            type="button"
-                            onClick={() => {
-                              onPeriodChange(mStr, `${mName} ${periodYear}`);
-                              setShowPeriodPicker(false);
-                            }}
-                            style={{
-                              padding: "10px 4px",
-                              borderRadius: 8,
-                              fontSize: "0.8rem",
-                              fontWeight: isSelected ? 700 : 500,
-                              background: isSelected ? "var(--blue-500)" : "var(--bg-surface-alt)",
-                              color: isSelected ? "#fff" : "var(--text-primary)",
-                              border: "none",
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            {mName}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Quick Semua Periode button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onPeriodChange("ALL", "Semua Periode");
-                        setShowPeriodPicker(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        marginTop: 10,
-                        padding: "7px 10px",
-                        borderRadius: 8,
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        background: selectedPeriod === "ALL" ? "var(--blue-500)" : "transparent",
-                        color: selectedPeriod === "ALL" ? "#fff" : "var(--text-secondary)",
-                        border: "1px solid var(--border-subtle)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Semua Periode
-                    </button>
-                  </div>
-                )}
-
-                {/* Tab: Tahun */}
-                {periodTab === "tahun" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, padding: "4px 0" }}>
-                    {[2024, 2025, 2026, 2027].map((y) => {
-                      const isSelected = selectedPeriod === String(y);
-                      return (
-                        <button
-                          key={y}
-                          type="button"
-                          onClick={() => {
-                            onPeriodChange(String(y), `Tahun ${y}`);
-                            setShowPeriodPicker(false);
-                          }}
-                          style={{
-                            padding: "12px 8px",
-                            borderRadius: 8,
-                            fontSize: "0.86rem",
-                            fontWeight: isSelected ? 700 : 600,
-                            background: isSelected ? "var(--blue-500)" : "var(--bg-surface-alt)",
-                            color: isSelected ? "#fff" : "var(--text-primary)",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {y}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Tab: Tanggal */}
-                {periodTab === "tanggal" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div>
-                      <label style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "block", marginBottom: 3 }}>
-                        Dari Tanggal:
-                      </label>
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "6px 10px",
-                          borderRadius: 6,
-                          border: "1px solid var(--border-subtle)",
-                          fontSize: "0.78rem",
-                          background: "var(--bg-surface)",
-                          color: "var(--text-primary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "block", marginBottom: 3 }}>
-                        Sampai Tanggal:
-                      </label>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "6px 10px",
-                          borderRadius: 6,
-                          border: "1px solid var(--border-subtle)",
-                          fontSize: "0.78rem",
-                          background: "var(--bg-surface)",
-                          color: "var(--text-primary)",
-                        }}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (customStartDate) {
-                          const p = customStartDate.slice(0, 7);
-                          onPeriodChange(p, `${customStartDate} s/d ${customEndDate || customStartDate}`);
-                        }
-                        setShowPeriodPicker(false);
-                      }}
-                      style={{
-                        padding: "7px 12px",
-                        borderRadius: 8,
-                        fontSize: "0.78rem",
-                        fontWeight: 700,
-                        background: "var(--blue-500)",
-                        color: "#fff",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Terapkan Tanggal
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ── Filter Lainnya (Status, Direktorat, Divisi, Departemen) ── */}
-          <div style={{ position: "relative" }}>
-            <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: 4 }}>
-              Filter Lainnya
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowFilterLainnya((v) => !v);
-                setShowPeriodPicker(false);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-                padding: "8px 14px",
-                borderRadius: 8,
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                background: "var(--bg-surface)",
-                border: showFilterLainnya ? "1.5px solid var(--blue-500)" : "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                minWidth: 160,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span>{filterLainnyaCount > 0 ? `${filterLainnyaCount} Filter Aktif` : "Semua Filter"}</span>
-                {filterLainnyaCount > 0 && (
-                  <span
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: "50%",
-                      background: "var(--blue-500)",
-                      color: "#fff",
-                      fontSize: "0.68rem",
-                      fontWeight: 800,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {filterLainnyaCount}
-                  </span>
-                )}
-              </span>
-              {showFilterLainnya ? <ChevronUp width={15} height={15} /> : <ChevronDown width={15} height={15} />}
-            </button>
-
-            {/* Popover Filter Lainnya */}
-            {showFilterLainnya && (
-              <div
-                className="card"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: 0,
-                  width: 320,
-                  padding: 16,
-                  borderRadius: 12,
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
-                  zIndex: 50,
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-subtle)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "var(--text-primary)" }}>
-                    Filter Tambahan
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowFilterLainnya(false)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
-                  >
-                    <X width={16} height={16} />
-                  </button>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* 1. Status */}
-                  <div>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                      Status
-                    </label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => onStatusChange(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "7px 10px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      <option value="ALL">Semua Status</option>
-                      <option value="COMPLETED">Selesai (Completed)</option>
-                      <option value="PENDING">Menunggu Approval (Pending)</option>
-                      <option value="REJECTED">Ditolak (Rejected)</option>
-                    </select>
-                  </div>
-
-                  {/* 2. Direktorat */}
-                  <div>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                      Direktorat
-                    </label>
-                    <select
-                      value={selectedDirektorat}
-                      onChange={(e) => onDirektoratChange(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "7px 10px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      <option value="ALL">Semua Direktorat</option>
-                      {orgData?.direktorat?.map((d) => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 3. Divisi */}
-                  <div>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                      Divisi
-                    </label>
-                    <select
-                      value={selectedDivisi}
-                      onChange={(e) => onDivisiChange(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "7px 10px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      <option value="ALL">Semua Divisi</option>
-                      {availableDivisi.map((div) => (
-                        <option key={div} value={div}>{div}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 4. Departemen */}
-                  <div>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                      Departemen
-                    </label>
-                    <select
-                      value={selectedDepartemen}
-                      onChange={(e) => onDepartemenChange(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "7px 10px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      <option value="ALL">Semua Departemen</option>
-                      {availableDepartemen.map((dep) => (
-                        <option key={dep} value={dep}>{dep}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, paddingTop: 10, borderTop: "1px solid var(--border-subtle)" }}>
-                    <button
-                      type="button"
-                      onClick={onResetFilters}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--text-secondary)",
-                        fontSize: "0.76rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Reset Filter
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowFilterLainnya(false)}
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: 6,
-                        background: "var(--blue-500)",
-                        color: "#fff",
-                        fontSize: "0.78rem",
-                        fontWeight: 700,
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Terapkan
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+    <div className={styles.dashboard}>
+      <section className={styles.header}>
+        <div>
+          <span className={styles.eyebrow}>General Affair Command Center</span>
+          <h1>Selamat datang, {firstName(me.nama)}</h1>
+          <p>{roleCopy(me.role)}</p>
         </div>
-
-        {/* Active Filter Chips */}
-        {(filterLainnyaCount > 0 || selectedPeriod !== "ALL") && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            {selectedPeriod !== "ALL" && (
-              <span className="badge badge-blue" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                Periode: {periodDisplayLabel}
-                <button
-                  type="button"
-                  onClick={() => onPeriodChange("ALL", "Semua Periode")}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
-                >
-                  <X width={12} height={12} />
-                </button>
-              </span>
-            )}
-            {selectedStatus !== "ALL" && (
-              <span className="badge badge-submitted" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                Status: {selectedStatus}
-                <button
-                  type="button"
-                  onClick={() => onStatusChange("ALL")}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
-                >
-                  <X width={12} height={12} />
-                </button>
-              </span>
-            )}
-            {selectedDirektorat !== "ALL" && (
-              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                Dir: {selectedDirektorat}
-                <button
-                  type="button"
-                  onClick={() => onDirektoratChange("ALL")}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
-                >
-                  <X width={12} height={12} />
-                </button>
-              </span>
-            )}
-            {selectedDivisi !== "ALL" && (
-              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                Div: {selectedDivisi}
-                <button
-                  type="button"
-                  onClick={() => onDivisiChange("ALL")}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
-                >
-                  <X width={12} height={12} />
-                </button>
-              </span>
-            )}
-            {selectedDepartemen !== "ALL" && (
-              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                Dep: {selectedDepartemen}
-                <button
-                  type="button"
-                  onClick={() => onDepartemenChange("ALL")}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
-                >
-                  <X width={12} height={12} />
-                </button>
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={onResetFilters}
-              style={{
-                fontSize: "0.72rem",
-                color: "var(--blue-500)",
-                background: "none",
-                border: "none",
-                fontWeight: 600,
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Reset Semua
-            </button>
+        <div className={styles.headerActions}>
+          <div className={styles.monthFilter}><MonthFilterPicker id="dashboard-month" value={month} onChange={setMonth} placeholder="Semua Periode" /></div>
+          <div className={styles.unitFilter}>
+            <SearchableSelect id="dashboard-unit" value={unit} onChange={setUnit} options={unitOptions} placeholder="Semua Unit" clearLabel="Semua Unit" getLabel={unitLabel} />
           </div>
-        )}
-      </div>
-
-      {/* Backdrop for closing popovers */}
-      {(showPeriodPicker || showFilterLainnya) && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 25 }}
-          onClick={() => {
-            setShowPeriodPicker(false);
-            setShowFilterLainnya(false);
-          }}
-        />
-      )}
-
-      {/* ── 0. Urgent Attention Banner ── */}
-      {totalPending > 0 && (
-        <div
-          className="card"
-          style={{
-            marginTop: 0,
-            marginBottom: 18,
-            padding: "12px 18px",
-            borderLeft: "4px solid #f59e0b",
-            background: "linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(28, 109, 255, 0.04) 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "rgba(245, 158, 11, 0.2)",
-                color: "#d97706",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: "0.95rem",
-                flexShrink: 0,
-              }}
-            >
-              ⚠️
-            </div>
-            <div>
-              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Perhatian Segera
-              </div>
-              <div style={{ fontSize: "0.88rem", fontWeight: 700 }}>
-                {totalPending} Pengajuan Menunggu Tindak Lanjut Persetujuan Anda Bulan Ini
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-              onClick={onOpenQuickAction}
-              className="badge badge-submitted"
-              style={{ border: "none", cursor: "pointer", padding: "6px 12px" }}
-            >
-              Review Permohonan
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── 1. Module Stat Cards (Gambar 2: Desain biru seragam stat-tile, tanpa 'Buka', klik menuju overview modul) ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isKpu ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 14,
-          marginBottom: 20,
-        }}
-      >
-        {[
-          {
-            key: "ekspedisi" as DashTab,
-            label: "Ekspedisi",
-            icon: <Layers width={16} height={16} />,
-            total: (stats.ekspedisi?.completed ?? 0) + (stats.ekspedisi?.pending ?? 0) + (stats.ekspedisi?.rejected ?? 0),
-            completed: stats.ekspedisi?.completed ?? 0,
-            pending: stats.ekspedisi?.pending ?? 0,
-          },
-          ...(!isKpu
-            ? [
-                {
-                  key: "room" as DashTab,
-                  label: "Room Booking",
-                  icon: <Calendar width={16} height={16} />,
-                  total: (stats.room?.completed ?? 0) + (stats.room?.pending ?? 0) + (stats.room?.rejected ?? 0),
-                  completed: stats.room?.completed ?? 0,
-                  pending: stats.room?.pending ?? 0,
-                },
-                {
-                  key: "vehicle" as DashTab,
-                  label: "Vehicle Booking",
-                  icon: <Car width={16} height={16} />,
-                  total: (stats.vehicle?.completed ?? 0) + (stats.vehicle?.pending ?? 0) + (stats.vehicle?.rejected ?? 0),
-                  completed: stats.vehicle?.completed ?? 0,
-                  pending: stats.vehicle?.pending ?? 0,
-                },
-              ]
-            : []),
-          {
-            key: "atk" as DashTab,
-            label: "Office Supplies",
-            icon: <AtkIcon />,
-            total: (stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0),
-            completed: stats.atk?.completed ?? 0,
-            pending: stats.atk?.pending ?? 0,
-          },
-          ...(!isKpu
-            ? [
-                {
-                  key: "maint" as DashTab,
-                  label: "Maintenance",
-                  icon: <Wrench width={16} height={16} />,
-                  total: (stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0),
-                  completed: stats.maint?.completed ?? 0,
-                  pending: stats.maint?.pending ?? 0,
-                },
-                {
-                  key: "arsip" as DashTab,
-                  label: "Archive",
-                  icon: <Folder width={16} height={16} />,
-                  total: (stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0),
-                  completed: stats.arsip?.completed ?? 0,
-                  pending: stats.arsip?.pending ?? 0,
-                },
-              ]
-            : []),
-        ].map((m) => (
-          <div
-            key={m.key}
-            onClick={() => onSelectTab(m.key)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onSelectTab(m.key);
-            }}
-            title={`Buka overview modul ${m.label}`}
-            style={{
-              padding: "16px 18px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              minHeight: 115,
-              background: "linear-gradient(135deg, #1c6dff 0%, #1450c9 100%)",
-              borderRadius: 14,
-              boxShadow: "0 4px 14px rgba(20, 80, 201, 0.25)",
-              color: "#ffffff",
-              cursor: "pointer",
-              transition: "transform 0.15s ease, box-shadow 0.15s ease",
-              userSelect: "none",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-3px)";
-              e.currentTarget.style.boxShadow = "0 8px 22px rgba(20, 80, 201, 0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "none";
-              e.currentTarget.style.boxShadow = "0 4px 14px rgba(20, 80, 201, 0.25)";
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "rgba(255, 255, 255, 0.95)", display: "flex", alignItems: "center", gap: 6 }}>
-                {m.icon}
-                <span>{m.label}</span>
-              </span>
-            </div>
-            <div>
-              <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.15 }}>
-                {m.total.toLocaleString()}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.85)", marginTop: 6 }}>
-                <span>{m.completed} Selesai · {m.pending} Menunggu</span>
-                <span style={{ fontWeight: 600, color: "rgba(255, 255, 255, 0.95)" }}>{activeDivisionText}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── 2. Main Row: Status Donut + Perbandingan Antar Modul ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.95fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
-        {/* Donut Card (Gambar 3 - Rapih & Bersih tanpa dropdown filter di dalam card) */}
-        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%", padding: "18px 20px" }}>
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>Status Keseluruhan</div>
-                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                  {isKpu ? 2 : 6} Modul · {activeDivisionText} · {periodDisplayLabel}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 180 }}>
-              <canvas ref={donutRef} width={200} height={180} style={{ display: "block" }} />
-            </div>
-            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 9 }}>
-              {[
-                { label: "Selesai",  v: donutCompleted, dot: "#16a34a", cls: "badge-completed" },
-                { label: "Diproses", v: donutPending,   dot: "#f59e0b", cls: "badge-submitted" },
-                { label: "Ditolak",  v: donutRejected,  dot: "#dc2626", cls: "badge-rejected"  },
-              ].map((s) => (
-                <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.83rem" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
-                    <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{s.label}</span>
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                    <span style={{ color: "var(--text-primary)" }}>{s.v.toLocaleString()}</span>
-                    {donutTotal > 0 && (
-                      <span className={`badge ${s.cls}`}>{Math.round((s.v / donutTotal) * 100)}%</span>
-                    )}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bar Antar Modul */}
-        <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Perbandingan Antar Modul</div>
-              <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 3 }}>
-                Volume selesai · pending · ditolak bulan ini
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: "0.75rem", fontWeight: 600 }}>
-              {(["#1c6dff", "#f59e0b", "#ef4444"] as const).map((c, i) => (
-                <span key={c} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: c, display: "inline-block" }} />
-                  {["Selesai", "Pending", "Tolak"][i]}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={barRef} width={580} height={260} style={{ width: "100%", height: "auto" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── 3. Deep Dive Charts: Distribusi Divisi + Tren 6 Bulan + Realisasi Anggaran ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
-        {/* Distribusi Divisi */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Distribusi Volume per Divisi</div>
-              <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                Penggunaan fasilitas GA oleh unit kerja
-              </div>
-            </div>
-            <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--blue-500)", background: "rgba(28,109,255,0.08)", padding: "4px 8px", borderRadius: 6 }}>
-              Top Divisi
-            </span>
-          </div>
-          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={divisiRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
-          </div>
-        </div>
-
-        {/* Tren Bulanan */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Tren Transaksi (6 Bulan)</div>
-              <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                Pertumbuhan volume layanan GA
-              </div>
-            </div>
-            <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#16a34a", display: "flex", alignItems: "center", gap: 4 }}>
-              <TrendingUp width={14} height={14} /> +14.2% YoY
-            </span>
-          </div>
-          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={trenRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
-          </div>
-        </div>
-
-        {/* Realisasi Anggaran */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Realisasi Anggaran GA</div>
-              <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                Alokasi biaya per kategori modul
-              </div>
-            </div>
-            <span className="badge badge-completed">Terkendali</span>
-          </div>
-          <div style={{ minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <canvas ref={budgetRef} width={340} height={180} style={{ width: "100%", height: "auto" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── 4. Operasional Hari Ini: Ruang Meeting & Kendaraan ── */}
-      {!isKpu && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-          {/* Jadwal Ruang Meeting */}
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(22,163,74,0.12)", color: "#16a34a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Calendar width={18} height={18} />
-                </span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Jadwal Ruang Meeting Hari Ini</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>
-                    {formatDate(todayLocalDate())} · {roomSchedules.length} Agenda
-                  </div>
-                </div>
-              </div>
-              <Link href="/booking-ruang-meeting/calendar" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-                Kalender →
-              </Link>
-            </div>
-
-            {/* Hourly Timeline Visualizer */}
-            {roomSchedules.length > 0 && (
-              <div style={{ overflowX: "auto", marginBottom: 14, paddingBottom: 6 }}>
-                <div style={{ minWidth: 460, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "8px 10px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "90px repeat(10, 1fr)", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 4, fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                    <div>RUANG</div>
-                    {["08","09","10","11","12","13","14","15","16","17"].map(h => (
-                      <div key={h} style={{ textAlign: "center" }}>{h}</div>
-                    ))}
-                  </div>
-                  {roomSchedules.slice(0, 3).map((r) => {
-                    const left = getTimelineLeft(r.jamMulai);
-                    const width = getTimelineWidth(r.jamMulai, r.jamSelesai, r.isWholeDay);
-                    return (
-                      <div key={r.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", alignItems: "center" }}>
-                        <div style={{ fontSize: "0.74rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>
-                          {r.namaRuang}
-                        </div>
-                        <div style={{ position: "relative", height: 22, background: "rgba(0,0,0,0.02)", borderRadius: 4 }}>
-                          <div
-                            style={{
-                              position: "absolute",
-                              left: `${left}%`,
-                              width: `${Math.min(width, 100 - left)}%`,
-                              top: 1,
-                              bottom: 1,
-                              background: "linear-gradient(135deg, #1450c9, #1c6dff)",
-                              color: "#fff",
-                              borderRadius: 4,
-                              fontSize: "0.68rem",
-                              fontWeight: 700,
-                              display: "flex",
-                              alignItems: "center",
-                              padding: "0 6px",
-                              overflow: "hidden",
-                              whiteSpace: "nowrap",
-                              textOverflow: "ellipsis",
-                              boxShadow: "0 1px 4px rgba(20,80,201,0.25)",
-                            }}
-                            title={`${r.namaKegiatan} (${formatTimeRange(r.jamMulai, r.jamSelesai, r.isWholeDay)})`}
-                          >
-                            {r.namaKegiatan}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {roomSchedules.length === 0 ? (
-              <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "16px 0", textAlign: "center" }}>
-                Tidak ada agenda rapat terjadwal untuk hari ini.
-              </p>
-            ) : (
-              <div className="table-wrap">
-                <table className="data-table" style={{ fontSize: "0.82rem" }}>
-                  <thead>
-                    <tr>
-                      <th>Ruangan</th>
-                      <th>Agenda & PIC</th>
-                      <th>Waktu</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roomSchedules.slice(0, 4).map((r) => (
-                      <tr key={r.id}>
-                        <td style={{ fontWeight: 700, color: "var(--blue-500)" }}>{r.namaRuang}</td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{r.namaKegiatan}</div>
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>{r.pic || "-"} · {r.divisi}</div>
-                        </td>
-                        <td style={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
-                          {formatTimeRange(r.jamMulai, r.jamSelesai, r.isWholeDay)}
-                        </td>
-                        <td>
-                          <span className="badge badge-completed">Terkonfirmasi</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Operasional Kendaraan */}
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(245,158,11,0.14)", color: "#d97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Car width={18} height={18} />
-                </span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Operasional Kendaraan Hari Ini</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>
-                    {formatDate(todayLocalDate())} · {vehSchedules.length} Penugasan
-                  </div>
-                </div>
-              </div>
-              <Link href="/booking-kendaraan/calendar" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-                Armada →
-              </Link>
-            </div>
-
-            {/* Fleet Cards Matrix Preview */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 12 }}>
-              {vehSchedules.slice(0, 2).map((v) => (
-                <div key={v.id} style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>{v.namaKendaraan}</span>
-                    <span className="badge badge-submitted" style={{ fontSize: "0.68rem" }}>On Duty</span>
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
-                    Supir: <strong>{v.supir || "Mandiri"}</strong>
-                  </div>
-                  <div style={{ fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
-                    {v.keperluan}
-                  </div>
-                </div>
-              ))}
-              <div style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>Toyota HiAce</span>
-                  <span className="badge badge-completed" style={{ fontSize: "0.68rem" }}>Standby Pool</span>
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
-                  Kapasitas: <strong>14 Seat</strong>
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "#16a34a", fontWeight: 600, marginTop: 2 }}>
-                  Siap Penugasan
-                </div>
-              </div>
-            </div>
-
-            {vehSchedules.length === 0 ? (
-              <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "16px 0", textAlign: "center" }}>
-                Seluruh unit armada kendaraan standby di pool GA.
-              </p>
-            ) : (
-              <div className="table-wrap">
-                <table className="data-table" style={{ fontSize: "0.82rem" }}>
-                  <thead>
-                    <tr>
-                      <th>Kendaraan</th>
-                      <th>Keperluan & Supir</th>
-                      <th>Jam</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vehSchedules.slice(0, 4).map((v) => (
-                      <tr key={v.id}>
-                        <td>
-                          <div style={{ fontWeight: 700 }}>{v.namaKendaraan}</div>
-                          <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>{v.platNomor || "-"}</div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{v.keperluan}</div>
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
-                            Supir: {v.supir || "Mandiri"} · {v.divisi}
-                          </div>
-                        </td>
-                        <td style={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
-                          {formatTimeRange(v.jamMulai, v.jamSelesai, v.isWholeDay)}
-                        </td>
-                        <td>
-                          <span className="badge badge-completed">On Duty</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── 5. Agenda Pemeliharaan + Skor Kinerja SLA / CSAT + Kontak Hotline GA ── */}
-      <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
-        {/* Agenda Pemeliharaan Gedung */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.1rem" }}>🗓️</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Agenda Pemeliharaan Gedung</div>
-                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Perawatan terjadwal fasilitas kantor</div>
-              </div>
-            </div>
-            <span className="badge badge-blue">Rutin</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>Pest Control & Fogging Gedung</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Jumat, 17:30 WIB · Area Kantor Pusat</div>
-              </div>
-              <span className="badge badge-submitted">Terjadwal</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>Servis Berkala AC Sentral Lt. 3</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sabtu, 09:00 WIB · Vendor Daikin</div>
-              </div>
-              <span className="badge badge-blue">Vendor</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Skor Kinerja SLA & CSAT Rating */}
-        {!isKpu && (
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "1.1rem" }}>⭐</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Kinerja SLA & Kepuasan GA</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Evaluasi pelayanan bulan berjalan</div>
-                </div>
-              </div>
-              <span className="badge badge-completed">Scorecard</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, textAlign: "center", marginBottom: 10 }}>
-              <div style={{ padding: "10px 8px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#16a34a" }}>96.4%</div>
-                <div style={{ fontSize: "0.74rem", fontWeight: 700, marginTop: 2 }}>SLA On-Time</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>Target &gt; 90%</div>
-              </div>
-              <div style={{ padding: "10px 8px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#f59e0b" }}>4.9<span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>/5.0</span></div>
-                <div style={{ fontSize: "0.74rem", fontWeight: 700, marginTop: 2 }}>Rating CSAT</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>148 Ulasan</div>
-              </div>
-            </div>
-            <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>Tingkat Kepatuhan SLA GA: Sangat Baik</span>
-              <span style={{ color: "#f59e0b", fontWeight: 700 }}>★★★★★</span>
-            </div>
-          </div>
-        )}
-
-        {/* Hotline Piket & Kontak Darurat GA */}
-        {!isKpu && (
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "1.1rem" }}>📞</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Petugas Piket & Hotline GA</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Bantuan darurat fasilitas kantor</div>
-                </div>
-              </div>
-              <span className="badge badge-blue">On Call</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "0.78rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Admin GA Hari Ini</div>
-                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Bpk. Ahmad Fauzi</div>
-                </div>
-                <span className="badge badge-blue font-mono">Ext. 104</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Teknisi Gedung On-Call</div>
-                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Pak Joko (AC & Listrik)</div>
-                </div>
-                <span className="badge badge-blue font-mono">Ext. 102</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Koordinator Driver Pool</div>
-                  <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Pak Budi Utomo</div>
-                </div>
-                <span className="badge badge-blue font-mono">Ext. 105</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── 6. Logistik Gudang ATK, Maintenance Pipeline & Gudang Arsip ── */}
-      <div style={{ display: "grid", gridTemplateColumns: isKpu ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
-        {/* Logistik Gudang ATK */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.1rem" }}>📦</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Peringatan Stok Logistik ATK</div>
-                <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Barang gudang di bawah batas minimum</div>
-              </div>
-            </div>
-            <Link href="/office-supplies/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-              Gudang →
-            </Link>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>Kertas HVS A4 80gr PaperOne</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sisa: <strong style={{ color: "#dc2626" }}>4 Rim</strong> (Batas min: 15 Rim)</div>
-              </div>
-              <Link href="/office-supplies/transaksi" className="badge badge-submitted" style={{ textDecoration: "none" }}>
-                Restock
-              </Link>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>Toner HP Laserjet 85A Black</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Sisa: <strong style={{ color: "#dc2626" }}>1 Kotak</strong> (Batas min: 4 Kotak)</div>
-              </div>
-              <Link href="/office-supplies/transaksi" className="badge badge-submitted" style={{ textDecoration: "none" }}>
-                Restock
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Maintenance Pipeline */}
-        {!isKpu && (
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "1.1rem" }}>🔧</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Pipeline Perbaikan Sarana</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Tahap pengerjaan fasilitas fisik</div>
-                </div>
-              </div>
-              <Link href="/maintenance/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-                Tiket →
-              </Link>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, textAlign: "center", fontSize: "0.75rem", marginBottom: 8 }}>
-              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#f59e0b" }}>2</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Cek Lokasi</div>
-              </div>
-              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#1c6dff" }}>3</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Estimasi RAB</div>
-              </div>
-              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#6366f1" }}>4</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Dikerjakan</div>
-              </div>
-              <div style={{ padding: 8, borderRadius: 8, background: "var(--bg-surface-alt)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "#16a34a" }}>{stats.maint?.completed ?? 14}</div>
-                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: 2 }}>Selesai</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Monitoring Gudang Arsip */}
-        {!isKpu && (
-          <div className="card" style={{ marginTop: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "1.1rem" }}>📁</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>Kapasitas Gudang Arsip</div>
-                  <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>Penyimpanan berkas inaktif</div>
-                </div>
-              </div>
-              <Link href="/arsip/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-                Arsip →
-              </Link>
-            </div>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", fontWeight: 700, marginBottom: 4 }}>
-                <span>385 / 500 Boks Terisi</span>
-                <span>77%</span>
-              </div>
-              <div style={{ background: "var(--border-subtle)", borderRadius: 9999, height: 8, overflow: "hidden" }}>
-                <div style={{ height: 8, borderRadius: 9999, background: "linear-gradient(90deg, #1c6dff, #6366f1)", width: "77%" }} />
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-              <span>Arsip Masuk Bln Ini: <strong>24 Boks</strong></span>
-              <span>Retensi 2026: <strong>12 Boks</strong></span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── 7. Log Transaksi Terkini Lintas Modul dengan Filter Chips ── */}
-      <div className="card" style={{ marginTop: 0, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 10 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Aktivitas & Transaksi Terkini Lintas Modul</div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>
-              Daftar pengajuan terbaru yang masuk ke sistem
-            </div>
-          </div>
-
-          {/* Quick Status Filter Chips */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {[
-              { key: "ALL", label: `Semua (${recentActivities.length})` },
-              { key: "PENDING", label: `Menunggu (${pendingActivities.length})` },
-              { key: "COMPLETED", label: `Selesai (${completedActivities.length})` },
-              { key: "REJECTED", label: `Ditolak (${rejectedActivities.length})` },
-            ].map((chip) => {
-              const active = tableStatusFilter === chip.key;
-              return (
-                <button
-                  key={chip.key}
-                  type="button"
-                  onClick={() => setTableStatusFilter(chip.key as any)}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: 20,
-                    fontSize: "0.74rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    border: active ? "none" : "1px solid var(--border-subtle)",
-                    background: active ? "var(--gradient-primary)" : "var(--bg-surface-alt)",
-                    color: active ? "#fff" : "var(--text-secondary)",
-                    boxShadow: active ? "0 2px 8px rgba(20,80,201,0.25)" : "none",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {chip.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {displayedActivities.length === 0 ? (
-          <p className="text-secondary" style={{ fontSize: "0.84rem", padding: "20px 0", textAlign: "center" }}>
-            Tidak ada transaksi dengan status yang dipilih.
-          </p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data-table" style={{ fontSize: "0.82rem" }}>
-              <thead>
-                <tr>
-                  <th>No. Dokumen</th>
-                  <th>Modul</th>
-                  <th>Pemohon & Divisi</th>
-                  <th>Rincian / Keperluan</th>
-                  <th>Tanggal</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedActivities.slice(0, 8).map((item) => (
-                  <tr key={`${item.modul}-${item.id}`}>
-                    <td style={{ fontWeight: 700, fontFamily: "monospace" }}>
-                      <Link href={item.href} style={{ color: "var(--blue-500)", textDecoration: "none" }}>
-                        {item.nomor}
-                      </Link>
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          fontSize: "0.72rem",
-                          fontWeight: 700,
-                          padding: "3px 8px",
-                          borderRadius: 6,
-                          background: item.modulColor,
-                          color: "#fff",
-                        }}
-                      >
-                        {item.modul}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{item.pemohon}</div>
-                      <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>{item.divisi}</div>
-                    </td>
-                    <td>{item.keperluan}</td>
-                    <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                      {formatDate(item.tanggal)}
-                    </td>
-                    <td>
-                      <span className={`badge ${item.badgeClass}`}>{item.status}</span>
-                    </td>
-                  </tr>
+          <button type="button" className={styles.refreshButton} onClick={() => setRefreshToken((value) => value + 1)} disabled={loading} title="Muat ulang data dashboard" aria-label="Muat ulang data dashboard">
+            <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
+          </button>
+          <div className={styles.quickAction} ref={quickRef}>
+            <button type="button" className={styles.primaryButton} onClick={() => setQuickOpen((value) => !value)} aria-expanded={quickOpen}><Plus aria-hidden="true" />Buat Pengajuan</button>
+            {quickOpen && (
+              <div className={styles.quickMenu}>
+                <div className={styles.quickMenuHeading}>Pilih modul pengajuan</div>
+                {visibleModules.map(({ key, label, Icon, transactionHref }) => (
+                  <Link key={key} href={transactionHref} onClick={() => setQuickOpen(false)}><span><Icon aria-hidden="true" /></span>{label}<ChevronRight aria-hidden="true" /></Link>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ─── Main exported component ───────────────────────────────────────────────────
-interface Props {
-  me: Me;
-}
-
-export default function DashboardContent({ me }: Props) {
-  const isKpu    = me.role === "KPU";
-  const isNonKpu = !isKpu;
-  const isGaAdmin = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
-
-  const [activeTab, setActiveTab] = useState<DashTab>("all");
-  const [stats, setStats] = useState<AllStats>({
-    ekspedisi: null, room: null, vehicle: null,
-    atk: null, maint: null, arsip: null, loading: true,
-  });
-
-  const [roomSchedules, setRoomSchedules] = useState<BookingRuang[]>([]);
-  const [vehSchedules, setVehSchedules] = useState<BookingKendaraan[]>([]);
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
-
-  // Interactive filters states
-  const [selectedDivisi, setSelectedDivisi] = useState<string>("ALL");
-  const [selectedDirektorat, setSelectedDirektorat] = useState<string>("ALL");
-  const [selectedDepartemen, setSelectedDepartemen] = useState<string>("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>(currentYearMonth());
-  const [periodDisplayLabel, setPeriodDisplayLabel] = useState<string>(`Bulan Ini (${currentYearMonth()})`);
-  const [orgData, setOrgData] = useState<OrgStructure | null>(null);
-  const [showQuickActionModal, setShowQuickActionModal] = useState(false);
-
-  useEffect(() => {
-    api.orgStructure().then(setOrgData).catch(() => {});
-  }, []);
-
-  const loadStats = useCallback(async (
-    customDiv?: string,
-    customDir?: string,
-    customDep?: string,
-    customPeriod?: string
-  ) => {
-    const today = todayLocalDate();
-    setStats((prev) => ({ ...prev, loading: true }));
-
-    const activePeriod = customPeriod !== undefined ? (customPeriod === "ALL" ? undefined : customPeriod) : (selectedPeriod === "ALL" ? undefined : selectedPeriod);
-    const activeDiv = customDiv !== undefined ? (customDiv === "ALL" ? undefined : customDiv) : (selectedDivisi === "ALL" ? undefined : selectedDivisi);
-    const activeDir = customDir !== undefined ? (customDir === "ALL" ? undefined : customDir) : (selectedDirektorat === "ALL" ? undefined : selectedDirektorat);
-    const activeDep = customDep !== undefined ? (customDep === "ALL" ? undefined : customDep) : (selectedDepartemen === "ALL" ? undefined : selectedDepartemen);
-
-    // Helper: convert countsByStatus to ModuleStats
-    const toStats = (
-      counts: Record<string, number>,
-      onApproval: string[],
-      approved: string,
-      rejected: string[]
-    ): ModuleStats => ({
-      pending:   onApproval.reduce((s, k) => s + (counts[k] ?? 0), 0),
-      completed: counts[approved] ?? 0,
-      rejected:  rejected.reduce((s, k) => s + (counts[k] ?? 0), 0),
-    });
-
-    const bookingOnApproval = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
-    const bookingApproved   = "APPROVED_GA_APPROVAL";
-    const bookingRejected   = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
-
-    const [ekspRes, atkRes] = await Promise.allSettled([
-      api.getPengirimanStats(activePeriod, activeDiv, activeDir, activeDep),
-      api.getAtkStats(activePeriod, activeDiv, activeDir, activeDep),
-    ]);
-
-    const ekspStats: ModuleStats | null = ekspRes.status === "fulfilled"
-      ? {
-          pending:   (ekspRes.value.waitingL1 ?? 0) + (ekspRes.value.waitingGa ?? 0) + (ekspRes.value.waitingGaApproval ?? 0) + (ekspRes.value.waitingKpu ?? 0),
-          completed: ekspRes.value.countsByStatus?.COMPLETED ?? 0,
-          rejected:  (ekspRes.value.countsByStatus?.REJECTED_L1 ?? 0) + (ekspRes.value.countsByStatus?.REJECTED_GA ?? 0) + (ekspRes.value.countsByStatus?.REJECTED_GA_APPROVAL ?? 0) + (ekspRes.value.countsByStatus?.REJECTED_KPU ?? 0),
-          totalBulanIni: ekspRes.value.totalBulanIni != null ? Number(ekspRes.value.totalBulanIni) : null,
-        }
-      : null;
-
-    const atkStats: ModuleStats | null = atkRes.status === "fulfilled"
-      ? toStats(atkRes.value.countsByStatus as Record<string, number>, bookingOnApproval, bookingApproved, ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL"])
-      : null;
-
-    if (!isNonKpu) {
-      setStats({ ekspedisi: ekspStats, room: null, vehicle: null, atk: atkStats, maint: null, arsip: null, loading: false });
-      return;
-    }
-
-    const [roomRes, vehRes, maintRes, arsipRes] = await Promise.allSettled([
-      api.getBookingStats(activePeriod, activeDiv, activeDir, activeDep),
-      api.getKendaraanStats(activePeriod, activeDiv, activeDir, activeDep),
-      api.getSaranaStats(activePeriod, activeDiv, activeDir, activeDep),
-      api.getArsipStats(activePeriod, activeDiv, activeDir, activeDep),
-    ]);
-
-    setStats({
-      ekspedisi: ekspStats,
-      room:   roomRes.status  === "fulfilled" ? toStats(roomRes.value.countsByStatus  as Record<string, number>, bookingOnApproval, bookingApproved, bookingRejected) : null,
-      vehicle: vehRes.status  === "fulfilled" ? toStats(vehRes.value.countsByStatus   as Record<string, number>, bookingOnApproval, bookingApproved, bookingRejected) : null,
-      atk:    atkStats,
-      maint:  maintRes.status === "fulfilled" ? toStats(maintRes.value.countsByStatus as Record<string, number>, bookingOnApproval, bookingApproved, bookingRejected) : null,
-      arsip:  arsipRes.status === "fulfilled" ? toStats(arsipRes.value.countsByStatus as Record<string, number>, bookingOnApproval, bookingApproved, bookingRejected) : null,
-      loading: false,
-    });
-
-    // Load Live Schedules for Today
-    try {
-      const [rooms, vehicles] = await Promise.allSettled([
-        api.getBookingSchedule(today),
-        api.getKendaraanSchedule(today),
-      ]);
-      if (rooms.status === "fulfilled") setRoomSchedules(rooms.value || []);
-      if (vehicles.status === "fulfilled") setVehSchedules(vehicles.value || []);
-    } catch {
-      // ignore
-    }
-
-    // Load Recent Activity Streams
-    try {
-      const [ekspList, roomList, vehList] = await Promise.allSettled([
-        api.listPengiriman({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
-        api.listBooking({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
-        api.listKendaraanBooking({ limit: 8, divisi: activeDiv, direktorat: activeDir }),
-      ]);
-
-      const items: RecentActivity[] = [];
-
-      if (ekspList.status === "fulfilled" && ekspList.value.items) {
-        ekspList.value.items.forEach((p) => {
-          items.push({
-            id: p.id,
-            modul: "Ekspedisi",
-            modulColor: "#1450c9",
-            nomor: p.nomorTransmittal || `EXP-${p.id}`,
-            keperluan: p.tujuanPenerimaan || p.catatan || "Pengiriman Dokumen / Barang",
-            pemohon: p.namaPenerima || p.divisi,
-            divisi: p.divisi,
-            tanggal: p.tanggal,
-            status: p.status === "COMPLETED" ? "Approved" : p.status,
-            badgeClass: p.status === "COMPLETED" ? "badge-completed" : p.status.includes("REJECT") ? "badge-rejected" : "badge-submitted",
-            href: "/ekspedisi/transaksi",
-          });
-        });
-      }
-
-      if (roomList.status === "fulfilled" && roomList.value.items) {
-        roomList.value.items.forEach((r) => {
-          items.push({
-            id: r.id,
-            modul: "Room Booking",
-            modulColor: "#10b981",
-            nomor: r.nomorPemesanan || `BRM-${r.id}`,
-            keperluan: r.namaKegiatan,
-            pemohon: r.pic || r.divisi,
-            divisi: r.divisi,
-            tanggal: r.tanggal,
-            status: r.status === "APPROVED_GA_APPROVAL" ? "Approved" : r.status,
-            badgeClass: r.status === "APPROVED_GA_APPROVAL" ? "badge-completed" : r.status.includes("REJECT") ? "badge-rejected" : "badge-submitted",
-            href: "/booking-ruang-meeting/transaksi",
-          });
-        });
-      }
-
-      if (vehList.status === "fulfilled" && vehList.value.items) {
-        vehList.value.items.forEach((v) => {
-          items.push({
-            id: v.id,
-            modul: "Vehicle",
-            modulColor: "#f59e0b",
-            nomor: v.nomorPemesanan || `BKV-${v.id}`,
-            keperluan: v.keperluan,
-            pemohon: v.pic || v.divisi,
-            divisi: v.divisi,
-            tanggal: v.tanggal,
-            status: v.status === "APPROVED_GA_APPROVAL" ? "Approved" : v.status,
-            badgeClass: v.status === "APPROVED_GA_APPROVAL" ? "badge-completed" : v.status.includes("REJECT") ? "badge-rejected" : "badge-submitted",
-            href: "/booking-kendaraan/transaksi",
-          });
-        });
-      }
-
-      items.sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
-      setRecentActivities(items);
-    } catch {
-      // ignore
-    }
-  }, [isNonKpu, selectedDivisi, selectedDirektorat, selectedDepartemen, selectedPeriod]);
-
-  useEffect(() => { loadStats(); }, [loadStats]);
-
-  const handlePeriodChange = (newPeriod: string, label: string) => {
-    setSelectedPeriod(newPeriod);
-    setPeriodDisplayLabel(label);
-    loadStats(selectedDivisi, selectedDirektorat, selectedDepartemen, newPeriod);
-  };
-
-  const handleStatusChange = (newStatus: string) => {
-    setSelectedStatus(newStatus);
-  };
-
-  const handleDivisiChange = (newDiv: string) => {
-    setSelectedDivisi(newDiv);
-    setSelectedDepartemen("ALL");
-    loadStats(newDiv, selectedDirektorat, "ALL", selectedPeriod);
-  };
-
-  const handleDirektoratChange = (newDir: string) => {
-    setSelectedDirektorat(newDir);
-    setSelectedDivisi("ALL");
-    setSelectedDepartemen("ALL");
-    loadStats("ALL", newDir, "ALL", selectedPeriod);
-  };
-
-  const handleDepartemenChange = (newDep: string) => {
-    setSelectedDepartemen(newDep);
-    loadStats(selectedDivisi, selectedDirektorat, newDep, selectedPeriod);
-  };
-
-  const handleResetFilters = () => {
-    setSelectedStatus("ALL");
-    setSelectedDirektorat("ALL");
-    setSelectedDivisi("ALL");
-    setSelectedDepartemen("ALL");
-    loadStats("ALL", "ALL", "ALL", selectedPeriod);
-  };
-
-  const visibleTabs = ALL_TABS.filter((t) => !isKpu || !t.kpuHidden);
-
-  return (
-    <>
-      {/* ── Tab bar — full-width 1 baris, responsive ── */}
-      <div style={{ width: "100%", overflowX: "auto", marginBottom: 20 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))`,
-            gap: 8,
-            width: "100%",
-            minWidth: visibleTabs.length > 3 ? 720 : "auto",
-          }}
-        >
-          {visibleTabs.map((t) => {
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setActiveTab(t.key)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  padding: "10px 10px",
-                  borderRadius: 10,
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "all .15s",
-                  width: "100%",
-                  background: isActive ? "var(--gradient-primary)" : "var(--bg-surface)",
-                  color: isActive ? "#fff" : "var(--text-secondary)",
-                  border: isActive ? "none" : "1px solid var(--border-subtle)",
-                  boxShadow: isActive ? "0 4px 14px rgba(20,80,201,0.3)" : "none",
-                }}
-              >
-                {t.icon}
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
         </div>
-      </div>
+      </section>
 
-      {/* ── Keseluruhan ── */}
-      {activeTab === "all" && (
-        <PaneAll
-          stats={stats}
-          isKpu={isKpu}
-          me={me}
-          roomSchedules={roomSchedules}
-          vehSchedules={vehSchedules}
-          recentActivities={recentActivities}
-          onOpenQuickAction={() => setShowQuickActionModal(true)}
-          onSelectTab={(tab: DashTab) => setActiveTab(tab)}
-          selectedPeriod={selectedPeriod}
-          periodDisplayLabel={periodDisplayLabel}
-          onPeriodChange={handlePeriodChange}
-          selectedStatus={selectedStatus}
-          onStatusChange={handleStatusChange}
-          selectedDirektorat={selectedDirektorat}
-          onDirektoratChange={handleDirektoratChange}
-          selectedDivisi={selectedDivisi}
-          onDivisiChange={handleDivisiChange}
-          selectedDepartemen={selectedDepartemen}
-          onDepartemenChange={handleDepartemenChange}
-          onResetFilters={handleResetFilters}
-          orgData={orgData}
-        />
+      {state.errors > 0 && !loading && <div className={styles.partialWarning} role="status"><AlertTriangle aria-hidden="true" />Sebagian data belum dapat dimuat. Gunakan tombol muat ulang untuk mencoba kembali.</div>}
+      {totals.actionable > 0 && (
+        <section className={styles.attentionBanner}>
+          <span className={styles.attentionIcon}><Clock3 aria-hidden="true" /></span>
+          <div><strong>{totals.actionable.toLocaleString("id-ID")} permohonan memerlukan tindakan Anda</strong><span>Antrean disusun dari permohonan yang paling lama menunggu.</span></div>
+          <a href="#dashboard-action-queue">Buka antrean <ArrowRight aria-hidden="true" /></a>
+        </section>
       )}
 
-      {/* ── Ekspedisi ── */}
-      {activeTab === "ekspedisi" && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.ekspedisi?.completed ?? 0} label="Selesai" />
-            <StatTile value={stats.ekspedisi?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.ekspedisi?.rejected ?? 0}  label="Ditolak" />
-            <StatTile
-              value={stats.ekspedisi?.totalBulanIni ? formatCurrency(stats.ekspedisi.totalBulanIni) : "Rp 0"}
-              label="Biaya Pengiriman Bulan Ini"
-              gradient="linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)"
-            />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Ekspedisi" href="/ekspedisi/transaksi" stats={stats.ekspedisi} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Ringkasan Logistik Kurir</div>
-                <Link href="/ekspedisi/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Kelola Resi →
-                </Link>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.83rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span className="text-secondary">Vendor Kurir:</span>
-                  <strong>JNE Express, KPU Logistik</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span className="text-secondary">Kota Tujuan Terbanyak:</span>
-                  <strong>Jakarta, Surabaya, Medan</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
-                  <span className="text-secondary">Rata-rata Ongkir:</span>
-                  <strong>Rp 245.000 / paket</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <section className={styles.kpiGrid} aria-label="Ringkasan dashboard">
+        <KpiCard label="Perlu Tindakan" value={totals.actionable} helper={`Untuk ${ROLE_LABEL_FULL[me.role]}`} Icon={Clock3} tone="warning" />
+        <KpiCard label="Total Pengajuan" value={totals.total} helper={month ? "Pada periode terpilih" : "Semua periode"} Icon={FileText} tone="primary" />
+        <KpiCard label="Selesai" value={totals.completed} helper={`${completionRate}% tingkat penyelesaian`} Icon={CheckCircle2} tone="success" />
+        <KpiCard label="Ditolak / Dibatalkan" value={totals.rejected} helper="Akumulasi seluruh modul" Icon={CircleX} tone="danger" />
+      </section>
 
-      {/* ── Room Booking ── */}
-      {activeTab === "room" && !isKpu && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.room?.completed ?? 0} label="Disetujui" />
-            <StatTile value={stats.room?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.room?.rejected ?? 0}  label="Ditolak" />
-            <StatTile value={(stats.room?.completed ?? 0) + (stats.room?.pending ?? 0) + (stats.room?.rejected ?? 0)} label="Total Bulan Ini" />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Room Booking" href="/booking-ruang-meeting/transaksi" stats={stats.room} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Jadwal Ruang Hari Ini</div>
-                <Link href="/booking-ruang-meeting/calendar" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Kalender →
-                </Link>
-              </div>
-              {roomSchedules.length === 0 ? (
-                <p className="text-secondary" style={{ fontSize: "0.85rem" }}>Tidak ada rapat hari ini.</p>
+      <section className={`${styles.moduleGrid} ${visibleModules.length === 2 ? styles.twoModules : ""}`} aria-label="Ringkasan modul">
+        {visibleModules.map(({ key, label, Icon, overviewHref }) => {
+          const summary = state.summaries[key];
+          return (
+            <Link key={key} href={overviewHref} className={styles.moduleCard}>
+              <span className={styles.moduleIcon}><Icon aria-hidden="true" /></span>
+              <span className={styles.moduleText}><strong>{label}</strong><small>{summary.failed ? "Data tidak tersedia" : `${summary.total.toLocaleString("id-ID")} transaksi`}</small></span>
+              {summary.actionable > 0 && <span className={styles.moduleBadge}>{summary.actionable}</span>}
+              <ChevronRight className={styles.moduleArrow} aria-hidden="true" />
+            </Link>
+          );
+        })}
+      </section>
+
+      <div className={`${styles.workspace} ${me.role === "KPU" ? styles.workspaceKpu : ""}`}>
+        <div className={styles.leftColumn}>
+          <section className={styles.panel} id="dashboard-action-queue">
+            <header className={styles.panelHeader}>
+              <div><h2>Perlu Tindakan Saya</h2><p>Permohonan yang sedang menunggu tahap kerja Anda</p></div>
+              <span className={styles.panelCount}>{totals.actionable.toLocaleString("id-ID")} antrean</span>
+            </header>
+            {loading && state.queue.length === 0 ? <div className={styles.emptyState}>Memuat antrean tindakan...</div>
+              : state.queue.length === 0 ? (
+                <div className={styles.emptyState}><PackageCheck aria-hidden="true" /><strong>Tidak ada antrean</strong><span>Semua permohonan untuk tahap Anda sudah ditangani.</span></div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {roomSchedules.slice(0, 3).map((r) => (
-                    <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 6 }}>
-                      <div>
-                        <strong>{r.namaRuang}</strong>: {r.namaKegiatan}
-                      </div>
-                      <span className="badge badge-completed">{formatTimeRange(r.jamMulai, r.jamSelesai, r.isWholeDay)}</span>
-                    </div>
+                <div className={styles.queueList}>
+                  {state.queue.slice(0, 5).map((item) => (
+                    <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
+                      <div className={styles.queueDocument}><span className={`${styles.moduleTag} ${styles[item.moduleKey]}`}>{item.moduleLabel}</span><strong>{item.number}</strong></div>
+                      <div className={styles.queueRequest}><strong>{item.title}</strong><span>{item.requester} · {item.unit}</span></div>
+                      <span className={`${styles.ageBadge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
+                      <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>
+                    </Link>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </>
-      )}
+          </section>
 
-      {/* ── Vehicle Booking ── */}
-      {activeTab === "vehicle" && !isKpu && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.vehicle?.completed ?? 0} label="Disetujui" />
-            <StatTile value={stats.vehicle?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.vehicle?.rejected ?? 0}  label="Ditolak" />
-            <StatTile value={(stats.vehicle?.completed ?? 0) + (stats.vehicle?.pending ?? 0) + (stats.vehicle?.rejected ?? 0)} label="Total Bulan Ini" />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Vehicle Booking" href="/booking-kendaraan/transaksi" stats={stats.vehicle} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Operasional Armada Hari Ini</div>
-                <Link href="/booking-kendaraan/calendar" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Kalender →
-                </Link>
-              </div>
-              {vehSchedules.length === 0 ? (
-                <p className="text-secondary" style={{ fontSize: "0.85rem" }}>Semua kendaraan standby di pool.</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {vehSchedules.slice(0, 3).map((v) => (
-                    <div key={v.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 6 }}>
-                      <div>
-                        <strong>{v.namaKendaraan}</strong>: {v.keperluan}
-                      </div>
-                      <span className="badge badge-completed">{v.supir || "Mandiri"}</span>
+          <section className={styles.performancePanel}>
+            <header><div><h2>Kinerja Periode Ini</h2><p>Status keseluruhan dari {visibleModules.length} modul yang dapat Anda akses</p></div><strong>{totals.total.toLocaleString("id-ID")} pengajuan</strong></header>
+            <div className={styles.progressTrack} aria-label={`${completionRate}% pengajuan selesai`}>
+              <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
+              <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
+              <span className={styles.progressRejected} style={{ width: `${progressWidths.rejected}%` }} />
+            </div>
+            <div className={styles.progressLegend}>
+              <span><i className={styles.legendCompleted} />Selesai <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendPending} />Diproses <strong>{totals.pending.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendRejected} />Ditolak/Batal <strong>{totals.rejected.toLocaleString("id-ID")}</strong></span>
+            </div>
+          </section>
+        </div>
+
+        <aside className={styles.rightColumn}>
+          {me.role !== "KPU" && (
+            <section className={styles.panel}>
+              <header className={styles.panelHeader}>
+                <div><h2>Jadwal Hari Ini</h2><p>Ruang meeting dan kendaraan operasional</p></div>
+                <div className={styles.scheduleTabs}>
+                  {(["all", "room", "vehicle"] as const).map((tab) => <button key={tab} type="button" className={scheduleTab === tab ? styles.scheduleTabActive : ""} onClick={() => setScheduleTab(tab)}>{tab === "all" ? "Semua" : tab === "room" ? "Ruang" : "Kendaraan"}</button>)}
+                </div>
+              </header>
+              <div className={styles.scheduleList}>
+                {loading && state.schedules.length === 0 ? <div className={styles.compactEmpty}>Memuat jadwal...</div>
+                  : filteredSchedules.length === 0 ? <div className={styles.compactEmpty}>Tidak ada jadwal pada kategori ini.</div>
+                  : filteredSchedules.slice(0, 4).map((item) => (
+                    <div key={item.id} className={styles.scheduleRow}>
+                      <span className={styles.scheduleTime}>{item.time}</span><span className={`${styles.scheduleRail} ${item.kind === "vehicle" ? styles.vehicleRail : ""}`} />
+                      <span className={styles.scheduleDetail}><strong>{item.title}</strong><small>{item.detail}</small></span><span className={styles.resourceBadge}>{item.resource}</span>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── Office Supplies ── */}
-      {activeTab === "atk" && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.atk?.completed ?? 0} label="Selesai" />
-            <StatTile value={stats.atk?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.atk?.rejected ?? 0}  label="Ditolak" />
-            <StatTile value={(stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0)} label="Total Bulan Ini" />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Office Supplies" href="/office-supplies/transaksi" stats={stats.atk} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Kesehatan Inventaris Gudang</div>
-                <Link href="/office-supplies/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Stok →
-                </Link>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Kertas HVS A4</span>
-                  <span className="badge badge-rejected">Sisa 4 Rim</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Toner HP LaserJet</span>
-                  <span className="badge badge-rejected">Sisa 1 Box</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Spidol Boardmarker</span>
-                  <span className="badge badge-submitted">Sisa 6 Pcs</span>
-                </div>
-              </div>
+            </section>
+          )}
+
+          <section className={styles.panel}>
+            <header className={styles.panelHeader}><div><h2>Aktivitas Terbaru</h2><p>Pembaruan status lintas modul</p></div></header>
+            <div className={styles.activityList}>
+              {loading && state.recent.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
+                : state.recent.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
+                : state.recent.map((item) => (
+                  <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.activityRow}>
+                    <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
+                    <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
+                  </Link>
+                ))}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* ── Maintenance ── */}
-      {activeTab === "maint" && !isKpu && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.maint?.completed ?? 0} label="Disetujui" />
-            <StatTile value={stats.maint?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.maint?.rejected ?? 0}  label="Ditolak" />
-            <StatTile value={(stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0)} label="Total Bulan Ini" />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Maintenance" href="/maintenance/transaksi" stats={stats.maint} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>SLA & Kategori Perbaikan</div>
-                <Link href="/maintenance/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Lapor →
-                </Link>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Pendingin Ruangan (AC)</span>
-                  <span className="badge badge-submitted">3 Tiket</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Kelistrikan & Penerangan</span>
-                  <span className="badge badge-completed">1 Tiket</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Plumbing / Saluran Air</span>
-                  <span className="badge badge-completed">2 Tiket</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── Archive ── */}
-      {activeTab === "arsip" && !isKpu && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 20 }}>
-            <StatTile value={stats.arsip?.completed ?? 0} label="Disetujui" />
-            <StatTile value={stats.arsip?.pending ?? 0}   label="Menunggu Approval" />
-            <StatTile value={stats.arsip?.rejected ?? 0}  label="Ditolak" />
-            <StatTile value={(stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0)} label="Total Bulan Ini" />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <ModuleStatCard title="Archive" href="/arsip/transaksi" stats={stats.arsip} loading={stats.loading} />
-            <div className="card" style={{ marginTop: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Penyimpanan & Retensi Arsip</div>
-                <Link href="/arsip/transaksi" style={{ fontSize: "0.78rem", color: "var(--blue-500)", textDecoration: "none" }}>
-                  Katalog →
-                </Link>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.82rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Kapasitas Rak Terpakai:</span>
-                  <strong>385 / 500 Boks (77%)</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: "1px solid var(--border-subtle)" }}>
-                  <span>Dokumen SOP & Kebijakan:</span>
-                  <strong>120 Boks</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Kontrak & Laporan Keuangan:</span>
-                  <strong>265 Boks</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── Quick Action Modal Launcher ── */}
-      {showQuickActionModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(5, 11, 26, 0.6)",
-            backdropFilter: "blur(4px)",
-            zIndex: 999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-          onClick={() => setShowQuickActionModal(false)}
-        >
-          <div
-            className="card"
-            style={{ maxWidth: 520, width: "100%", padding: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>Buat Permohonan Layanan GA</div>
-              <button
-                type="button"
-                onClick={() => setShowQuickActionModal(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
-              >
-                <X width={18} height={18} />
-              </button>
-            </div>
-            <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: 16 }}>
-              Pilih modul operasional yang ingin Anda buat pengajuannya:
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-              <Link
-                href="/ekspedisi/transaksi"
-                onClick={() => setShowQuickActionModal(false)}
-                style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-              >
-                <div style={{ fontWeight: 700, color: "#1450c9", fontSize: "0.85rem", marginBottom: 2 }}>📦 Ekspedisi</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Kirim surat/kargo via kurir</div>
-              </Link>
-
-              {!isKpu && (
-                <Link
-                  href="/booking-ruang-meeting/transaksi"
-                  onClick={() => setShowQuickActionModal(false)}
-                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-                >
-                  <div style={{ fontWeight: 700, color: "#10b981", fontSize: "0.85rem", marginBottom: 2 }}>🏢 Ruang Meeting</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Pesan ruang rapat & proyektor</div>
-                </Link>
-              )}
-
-              {!isKpu && (
-                <Link
-                  href="/booking-kendaraan/transaksi"
-                  onClick={() => setShowQuickActionModal(false)}
-                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-                >
-                  <div style={{ fontWeight: 700, color: "#f59e0b", fontSize: "0.85rem", marginBottom: 2 }}>🚗 Kendaraan Dinas</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Peminjaman mobil & supir</div>
-                </Link>
-              )}
-
-              <Link
-                href="/office-supplies/transaksi"
-                onClick={() => setShowQuickActionModal(false)}
-                style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-              >
-                <div style={{ fontWeight: 700, color: "#6366f1", fontSize: "0.85rem", marginBottom: 2 }}>✏️ ATK & Logistik</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Permintaan perlengkapan kantor</div>
-              </Link>
-
-              {!isKpu && (
-                <Link
-                  href="/maintenance/transaksi"
-                  onClick={() => setShowQuickActionModal(false)}
-                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-                >
-                  <div style={{ fontWeight: 700, color: "#8b5cf6", fontSize: "0.85rem", marginBottom: 2 }}>🔧 Servis Sarana</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Lapor kerusakan AC/Listrik/Gedung</div>
-                </Link>
-              )}
-
-              {!isKpu && (
-                <Link
-                  href="/arsip/transaksi"
-                  onClick={() => setShowQuickActionModal(false)}
-                  style={{ textDecoration: "none", padding: 12, borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--bg-surface-alt)", display: "block" }}
-                >
-                  <div style={{ fontWeight: 700, color: "#059669", fontSize: "0.85rem", marginBottom: 2 }}>📁 Serah Terima Arsip</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Penyimpanan berkas ke gudang</div>
-                </Link>
-              )}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => setShowQuickActionModal(false)}
-                style={{
-                  padding: "6px 16px",
-                  borderRadius: 8,
-                  fontSize: "0.8rem",
-                  border: "1px solid var(--border-subtle)",
-                  background: "var(--bg-surface)",
-                  cursor: "pointer",
-                }}
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+          </section>
+        </aside>
+      </div>
+    </div>
   );
 }
-
-
