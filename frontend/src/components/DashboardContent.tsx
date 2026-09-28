@@ -23,6 +23,11 @@ import {
   Star,
   X,
   RotateCw,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { currentYearMonth, formatCurrency, formatDate, formatTimeRange, todayLocalDate } from "@/lib/format";
@@ -464,12 +469,19 @@ function PaneAll({
   vehSchedules,
   recentActivities,
   onOpenQuickAction,
-  selectedModul,
-  setSelectedModul,
+  onSelectTab,
+  selectedPeriod,
+  periodDisplayLabel,
+  onPeriodChange,
+  selectedStatus,
+  onStatusChange,
   selectedDirektorat,
   onDirektoratChange,
   selectedDivisi,
   onDivisiChange,
+  selectedDepartemen,
+  onDepartemenChange,
+  onResetFilters,
   orgData,
 }: {
   stats: AllStats;
@@ -479,12 +491,19 @@ function PaneAll({
   vehSchedules: BookingKendaraan[];
   recentActivities: RecentActivity[];
   onOpenQuickAction: () => void;
-  selectedModul: string;
-  setSelectedModul: (m: string) => void;
+  onSelectTab: (tab: DashTab) => void;
+  selectedPeriod: string;
+  periodDisplayLabel: string;
+  onPeriodChange: (p: string, lbl: string) => void;
+  selectedStatus: string;
+  onStatusChange: (s: string) => void;
   selectedDirektorat: string;
   onDirektoratChange: (d: string) => void;
   selectedDivisi: string;
   onDivisiChange: (v: string) => void;
+  selectedDepartemen: string;
+  onDepartemenChange: (dep: string) => void;
+  onResetFilters: () => void;
   orgData: OrgStructure | null;
 }) {
   const donutRef  = useRef<HTMLCanvasElement>(null);
@@ -496,6 +515,14 @@ function PaneAll({
   // Status Filter Chips for Table
   const [tableStatusFilter, setTableStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED" | "REJECTED">("ALL");
 
+  // Popover States for Filters
+  const [showPeriodPicker, setShowPeriodPicker] = useState(false);
+  const [periodTab, setPeriodTab] = useState<"tanggal" | "bulan" | "tahun">("bulan");
+  const [periodYear, setPeriodYear] = useState<number>(new Date().getFullYear());
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [showFilterLainnya, setShowFilterLainnya] = useState(false);
+
   const availableDivisi = useMemo(() => {
     if (!orgData) return [];
     if (selectedDirektorat === "ALL") return orgData.divisi;
@@ -503,8 +530,29 @@ function PaneAll({
     return dirNode ? dirNode.divisi.map((v) => v.nama) : orgData.divisi;
   }, [orgData, selectedDirektorat]);
 
+  const availableDepartemen = useMemo(() => {
+    if (!orgData) return [];
+    if (selectedDivisi !== "ALL") {
+      for (const dir of orgData.direktoratTree || []) {
+        const divNode = dir.divisi.find((v) => v.nama === selectedDivisi);
+        if (divNode && divNode.departemen && divNode.departemen.length > 0) {
+          return divNode.departemen;
+        }
+      }
+    }
+    return orgData.departemen || [];
+  }, [orgData, selectedDivisi]);
+
+  const filterLainnyaCount =
+    (selectedStatus !== "ALL" ? 1 : 0) +
+    (selectedDirektorat !== "ALL" ? 1 : 0) +
+    (selectedDivisi !== "ALL" ? 1 : 0) +
+    (selectedDepartemen !== "ALL" ? 1 : 0);
+
   const activeDivisionText =
-    selectedDivisi !== "ALL"
+    selectedDepartemen !== "ALL"
+      ? `Dep. ${selectedDepartemen}`
+      : selectedDivisi !== "ALL"
       ? `Divisi ${selectedDivisi}`
       : selectedDirektorat !== "ALL"
       ? selectedDirektorat
@@ -526,24 +574,19 @@ function PaneAll({
   const grandTotal     = totalPending + totalCompleted + totalRejected;
   const totalCost      = stats.ekspedisi?.totalBulanIni ?? 0;
 
-  // Donut data based on selectedModul
-  let donutCompleted = 0;
-  let donutPending = 0;
-  let donutRejected = 0;
+  // Donut data based on overall totals
+  const donutCompleted = totalCompleted;
+  const donutPending   = totalPending;
+  const donutRejected  = totalRejected;
+  const donutTotal     = donutCompleted + donutPending + donutRejected;
 
-  if (selectedModul === "ALL") {
-    donutCompleted = totalCompleted;
-    donutPending = totalPending;
-    donutRejected = totalRejected;
-  } else {
-    const s = stats[selectedModul as keyof AllStats] as ModuleStats | null;
-    if (s) {
-      donutCompleted = s.completed;
-      donutPending = s.pending;
-      donutRejected = s.rejected;
+  useEffect(() => {
+    if (selectedStatus === "COMPLETED" || selectedStatus === "PENDING" || selectedStatus === "REJECTED") {
+      setTableStatusFilter(selectedStatus);
+    } else {
+      setTableStatusFilter("ALL");
     }
-  }
-  const donutTotal = donutCompleted + donutPending + donutRejected;
+  }, [selectedStatus]);
 
   // Donut
   useEffect(() => {
@@ -650,6 +693,632 @@ function PaneAll({
 
   return (
     <>
+      {/* ── Filter Bar: Filter Periode (Gambar 4/5) & Filter Lainnya ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 18,
+          position: "relative",
+          zIndex: 30,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {/* ── Filter Periode ── */}
+          <div style={{ position: "relative" }}>
+            <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: 4 }}>
+              Filter Periode
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPeriodPicker((v) => !v);
+                setShowFilterLainnya(false);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                background: "var(--bg-surface)",
+                border: showPeriodPicker ? "1.5px solid var(--blue-500)" : "1px solid var(--border-subtle)",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                minWidth: 160,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+              }}
+            >
+              <span>{periodDisplayLabel}</span>
+              {showPeriodPicker ? <ChevronUp width={15} height={15} /> : <ChevronDown width={15} height={15} />}
+            </button>
+
+            {/* Popover Kalender Periode (Gambar 4 & 5) */}
+            {showPeriodPicker && (
+              <div
+                className="card"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  width: 285,
+                  padding: 14,
+                  borderRadius: 12,
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+                  zIndex: 50,
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                {/* Segmented Control: Tanggal | Bulan | Tahun */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 3,
+                    background: "var(--bg-surface-alt)",
+                    padding: 3,
+                    borderRadius: 8,
+                    marginBottom: 14,
+                  }}
+                >
+                  {(["tanggal", "bulan", "tahun"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setPeriodTab(tab)}
+                      style={{
+                        padding: "6px 0",
+                        fontSize: "0.76rem",
+                        fontWeight: periodTab === tab ? 700 : 500,
+                        borderRadius: 6,
+                        border: "none",
+                        background: periodTab === tab ? "var(--bg-surface)" : "transparent",
+                        color: periodTab === tab ? "var(--blue-500)" : "var(--text-secondary)",
+                        cursor: "pointer",
+                        boxShadow: periodTab === tab ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                        textTransform: "capitalize",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {tab === "tanggal" ? "Tanggal" : tab === "bulan" ? "Bulan" : "Tahun"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tab: Bulan */}
+                {periodTab === "bulan" && (
+                  <div>
+                    {/* Header Year Picker */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                        padding: "0 4px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPeriodYear((y) => y - 1)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--text-secondary)",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 4,
+                        }}
+                      >
+                        <ChevronLeft width={16} height={16} />
+                      </button>
+                      <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--text-primary)" }}>
+                        {periodYear}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPeriodYear((y) => y + 1)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--text-secondary)",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 4,
+                        }}
+                      >
+                        <ChevronRight width={16} height={16} />
+                      </button>
+                    </div>
+
+                    {/* 3x4 Month Grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                      {[
+                        "Jan", "Feb", "Mar",
+                        "Apr", "Mei", "Jun",
+                        "Jul", "Agu", "Sep",
+                        "Okt", "Nov", "Des",
+                      ].map((mName, idx) => {
+                        const mStr = `${periodYear}-${String(idx + 1).padStart(2, "0")}`;
+                        const isSelected = selectedPeriod === mStr;
+                        return (
+                          <button
+                            key={mName}
+                            type="button"
+                            onClick={() => {
+                              onPeriodChange(mStr, `${mName} ${periodYear}`);
+                              setShowPeriodPicker(false);
+                            }}
+                            style={{
+                              padding: "10px 4px",
+                              borderRadius: 8,
+                              fontSize: "0.8rem",
+                              fontWeight: isSelected ? 700 : 500,
+                              background: isSelected ? "var(--blue-500)" : "var(--bg-surface-alt)",
+                              color: isSelected ? "#fff" : "var(--text-primary)",
+                              border: "none",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            {mName}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Quick Semua Periode button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onPeriodChange("ALL", "Semua Periode");
+                        setShowPeriodPicker(false);
+                      }}
+                      style={{
+                        width: "100%",
+                        marginTop: 10,
+                        padding: "7px 10px",
+                        borderRadius: 8,
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        background: selectedPeriod === "ALL" ? "var(--blue-500)" : "transparent",
+                        color: selectedPeriod === "ALL" ? "#fff" : "var(--text-secondary)",
+                        border: "1px solid var(--border-subtle)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Semua Periode
+                    </button>
+                  </div>
+                )}
+
+                {/* Tab: Tahun */}
+                {periodTab === "tahun" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, padding: "4px 0" }}>
+                    {[2024, 2025, 2026, 2027].map((y) => {
+                      const isSelected = selectedPeriod === String(y);
+                      return (
+                        <button
+                          key={y}
+                          type="button"
+                          onClick={() => {
+                            onPeriodChange(String(y), `Tahun ${y}`);
+                            setShowPeriodPicker(false);
+                          }}
+                          style={{
+                            padding: "12px 8px",
+                            borderRadius: 8,
+                            fontSize: "0.86rem",
+                            fontWeight: isSelected ? 700 : 600,
+                            background: isSelected ? "var(--blue-500)" : "var(--bg-surface-alt)",
+                            color: isSelected ? "#fff" : "var(--text-primary)",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {y}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Tab: Tanggal */}
+                {periodTab === "tanggal" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "block", marginBottom: 3 }}>
+                        Dari Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid var(--border-subtle)",
+                          fontSize: "0.78rem",
+                          background: "var(--bg-surface)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", color: "var(--text-secondary)", display: "block", marginBottom: 3 }}>
+                        Sampai Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid var(--border-subtle)",
+                          fontSize: "0.78rem",
+                          background: "var(--bg-surface)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (customStartDate) {
+                          const p = customStartDate.slice(0, 7);
+                          onPeriodChange(p, `${customStartDate} s/d ${customEndDate || customStartDate}`);
+                        }
+                        setShowPeriodPicker(false);
+                      }}
+                      style={{
+                        padding: "7px 12px",
+                        borderRadius: 8,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        background: "var(--blue-500)",
+                        color: "#fff",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Terapkan Tanggal
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Filter Lainnya (Status, Direktorat, Divisi, Departemen) ── */}
+          <div style={{ position: "relative" }}>
+            <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: 4 }}>
+              Filter Lainnya
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowFilterLainnya((v) => !v);
+                setShowPeriodPicker(false);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                background: "var(--bg-surface)",
+                border: showFilterLainnya ? "1.5px solid var(--blue-500)" : "1px solid var(--border-subtle)",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                minWidth: 160,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span>{filterLainnyaCount > 0 ? `${filterLainnyaCount} Filter Aktif` : "Semua Filter"}</span>
+                {filterLainnyaCount > 0 && (
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: "var(--blue-500)",
+                      color: "#fff",
+                      fontSize: "0.68rem",
+                      fontWeight: 800,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {filterLainnyaCount}
+                  </span>
+                )}
+              </span>
+              {showFilterLainnya ? <ChevronUp width={15} height={15} /> : <ChevronDown width={15} height={15} />}
+            </button>
+
+            {/* Popover Filter Lainnya */}
+            {showFilterLainnya && (
+              <div
+                className="card"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  width: 320,
+                  padding: 16,
+                  borderRadius: 12,
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+                  zIndex: 50,
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "var(--text-primary)" }}>
+                    Filter Tambahan
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterLainnya(false)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+                  >
+                    <X width={16} height={16} />
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {/* 1. Status */}
+                  <div>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                      Status
+                    </label>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => onStatusChange(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 10px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        border: "1px solid var(--border-subtle)",
+                        background: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="ALL">Semua Status</option>
+                      <option value="COMPLETED">Selesai (Completed)</option>
+                      <option value="PENDING">Menunggu Approval (Pending)</option>
+                      <option value="REJECTED">Ditolak (Rejected)</option>
+                    </select>
+                  </div>
+
+                  {/* 2. Direktorat */}
+                  <div>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                      Direktorat
+                    </label>
+                    <select
+                      value={selectedDirektorat}
+                      onChange={(e) => onDirektoratChange(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 10px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        border: "1px solid var(--border-subtle)",
+                        background: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="ALL">Semua Direktorat</option>
+                      {orgData?.direktorat?.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. Divisi */}
+                  <div>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                      Divisi
+                    </label>
+                    <select
+                      value={selectedDivisi}
+                      onChange={(e) => onDivisiChange(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 10px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        border: "1px solid var(--border-subtle)",
+                        background: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="ALL">Semua Divisi</option>
+                      {availableDivisi.map((div) => (
+                        <option key={div} value={div}>{div}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 4. Departemen */}
+                  <div>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                      Departemen
+                    </label>
+                    <select
+                      value={selectedDepartemen}
+                      onChange={(e) => onDepartemenChange(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 10px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        border: "1px solid var(--border-subtle)",
+                        background: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="ALL">Semua Departemen</option>
+                      {availableDepartemen.map((dep) => (
+                        <option key={dep} value={dep}>{dep}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, paddingTop: 10, borderTop: "1px solid var(--border-subtle)" }}>
+                    <button
+                      type="button"
+                      onClick={onResetFilters}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-secondary)",
+                        fontSize: "0.76rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reset Filter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowFilterLainnya(false)}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 6,
+                        background: "var(--blue-500)",
+                        color: "#fff",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Terapkan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Filter Chips */}
+        {(filterLainnyaCount > 0 || selectedPeriod !== "ALL") && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            {selectedPeriod !== "ALL" && (
+              <span className="badge badge-blue" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                Periode: {periodDisplayLabel}
+                <button
+                  type="button"
+                  onClick={() => onPeriodChange("ALL", "Semua Periode")}
+                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                >
+                  <X width={12} height={12} />
+                </button>
+              </span>
+            )}
+            {selectedStatus !== "ALL" && (
+              <span className="badge badge-submitted" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                Status: {selectedStatus}
+                <button
+                  type="button"
+                  onClick={() => onStatusChange("ALL")}
+                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                >
+                  <X width={12} height={12} />
+                </button>
+              </span>
+            )}
+            {selectedDirektorat !== "ALL" && (
+              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                Dir: {selectedDirektorat}
+                <button
+                  type="button"
+                  onClick={() => onDirektoratChange("ALL")}
+                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                >
+                  <X width={12} height={12} />
+                </button>
+              </span>
+            )}
+            {selectedDivisi !== "ALL" && (
+              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                Div: {selectedDivisi}
+                <button
+                  type="button"
+                  onClick={() => onDivisiChange("ALL")}
+                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                >
+                  <X width={12} height={12} />
+                </button>
+              </span>
+            )}
+            {selectedDepartemen !== "ALL" && (
+              <span className="badge badge-completed" style={{ fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                Dep: {selectedDepartemen}
+                <button
+                  type="button"
+                  onClick={() => onDepartemenChange("ALL")}
+                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                >
+                  <X width={12} height={12} />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onResetFilters}
+              style={{
+                fontSize: "0.72rem",
+                color: "var(--blue-500)",
+                background: "none",
+                border: "none",
+                fontWeight: 600,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Reset Semua
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Backdrop for closing popovers */}
+      {(showPeriodPicker || showFilterLainnya) && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 25 }}
+          onClick={() => {
+            setShowPeriodPicker(false);
+            setShowFilterLainnya(false);
+          }}
+        />
+      )}
+
       {/* ── 0. Urgent Attention Banner ── */}
       {totalPending > 0 && (
         <div
@@ -706,7 +1375,7 @@ function PaneAll({
         </div>
       )}
 
-      {/* ── 1. Module Stat Cards (Gambar 2: Warna sama semua, total transaksi 6 modul sesuai role dibagi divisi) ── */}
+      {/* ── 1. Module Stat Cards (Gambar 2: Desain biru seragam stat-tile, tanpa 'Buka', klik menuju overview modul) ── */}
       <div
         style={{
           display: "grid",
@@ -717,100 +1386,107 @@ function PaneAll({
       >
         {[
           {
-            key: "ekspedisi",
+            key: "ekspedisi" as DashTab,
             label: "Ekspedisi",
-            icon: <Layers width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+            icon: <Layers width={16} height={16} />,
             total: (stats.ekspedisi?.completed ?? 0) + (stats.ekspedisi?.pending ?? 0) + (stats.ekspedisi?.rejected ?? 0),
             completed: stats.ekspedisi?.completed ?? 0,
             pending: stats.ekspedisi?.pending ?? 0,
-            href: "/ekspedisi/transaksi",
           },
           ...(!isKpu
             ? [
                 {
-                  key: "room",
+                  key: "room" as DashTab,
                   label: "Room Booking",
-                  icon: <Calendar width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  icon: <Calendar width={16} height={16} />,
                   total: (stats.room?.completed ?? 0) + (stats.room?.pending ?? 0) + (stats.room?.rejected ?? 0),
                   completed: stats.room?.completed ?? 0,
                   pending: stats.room?.pending ?? 0,
-                  href: "/booking-ruang-meeting/transaksi",
                 },
                 {
-                  key: "vehicle",
+                  key: "vehicle" as DashTab,
                   label: "Vehicle Booking",
-                  icon: <Car width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  icon: <Car width={16} height={16} />,
                   total: (stats.vehicle?.completed ?? 0) + (stats.vehicle?.pending ?? 0) + (stats.vehicle?.rejected ?? 0),
                   completed: stats.vehicle?.completed ?? 0,
                   pending: stats.vehicle?.pending ?? 0,
-                  href: "/booking-kendaraan/transaksi",
                 },
               ]
             : []),
           {
-            key: "atk",
+            key: "atk" as DashTab,
             label: "Office Supplies",
-            icon: <span style={{ color: "var(--blue-500)" }}><AtkIcon /></span>,
+            icon: <AtkIcon />,
             total: (stats.atk?.completed ?? 0) + (stats.atk?.pending ?? 0) + (stats.atk?.rejected ?? 0),
             completed: stats.atk?.completed ?? 0,
             pending: stats.atk?.pending ?? 0,
-            href: "/office-supplies/transaksi",
           },
           ...(!isKpu
             ? [
                 {
-                  key: "maint",
+                  key: "maint" as DashTab,
                   label: "Maintenance",
-                  icon: <Wrench width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  icon: <Wrench width={16} height={16} />,
                   total: (stats.maint?.completed ?? 0) + (stats.maint?.pending ?? 0) + (stats.maint?.rejected ?? 0),
                   completed: stats.maint?.completed ?? 0,
                   pending: stats.maint?.pending ?? 0,
-                  href: "/maintenance/transaksi",
                 },
                 {
-                  key: "arsip",
+                  key: "arsip" as DashTab,
                   label: "Archive",
-                  icon: <Folder width={16} height={16} style={{ color: "var(--blue-500)" }} />,
+                  icon: <Folder width={16} height={16} />,
                   total: (stats.arsip?.completed ?? 0) + (stats.arsip?.pending ?? 0) + (stats.arsip?.rejected ?? 0),
                   completed: stats.arsip?.completed ?? 0,
                   pending: stats.arsip?.pending ?? 0,
-                  href: "/arsip/transaksi",
                 },
               ]
             : []),
         ].map((m) => (
           <div
             key={m.key}
-            className="card"
+            onClick={() => onSelectTab(m.key)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onSelectTab(m.key);
+            }}
+            title={`Buka overview modul ${m.label}`}
             style={{
-              marginTop: 0,
               padding: "16px 18px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
               minHeight: 115,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              boxShadow: "0 2px 8px rgba(15, 40, 90, 0.04)",
+              background: "linear-gradient(135deg, #1c6dff 0%, #1450c9 100%)",
+              borderRadius: 14,
+              boxShadow: "0 4px 14px rgba(20, 80, 201, 0.25)",
+              color: "#ffffff",
+              cursor: "pointer",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+              userSelect: "none",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-3px)";
+              e.currentTarget.style.boxShadow = "0 8px 22px rgba(20, 80, 201, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 4px 14px rgba(20, 80, 201, 0.25)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "rgba(255, 255, 255, 0.95)", display: "flex", alignItems: "center", gap: 6 }}>
                 {m.icon}
                 <span>{m.label}</span>
               </span>
-              <Link href={m.href} style={{ fontSize: "0.72rem", color: "var(--blue-500)", textDecoration: "none", fontWeight: 600 }}>
-                Buka →
-              </Link>
             </div>
             <div>
-              <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.15 }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.15 }}>
                 {m.total.toLocaleString()}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.85)", marginTop: 6 }}>
                 <span>{m.completed} Selesai · {m.pending} Menunggu</span>
-                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{activeDivisionText}</span>
+                <span style={{ fontWeight: 600, color: "rgba(255, 255, 255, 0.95)" }}>{activeDivisionText}</span>
               </div>
             </div>
           </div>
@@ -819,96 +1495,15 @@ function PaneAll({
 
       {/* ── 2. Main Row: Status Donut + Perbandingan Antar Modul ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.95fr", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
-        {/* Donut Card (Gambar 3 - Rapih & Filter Lengkap: Modul, Direktorat, Divisi) */}
+        {/* Donut Card (Gambar 3 - Rapih & Bersih tanpa dropdown filter di dalam card) */}
         <div className="card" style={{ marginTop: 0, display: "flex", flexDirection: "column", height: "100%", padding: "18px 20px" }}>
           <div style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>Status Keseluruhan</div>
                 <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginTop: 2 }}>
-                  {selectedModul === "ALL" ? `${isKpu ? 2 : 6} Modul` : selectedModul.toUpperCase()} · {activeDivisionText} · {currentYearMonth()}
+                  {isKpu ? 2 : 6} Modul · {activeDivisionText} · {periodDisplayLabel}
                 </div>
-              </div>
-            </div>
-
-            {/* 3 Filters: Modul, Direktorat, Divisi */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))", gap: 8 }}>
-              {/* Filter 1: Per Modul */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Modul</span>
-                <select
-                  value={selectedModul}
-                  onChange={(e) => setSelectedModul(e.target.value)}
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "0.76rem",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-subtle)",
-                    background: "var(--bg-surface)",
-                    color: "var(--text-primary)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    outline: "none",
-                  }}
-                >
-                  <option value="ALL">Semua Modul</option>
-                  <option value="ekspedisi">Ekspedisi</option>
-                  {!isKpu && <option value="room">Room Booking</option>}
-                  {!isKpu && <option value="vehicle">Vehicle Booking</option>}
-                  <option value="atk">Office Supplies</option>
-                  {!isKpu && <option value="maint">Maintenance</option>}
-                  {!isKpu && <option value="arsip">Archive</option>}
-                </select>
-              </div>
-
-              {/* Filter 2: Per Direktorat */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Direktorat</span>
-                <select
-                  value={selectedDirektorat}
-                  onChange={(e) => onDirektoratChange(e.target.value)}
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "0.76rem",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-subtle)",
-                    background: "var(--bg-surface)",
-                    color: "var(--text-primary)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    outline: "none",
-                  }}
-                >
-                  <option value="ALL">Semua Direktorat</option>
-                  {orgData?.direktorat?.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Filter 3: Per Divisi */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Divisi</span>
-                <select
-                  value={selectedDivisi}
-                  onChange={(e) => onDivisiChange(e.target.value)}
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "0.76rem",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-subtle)",
-                    background: "var(--bg-surface)",
-                    color: "var(--text-primary)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    outline: "none",
-                  }}
-                >
-                  <option value="ALL">Semua Divisi</option>
-                  {availableDivisi.map((div) => (
-                    <option key={div} value={div}>{div}</option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -1560,7 +2155,10 @@ export default function DashboardContent({ me }: Props) {
   // Interactive filters states
   const [selectedDivisi, setSelectedDivisi] = useState<string>("ALL");
   const [selectedDirektorat, setSelectedDirektorat] = useState<string>("ALL");
-  const [selectedModul, setSelectedModul] = useState<string>("ALL");
+  const [selectedDepartemen, setSelectedDepartemen] = useState<string>("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(currentYearMonth());
+  const [periodDisplayLabel, setPeriodDisplayLabel] = useState<string>(`Bulan Ini (${currentYearMonth()})`);
   const [orgData, setOrgData] = useState<OrgStructure | null>(null);
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
 
@@ -1568,13 +2166,19 @@ export default function DashboardContent({ me }: Props) {
     api.orgStructure().then(setOrgData).catch(() => {});
   }, []);
 
-  const loadStats = useCallback(async (customDiv?: string, customDir?: string) => {
-    const bulan = currentYearMonth();
+  const loadStats = useCallback(async (
+    customDiv?: string,
+    customDir?: string,
+    customDep?: string,
+    customPeriod?: string
+  ) => {
     const today = todayLocalDate();
     setStats((prev) => ({ ...prev, loading: true }));
 
+    const activePeriod = customPeriod !== undefined ? (customPeriod === "ALL" ? undefined : customPeriod) : (selectedPeriod === "ALL" ? undefined : selectedPeriod);
     const activeDiv = customDiv !== undefined ? (customDiv === "ALL" ? undefined : customDiv) : (selectedDivisi === "ALL" ? undefined : selectedDivisi);
     const activeDir = customDir !== undefined ? (customDir === "ALL" ? undefined : customDir) : (selectedDirektorat === "ALL" ? undefined : selectedDirektorat);
+    const activeDep = customDep !== undefined ? (customDep === "ALL" ? undefined : customDep) : (selectedDepartemen === "ALL" ? undefined : selectedDepartemen);
 
     // Helper: convert countsByStatus to ModuleStats
     const toStats = (
@@ -1593,8 +2197,8 @@ export default function DashboardContent({ me }: Props) {
     const bookingRejected   = ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
 
     const [ekspRes, atkRes] = await Promise.allSettled([
-      api.getPengirimanStats(bulan, activeDiv, activeDir),
-      api.getAtkStats(bulan, activeDiv, activeDir),
+      api.getPengirimanStats(activePeriod, activeDiv, activeDir, activeDep),
+      api.getAtkStats(activePeriod, activeDiv, activeDir, activeDep),
     ]);
 
     const ekspStats: ModuleStats | null = ekspRes.status === "fulfilled"
@@ -1616,10 +2220,10 @@ export default function DashboardContent({ me }: Props) {
     }
 
     const [roomRes, vehRes, maintRes, arsipRes] = await Promise.allSettled([
-      api.getBookingStats(bulan, activeDiv, activeDir),
-      api.getKendaraanStats(bulan, activeDiv, activeDir),
-      api.getSaranaStats(bulan, activeDiv, activeDir),
-      api.getArsipStats(bulan, activeDiv, activeDir),
+      api.getBookingStats(activePeriod, activeDiv, activeDir, activeDep),
+      api.getKendaraanStats(activePeriod, activeDiv, activeDir, activeDep),
+      api.getSaranaStats(activePeriod, activeDiv, activeDir, activeDep),
+      api.getArsipStats(activePeriod, activeDiv, activeDir, activeDep),
     ]);
 
     setStats({
@@ -1713,19 +2317,44 @@ export default function DashboardContent({ me }: Props) {
     } catch {
       // ignore
     }
-  }, [isNonKpu, selectedDivisi, selectedDirektorat]);
+  }, [isNonKpu, selectedDivisi, selectedDirektorat, selectedDepartemen, selectedPeriod]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
+  const handlePeriodChange = (newPeriod: string, label: string) => {
+    setSelectedPeriod(newPeriod);
+    setPeriodDisplayLabel(label);
+    loadStats(selectedDivisi, selectedDirektorat, selectedDepartemen, newPeriod);
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+  };
+
   const handleDivisiChange = (newDiv: string) => {
     setSelectedDivisi(newDiv);
-    loadStats(newDiv, selectedDirektorat);
+    setSelectedDepartemen("ALL");
+    loadStats(newDiv, selectedDirektorat, "ALL", selectedPeriod);
   };
 
   const handleDirektoratChange = (newDir: string) => {
     setSelectedDirektorat(newDir);
     setSelectedDivisi("ALL");
-    loadStats("ALL", newDir);
+    setSelectedDepartemen("ALL");
+    loadStats("ALL", newDir, "ALL", selectedPeriod);
+  };
+
+  const handleDepartemenChange = (newDep: string) => {
+    setSelectedDepartemen(newDep);
+    loadStats(selectedDivisi, selectedDirektorat, newDep, selectedPeriod);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedStatus("ALL");
+    setSelectedDirektorat("ALL");
+    setSelectedDivisi("ALL");
+    setSelectedDepartemen("ALL");
+    loadStats("ALL", "ALL", "ALL", selectedPeriod);
   };
 
   const visibleTabs = ALL_TABS.filter((t) => !isKpu || !t.kpuHidden);
@@ -1787,12 +2416,19 @@ export default function DashboardContent({ me }: Props) {
           vehSchedules={vehSchedules}
           recentActivities={recentActivities}
           onOpenQuickAction={() => setShowQuickActionModal(true)}
-          selectedModul={selectedModul}
-          setSelectedModul={setSelectedModul}
+          onSelectTab={(tab: DashTab) => setActiveTab(tab)}
+          selectedPeriod={selectedPeriod}
+          periodDisplayLabel={periodDisplayLabel}
+          onPeriodChange={handlePeriodChange}
+          selectedStatus={selectedStatus}
+          onStatusChange={handleStatusChange}
           selectedDirektorat={selectedDirektorat}
           onDirektoratChange={handleDirektoratChange}
           selectedDivisi={selectedDivisi}
           onDivisiChange={handleDivisiChange}
+          selectedDepartemen={selectedDepartemen}
+          onDepartemenChange={handleDepartemenChange}
+          onResetFilters={handleResetFilters}
           orgData={orgData}
         />
       )}

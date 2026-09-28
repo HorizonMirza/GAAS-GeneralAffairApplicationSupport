@@ -792,7 +792,7 @@ public class PengirimanController : ApiControllerBase
     // List() call per status - List() itself still does the extra chat/mention work per item,
     // which none of these counts need.
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null, [FromQuery] string? departemen = null)
     {
         var (user, error) = await RequireRoleAsync();
         if (error != null) return error;
@@ -811,6 +811,7 @@ public class PengirimanController : ApiControllerBase
             or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(p => p.Divisi == user.Divisi && (p.Status != StatusEnum.DRAFT || p.CreatedBy == user.Id || p.RejectReason != null));
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         }
         else
         {
@@ -820,6 +821,7 @@ public class PengirimanController : ApiControllerBase
                 var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
                 query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
             }
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
             query = query.Where(p => p.Status != StatusEnum.DRAFT || p.CreatedBy == user.Id);
         }
 

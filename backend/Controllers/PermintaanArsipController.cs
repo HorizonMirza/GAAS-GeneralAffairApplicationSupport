@@ -675,7 +675,7 @@ public class PermintaanArsipController : ApiControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null, [FromQuery] string? departemen = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -694,6 +694,7 @@ public class PermintaanArsipController : ApiControllerBase
             or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(p => p.Divisi == user.Divisi && (p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == user.Id));
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         }
         else
         {
@@ -703,6 +704,7 @@ public class PermintaanArsipController : ApiControllerBase
                 var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
                 query = query.Where(p => divisiInDirektorat.Contains(p.Divisi));
             }
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
             query = query.Where(p => p.Status != BookingStatusEnum.DRAFT || p.CreatedBy == user.Id);
         }
 

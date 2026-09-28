@@ -1024,7 +1024,7 @@ public class BookingKendaraanController : ApiControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null, [FromQuery] string? departemen = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -1043,6 +1043,7 @@ public class BookingKendaraanController : ApiControllerBase
             or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)
         {
             query = query.Where(b => b.Divisi == user.Divisi && (b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == user.Id));
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
         }
         else
         {
@@ -1052,6 +1053,7 @@ public class BookingKendaraanController : ApiControllerBase
                 var divisiInDirektorat = OrgTree.GetDivisiOptions(direktorat);
                 query = query.Where(b => divisiInDirektorat.Contains(b.Divisi));
             }
+            if (!string.IsNullOrEmpty(departemen)) query = query.Where(b => b.Departemen == departemen);
             query = query.Where(b => b.Status != BookingStatusEnum.DRAFT || b.CreatedBy == user.Id);
         }
 
