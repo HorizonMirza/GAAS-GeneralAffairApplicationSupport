@@ -13,10 +13,11 @@
 
 .greeting {
   min-width: 0;
+  transform: translateY(-2px);
 }
 
 .greeting :global(.welcome-heading) {
-  font-size: 1.15rem;
+  font-size: 1.02rem;
 }
 
 .headerActions {
@@ -28,7 +29,7 @@
 }
 
 .monthFilter {
-  width: 160px;
+  width: 220px;
 }
 
 .moreFilter {

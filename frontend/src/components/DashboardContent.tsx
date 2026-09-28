@@ -472,6 +472,18 @@ export default function DashboardContent({ me }: { me: Me }) {
 
   useEffect(() => { void loadDashboard(); }, [loadDashboard, refreshToken]);
 
+  function resetDashboard() {
+    setMonth("");
+    setDate("");
+    setStatus("");
+    setDirektorat("");
+    setDivisi("");
+    setDepartemen("");
+    setScheduleTab("all");
+    setFilterOpen(false);
+    setRefreshToken((value) => value + 1);
+  }
+
   const totals = useMemo(() => visibleModules.reduce((result, module) => {
     const summary = state.summaries[module.key];
     result.total += summary.total;
@@ -568,7 +580,7 @@ export default function DashboardContent({ me }: { me: Me }) {
               </div>
             )}
           </div>
-          <button type="button" className={styles.refreshButton} onClick={() => setRefreshToken((value) => value + 1)} disabled={loading} title="Muat ulang data dashboard" aria-label="Muat ulang data dashboard">
+          <button type="button" className={styles.refreshButton} onClick={resetDashboard} disabled={loading} title="Reset filter dan muat ulang dashboard" aria-label="Reset filter dan muat ulang dashboard">
             <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
           </button>
         </div>
