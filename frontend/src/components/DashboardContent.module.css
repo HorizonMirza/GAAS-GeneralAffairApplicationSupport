@@ -293,10 +293,18 @@
 
 .analyticsGrid {
   display: grid;
-  grid-template-columns: minmax(310px, 2fr) minmax(540px, 4fr);
-  gap: 16px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 11px;
   align-items: stretch;
   margin-bottom: 18px;
+}
+
+.statusPanel {
+  grid-column: span 2;
+}
+
+.comparisonPanel {
+  grid-column: span 4;
 }
 
 .statusPanel,
@@ -1353,10 +1361,13 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .analyticsGrid,
   .insightGrid {
     grid-template-columns: 1fr;
   }
 
+  .statusPanel,
+  .comparisonPanel,
   .insightPanel:first-child,
   .insightPanel:last-child {
     grid-column: 1;
