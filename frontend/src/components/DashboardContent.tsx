@@ -124,16 +124,24 @@ interface DashboardState {
   queue: DashboardItem[];
   recent: DashboardItem[];
   schedules: ScheduleItem[];
+  analytics: AnalyticsItem[];
   errors: number;
 }
 
+interface AnalyticsItem {
+  moduleKey: ModuleKey;
+  divisi: string;
+  departemen: string | null;
+  createdAt: string;
+}
+
 const MODULES: ModuleDefinition[] = [
-  { key: "expedition", label: "Expedition", shortLabel: "Eksp.", overviewHref: "/ekspedisi/overview", transactionHref: "/ekspedisi/transaksi" },
-  { key: "room", label: "Room Booking", shortLabel: "Ruang", overviewHref: "/booking-ruang-meeting/overview", transactionHref: "/booking-ruang-meeting/transaksi", hiddenForKpu: true },
-  { key: "vehicle", label: "Vehicle Booking", shortLabel: "Kend.", overviewHref: "/booking-kendaraan/overview", transactionHref: "/booking-kendaraan/transaksi", hiddenForKpu: true },
-  { key: "atk", label: "Office Supplies", shortLabel: "ATK", overviewHref: "/office-supplies/overview", transactionHref: "/office-supplies/transaksi" },
-  { key: "maintenance", label: "Maintenance", shortLabel: "Maint.", overviewHref: "/maintenance/overview", transactionHref: "/maintenance/transaksi", hiddenForKpu: true },
-  { key: "archive", label: "Archive", shortLabel: "Arsip", overviewHref: "/arsip/overview", transactionHref: "/arsip/transaksi", hiddenForKpu: true },
+  { key: "expedition", label: "Expedition", shortLabel: "Expedition", overviewHref: "/ekspedisi/overview", transactionHref: "/ekspedisi/transaksi" },
+  { key: "room", label: "Room Booking", shortLabel: "Room Book.", overviewHref: "/booking-ruang-meeting/overview", transactionHref: "/booking-ruang-meeting/transaksi", hiddenForKpu: true },
+  { key: "vehicle", label: "Vehicle Booking", shortLabel: "Vehicle Book.", overviewHref: "/booking-kendaraan/overview", transactionHref: "/booking-kendaraan/transaksi", hiddenForKpu: true },
+  { key: "atk", label: "Office Supplies", shortLabel: "Office Sup.", overviewHref: "/office-supplies/overview", transactionHref: "/office-supplies/transaksi" },
+  { key: "maintenance", label: "Maintenance", shortLabel: "Maintenance", overviewHref: "/maintenance/overview", transactionHref: "/maintenance/transaksi", hiddenForKpu: true },
+  { key: "archive", label: "Archive", shortLabel: "Archive", overviewHref: "/arsip/overview", transactionHref: "/arsip/transaksi", hiddenForKpu: true },
 ];
 
 const EMPTY_SUMMARY: ModuleSummary = { total: 0, pending: 0, completed: 0, rejected: 0, actionable: 0, failed: false };
@@ -349,6 +357,20 @@ function periodDescription(month: string, date: string): string {
   return "Semua periode";
 }
 
+function monthKey(value: Date): string {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function recentMonthBuckets(reference: Date, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const value = new Date(reference.getFullYear(), reference.getMonth() - (count - 1 - index), 1);
+    return {
+      key: monthKey(value),
+      label: new Intl.DateTimeFormat("id-ID", { month: "short" }).format(value).replace(".", ""),
+    };
+  });
+}
+
 export default function DashboardContent({ me }: { me: Me }) {
   const [activeView, setActiveView] = useState<DashboardView>("all");
   const [month, setMonth] = useState("");
@@ -363,7 +385,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
-  const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], errors: 0 });
+  const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], analytics: [], errors: 0 });
   const filterWrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
@@ -407,10 +429,11 @@ export default function DashboardContent({ me }: { me: Me }) {
         status: actionFilter,
         ...(me.role === "KPU" && module.key === "atk" ? { sumberPembelian: "KPU" as const } : {}),
       };
-      const [statsResult, queueResult, recentResult] = await Promise.allSettled([
+      const [statsResult, queueResult, recentResult, analyticsResult] = await Promise.allSettled([
         source.stats(month || undefined, date || undefined, unitScope.divisi, unitScope.direktorat, unitScope.departemen),
         source.list(queueParams),
         source.list({ ...scope, limit: 5, status: selectedStatusForModule(module.key, status) }),
+        source.list({ page: 1, limit: 1000, ...unitScope, status: selectedStatusForModule(module.key, status) }),
       ]);
       const filteredCounts = statsResult.status === "fulfilled"
         ? filterCountsBySelection(module.key, statsResult.value.countsByStatus, status)
@@ -428,7 +451,10 @@ export default function DashboardContent({ me }: { me: Me }) {
         summary: { ...stats, actionable: actionCount, failed: statsResult.status === "rejected" } satisfies ModuleSummary,
         queue: filteredQueue.map((item) => adaptItem(module, item)),
         recent: recentResult.status === "fulfilled" ? recentResult.value.items.map((item) => adaptItem(module, item)) : [],
-        errors: [statsResult, queueResult, recentResult].filter((result) => result.status === "rejected").length,
+        analytics: analyticsResult.status === "fulfilled"
+          ? analyticsResult.value.items.map<AnalyticsItem>((item) => ({ moduleKey: module.key, divisi: item.divisi, departemen: item.departemen, createdAt: item.createdAt }))
+          : [],
+        errors: [statsResult, queueResult, recentResult, analyticsResult].filter((result) => result.status === "rejected").length,
       };
     });
 
@@ -445,11 +471,13 @@ export default function DashboardContent({ me }: { me: Me }) {
     const summaries = emptySummaries();
     const queue: DashboardItem[] = [];
     const recent: DashboardItem[] = [];
+    const analytics: AnalyticsItem[] = [];
     let errors = scheduleResult.errors;
     moduleResults.forEach((result) => {
       summaries[result.module.key] = result.summary;
       queue.push(...result.queue);
       recent.push(...result.recent);
+      analytics.push(...result.analytics);
       errors += result.errors;
     });
 
@@ -485,6 +513,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       queue: queue.slice(0, 8),
       recent: recent.slice(0, 5),
       schedules: [...rooms, ...vehicles].sort((a, b) => scheduleTimeValue(a.time) - scheduleTimeValue(b.time)),
+      analytics,
       errors,
     });
     setLoading(false);
@@ -539,6 +568,51 @@ export default function DashboardContent({ me }: { me: Me }) {
     }),
   );
   const periodText = periodDescription(month, date);
+  const organizationContext = direktorat || divisi || departemen
+    ? [direktorat ? `Direktorat ${direktorat}` : "Semua direktorat", divisi ? `Divisi ${divisi}` : "Semua divisi", departemen ? `Departemen ${departemen}` : "Semua departemen"].join(" · ")
+    : "Semua direktorat/divisi/departemen";
+  const statusContext = status
+    ? ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
+    : "";
+  const analyticsContext = [activeView === "all" ? "Seluruh modul" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
+  const selectedAnalytics = state.analytics.filter((item) => activeView === "all" || item.moduleKey === activeView);
+  const periodAnalytics = selectedAnalytics.filter((item) => {
+    const itemDate = item.createdAt.slice(0, 10);
+    if (date) return itemDate === date;
+    if (month) return itemDate.startsWith(month);
+    return true;
+  });
+  const divisionCounts = periodAnalytics.reduce<Record<string, number>>((counts, item) => {
+    const key = item.divisi || "Tanpa Divisi";
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+  const divisionVolumes = Object.entries(divisionCounts)
+    .map(([label, value]) => ({ label, value }))
+    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label))
+    .slice(0, 5);
+  const maxDivisionVolume = Math.max(1, ...divisionVolumes.map((item) => item.value));
+  const trendReference = date
+    ? new Date(`${date}T00:00:00`)
+    : month
+      ? new Date(`${month}-01T00:00:00`)
+      : new Date();
+  const trendData = recentMonthBuckets(trendReference, 6).map((bucket) => ({
+    ...bucket,
+    value: selectedAnalytics.filter((item) => item.createdAt.slice(0, 7) === bucket.key).length,
+  }));
+  const trendMax = Math.max(1, ...trendData.map((item) => item.value));
+  const trendPoints = trendData.map((item, index) => ({
+    ...item,
+    x: 40 + (index * 520) / Math.max(1, trendData.length - 1),
+    y: 20 + (1 - item.value / trendMax) * 120,
+  }));
+  const trendLinePoints = trendPoints.map((point) => `${point.x},${point.y}`).join(" ");
+  const trendAreaPoints = `40,140 ${trendLinePoints} 560,140`;
+  const previousTrendValue = trendData.at(-2)?.value ?? 0;
+  const latestTrendValue = trendData.at(-1)?.value ?? 0;
+  const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
+  const yAxisTicks = [maxBarValue, Math.round((maxBarValue * 2) / 3), Math.round(maxBarValue / 3), 0];
   const progressTotal = totals.completed + totals.pending + totals.rejected;
   const progressWidths = {
     completed: progressTotal > 0 ? (totals.completed / progressTotal) * 100 : 0,
@@ -631,7 +705,7 @@ export default function DashboardContent({ me }: { me: Me }) {
 
       <section className={styles.analyticsGrid} aria-label="Analitik dashboard">
         <article className={styles.statusPanel}>
-          <header className={styles.panelHeader}><div><h2>Ringkasan Status Transaksi</h2><p>{activeView === "all" ? "Seluruh modul" : activeModuleLabel} pada {periodText.toLowerCase()}</p></div></header>
+          <header className={styles.panelHeader}><div><h2>Status Transaksi</h2><p>{analyticsContext}</p></div></header>
           <div className={styles.statusContent}>
             <div className={styles.donut} aria-label={`${totals.completed} approved, ${totals.pending} on-approval, ${totals.rejected} rejected`}>
               <svg className={styles.donutSvg} viewBox="0 0 120 120" role="group" aria-label="Distribusi status transaksi">
@@ -666,20 +740,24 @@ export default function DashboardContent({ me }: { me: Me }) {
               )}
             </div>
             <div className={styles.statusLegend}>
-              <div><span><i className={styles.completedDot} />Approved</span><strong>{totals.completed.toLocaleString("id-ID")}</strong><em>{completedPercent}%</em></div>
-              <div><span><i className={styles.pendingDot} />On-Approval</span><strong>{totals.pending.toLocaleString("id-ID")}</strong><em>{pendingPercent}%</em></div>
-              <div><span><i className={styles.rejectedDot} />Rejected</span><strong>{totals.rejected.toLocaleString("id-ID")}</strong><em>{rejectedPercent}%</em></div>
+              <div><span><i className={styles.completedDot} />Approved</span><strong className={styles.statusCount}>{totals.completed.toLocaleString("id-ID")}</strong><em>{completedPercent}%</em></div>
+              <div><span><i className={styles.pendingDot} />On-Approval</span><strong className={styles.statusCount}>{totals.pending.toLocaleString("id-ID")}</strong><em>{pendingPercent}%</em></div>
+              <div><span><i className={styles.rejectedDot} />Rejected</span><strong className={styles.statusCount}>{totals.rejected.toLocaleString("id-ID")}</strong><em>{rejectedPercent}%</em></div>
             </div>
           </div>
         </article>
 
         <article className={styles.comparisonPanel}>
           <header className={styles.panelHeader}>
-            <div><h2>Perbandingan Status Modul</h2><p>Distribusi transaksi pada {periodText.toLowerCase()}</p></div>
+            <div><h2>Status Modul</h2><p>{analyticsContext}</p></div>
             <div className={styles.chartLegend} aria-label="Legenda grafik"><span><i className={styles.completedDot} />Approved</span><span><i className={styles.pendingDot} />On-Approval</span><span><i className={styles.rejectedDot} />Rejected</span></div>
           </header>
           <div className={styles.chartViewport}>
             <div className={styles.chartGrid} aria-hidden="true"><span /><span /><span /><span /></div>
+            <div className={styles.yAxis} aria-hidden="true">
+              {yAxisTicks.map((tick, index) => <span key={`${tick}-${index}`}>{tick.toLocaleString("id-ID")}</span>)}
+            </div>
+            <span className={styles.yAxisTitle} aria-hidden="true">Transactions</span>
             <div className={styles.barGroups} style={{ gridTemplateColumns: `repeat(${selectedModules.length}, minmax(62px, 1fr))` }}>
               {selectedModules.map((module) => {
                 const summary = state.summaries[module.key];
@@ -703,6 +781,53 @@ export default function DashboardContent({ me }: { me: Me }) {
                 );
               })}
             </div>
+            <span className={styles.xAxisTitle} aria-hidden="true">Module</span>
+          </div>
+        </article>
+      </section>
+
+      <section className={styles.insightGrid} aria-label="Analitik organisasi dan tren">
+        <article className={styles.insightPanel}>
+          <header className={styles.insightHeader}>
+            <div><h2>Distribusi Volume per Divisi</h2><p>{periodText} · {organizationContext}</p></div>
+            <span>Top Divisi</span>
+          </header>
+          <div className={styles.divisionChart}>
+            {divisionVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada data divisi pada filter ini.</div> : divisionVolumes.map((item) => (
+              <div className={styles.divisionRow} key={item.label} title={`${item.label}: ${item.value.toLocaleString("id-ID")} transaksi`}>
+                <strong>{item.label}</strong>
+                <span className={styles.divisionTrack}><i style={{ width: `${Math.max(6, (item.value / maxDivisionVolume) * 100)}%` }} /></span>
+                <em>{item.value.toLocaleString("id-ID")}</em>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.insightPanel}>
+          <header className={styles.insightHeader}>
+            <div><h2>Tren Transaksi (6 Bulan)</h2><p>{activeView === "all" ? "Seluruh modul" : activeModuleLabel} · {organizationContext}</p></div>
+            {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
+          </header>
+          <div className={styles.trendChart}>
+            <svg viewBox="0 0 600 180" role="img" aria-label="Tren volume transaksi enam bulan terakhir">
+              <title>Tren volume transaksi enam bulan terakhir</title>
+              {[0, 1, 2, 3].map((line) => {
+                const y = 20 + line * 40;
+                const value = Math.round(trendMax * (1 - line / 3));
+                return <g key={line}><line className={styles.trendGridLine} x1="40" x2="560" y1={y} y2={y} /><text className={styles.trendAxisText} x="30" y={y + 3} textAnchor="end">{value}</text></g>;
+              })}
+              <polygon className={styles.trendArea} points={trendAreaPoints} />
+              <polyline className={styles.trendLine} points={trendLinePoints} />
+              {trendPoints.map((point) => (
+                <g className={styles.trendPoint} key={point.key} tabIndex={0} aria-label={`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}>
+                  <circle cx={point.x} cy={point.y} r="5" />
+                  <text x={point.x} y={Math.max(12, point.y - 10)} textAnchor="middle">{point.value}</text>
+                  <text className={styles.trendMonthLabel} x={point.x} y="165" textAnchor="middle">{point.label}</text>
+                  <title>{`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
+                </g>
+              ))}
+              <text className={styles.trendAxisTitle} x="300" y="179" textAnchor="middle">Month</text>
+            </svg>
           </div>
         </article>
       </section>
