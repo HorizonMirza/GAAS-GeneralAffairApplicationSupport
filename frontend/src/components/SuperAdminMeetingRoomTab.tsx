@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
-import { useConfirm } from "@/components/ui/ConfirmProvider";
 import ModalOverlay from "@/components/ModalOverlay";
+import PasswordField from "@/components/PasswordField";
+import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
 import type { MeetingRoomItem } from "@/lib/types";
 
 interface RoomFormState {
@@ -13,12 +14,14 @@ interface RoomFormState {
   kapasitas: string;
   lantai: string;
   fasilitas: string;
+  password: string;
 }
 
-const EMPTY_FORM: RoomFormState = { nama: "", kapasitas: "", lantai: "", fasilitas: "" };
+const EMPTY_FORM: RoomFormState = { nama: "", kapasitas: "", lantai: "", fasilitas: "", password: "" };
+const ICON_BTN_STYLE: React.CSSProperties = { width: "auto", padding: "3px 6px" };
 
 function toFormFields(item: MeetingRoomItem): RoomFormState {
-  return { nama: item.nama, kapasitas: String(item.kapasitas), lantai: item.lantai, fasilitas: item.fasilitas.join(", ") };
+  return { nama: item.nama, kapasitas: String(item.kapasitas), lantai: item.lantai, fasilitas: item.fasilitas.join(", "), password: "" };
 }
 
 // Super Admin's meeting room roster editor - the UI for MeetingRoomAdminController, replacing the
@@ -26,7 +29,6 @@ function toFormFields(item: MeetingRoomItem): RoomFormState {
 // Same list+modal-form shape as SuperAdminUsersTab, without pagination - the roster is small.
 export default function SuperAdminMeetingRoomTab() {
   const { showToast } = useToast();
-  const confirm = useConfirm();
 
   const [items, setItems] = useState<MeetingRoomItem[]>([]);
   const [busy, setBusy] = useState(true);
@@ -36,6 +38,8 @@ export default function SuperAdminMeetingRoomTab() {
   const [form, setForm] = useState<RoomFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<MeetingRoomItem | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -78,12 +82,14 @@ export default function SuperAdminMeetingRoomTab() {
     if (!form.lantai.trim()) { setFormError("Lantai wajib diisi"); return; }
     const kapasitas = Number(form.kapasitas);
     if (!Number.isInteger(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus bilangan bulat lebih dari 0"); return; }
+    if (!form.password) { setFormError("Password wajib diisi"); return; }
 
     const payload = {
       nama: form.nama.trim(),
       kapasitas,
       lantai: form.lantai.trim(),
       fasilitas: form.fasilitas.split(",").map((f) => f.trim()).filter((f) => f.length > 0),
+      password: form.password,
     };
 
     setSaving(true);
@@ -104,30 +110,21 @@ export default function SuperAdminMeetingRoomTab() {
     }
   }
 
-  function handleDelete(item: MeetingRoomItem) {
-    confirm(`Hapus ruang meeting "${item.nama}"?`, async () => {
-      try {
-        await api.deleteAdminMeetingRoom(item.id);
-        showToast("Ruang meeting berhasil dihapus");
-        await load();
-      } catch (err) {
-        showToast(errorMessage(err), "error");
-      }
-    });
+  async function handleDeleteConfirm(password: string) {
+    if (!deleteTarget) return;
+    await api.deleteAdminMeetingRoom(deleteTarget.id, password);
+    showToast("Ruang meeting berhasil dihapus");
+    setDeleteTarget(null);
+    await load();
   }
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Ruang Meeting ({items.length})</h3>
+      <div className="card-header" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Ruang
         </button>
       </div>
-      <p className="text-secondary" style={{ marginTop: 0 }}>
-        Daftar ruang yang bisa dipilih saat membuat Room Booking. Mengganti nama/kapasitas tidak
-        mengubah data booking yang sudah ada - hanya memengaruhi pilihan pada form baru ke depannya.
-      </p>
 
       <div className="table-wrap">
         <table className="data-table">
@@ -151,8 +148,12 @@ export default function SuperAdminMeetingRoomTab() {
                   <td>{item.lantai}</td>
                   <td>{item.fasilitas.length > 0 ? item.fasilitas.join(", ") : "-"}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => openEdit(item)}>Edit</button>
-                    <button type="button" className="btn btn-confirm-danger" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleDelete(item)}>Hapus</button>
+                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Edit" onClick={() => openEdit(item)}>
+                      <Pencil width={14} height={14} />
+                    </button>
+                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => setDeleteTarget(item)}>
+                      <Trash2 width={14} height={14} />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -183,15 +184,24 @@ export default function SuperAdminMeetingRoomTab() {
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="room-form-lantai">Lantai</label>
-              <input id="room-form-lantai" type="text" required placeholder="Contoh: Lantai 3" value={form.lantai} onChange={(e) => setForm((f) => ({ ...f, lantai: e.target.value }))} />
+              <input id="room-form-lantai" type="text" required value={form.lantai} onChange={(e) => setForm((f) => ({ ...f, lantai: e.target.value }))} />
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="room-form-fasilitas">Fasilitas</label>
-              <input id="room-form-fasilitas" type="text" placeholder="Pisahkan dengan koma, contoh: TV, AC, Proyektor" value={form.fasilitas} onChange={(e) => setForm((f) => ({ ...f, fasilitas: e.target.value }))} />
+              <input id="room-form-fasilitas" type="text" value={form.fasilitas} onChange={(e) => setForm((f) => ({ ...f, fasilitas: e.target.value }))} />
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <PasswordField
+                id="room-form-password"
+                label="Password Super Admin"
+                placeholder="Masukkan Password"
+                icon={<Lock width={15} height={15} />}
+                value={form.password}
+                onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+              />
             </div>
 
             <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setFormOpen(null)} disabled={saving}>Batal</button>
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={saving}>
                 {saving ? "Menyimpan..." : formOpen === "create" ? "Tambah" : "Simpan"}
               </button>
@@ -199,6 +209,14 @@ export default function SuperAdminMeetingRoomTab() {
           </form>
         </div>
       </ModalOverlay>
+
+      <DeleteWithPasswordModal
+        open={!!deleteTarget}
+        title="Hapus Ruang Meeting"
+        itemLabel={`ruang meeting "${deleteTarget?.nama ?? ""}"`}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

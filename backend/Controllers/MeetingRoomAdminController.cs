@@ -43,8 +43,11 @@ public class MeetingRoomAdminController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateMeetingRoomRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var nama = payload.Nama?.Trim() ?? "";
         var lantai = payload.Lantai?.Trim() ?? "";
@@ -81,8 +84,11 @@ public class MeetingRoomAdminController : ApiControllerBase
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateMeetingRoomRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var row = await _db.MeetingRooms.FirstOrDefaultAsync(r => r.Id == id);
         if (row == null) return NotFound(new { detail = "Ruang tidak ditemukan" });
@@ -116,10 +122,13 @@ public class MeetingRoomAdminController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, [FromBody] DeleteMeetingRoomRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var row = await _db.MeetingRooms.FirstOrDefaultAsync(r => r.Id == id);
         if (row == null) return NotFound(new { detail = "Ruang tidak ditemukan" });

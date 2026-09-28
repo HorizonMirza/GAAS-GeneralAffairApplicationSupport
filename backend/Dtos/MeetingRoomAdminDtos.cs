@@ -8,5 +8,6 @@ public record MeetingRoomOut(int Id, string Nama, int Kapasitas, string Lantai, 
 
 public record MeetingRoomListResponse(List<MeetingRoomOut> Rooms);
 
-public record CreateMeetingRoomRequest(string Nama, int Kapasitas, string Lantai, List<string>? Fasilitas);
-public record UpdateMeetingRoomRequest(string Nama, int Kapasitas, string Lantai, List<string>? Fasilitas);
+public record CreateMeetingRoomRequest(string Nama, int Kapasitas, string Lantai, List<string>? Fasilitas, string Password);
+public record UpdateMeetingRoomRequest(string Nama, int Kapasitas, string Lantai, List<string>? Fasilitas, string Password);
+public record DeleteMeetingRoomRequest(string Password);

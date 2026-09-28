@@ -12,8 +12,10 @@ public record VehicleListResponse(List<VehicleOut> Vehicles);
 
 public record CreateVehicleRequest(
     string Nama, string PlatNomor, int Kapasitas, string Supir,
-    string Merek, string Model, int Tahun, string Warna, string NomorTeleponSupir, string LokasiParkir);
+    string Merek, string Model, int Tahun, string Warna, string NomorTeleponSupir, string LokasiParkir, string Password);
 
 public record UpdateVehicleRequest(
     string Nama, string PlatNomor, int Kapasitas, string Supir,
-    string Merek, string Model, int Tahun, string Warna, string NomorTeleponSupir, string LokasiParkir);
+    string Merek, string Model, int Tahun, string Warna, string NomorTeleponSupir, string LokasiParkir, string Password);
+
+public record DeleteVehicleRequest(string Password);

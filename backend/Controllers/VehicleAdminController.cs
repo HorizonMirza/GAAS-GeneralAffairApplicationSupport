@@ -41,8 +41,11 @@ public class VehicleAdminController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateVehicleRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var validationError = ValidatePayload(payload.Nama, payload.PlatNomor, payload.Kapasitas, payload.Supir, payload.Merek, payload.Model, payload.Tahun, payload.Warna, payload.NomorTeleponSupir, payload.LokasiParkir);
         if (validationError != null) return StatusCode(400, new { detail = validationError });
@@ -80,8 +83,11 @@ public class VehicleAdminController : ApiControllerBase
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateVehicleRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var row = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Kendaraan tidak ditemukan" });
@@ -118,10 +124,13 @@ public class VehicleAdminController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, [FromBody] DeleteVehicleRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, user!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var row = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Kendaraan tidak ditemukan" });

@@ -904,19 +904,21 @@ export const api = {
 
   // --- Meeting Room (Super Admin only) ---
   listAdminMeetingRooms: () => apiRequest<MeetingRoomListResult>("/meeting-room-admin"),
-  createAdminMeetingRoom: (payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[] }) =>
+  createAdminMeetingRoom: (payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[]; password: string }) =>
     apiRequest<MeetingRoomItem>("/meeting-room-admin", { method: "POST", body: payload }),
-  updateAdminMeetingRoom: (id: number, payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[] }) =>
+  updateAdminMeetingRoom: (id: number, payload: { nama: string; kapasitas: number; lantai: string; fasilitas: string[]; password: string }) =>
     apiRequest<MeetingRoomItem>(`/meeting-room-admin/${id}`, { method: "PATCH", body: payload }),
-  deleteAdminMeetingRoom: (id: number) => apiRequest(`/meeting-room-admin/${id}`, { method: "DELETE" }),
+  deleteAdminMeetingRoom: (id: number, password: string) =>
+    apiRequest(`/meeting-room-admin/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Vehicle (Super Admin only) ---
   listAdminVehicles: () => apiRequest<VehicleListResult>("/vehicle-admin"),
-  createAdminVehicle: (payload: Omit<VehicleItem, "id">) =>
+  createAdminVehicle: (payload: Omit<VehicleItem, "id"> & { password: string }) =>
     apiRequest<VehicleItem>("/vehicle-admin", { method: "POST", body: payload }),
-  updateAdminVehicle: (id: number, payload: Omit<VehicleItem, "id">) =>
+  updateAdminVehicle: (id: number, payload: Omit<VehicleItem, "id"> & { password: string }) =>
     apiRequest<VehicleItem>(`/vehicle-admin/${id}`, { method: "PATCH", body: payload }),
-  deleteAdminVehicle: (id: number) => apiRequest(`/vehicle-admin/${id}`, { method: "DELETE" }),
+  deleteAdminVehicle: (id: number, password: string) =>
+    apiRequest(`/vehicle-admin/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Users Admin (Super Admin only) ---
   listAdminUsers: (params: ListAdminUsersParams) =>

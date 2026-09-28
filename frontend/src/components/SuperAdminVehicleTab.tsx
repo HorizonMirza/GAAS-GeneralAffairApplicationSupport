@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
-import { useConfirm } from "@/components/ui/ConfirmProvider";
 import ModalOverlay from "@/components/ModalOverlay";
+import PasswordField from "@/components/PasswordField";
+import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
 import type { VehicleItem } from "@/lib/types";
 
 interface VehicleFormState {
@@ -19,11 +20,13 @@ interface VehicleFormState {
   warna: string;
   nomorTeleponSupir: string;
   lokasiParkir: string;
+  password: string;
 }
 
 const EMPTY_FORM: VehicleFormState = {
-  nama: "", platNomor: "", kapasitas: "", supir: "", merek: "", model: "", tahun: "", warna: "", nomorTeleponSupir: "", lokasiParkir: "",
+  nama: "", platNomor: "", kapasitas: "", supir: "", merek: "", model: "", tahun: "", warna: "", nomorTeleponSupir: "", lokasiParkir: "", password: "",
 };
+const ICON_BTN_STYLE: React.CSSProperties = { width: "auto", padding: "3px 6px" };
 
 function toFormFields(item: VehicleItem): VehicleFormState {
   return {
@@ -37,6 +40,7 @@ function toFormFields(item: VehicleItem): VehicleFormState {
     warna: item.warna,
     nomorTeleponSupir: item.nomorTeleponSupir,
     lokasiParkir: item.lokasiParkir,
+    password: "",
   };
 }
 
@@ -45,7 +49,6 @@ function toFormFields(item: VehicleItem): VehicleFormState {
 // list+modal-form shape as SuperAdminUsersTab, without pagination - the fleet is small.
 export default function SuperAdminVehicleTab() {
   const { showToast } = useToast();
-  const confirm = useConfirm();
 
   const [items, setItems] = useState<VehicleItem[]>([]);
   const [busy, setBusy] = useState(true);
@@ -55,6 +58,8 @@ export default function SuperAdminVehicleTab() {
   const [form, setForm] = useState<VehicleFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<VehicleItem | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -105,6 +110,7 @@ export default function SuperAdminVehicleTab() {
     if (!form.warna.trim()) { setFormError("Warna wajib diisi"); return; }
     if (!form.nomorTeleponSupir.trim()) { setFormError("No. telepon supir wajib diisi"); return; }
     if (!form.lokasiParkir.trim()) { setFormError("Lokasi parkir wajib diisi"); return; }
+    if (!form.password) { setFormError("Password wajib diisi"); return; }
 
     const payload = {
       nama: form.nama.trim(),
@@ -117,6 +123,7 @@ export default function SuperAdminVehicleTab() {
       warna: form.warna.trim(),
       nomorTeleponSupir: form.nomorTeleponSupir.trim(),
       lokasiParkir: form.lokasiParkir.trim(),
+      password: form.password,
     };
 
     setSaving(true);
@@ -137,31 +144,21 @@ export default function SuperAdminVehicleTab() {
     }
   }
 
-  function handleDelete(item: VehicleItem) {
-    confirm(`Hapus kendaraan "${item.nama}"?`, async () => {
-      try {
-        await api.deleteAdminVehicle(item.id);
-        showToast("Kendaraan berhasil dihapus");
-        await load();
-      } catch (err) {
-        showToast(errorMessage(err), "error");
-      }
-    });
+  async function handleDeleteConfirm(password: string) {
+    if (!deleteTarget) return;
+    await api.deleteAdminVehicle(deleteTarget.id, password);
+    showToast("Kendaraan berhasil dihapus");
+    setDeleteTarget(null);
+    await load();
   }
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Kendaraan ({items.length})</h3>
+      <div className="card-header" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Kendaraan
         </button>
       </div>
-      <p className="text-secondary" style={{ marginTop: 0 }}>
-        Daftar kendaraan yang bisa dipilih saat membuat Vehicle Booking. Mengganti data kendaraan
-        tidak mengubah data booking yang sudah ada - hanya memengaruhi pilihan pada form baru ke
-        depannya.
-      </p>
 
       <div className="table-wrap">
         <table className="data-table">
@@ -187,8 +184,12 @@ export default function SuperAdminVehicleTab() {
                   <td>{item.merek} {item.model}</td>
                   <td>{item.tahun}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => openEdit(item)}>Edit</button>
-                    <button type="button" className="btn btn-confirm-danger" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleDelete(item)}>Hapus</button>
+                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Edit" onClick={() => openEdit(item)}>
+                      <Pencil width={14} height={14} />
+                    </button>
+                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => setDeleteTarget(item)}>
+                      <Trash2 width={14} height={14} />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -252,8 +253,18 @@ export default function SuperAdminVehicleTab() {
               </div>
             </div>
 
+            <div style={{ marginTop: 12 }}>
+              <PasswordField
+                id="vehicle-form-password"
+                label="Password Super Admin"
+                placeholder="Masukkan Password"
+                icon={<Lock width={15} height={15} />}
+                value={form.password}
+                onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+              />
+            </div>
+
             <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setFormOpen(null)} disabled={saving}>Batal</button>
               <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={saving}>
                 {saving ? "Menyimpan..." : formOpen === "create" ? "Tambah" : "Simpan"}
               </button>
@@ -261,6 +272,14 @@ export default function SuperAdminVehicleTab() {
           </form>
         </div>
       </ModalOverlay>
+
+      <DeleteWithPasswordModal
+        open={!!deleteTarget}
+        title="Hapus Kendaraan"
+        itemLabel={`kendaraan "${deleteTarget?.nama ?? ""}"`}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -3326,9 +3326,6 @@ function SuperAdminPageInner() {
           {bookingRuangSubtab === "transaksi" && (
         <>
       <div className="card">
-        <div className="card-header">
-          <h3>Room Booking Meeting</h3>
-        </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-booking-search">Cari Pesanan</label>
@@ -4253,9 +4250,6 @@ function SuperAdminPageInner() {
           {kendaraanSubtab === "transaksi" && (
         <>
       <div className="card">
-        <div className="card-header">
-          <h3>Booking Kendaraan</h3>
-        </div>
         <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-kendaraan-search">Cari Pesanan</label>
