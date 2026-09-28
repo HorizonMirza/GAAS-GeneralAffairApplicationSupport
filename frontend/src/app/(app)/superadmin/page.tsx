@@ -105,13 +105,16 @@ interface BookingFilterState {
   page: number;
   limit: number;
   tanggal: string;
+  bulan: string;
   status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
+  direktorat: string;
   namaRuang: string;
+  search: string;
 }
 
-const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaRuang: "" };
+const EMPTY_BOOKING_FILTERS: BookingFilterState = { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", namaRuang: "", search: "" };
 
 const AUTO_WIDTH_STYLE = { width: "auto" };
 const RESET_FILTER_BUTTON_STYLE = { width: "auto", alignSelf: "flex-end" };
@@ -511,6 +514,7 @@ function SuperAdminPageInner() {
     }, 350);
   }
   const [bookingFilters, setBookingFilters] = useState<BookingFilterState>(EMPTY_BOOKING_FILTERS);
+  const [bookingSearchInput, setBookingSearchInput] = useState("");
   const [bookingItems, setBookingItems] = useState<BookingRuang[]>([]);
   const [bookingTotal, setBookingTotal] = useState(0);
   const [bookingBusy, setBookingBusy] = useState(true);
@@ -787,10 +791,13 @@ function SuperAdminPageInner() {
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const atkFilterWrapRef = useRef<HTMLDivElement>(null);
   const saranaFilterWrapRef = useRef<HTMLDivElement>(null);
+  const bookingFilterWrapRef = useRef<HTMLDivElement>(null);
   const [atkFilterOpen, setAtkFilterOpen] = useState(false);
   const [saranaFilterOpen, setSaranaFilterOpen] = useState(false);
+  const [bookingFilterOpen, setBookingFilterOpen] = useState(false);
   useExclusivePanel(atkFilterOpen, () => setAtkFilterOpen(false));
   useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
+  useExclusivePanel(bookingFilterOpen, () => setBookingFilterOpen(false));
   useExclusivePanel(arsipKatalogFilterOpen, () => setArsipKatalogFilterOpen(false));
   useExclusivePanel(saranaKatalogFilterOpen, () => setSaranaKatalogFilterOpen(false));
   const tableReqIdRef = useRef(0);
@@ -805,12 +812,14 @@ function SuperAdminPageInner() {
   const arsipKatalogReqIdRef = useRef(0);
   const atkSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const atkReqIdRef = useRef(0);
+  const bookingSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaReqIdRef = useRef(0);
   const saranaKatalogFilterWrapRef = useRef<HTMLDivElement>(null);
   const saranaKatalogSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaKatalogReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+  useClickOutside([bookingFilterWrapRef], () => setBookingFilterOpen(false), bookingFilterOpen);
   useClickOutside([atkFilterWrapRef], () => setAtkFilterOpen(false), atkFilterOpen);
   useClickOutside([saranaFilterWrapRef], () => setSaranaFilterOpen(false), saranaFilterOpen);
   useClickOutside([arsipKatalogFilterWrapRef], () => setArsipKatalogFilterOpen(false), arsipKatalogFilterOpen);
@@ -979,10 +988,13 @@ function SuperAdminPageInner() {
         page: bookingFilters.page,
         limit: bookingFilters.limit,
         tanggal: bookingFilters.tanggal,
+        bulan: bookingFilters.bulan,
         status: bookingFilters.status,
         divisi: bookingFilters.divisi,
         departemen: bookingFilters.departemen,
+        direktorat: bookingFilters.direktorat,
         namaRuang: bookingFilters.namaRuang,
+        search: bookingFilters.search,
       });
       if (reqId !== bookingReqIdRef.current) return;
       const bookingItemsResult = result?.items ?? [];
@@ -1806,13 +1818,14 @@ function SuperAdminPageInner() {
 
   function bookingExportParams() {
     return {
-      bulan: undefined,
+      bulan: bookingFilters.bulan,
       tanggal: bookingFilters.tanggal,
       status: bookingFilters.status,
       divisi: bookingFilters.divisi,
       departemen: bookingFilters.departemen,
+      direktorat: bookingFilters.direktorat,
       nama_ruang: bookingFilters.namaRuang,
-      search: undefined,
+      search: bookingFilters.search,
     };
   }
 
@@ -1894,7 +1907,16 @@ function SuperAdminPageInner() {
     setBookingFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
   }
 
+  function handleBookingSearchChange(value: string) {
+    setBookingSearchInput(value);
+    if (bookingSearchDebounce.current) clearTimeout(bookingSearchDebounce.current);
+    bookingSearchDebounce.current = setTimeout(() => {
+      updateBookingFilter({ search: value.trim() });
+    }, 350);
+  }
+
   function resetBookingFilters() {
+    setBookingSearchInput("");
     setBookingFilters(EMPTY_BOOKING_FILTERS);
   }
 
@@ -2169,11 +2191,20 @@ function SuperAdminPageInner() {
   const bookingPageButtons: number[] = [];
   for (let p = bookingPageStart; p <= bookingPageEnd; p++) bookingPageButtons.push(p);
 
-  const bookingDivisiOptions = orgStructure?.divisi || [];
+  const bookingSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === bookingFilters.direktorat) || null;
+  const bookingDivisiOptions = bookingSelectedDirektoratNode
+    ? bookingSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
   const bookingSelectedDivisiNode = bookingFilters.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === bookingFilters.divisi)
+    ? (bookingSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === bookingFilters.divisi
+      )
     : null;
-  const bookingDepartemenOptions = bookingSelectedDivisiNode ? bookingSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+  const bookingDepartemenOptions = bookingSelectedDivisiNode
+    ? bookingSelectedDivisiNode.departemen
+    : bookingSelectedDirektoratNode
+      ? bookingSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
 
   const kendaraanTotalPages = Math.max(1, Math.ceil(kendaraanTotal / kendaraanFilters.limit));
   const kendaraanPageStart = Math.min(Math.max(1, kendaraanFilters.page), kendaraanTotalPages);
@@ -2518,7 +2549,7 @@ function SuperAdminPageInner() {
 
           {ekspedisiSubtab === "pengiriman" && (
             <div className="card">
-        <div className="toolbar">
+        <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
             <input type="text" id="filter-search" placeholder="No Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
@@ -2933,24 +2964,24 @@ function SuperAdminPageInner() {
             </button>
             <button
               type="button"
+              className={`superadmin-subtab-btn ${bookingRuangSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setBookingRuangSubtab("calendar")}
+            >
+              Calendar
+            </button>
+            <button
+              type="button"
               className={`superadmin-subtab-btn ${bookingRuangSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setBookingRuangSubtab("transaksi")}
             >
-              Transaksi Booking ({bookingTotal})
+              Booking ({bookingTotal})
             </button>
             <button
               type="button"
               className={`superadmin-subtab-btn ${bookingRuangSubtab === "roster" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setBookingRuangSubtab("roster")}
             >
-              Kelola Ruang Meeting
-            </button>
-            <button
-              type="button"
-              className={`superadmin-subtab-btn ${bookingRuangSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
-              onClick={() => setBookingRuangSubtab("calendar")}
-            >
-              Calendar
+              Settings
             </button>
           </div>
 
@@ -3267,60 +3298,86 @@ function SuperAdminPageInner() {
         <div className="card-header">
           <h3>Room Booking Meeting</h3>
         </div>
-        <div className="toolbar">
-          <div className="field">
-            <label htmlFor="filter-booking-tanggal">Filter Tanggal</label>
-            <DateFilterPicker id="filter-booking-tanggal" value={bookingFilters.tanggal} onChange={(v) => updateBookingFilter({ tanggal: v })} />
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
+            <label htmlFor="filter-booking-search">Cari Pesanan</label>
+            <input type="text" id="filter-booking-search" placeholder="No Pesanan" value={bookingSearchInput} onChange={(e) => handleBookingSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-booking-status">Status</label>
-            <SearchableSelect
-              id="filter-booking-status"
-              value={bookingFilters.status}
-              onChange={(v) => updateBookingFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
-              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
-              getLabel={(v) => ({
-                DRAFT: "Draft",
-                ON_APPROVAL: "On-Approval",
-                REJECTED: "Rejected",
-                APPROVED_GA_APPROVAL: "Approved",
-              } as Record<string, string>)[v] || v}
-              clearLabel="Semua Status"
-              placeholder="Semua Status"
-            />
+            <label htmlFor="filter-booking-bulan">Filter Periode</label>
+            <PeriodFilterPicker id="filter-booking-bulan" bulan={bookingFilters.bulan} tanggal={bookingFilters.tanggal} onChangeBulan={(v) => updateBookingFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateBookingFilter({ tanggal: v, bulan: "" })} />
           </div>
-          <div className="field">
-            <label htmlFor="filter-booking-ruang">Ruangan</label>
-            <SearchableSelect
-              id="filter-booking-ruang"
-              value={bookingFilters.namaRuang}
-              onChange={(v) => updateBookingFilter({ namaRuang: v })}
-              options={rooms.map((r) => r.nama)}
-              clearLabel="Semua Ruang"
-              placeholder="Semua Ruang"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-booking-divisi">Divisi</label>
-            <SearchableSelect
-              id="filter-booking-divisi"
-              value={bookingFilters.divisi}
-              onChange={(v) => updateBookingFilter({ divisi: v, departemen: "" })}
-              options={bookingDivisiOptions}
-              clearLabel="Semua Divisi"
-              placeholder="Semua Divisi"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-booking-departemen">Departemen</label>
-            <SearchableSelect
-              id="filter-booking-departemen"
-              value={bookingFilters.departemen}
-              onChange={(v) => updateBookingFilter({ departemen: v })}
-              options={bookingDepartemenOptions}
-              clearLabel="Semua Departemen"
-              placeholder="Semua Departemen"
-            />
+          <div className="filter-dropdown-wrap" ref={bookingFilterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-booking-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setBookingFilterOpen((v) => !v)}>
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            {bookingFilterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={FIELD_NO_MARGIN_STYLE}>
+                  <label htmlFor="filter-booking-status">Status</label>
+                  <SearchableSelect
+                    id="filter-booking-status"
+                    value={bookingFilters.status}
+                    onChange={(v) => updateBookingFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      ON_APPROVAL: "On-Approval",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-booking-ruang">Ruangan</label>
+                  <SearchableSelect
+                    id="filter-booking-ruang"
+                    value={bookingFilters.namaRuang}
+                    onChange={(v) => updateBookingFilter({ namaRuang: v })}
+                    options={rooms.map((r) => r.nama)}
+                    clearLabel="Semua Ruang"
+                    placeholder="Semua Ruang"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-booking-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="filter-booking-direktorat"
+                    value={bookingFilters.direktorat}
+                    onChange={(v) => updateBookingFilter({ direktorat: v, divisi: "", departemen: "" })}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-booking-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="filter-booking-divisi"
+                    value={bookingFilters.divisi}
+                    onChange={(v) => updateBookingFilter({ divisi: v, departemen: "" })}
+                    options={bookingDivisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-booking-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="filter-booking-departemen"
+                    value={bookingFilters.departemen}
+                    onChange={(v) => updateBookingFilter({ departemen: v })}
+                    options={bookingDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetBookingFilters}>Semua Pesanan</button>
           <div className="toolbar-actions">
