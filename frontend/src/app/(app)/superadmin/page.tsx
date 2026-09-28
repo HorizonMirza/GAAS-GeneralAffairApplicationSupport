@@ -7,7 +7,7 @@ import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_STATUS_LABEL, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, truncateText } from "@/lib/format";
-import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, Pengiriman, PermintaanArsip, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -155,6 +155,36 @@ interface SaranaFilterState {
 
 const EMPTY_SARANA_FILTERS: SaranaFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "" };
 
+// Repository (Katalog) - read-only, approved-only view, so no status filter like the Transaction
+// tables above (see PermintaanArsipController/PerbaikanSaranaController.GetCatalog).
+interface ArsipKatalogFilterState {
+  page: number;
+  limit: number;
+  search: string;
+  kategori: ArchiveKategori | "";
+  divisi: string;
+  departemen: string;
+  direktorat: string;
+  bulan: string;
+  tanggal: string;
+}
+
+const EMPTY_ARSIP_KATALOG_FILTERS: ArsipKatalogFilterState = { page: 1, limit: 10, search: "", kategori: "", divisi: "", departemen: "", direktorat: "", bulan: "", tanggal: "" };
+
+interface SaranaKatalogFilterState {
+  page: number;
+  limit: number;
+  search: string;
+  kategori: KategoriKerusakan | "";
+  divisi: string;
+  departemen: string;
+  direktorat: string;
+  bulan: string;
+  tanggal: string;
+}
+
+const EMPTY_SARANA_KATALOG_FILTERS: SaranaKatalogFilterState = { page: 1, limit: 10, search: "", kategori: "", divisi: "", departemen: "", direktorat: "", bulan: "", tanggal: "" };
+
 interface FilterState {
   page: number;
   limit: number;
@@ -282,6 +312,20 @@ function SuperAdminPageInner() {
   const [arsipKoreksiTarget, setArsipKoreksiTarget] = useState<PermintaanArsip | null>(null);
   const arsipRowMenu = useRowMenu(arsipItems);
 
+  // Repository (Katalog) tab - separate state from the Transaction table above since it's a
+  // wholly different read-only endpoint/filter shape (see arsip/katalog/page.tsx).
+  const [arsipKatalogFilters, setArsipKatalogFilters] = useState<ArsipKatalogFilterState>(EMPTY_ARSIP_KATALOG_FILTERS);
+  const [arsipKatalogSearchInput, setArsipKatalogSearchInput] = useState("");
+  const [arsipKatalogItems, setArsipKatalogItems] = useState<PermintaanArsipCatalogItem[]>([]);
+  const [arsipKatalogTotal, setArsipKatalogTotal] = useState(0);
+  const [arsipKatalogBusy, setArsipKatalogBusy] = useState(true);
+  const [arsipKatalogError, setArsipKatalogError] = useState("");
+  const [arsipKatalogFilterOpen, setArsipKatalogFilterOpen] = useState(false);
+  const [arsipKatalogDetail, setArsipKatalogDetail] = useState<PermintaanArsip | null>(null);
+  const [arsipKatalogStatusItemId, setArsipKatalogStatusItemId] = useState<number | null>(null);
+  const [arsipKatalogChatItem, setArsipKatalogChatItem] = useState<PermintaanArsipCatalogItem | null>(null);
+  const arsipKatalogRowMenu = useRowMenu(arsipKatalogItems);
+
   const [atkFilters, setAtkFilters] = useState<AtkFilterState>(EMPTY_ATK_FILTERS);
   const [atkSearchInput, setAtkSearchInput] = useState("");
   const [atkItems, setAtkItems] = useState<PermintaanAtk[]>([]);
@@ -323,6 +367,20 @@ function SuperAdminPageInner() {
   const [saranaKoreksiTarget, setSaranaKoreksiTarget] = useState<PerbaikanSarana | null>(null);
   const saranaRowMenu = useRowMenu(saranaItems);
 
+  // Repository (Katalog) tab - separate state from the Transaction table above since it's a
+  // wholly different read-only endpoint/filter shape (see maintenance/katalog/page.tsx).
+  const [saranaKatalogFilters, setSaranaKatalogFilters] = useState<SaranaKatalogFilterState>(EMPTY_SARANA_KATALOG_FILTERS);
+  const [saranaKatalogSearchInput, setSaranaKatalogSearchInput] = useState("");
+  const [saranaKatalogItems, setSaranaKatalogItems] = useState<PerbaikanSaranaCatalogItem[]>([]);
+  const [saranaKatalogTotal, setSaranaKatalogTotal] = useState(0);
+  const [saranaKatalogBusy, setSaranaKatalogBusy] = useState(true);
+  const [saranaKatalogError, setSaranaKatalogError] = useState("");
+  const [saranaKatalogFilterOpen, setSaranaKatalogFilterOpen] = useState(false);
+  const [saranaKatalogDetail, setSaranaKatalogDetail] = useState<PerbaikanSarana | null>(null);
+  const [saranaKatalogStatusItemId, setSaranaKatalogStatusItemId] = useState<number | null>(null);
+  const [saranaKatalogChatItem, setSaranaKatalogChatItem] = useState<PerbaikanSaranaCatalogItem | null>(null);
+  const saranaKatalogRowMenu = useRowMenu(saranaKatalogItems);
+
   const invoiceRowMenu = useRowMenu(invoices ?? []);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -332,6 +390,8 @@ function SuperAdminPageInner() {
   const [saranaFilterOpen, setSaranaFilterOpen] = useState(false);
   useExclusivePanel(atkFilterOpen, () => setAtkFilterOpen(false));
   useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
+  useExclusivePanel(arsipKatalogFilterOpen, () => setArsipKatalogFilterOpen(false));
+  useExclusivePanel(saranaKatalogFilterOpen, () => setSaranaKatalogFilterOpen(false));
   const tableReqIdRef = useRef(0);
   const invoiceReqIdRef = useRef(0);
   const atkInvoiceReqIdRef = useRef(0);
@@ -339,13 +399,21 @@ function SuperAdminPageInner() {
   const kendaraanReqIdRef = useRef(0);
   const arsipSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arsipReqIdRef = useRef(0);
+  const arsipKatalogFilterWrapRef = useRef<HTMLDivElement>(null);
+  const arsipKatalogSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const arsipKatalogReqIdRef = useRef(0);
   const atkSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const atkReqIdRef = useRef(0);
   const saranaSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaReqIdRef = useRef(0);
+  const saranaKatalogFilterWrapRef = useRef<HTMLDivElement>(null);
+  const saranaKatalogSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saranaKatalogReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
   useClickOutside([atkFilterWrapRef], () => setAtkFilterOpen(false), atkFilterOpen);
   useClickOutside([saranaFilterWrapRef], () => setSaranaFilterOpen(false), saranaFilterOpen);
+  useClickOutside([arsipKatalogFilterWrapRef], () => setArsipKatalogFilterOpen(false), arsipKatalogFilterOpen);
+  useClickOutside([saranaKatalogFilterWrapRef], () => setSaranaKatalogFilterOpen(false), saranaKatalogFilterOpen);
 
   useEffect(() => {
     if (!loading && me && me.role !== "SUPER_ADMIN") router.replace("/dashboard");
@@ -528,6 +596,41 @@ function SuperAdminPageInner() {
     }
   }, [arsipFilters]);
 
+  const loadArsipKatalog = useCallback(async (opts?: { silent?: boolean }) => {
+    const reqId = ++arsipKatalogReqIdRef.current;
+    if (!opts?.silent) {
+      setArsipKatalogBusy(true);
+      setArsipKatalogError("");
+    }
+    try {
+      const result = await api.getArsipCatalog({
+        page: arsipKatalogFilters.page,
+        limit: arsipKatalogFilters.limit,
+        search: arsipKatalogFilters.search,
+        kategori: arsipKatalogFilters.kategori,
+        divisi: arsipKatalogFilters.divisi,
+        departemen: arsipKatalogFilters.departemen,
+        direktorat: arsipKatalogFilters.direktorat,
+        bulan: arsipKatalogFilters.bulan,
+        tanggal: arsipKatalogFilters.tanggal,
+      });
+      if (reqId !== arsipKatalogReqIdRef.current) return;
+      const itemsResult = result?.items ?? [];
+      const totalResult = result?.total ?? 0;
+      if (itemsResult.length === 0 && totalResult > 0 && arsipKatalogFilters.page > 1) {
+        setArsipKatalogFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setArsipKatalogItems(itemsResult);
+      setArsipKatalogTotal(totalResult);
+    } catch (err) {
+      if (reqId !== arsipKatalogReqIdRef.current) return;
+      if (!opts?.silent) setArsipKatalogError((err as Error).message);
+    } finally {
+      if (reqId === arsipKatalogReqIdRef.current && !opts?.silent) setArsipKatalogBusy(false);
+    }
+  }, [arsipKatalogFilters]);
+
   const loadAtk = useCallback(async (opts?: { silent?: boolean }) => {
     const reqId = ++atkReqIdRef.current;
     if (!opts?.silent) {
@@ -598,6 +701,41 @@ function SuperAdminPageInner() {
     }
   }, [saranaFilters]);
 
+  const loadSaranaKatalog = useCallback(async (opts?: { silent?: boolean }) => {
+    const reqId = ++saranaKatalogReqIdRef.current;
+    if (!opts?.silent) {
+      setSaranaKatalogBusy(true);
+      setSaranaKatalogError("");
+    }
+    try {
+      const result = await api.getSaranaCatalog({
+        page: saranaKatalogFilters.page,
+        limit: saranaKatalogFilters.limit,
+        search: saranaKatalogFilters.search,
+        kategori: saranaKatalogFilters.kategori,
+        divisi: saranaKatalogFilters.divisi,
+        departemen: saranaKatalogFilters.departemen,
+        direktorat: saranaKatalogFilters.direktorat,
+        bulan: saranaKatalogFilters.bulan,
+        tanggal: saranaKatalogFilters.tanggal,
+      });
+      if (reqId !== saranaKatalogReqIdRef.current) return;
+      const itemsResult = result?.items ?? [];
+      const totalResult = result?.total ?? 0;
+      if (itemsResult.length === 0 && totalResult > 0 && saranaKatalogFilters.page > 1) {
+        setSaranaKatalogFilters((f) => ({ ...f, page: f.page - 1 }));
+        return;
+      }
+      setSaranaKatalogItems(itemsResult);
+      setSaranaKatalogTotal(totalResult);
+    } catch (err) {
+      if (reqId !== saranaKatalogReqIdRef.current) return;
+      if (!opts?.silent) setSaranaKatalogError((err as Error).message);
+    } finally {
+      if (reqId === saranaKatalogReqIdRef.current && !opts?.silent) setSaranaKatalogBusy(false);
+    }
+  }, [saranaKatalogFilters]);
+
   useEffect(() => {
     if (activeTab === "ekspedisi") {
       loadTable();
@@ -629,6 +767,12 @@ function SuperAdminPageInner() {
   }, [activeTab, loadArsip]);
 
   useEffect(() => {
+    if (activeTab === "arsip") {
+      loadArsipKatalog();
+    }
+  }, [activeTab, loadArsipKatalog]);
+
+  useEffect(() => {
     if (activeTab === "atk") {
       loadAtk();
     }
@@ -645,6 +789,12 @@ function SuperAdminPageInner() {
       loadSarana();
     }
   }, [activeTab, loadSarana]);
+
+  useEffect(() => {
+    if (activeTab === "sarana") {
+      loadSaranaKatalog();
+    }
+  }, [activeTab, loadSaranaKatalog]);
 
   useEffect(() => {
     if (activeTab === "booking-ruang" && rooms.length === 0) {
@@ -923,6 +1073,49 @@ function SuperAdminPageInner() {
     }, "Delete Permanent");
   }
 
+  function updateArsipKatalogFilter(patch: Partial<ArsipKatalogFilterState>) {
+    setArsipKatalogFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function handleArsipKatalogSearchChange(value: string) {
+    setArsipKatalogSearchInput(value);
+    if (arsipKatalogSearchDebounce.current) clearTimeout(arsipKatalogSearchDebounce.current);
+    arsipKatalogSearchDebounce.current = setTimeout(() => {
+      updateArsipKatalogFilter({ search: value.trim() });
+    }, 350);
+  }
+
+  function resetArsipKatalogFilters() {
+    setArsipKatalogSearchInput("");
+    setArsipKatalogFilters(EMPTY_ARSIP_KATALOG_FILTERS);
+  }
+
+  function goToArsipKatalogPage(page: number) {
+    if (page < 1) return;
+    setArsipKatalogFilters((f) => ({ ...f, page }));
+  }
+
+  function currentArsipKatalogExportParams() {
+    return {
+      search: arsipKatalogFilters.search,
+      kategori: arsipKatalogFilters.kategori,
+      divisi: arsipKatalogFilters.divisi,
+      departemen: arsipKatalogFilters.departemen,
+      direktorat: arsipKatalogFilters.direktorat,
+      bulan: arsipKatalogFilters.bulan,
+      tanggal: arsipKatalogFilters.tanggal,
+    };
+  }
+
+  async function openArsipKatalogDetail(id: number) {
+    try {
+      const item = await api.getArsip(id);
+      setArsipKatalogDetail(item);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
+
   function updateAtkFilter(patch: Partial<AtkFilterState>) {
     setAtkFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
   }
@@ -989,6 +1182,49 @@ function SuperAdminPageInner() {
         showToast((err as Error).message, "error");
       }
     }, "Delete Permanent");
+  }
+
+  function updateSaranaKatalogFilter(patch: Partial<SaranaKatalogFilterState>) {
+    setSaranaKatalogFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
+  }
+
+  function handleSaranaKatalogSearchChange(value: string) {
+    setSaranaKatalogSearchInput(value);
+    if (saranaKatalogSearchDebounce.current) clearTimeout(saranaKatalogSearchDebounce.current);
+    saranaKatalogSearchDebounce.current = setTimeout(() => {
+      updateSaranaKatalogFilter({ search: value.trim() });
+    }, 350);
+  }
+
+  function resetSaranaKatalogFilters() {
+    setSaranaKatalogSearchInput("");
+    setSaranaKatalogFilters(EMPTY_SARANA_KATALOG_FILTERS);
+  }
+
+  function goToSaranaKatalogPage(page: number) {
+    if (page < 1) return;
+    setSaranaKatalogFilters((f) => ({ ...f, page }));
+  }
+
+  function currentSaranaKatalogExportParams() {
+    return {
+      search: saranaKatalogFilters.search,
+      kategori: saranaKatalogFilters.kategori,
+      divisi: saranaKatalogFilters.divisi,
+      departemen: saranaKatalogFilters.departemen,
+      direktorat: saranaKatalogFilters.direktorat,
+      bulan: saranaKatalogFilters.bulan,
+      tanggal: saranaKatalogFilters.tanggal,
+    };
+  }
+
+  async function openSaranaKatalogDetail(id: number) {
+    try {
+      const item = await api.getSarana(id);
+      setSaranaKatalogDetail(item);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
@@ -1062,6 +1298,27 @@ function SuperAdminPageInner() {
     : null;
   const arsipDepartemenOptions = arsipSelectedDivisiNode ? arsipSelectedDivisiNode.departemen : orgStructure?.departemen || [];
 
+  const arsipKatalogTotalPages = Math.max(1, Math.ceil(arsipKatalogTotal / arsipKatalogFilters.limit));
+  const arsipKatalogPageStart = Math.min(Math.max(1, arsipKatalogFilters.page), arsipKatalogTotalPages);
+  const arsipKatalogPageEnd = Math.min(arsipKatalogTotalPages, arsipKatalogPageStart + 1);
+  const arsipKatalogPageButtons: number[] = [];
+  for (let p = arsipKatalogPageStart; p <= arsipKatalogPageEnd; p++) arsipKatalogPageButtons.push(p);
+
+  const arsipKatalogSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === arsipKatalogFilters.direktorat) || null;
+  const arsipKatalogDivisiOptions = arsipKatalogSelectedDirektoratNode
+    ? arsipKatalogSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
+  const arsipKatalogSelectedDivisiNode = arsipKatalogFilters.divisi
+    ? (arsipKatalogSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === arsipKatalogFilters.divisi
+      )
+    : null;
+  const arsipKatalogDepartemenOptions = arsipKatalogSelectedDivisiNode
+    ? arsipKatalogSelectedDivisiNode.departemen
+    : arsipKatalogSelectedDirektoratNode
+      ? arsipKatalogSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
+
   const atkTotalPages = Math.max(1, Math.ceil(atkTotal / atkFilters.limit));
   const atkPageStart = Math.min(Math.max(1, atkFilters.page), atkTotalPages);
   const atkPageEnd = Math.min(atkTotalPages, atkPageStart + 1);
@@ -1102,6 +1359,27 @@ function SuperAdminPageInner() {
     ? saranaSelectedDivisiNode.departemen
     : saranaSelectedDirektoratNode
       ? saranaSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
+
+  const saranaKatalogTotalPages = Math.max(1, Math.ceil(saranaKatalogTotal / saranaKatalogFilters.limit));
+  const saranaKatalogPageStart = Math.min(Math.max(1, saranaKatalogFilters.page), saranaKatalogTotalPages);
+  const saranaKatalogPageEnd = Math.min(saranaKatalogTotalPages, saranaKatalogPageStart + 1);
+  const saranaKatalogPageButtons: number[] = [];
+  for (let p = saranaKatalogPageStart; p <= saranaKatalogPageEnd; p++) saranaKatalogPageButtons.push(p);
+
+  const saranaKatalogSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === saranaKatalogFilters.direktorat) || null;
+  const saranaKatalogDivisiOptions = saranaKatalogSelectedDirektoratNode
+    ? saranaKatalogSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
+  const saranaKatalogSelectedDivisiNode = saranaKatalogFilters.divisi
+    ? (saranaKatalogSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === saranaKatalogFilters.divisi
+      )
+    : null;
+  const saranaKatalogDepartemenOptions = saranaKatalogSelectedDivisiNode
+    ? saranaKatalogSelectedDivisiNode.departemen
+    : saranaKatalogSelectedDirektoratNode
+      ? saranaKatalogSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
       : orgStructure?.departemen || [];
 
   const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
@@ -2449,6 +2727,229 @@ function SuperAdminPageInner() {
           />
 
           <ArsipStatusHistoryModal open={arsipStatusItemId != null} itemId={arsipStatusItemId} onClose={() => setArsipStatusItemId(null)} />
+
+          <div className="card" style={{ marginTop: 20 }}>
+            <div className="card-header">
+              <h3>Repository Arsip</h3>
+            </div>
+            <div className="toolbar transactions-page-toolbar">
+              <div className="field toolbar-search-field">
+                <label htmlFor="filter-arsip-katalog-search">Cari Arsip</label>
+                <input type="text" id="filter-arsip-katalog-search" placeholder="Nama Arsip" value={arsipKatalogSearchInput} onChange={(e) => handleArsipKatalogSearchChange(e.target.value)} />
+              </div>
+
+              <div className="field">
+                <label htmlFor="filter-arsip-katalog-bulan">Filter Periode</label>
+                <PeriodFilterPicker id="filter-arsip-katalog-bulan" bulan={arsipKatalogFilters.bulan} tanggal={arsipKatalogFilters.tanggal} onChangeBulan={(v) => updateArsipKatalogFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateArsipKatalogFilter({ tanggal: v, bulan: "" })} />
+              </div>
+
+              <div className="filter-dropdown-wrap" ref={arsipKatalogFilterWrapRef}>
+                <label className="filter-dropdown-label">Filter Lainnya</label>
+                <button type="button" className="btn filter-dropdown-toggle" id="filter-arsip-katalog-toggle" style={{ width: "auto" }} onClick={() => setArsipKatalogFilterOpen((v) => !v)}>
+                  Semua Filter
+                  <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                {arsipKatalogFilterOpen && (
+                  <div className="filter-dropdown-panel">
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="filter-arsip-katalog-kategori">Kategori</label>
+                      <SearchableSelect
+                        id="filter-arsip-katalog-kategori"
+                        value={arsipKatalogFilters.kategori}
+                        onChange={(v) => updateArsipKatalogFilter({ kategori: v as ArchiveKategori | "" })}
+                        options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
+                        getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                        clearLabel="Semua Kategori"
+                        placeholder="Semua Kategori"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-arsip-katalog-direktorat">Direktorat</label>
+                      <SearchableSelect
+                        id="filter-arsip-katalog-direktorat"
+                        value={arsipKatalogFilters.direktorat}
+                        onChange={(v) => updateArsipKatalogFilter({ direktorat: v, divisi: "", departemen: "" })}
+                        options={orgStructure?.direktorat || []}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-arsip-katalog-divisi">Divisi</label>
+                      <SearchableSelect
+                        id="filter-arsip-katalog-divisi"
+                        value={arsipKatalogFilters.divisi}
+                        onChange={(v) => updateArsipKatalogFilter({ divisi: v, departemen: "" })}
+                        options={arsipKatalogDivisiOptions}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-arsip-katalog-departemen">Departemen</label>
+                      <SearchableSelect
+                        id="filter-arsip-katalog-departemen"
+                        value={arsipKatalogFilters.departemen}
+                        onChange={(v) => updateArsipKatalogFilter({ departemen: v })}
+                        options={arsipKatalogDepartemenOptions}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetArsipKatalogFilters}>Semua Arsip</button>
+
+              <div className="toolbar-actions">
+                <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipKatalogExportPdfUrl(currentArsipKatalogExportParams()), "_blank")}>
+                  ⬇ Download PDF
+                </button>
+                <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.arsipKatalogExportUrl(currentArsipKatalogExportParams()), "_blank")}>
+                  ⬇ Download Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>No</th><th>No Pemindahan</th><th>Tanggal</th><th>Jumlah Arsip</th>
+                    <th>Nama Arsip</th><th>Kategori</th><th>Tahun</th>
+                    <th>Lokasi Penyimpanan Saat Ini</th><th>Divisi</th><th>Departemen</th>
+                    <th>Nama PIC</th><th>No. Telepon PIC</th><th>Catatan</th><th>Tanggal Disetujui</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {arsipKatalogBusy ? (
+                    <tr><td colSpan={15} className="table-empty">Memuat data...</td></tr>
+                  ) : arsipKatalogError ? (
+                    <tr><td colSpan={15} className="table-empty">{arsipKatalogError}</td></tr>
+                  ) : arsipKatalogItems.length === 0 ? (
+                    <tr><td colSpan={15} className="table-empty">Tidak Ada Data</td></tr>
+                  ) : (
+                    arsipKatalogItems.map((item, index) => (
+                      <tr key={item.id}>
+                        <td>{(arsipKatalogFilters.page - 1) * arsipKatalogFilters.limit + index + 1}</td>
+                        <td>{item.nomorArsip || "-"}</td>
+                        <td>{formatDate(item.tanggal)}</td>
+                        <td>{item.jumlahArsip}</td>
+                        <td title={item.namaArsip}>{truncateText(item.namaArsip, 30)}</td>
+                        <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                        <td>{item.tahunArsip}</td>
+                        <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
+                        <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                        <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                        <td title={item.namaPic || ""}>{truncateText(item.namaPic, 15)}</td>
+                        <td>{item.noTeleponPic || "-"}</td>
+                        <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                        <td>{item.approvedApprovalGaAt ? formatDate(item.approvedApprovalGaAt) : "-"}</td>
+                        <td>
+                          <div className="status-cell">
+                            <span className="badge badge-approved">Approved</span>
+                            <button
+                              type="button"
+                              className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                              aria-label="Chat"
+                              onClick={() => setArsipKatalogChatItem(item)}
+                            >
+                              <MessageSquare width="17" height="17" />
+                              {item.unreadChatCount > 0 && (
+                                <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                              )}
+                            </button>
+                            <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => arsipKatalogRowMenu.toggle(e, item.id, 120)}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pagination">
+              <div className="pagination-left">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="filter-arsip-katalog-limit">Tampilkan</label>
+                  <SearchableSelect
+                    id="filter-arsip-katalog-limit"
+                    value={String(arsipKatalogFilters.limit)}
+                    onChange={(v) => updateArsipKatalogFilter({ limit: Number(v) })}
+                    options={["5", "10", "20", "50"]}
+                    getLabel={(v) => `${v} Arsip`}
+                    placeholder={`${arsipKatalogFilters.limit} Arsip`}
+                  />
+                </div>
+              </div>
+              <div className="pagination-right">
+                <span className="text-secondary">Total {arsipKatalogTotal} Arsip · Halaman {arsipKatalogFilters.page} dari {arsipKatalogTotalPages}</span>
+                <div className="pages">
+                  <button className="page-btn" disabled={arsipKatalogFilters.page <= 1} onClick={() => goToArsipKatalogPage(arsipKatalogFilters.page - 1)}>‹</button>
+                  {arsipKatalogPageButtons.map((p) => (
+                    <button key={p} className={`page-btn ${p === arsipKatalogFilters.page ? "active" : ""}`} onClick={() => goToArsipKatalogPage(p)}>{p}</button>
+                  ))}
+                  <button className="page-btn" disabled={arsipKatalogFilters.page >= arsipKatalogTotalPages} onClick={() => goToArsipKatalogPage(arsipKatalogFilters.page + 1)}>›</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <RowMenuDropdown
+            position={arsipKatalogRowMenu.position}
+            canEditDelete={false}
+            canDelete={false}
+            onDetail={() => {
+              const item = arsipKatalogRowMenu.menuItem;
+              arsipKatalogRowMenu.close();
+              if (item) openArsipKatalogDetail(item.id);
+            }}
+            onUpdates={() => {}}
+            onStatus={() => {
+              const item = arsipKatalogRowMenu.menuItem;
+              arsipKatalogRowMenu.close();
+              if (item) setArsipKatalogStatusItemId(item.id);
+            }}
+            onDelete={() => {}}
+            pdfUrl={arsipKatalogRowMenu.menuItem ? api.arsipPdfUrl(arsipKatalogRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = arsipKatalogRowMenu.menuItem;
+              arsipKatalogRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.arsipPdfUrl(item.id), `Bukti-Pemindahan-Arsip-${item.nomorArsip || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <ArsipDetailModal
+            open={!!arsipKatalogDetail}
+            mode="view"
+            item={arsipKatalogDetail}
+            me={me}
+            onClose={() => setArsipKatalogDetail(null)}
+            onSaved={() => {}}
+            onRequestReject={() => {}}
+          />
+
+          <ArsipStatusHistoryModal open={arsipKatalogStatusItemId != null} itemId={arsipKatalogStatusItemId} onClose={() => setArsipKatalogStatusItemId(null)} />
+
+          <ArsipChatModal
+            open={!!arsipKatalogChatItem}
+            itemId={arsipKatalogChatItem?.id ?? null}
+            itemLabel={arsipKatalogChatItem ? `${arsipKatalogChatItem.namaArsip} - ${arsipKatalogChatItem.nomorArsip || "-"}` : ""}
+            departemen={arsipKatalogChatItem?.departemen ?? null}
+            me={me}
+            onClose={() => setArsipKatalogChatItem(null)}
+            onRead={loadArsipKatalog}
+          />
         </>
       )}
 
@@ -3158,6 +3659,227 @@ function SuperAdminPageInner() {
           />
 
           <SaranaStatusHistoryModal open={saranaStatusItemId != null} itemId={saranaStatusItemId} onClose={() => setSaranaStatusItemId(null)} />
+
+          <div className="card" style={{ marginTop: 20 }}>
+            <div className="card-header">
+              <h3>Repository Maintenance</h3>
+            </div>
+            <div className="toolbar transactions-page-toolbar">
+              <div className="field toolbar-search-field">
+                <label htmlFor="filter-sarana-katalog-search">Cari Laporan</label>
+                <input type="text" id="filter-sarana-katalog-search" placeholder="Nama Laporan" value={saranaKatalogSearchInput} onChange={(e) => handleSaranaKatalogSearchChange(e.target.value)} />
+              </div>
+
+              <div className="field">
+                <label htmlFor="filter-sarana-katalog-bulan">Filter Periode</label>
+                <PeriodFilterPicker id="filter-sarana-katalog-bulan" bulan={saranaKatalogFilters.bulan} tanggal={saranaKatalogFilters.tanggal} onChangeBulan={(v) => updateSaranaKatalogFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateSaranaKatalogFilter({ tanggal: v, bulan: "" })} />
+              </div>
+
+              <div className="filter-dropdown-wrap" ref={saranaKatalogFilterWrapRef}>
+                <label className="filter-dropdown-label">Filter Lainnya</label>
+                <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-katalog-toggle" style={{ width: "auto" }} onClick={() => setSaranaKatalogFilterOpen((v) => !v)}>
+                  Semua Filter
+                  <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                {saranaKatalogFilterOpen && (
+                  <div className="filter-dropdown-panel">
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="filter-sarana-katalog-kategori">Kategori</label>
+                      <SearchableSelect
+                        id="filter-sarana-katalog-kategori"
+                        value={saranaKatalogFilters.kategori}
+                        onChange={(v) => updateSaranaKatalogFilter({ kategori: v as KategoriKerusakan | "" })}
+                        options={KATEGORI_OPTIONS}
+                        getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                        clearLabel="Semua Kategori"
+                        placeholder="Semua Kategori"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-sarana-katalog-direktorat">Direktorat</label>
+                      <SearchableSelect
+                        id="filter-sarana-katalog-direktorat"
+                        value={saranaKatalogFilters.direktorat}
+                        onChange={(v) => updateSaranaKatalogFilter({ direktorat: v, divisi: "", departemen: "" })}
+                        options={orgStructure?.direktorat || []}
+                        clearLabel="Semua Direktorat"
+                        placeholder="Semua Direktorat"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-sarana-katalog-divisi">Divisi</label>
+                      <SearchableSelect
+                        id="filter-sarana-katalog-divisi"
+                        value={saranaKatalogFilters.divisi}
+                        onChange={(v) => updateSaranaKatalogFilter({ divisi: v, departemen: "" })}
+                        options={saranaKatalogDivisiOptions}
+                        clearLabel="Semua Divisi"
+                        placeholder="Semua Divisi"
+                      />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                      <label htmlFor="filter-sarana-katalog-departemen">Departemen</label>
+                      <SearchableSelect
+                        id="filter-sarana-katalog-departemen"
+                        value={saranaKatalogFilters.departemen}
+                        onChange={(v) => updateSaranaKatalogFilter({ departemen: v })}
+                        options={saranaKatalogDepartemenOptions}
+                        clearLabel="Semua Departemen"
+                        placeholder="Semua Departemen"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetSaranaKatalogFilters}>Semua Laporan</button>
+
+              <div className="toolbar-actions">
+                <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.saranaKatalogExportPdfUrl(currentSaranaKatalogExportParams()), "_blank")}>
+                  ⬇ Download PDF
+                </button>
+                <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => window.open(api.saranaKatalogExportUrl(currentSaranaKatalogExportParams()), "_blank")}>
+                  ⬇ Download Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>No</th><th>No Perbaikan</th><th>Tanggal</th>
+                    <th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
+                    <th>Divisi</th><th>Departemen</th>
+                    <th>Nama Pelapor</th><th>No. Telepon Pelapor</th><th>Catatan</th><th>Tanggal Disetujui</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {saranaKatalogBusy ? (
+                    <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
+                  ) : saranaKatalogError ? (
+                    <tr><td colSpan={13} className="table-empty">{saranaKatalogError}</td></tr>
+                  ) : saranaKatalogItems.length === 0 ? (
+                    <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
+                  ) : (
+                    saranaKatalogItems.map((item, index) => (
+                      <tr key={item.id}>
+                        <td>{(saranaKatalogFilters.page - 1) * saranaKatalogFilters.limit + index + 1}</td>
+                        <td>{item.nomorPerbaikan || "-"}</td>
+                        <td>{formatDate(item.tanggal)}</td>
+                        <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
+                        <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                        <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 30)}</td>
+                        <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
+                        <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
+                        <td title={item.namaPelapor}>{truncateText(item.namaPelapor, 15)}</td>
+                        <td>{item.noTeleponPelapor || "-"}</td>
+                        <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
+                        <td>{item.approvedApprovalGaAt ? formatDate(item.approvedApprovalGaAt) : "-"}</td>
+                        <td>
+                          <div className="status-cell">
+                            <span className="badge badge-approved">Approved</span>
+                            <button
+                              type="button"
+                              className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                              aria-label="Chat"
+                              onClick={() => setSaranaKatalogChatItem(item)}
+                            >
+                              <MessageSquare width="17" height="17" />
+                              {item.unreadChatCount > 0 && (
+                                <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                              )}
+                            </button>
+                            <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => saranaKatalogRowMenu.toggle(e, item.id, 120)}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pagination">
+              <div className="pagination-left">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="filter-sarana-katalog-limit">Tampilkan</label>
+                  <SearchableSelect
+                    id="filter-sarana-katalog-limit"
+                    value={String(saranaKatalogFilters.limit)}
+                    onChange={(v) => updateSaranaKatalogFilter({ limit: Number(v) })}
+                    options={["5", "10", "20", "50"]}
+                    getLabel={(v) => `${v} Laporan`}
+                    placeholder={`${saranaKatalogFilters.limit} Laporan`}
+                  />
+                </div>
+              </div>
+              <div className="pagination-right">
+                <span className="text-secondary">Total {saranaKatalogTotal} Laporan · Halaman {saranaKatalogFilters.page} dari {saranaKatalogTotalPages}</span>
+                <div className="pages">
+                  <button className="page-btn" disabled={saranaKatalogFilters.page <= 1} onClick={() => goToSaranaKatalogPage(saranaKatalogFilters.page - 1)}>‹</button>
+                  {saranaKatalogPageButtons.map((p) => (
+                    <button key={p} className={`page-btn ${p === saranaKatalogFilters.page ? "active" : ""}`} onClick={() => goToSaranaKatalogPage(p)}>{p}</button>
+                  ))}
+                  <button className="page-btn" disabled={saranaKatalogFilters.page >= saranaKatalogTotalPages} onClick={() => goToSaranaKatalogPage(saranaKatalogFilters.page + 1)}>›</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <RowMenuDropdown
+            position={saranaKatalogRowMenu.position}
+            canEditDelete={false}
+            canDelete={false}
+            onDetail={() => {
+              const item = saranaKatalogRowMenu.menuItem;
+              saranaKatalogRowMenu.close();
+              if (item) openSaranaKatalogDetail(item.id);
+            }}
+            onUpdates={() => {}}
+            onStatus={() => {
+              const item = saranaKatalogRowMenu.menuItem;
+              saranaKatalogRowMenu.close();
+              if (item) setSaranaKatalogStatusItemId(item.id);
+            }}
+            onDelete={() => {}}
+            pdfUrl={saranaKatalogRowMenu.menuItem ? api.saranaPdfUrl(saranaKatalogRowMenu.menuItem.id) : undefined}
+            onPdfClick={async () => {
+              const item = saranaKatalogRowMenu.menuItem;
+              saranaKatalogRowMenu.close();
+              if (!item) return;
+              try {
+                await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Perbaikan-Sarana-${item.nomorPerbaikan || item.id}.pdf`);
+              } catch (err) {
+                showToast((err as Error).message, "error");
+              }
+            }}
+          />
+
+          <SaranaDetailModal
+            open={!!saranaKatalogDetail}
+            mode="view"
+            item={saranaKatalogDetail}
+            me={me}
+            onClose={() => setSaranaKatalogDetail(null)}
+            onSaved={() => {}}
+            onRequestReject={() => {}}
+          />
+
+          <SaranaStatusHistoryModal open={saranaKatalogStatusItemId != null} itemId={saranaKatalogStatusItemId} onClose={() => setSaranaKatalogStatusItemId(null)} />
+
+          <SaranaChatModal
+            open={!!saranaKatalogChatItem}
+            itemId={saranaKatalogChatItem?.id ?? null}
+            itemLabel={saranaKatalogChatItem ? `${saranaKatalogChatItem.lokasi} - ${saranaKatalogChatItem.nomorPerbaikan || "-"}` : ""}
+            departemen={saranaKatalogChatItem?.departemen ?? null}
+            me={me}
+            onClose={() => setSaranaKatalogChatItem(null)}
+            onRead={loadSaranaKatalog}
+          />
         </>
       )}
 
