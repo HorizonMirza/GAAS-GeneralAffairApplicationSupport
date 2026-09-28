@@ -838,7 +838,7 @@ public class PerbaikanSaranaController : ApiControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null, [FromQuery] string? departemen = null)
+    public async Task<IActionResult> GetStats([FromQuery] string? bulan = null, [FromQuery] DateOnly? tanggal = null, [FromQuery] string? divisi = null, [FromQuery] string? direktorat = null, [FromQuery] string? departemen = null)
     {
         var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
         if (error != null) return error;
@@ -852,6 +852,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         {
             return BadRequest(new { detail = ex.Message });
         }
+
+        if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
 
         if (!string.IsNullOrEmpty(user!.Divisi) && user.Role is RoleEnum.ADMIN_DEPARTEMEN or RoleEnum.APPROVAL_DEPARTEMEN
             or RoleEnum.ADMIN_DIVISI or RoleEnum.APPROVAL_DIVISI)

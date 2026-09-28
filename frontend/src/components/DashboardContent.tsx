@@ -19,8 +19,8 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import MonthFilterPicker from "@/components/MonthFilterPicker";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import SearchableSelect from "@/components/SearchableSelect";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import { api } from "@/lib/api";
@@ -40,16 +40,21 @@ import type {
   Status,
   SumberPembelian,
 } from "@/lib/types";
+import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 import styles from "./DashboardContent.module.css";
 
 type ModuleKey = "expedition" | "room" | "vehicle" | "atk" | "maintenance" | "archive";
 type DashboardStatusFilter =
+  | "DRAFT"
   | "SUBMITTED"
   | "APPROVED_L1"
   | "APPROVED_GA"
   | "APPROVED_GA_APPROVAL"
+  | "COMPLETED"
   | "REJECTED"
   | "ON_APPROVAL";
+type DashboardStatusSelection = "DRAFT" | "ON_APPROVAL" | "REJECTED" | "COMPLETED" | "";
 type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
 type ScheduleTab = "all" | "room" | "vehicle";
 
@@ -66,6 +71,7 @@ interface CommonListParams {
   page?: number;
   limit?: number;
   bulan?: string;
+  tanggal?: string;
   direktorat?: string;
   divisi?: string;
   departemen?: string;
@@ -83,7 +89,7 @@ interface CommonStatsResult {
 }
 
 interface ModuleSource {
-  stats: (bulan?: string, divisi?: string, direktorat?: string, departemen?: string) => Promise<CommonStatsResult>;
+  stats: (bulan?: string, tanggal?: string, divisi?: string, direktorat?: string, departemen?: string) => Promise<CommonStatsResult>;
   list: (params: CommonListParams) => Promise<CommonListResult>;
 }
 
@@ -149,46 +155,46 @@ function emptySummaries(): Record<ModuleKey, ModuleSummary> {
 
 const MODULE_SOURCES: Record<ModuleKey, ModuleSource> = {
   expedition: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getPengirimanStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getPengirimanStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
     list: async (params) => api.listPengiriman(params),
   },
   room: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getBookingStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getBookingStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
-    list: async (params) => api.listBooking(params),
+    list: async (params) => api.listBooking({ ...params, status: params.status as BookingStatus | "REJECTED" | "ON_APPROVAL" | undefined }),
   },
   vehicle: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getKendaraanStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getKendaraanStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
-    list: async (params) => api.listKendaraanBooking(params),
+    list: async (params) => api.listKendaraanBooking({ ...params, status: params.status as BookingStatus | "REJECTED" | "ON_APPROVAL" | undefined }),
   },
   atk: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getAtkStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getAtkStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
     list: async (params) => api.listAtk(params),
   },
   maintenance: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getSaranaStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getSaranaStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
-    list: async (params) => api.listSarana(params),
+    list: async (params) => api.listSarana({ ...params, status: params.status as BookingStatus | "REJECTED" | "ON_APPROVAL" | undefined }),
   },
   archive: {
-    stats: async (bulan, divisi, direktorat, departemen) => {
-      const result = await api.getArsipStats(bulan, divisi, direktorat, departemen);
+    stats: async (bulan, tanggal, divisi, direktorat, departemen) => {
+      const result = await api.getArsipStats(bulan, tanggal, divisi, direktorat, departemen);
       return { countsByStatus: result.countsByStatus as Partial<Record<string, number>> };
     },
-    list: async (params) => api.listArsip(params),
+    list: async (params) => api.listArsip({ ...params, status: params.status as BookingStatus | "REJECTED" | "ON_APPROVAL" | undefined }),
   },
 };
 
@@ -272,25 +278,40 @@ function adaptItem(module: ModuleDefinition, item: SourceItem): DashboardItem {
   }
 }
 
-function scopeFromUnit(value: string): Pick<CommonListParams, "direktorat" | "divisi" | "departemen"> {
-  if (!value) return {};
-  const separator = value.indexOf("|");
-  if (separator < 0) return {};
-  const type = value.slice(0, separator);
-  const name = value.slice(separator + 1);
-  if (type === "DIREKTORAT") return { direktorat: name };
-  if (type === "DIVISI") return { divisi: name };
-  if (type === "DEPARTEMEN") return { departemen: name };
-  return {};
+function selectedStatusForModule(key: ModuleKey, status: DashboardStatusSelection): DashboardStatusFilter | undefined {
+  if (!status) return undefined;
+  if (status === "COMPLETED" && key !== "expedition" && key !== "atk") return "APPROVED_GA_APPROVAL";
+  return status;
 }
 
-function unitLabel(value: string): string {
-  const separator = value.indexOf("|");
-  if (separator < 0) return value;
-  const type = value.slice(0, separator);
-  const name = value.slice(separator + 1);
-  const labels: Record<string, string> = { DIREKTORAT: "Direktorat", DIVISI: "Divisi", DEPARTEMEN: "Departemen" };
-  return `${labels[type] ?? type} - ${name}`;
+function actionMatchesSelection(actionFilter: DashboardStatusFilter, status: DashboardStatusSelection): boolean {
+  if (!status) return true;
+  if (status === "REJECTED") return actionFilter === "REJECTED";
+  if (status === "ON_APPROVAL") return actionFilter !== "REJECTED";
+  return false;
+}
+
+function filterCountsBySelection(
+  key: ModuleKey,
+  counts: Partial<Record<string, number>>,
+  status: DashboardStatusSelection,
+): Partial<Record<string, number>> {
+  if (!status) return counts;
+  if (status === "DRAFT") return { DRAFT: counts.DRAFT ?? 0 };
+  if (status === "ON_APPROVAL") {
+    const stages = key === "expedition" || key === "atk"
+      ? ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"]
+      : ["SUBMITTED", "APPROVED_L1", "APPROVED_GA"];
+    return Object.fromEntries(stages.map((stage) => [stage, counts[stage] ?? 0]));
+  }
+  if (status === "REJECTED") {
+    const stages = key === "expedition" || key === "atk"
+      ? ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"]
+      : ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
+    return Object.fromEntries(stages.map((stage) => [stage, counts[stage] ?? 0]));
+  }
+  const completedStage = key === "expedition" || key === "atk" ? "COMPLETED" : "APPROVED_GA_APPROVAL";
+  return { [completedStage]: counts[completedStage] ?? 0 };
 }
 
 function relativeAge(milliseconds: number): string {
@@ -329,29 +350,39 @@ function KpiCard({ label, value, helper, Icon, tone }: {
 
 export default function DashboardContent({ me }: { me: Me }) {
   const [month, setMonth] = useState("");
-  const [unit, setUnit] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState<DashboardStatusSelection>("");
+  const [direktorat, setDirektorat] = useState("");
+  const [divisi, setDivisi] = useState("");
+  const [departemen, setDepartemen] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
   const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], errors: 0 });
+  const filterWrapRef = useRef<HTMLDivElement>(null);
+  useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const visibleModules = useMemo(() => MODULES.filter((module) => me.role !== "KPU" || !module.hiddenForKpu), [me.role]);
-  const unitOptions = useMemo(() => {
-    if (!org) return [];
-    return [
-      ...org.direktorat.map((name) => `DIREKTORAT|${name}`),
-      ...org.divisi.map((name) => `DIVISI|${name}`),
-      ...org.departemen.map((name) => `DEPARTEMEN|${name}`),
-    ];
-  }, [org]);
+  const selectedDirektoratNode = org?.direktoratTree.find((node) => node.nama === direktorat) ?? null;
+  const divisiOptions = selectedDirektoratNode ? selectedDirektoratNode.divisi.map((node) => node.nama) : org?.divisi ?? [];
+  const selectedDivisiNode = divisi
+    ? (selectedDirektoratNode?.divisi ?? org?.direktoratTree.flatMap((node) => node.divisi) ?? []).find((node) => node.nama === divisi) ?? null
+    : null;
+  const departemenOptions = selectedDivisiNode
+    ? selectedDivisiNode.departemen
+    : selectedDirektoratNode
+      ? selectedDirektoratNode.divisi.flatMap((node) => node.departemen)
+      : org?.departemen ?? [];
 
   useEffect(() => { api.orgStructure().then(setOrg).catch(() => setOrg(null)); }, []);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
-    const unitScope = scopeFromUnit(unit);
-    const scope: CommonListParams = { page: 1, bulan: month || undefined, ...unitScope };
+    const unitScope = { direktorat: direktorat || undefined, divisi: divisi || undefined, departemen: departemen || undefined };
+    const scope: CommonListParams = { page: 1, bulan: month || undefined, tanggal: date || undefined, ...unitScope };
     const actionFilter = getActionFilter(me.role);
 
     const moduleTasks = visibleModules.map(async (module) => {
@@ -363,18 +394,21 @@ export default function DashboardContent({ me }: { me: Me }) {
         ...(me.role === "KPU" && module.key === "atk" ? { sumberPembelian: "KPU" as const } : {}),
       };
       const [statsResult, queueResult, recentResult] = await Promise.allSettled([
-        source.stats(month || undefined, unitScope.divisi, unitScope.direktorat, unitScope.departemen),
+        source.stats(month || undefined, date || undefined, unitScope.divisi, unitScope.direktorat, unitScope.departemen),
         source.list(queueParams),
-        source.list({ ...scope, limit: 5 }),
+        source.list({ ...scope, limit: 5, status: selectedStatusForModule(module.key, status) }),
       ]);
+      const filteredCounts = statsResult.status === "fulfilled"
+        ? filterCountsBySelection(module.key, statsResult.value.countsByStatus, status)
+        : {};
       const stats = statsResult.status === "fulfilled"
-        ? summarizeModule(module.key, statsResult.value.countsByStatus)
+        ? summarizeModule(module.key, filteredCounts)
         : { total: 0, pending: 0, completed: 0, rejected: 0 };
-      const rawQueue = queueResult.status === "fulfilled" ? queueResult.value.items : [];
+      const rawQueue = queueResult.status === "fulfilled" && actionMatchesSelection(actionFilter, status) ? queueResult.value.items : [];
       const filteredQueue = isOriginAdmin(me.role) ? rawQueue.filter((item) => isOriginCorrection(module.key, item, me)) : rawQueue;
       const actionCount = isOriginAdmin(me.role)
         ? filteredQueue.length
-        : queueResult.status === "fulfilled" ? queueResult.value.total : 0;
+        : queueResult.status === "fulfilled" && actionMatchesSelection(actionFilter, status) ? queueResult.value.total : 0;
       return {
         module,
         summary: { ...stats, actionable: actionCount, failed: statsResult.status === "rejected" } satisfies ModuleSummary,
@@ -434,7 +468,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       errors,
     });
     setLoading(false);
-  }, [me, month, org, unit, visibleModules]);
+  }, [date, departemen, direktorat, divisi, me, month, org, status, visibleModules]);
 
   useEffect(() => { void loadDashboard(); }, [loadDashboard, refreshToken]);
 
@@ -463,9 +497,76 @@ export default function DashboardContent({ me }: { me: Me }) {
           <WelcomeGreeting me={me} />
         </div>
         <div className={styles.headerActions}>
-          <div className={styles.monthFilter}><MonthFilterPicker id="dashboard-month" value={month} onChange={setMonth} placeholder="Semua Periode" /></div>
-          <div className={styles.unitFilter}>
-            <SearchableSelect id="dashboard-unit" value={unit} onChange={setUnit} options={unitOptions} placeholder="Semua Filter" clearLabel="Semua Filter" getLabel={unitLabel} />
+          <div className={styles.monthFilter}>
+            <PeriodFilterPicker
+              id="dashboard-period"
+              bulan={month}
+              tanggal={date}
+              onChangeBulan={(value) => { setMonth(value); setDate(""); }}
+              onChangeTanggal={(value) => { setDate(value); setMonth(""); }}
+              placeholder="Semua Periode"
+            />
+          </div>
+          <div className={`filter-dropdown-wrap ${styles.moreFilter}`} ref={filterWrapRef}>
+            <button
+              type="button"
+              className={`btn filter-dropdown-toggle ${styles.filterToggle}`}
+              id="dashboard-filter-toggle"
+              aria-expanded={filterOpen}
+              onClick={() => setFilterOpen((value) => !value)}
+            >
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
+            {filterOpen && (
+              <div className={`filter-dropdown-panel ${styles.filterPanel}`}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="dashboard-status">Status</label>
+                  <SearchableSelect
+                    id="dashboard-status"
+                    value={status}
+                    onChange={(value) => setStatus(value as DashboardStatusSelection)}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]}
+                    getLabel={(value) => ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<string, string>)[value] ?? value}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="dashboard-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="dashboard-direktorat"
+                    value={direktorat}
+                    onChange={(value) => { setDirektorat(value); setDivisi(""); setDepartemen(""); }}
+                    options={org?.direktorat ?? []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="dashboard-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="dashboard-divisi"
+                    value={divisi}
+                    onChange={(value) => { setDivisi(value); setDepartemen(""); }}
+                    options={divisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="dashboard-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="dashboard-departemen"
+                    value={departemen}
+                    onChange={setDepartemen}
+                    options={departemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <button type="button" className={styles.refreshButton} onClick={() => setRefreshToken((value) => value + 1)} disabled={loading} title="Muat ulang data dashboard" aria-label="Muat ulang data dashboard">
             <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
@@ -484,7 +585,7 @@ export default function DashboardContent({ me }: { me: Me }) {
 
       <section className={styles.kpiGrid} aria-label="Ringkasan dashboard">
         <KpiCard label="Perlu Tindakan" value={totals.actionable} helper={`Untuk ${ROLE_LABEL_FULL[me.role]}`} Icon={Clock3} tone="warning" />
-        <KpiCard label="Total Pengajuan" value={totals.total} helper={month ? "Pada periode terpilih" : "Semua periode"} Icon={FileText} tone="primary" />
+        <KpiCard label="Total Pengajuan" value={totals.total} helper={month || date ? "Pada periode terpilih" : "Semua periode"} Icon={FileText} tone="primary" />
         <KpiCard label="Selesai" value={totals.completed} helper={`${completionRate}% tingkat penyelesaian`} Icon={CheckCircle2} tone="success" />
         <KpiCard label="Ditolak / Dibatalkan" value={totals.rejected} helper="Akumulasi seluruh modul" Icon={CircleX} tone="danger" />
       </section>
