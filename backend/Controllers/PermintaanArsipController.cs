@@ -768,6 +768,25 @@ public class PermintaanArsipController : ApiControllerBase
                 p.ApprovedApprovalGaAt))
             .ToListAsync();
 
+        var itemIds = rows.Select(r => r.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var messageTimes = await _db.PermintaanArsipChatMessages
+                .Where(m => itemIds.Contains(m.PermintaanArsipId) && m.SenderId != user!.Id)
+                .Select(m => new { m.PermintaanArsipId, m.CreatedAt })
+                .ToListAsync();
+            var lastReadAt = await _db.PermintaanArsipChatReads
+                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.PermintaanArsipId))
+                .ToDictionaryAsync(r => r.PermintaanArsipId, r => r.LastReadAt);
+            var rowsById = rows.ToDictionary(r => r.Id);
+            foreach (var group in messageTimes.GroupBy(m => m.PermintaanArsipId))
+            {
+                if (!rowsById.TryGetValue(group.Key, out var row)) continue;
+                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+                row.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+            }
+        }
+
         return Ok(new PermintaanArsipCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
     }
 

@@ -799,6 +799,25 @@ public class PerbaikanSaranaController : ApiControllerBase
                 p.ApprovedApprovalGaAt))
             .ToListAsync();
 
+        var itemIds = rows.Select(r => r.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var messageTimes = await _db.PerbaikanSaranaChatMessages
+                .Where(m => itemIds.Contains(m.PerbaikanSaranaId) && m.SenderId != user!.Id)
+                .Select(m => new { m.PerbaikanSaranaId, m.CreatedAt })
+                .ToListAsync();
+            var lastReadAt = await _db.PerbaikanSaranaChatReads
+                .Where(r => r.UserId == user!.Id && itemIds.Contains(r.PerbaikanSaranaId))
+                .ToDictionaryAsync(r => r.PerbaikanSaranaId, r => r.LastReadAt);
+            var rowsById = rows.ToDictionary(r => r.Id);
+            foreach (var group in messageTimes.GroupBy(m => m.PerbaikanSaranaId))
+            {
+                if (!rowsById.TryGetValue(group.Key, out var row)) continue;
+                var hasRead = lastReadAt.TryGetValue(group.Key, out var readAt);
+                row.UnreadChatCount = group.Count(m => !hasRead || m.CreatedAt > readAt);
+            }
+        }
+
         return Ok(new PerbaikanSaranaCatalogResponse { Items = rows, Total = total, Page = page, Limit = limit });
     }
 

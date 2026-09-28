@@ -150,7 +150,13 @@ public record PerbaikanSaranaCatalogItemOut(
     string? Departemen,
     string? Catatan,
     DateTime? ApprovedApprovalGaAt
-);
+)
+{
+    // Populated externally by GetCatalog (not part of the constructor's projection) - same
+    // pattern as PerbaikanSaranaOut.UnreadChatCount, so Repository's chat icon can show an
+    // unread badge even though this row shape otherwise carries none of List()'s workflow fields.
+    public int UnreadChatCount { get; set; }
+}
 
 public class PerbaikanSaranaCatalogResponse
 {

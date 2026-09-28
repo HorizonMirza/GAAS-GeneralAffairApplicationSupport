@@ -16,6 +16,7 @@ import InvoiceDetailModal from "@/components/InvoiceDetailModal";
 import InvoiceHistoryModal from "@/components/InvoiceHistoryModal";
 import InvoiceRowMenuDropdown from "@/components/InvoiceRowMenuDropdown";
 import InvoiceChatModal from "@/components/InvoiceChatModal";
+import InvoiceStepper from "@/components/InvoiceStepper";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -226,6 +227,9 @@ export default function InvoiceHistoryPage() {
                   <button type="button" className="row-menu-btn" aria-label="Aksi" onClick={(e) => invoiceRowMenu.toggle(e, inv.id)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                   </button>
+                </div>
+                <div className="invoice-row-stepper">
+                  <InvoiceStepper status={inv.status} />
                 </div>
               </div>
             ))

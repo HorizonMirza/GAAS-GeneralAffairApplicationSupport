@@ -463,6 +463,7 @@ export interface PermintaanArsipCatalogItem {
   departemen: string | null;
   catatan: string | null;
   approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
 }
 
 export interface PermintaanArsipCatalogResponse {
@@ -580,6 +581,7 @@ export interface PerbaikanSaranaCatalogItem {
   departemen: string | null;
   catatan: string | null;
   approvedApprovalGaAt: string | null;
+  unreadChatCount: number;
 }
 
 export interface PerbaikanSaranaCatalogResponse {

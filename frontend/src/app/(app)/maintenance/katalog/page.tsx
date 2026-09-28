@@ -1,16 +1,23 @@
 "use client";
 
+import { MessageSquare } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { KATEGORI_KERUSAKAN_LABEL, isBookingOriginRole } from "@/lib/constants";
 import { formatDate, truncateText } from "@/lib/format";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
-import type { KategoriKerusakan, PerbaikanSaranaCatalogItem } from "@/lib/types";
+import { useRowMenu } from "@/lib/useRowMenu";
+import { useToast } from "@/components/ui/ToastProvider";
+import type { KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
+import RowMenuDropdown from "@/components/RowMenuDropdown";
+import SaranaDetailModal from "@/components/SaranaDetailModal";
+import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
+import SaranaChatModal from "@/components/SaranaChatModal";
 
 const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
 
@@ -33,6 +40,7 @@ function defaultFilters(): FilterState {
 export default function MaintenanceKatalogPage() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -42,6 +50,11 @@ export default function MaintenanceKatalogPage() {
   const [error, setError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
+
+  const [detail, setDetail] = useState<PerbaikanSarana | null>(null);
+  const [statusItemId, setStatusItemId] = useState<number | null>(null);
+  const [chatItem, setChatItem] = useState<PerbaikanSaranaCatalogItem | null>(null);
+  const rowMenu = useRowMenu(items);
 
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -74,6 +87,15 @@ export default function MaintenanceKatalogPage() {
   }, [load]);
 
   if (!me || me.role === "KPU") return null;
+
+  async function openDetail(id: number) {
+    try {
+      const item = await api.getSarana(id);
+      setDetail(item);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  }
 
   function updateFilter(patch: Partial<FilterState>) {
     setFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
@@ -135,11 +157,12 @@ export default function MaintenanceKatalogPage() {
       : orgStructure?.departemen || [];
 
   return (
+    <>
     <div className="card">
       <div className="toolbar transactions-page-toolbar">
         <div className="field toolbar-search-field">
           <label htmlFor="filter-sarana-katalog-search">Cari Laporan</label>
-          <input type="text" id="filter-sarana-katalog-search" placeholder="Lokasi / No Perbaikan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
+          <input type="text" id="filter-sarana-katalog-search" placeholder="Nama Laporan" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
         </div>
 
         <div className="field">
@@ -228,15 +251,16 @@ export default function MaintenanceKatalogPage() {
               <th>Lokasi</th><th>Kategori</th><th>Deskripsi Kerusakan</th>
               <th>Divisi</th><th>Departemen</th>
               <th>Nama Pelapor</th><th>No. Telepon Pelapor</th><th>Catatan</th><th>Tanggal Disetujui</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={13} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={12} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={13} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={13} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((item, index) => (
                 <tr key={item.id}>
@@ -252,6 +276,25 @@ export default function MaintenanceKatalogPage() {
                   <td>{item.noTeleponPelapor || "-"}</td>
                   <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                   <td>{item.approvedApprovalGaAt ? formatDate(item.approvedApprovalGaAt) : "-"}</td>
+                  <td>
+                    <div className="status-cell">
+                      <span className="badge badge-approved">Approved</span>
+                      <button
+                        type="button"
+                        className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}`}
+                        aria-label="Chat"
+                        onClick={() => setChatItem(item)}
+                      >
+                        <MessageSquare width="17" height="17" />
+                        {item.unreadChatCount > 0 && (
+                          <span className="chat-count-badge">{item.unreadChatCount > 9 ? "9+" : item.unreadChatCount}</span>
+                        )}
+                      </button>
+                      <button type="button" className="card-icon-btn" aria-label="Aksi" onClick={(e) => rowMenu.toggle(e, item.id, 120)}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
@@ -285,5 +328,61 @@ export default function MaintenanceKatalogPage() {
         </div>
       </div>
     </div>
+
+    <RowMenuDropdown
+      position={rowMenu.position}
+      canEditDelete={false}
+      canDelete={false}
+      onDetail={() => {
+        const item = rowMenu.menuItem;
+        rowMenu.close();
+        if (item) openDetail(item.id);
+      }}
+      onUpdates={() => {}}
+      onStatus={() => {
+        const item = rowMenu.menuItem;
+        rowMenu.close();
+        if (item) setStatusItemId(item.id);
+      }}
+      onDelete={() => {}}
+      pdfUrl={rowMenu.menuItem ? api.saranaPdfUrl(rowMenu.menuItem.id) : undefined}
+      onPdfClick={async () => {
+        const item = rowMenu.menuItem;
+        rowMenu.close();
+        if (!item) return;
+        try {
+          await downloadFile(api.saranaPdfUrl(item.id), `Bukti-Perbaikan-Sarana-${item.nomorPerbaikan || item.id}.pdf`);
+        } catch (err) {
+          showToast((err as Error).message, "error");
+        }
+      }}
+    />
+
+    {me && (
+      <SaranaDetailModal
+        open={!!detail}
+        mode="view"
+        item={detail}
+        me={me}
+        onClose={() => setDetail(null)}
+        onSaved={() => {}}
+        onRequestReject={() => {}}
+      />
+    )}
+
+    <SaranaStatusHistoryModal open={statusItemId != null} itemId={statusItemId} onClose={() => setStatusItemId(null)} />
+
+    {me && (
+      <SaranaChatModal
+        open={!!chatItem}
+        itemId={chatItem?.id ?? null}
+        itemLabel={chatItem ? `${chatItem.lokasi} - ${chatItem.nomorPerbaikan || "-"}` : ""}
+        departemen={chatItem?.departemen ?? null}
+        me={me}
+        onClose={() => setChatItem(null)}
+        onRead={load}
+      />
+    )}
+    </>
   );
 }

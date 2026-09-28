@@ -3353,6 +3353,14 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
+/* Forces onto its own line below invoice-row-main/-actions, thanks to .invoice-row's own
+   flex-wrap - the stepper reads best spanning the row's full width, not squeezed beside them. */
+.invoice-row-stepper {
+  flex-basis: 100%;
+  max-width: 420px;
+  margin-top: 4px;
+}
+
 /* ---------- Table ---------- */
 .table-wrap {
   overflow-x: auto;
