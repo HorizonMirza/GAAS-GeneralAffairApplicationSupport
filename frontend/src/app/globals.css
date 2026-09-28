@@ -3994,7 +3994,8 @@ table.data-table {
 .toolbar #filter-arsip-bulan,
 .toolbar #filter-katalog-bulan,
 .toolbar #filter-atk-bulan,
-.toolbar #filter-sarana-bulan {
+.toolbar #filter-sarana-bulan,
+.toolbar #filter-sarana-katalog-bulan {
   max-width: 130px;
 }
 
@@ -4015,7 +4016,8 @@ table.data-table {
 .toolbar.transactions-page-toolbar #filter-arsip-bulan,
 .toolbar.transactions-page-toolbar #filter-katalog-bulan,
 .toolbar.transactions-page-toolbar #filter-atk-bulan,
-.toolbar.transactions-page-toolbar #filter-sarana-bulan {
+.toolbar.transactions-page-toolbar #filter-sarana-bulan,
+.toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan {
   max-width: none;
   width: 160px;
 }
@@ -4030,6 +4032,7 @@ table.data-table {
 .toolbar.transactions-page-toolbar #filter-katalog-bulan,
 .toolbar.transactions-page-toolbar #filter-atk-bulan,
 .toolbar.transactions-page-toolbar #filter-sarana-bulan,
+.toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan,
 .transactions-page-toolbar > .btn {
   height: 38px;
   box-sizing: border-box;
