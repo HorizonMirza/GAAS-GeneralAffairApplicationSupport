@@ -52,12 +52,11 @@
   font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, background 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, background 150ms ease;
 }
 
 .moduleTabs button:hover,
 .moduleTabs button:focus-visible {
-  transform: translateY(-1px);
   border-color: var(--blue-400);
   color: var(--blue-500);
   box-shadow: 0 4px 12px rgba(20, 80, 201, 0.1);
