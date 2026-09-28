@@ -23,10 +23,24 @@ interface VehicleFormState {
   password: string;
 }
 
+interface VehicleFormErrors {
+  nama?: string;
+  platNomor?: string;
+  kapasitas?: string;
+  supir?: string;
+  merek?: string;
+  model?: string;
+  tahun?: string;
+  warna?: string;
+  nomorTeleponSupir?: string;
+  lokasiParkir?: string;
+  password?: string;
+  general?: string;
+}
+
 const EMPTY_FORM: VehicleFormState = {
   nama: "", platNomor: "", kapasitas: "", supir: "", merek: "", model: "", tahun: "", warna: "", nomorTeleponSupir: "", lokasiParkir: "", password: "",
 };
-const ICON_BTN_STYLE: React.CSSProperties = { width: "auto", padding: "3px 6px" };
 
 function toFormFields(item: VehicleItem): VehicleFormState {
   return {
@@ -44,6 +58,23 @@ function toFormFields(item: VehicleItem): VehicleFormState {
   };
 }
 
+// Routes a flat backend `detail` string to the field it's actually about, so it renders right
+// under that field instead of one generic banner - same idea for every Create/Update error here.
+function routeApiError(message: string): VehicleFormErrors {
+  if (/nama kendaraan/i.test(message)) return { nama: message };
+  if (/plat nomor/i.test(message)) return { platNomor: message };
+  if (/kapasitas/i.test(message)) return { kapasitas: message };
+  if (/supir/i.test(message)) return { supir: message };
+  if (/merek/i.test(message)) return { merek: message };
+  if (/model/i.test(message)) return { model: message };
+  if (/tahun/i.test(message)) return { tahun: message };
+  if (/warna/i.test(message)) return { warna: message };
+  if (/telepon/i.test(message)) return { nomorTeleponSupir: message };
+  if (/lokasi parkir/i.test(message)) return { lokasiParkir: message };
+  if (/password/i.test(message)) return { password: message };
+  return { general: message };
+}
+
 // Super Admin's vehicle fleet editor - the UI for VehicleAdminController, replacing the hardcoded
 // 10-vehicle list Services/Vehicles.cs used to carry (see its own SeedData/LoadFromDb). Same
 // list+modal-form shape as SuperAdminUsersTab, without pagination - the fleet is small.
@@ -56,7 +87,7 @@ export default function SuperAdminVehicleTab() {
 
   const [formOpen, setFormOpen] = useState<"create" | VehicleItem | null>(null);
   const [form, setForm] = useState<VehicleFormState>(EMPTY_FORM);
-  const [formError, setFormError] = useState("");
+  const [formErrors, setFormErrors] = useState<VehicleFormErrors>({});
   const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<VehicleItem | null>(null);
@@ -85,32 +116,34 @@ export default function SuperAdminVehicleTab() {
 
   function openCreate() {
     setForm(EMPTY_FORM);
-    setFormError("");
+    setFormErrors({});
     setFormOpen("create");
   }
 
   function openEdit(item: VehicleItem) {
     setForm(toFormFields(item));
-    setFormError("");
+    setFormErrors({});
     setFormOpen(item);
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError("");
-    if (!form.nama.trim()) { setFormError("Nama kendaraan wajib diisi"); return; }
-    if (!form.platNomor.trim()) { setFormError("Plat nomor wajib diisi"); return; }
+    const errs: VehicleFormErrors = {};
+    if (!form.nama.trim()) errs.nama = "Nama kendaraan wajib diisi";
+    if (!form.platNomor.trim()) errs.platNomor = "Plat nomor wajib diisi";
     const kapasitas = Number(form.kapasitas);
-    if (!Number.isInteger(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus bilangan bulat lebih dari 0"); return; }
-    if (!form.supir.trim()) { setFormError("Nama supir wajib diisi"); return; }
-    if (!form.merek.trim()) { setFormError("Merek wajib diisi"); return; }
-    if (!form.model.trim()) { setFormError("Model wajib diisi"); return; }
+    if (!Number.isInteger(kapasitas) || kapasitas <= 0) errs.kapasitas = "Kapasitas harus bilangan bulat lebih dari 0";
+    if (!form.supir.trim()) errs.supir = "Nama supir wajib diisi";
+    if (!form.merek.trim()) errs.merek = "Merek wajib diisi";
+    if (!form.model.trim()) errs.model = "Model wajib diisi";
     const tahun = Number(form.tahun);
-    if (!Number.isInteger(tahun) || tahun < 1900 || tahun > 2100) { setFormError("Tahun tidak valid"); return; }
-    if (!form.warna.trim()) { setFormError("Warna wajib diisi"); return; }
-    if (!form.nomorTeleponSupir.trim()) { setFormError("No. telepon supir wajib diisi"); return; }
-    if (!form.lokasiParkir.trim()) { setFormError("Lokasi parkir wajib diisi"); return; }
-    if (!form.password) { setFormError("Password wajib diisi"); return; }
+    if (!Number.isInteger(tahun) || tahun < 1900 || tahun > 2100) errs.tahun = "Tahun tidak valid";
+    if (!form.warna.trim()) errs.warna = "Warna wajib diisi";
+    if (!form.nomorTeleponSupir.trim()) errs.nomorTeleponSupir = "No. telepon supir wajib diisi";
+    if (!form.lokasiParkir.trim()) errs.lokasiParkir = "Lokasi parkir wajib diisi";
+    if (!form.password) errs.password = "Password wajib diisi";
+    if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
+    setFormErrors({});
 
     const payload = {
       nama: form.nama.trim(),
@@ -138,7 +171,7 @@ export default function SuperAdminVehicleTab() {
       setFormOpen(null);
       await load();
     } catch (err) {
-      setFormError(errorMessage(err));
+      setFormErrors(routeApiError(errorMessage(err)));
     } finally {
       setSaving(false);
     }
@@ -184,11 +217,11 @@ export default function SuperAdminVehicleTab() {
                   <td>{item.merek} {item.model}</td>
                   <td>{item.tahun}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Edit" onClick={() => openEdit(item)}>
-                      <Pencil width={14} height={14} />
+                    <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
+                      <Pencil width={16} height={16} />
                     </button>
-                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => setDeleteTarget(item)}>
-                      <Trash2 width={14} height={14} />
+                    <button type="button" className="card-icon-btn card-icon-btn-danger" aria-label="Hapus" title="Hapus" onClick={() => setDeleteTarget(item)}>
+                      <Trash2 width={16} height={16} />
                     </button>
                   </td>
                 </tr>
@@ -205,8 +238,8 @@ export default function SuperAdminVehicleTab() {
             <button type="button" className="modal-close" onClick={() => setFormOpen(null)}>&times;</button>
           </div>
 
-          <div className={`alert-error ${formError ? "alert-error-visible" : ""}`}>
-            <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
+          <div className={`alert-error ${formErrors.general ? "alert-error-visible" : ""}`}>
+            <div className="alert-error-text"><strong>Error</strong><span>{formErrors.general}</span></div>
           </div>
 
           <form onSubmit={handleFormSubmit}>
@@ -214,42 +247,52 @@ export default function SuperAdminVehicleTab() {
               <div className="field full">
                 <label htmlFor="vehicle-form-nama">Nama Kendaraan</label>
                 <input id="vehicle-form-nama" type="text" required value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} />
+                {formErrors.nama && <div className="field-error-text">{formErrors.nama}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-plat">Plat Nomor</label>
                 <input id="vehicle-form-plat" type="text" required value={form.platNomor} onChange={(e) => setForm((f) => ({ ...f, platNomor: e.target.value }))} />
+                {formErrors.platNomor && <div className="field-error-text">{formErrors.platNomor}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-kapasitas">Kapasitas</label>
                 <input id="vehicle-form-kapasitas" type="number" min={1} required value={form.kapasitas} onChange={(e) => setForm((f) => ({ ...f, kapasitas: e.target.value }))} />
+                {formErrors.kapasitas && <div className="field-error-text">{formErrors.kapasitas}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-supir">Nama Supir</label>
                 <input id="vehicle-form-supir" type="text" required value={form.supir} onChange={(e) => setForm((f) => ({ ...f, supir: e.target.value }))} />
+                {formErrors.supir && <div className="field-error-text">{formErrors.supir}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-notelp">No. Telepon Supir</label>
                 <input id="vehicle-form-notelp" type="text" required value={form.nomorTeleponSupir} onChange={(e) => setForm((f) => ({ ...f, nomorTeleponSupir: e.target.value }))} />
+                {formErrors.nomorTeleponSupir && <div className="field-error-text">{formErrors.nomorTeleponSupir}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-merek">Merek</label>
                 <input id="vehicle-form-merek" type="text" required value={form.merek} onChange={(e) => setForm((f) => ({ ...f, merek: e.target.value }))} />
+                {formErrors.merek && <div className="field-error-text">{formErrors.merek}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-model">Model</label>
                 <input id="vehicle-form-model" type="text" required value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} />
+                {formErrors.model && <div className="field-error-text">{formErrors.model}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-tahun">Tahun</label>
                 <input id="vehicle-form-tahun" type="number" min={1900} max={2100} required value={form.tahun} onChange={(e) => setForm((f) => ({ ...f, tahun: e.target.value }))} />
+                {formErrors.tahun && <div className="field-error-text">{formErrors.tahun}</div>}
               </div>
               <div className="field">
                 <label htmlFor="vehicle-form-warna">Warna</label>
                 <input id="vehicle-form-warna" type="text" required value={form.warna} onChange={(e) => setForm((f) => ({ ...f, warna: e.target.value }))} />
+                {formErrors.warna && <div className="field-error-text">{formErrors.warna}</div>}
               </div>
               <div className="field full">
                 <label htmlFor="vehicle-form-lokasi">Lokasi Parkir</label>
                 <input id="vehicle-form-lokasi" type="text" required value={form.lokasiParkir} onChange={(e) => setForm((f) => ({ ...f, lokasiParkir: e.target.value }))} />
+                {formErrors.lokasiParkir && <div className="field-error-text">{formErrors.lokasiParkir}</div>}
               </div>
             </div>
 
@@ -260,13 +303,14 @@ export default function SuperAdminVehicleTab() {
                 placeholder="Masukkan Password"
                 icon={<Lock width={15} height={15} />}
                 value={form.password}
-                onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+                error={formErrors.password}
+                onChange={(v) => { setForm((f) => ({ ...f, password: v })); if (formErrors.password) setFormErrors((e) => ({ ...e, password: undefined })); }}
               />
             </div>
 
             <div className="modal-actions">
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={saving}>
-                {saving ? "Menyimpan..." : formOpen === "create" ? "Tambah" : "Simpan"}
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
+                {saving ? "Menyimpan..." : "Save"}
               </button>
             </div>
           </form>
@@ -277,6 +321,14 @@ export default function SuperAdminVehicleTab() {
         open={!!deleteTarget}
         title="Hapus Kendaraan"
         itemLabel={`kendaraan "${deleteTarget?.nama ?? ""}"`}
+        details={deleteTarget ? [
+          { label: "Nama Kendaraan", value: deleteTarget.nama },
+          { label: "Plat Nomor", value: deleteTarget.platNomor },
+          { label: "Kapasitas", value: String(deleteTarget.kapasitas) },
+          { label: "Supir", value: deleteTarget.supir },
+          { label: "Merek / Model", value: `${deleteTarget.merek} ${deleteTarget.model}` },
+          { label: "Tahun", value: String(deleteTarget.tahun) },
+        ] : []}
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       />

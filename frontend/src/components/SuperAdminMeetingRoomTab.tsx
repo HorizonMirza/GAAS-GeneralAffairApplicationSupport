@@ -17,11 +17,28 @@ interface RoomFormState {
   password: string;
 }
 
+interface RoomFormErrors {
+  nama?: string;
+  kapasitas?: string;
+  lantai?: string;
+  password?: string;
+  general?: string;
+}
+
 const EMPTY_FORM: RoomFormState = { nama: "", kapasitas: "", lantai: "", fasilitas: "", password: "" };
-const ICON_BTN_STYLE: React.CSSProperties = { width: "auto", padding: "3px 6px" };
 
 function toFormFields(item: MeetingRoomItem): RoomFormState {
   return { nama: item.nama, kapasitas: String(item.kapasitas), lantai: item.lantai, fasilitas: item.fasilitas.join(", "), password: "" };
+}
+
+// Routes a flat backend `detail` string to the field it's actually about, so it renders right
+// under that field instead of one generic banner - same idea for every Create/Update error here.
+function routeApiError(message: string): RoomFormErrors {
+  if (/nama ruang/i.test(message)) return { nama: message };
+  if (/lantai/i.test(message)) return { lantai: message };
+  if (/kapasitas/i.test(message)) return { kapasitas: message };
+  if (/password/i.test(message)) return { password: message };
+  return { general: message };
 }
 
 // Super Admin's meeting room roster editor - the UI for MeetingRoomAdminController, replacing the
@@ -36,7 +53,7 @@ export default function SuperAdminMeetingRoomTab() {
 
   const [formOpen, setFormOpen] = useState<"create" | MeetingRoomItem | null>(null);
   const [form, setForm] = useState<RoomFormState>(EMPTY_FORM);
-  const [formError, setFormError] = useState("");
+  const [formErrors, setFormErrors] = useState<RoomFormErrors>({});
   const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<MeetingRoomItem | null>(null);
@@ -65,24 +82,26 @@ export default function SuperAdminMeetingRoomTab() {
 
   function openCreate() {
     setForm(EMPTY_FORM);
-    setFormError("");
+    setFormErrors({});
     setFormOpen("create");
   }
 
   function openEdit(item: MeetingRoomItem) {
     setForm(toFormFields(item));
-    setFormError("");
+    setFormErrors({});
     setFormOpen(item);
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError("");
-    if (!form.nama.trim()) { setFormError("Nama ruang wajib diisi"); return; }
-    if (!form.lantai.trim()) { setFormError("Lantai wajib diisi"); return; }
+    const errs: RoomFormErrors = {};
+    if (!form.nama.trim()) errs.nama = "Nama ruang wajib diisi";
+    if (!form.lantai.trim()) errs.lantai = "Lantai wajib diisi";
     const kapasitas = Number(form.kapasitas);
-    if (!Number.isInteger(kapasitas) || kapasitas <= 0) { setFormError("Kapasitas harus bilangan bulat lebih dari 0"); return; }
-    if (!form.password) { setFormError("Password wajib diisi"); return; }
+    if (!Number.isInteger(kapasitas) || kapasitas <= 0) errs.kapasitas = "Kapasitas harus bilangan bulat lebih dari 0";
+    if (!form.password) errs.password = "Password wajib diisi";
+    if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
+    setFormErrors({});
 
     const payload = {
       nama: form.nama.trim(),
@@ -104,7 +123,7 @@ export default function SuperAdminMeetingRoomTab() {
       setFormOpen(null);
       await load();
     } catch (err) {
-      setFormError(errorMessage(err));
+      setFormErrors(routeApiError(errorMessage(err)));
     } finally {
       setSaving(false);
     }
@@ -122,7 +141,7 @@ export default function SuperAdminMeetingRoomTab() {
     <div className="card">
       <div className="card-header" style={{ justifyContent: "flex-end" }}>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-          <Plus width={16} height={16} /> Tambah Ruang
+          <Plus width={16} height={16} /> Tambah Ruang Meeting
         </button>
       </div>
 
@@ -148,11 +167,11 @@ export default function SuperAdminMeetingRoomTab() {
                   <td>{item.lantai}</td>
                   <td>{item.fasilitas.length > 0 ? item.fasilitas.join(", ") : "-"}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Edit" onClick={() => openEdit(item)}>
-                      <Pencil width={14} height={14} />
+                    <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
+                      <Pencil width={16} height={16} />
                     </button>
-                    <button type="button" className="btn btn-secondary" style={ICON_BTN_STYLE} title="Hapus" onClick={() => setDeleteTarget(item)}>
-                      <Trash2 width={14} height={14} />
+                    <button type="button" className="card-icon-btn card-icon-btn-danger" aria-label="Hapus" title="Hapus" onClick={() => setDeleteTarget(item)}>
+                      <Trash2 width={16} height={16} />
                     </button>
                   </td>
                 </tr>
@@ -169,22 +188,25 @@ export default function SuperAdminMeetingRoomTab() {
             <button type="button" className="modal-close" onClick={() => setFormOpen(null)}>&times;</button>
           </div>
 
-          <div className={`alert-error ${formError ? "alert-error-visible" : ""}`}>
-            <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
+          <div className={`alert-error ${formErrors.general ? "alert-error-visible" : ""}`}>
+            <div className="alert-error-text"><strong>Error</strong><span>{formErrors.general}</span></div>
           </div>
 
           <form onSubmit={handleFormSubmit}>
             <div className="field">
               <label htmlFor="room-form-nama">Nama Ruang</label>
               <input id="room-form-nama" type="text" required value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} />
+              {formErrors.nama && <div className="field-error-text">{formErrors.nama}</div>}
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="room-form-kapasitas">Kapasitas</label>
               <input id="room-form-kapasitas" type="number" min={1} required value={form.kapasitas} onChange={(e) => setForm((f) => ({ ...f, kapasitas: e.target.value }))} />
+              {formErrors.kapasitas && <div className="field-error-text">{formErrors.kapasitas}</div>}
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="room-form-lantai">Lantai</label>
               <input id="room-form-lantai" type="text" required value={form.lantai} onChange={(e) => setForm((f) => ({ ...f, lantai: e.target.value }))} />
+              {formErrors.lantai && <div className="field-error-text">{formErrors.lantai}</div>}
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="room-form-fasilitas">Fasilitas</label>
@@ -197,13 +219,14 @@ export default function SuperAdminMeetingRoomTab() {
                 placeholder="Masukkan Password"
                 icon={<Lock width={15} height={15} />}
                 value={form.password}
-                onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+                error={formErrors.password}
+                onChange={(v) => { setForm((f) => ({ ...f, password: v })); if (formErrors.password) setFormErrors((e) => ({ ...e, password: undefined })); }}
               />
             </div>
 
             <div className="modal-actions">
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={saving}>
-                {saving ? "Menyimpan..." : formOpen === "create" ? "Tambah" : "Simpan"}
+              <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
+                {saving ? "Menyimpan..." : "Save"}
               </button>
             </div>
           </form>
@@ -214,6 +237,12 @@ export default function SuperAdminMeetingRoomTab() {
         open={!!deleteTarget}
         title="Hapus Ruang Meeting"
         itemLabel={`ruang meeting "${deleteTarget?.nama ?? ""}"`}
+        details={deleteTarget ? [
+          { label: "Nama Ruang", value: deleteTarget.nama },
+          { label: "Kapasitas", value: String(deleteTarget.kapasitas) },
+          { label: "Lantai", value: deleteTarget.lantai },
+          { label: "Fasilitas", value: deleteTarget.fasilitas.length > 0 ? deleteTarget.fasilitas.join(", ") : "-" },
+        ] : []}
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       />

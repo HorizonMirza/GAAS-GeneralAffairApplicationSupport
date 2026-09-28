@@ -12,6 +12,9 @@ interface Props {
   title: string;
   // e.g. `ruang meeting "Ruang Golf"` - read as a sentence continuing "Anda akan menghapus ...".
   itemLabel: string;
+  // Read-only summary of the item being removed (Nama/Kapasitas/Lantai/... etc.) - reuses the
+  // same .detail-grid/.detail-row treatment every other Detail modal in the app uses.
+  details?: { label: string; value: string }[];
   onConfirm: (password: string) => Promise<void>;
   onClose: () => void;
 }
@@ -19,7 +22,7 @@ interface Props {
 // A permanent delete of a room/vehicle roster entry - gated the same way the old BulkDeleteModal
 // gated a bulk delete (type the keyword to unlock) plus a re-entered Super Admin password, since
 // unlike a bulk delete this can't be scoped down by a filter first.
-export default function DeleteWithPasswordModal({ open, title, itemLabel, onConfirm, onClose }: Props) {
+export default function DeleteWithPasswordModal({ open, title, itemLabel, details, onConfirm, onClose }: Props) {
   const [typed, setTyped] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -63,6 +66,17 @@ export default function DeleteWithPasswordModal({ open, title, itemLabel, onConf
           Anda akan menghapus <strong style={{ color: "var(--text-primary)" }}>{itemLabel}</strong> secara
           permanen. Tindakan ini tidak dapat dibatalkan.
         </p>
+
+        {details && details.length > 0 && (
+          <div className="detail-grid" style={{ marginTop: 12, maxHeight: "none", overflowY: "visible" }}>
+            {details.map((d) => (
+              <div className="detail-row" key={d.label}>
+                <span className="detail-label">{d.label}</span>
+                <span className="detail-value">{d.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="field" style={{ marginTop: 16 }}>
           <label htmlFor="delete-confirm-keyword">
