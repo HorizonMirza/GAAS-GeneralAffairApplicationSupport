@@ -125,13 +125,16 @@ interface KendaraanFilterState {
   page: number;
   limit: number;
   tanggal: string;
+  bulan: string;
   status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
   departemen: string;
+  direktorat: string;
   namaKendaraan: string;
+  search: string;
 }
 
-const EMPTY_KENDARAAN_FILTERS: KendaraanFilterState = { page: 1, limit: 10, tanggal: "", status: "", divisi: "", departemen: "", namaKendaraan: "" };
+const EMPTY_KENDARAAN_FILTERS: KendaraanFilterState = { page: 1, limit: 10, tanggal: "", bulan: "", status: "", divisi: "", departemen: "", direktorat: "", namaKendaraan: "", search: "" };
 
 // Calendar sub-tab (Room/Vehicle Booking) - mirrors booking-ruang-meeting/calendar and
 // booking-kendaraan/calendar's own date-range helpers exactly.
@@ -576,6 +579,7 @@ function SuperAdminPageInner() {
   const [bookingCalSidebarHeight, setBookingCalSidebarHeight] = useState<number | undefined>(undefined);
 
   const [kendaraanFilters, setKendaraanFilters] = useState<KendaraanFilterState>(EMPTY_KENDARAAN_FILTERS);
+  const [kendaraanSearchInput, setKendaraanSearchInput] = useState("");
   const [kendaraanItems, setKendaraanItems] = useState<BookingKendaraan[]>([]);
   const [kendaraanTotal, setKendaraanTotal] = useState(0);
   const [kendaraanBusy, setKendaraanBusy] = useState(true);
@@ -792,12 +796,15 @@ function SuperAdminPageInner() {
   const atkFilterWrapRef = useRef<HTMLDivElement>(null);
   const saranaFilterWrapRef = useRef<HTMLDivElement>(null);
   const bookingFilterWrapRef = useRef<HTMLDivElement>(null);
+  const kendaraanFilterWrapRef = useRef<HTMLDivElement>(null);
   const [atkFilterOpen, setAtkFilterOpen] = useState(false);
   const [saranaFilterOpen, setSaranaFilterOpen] = useState(false);
   const [bookingFilterOpen, setBookingFilterOpen] = useState(false);
+  const [kendaraanFilterOpen, setKendaraanFilterOpen] = useState(false);
   useExclusivePanel(atkFilterOpen, () => setAtkFilterOpen(false));
   useExclusivePanel(saranaFilterOpen, () => setSaranaFilterOpen(false));
   useExclusivePanel(bookingFilterOpen, () => setBookingFilterOpen(false));
+  useExclusivePanel(kendaraanFilterOpen, () => setKendaraanFilterOpen(false));
   useExclusivePanel(arsipKatalogFilterOpen, () => setArsipKatalogFilterOpen(false));
   useExclusivePanel(saranaKatalogFilterOpen, () => setSaranaKatalogFilterOpen(false));
   const tableReqIdRef = useRef(0);
@@ -813,6 +820,7 @@ function SuperAdminPageInner() {
   const atkSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const atkReqIdRef = useRef(0);
   const bookingSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kendaraanSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saranaReqIdRef = useRef(0);
   const saranaKatalogFilterWrapRef = useRef<HTMLDivElement>(null);
@@ -820,6 +828,7 @@ function SuperAdminPageInner() {
   const saranaKatalogReqIdRef = useRef(0);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
   useClickOutside([bookingFilterWrapRef], () => setBookingFilterOpen(false), bookingFilterOpen);
+  useClickOutside([kendaraanFilterWrapRef], () => setKendaraanFilterOpen(false), kendaraanFilterOpen);
   useClickOutside([atkFilterWrapRef], () => setAtkFilterOpen(false), atkFilterOpen);
   useClickOutside([saranaFilterWrapRef], () => setSaranaFilterOpen(false), saranaFilterOpen);
   useClickOutside([arsipKatalogFilterWrapRef], () => setArsipKatalogFilterOpen(false), arsipKatalogFilterOpen);
@@ -1071,10 +1080,13 @@ function SuperAdminPageInner() {
         page: kendaraanFilters.page,
         limit: kendaraanFilters.limit,
         tanggal: kendaraanFilters.tanggal,
+        bulan: kendaraanFilters.bulan,
         status: kendaraanFilters.status,
         divisi: kendaraanFilters.divisi,
         departemen: kendaraanFilters.departemen,
+        direktorat: kendaraanFilters.direktorat,
         namaKendaraan: kendaraanFilters.namaKendaraan,
+        search: kendaraanFilters.search,
       });
       if (reqId !== kendaraanReqIdRef.current) return;
       const kendaraanItemsResult = result?.items ?? [];
@@ -1831,13 +1843,14 @@ function SuperAdminPageInner() {
 
   function kendaraanExportParams() {
     return {
-      bulan: undefined,
+      bulan: kendaraanFilters.bulan,
       tanggal: kendaraanFilters.tanggal,
       status: kendaraanFilters.status,
       divisi: kendaraanFilters.divisi,
       departemen: kendaraanFilters.departemen,
+      direktorat: kendaraanFilters.direktorat,
       nama_kendaraan: kendaraanFilters.namaKendaraan,
-      search: undefined,
+      search: kendaraanFilters.search,
     };
   }
 
@@ -1941,7 +1954,16 @@ function SuperAdminPageInner() {
     setKendaraanFilters((f) => ({ ...f, ...patch, page: patch.page ?? 1 }));
   }
 
+  function handleKendaraanSearchChange(value: string) {
+    setKendaraanSearchInput(value);
+    if (kendaraanSearchDebounce.current) clearTimeout(kendaraanSearchDebounce.current);
+    kendaraanSearchDebounce.current = setTimeout(() => {
+      updateKendaraanFilter({ search: value.trim() });
+    }, 350);
+  }
+
   function resetKendaraanFilters() {
+    setKendaraanSearchInput("");
     setKendaraanFilters(EMPTY_KENDARAAN_FILTERS);
   }
 
@@ -2212,11 +2234,20 @@ function SuperAdminPageInner() {
   const kendaraanPageButtons: number[] = [];
   for (let p = kendaraanPageStart; p <= kendaraanPageEnd; p++) kendaraanPageButtons.push(p);
 
-  const kendaraanDivisiOptions = orgStructure?.divisi || [];
+  const kendaraanSelectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === kendaraanFilters.direktorat) || null;
+  const kendaraanDivisiOptions = kendaraanSelectedDirektoratNode
+    ? kendaraanSelectedDirektoratNode.divisi.map((v) => v.nama)
+    : orgStructure?.divisi || [];
   const kendaraanSelectedDivisiNode = kendaraanFilters.divisi
-    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === kendaraanFilters.divisi)
+    ? (kendaraanSelectedDirektoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find(
+        (v) => v.nama === kendaraanFilters.divisi
+      )
     : null;
-  const kendaraanDepartemenOptions = kendaraanSelectedDivisiNode ? kendaraanSelectedDivisiNode.departemen : orgStructure?.departemen || [];
+  const kendaraanDepartemenOptions = kendaraanSelectedDivisiNode
+    ? kendaraanSelectedDivisiNode.departemen
+    : kendaraanSelectedDirektoratNode
+      ? kendaraanSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
+      : orgStructure?.departemen || [];
 
   const arsipTotalPages = Math.max(1, Math.ceil(arsipTotal / arsipFilters.limit));
   const arsipPageStart = Math.min(Math.max(1, arsipFilters.page), arsipTotalPages);
@@ -3885,24 +3916,24 @@ function SuperAdminPageInner() {
             </button>
             <button
               type="button"
+              className={`superadmin-subtab-btn ${kendaraanSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setKendaraanSubtab("calendar")}
+            >
+              Calendar
+            </button>
+            <button
+              type="button"
               className={`superadmin-subtab-btn ${kendaraanSubtab === "transaksi" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setKendaraanSubtab("transaksi")}
             >
-              Transaksi Booking ({kendaraanTotal})
+              Booking ({kendaraanTotal})
             </button>
             <button
               type="button"
               className={`superadmin-subtab-btn ${kendaraanSubtab === "roster" ? "superadmin-subtab-btn-active" : ""}`}
               onClick={() => setKendaraanSubtab("roster")}
             >
-              Kelola Kendaraan
-            </button>
-            <button
-              type="button"
-              className={`superadmin-subtab-btn ${kendaraanSubtab === "calendar" ? "superadmin-subtab-btn-active" : ""}`}
-              onClick={() => setKendaraanSubtab("calendar")}
-            >
-              Calendar
+              Settings
             </button>
           </div>
 
@@ -4225,60 +4256,86 @@ function SuperAdminPageInner() {
         <div className="card-header">
           <h3>Booking Kendaraan</h3>
         </div>
-        <div className="toolbar">
-          <div className="field">
-            <label htmlFor="filter-kendaraan-tanggal">Filter Tanggal</label>
-            <DateFilterPicker id="filter-kendaraan-tanggal" value={kendaraanFilters.tanggal} onChange={(v) => updateKendaraanFilter({ tanggal: v })} />
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
+            <label htmlFor="filter-kendaraan-search">Cari Pesanan</label>
+            <input type="text" id="filter-kendaraan-search" placeholder="No Pesanan" value={kendaraanSearchInput} onChange={(e) => handleKendaraanSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-kendaraan-status">Status</label>
-            <SearchableSelect
-              id="filter-kendaraan-status"
-              value={kendaraanFilters.status}
-              onChange={(v) => updateKendaraanFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
-              options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
-              getLabel={(v) => ({
-                DRAFT: "Draft",
-                ON_APPROVAL: "On-Approval",
-                REJECTED: "Rejected",
-                APPROVED_GA_APPROVAL: "Approved",
-              } as Record<string, string>)[v] || v}
-              clearLabel="Semua Status"
-              placeholder="Semua Status"
-            />
+            <label htmlFor="filter-kendaraan-bulan">Filter Periode</label>
+            <PeriodFilterPicker id="filter-kendaraan-bulan" bulan={kendaraanFilters.bulan} tanggal={kendaraanFilters.tanggal} onChangeBulan={(v) => updateKendaraanFilter({ bulan: v, tanggal: "" })} onChangeTanggal={(v) => updateKendaraanFilter({ tanggal: v, bulan: "" })} />
           </div>
-          <div className="field">
-            <label htmlFor="filter-kendaraan-nama">Kendaraan</label>
-            <SearchableSelect
-              id="filter-kendaraan-nama"
-              value={kendaraanFilters.namaKendaraan}
-              onChange={(v) => updateKendaraanFilter({ namaKendaraan: v })}
-              options={vehicles.map((v) => v.nama)}
-              clearLabel="Semua Kendaraan"
-              placeholder="Semua Kendaraan"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-kendaraan-divisi">Divisi</label>
-            <SearchableSelect
-              id="filter-kendaraan-divisi"
-              value={kendaraanFilters.divisi}
-              onChange={(v) => updateKendaraanFilter({ divisi: v, departemen: "" })}
-              options={kendaraanDivisiOptions}
-              clearLabel="Semua Divisi"
-              placeholder="Semua Divisi"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="filter-kendaraan-departemen">Departemen</label>
-            <SearchableSelect
-              id="filter-kendaraan-departemen"
-              value={kendaraanFilters.departemen}
-              onChange={(v) => updateKendaraanFilter({ departemen: v })}
-              options={kendaraanDepartemenOptions}
-              clearLabel="Semua Departemen"
-              placeholder="Semua Departemen"
-            />
+          <div className="filter-dropdown-wrap" ref={kendaraanFilterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button type="button" className="btn filter-dropdown-toggle" id="filter-kendaraan-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setKendaraanFilterOpen((v) => !v)}>
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            {kendaraanFilterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={FIELD_NO_MARGIN_STYLE}>
+                  <label htmlFor="filter-kendaraan-status">Status</label>
+                  <SearchableSelect
+                    id="filter-kendaraan-status"
+                    value={kendaraanFilters.status}
+                    onChange={(v) => updateKendaraanFilter({ status: v as BookingStatus | "REJECTED" | "ON_APPROVAL" | "" })}
+                    options={["DRAFT", "ON_APPROVAL", "REJECTED", "APPROVED_GA_APPROVAL"]}
+                    getLabel={(v) => ({
+                      DRAFT: "Draft",
+                      ON_APPROVAL: "On-Approval",
+                      REJECTED: "Rejected",
+                      APPROVED_GA_APPROVAL: "Approved",
+                    } as Record<string, string>)[v] || v}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-kendaraan-nama">Kendaraan</label>
+                  <SearchableSelect
+                    id="filter-kendaraan-nama"
+                    value={kendaraanFilters.namaKendaraan}
+                    onChange={(v) => updateKendaraanFilter({ namaKendaraan: v })}
+                    options={vehicles.map((v) => v.nama)}
+                    clearLabel="Semua Kendaraan"
+                    placeholder="Semua Kendaraan"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-kendaraan-direktorat">Direktorat</label>
+                  <SearchableSelect
+                    id="filter-kendaraan-direktorat"
+                    value={kendaraanFilters.direktorat}
+                    onChange={(v) => updateKendaraanFilter({ direktorat: v, divisi: "", departemen: "" })}
+                    options={orgStructure?.direktorat || []}
+                    clearLabel="Semua Direktorat"
+                    placeholder="Semua Direktorat"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-kendaraan-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="filter-kendaraan-divisi"
+                    value={kendaraanFilters.divisi}
+                    onChange={(v) => updateKendaraanFilter({ divisi: v, departemen: "" })}
+                    options={kendaraanDivisiOptions}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={FIELD_NO_MARGIN_TOP_SPACED_STYLE}>
+                  <label htmlFor="filter-kendaraan-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="filter-kendaraan-departemen"
+                    value={kendaraanFilters.departemen}
+                    onChange={(v) => updateKendaraanFilter({ departemen: v })}
+                    options={kendaraanDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <button className="btn btn-secondary" style={RESET_FILTER_BUTTON_STYLE} onClick={resetKendaraanFilters}>Semua Pesanan</button>
           <div className="toolbar-actions">
