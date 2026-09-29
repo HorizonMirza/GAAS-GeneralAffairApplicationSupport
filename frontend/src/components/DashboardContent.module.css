@@ -58,27 +58,31 @@
   justify-content: center;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  color: #000;
+  color: var(--text-secondary);
   background: var(--bg-surface);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
   white-space: nowrap;
-  transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, background 150ms ease;
+  transition: all 150ms ease;
+}
+
+.moduleTabs button span {
+  color: inherit;
+  font-weight: inherit;
 }
 
 .moduleTabs button:hover,
 .moduleTabs button:focus-visible {
   border-color: var(--blue-400);
   color: var(--blue-500);
-  box-shadow: 0 4px 12px rgba(20, 80, 201, 0.1);
 }
 
 .moduleTabs .moduleTabActive {
   border-color: var(--blue-500);
   color: #fff;
   background: var(--blue-500);
-  box-shadow: 0 5px 14px rgba(20, 80, 201, 0.2);
 }
 
 .moduleTabs .moduleTabActive:hover,
