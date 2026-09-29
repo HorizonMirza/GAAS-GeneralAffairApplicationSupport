@@ -394,7 +394,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
               <label htmlFor="pv-kode-program">Kode Program {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <input type="text" id="pv-kode-program" required disabled={!isEdit} value={form.kodeProgram} onChange={(e) => set("kodeProgram", e.target.value)} />
             </div>
-            <div className="field">
+            <div className="field field-select-blue">
               <label htmlFor="pv-asuransi">Asuransi {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <SearchableSelect
                 id="pv-asuransi"
@@ -403,10 +403,10 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 onChange={(v) => set("asuransiStatus", v as Asuransi)}
                 options={asuransiOptions.options}
                 getLabel={asuransiOptions.getLabel}
-                placeholder="Tidak"
+                placeholder="Pilih Asuransi"
               />
             </div>
-            <div className="field">
+            <div className="field field-select-blue">
               <label htmlFor="pv-packing">Pengemasan Tambahan {isKpuEdit && <Lock className="field-lock-icon" width={12} height={12} />}</label>
               <SearchableSelect
                 id="pv-packing"
@@ -415,7 +415,7 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 onChange={(v) => set("requestPacking", v)}
                 options={pengemasanOptions.options}
                 getLabel={pengemasanOptions.getLabel}
-                placeholder="Tidak"
+                placeholder="Pilih Pengemasan Tambahan"
               />
             </div>
             <div className="field full" style={{ marginBottom: 6 }}>

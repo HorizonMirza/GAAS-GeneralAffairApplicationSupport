@@ -32,8 +32,8 @@ function emptyForm(): PengirimanCreatePayload {
     namaPenerima: "",
     noTeleponPenerima: "",
     alamatPenerima: "",
-    asuransiStatus: "Tidak",
-    requestPacking: "Tidak",
+    asuransiStatus: "",
+    requestPacking: "",
     catatan: "",
   };
 }
@@ -126,6 +126,10 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
     }
     if (form.jumlahItem <= 0) {
       setError("Jumlah barang harus lebih dari 0");
+      return;
+    }
+    if (!form.asuransiStatus || !form.requestPacking) {
+      setError("Asuransi dan Pengemasan Tambahan wajib dipilih");
       return;
     }
     if (!form.namaPengirim.trim()) {
@@ -324,7 +328,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                 onChange={(e) => set("kodeProgram", e.target.value.replace(/[^0-9.]/g, ""))}
               />
             </div>
-            <div className="field">
+            <div className="field field-select-blue">
               <label htmlFor="f-asuransi">Asuransi</label>
               <SearchableSelect
                 id="f-asuransi"
@@ -332,10 +336,10 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                 onChange={(v) => set("asuransiStatus", v as Asuransi)}
                 options={asuransiOptions.options}
                 getLabel={asuransiOptions.getLabel}
-                placeholder="Tidak"
+                placeholder="Pilih Asuransi"
               />
             </div>
-            <div className="field">
+            <div className="field field-select-blue">
               <label htmlFor="f-packing">Pengemasan Tambahan</label>
               <SearchableSelect
                 id="f-packing"
@@ -343,7 +347,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                 onChange={(v) => set("requestPacking", v)}
                 options={pengemasanOptions.options}
                 getLabel={pengemasanOptions.getLabel}
-                placeholder="Tidak"
+                placeholder="Pilih Pengemasan Tambahan"
               />
             </div>
             <div className="field full">

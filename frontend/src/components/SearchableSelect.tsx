@@ -130,7 +130,7 @@ export default function SearchableSelect({ id, value, onChange, options, placeho
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={value === undefined ? "searchable-select-placeholder" : ""}>
+        <span className={value === undefined || (value === "" && !clearLabel) ? "searchable-select-placeholder" : ""}>
           {value === undefined ? placeholder : value === "" ? clearLabel || placeholder : label(value)}
         </span>
         <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
