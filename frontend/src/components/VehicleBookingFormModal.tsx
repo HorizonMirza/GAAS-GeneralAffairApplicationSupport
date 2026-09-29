@@ -7,6 +7,7 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { getAvailableEndHours, getAvailableStartHours, getDefaultBookingSlot, isWholeDayAllowed } from "@/lib/bookingTime";
+import { useHolidayDates } from "@/lib/useAppSettings";
 import type { BookingKendaraanCreatePayload, Me, Role, VehicleOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -74,6 +75,7 @@ const AS_ROLE_OPTIONS: Role[] = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADM
 
 export default function VehicleBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
+  const holidayDates = useHolidayDates();
   const [form, setForm] = useState<BookingKendaraanCreatePayload>(emptyForm());
   const [asRole, setAsRole] = useState<Role | "">("");
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
@@ -369,7 +371,7 @@ export default function VehicleBookingFormModal({ open, me, onClose, onCreated, 
             </div>
             <div className="field">
               <label htmlFor="fk-tanggal">Tanggal</label>
-              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends />
+              <DateFilterPicker id="fk-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends disabledDates={holidayDates} />
             </div>
             <div className="field">
               <label htmlFor="fk-penumpang">Jumlah Penumpang</label>

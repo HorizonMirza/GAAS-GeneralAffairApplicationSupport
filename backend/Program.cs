@@ -1119,6 +1119,45 @@ using (var scope = app.Services.CreateScope())
     }
     MasterData.LoadFromDb(migrateDb);
 
+    // App Settings (Part 7) - company name/logo shown in the sidebar, login page and PDF exports,
+    // plus Room/Vehicle Booking's own operating hours - all used to be hardcoded (see
+    // BookingRuangController.OperatingStart/End and the literal "PGN Solution" text baked into
+    // every *PdfService). Existing behavior is preserved exactly on first upgrade: seed defaults
+    // match what those hardcoded values already were, and LogoPath starts null (falls back to the
+    // same bundled Assets/logo-pgm-solution.png file every PDF/logo endpoint already used).
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS app_settings (
+            id SERIAL PRIMARY KEY,
+            company_name VARCHAR(255) NOT NULL,
+            logo_path VARCHAR(255),
+            logo_content_type VARCHAR(50),
+            logo_original_filename VARCHAR(255),
+            operating_start TIME NOT NULL,
+            operating_end TIME NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS holiday (
+            id SERIAL PRIMARY KEY,
+            date DATE NOT NULL UNIQUE,
+            label VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+    if (!migrateDb.AppSettings.Any())
+    {
+        migrateDb.AppSettings.Add(new AppSettings
+        {
+            Id = 1,
+            CompanyName = "PGN Solution",
+            OperatingStart = new TimeOnly(7, 0),
+            OperatingEnd = new TimeOnly(18, 0),
+            UpdatedAt = DateTime.UtcNow,
+        });
+        migrateDb.SaveChanges();
+    }
+    AppSettingsCache.Configure(DirektoriUnggahan.ResolveDanBuat(builder.Configuration, DirektoriUnggahan.KunciAppLogo, DirektoriUnggahan.DefaultAppLogo));
+    AppSettingsCache.LoadFromDb(migrateDb);
+
     // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
     // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
     // restart, instead of silently requiring the seed command to be run by hand. Insert-if-

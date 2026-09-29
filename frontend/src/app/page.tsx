@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { focusNextFieldOnEnter } from "@/lib/formNav";
 import { SmokeyBackground } from "@/components/SmokeyBackground";
+import { useAppSettings } from "@/lib/useAppSettings";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { companyName, logoUrl } = useAppSettings();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,8 +48,8 @@ export default function LoginPage() {
       <div className="login-outer">
         <div className="brand-logo">
           <img
-            src="/assets/logo-pgn-solution.png"
-            alt="PGN Solution"
+            src={logoUrl}
+            alt={companyName}
             className="brand-logo-img"
             style={{ maxWidth: 240, maxHeight: 72, width: "auto", height: "auto" }}
           />

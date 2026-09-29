@@ -12,11 +12,13 @@ public static class DirektoriUnggahan
     public const string KunciAtkInvoice = "AtkInvoiceUploadDir";
     public const string KunciSarana = "SaranaUploadDir";
     public const string KunciFotoProfil = "ProfilePhotoUploadDir";
+    public const string KunciAppLogo = "AppLogoUploadDir";
 
     public const string DefaultInvoice = "uploads/invoices";
     public const string DefaultAtkInvoice = "uploads/atk-invoices";
     public const string DefaultSarana = "uploads/sarana";
     public const string DefaultFotoProfil = "uploads/profile-photos";
+    public const string DefaultAppLogo = "uploads/app-logo";
 
     // A relative path in appsettings is taken relative to the project folder, not the build
     // output - AppContext.BaseDirectory points at bin/<config>/<tfm>/, hence the three levels up.

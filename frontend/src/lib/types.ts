@@ -180,6 +180,26 @@ export interface NotificationSoundSettings {
   activitySoundId: string;
 }
 
+// Company branding + booking operating hours (see AppSettingsController) - GET is public (the
+// pre-login page shows the logo too), every write is Superadmin-only and password-gated.
+export interface AppSettings {
+  companyName: string;
+  hasCustomLogo: boolean;
+  operatingStart: string;
+  operatingEnd: string;
+  updatedAt: string;
+}
+
+export interface Holiday {
+  id: number;
+  date: string;
+  label: string;
+}
+
+export interface HolidayListResponse {
+  holidays: Holiday[];
+}
+
 export interface PengirimanListResponse {
   items: Pengiriman[];
   total: number;

@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
 import { formatLongDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
+import { useAppSettings } from "@/lib/useAppSettings";
 import { useClickOutside } from "@/lib/useClickOutside";
 import ChatNotificationListener from "@/components/ChatNotificationListener";
 import GlobalChatModal from "@/components/GlobalChatModal";
@@ -112,6 +113,7 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "sarana", label: "Maintenance" },
   { key: "arsip", label: "Archive" },
   { key: "master-data", label: "Master Data" },
+  { key: "app-settings", label: "Pengaturan Aplikasi" },
   { key: "organisasi", label: "Organization" },
   { key: "users", label: "Users" },
 ];
@@ -284,6 +286,7 @@ function AccountMenu() {
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { me, refresh } = useAuth();
+  const { companyName, logoUrl } = useAppSettings();
   const { showToast } = useToast();
   const pathname = usePathname();
   const router = useRouter();
@@ -357,7 +360,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <GlobalChatModal />
       <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
         <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
-          <img src="/assets/logo-pgn-solution.png" alt="PGN Solution" className="brand-logo-sidebar-img" />
+          <img src={logoUrl} alt={companyName} className="brand-logo-sidebar-img" />
         </Link>
 
         <ScrollArea className="sidebar-scroll">

@@ -1,6 +1,7 @@
 import type {
   AdminUserListItem,
   AdminUserListResponse,
+  AppSettings,
   ApproveKpuPayload,
   ArchiveKategori,
   BookingKendaraan,
@@ -24,6 +25,8 @@ import type {
   CreateDivisiResult,
   CreatedUserResult,
   CreateUserPayload,
+  Holiday,
+  HolidayListResponse,
   ImpersonateResult,
   ImpersonationLogListResponse,
   KategoriKerusakan,
@@ -221,6 +224,45 @@ export const api = {
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
   me: () => apiRequest<Me>("/me"),
   orgStructure: () => apiRequest<OrgStructure>("/org-structure"),
+
+  // Company branding + booking hours - GET is public (also read by the pre-login page), every
+  // write is Superadmin-only and password-gated (see AppSettingsController).
+  getAppSettings: () => apiRequest<AppSettings>("/app-settings"),
+  updateAppSettings: (payload: { companyName: string; operatingStart: string; operatingEnd: string; password: string }) =>
+    apiRequest<AppSettings>("/app-settings", { method: "PUT", body: payload }),
+  uploadAppLogo: async (file: File, password: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("password", password);
+    const response = await fetch(`${API_BASE}/app-settings/logo`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let detail = "Gagal mengunggah logo";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch {
+        // ignore - response body wasn't JSON
+      }
+      throw new ApiError(detail, response.status);
+    }
+    return (await response.json()) as AppSettings;
+  },
+  deleteAppLogo: (password: string) =>
+    apiRequest<AppSettings>("/app-settings/logo", { method: "DELETE", body: { password } }),
+  // `v` cache-busts after a fresh upload/delete the same way profilePhotoUrl does - pass the
+  // settings' updatedAt (parsed to a number) so the URL actually changes when the logo does.
+  appLogoUrl: (v?: string) => (v ? `${API_BASE}/app-settings/logo?v=${encodeURIComponent(v)}` : `${API_BASE}/app-settings/logo`),
+
+  listHolidays: () => apiRequest<HolidayListResponse>("/app-settings/holidays"),
+  createHoliday: (payload: { date: string; label: string; password: string }) =>
+    apiRequest<Holiday>("/app-settings/holidays", { method: "POST", body: payload }),
+  deleteHoliday: (id: number, password: string) =>
+    apiRequest<null>(`/app-settings/holidays/${id}`, { method: "DELETE", body: { password } }),
+
   getNotificationSoundSettings: () => apiRequest<NotificationSoundSettings>("/notification-settings"),
   updateNotificationSoundSettings: (payload: NotificationSoundSettings) =>
     apiRequest<NotificationSoundSettings>("/notification-settings", { method: "PUT", body: payload }),

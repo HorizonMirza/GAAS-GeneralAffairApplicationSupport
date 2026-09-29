@@ -26,22 +26,12 @@ public static class ArsipPdfService
         ["LAINNYA"] = "Lainnya",
     };
 
-    private static byte[]? _logoBytes;
-
-    private static byte[] LoadLogo()
-    {
-        if (_logoBytes != null) return _logoBytes;
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "logo-pgm-solution.png");
-        _logoBytes = File.ReadAllBytes(path);
-        return _logoBytes;
-    }
-
     // actorNames: id -> Nama untuk ApprovedByApprovalGa - di-resolve sekali oleh controller
     // sebelum memanggil ini, karena PermintaanArsip sendiri tidak punya navigation property untuk
     // FK itu (lihat model).
     public static byte[] Generate(PermintaanArsip item, Dictionary<int, string> actorNames)
     {
-        var logo = LoadLogo();
+        var logo = AppSettingsCache.GetLogoBytes();
 
         var document = Document.Create(container =>
         {
@@ -87,7 +77,7 @@ public static class ArsipPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa pemindahan arsip di atas telah disetujui secara final. Nomor pemindahan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima arsip."
+                        $"Dokumen ini diterbitkan otomatis oleh sistem {AppSettingsCache.CompanyName} (GAAS) sebagai bukti bahwa pemindahan arsip di atas telah disetujui secara final. Nomor pemindahan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima arsip."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

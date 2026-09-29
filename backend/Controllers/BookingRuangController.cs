@@ -334,8 +334,6 @@ public class BookingRuangController : ApiControllerBase
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
 
-    private static readonly TimeOnly OperatingStart = new(7, 0);
-    private static readonly TimeOnly OperatingEnd = new(18, 0);
 
     private static string? ValidatePayload(BookingRuangCreate payload, bool isGaActor)
     {
@@ -372,6 +370,8 @@ public class BookingRuangController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+        if (AppSettingsCache.IsHoliday(payload.Tanggal))
+            return "Tanggal ini adalah hari libur, ruang meeting tidak bisa dipesan";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
@@ -384,7 +384,7 @@ public class BookingRuangController : ApiControllerBase
         {
             if (payload.IsWholeDay)
             {
-                if (currentTimeWib >= OperatingStart)
+                if (currentTimeWib >= AppSettingsCache.OperatingStart)
                     return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
             }
             else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
@@ -399,7 +399,7 @@ public class BookingRuangController : ApiControllerBase
                 return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
-            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+            if (payload.JamMulai < AppSettingsCache.OperatingStart || payload.JamSelesai > AppSettingsCache.OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         if (payload.IsRecurring)
@@ -424,8 +424,8 @@ public class BookingRuangController : ApiControllerBase
         item.JumlahPeserta = payload.JumlahPeserta;
         item.Tanggal = payload.Tanggal;
         item.IsWholeDay = payload.IsWholeDay;
-        item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
-        item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
+        item.JamMulai = payload.IsWholeDay ? AppSettingsCache.OperatingStart : payload.JamMulai;
+        item.JamSelesai = payload.IsWholeDay ? AppSettingsCache.OperatingEnd : payload.JamSelesai;
         item.Catatan = payload.Catatan;
         if (!string.IsNullOrWhiteSpace(payload.Tipe))
             item.Tipe = payload.Tipe;
@@ -449,7 +449,7 @@ public class BookingRuangController : ApiControllerBase
         var frequency = payload.RecurrenceFrequency.Value;
         while (current <= payload.RecurrenceEndDate.Value && dates.Count < MaxOccurrencesPerSeries)
         {
-            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+            if (current.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) && !AppSettingsCache.IsHoliday(current))
                 dates.Add(current);
             current = frequency switch
             {
@@ -928,6 +928,8 @@ public class BookingRuangController : ApiControllerBase
             return "No. telepon PIC tidak valid";
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Ruang meeting hanya bisa dipesan pada hari Senin - Jumat";
+        if (AppSettingsCache.IsHoliday(payload.Tanggal))
+            return "Tanggal ini adalah hari libur, ruang meeting tidak bisa dipesan";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
@@ -940,7 +942,7 @@ public class BookingRuangController : ApiControllerBase
         {
             if (payload.IsWholeDay)
             {
-                if (currentTimeWib >= OperatingStart)
+                if (currentTimeWib >= AppSettingsCache.OperatingStart)
                     return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
             }
             else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
@@ -955,7 +957,7 @@ public class BookingRuangController : ApiControllerBase
                 return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
-            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+            if (payload.JamMulai < AppSettingsCache.OperatingStart || payload.JamSelesai > AppSettingsCache.OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
 
@@ -1014,8 +1016,8 @@ public class BookingRuangController : ApiControllerBase
         item.Pic = payload.Pic.Trim();
         item.NoTeleponPic = payload.NoTeleponPic.Trim();
         item.IsWholeDay = payload.IsWholeDay;
-        item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
-        item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
+        item.JamMulai = payload.IsWholeDay ? AppSettingsCache.OperatingStart : payload.JamMulai;
+        item.JamSelesai = payload.IsWholeDay ? AppSettingsCache.OperatingEnd : payload.JamSelesai;
         item.HasConflict = false;
         item.AdditionalRooms.Clear();
         foreach (var room in (payload.AdditionalRooms ?? new List<string>()).Distinct())
@@ -1067,7 +1069,7 @@ public class BookingRuangController : ApiControllerBase
             var nowWib = WaktuWib.Now;
             var todayWib = DateOnly.FromDateTime(nowWib);
             var currentTimeWib = TimeOnly.FromDateTime(nowWib);
-            if (newDate < todayWib || (newDate == todayWib && ((item.IsWholeDay && currentTimeWib >= OperatingStart) || (!item.IsWholeDay && item.JamMulai != null && item.JamMulai.Value <= currentTimeWib))))
+            if (newDate < todayWib || (newDate == todayWib && ((item.IsWholeDay && currentTimeWib >= AppSettingsCache.OperatingStart) || (!item.IsWholeDay && item.JamMulai != null && item.JamMulai.Value <= currentTimeWib))))
             {
                 results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = "Jadwal baru tidak boleh di masa lalu" });
                 continue;
@@ -1075,6 +1077,11 @@ public class BookingRuangController : ApiControllerBase
             if (newDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {
                 results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
+                continue;
+            }
+            if (AppSettingsCache.IsHoliday(newDate))
+            {
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} adalah hari libur" });
                 continue;
             }
             var roomList = RoomList(item);

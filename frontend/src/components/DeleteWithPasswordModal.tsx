@@ -13,12 +13,18 @@ interface Props {
   children?: React.ReactNode;
   onConfirm: (password: string) => Promise<void>;
   onClose: () => void;
+  // ModalOverlay always renders its children (visibility is CSS-only, see that component), so
+  // this modal's password field sits in the DOM even while closed - a page that mounts more than
+  // one DeleteWithPasswordModal at once (e.g. SuperAdminAppSettingsTab's several cards) needs a
+  // distinct id per instance to avoid a duplicate-id collision. Defaults to the original hardcoded
+  // id so every existing single-modal-per-page caller is unaffected.
+  passwordFieldId?: string;
 }
 
 // A permanent delete of a room/vehicle roster entry - gated by re-entering the Super Admin's own
 // password (verified server-side). Same modal chrome and field layout as the Add/Edit form in the
 // same tab, just with disabled fields and a red "Hapus" button instead of green "Save".
-export default function DeleteWithPasswordModal({ open, title, children, onConfirm, onClose }: Props) {
+export default function DeleteWithPasswordModal({ open, title, children, onConfirm, onClose, passwordFieldId = "delete-confirm-password" }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,7 +61,7 @@ export default function DeleteWithPasswordModal({ open, title, children, onConfi
 
         <div style={{ marginTop: 12 }}>
           <PasswordField
-            id="delete-confirm-password"
+            id={passwordFieldId}
             label="Password Super Admin"
             placeholder="Masukkan Password"
             icon={<Lock width={15} height={15} />}

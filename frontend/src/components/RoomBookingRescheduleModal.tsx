@@ -8,6 +8,7 @@ import { formatDateTime, todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { getAvailableEndHours, getAvailableStartHours, isWholeDayAllowed } from "@/lib/bookingTime";
 import { useMasterDataOptions } from "@/lib/useMasterData";
+import { useHolidayDates } from "@/lib/useAppSettings";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -65,6 +66,7 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
 // Tambahan/PIC are live.
 export default function RoomBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
   const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
+  const holidayDates = useHolidayDates();
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -255,7 +257,7 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
             </div>
             <div className="field">
               <label htmlFor="rs-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <DateFilterPicker id="rs-tanggal" clearable={false} value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} disableWeekends />
+              <DateFilterPicker id="rs-tanggal" clearable={false} value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} disableWeekends disabledDates={holidayDates} />
             </div>
             <div className="field">
               <label htmlFor="rs-peserta">Jumlah Peserta <Pencil className="field-edit-icon" width={12} height={12} /></label>

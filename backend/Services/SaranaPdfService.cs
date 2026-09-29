@@ -27,22 +27,12 @@ public static class SaranaPdfService
         ["LAINNYA"] = "Lainnya",
     };
 
-    private static byte[]? _logoBytes;
-
-    private static byte[] LoadLogo()
-    {
-        if (_logoBytes != null) return _logoBytes;
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "logo-pgm-solution.png");
-        _logoBytes = File.ReadAllBytes(path);
-        return _logoBytes;
-    }
-
     // actorNames: id -> Nama untuk LokasiDicekBy/GambarDibuatBy/SelesaiBy/ApprovedByApprovalGa -
     // di-resolve sekali oleh controller sebelum memanggil ini, karena PerbaikanSarana sendiri tidak
     // punya navigation property untuk FK-FK itu (lihat model).
     public static byte[] Generate(PerbaikanSarana item, Dictionary<int, string> actorNames)
     {
-        var logo = LoadLogo();
+        var logo = AppSettingsCache.GetLogoBytes();
 
         var document = Document.Create(container =>
         {
@@ -87,7 +77,7 @@ public static class SaranaPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa pengajuan perbaikan di atas telah disetujui secara final. Nomor pengajuan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima pekerjaan."
+                        $"Dokumen ini diterbitkan otomatis oleh sistem {AppSettingsCache.CompanyName} (GAAS) sebagai bukti bahwa pengajuan perbaikan di atas telah disetujui secara final. Nomor pengajuan pada dokumen ini dapat digunakan sebagai referensi verifikasi dan serah terima pekerjaan."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

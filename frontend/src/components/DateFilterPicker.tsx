@@ -60,6 +60,11 @@ interface Props {
   // CLOSE_MIN's own Mon-Fri assumption), so those cells render muted and can't be picked, same
   // treatment as a before-minDate day.
   disableWeekends?: boolean;
+  // Room/Vehicle Booking only - Super Admin's own Hari Libur list (see useAppSettings/
+  // AppSettingsController), a set of "YYYY-MM-DD" strings. Backend already rejects a booking on
+  // any of these regardless of this prop, so this is purely UX - a muted, unclickable cell here
+  // avoids the round-trip error for a mistake the calendar could just prevent up front.
+  disabledDates?: string[];
 }
 
 // Replaces the plain <input type="date"> used for every "Filter Tanggal" across the app - same
@@ -68,7 +73,7 @@ interface Props {
 // jumping to a distant month or year doesn't take a long click-through, then a day grid below
 // reuses this app's existing MiniMonthCalendar day-cell styling (weekday header, muted outside-
 // month days, today/selected circle) for visual consistency with the rest of the app.
-export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal", disabled, clearable = true, minDate, disableWeekends }: Props) {
+export default function DateFilterPicker({ id, value, onChange, placeholder = "Semua Tanggal", disabled, clearable = true, minDate, disableWeekends, disabledDates }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
@@ -225,7 +230,8 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
               const isSelected = c.iso === value;
               const isBeforeMin = !!minDate && c.iso < minDate;
               const isWeekend = !!disableWeekends && (c.weekday === 0 || c.weekday === 6);
-              const isBlocked = isBeforeMin || isWeekend;
+              const isHoliday = !!disabledDates?.includes(c.iso);
+              const isBlocked = isBeforeMin || isWeekend || isHoliday;
               const cls = ["mini-calendar-day"];
               if (c.muted || isBlocked) cls.push("mini-calendar-day-muted");
               if (isSelected) cls.push("mini-calendar-day-selected");
@@ -243,7 +249,7 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
             <button
               type="button"
               className="filter-picker-link"
-              disabled={(!!minDate && today < minDate) || (!!disableWeekends && [0, 6].includes(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10))).getDay()))}
+              disabled={(!!minDate && today < minDate) || (!!disableWeekends && [0, 6].includes(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10))).getDay())) || !!disabledDates?.includes(today)}
               onClick={() => selectDay(today)}
             >
               Hari Ini

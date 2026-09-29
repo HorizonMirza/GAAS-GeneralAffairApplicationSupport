@@ -58,6 +58,8 @@ public class AppDbContext : DbContext
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<ImpersonationLog> ImpersonationLogs => Set<ImpersonationLog>();
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1231,6 +1233,31 @@ public class AppDbContext : DbContext
             e.Property(s => s.ChatSoundId).HasColumnName("chat_sound_id").HasMaxLength(30).IsRequired();
             e.Property(s => s.ActivitySoundId).HasColumnName("activity_sound_id").HasMaxLength(30).IsRequired();
             e.Property(s => s.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<AppSettings>(e =>
+        {
+            e.ToTable("app_settings");
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasColumnName("id");
+            e.Property(s => s.CompanyName).HasColumnName("company_name").HasMaxLength(255).IsRequired();
+            e.Property(s => s.LogoPath).HasColumnName("logo_path").HasMaxLength(255);
+            e.Property(s => s.LogoContentType).HasColumnName("logo_content_type").HasMaxLength(50);
+            e.Property(s => s.LogoOriginalFilename).HasColumnName("logo_original_filename").HasMaxLength(255);
+            e.Property(s => s.OperatingStart).HasColumnName("operating_start");
+            e.Property(s => s.OperatingEnd).HasColumnName("operating_end");
+            e.Property(s => s.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<Holiday>(e =>
+        {
+            e.ToTable("holiday");
+            e.HasKey(h => h.Id);
+            e.Property(h => h.Id).HasColumnName("id");
+            e.Property(h => h.Date).HasColumnName("date").IsRequired();
+            e.Property(h => h.Label).HasColumnName("label").HasMaxLength(255).IsRequired();
+            e.Property(h => h.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(h => h.Date).IsUnique();
         });
 
         modelBuilder.Entity<OrgDirektorat>(e =>

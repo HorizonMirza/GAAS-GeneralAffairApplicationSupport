@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { getAvailableEndHours, getAvailableStartHours, isWholeDayAllowed, todayLocalDate } from "@/lib/bookingTime";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useHolidayDates } from "@/lib/useAppSettings";
 import type { BookingKendaraan, BookingKendaraanReschedulePayload, VehicleOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -59,6 +60,7 @@ function toFormFields(item: BookingKendaraan): BookingKendaraanReschedulePayload
 // untouched here. Separate from VehicleBookingDetailModal's own "edit" mode, which is
 // creator-only and DRAFT-only.
 export default function VehicleBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
+  const holidayDates = useHolidayDates();
   const [form, setForm] = useState<BookingKendaraanReschedulePayload | null>(null);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [error, setError] = useState("");
@@ -256,7 +258,7 @@ export default function VehicleBookingRescheduleModal({ open, item, onClose, onS
             </div>
             <div className="field">
               <label htmlFor="rk-tanggal">Tanggal <Pencil className="field-edit-icon" width={12} height={12} /></label>
-              <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={handleTanggalChange} clearable={false} minDate={todayLocalDate()} disableWeekends />
+              <DateFilterPicker id="rk-tanggal" value={form.tanggal} onChange={handleTanggalChange} clearable={false} minDate={todayLocalDate()} disableWeekends disabledDates={holidayDates} />
             </div>
             <div className="field">
               <label htmlFor="rk-penumpang">Jumlah Penumpang <Pencil className="field-edit-icon" width={12} height={12} /></label>

@@ -25,19 +25,9 @@ public static class BookingPdfService
         ["MONTHLY"] = "Bulanan",
     };
 
-    private static byte[]? _logoBytes;
-
-    private static byte[] LoadLogo()
-    {
-        if (_logoBytes != null) return _logoBytes;
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "logo-pgm-solution.png");
-        _logoBytes = File.ReadAllBytes(path);
-        return _logoBytes;
-    }
-
     public static byte[] Generate(BookingRuang item)
     {
-        var logo = LoadLogo();
+        var logo = AppSettingsCache.GetLogoBytes();
 
         var document = Document.Create(container =>
         {
@@ -91,7 +81,7 @@ public static class BookingPdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
+                        $"Dokumen ini diterbitkan otomatis oleh sistem {AppSettingsCache.CompanyName} (GAAS) sebagai bukti bahwa ruang meeting di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

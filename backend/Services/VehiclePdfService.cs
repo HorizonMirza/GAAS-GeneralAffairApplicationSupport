@@ -18,19 +18,9 @@ public static class VehiclePdfService
     private const string HeaderBg = "#CFD8E8";
     private const string AccentBlue = "#1450C9";
 
-    private static byte[]? _logoBytes;
-
-    private static byte[] LoadLogo()
-    {
-        if (_logoBytes != null) return _logoBytes;
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "logo-pgm-solution.png");
-        _logoBytes = File.ReadAllBytes(path);
-        return _logoBytes;
-    }
-
     public static byte[] Generate(BookingKendaraan item)
     {
-        var logo = LoadLogo();
+        var logo = AppSettingsCache.GetLogoBytes();
 
         var document = Document.Create(container =>
         {
@@ -81,7 +71,7 @@ public static class VehiclePdfService
                         : "-").FontSize(9).FontColor("#555555");
 
                     col.Item().PaddingTop(14).Text(
-                        "Dokumen ini diterbitkan otomatis oleh sistem PGN Solution (GAAS) sebagai bukti bahwa kendaraan di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
+                        $"Dokumen ini diterbitkan otomatis oleh sistem {AppSettingsCache.CompanyName} (GAAS) sebagai bukti bahwa kendaraan di atas telah disetujui dan dikonfirmasi untuk jadwal yang tercantum. Nomor pemesanan pada dokumen ini dapat digunakan sebagai referensi verifikasi."
                     ).FontSize(8.5f).FontColor("#666666");
                 });
 

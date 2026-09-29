@@ -296,8 +296,6 @@ public class BookingKendaraanController : ApiControllerBase
         return ApplySejakBulanFilter(ApplyBulanFilter(query, bulan), sejakBulan);
     }
 
-    private static readonly TimeOnly OperatingStart = new(7, 0);
-    private static readonly TimeOnly OperatingEnd = new(18, 0);
 
     private static string? ValidatePayload(BookingKendaraanCreate payload, bool isGaActor)
     {
@@ -325,6 +323,8 @@ public class BookingKendaraanController : ApiControllerBase
         }
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Kendaraan hanya bisa dipesan pada hari Senin - Jumat";
+        if (AppSettingsCache.IsHoliday(payload.Tanggal))
+            return "Tanggal ini adalah hari libur, kendaraan tidak bisa dipesan";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
@@ -337,7 +337,7 @@ public class BookingKendaraanController : ApiControllerBase
         {
             if (payload.IsWholeDay)
             {
-                if (currentTimeWib >= OperatingStart)
+                if (currentTimeWib >= AppSettingsCache.OperatingStart)
                     return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
             }
             else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
@@ -352,7 +352,7 @@ public class BookingKendaraanController : ApiControllerBase
                 return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
-            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+            if (payload.JamMulai < AppSettingsCache.OperatingStart || payload.JamSelesai > AppSettingsCache.OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         return null;
@@ -672,6 +672,8 @@ public class BookingKendaraanController : ApiControllerBase
             return "No. telepon PIC tidak valid";
         if (payload.Tanggal.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return "Kendaraan hanya bisa dipesan pada hari Senin - Jumat";
+        if (AppSettingsCache.IsHoliday(payload.Tanggal))
+            return "Tanggal ini adalah hari libur, kendaraan tidak bisa dipesan";
 
         var nowWib = WaktuWib.Now;
         var todayWib = DateOnly.FromDateTime(nowWib);
@@ -684,7 +686,7 @@ public class BookingKendaraanController : ApiControllerBase
         {
             if (payload.IsWholeDay)
             {
-                if (currentTimeWib >= OperatingStart)
+                if (currentTimeWib >= AppSettingsCache.OperatingStart)
                     return "Booking sepanjang hari untuk hari ini hanya dapat dilakukan sebelum jam operasional dimulai (07:00)";
             }
             else if (payload.JamMulai != null && payload.JamMulai.Value <= currentTimeWib)
@@ -699,7 +701,7 @@ public class BookingKendaraanController : ApiControllerBase
                 return "Jam mulai dan jam selesai wajib diisi kalau bukan Sepanjang Hari";
             if (payload.JamMulai >= payload.JamSelesai)
                 return "Jam mulai harus lebih awal dari jam selesai";
-            if (payload.JamMulai < OperatingStart || payload.JamSelesai > OperatingEnd)
+            if (payload.JamMulai < AppSettingsCache.OperatingStart || payload.JamSelesai > AppSettingsCache.OperatingEnd)
                 return "Jam booking hanya tersedia antara 07:00 - 18:00";
         }
         return null;
@@ -886,7 +888,7 @@ public class BookingKendaraanController : ApiControllerBase
         {
             if (item.IsWholeDay)
             {
-                if (currentTimeWib >= OperatingStart)
+                if (currentTimeWib >= AppSettingsCache.OperatingStart)
                     return BadRequest(new { detail = "Booking sepanjang hari untuk hari ini hanya dapat diajukan sebelum jam operasional dimulai (07:00)" });
             }
             else if (item.JamMulai != null && item.JamMulai.Value <= currentTimeWib)

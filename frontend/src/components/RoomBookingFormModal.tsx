@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { useMasterDataOptions } from "@/lib/useMasterData";
+import { useHolidayDates } from "@/lib/useAppSettings";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, Role, RoomOption } from "@/lib/types";
 import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL } from "@/lib/constants";
 import DateFilterPicker from "./DateFilterPicker";
@@ -91,6 +92,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
   const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
+  const holidayDates = useHolidayDates();
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [asRole, setAsRole] = useState<Role | "">("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -483,7 +485,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
             </div>
             <div className="field">
               <label htmlFor="f-tanggal">Tanggal</label>
-              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends />
+              <DateFilterPicker id="f-tanggal" value={form.tanggal} onChange={handleTanggalChange} minDate={todayLocalDate()} clearable={false} disableWeekends disabledDates={holidayDates} />
             </div>
             <div className="field">
               <label htmlFor="f-peserta">Jumlah Peserta</label>

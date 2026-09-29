@@ -84,9 +84,10 @@ import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
 import SuperAdminMeetingRoomTab from "@/components/SuperAdminMeetingRoomTab";
 import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
 import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
+import SuperAdminAppSettingsTab from "@/components/SuperAdminAppSettingsTab";
 import { useMasterDataOptions } from "@/lib/useMasterData";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "organisasi" | "users";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "app-settings" | "organisasi" | "users";
 
 // Labels/icons here mirror AppShell's SUPER_ADMIN_TABS (the sidebar submenu that's the actual
 // navigation UI now) - this array itself only validates ?tab= against known keys, since the pill
@@ -100,6 +101,7 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
   { key: "master-data", label: "Master Data", icon: <Database width={16} height={16} /> },
+  { key: "app-settings", label: "Pengaturan Aplikasi", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
 ];
@@ -6893,6 +6895,8 @@ function SuperAdminPageInner() {
           {masterDataSubtab === "ARSIP_TAHUN" && <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" />}
         </>
       )}
+
+      {activeTab === "app-settings" && <SuperAdminAppSettingsTab />}
 
       {activeTab === "organisasi" && <SuperAdminOrgTab />}
 
