@@ -413,6 +413,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [divisi, setDivisi] = useState("");
   const [departemen, setDepartemen] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [organizationMenuOpen, setOrganizationMenuOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
@@ -429,8 +430,16 @@ export default function DashboardContent({ me }: { me: Me }) {
     errors: 0,
   });
   const filterWrapRef = useRef<HTMLDivElement>(null);
-  useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-  useExclusivePanel(filterOpen, () => setFilterOpen(false));
+  const organizationWrapRef = useRef<HTMLDivElement>(null);
+  const hasOpenPanel = filterOpen || organizationMenuOpen;
+  useClickOutside([filterWrapRef, organizationWrapRef], () => {
+    setFilterOpen(false);
+    setOrganizationMenuOpen(false);
+  }, hasOpenPanel);
+  useExclusivePanel(hasOpenPanel, () => {
+    setFilterOpen(false);
+    setOrganizationMenuOpen(false);
+  });
 
   const visibleModules = useMemo(
     () => MODULES.filter((module) => me.role !== "KPU" || !module.hiddenForKpu),
@@ -600,6 +609,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     setDivisi("");
     setDepartemen("");
     setOrganizationDimension("direktorat");
+    setOrganizationMenuOpen(false);
     setFilterOpen(false);
     setRefreshToken((value) => value + 1);
   }
@@ -766,7 +776,7 @@ export default function DashboardContent({ me }: { me: Me }) {
             />
           </div>
           <div className={`filter-dropdown-wrap ${styles.moreFilter}`} ref={filterWrapRef}>
-            <button type="button" className={`btn filter-dropdown-toggle ${styles.filterToggle}`} id="dashboard-filter-toggle" aria-expanded={filterOpen} onClick={() => setFilterOpen((value) => !value)}>
+            <button type="button" className={`btn filter-dropdown-toggle ${styles.filterToggle}`} id="dashboard-filter-toggle" aria-expanded={filterOpen} onClick={() => { setFilterOpen((value) => !value); setOrganizationMenuOpen(false); }}>
               Semua Filter
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
@@ -914,16 +924,34 @@ export default function DashboardContent({ me }: { me: Me }) {
         <article className={styles.insightPanel}>
           <header className={`${styles.insightHeader} ${styles.distributionHeader}`}>
             <div><h2>Distribusi Volume {organizationDimensionLabel}</h2><p>{distributionContext}</p></div>
-            <select
-              className={styles.organizationSelect}
-              aria-label="Dimensi distribusi volume"
-              value={organizationDimension}
-              onChange={(event) => setOrganizationDimension(event.target.value as OrganizationDimension)}
-            >
-              <option value="direktorat">Direktorat</option>
-              <option value="divisi">Divisi</option>
-              <option value="departemen">Departemen</option>
-            </select>
+            <div className={`filter-dropdown-wrap ${styles.organizationDropdown}`} ref={organizationWrapRef}>
+              <button
+                type="button"
+                className={`btn filter-dropdown-toggle ${styles.organizationDropdownToggle}`}
+                aria-expanded={organizationMenuOpen}
+                aria-haspopup="menu"
+                onClick={() => { setOrganizationMenuOpen((value) => !value); setFilterOpen(false); }}
+              >
+                {organizationDimensionLabel}
+                <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+              </button>
+              {organizationMenuOpen && (
+                <div className={`filter-dropdown-panel ${styles.organizationDropdownPanel}`} role="menu" aria-label="Dimensi distribusi volume">
+                  {(["direktorat", "divisi", "departemen"] as const).map((dimension) => (
+                    <button
+                      key={dimension}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={organizationDimension === dimension}
+                      className={organizationDimension === dimension ? styles.organizationOptionActive : styles.organizationOption}
+                      onClick={() => { setOrganizationDimension(dimension); setOrganizationMenuOpen(false); }}
+                    >
+                      {({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[dimension]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </header>
           <div className={styles.divisionChart}>
             {organizationVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada struktur organisasi pada filter ini.</div> : organizationVolumes.map((item) => (
@@ -951,11 +979,26 @@ export default function DashboardContent({ me }: { me: Me }) {
               <polygon className={styles.trendArea} points={trendAreaPoints} />
               <polyline className={styles.trendLine} points={trendLinePoints} />
               {trendPoints.map((point) => (
-                <g className={styles.trendPoint} key={point.key} tabIndex={0} aria-label={`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}>
+                <g
+                  className={`${styles.trendPoint} ${month === point.key ? styles.trendPointActive : ""}`}
+                  key={point.key}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={month === point.key}
+                  aria-label={`Terapkan filter ${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}
+                  onClick={() => { setMonth(point.key); setDate(""); }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setMonth(point.key);
+                      setDate("");
+                    }
+                  }}
+                >
                   <circle cx={point.x} cy={point.y} r="5" />
                   <text x={point.x} y={Math.max(13, point.y - 11)} textAnchor="middle">{point.value}</text>
                   <text className={styles.trendMonthLabel} x={point.x} y="252" textAnchor="middle">{point.label}</text>
-                  <title>{`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
+                  <title>{`Terapkan filter ${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
                 </g>
               ))}
             </svg>
