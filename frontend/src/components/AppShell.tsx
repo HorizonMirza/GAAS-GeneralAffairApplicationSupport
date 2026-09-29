@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, Shield, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Settings, Shield, Wrench } from "lucide-react";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
@@ -98,17 +98,13 @@ const NAV_CATEGORIES: NavCategory[] = [
 ];
 
 const SUPER_ADMIN_LABEL = "Super Admin";
+const SETTINGS_LABEL = "Settings";
 
 // Mirrors superadmin/page.tsx's own TABS (minus "Ruang Meeting"/"Kendaraan", folded into "Room
 // Booking"/"Vehicle Booking" as sub-tabs there instead of separate top-level ones) - kept as its
 // own small list here rather than importing that page's TABS const, which would pull that whole
 // ~3000-line page (and every modal it imports) into every route's bundle just for two label
 // strings.
-//
-// Master Data/Pengaturan Aplikasi/Organization/Users/Activity Log are deliberately NOT listed
-// here - they moved out of this sidebar submenu into their own quick-access pill row rendered at
-// the top of the Dashboard tab (see superadmin/page.tsx's QUICK_ACCESS_TABS), reachable only from
-// there rather than from every tab.
 const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "overview", label: "Dashboard" },
   { key: "ekspedisi", label: "Expedition" },
@@ -119,15 +115,51 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "arsip", label: "Archive" },
 ];
 
+// Master Data/Pengaturan Aplikasi/Organization/Users/Activity Log live under their own "Settings"
+// collapsible (own trigger, own submenu) instead of mixed into the flat Super Admin list above -
+// same route (/superadmin?tab=...) as every other Super Admin tab, just grouped separately so
+// they read as "app configuration" rather than getting lost among the seven business modules.
+const SETTINGS_TABS: { key: string; label: string }[] = [
+  { key: "master-data", label: "Master Data" },
+  { key: "app-settings", label: "Pengaturan Aplikasi" },
+  { key: "organisasi", label: "Organization" },
+  { key: "users", label: "Users" },
+  { key: "activity-log", label: "Activity Log" },
+];
+
 // Isolated into its own component so only this fragment (not the whole AppShell, mounted on every
 // page) needs a Suspense boundary for useSearchParams - the tab in the URL only matters for
 // highlighting which submenu item is active, not for anything else here.
 function SuperAdminSubmenuItems() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") || "overview";
+  // "?tab=" only means something on /superadmin itself - on any other page (which never carries
+  // that param) the old `searchParams.get("tab") || "overview"` fallback wrongly defaulted to
+  // "overview" and highlighted "Dashboard" here even while browsing a completely unrelated
+  // module. Off /superadmin, activeTab is set to a key nothing in SUPER_ADMIN_TABS can match, so
+  // no item shows active.
+  const activeTab = pathname === "/superadmin" ? searchParams.get("tab") || "overview" : "";
   return (
     <>
       {SUPER_ADMIN_TABS.map((tab) => (
+        <Link key={tab.key} className={`nav-link ${activeTab === tab.key ? "active" : ""}`} href={`/superadmin?tab=${tab.key}`}>
+          {tab.label}
+        </Link>
+      ))}
+    </>
+  );
+}
+
+// Same shape/reasoning as SuperAdminSubmenuItems, for the Settings collapsible's own five items -
+// a separate component (not a shared one parameterized by list) only because the "default to
+// overview" fallback only makes sense for SUPER_ADMIN_TABS, which actually has that key.
+function SettingsSubmenuItems() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = pathname === "/superadmin" ? searchParams.get("tab") || "" : "";
+  return (
+    <>
+      {SETTINGS_TABS.map((tab) => (
         <Link key={tab.key} className={`nav-link ${activeTab === tab.key ? "active" : ""}`} href={`/superadmin?tab=${tab.key}`}>
           {tab.label}
         </Link>
@@ -284,6 +316,7 @@ function AccountMenu() {
     </div>
   );
 }
+
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { me, refresh } = useAuth();
@@ -459,6 +492,47 @@ export default function AppShell({ children }: { children: ReactNode }) {
                       <CollapsibleContent className="nav-category-submenu">
                         <Suspense fallback={null}>
                           <SuperAdminSubmenuItems />
+                        </Suspense>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })()}
+
+                {(() => {
+                  // Same route as Super Admin's own section above (/superadmin), so it shares the
+                  // same pathname-only hasActive - both sections show open together while
+                  // anywhere in Super Admin, same as Super Admin's own trigger already does for
+                  // every one of its seven tabs regardless of which is current.
+                  const hasActive = pathname === "/superadmin";
+                  const isOpen = !isIconCollapsed && (openCategory === SETTINGS_LABEL || hasActive);
+                  return (
+                    <Collapsible
+                      open={isOpen}
+                      onOpenChange={(next) => {
+                        if (!isIconCollapsed) setOpenCategory(next ? SETTINGS_LABEL : null);
+                      }}
+                      className={`nav-category ${isOpen ? "open" : ""} ${hasActive ? "has-active" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className={`nav-category-trigger ${isIconCollapsed && hasActive ? "has-active" : ""}`}
+                        title={SETTINGS_LABEL}
+                        aria-expanded={isOpen}
+                        onClick={() => {
+                          if (isIconCollapsed) {
+                            router.push("/superadmin?tab=master-data");
+                          } else {
+                            setOpenCategory(isOpen ? null : SETTINGS_LABEL);
+                          }
+                        }}
+                      >
+                        <Settings width={20} height={20} />
+                        <span style={labelWidthStyle(SETTINGS_LABEL)}>{SETTINGS_LABEL}</span>
+                        <svg className="nav-category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      </button>
+                      <CollapsibleContent className="nav-category-submenu">
+                        <Suspense fallback={null}>
+                          <SettingsSubmenuItems />
                         </Suspense>
                       </CollapsibleContent>
                     </Collapsible>
