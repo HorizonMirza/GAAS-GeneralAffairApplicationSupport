@@ -431,6 +431,8 @@ export default function DashboardContent({ me }: { me: Me }) {
   });
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const organizationWrapRef = useRef<HTMLDivElement>(null);
+  const moduleTabsRef = useRef<HTMLElement>(null);
+  const [tabBoxWidth, setTabBoxWidth] = useState<number | null>(null);
   const hasOpenPanel = filterOpen || organizationMenuOpen;
   useClickOutside([filterWrapRef, organizationWrapRef], () => {
     setFilterOpen(false);
@@ -440,6 +442,24 @@ export default function DashboardContent({ me }: { me: Me }) {
     setFilterOpen(false);
     setOrganizationMenuOpen(false);
   });
+
+  useEffect(() => {
+    const el = moduleTabsRef.current;
+    if (!el) return;
+    const updateWidth = () => {
+      const buttons = el.querySelectorAll<HTMLButtonElement>("button");
+      if (buttons.length > 0) {
+        const w = buttons[buttons.length - 1].getBoundingClientRect().width;
+        if (w > 0) {
+          setTabBoxWidth(Math.round(w));
+        }
+      }
+    };
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const visibleModules = useMemo(
     () => MODULES.filter((module) => me.role !== "KPU" || !module.hiddenForKpu),
@@ -762,10 +782,16 @@ export default function DashboardContent({ me }: { me: Me }) {
   const overallTotal = visibleModules.reduce((total, module) => total + state.summaries[module.key].total, 0);
 
   return (
-    <div className={styles.dashboard}>
+    <div
+      className={styles.dashboard}
+      style={tabBoxWidth ? ({ "--tab-box-width": `${tabBoxWidth}px` } as React.CSSProperties) : undefined}
+    >
       <header className={styles.header}>
         <div className={styles.greeting}><WelcomeGreeting me={me} /></div>
         <div className={styles.headerActions}>
+          <button type="button" className={styles.refreshButton} onClick={resetDashboard} disabled={loading} title="Reset filter dan muat ulang dashboard" aria-label="Reset filter dan muat ulang dashboard">
+            <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
+          </button>
           <div className={styles.monthFilter}>
             <PeriodFilterPicker
               id="dashboard-period"
@@ -802,13 +828,10 @@ export default function DashboardContent({ me }: { me: Me }) {
               </div>
             )}
           </div>
-          <button type="button" className={styles.refreshButton} onClick={resetDashboard} disabled={loading} title="Reset filter dan muat ulang dashboard" aria-label="Reset filter dan muat ulang dashboard">
-            <RefreshCw className={loading ? styles.spinning : ""} aria-hidden="true" />
-          </button>
         </div>
       </header>
 
-      <nav className={styles.moduleTabs} aria-label="Dashboard per modul">
+      <nav className={styles.moduleTabs} ref={moduleTabsRef} aria-label="Dashboard per modul">
         <button type="button" className={activeView === "all" ? styles.moduleTabActive : ""} aria-pressed={activeView === "all"} onClick={() => setActiveView("all")}>
           <span>Overall ({overallTotal.toLocaleString("id-ID")})</span>
         </button>
