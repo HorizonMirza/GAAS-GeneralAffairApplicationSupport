@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { isValidPengirimanPhone, ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { Asuransi, Me, PengirimanCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -52,6 +53,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   useAutofocusFirstField(formRef, open);
+  const asuransiOptions = useMasterDataOptions("ASURANSI");
+  const pengemasanOptions = useMasterDataOptions("PENGEMASAN");
 
   const isSuperAdmin = me.role === "SUPER_ADMIN";
   const isGaActor = me.role === "ADMIN_GA" || me.role === "APPROVAL_GA" || me.role === "SUPER_ADMIN";
@@ -327,7 +330,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                 id="f-asuransi"
                 value={form.asuransiStatus}
                 onChange={(v) => set("asuransiStatus", v as Asuransi)}
-                options={["Tidak", "Ya"]}
+                options={asuransiOptions.options}
+                getLabel={asuransiOptions.getLabel}
                 placeholder="Tidak"
               />
             </div>
@@ -337,7 +341,8 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                 id="f-packing"
                 value={form.requestPacking}
                 onChange={(v) => set("requestPacking", v)}
-                options={["Tidak", "Tambahan Kayu"]}
+                options={pengemasanOptions.options}
+                getLabel={pengemasanOptions.getLabel}
                 placeholder="Tidak"
               />
             </div>

@@ -17,7 +17,7 @@ public class PermintaanArsipCreate
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
     public string NamaArsip { get; set; } = null!;
-    public ArchiveKategoriEnum Kategori { get; set; }
+    public string Kategori { get; set; } = null!;
     public string TahunArsip { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string NamaPic { get; set; } = null!;
@@ -43,7 +43,7 @@ public class PermintaanArsipOut
     public DateOnly Tanggal { get; set; }
     public int JumlahArsip { get; set; }
     public string NamaArsip { get; set; } = null!;
-    public ArchiveKategoriEnum Kategori { get; set; }
+    public string Kategori { get; set; } = null!;
     public string TahunArsip { get; set; } = null!;
     public string LokasiPenyimpanan { get; set; } = null!;
     public string? NamaPic { get; set; }
@@ -115,7 +115,7 @@ public record PermintaanArsipCatalogItemOut(
     DateOnly Tanggal,
     int JumlahArsip,
     string NamaArsip,
-    ArchiveKategoriEnum Kategori,
+    string Kategori,
     string TahunArsip,
     string LokasiPenyimpanan,
     string? NamaPic,

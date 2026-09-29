@@ -12,12 +12,6 @@ public enum RoleEnum
     SUPER_ADMIN,
 }
 
-public enum AsuransiEnum
-{
-    Ya,
-    Tidak,
-}
-
 public enum InvoiceStatusEnum
 {
     DRAFT,
@@ -72,29 +66,11 @@ public enum BookingStatusEnum
     CANCELLED,
 }
 
-public enum TipeBookingEnum
-{
-    INTERNAL,
-    EXTERNAL,
-}
-
 public enum RecurrenceFrequencyEnum
 {
     DAILY,
     WEEKLY,
     MONTHLY,
-}
-
-// Maintenance: jenis kerusakan yang dilaporkan, dipakai untuk filter di halaman Transaction.
-public enum KategoriKerusakanEnum
-{
-    AC,
-    LISTRIK,
-    AIR,
-    FURNITUR,
-    GEDUNG,
-    IT,
-    LAINNYA,
 }
 
 // Maintenance: tahap eksekusi fisik setelah laporan disetujui final (APPROVED_GA_APPROVAL) -
@@ -108,28 +84,3 @@ public enum ExecutionStageEnum
     SELESAI,
 }
 
-// Archive: jenis dokumen asli setiap arsip di dalam sebuah PermintaanArsip (lihat
-// PermintaanArsipItem.Kategori) - dipakai sebagai "folder" saat filter.
-public enum ArchiveKategoriEnum
-{
-    SOP,
-    SURAT,
-    KONTRAK,
-    LAPORAN,
-    PANDUAN,
-    LAINNYA,
-}
-
-// Office Supplies: jenis barang yang diminta, mengikuti pengelompokan implisit di
-// lib/atkCatalog.ts (frontend) - dipakai untuk filter/tampilan di Transaksi.
-public enum AtkKategoriEnum
-{
-    ALAT_TULIS,
-    KERTAS_CETAK,
-    PERLENGKAPAN_KANTOR,
-    MAP_FILING,
-    ELEKTRONIK_KOMPUTER,
-    KEBERSIHAN_PANTRY,
-    PERLENGKAPAN_RAPAT,
-    LAINNYA,
-}

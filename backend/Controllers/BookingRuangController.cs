@@ -351,8 +351,10 @@ public class BookingRuangController : ApiControllerBase
             return $"Jumlah peserta maksimal {MaxJumlahPeserta} orang";
         if (!MeetingRooms.IsValidRoom(payload.NamaRuang))
             return "Ruang tidak ditemukan";
-        if (!payload.Tipe.HasValue)
+        if (string.IsNullOrWhiteSpace(payload.Tipe))
             return "Tipe wajib dipilih";
+        if (!MasterData.IsValidKey(MasterDataCategories.TipeBooking, payload.Tipe))
+            return "Tipe booking tidak valid";
         // Only Admin/Approval GA can book on behalf of another unit - the field is silently
         // ignored for every other role (see EffectiveOwner below), so it's only validated
         // here when it could actually take effect.
@@ -425,8 +427,8 @@ public class BookingRuangController : ApiControllerBase
         item.JamMulai = payload.IsWholeDay ? OperatingStart : payload.JamMulai;
         item.JamSelesai = payload.IsWholeDay ? OperatingEnd : payload.JamSelesai;
         item.Catatan = payload.Catatan;
-        if (payload.Tipe.HasValue)
-            item.Tipe = payload.Tipe.Value;
+        if (!string.IsNullOrWhiteSpace(payload.Tipe))
+            item.Tipe = payload.Tipe;
 
         item.AdditionalRooms.Clear();
         foreach (var room in (payload.AdditionalRooms ?? new List<string>()).Distinct())

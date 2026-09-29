@@ -1,12 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
-import { ATK_CATALOG } from "@/lib/atkCatalog";
 import {
   GA_APPROVAL_ACTIONABLE_STATUSES,
-  KATEGORI_ATK_LABEL,
   L1_ACTIONABLE_STATUSES,
   SUMBER_PEMBELIAN_LABEL,
   atkOriginActorLabel,
@@ -16,6 +14,7 @@ import {
 } from "@/lib/constants";
 import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataItems, useMasterDataOptions } from "@/lib/useMasterData";
 import type { AtkKategori, Me, PermintaanAtk, PermintaanAtkCreatePayload, PermintaanAtkItemPayload, SumberPembelian } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -24,11 +23,6 @@ import SearchableSelect from "./SearchableSelect";
 import TextAutocomplete from "./TextAutocomplete";
 import { useToast } from "./ui/ToastProvider";
 
-// Satuan is no longer a field the user fills in by hand - it's derived silently from the catalog
-// the moment Nama Barang matches one of the 200 starter items, falling back to "pcs" (the most
-// common unit in the catalog) for anything typed that isn't an exact match.
-const ATK_CATALOG_BY_NAME = new Map(ATK_CATALOG.map((i) => [i.namaBarang, i.satuan]));
-const ATK_CATALOG_NAMES = ATK_CATALOG.map((i) => i.namaBarang);
 const DEFAULT_SATUAN = "pcs";
 
 const SUMBER_PEMBELIAN_OPTIONS: SumberPembelian[] = ["KPU", "PADI"];
@@ -48,8 +42,6 @@ interface Props {
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_ATK_LABEL) as AtkKategori[];
-
 const MAX_ITEM_ROWS = 10;
 
 function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
@@ -65,6 +57,10 @@ function toFormFields(item: PermintaanAtk): PermintaanAtkCreatePayload {
 }
 
 export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const kategoriOptions = useMasterDataOptions("ATK_KATEGORI");
+  const atkNamaBarangItems = useMasterDataItems("ATK_NAMA_BARANG");
+  const catalogNames = useMemo(() => atkNamaBarangItems.map((i) => i.key), [atkNamaBarangItems]);
+  const catalogByName = useMemo(() => new Map(atkNamaBarangItems.map((i) => [i.key, i.extra || DEFAULT_SATUAN])), [atkNamaBarangItems]);
   const [form, setForm] = useState<PermintaanAtkCreatePayload | null>(null);
   const [sumberPembelian, setSumberPembelian] = useState<SumberPembelian | "">("");
   const [totalHargaBarang, setTotalHargaBarang] = useState("");
@@ -271,8 +267,8 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                 disabled={!isOriginEdit}
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as AtkKategori)}
-                options={KATEGORI_OPTIONS}
-                getLabel={(v) => KATEGORI_ATK_LABEL[v as AtkKategori] || v}
+                options={kategoriOptions.options}
+                getLabel={kategoriOptions.getLabel}
                 placeholder="Pilih Kategori"
               />
             </div>
@@ -303,11 +299,11 @@ export default function AtkDetailModal({ open, mode, item, me, onClose, onSaved,
                           required
                           disabled={!isEdit}
                           maxLength={255}
-                          options={ATK_CATALOG_NAMES}
+                          options={catalogNames}
                           placeholder="Contoh: Pulpen"
                           value={row.namaBarang}
                           onChange={(namaBarang) => {
-                            setItem(idx, { namaBarang, satuan: ATK_CATALOG_BY_NAME.get(namaBarang) || DEFAULT_SATUAN });
+                            setItem(idx, { namaBarang, satuan: catalogByName.get(namaBarang) || DEFAULT_SATUAN });
                           }}
                         />
                       </div>

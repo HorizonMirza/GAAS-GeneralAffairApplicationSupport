@@ -39,11 +39,16 @@ export type SumberPembelian = "KPU" | "PADI";
 // status approval-nya sendiri (lihat backend PerbaikanSarana.cs).
 export type ExecutionStage = "MENUNGGU" | "LOKASI_DICEK" | "GAMBAR_DIBUAT" | "SELESAI";
 
-export type TipeBooking = "INTERNAL" | "EXTERNAL";
+// Was a fixed "INTERNAL" | "EXTERNAL" union - widened to a plain string once Super Admin's Master
+// Data tab could add/rename options beyond those two (see MasterDataCategories.TipeBooking on the
+// backend). Existing code that only ever compared against those two literals still works exactly
+// the same, since both string literals remain assignable.
+export type TipeBooking = string;
 
 export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
 
-export type Asuransi = "Ya" | "Tidak";
+// Same widening as TipeBooking above, for MasterDataCategories.Asuransi.
+export type Asuransi = string;
 
 export type InvoiceStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
 
@@ -405,7 +410,8 @@ export interface BookingRuangActionResult {
 // --- Archive: permintaan pemindahan arsip aktif (dipegang divisi/departemen) ke inaktif
 // (dipegang Admin/Approval GA), lewat alur approval yang sama dengan Office Supplies/Maintenance ---
 
-export type ArchiveKategori = "SOP" | "SURAT" | "KONTRAK" | "LAPORAN" | "PANDUAN" | "LAINNYA";
+// Same widening as TipeBooking above, for MasterDataCategories.ArchiveKategori.
+export type ArchiveKategori = string;
 
 export interface PermintaanArsip {
   id: number;
@@ -511,7 +517,8 @@ export interface KoreksiArsipPayload {
 // --- Maintenance (Perbaikan Sarana) ---
 // Alur approval-nya sama dengan Booking/ATK (BookingStatus, berakhir di APPROVED_GA_APPROVAL).
 
-export type KategoriKerusakan = "AC" | "LISTRIK" | "AIR" | "FURNITUR" | "GEDUNG" | "IT" | "LAINNYA";
+// Same widening as TipeBooking above, for MasterDataCategories.KategoriKerusakan.
+export type KategoriKerusakan = string;
 
 export interface PerbaikanSaranaFotoKerusakan {
   id: number;
@@ -628,15 +635,8 @@ export interface KoreksiSaranaPayload {
 // --- Office Supplies (Permintaan ATK) ---
 // Alur approval-nya memakai BookingStatus (berakhir di APPROVED_GA_APPROVAL, tanpa tahap KPU).
 
-export type AtkKategori =
-  | "ALAT_TULIS"
-  | "KERTAS_CETAK"
-  | "PERLENGKAPAN_KANTOR"
-  | "MAP_FILING"
-  | "ELEKTRONIK_KOMPUTER"
-  | "KEBERSIHAN_PANTRY"
-  | "PERLENGKAPAN_RAPAT"
-  | "LAINNYA";
+// Same widening as TipeBooking above, for MasterDataCategories.AtkKategori.
+export type AtkKategori = string;
 
 export interface PermintaanAtkItem {
   id: number;
@@ -959,6 +959,35 @@ export interface VehicleItem {
 
 export interface VehicleListResult {
   vehicles: VehicleItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Master Data (Super Admin-managed lookup lists) - see backend's MasterDataController. Key is
+// what's actually stored on the business record; Label is only ever shown in a dropdown/table
+// cell, so it's the only part Super Admin can rename after creation. Extra is a second
+// display-only value - only ATK_NAMA_BARANG uses it, for the item's default Satuan.
+// ---------------------------------------------------------------------------
+
+export type MasterDataCategory =
+  | "ASURANSI"
+  | "PENGEMASAN"
+  | "TIPE_BOOKING"
+  | "ATK_KATEGORI"
+  | "ATK_NAMA_BARANG"
+  | "KATEGORI_KERUSAKAN"
+  | "ARCHIVE_KATEGORI"
+  | "ARSIP_TAHUN";
+
+export interface MasterDataItem {
+  id: number;
+  category: MasterDataCategory;
+  key: string;
+  label: string;
+  extra: string | null;
+}
+
+export interface MasterDataListResult {
+  items: MasterDataItem[];
 }
 
 // ---------------------------------------------------------------------------

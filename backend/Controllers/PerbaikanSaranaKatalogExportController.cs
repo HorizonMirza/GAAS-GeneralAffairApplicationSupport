@@ -21,15 +21,15 @@ public class PerbaikanSaranaKatalogExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
 
-    private static readonly Dictionary<KategoriKerusakanEnum, string> KategoriLabel = new()
+    private static readonly Dictionary<string, string> KategoriLabel = new()
     {
-        [KategoriKerusakanEnum.AC] = "Pendingin Ruangan",
-        [KategoriKerusakanEnum.LISTRIK] = "Listrik",
-        [KategoriKerusakanEnum.AIR] = "Saluran",
-        [KategoriKerusakanEnum.FURNITUR] = "Furnitur",
-        [KategoriKerusakanEnum.GEDUNG] = "Bangunan",
-        [KategoriKerusakanEnum.IT] = "Jaringan",
-        [KategoriKerusakanEnum.LAINNYA] = "Lainnya",
+        ["AC"] = "Pendingin Ruangan",
+        ["LISTRIK"] = "Listrik",
+        ["AIR"] = "Saluran",
+        ["FURNITUR"] = "Furnitur",
+        ["GEDUNG"] = "Bangunan",
+        ["IT"] = "Jaringan",
+        ["LAINNYA"] = "Lainnya",
     };
 
     private static readonly (string Field, string Label)[] Columns =
@@ -59,7 +59,7 @@ public class PerbaikanSaranaKatalogExportController : ApiControllerBase
         "nomor_perbaikan" => row.NomorPerbaikan,
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "lokasi" => row.Lokasi,
-        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
+        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori),
         "deskripsi_kerusakan" => row.DeskripsiKerusakan,
         "nama_pelapor" => row.NamaPelapor,
         "no_telepon_pelapor" => row.NoTeleponPelapor,
@@ -81,7 +81,7 @@ public class PerbaikanSaranaKatalogExportController : ApiControllerBase
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
         if (tanggal.HasValue) parts.Add(tanggal.Value.ToString("yyyy-MM-dd"));
-        if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(KategoriLabel.TryGetValue(Enum.TryParse<KategoriKerusakanEnum>(kategori, out var k) ? k : KategoriKerusakanEnum.LAINNYA, out var label) ? label : kategori));
+        if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(KategoriLabel.GetValueOrDefault(kategori, kategori)));
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -92,16 +92,11 @@ public class PerbaikanSaranaKatalogExportController : ApiControllerBase
     private async Task<List<PerbaikanSaranaCatalogItemOut>> ExportRowsAsync(
         User currentUser, string? search, string? kategori, string? divisi, string? departemen, string? direktorat, string? bulan, DateOnly? tanggal)
     {
-        KategoriKerusakanEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (!Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori))
-                throw new ArgumentException("Kategori tidak valid");
-            kategoriFilter = parsedKategori;
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
+            throw new ArgumentException("Kategori tidak valid");
 
         var query = PerbaikanSaranaController.ApplyListFilters(
-            _db, _db.PerbaikanSaranas.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategoriFilter, direktorat, bulan, search, false, tanggal);
+            _db, _db.PerbaikanSaranas.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
 
         BatasEkspor.Pastikan(await query.CountAsync());
         return await query

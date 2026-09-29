@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { GA_APPROVAL_ACTIONABLE_STATUSES, L1_ACTIONABLE_STATUSES, isGaActionable, isValidPengirimanPhone, originActorLabel } from "@/lib/constants";
 import { formatDateTime, formatThousandSeparator, parseThousandSeparator } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { Asuransi, Me, Pengiriman, PengirimanCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -45,6 +46,8 @@ function toFormFields(item: Pengiriman): PengirimanCreatePayload {
 }
 
 export default function PengirimanDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const asuransiOptions = useMasterDataOptions("ASURANSI");
+  const pengemasanOptions = useMasterDataOptions("PENGEMASAN");
   const [form, setForm] = useState<PengirimanCreatePayload | null>(null);
   const [kResi, setKResi] = useState("");
   const [kBerat, setKBerat] = useState("");
@@ -398,7 +401,8 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 disabled={!isEdit}
                 value={form.asuransiStatus}
                 onChange={(v) => set("asuransiStatus", v as Asuransi)}
-                options={["Tidak", "Ya"]}
+                options={asuransiOptions.options}
+                getLabel={asuransiOptions.getLabel}
                 placeholder="Tidak"
               />
             </div>
@@ -409,7 +413,8 @@ export default function PengirimanDetailModal({ open, mode, item, me, onClose, o
                 disabled={!isEdit}
                 value={form.requestPacking}
                 onChange={(v) => set("requestPacking", v)}
-                options={["Tidak", "Tambahan Kayu"]}
+                options={pengemasanOptions.options}
+                getLabel={pengemasanOptions.getLabel}
                 placeholder="Tidak"
               />
             </div>

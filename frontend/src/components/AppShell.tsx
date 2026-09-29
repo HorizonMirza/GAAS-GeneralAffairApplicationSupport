@@ -111,6 +111,7 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "atk", label: "Office Supplies" },
   { key: "sarana", label: "Maintenance" },
   { key: "arsip", label: "Archive" },
+  { key: "master-data", label: "Master Data" },
   { key: "organisasi", label: "Organization" },
   { key: "users", label: "Users" },
 ];

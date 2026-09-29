@@ -19,7 +19,7 @@ public class BookingRuang
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
 
-    public TipeBookingEnum Tipe { get; set; } = TipeBookingEnum.INTERNAL;
+    public string Tipe { get; set; } = "INTERNAL";
 
     // Set only when this booking is one occurrence of a recurring series (see
     // BookingRuangController.BuildOccurrenceDates) - every occurrence shares the same SeriesId,

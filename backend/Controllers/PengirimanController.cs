@@ -339,6 +339,10 @@ public class PengirimanController : ApiControllerBase
             return "Nomor telepon penerima tidak valid";
         if (string.IsNullOrWhiteSpace(payload.RequestPacking))
             return "Request packing wajib diisi";
+        if (!MasterData.IsValidKey(MasterDataCategories.Pengemasan, payload.RequestPacking))
+            return "Request packing tidak valid";
+        if (!MasterData.IsValidKey(MasterDataCategories.Asuransi, payload.AsuransiStatus))
+            return "Asuransi tidak valid";
         if (!string.IsNullOrWhiteSpace(payload.Catatan) && !IsValidNote(payload.Catatan))
             return "Catatan hanya boleh berisi huruf dan angka";
         return null;

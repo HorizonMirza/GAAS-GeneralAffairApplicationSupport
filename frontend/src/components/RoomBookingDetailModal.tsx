@@ -12,11 +12,11 @@ import {
   isBookingGaActionable,
   MAX_JUMLAH_PESERTA,
   RECURRENCE_FREQUENCY_LABELS,
-  TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDateTime, todayLocalDate } from "@/lib/format";
 import { getAvailableStartHours, getAvailableEndHours, isWholeDayAllowed } from "@/lib/bookingTime";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { BookingRuang, BookingRuangCreatePayload, Me, RecurrenceFrequency, RoomOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -63,6 +63,7 @@ function toFormFields(item: BookingRuang): BookingRuangCreatePayload {
 }
 
 export default function RoomBookingDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
   const [form, setForm] = useState<BookingRuangCreatePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -548,8 +549,8 @@ export default function RoomBookingDetailModal({ open, mode, item, me, onClose, 
                 id="bv-tipe"
                 value={form.tipe}
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
-                options={Object.keys(TIPE_BOOKING_LABELS)}
-                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
+                options={tipeBookingOptions.options}
+                getLabel={tipeBookingOptions.getLabel}
                 placeholder="Pilih Tipe"
                 disabled={!isEdit}
                 searchable={false}

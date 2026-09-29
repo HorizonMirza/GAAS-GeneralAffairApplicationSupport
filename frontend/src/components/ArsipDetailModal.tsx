@@ -3,7 +3,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
-  ARCHIVE_KATEGORI_LABEL,
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
   arsipOriginActorLabel,
@@ -12,14 +11,13 @@ import {
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { ArchiveKategori, Me, PermintaanArsip, PermintaanArsipCreatePayload } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import type { RejectType } from "./RejectModal";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
-
-const KATEGORI_OPTIONS = Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[];
 
 interface Props {
   open: boolean;
@@ -46,6 +44,8 @@ function toFormFields(item: PermintaanArsip): PermintaanArsipCreatePayload {
 }
 
 export default function ArsipDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const kategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
+  const tahunOptions = useMasterDataOptions("ARSIP_TAHUN");
   const [form, setForm] = useState<PermintaanArsipCreatePayload | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -239,22 +239,21 @@ export default function ArsipDetailModal({ open, mode, item, me, onClose, onSave
                 disabled={!isEdit}
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as ArchiveKategori)}
-                options={KATEGORI_OPTIONS}
-                getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                options={kategoriOptions.options}
+                getLabel={kategoriOptions.getLabel}
                 placeholder="Kategori"
               />
             </div>
             <div className="field">
               <label htmlFor="dr-tahun">Tahun</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+              <SearchableSelect
                 id="dr-tahun"
-                required
                 disabled={!isEdit}
                 value={form.tahunArsip}
-                onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                onChange={(v) => set("tahunArsip", v)}
+                options={tahunOptions.options}
+                getLabel={tahunOptions.getLabel}
+                placeholder="Pilih Tahun"
               />
             </div>
 

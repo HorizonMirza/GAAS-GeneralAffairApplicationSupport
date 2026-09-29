@@ -200,7 +200,7 @@ public static class BookingPdfService
     {
         var pairs = new (string Label, string Value)[]
         {
-            ("Tipe Booking", item.Tipe == TipeBookingEnum.EXTERNAL ? "External" : "Internal"),
+            ("Tipe Booking", item.Tipe switch { "INTERNAL" => "Internal", "EXTERNAL" => "External", _ => item.Tipe }),
             ("Jumlah Peserta", $"{item.JumlahPeserta} orang"),
             ("Nama PIC", item.Pic ?? "-"),
             ("No. Telepon PIC", item.NoTeleponPic ?? "-"),

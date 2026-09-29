@@ -12,7 +12,7 @@ public class PerbaikanSarana
     public string? NomorPerbaikan { get; set; }
     public DateOnly Tanggal { get; set; }
     public string Lokasi { get; set; } = null!;
-    public KategoriKerusakanEnum Kategori { get; set; }
+    public string Kategori { get; set; } = null!;
     public string DeskripsiKerusakan { get; set; } = null!;
     public string? Catatan { get; set; }
     public string NamaPelapor { get; set; } = null!;

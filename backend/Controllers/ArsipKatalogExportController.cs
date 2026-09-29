@@ -21,14 +21,14 @@ public class ArsipKatalogExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
 
-    private static readonly Dictionary<ArchiveKategoriEnum, string> KategoriLabel = new()
+    private static readonly Dictionary<string, string> KategoriLabel = new()
     {
-        [ArchiveKategoriEnum.SOP] = "SOP",
-        [ArchiveKategoriEnum.SURAT] = "Surat",
-        [ArchiveKategoriEnum.KONTRAK] = "Kontrak",
-        [ArchiveKategoriEnum.LAPORAN] = "Laporan",
-        [ArchiveKategoriEnum.PANDUAN] = "Panduan",
-        [ArchiveKategoriEnum.LAINNYA] = "Lainnya",
+        ["SOP"] = "SOP",
+        ["SURAT"] = "Surat",
+        ["KONTRAK"] = "Kontrak",
+        ["LAPORAN"] = "Laporan",
+        ["PANDUAN"] = "Panduan",
+        ["LAINNYA"] = "Lainnya",
     };
 
     private static readonly (string Field, string Label)[] Columns =
@@ -61,7 +61,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         "tanggal" => row.Tanggal.ToString("yyyy-MM-dd"),
         "jumlah_arsip" => row.JumlahArsip,
         "nama_arsip" => row.NamaArsip,
-        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
+        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori),
         "tahun" => row.TahunArsip,
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
@@ -84,7 +84,7 @@ public class ArsipKatalogExportController : ApiControllerBase
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(bulan)) parts.Add(bulan);
         if (tanggal.HasValue) parts.Add(tanggal.Value.ToString("yyyy-MM-dd"));
-        if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(KategoriLabel.TryGetValue(Enum.TryParse<ArchiveKategoriEnum>(kategori, out var k) ? k : ArchiveKategoriEnum.LAINNYA, out var label) ? label : kategori));
+        if (!string.IsNullOrEmpty(kategori)) parts.Add(Slugify(KategoriLabel.GetValueOrDefault(kategori, kategori)));
         if (!string.IsNullOrEmpty(divisi)) parts.Add(Slugify(divisi));
         if (!string.IsNullOrEmpty(departemen)) parts.Add(Slugify(departemen));
         if (!string.IsNullOrEmpty(direktorat)) parts.Add(Slugify(direktorat));
@@ -95,18 +95,13 @@ public class ArsipKatalogExportController : ApiControllerBase
     private async Task<List<PermintaanArsipCatalogItemOut>> ExportRowsAsync(
         User currentUser, string? search, string? kategori, string? divisi, string? departemen, string? direktorat, string? bulan, DateOnly? tanggal)
     {
-        ArchiveKategoriEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var parsedKategori))
-                throw new ArgumentException("Kategori tidak valid");
-            kategoriFilter = parsedKategori;
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.ArchiveKategori, kategori))
+            throw new ArgumentException("Kategori tidak valid");
 
         var requestQuery = PermintaanArsipController.ApplyListFilters(
             _db, _db.PermintaanArsips.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, search, false, tanggal);
 
-        if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
+        if (!string.IsNullOrEmpty(kategori)) requestQuery = requestQuery.Where(p => p.Kategori == kategori);
 
         BatasEkspor.Pastikan(await requestQuery.CountAsync());
         return await requestQuery

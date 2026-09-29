@@ -225,9 +225,9 @@ public class PermintaanArsipController : ApiControllerBase
         if (tanggal.HasValue) query = query.Where(p => p.Tanggal == tanggal.Value);
         if (!string.IsNullOrEmpty(kategori))
         {
-            if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var kategoriEnum))
+            if (!MasterData.IsValidKey(MasterDataCategories.ArchiveKategori, kategori))
                 throw new ArgumentException("Kategori tidak valid");
-            query = query.Where(p => p.Kategori == kategoriEnum);
+            query = query.Where(p => p.Kategori == kategori);
         }
 
         return ApplyBulanFilter(query, bulan);
@@ -255,10 +255,12 @@ public class PermintaanArsipController : ApiControllerBase
             return "Lokasi penyimpanan wajib diisi";
         if (string.IsNullOrWhiteSpace(payload.NamaArsip))
             return "Nama arsip wajib diisi";
-        if (!Enum.IsDefined(typeof(ArchiveKategoriEnum), payload.Kategori))
+        if (string.IsNullOrWhiteSpace(payload.Kategori) || !MasterData.IsValidKey(MasterDataCategories.ArchiveKategori, payload.Kategori))
             return "Kategori arsip tidak valid";
         if (string.IsNullOrWhiteSpace(payload.TahunArsip))
             return "Tahun arsip wajib diisi";
+        if (!MasterData.IsValidKey(MasterDataCategories.ArsipTahun, payload.TahunArsip))
+            return "Tahun arsip tidak valid";
         return null;
     }
 
@@ -744,13 +746,8 @@ public class PermintaanArsipController : ApiControllerBase
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
-        ArchiveKategoriEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (!Enum.TryParse<ArchiveKategoriEnum>(kategori, out var parsedKategori))
-                return BadRequest(new { detail = "Kategori tidak valid" });
-            kategoriFilter = parsedKategori;
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.ArchiveKategori, kategori))
+            return BadRequest(new { detail = "Kategori tidak valid" });
 
         IQueryable<PermintaanArsip> requestQuery;
         try
@@ -762,7 +759,7 @@ public class PermintaanArsipController : ApiControllerBase
             return BadRequest(new { detail = ex.Message });
         }
 
-        if (kategoriFilter.HasValue) requestQuery = requestQuery.Where(p => p.Kategori == kategoriFilter.Value);
+        if (!string.IsNullOrEmpty(kategori)) requestQuery = requestQuery.Where(p => p.Kategori == kategori);
 
         var total = await requestQuery.CountAsync();
         var rows = await requestQuery

@@ -57,6 +57,7 @@ public class AppDbContext : DbContext
     public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<ImpersonationLog> ImpersonationLogs => Set<ImpersonationLog>();
+    public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1348,6 +1349,20 @@ public class AppDbContext : DbContext
             e.Property(v => v.Warna).HasColumnName("warna").HasMaxLength(50).IsRequired();
             e.Property(v => v.NomorTeleponSupir).HasColumnName("nomor_telepon_supir").HasMaxLength(30).IsRequired();
             e.Property(v => v.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<MasterDataItem>(e =>
+        {
+            e.ToTable("master_data_item");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("id");
+            e.Property(m => m.Category).HasColumnName("category").HasMaxLength(50).IsRequired();
+            e.Property(m => m.Key).HasColumnName("key").HasMaxLength(150).IsRequired();
+            e.Property(m => m.Label).HasColumnName("label").HasMaxLength(255).IsRequired();
+            e.Property(m => m.Extra).HasColumnName("extra").HasMaxLength(50);
+            e.Property(m => m.SortOrder).HasColumnName("sort_order");
+            e.Property(m => m.CreatedAt).HasColumnName("created_at");
+            e.HasIndex(m => new { m.Category, m.Key }).IsUnique();
         });
     }
 }

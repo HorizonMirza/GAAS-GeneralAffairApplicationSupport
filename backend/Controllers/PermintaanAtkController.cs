@@ -251,7 +251,7 @@ public class PermintaanAtkController : ApiControllerBase
             if (!string.IsNullOrEmpty(payload.Departemen) && !OrgTree.GetDepartemenOptions(payload.Divisi).Contains(payload.Departemen))
                 return "Departemen tidak ditemukan pada divisi tersebut";
         }
-        if (!Enum.IsDefined(typeof(AtkKategoriEnum), payload.Kategori))
+        if (string.IsNullOrWhiteSpace(payload.Kategori) || !MasterData.IsValidKey(MasterDataCategories.AtkKategori, payload.Kategori))
             return "Kategori tidak valid";
         if (string.IsNullOrWhiteSpace(payload.Keperluan))
             return "Tujuan wajib diisi";

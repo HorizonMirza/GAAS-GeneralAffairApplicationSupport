@@ -6,13 +6,13 @@ import { api } from "@/lib/api";
 import {
   BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES,
   BOOKING_L1_ACTIONABLE_STATUSES,
-  KATEGORI_KERUSAKAN_LABEL,
   isSaranaEditableByOrigin,
   isSaranaGaActionable,
   saranaOriginActorLabel,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { KategoriKerusakan, Me, PerbaikanSarana, PerbaikanSaranaCreatePayload, PerbaikanSaranaFotoKerusakan } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -31,7 +31,6 @@ interface Props {
   onRequestReject: (id: number, type: RejectType, originLabel: string) => void;
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
 const MAX_FOTO_KERUSAKAN = 5;
 
 function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
@@ -47,6 +46,7 @@ function toFormFields(item: PerbaikanSarana): PerbaikanSaranaCreatePayload {
 }
 
 export default function SaranaDetailModal({ open, mode, item, me, onClose, onSaved, onRequestReject }: Props) {
+  const kategoriOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
   const [form, setForm] = useState<PerbaikanSaranaCreatePayload | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -190,8 +190,8 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                 disabled={!isEdit}
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as KategoriKerusakan)}
-                options={KATEGORI_OPTIONS}
-                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                options={kategoriOptions.options}
+                getLabel={kategoriOptions.getLabel}
                 placeholder="Pilih kategori"
               />
             </div>

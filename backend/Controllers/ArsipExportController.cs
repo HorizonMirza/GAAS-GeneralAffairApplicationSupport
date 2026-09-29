@@ -21,14 +21,14 @@ public class ArsipExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
 
-    private static readonly Dictionary<ArchiveKategoriEnum, string> KategoriLabel = new()
+    private static readonly Dictionary<string, string> KategoriLabel = new()
     {
-        [ArchiveKategoriEnum.SOP] = "SOP",
-        [ArchiveKategoriEnum.SURAT] = "Surat",
-        [ArchiveKategoriEnum.KONTRAK] = "Kontrak",
-        [ArchiveKategoriEnum.LAPORAN] = "Laporan",
-        [ArchiveKategoriEnum.PANDUAN] = "Panduan",
-        [ArchiveKategoriEnum.LAINNYA] = "Lainnya",
+        ["SOP"] = "SOP",
+        ["SURAT"] = "Surat",
+        ["KONTRAK"] = "Kontrak",
+        ["LAPORAN"] = "Laporan",
+        ["PANDUAN"] = "Panduan",
+        ["LAINNYA"] = "Lainnya",
     };
 
     private static readonly (string Field, string Label)[] Columns =
@@ -77,7 +77,7 @@ public class ArsipExportController : ApiControllerBase
         "nama_pic" => row.NamaPic,
         "no_telepon_pic" => row.NoTeleponPic,
         "nama_arsip" => row.NamaArsip,
-        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori.ToString()),
+        "kategori" => KategoriLabel.GetValueOrDefault(row.Kategori, row.Kategori),
         "tahun_arsip" => row.TahunArsip,
         "lokasi_penyimpanan" => row.LokasiPenyimpanan,
         "divisi" => row.Divisi,

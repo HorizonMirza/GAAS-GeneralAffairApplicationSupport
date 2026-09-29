@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { KATEGORI_KERUSAKAN_LABEL, ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { KategoriKerusakan, Me, PerbaikanSaranaCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -36,8 +37,6 @@ function emptyForm(): SaranaFormState {
   };
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-
 // The 6 roles a real actor can create a Maintenance request as
 // (PerbaikanSaranaController.OriginRoles minus KPU/SUPER_ADMIN, which never create their own) -
 // what Super Admin picks from in "Bertindak Sebagai Role" to declare which origin identity a new
@@ -46,6 +45,7 @@ const AS_ROLE_OPTIONS: Role[] = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADM
 
 export default function SaranaFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
+  const kategoriOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
   const [form, setForm] = useState<SaranaFormState>(emptyForm());
   const [asRole, setAsRole] = useState<Role | "">("");
   const [fotoKerusakanFiles, setFotoKerusakanFiles] = useState<File[]>([]);
@@ -231,8 +231,8 @@ export default function SaranaFormModal({ open, me, onClose, onCreated }: Props)
                 id="fs-kategori"
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as KategoriKerusakan)}
-                options={KATEGORI_OPTIONS}
-                getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                options={kategoriOptions.options}
+                getLabel={kategoriOptions.getLabel}
                 placeholder="Pilih Kategori"
               />
             </div>

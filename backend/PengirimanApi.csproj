@@ -44,6 +44,11 @@
     <None Include="Assets\logo-pgm-solution.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Starter Nama Barang ATK catalog, read once at startup to seed MasterDataItem - see
+         Program.cs's Master Data (Part 6) block. -->
+    <None Include="SeedData\atk_nama_barang.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

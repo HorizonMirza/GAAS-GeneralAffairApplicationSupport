@@ -184,7 +184,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         BookingStatusEnum? statusFilter,
         string? divisi,
         string? departemen,
-        KategoriKerusakanEnum? kategori = null,
+        string? kategori = null,
         string? direktorat = null,
         string? bulan = null,
         string? search = null,
@@ -220,7 +220,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (statusFilter.HasValue) query = query.Where(p => p.Status == statusFilter.Value);
         else if (onlyRejected) query = query.Where(p => RejectedStatuses.Contains(p.Status));
         else if (onlyOnApproval) query = query.Where(p => OnApprovalStatuses.Contains(p.Status));
-        if (kategori.HasValue) query = query.Where(p => p.Kategori == kategori.Value);
+        if (!string.IsNullOrEmpty(kategori)) query = query.Where(p => p.Kategori == kategori);
         if (!string.IsNullOrEmpty(divisi)) query = query.Where(p => p.Divisi == divisi);
         if (!string.IsNullOrEmpty(departemen)) query = query.Where(p => p.Departemen == departemen);
         if (!string.IsNullOrEmpty(direktorat))
@@ -265,7 +265,7 @@ public class PerbaikanSaranaController : ApiControllerBase
             return "Deskripsi kerusakan wajib diisi";
         if (payload.DeskripsiKerusakan.Length > MaxDeskripsiLength)
             return $"Deskripsi kerusakan maksimal {MaxDeskripsiLength} karakter";
-        if (!Enum.IsDefined(typeof(KategoriKerusakanEnum), payload.Kategori))
+        if (string.IsNullOrWhiteSpace(payload.Kategori) || !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, payload.Kategori))
             return "Kategori kerusakan tidak valid";
         if (string.IsNullOrWhiteSpace(payload.NamaPelapor))
             return "Nama pelapor wajib diisi";
@@ -547,17 +547,13 @@ public class PerbaikanSaranaController : ApiControllerBase
             else return BadRequest(new { detail = "Status tidak valid" });
         }
 
-        KategoriKerusakanEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori)) kategoriFilter = parsedKategori;
-            else return BadRequest(new { detail = "Kategori tidak valid" });
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
+            return BadRequest(new { detail = "Kategori tidak valid" });
 
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategori, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -669,17 +665,13 @@ public class PerbaikanSaranaController : ApiControllerBase
             else return BadRequest(new { detail = "Status tidak valid" });
         }
 
-        KategoriKerusakanEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori)) kategoriFilter = parsedKategori;
-            else return BadRequest(new { detail = "Kategori tidak valid" });
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
+            return BadRequest(new { detail = "Kategori tidak valid" });
 
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategoriFilter, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategori, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -768,18 +760,13 @@ public class PerbaikanSaranaController : ApiControllerBase
         if (page < 1)
             return BadRequest(new { detail = "Halaman harus dimulai dari 1" });
 
-        KategoriKerusakanEnum? kategoriFilter = null;
-        if (!string.IsNullOrEmpty(kategori))
-        {
-            if (!Enum.TryParse<KategoriKerusakanEnum>(kategori, out var parsedKategori))
-                return BadRequest(new { detail = "Kategori tidak valid" });
-            kategoriFilter = parsedKategori;
-        }
+        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
+            return BadRequest(new { detail = "Kategori tidak valid" });
 
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategoriFilter, direktorat, bulan, search, false, tanggal);
+            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
         }
         catch (ArgumentException ex)
         {

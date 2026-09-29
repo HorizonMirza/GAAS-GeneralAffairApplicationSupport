@@ -27,7 +27,7 @@ public class BookingRuangCreate
     public TimeOnly? JamMulai { get; set; }
     public TimeOnly? JamSelesai { get; set; }
     public string? Catatan { get; set; }
-    public TipeBookingEnum? Tipe { get; set; }
+    public string? Tipe { get; set; }
 
     // When true (with Frequency/EndDate both set), Create() generates one occurrence per computed
     // date instead of a single booking - see BookingRuangController.BuildOccurrenceDates.
@@ -80,7 +80,7 @@ public class BookingRuangOut
     public string? Catatan { get; set; }
     public string Divisi { get; set; } = null!;
     public string? Departemen { get; set; }
-    public TipeBookingEnum Tipe { get; set; }
+    public string Tipe { get; set; } = null!;
     public Guid? SeriesId { get; set; }
     public RecurrenceFrequencyEnum? RecurrenceFrequency { get; set; }
     public DateOnly? RecurrenceEndDate { get; set; }

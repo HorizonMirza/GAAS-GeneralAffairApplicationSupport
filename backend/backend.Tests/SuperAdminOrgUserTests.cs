@@ -138,6 +138,7 @@ public class SuperAdminOrgUserTests
             NamaPenerima = "Penerima",
             AlamatPenerima = "Alamat Penerima",
             NoTeleponPenerima = "0800000001",
+            AsuransiStatus = "Tidak",
             RequestPacking = "Tidak",
             CreatedBy = 1,
             CreatedByRole = RoleEnum.ADMIN_DIVISI,

@@ -5,8 +5,9 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, Role, RoomOption } from "@/lib/types";
-import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL } from "@/lib/constants";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -89,6 +90,7 @@ function emptyForm(initial?: Partial<BookingRuangCreatePayload>): BookingRuangCr
 
 export default function RoomBookingFormModal({ open, me, onClose, onCreated, initial }: Props) {
   const { orgStructure } = useAuth();
+  const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
   const [form, setForm] = useState<BookingRuangCreatePayload>(emptyForm());
   const [asRole, setAsRole] = useState<Role | "">("");
   const [rooms, setRooms] = useState<RoomOption[]>([]);
@@ -572,8 +574,8 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                 id="f-tipe"
                 value={form.tipe}
                 onChange={(v) => set("tipe", v as BookingRuangCreatePayload["tipe"])}
-                options={Object.keys(TIPE_BOOKING_LABELS)}
-                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
+                options={tipeBookingOptions.options}
+                getLabel={tipeBookingOptions.getLabel}
                 placeholder="Pilih Tipe"
                 searchable={false}
               />

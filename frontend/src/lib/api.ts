@@ -36,6 +36,8 @@ import type {
   Me,
   MeetingRoomItem,
   MeetingRoomListResult,
+  MasterDataCategory,
+  MasterDataListResult,
   NotificationSoundSettings,
   OrgStructure,
   OrgTreeResponse,
@@ -919,6 +921,16 @@ export const api = {
     apiRequest<VehicleItem>(`/vehicle-admin/${id}`, { method: "PATCH", body: payload }),
   deleteAdminVehicle: (id: number, password: string) =>
     apiRequest(`/vehicle-admin/${id}`, { method: "DELETE", body: { password } }),
+
+  // --- Master Data (read open to every logged-in role; writes Super Admin only) ---
+  listMasterData: (category: MasterDataCategory) =>
+    apiRequest<MasterDataListResult>("/master-data", { params: { category } }),
+  createMasterData: (payload: { category: MasterDataCategory; label: string; extra?: string; password: string }) =>
+    apiRequest("/master-data", { method: "POST", body: payload }),
+  updateMasterData: (id: number, payload: { label: string; extra?: string; password: string }) =>
+    apiRequest(`/master-data/${id}`, { method: "PATCH", body: payload }),
+  deleteMasterData: (id: number, password: string) =>
+    apiRequest(`/master-data/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Users Admin (Super Admin only) ---
   listAdminUsers: (params: ListAdminUsersParams) =>

@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
@@ -1024,6 +1025,100 @@ using (var scope = app.Services.CreateScope())
     MeetingRooms.LoadFromDb(migrateDb);
     Vehicles.LoadFromDb(migrateDb);
 
+    // Master Data (Part 6) - Super Admin-managed lookup lists that replace what used to be fixed
+    // C# enums (Asuransi/Pengemasan/Tipe Booking/Kategori ATK/Kategori Kerusakan/Kategori Arsip)
+    // or plain free text with no catalog at all (Nama Barang ATK, Tahun Arsip). Every existing
+    // enum value keeps the exact same string it was already stored as (see AppDbContext's
+    // HasConversion<string>() on each of those columns) - this table only adds a place for Super
+    // Admin to rename/add/remove the options offered in each dropdown, it never touches business
+    // data itself.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS master_data_item (
+            id SERIAL PRIMARY KEY,
+            category VARCHAR(50) NOT NULL,
+            key VARCHAR(150) NOT NULL,
+            label VARCHAR(255) NOT NULL,
+            extra VARCHAR(50),
+            sort_order INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (category, key)
+        )");
+
+    if (!migrateDb.MasterDataItems.Any())
+    {
+        var order = 0;
+        void Seed(string category, string key, string label, string? extra = null)
+        {
+            migrateDb.MasterDataItems.Add(new MasterDataItem
+            {
+                Category = category, Key = key, Label = label, Extra = extra, SortOrder = order++,
+            });
+        }
+
+        Seed(MasterDataCategories.Asuransi, "Ya", "Ya");
+        Seed(MasterDataCategories.Asuransi, "Tidak", "Tidak");
+
+        order = 0;
+        Seed(MasterDataCategories.Pengemasan, "Tidak", "Tidak");
+        Seed(MasterDataCategories.Pengemasan, "Tambahan Kayu", "Tambahan Kayu");
+
+        order = 0;
+        Seed(MasterDataCategories.TipeBooking, "INTERNAL", "Internal");
+        Seed(MasterDataCategories.TipeBooking, "EXTERNAL", "External");
+
+        order = 0;
+        Seed(MasterDataCategories.AtkKategori, "ELEKTRONIK_KOMPUTER", "Elektronik & Komputer");
+        Seed(MasterDataCategories.AtkKategori, "KEBERSIHAN_PANTRY", "Kebersihan & Pantry");
+        Seed(MasterDataCategories.AtkKategori, "PERLENGKAPAN_KANTOR", "Perlengkapan Kantor");
+        Seed(MasterDataCategories.AtkKategori, "PERLENGKAPAN_RAPAT", "Perlengkapan Rapat");
+        Seed(MasterDataCategories.AtkKategori, "KERTAS_CETAK", "Kertas & Cetak");
+        Seed(MasterDataCategories.AtkKategori, "MAP_FILING", "Map & Filing");
+        Seed(MasterDataCategories.AtkKategori, "ALAT_TULIS", "Alat Tulis");
+        Seed(MasterDataCategories.AtkKategori, "LAINNYA", "Lainnya");
+
+        order = 0;
+        Seed(MasterDataCategories.KategoriKerusakan, "AC", "Pendingin Ruangan");
+        Seed(MasterDataCategories.KategoriKerusakan, "FURNITUR", "Furnitur");
+        Seed(MasterDataCategories.KategoriKerusakan, "GEDUNG", "Bangunan");
+        Seed(MasterDataCategories.KategoriKerusakan, "IT", "Jaringan");
+        Seed(MasterDataCategories.KategoriKerusakan, "LISTRIK", "Listrik");
+        Seed(MasterDataCategories.KategoriKerusakan, "AIR", "Saluran");
+        Seed(MasterDataCategories.KategoriKerusakan, "LAINNYA", "Lainnya");
+
+        order = 0;
+        Seed(MasterDataCategories.ArchiveKategori, "SOP", "SOP");
+        Seed(MasterDataCategories.ArchiveKategori, "SURAT", "Surat");
+        Seed(MasterDataCategories.ArchiveKategori, "KONTRAK", "Kontrak");
+        Seed(MasterDataCategories.ArchiveKategori, "LAPORAN", "Laporan");
+        Seed(MasterDataCategories.ArchiveKategori, "PANDUAN", "Panduan");
+        Seed(MasterDataCategories.ArchiveKategori, "LAINNYA", "Lainnya");
+
+        // Starter catalog of 200 common office-supply items, migrated from the frontend's old
+        // atkCatalog.ts autocomplete-only list (see SeedData/atk_nama_barang.json) - each item's
+        // own Satuan rides along as Extra so picking one from the Super Admin-managed list can
+        // still auto-fill the item's unit, exactly like the old hardcoded autocomplete did.
+        order = 0;
+        var catalogPath = Path.Combine(AppContext.BaseDirectory, "SeedData", "atk_nama_barang.json");
+        if (File.Exists(catalogPath))
+        {
+            var catalogJson = File.ReadAllText(catalogPath);
+            var catalogItems = JsonSerializer.Deserialize<List<AtkCatalogSeedItem>>(catalogJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+            foreach (var item in catalogItems)
+                Seed(MasterDataCategories.AtkNamaBarang, item.NamaBarang, item.NamaBarang, item.Satuan);
+        }
+
+        // Tahun Arsip used to be a free-typed text field with no catalog at all - seed a sensible
+        // default range (15 years back through next year) so the new dropdown isn't empty on
+        // first upgrade; Super Admin can add/remove years from here same as any other category.
+        order = 0;
+        var currentYear = DateTime.UtcNow.Year;
+        for (var year = currentYear - 15; year <= currentYear + 1; year++)
+            Seed(MasterDataCategories.ArsipTahun, year.ToString(), year.ToString());
+
+        migrateDb.SaveChanges();
+    }
+    MasterData.LoadFromDb(migrateDb);
+
     // Runs on every normal boot (not just `dotnet run -- seed`) so a new account added to
     // DbSeeder.BuildAccounts() (e.g. a second Admin/Approval GA) actually exists after a plain
     // restart, instead of silently requiring the seed command to be run by hand. Insert-if-
@@ -1100,3 +1195,7 @@ app.MapHub<ChatHub>("/hubs/chat");
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+// Shape of each entry in SeedData/atk_nama_barang.json, used only to seed MasterDataItem's
+// ATK_NAMA_BARANG category once above.
+record AtkCatalogSeedItem(string NamaBarang, string Satuan);

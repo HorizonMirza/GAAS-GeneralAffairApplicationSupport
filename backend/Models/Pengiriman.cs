@@ -17,7 +17,7 @@ public class Pengiriman
     public string NamaPenerima { get; set; } = null!;
     public string AlamatPenerima { get; set; } = null!;
     public string NoTeleponPenerima { get; set; } = null!;
-    public AsuransiEnum AsuransiStatus { get; set; }
+    public string AsuransiStatus { get; set; } = null!;
     public string RequestPacking { get; set; } = null!;
     public string? Catatan { get; set; }
 

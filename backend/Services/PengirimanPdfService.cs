@@ -148,7 +148,7 @@ public static class PengirimanPdfService
             ("Tujuan Penerimaan", item.TujuanPenerimaan),
             ("Jumlah Item", item.JumlahItem.ToString()),
             ("Berat Barang", item.BeratBarangKg.HasValue ? $"{item.BeratBarangKg} Kg" : "-"),
-            ("Asuransi", item.AsuransiStatus == AsuransiEnum.Ya
+            ("Asuransi", item.AsuransiStatus == "Ya"
                 ? $"Ya - Rp {item.AsuransiHarga:N0}"
                 : "Tidak"),
             ("Request Packing", item.RequestPacking),

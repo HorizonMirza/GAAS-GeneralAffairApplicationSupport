@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { ArchiveKategori, Me, PermintaanArsipCreatePayload, Role } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import SearchableSelect from "./SearchableSelect";
 import { useToast } from "./ui/ToastProvider";
-
-const KATEGORI_OPTIONS = Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[];
 
 interface Props {
   open: boolean;
@@ -21,16 +20,16 @@ interface Props {
   onCreated: () => void;
 }
 
-// Kategori starts unset (undefined) so SearchableSelect shows its placeholder instead of a
-// pre-picked value - handleSubmit validates one is chosen before submitting, the same pattern
-// RoomBookingFormModal uses for its own required-but-unset selects.
-function emptyForm(): Omit<PermintaanArsipCreatePayload, "kategori"> & { kategori: ArchiveKategori | undefined } {
+// Kategori/Tahun both start unset (undefined) so SearchableSelect shows its placeholder instead
+// of a pre-picked value - handleSubmit validates each is chosen before submitting, the same
+// pattern RoomBookingFormModal uses for its own required-but-unset selects.
+function emptyForm(): Omit<PermintaanArsipCreatePayload, "kategori" | "tahunArsip"> & { kategori: ArchiveKategori | undefined; tahunArsip: string | undefined } {
   return {
     tanggal: todayLocalDate(),
     jumlahArsip: 1,
     namaArsip: "",
     kategori: undefined,
-    tahunArsip: "",
+    tahunArsip: undefined,
     lokasiPenyimpanan: "",
     namaPic: "",
     noTeleponPic: "",
@@ -47,6 +46,8 @@ const AS_ROLE_OPTIONS: Role[] = ["ADMIN_DEPARTEMEN", "APPROVAL_DEPARTEMEN", "ADM
 
 export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) {
   const { orgStructure } = useAuth();
+  const kategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
+  const tahunOptions = useMasterDataOptions("ARSIP_TAHUN");
   const [form, setForm] = useState<FormState>(emptyForm());
   const [asRole, setAsRole] = useState<Role | "">("");
   const [error, setError] = useState("");
@@ -129,6 +130,10 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
       setError("Kategori wajib dipilih");
       return;
     }
+    if (!form.tahunArsip) {
+      setError("Tahun wajib dipilih");
+      return;
+    }
     setBusy(true);
     try {
       // "" (the explicit "Kebutuhan Divisi" choice) means no specific Departemen - translated to
@@ -136,6 +141,7 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
       await api.createArsip({
         ...form,
         kategori: form.kategori,
+        tahunArsip: form.tahunArsip,
         departemen: form.departemen || undefined,
         catatan: form.catatan || null,
         asRole: isSuperAdmin ? asRole || undefined : undefined,
@@ -274,21 +280,20 @@ export default function ArsipFormModal({ open, me, onClose, onCreated }: Props) 
                 id="fr-kategori"
                 value={form.kategori}
                 onChange={(v) => set("kategori", v as ArchiveKategori)}
-                options={KATEGORI_OPTIONS}
-                getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                options={kategoriOptions.options}
+                getLabel={kategoriOptions.getLabel}
                 placeholder="Pilih Kategori"
               />
             </div>
             <div className="field">
               <label htmlFor="fr-tahun">Tahun</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+              <SearchableSelect
                 id="fr-tahun"
-                required
                 value={form.tahunArsip}
-                onChange={(e) => set("tahunArsip", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                onChange={(v) => set("tahunArsip", v)}
+                options={tahunOptions.options}
+                getLabel={tahunOptions.getLabel}
+                placeholder="Pilih Tahun"
               />
             </div>
             <div className="field full">

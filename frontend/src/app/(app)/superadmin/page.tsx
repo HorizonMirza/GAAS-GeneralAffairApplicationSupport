@@ -9,7 +9,7 @@ import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_ON_
 import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, todayLocalDate, truncateText } from "@/lib/format";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
-import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
+import type { ArchiveKategori, BookingKendaraan, BookingKendaraanCreatePayload, BookingRuang, BookingRuangCreatePayload, BookingStatus, Invoice, KategoriKerusakan, MasterDataCategory, PerbaikanSarana, PerbaikanSaranaCatalogItem, Pengiriman, PermintaanArsip, PermintaanArsipCatalogItem, PermintaanAtk, RoomOption, Status, SumberPembelian, VehicleOption } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
@@ -76,15 +76,16 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
+import { Building2, Calendar, Car, ClipboardList, Database, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
 import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
 import SuperAdminMeetingRoomTab from "@/components/SuperAdminMeetingRoomTab";
 import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
+import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "organisasi" | "users";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "organisasi" | "users";
 
 // Labels/icons here mirror AppShell's SUPER_ADMIN_TABS (the sidebar submenu that's the actual
 // navigation UI now) - this array itself only validates ?tab= against known keys, since the pill
@@ -97,6 +98,7 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
+  { key: "master-data", label: "Master Data", icon: <Database width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
 ];
@@ -761,6 +763,7 @@ function SuperAdminPageInner() {
   // Maintenance tab now switches between Overview/Transaction/Repository via sub-tab buttons,
   // same pattern as Ekspedisi/ATK/Room/Vehicle Booking.
   const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
+  const [masterDataSubtab, setMasterDataSubtab] = useState<MasterDataCategory>("ASURANSI");
 
   // Pressing a module in the sidebar always lands on that module's own Overview sub-tab, even if
   // a previous visit had left it on Transaction/Calendar/etc. - this only fires on an actual
@@ -772,6 +775,7 @@ function SuperAdminPageInner() {
     else if (activeTab === "atk") setAtkSubtab("overview");
     else if (activeTab === "sarana") setSaranaSubtab("overview");
     else if (activeTab === "arsip") setArsipSubtab("overview");
+    else if (activeTab === "master-data") setMasterDataSubtab("ASURANSI");
   }, [activeTab]);
 
   // Overview sub-tab - mirrors maintenance/overview/page.tsx exactly.
@@ -6860,6 +6864,30 @@ function SuperAdminPageInner() {
           />
             </>
           )}
+        </>
+      )}
+
+      {activeTab === "master-data" && (
+        <>
+          <div className="superadmin-subtabs">
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ASURANSI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ASURANSI")}>Asuransi</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "PENGEMASAN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("PENGEMASAN")}>Pengemasan Tambahan</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "TIPE_BOOKING" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("TIPE_BOOKING")}>Tipe Booking</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ATK_KATEGORI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ATK_KATEGORI")}>Kategori ATK</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ATK_NAMA_BARANG" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ATK_NAMA_BARANG")}>Nama Barang ATK</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "KATEGORI_KERUSAKAN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("KATEGORI_KERUSAKAN")}>Kategori Kerusakan</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ARCHIVE_KATEGORI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ARCHIVE_KATEGORI")}>Kategori Arsip</button>
+            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ARSIP_TAHUN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ARSIP_TAHUN")}>Tahun Arsip</button>
+          </div>
+
+          {masterDataSubtab === "ASURANSI" && <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" />}
+          {masterDataSubtab === "PENGEMASAN" && <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" />}
+          {masterDataSubtab === "TIPE_BOOKING" && <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" />}
+          {masterDataSubtab === "ATK_KATEGORI" && <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" />}
+          {masterDataSubtab === "ATK_NAMA_BARANG" && <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" />}
+          {masterDataSubtab === "KATEGORI_KERUSAKAN" && <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" />}
+          {masterDataSubtab === "ARCHIVE_KATEGORI" && <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" />}
+          {masterDataSubtab === "ARSIP_TAHUN" && <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" />}
         </>
       )}
 
