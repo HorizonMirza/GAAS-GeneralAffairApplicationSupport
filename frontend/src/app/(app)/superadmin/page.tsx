@@ -2382,10 +2382,6 @@ function SuperAdminPageInner() {
     <>
       {activeTab === "overview" && (
         <>
-          <div className="card-header dashboard-welcome-header" style={{ marginBottom: 22 }}>
-            <WelcomeGreeting me={me} />
-          </div>
-
           <DashboardContent me={me} />
 
           <div style={{ marginTop: 28 }}>
