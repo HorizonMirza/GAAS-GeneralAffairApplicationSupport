@@ -1144,16 +1144,16 @@ export default function DashboardContent({ me }: { me: Me }) {
           </section>
 
           <section className={styles.performancePanel}>
-            <header><div><h2>Performance Overview</h2><p>Status summary across {selectedModules.length} active modules</p></div><strong>{totals.total.toLocaleString("id-ID")} transactions</strong></header>
-            <div className={styles.progressTrack} aria-label={`${completedPercent}% completed transactions`}>
+            <header><div><h2>Ringkasan Kinerja</h2><p>Ringkasan status {selectedModules.length} modul aktif</p></div><strong>{totals.total.toLocaleString("id-ID")} transaksi</strong></header>
+            <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
               <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
               <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
               <span className={styles.progressRejected} style={{ width: `${progressWidths.rejected}%` }} />
             </div>
             <div className={styles.progressLegend}>
-              <span><i className={styles.legendCompleted} />Completed <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>
-              <span><i className={styles.legendPending} />In Progress <strong>{totals.pending.toLocaleString("id-ID")}</strong></span>
-              <span><i className={styles.legendRejected} />Rejected/Cancelled <strong>{totals.rejected.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendCompleted} />Approved <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendPending} />On-Approval <strong>{totals.pending.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendRejected} />Rejected <strong>{totals.rejected.toLocaleString("id-ID")}</strong></span>
             </div>
           </section>
         </div>
