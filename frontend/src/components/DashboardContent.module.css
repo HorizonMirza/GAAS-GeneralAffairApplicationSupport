@@ -311,6 +311,25 @@
   height: 17px;
 }
 
+.demoBanner {
+  min-height: 42px;
+  margin-bottom: 14px;
+  padding: 9px 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(28, 109, 255, 0.24);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  background: rgba(28, 109, 255, 0.07);
+  font-size: 0.78rem;
+}
+
+.demoBanner strong {
+  color: var(--blue-600);
+  font-weight: 750;
+}
+
 .attentionBanner {
   min-height: 62px;
   margin-bottom: 16px;

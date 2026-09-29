@@ -357,6 +357,142 @@ const SCHEDULE_END_MINUTES = 18 * 60;
 const SCHEDULE_DURATION_MINUTES = SCHEDULE_END_MINUTES - SCHEDULE_START_MINUTES;
 const SCHEDULE_HOURS = Array.from({ length: 12 }, (_, index) => index + 7);
 
+const DEMO_SCHEDULES: ScheduleItem[] = [
+  {
+    id: "demo-room-1",
+    kind: "room",
+    time: "08:00 - 10:00",
+    title: "Rapat Koordinasi Operasional",
+    detail: "12 peserta · PIC Andi Pratama",
+    resources: ["Ruang ECC"],
+    startMinutes: 8 * 60,
+    endMinutes: 10 * 60,
+  },
+  {
+    id: "demo-room-2",
+    kind: "room",
+    time: "10:00 - 12:30",
+    title: "Town Hall Divisi",
+    detail: "24 peserta · PIC Rina Setiawati",
+    resources: ["Ruang Eksternal Besar"],
+    startMinutes: 10 * 60,
+    endMinutes: 12 * 60 + 30,
+  },
+  {
+    id: "demo-room-3",
+    kind: "room",
+    time: "13:00 - 15:00",
+    title: "Review Proyek GAAS",
+    detail: "8 peserta · PIC Dimas Pratama",
+    resources: ["Ruang Solution 1"],
+    startMinutes: 13 * 60,
+    endMinutes: 15 * 60,
+  },
+  {
+    id: "demo-room-4",
+    kind: "room",
+    time: "15:30 - 17:00",
+    title: "Briefing Vendor",
+    detail: "6 peserta · PIC Siti Rahma",
+    resources: ["Ruang Golf"],
+    startMinutes: 15 * 60 + 30,
+    endMinutes: 17 * 60,
+  },
+  {
+    id: "demo-vehicle-1",
+    kind: "vehicle",
+    time: "07:30 - 10:00",
+    title: "Kunjungan Lapangan",
+    detail: "4 penumpang · PIC Budi Santoso",
+    resources: ["Toyota Avanza 1"],
+    startMinutes: 7 * 60 + 30,
+    endMinutes: 10 * 60,
+  },
+  {
+    id: "demo-vehicle-2",
+    kind: "vehicle",
+    time: "09:00 - 12:00",
+    title: "Antar Dokumen",
+    detail: "2 penumpang · PIC Nanda Putri",
+    resources: ["Mitsubishi Xpander"],
+    startMinutes: 9 * 60,
+    endMinutes: 12 * 60,
+  },
+  {
+    id: "demo-vehicle-3",
+    kind: "vehicle",
+    time: "13:00 - 17:30",
+    title: "Mobilisasi Tim",
+    detail: "10 penumpang · PIC Fajar Nugroho",
+    resources: ["Isuzu Elf (Minibus)"],
+    startMinutes: 13 * 60,
+    endMinutes: 17 * 60 + 30,
+  },
+];
+
+const DEMO_QUEUE_ITEMS: DashboardItem[] = [
+  {
+    id: 900001,
+    moduleKey: "expedition",
+    moduleLabel: "Expedition",
+    number: "DEMO.EXP.001",
+    title: "Pengiriman Dokumen Kontrak",
+    requester: "Rina Setiawati",
+    unit: "Corporate Secretary · Legal and Compliance",
+    status: "APPROVED_L1",
+    statusLabel: "Admin General Affair",
+    createdAt: "2026-09-29T08:00:00",
+    updatedAt: "2026-09-29T08:00:00",
+    ageMilliseconds: 38 * 60_000,
+    href: "/ekspedisi/transaksi",
+  },
+  {
+    id: 900002,
+    moduleKey: "room",
+    moduleLabel: "Room Booking",
+    number: "DEMO.ROOM.002",
+    title: "Rapat Koordinasi Direksi",
+    requester: "Dimas Pratama",
+    unit: "Finance · Budget Control",
+    status: "SUBMITTED",
+    statusLabel: "Approval Departemen",
+    createdAt: "2026-09-29T07:00:00",
+    updatedAt: "2026-09-29T07:00:00",
+    ageMilliseconds: 2 * 60 * 60_000,
+    href: "/booking-ruang-meeting/transaksi",
+  },
+  {
+    id: 900003,
+    moduleKey: "vehicle",
+    moduleLabel: "Vehicle Booking",
+    number: "DEMO.VEH.003",
+    title: "Kunjungan Operasional Site",
+    requester: "Siti Rahma",
+    unit: "Operation · Field Support",
+    status: "APPROVED_GA",
+    statusLabel: "Approval General Affair",
+    createdAt: "2026-09-29T04:00:00",
+    updatedAt: "2026-09-29T04:00:00",
+    ageMilliseconds: 5 * 60 * 60_000,
+    href: "/booking-kendaraan/transaksi",
+  },
+  {
+    id: 900004,
+    moduleKey: "maintenance",
+    moduleLabel: "Maintenance",
+    number: "DEMO.MTN.004",
+    title: "Perbaikan AC Ruang Meeting",
+    requester: "Bagus Santoso",
+    unit: "General Affair · Facility Management",
+    status: "APPROVED_L1",
+    statusLabel: "Admin General Affair",
+    createdAt: "2026-09-28T06:00:00",
+    updatedAt: "2026-09-28T06:00:00",
+    ageMilliseconds: 27 * 60 * 60_000,
+    href: "/maintenance/transaksi",
+  },
+];
+
 function workflowStages(key: ModuleKey, countsByStatus: Partial<Record<string, number>>) {
   const stages = [
     { key: "SUBMITTED", label: "Approval Departemen/Divisi" },
@@ -422,6 +558,7 @@ function formatRupiah(value: number): string {
 }
 
 export default function DashboardContent({ me }: { me: Me }) {
+  const [demoMode, setDemoMode] = useState(false);
   const [activeView, setActiveView] = useState<DashboardView>("all");
   const [month, setMonth] = useState("");
   const [date, setDate] = useState("");
@@ -460,6 +597,10 @@ export default function DashboardContent({ me }: { me: Me }) {
     setFilterOpen(false);
     setOrganizationMenuOpen(false);
   });
+
+  useEffect(() => {
+    setDemoMode(new URLSearchParams(window.location.search).get("demo") === "1");
+  }, []);
 
   useEffect(() => {
     const el = moduleTabsRef.current;
@@ -796,26 +937,29 @@ export default function DashboardContent({ me }: { me: Me }) {
   const latestTrendValue = trendData.at(-1)?.value ?? 0;
   const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
   const yAxisTicks = [maxBarValue, Math.round((maxBarValue * 2) / 3), Math.round(maxBarValue / 3), 0];
-  const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
+  const schedulesForDisplay = demoMode ? DEMO_SCHEDULES : state.schedules;
+  const queueForDisplay = demoMode ? DEMO_QUEUE_ITEMS : state.queue;
+  const dashboardQueue = queueForDisplay.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const latestActivities = dashboardRecent.slice(0, 9);
   const isFullModules = visibleModules.length === 6;
   const roomResourceNames = Array.from(new Set([
     ...state.roomResources,
-    ...state.schedules.filter((item) => item.kind === "room").flatMap((item) => item.resources),
+    ...schedulesForDisplay.filter((item) => item.kind === "room").flatMap((item) => item.resources),
   ])).sort((left, right) => left.localeCompare(right));
   const vehicleResourceNames = Array.from(new Set([
     ...state.vehicleResources,
-    ...state.schedules.filter((item) => item.kind === "vehicle").flatMap((item) => item.resources),
+    ...schedulesForDisplay.filter((item) => item.kind === "vehicle").flatMap((item) => item.resources),
   ])).sort((left, right) => left.localeCompare(right));
   const roomScheduleRows = roomResourceNames.map((resource) => ({
     resource,
-    items: state.schedules.filter((item) => item.kind === "room" && item.resources.includes(resource)),
+    items: schedulesForDisplay.filter((item) => item.kind === "room" && item.resources.includes(resource)),
   }));
   const vehicleScheduleRows = vehicleResourceNames.map((resource) => ({
     resource,
-    items: state.schedules.filter((item) => item.kind === "vehicle" && item.resources.includes(resource)),
+    items: schedulesForDisplay.filter((item) => item.kind === "vehicle" && item.resources.includes(resource)),
   }));
+  const actionableCount = demoMode ? dashboardQueue.length : totals.actionable;
   const scheduleDateLabel = new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "long", year: "numeric" })
     .format(new Date(`${todayLocalDate()}T00:00:00`));
   const overallTotal = visibleModules.reduce((total, module) => total + state.summaries[module.key].total, 0);
@@ -881,11 +1025,12 @@ export default function DashboardContent({ me }: { me: Me }) {
         ))}
       </nav>
 
+      {demoMode && <div className={styles.demoBanner} role="status"><strong>Mode Demo</strong><span>Data contoh hanya ditampilkan di halaman ini dan tidak disimpan.</span></div>}
       {state.errors > 0 && !loading && <div className={styles.partialWarning} role="status"><AlertTriangle aria-hidden="true" />Sebagian data belum dapat dimuat. Gunakan tombol muat ulang untuk mencoba kembali.</div>}
-      {totals.actionable > 0 && (
+      {actionableCount > 0 && (
         <section className={styles.attentionBanner}>
           <span className={styles.attentionIcon}><Clock3 aria-hidden="true" /></span>
-          <div><strong>{totals.actionable.toLocaleString("id-ID")} permohonan memerlukan tindakan Anda</strong><span>Antrean disusun dari permohonan yang paling lama menunggu.</span></div>
+          <div><strong>{actionableCount.toLocaleString("id-ID")} permohonan memerlukan tindakan Anda</strong><span>Antrean disusun dari permohonan yang paling lama menunggu.</span></div>
           <a href="#dashboard-action-queue">Buka antrean <ArrowRight aria-hidden="true" /></a>
         </section>
       )}
@@ -1168,7 +1313,7 @@ export default function DashboardContent({ me }: { me: Me }) {
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
               <div><h2>Perlu Tindakan Saya</h2><p>Permohonan yang sedang menunggu tahap kerja Anda</p></div>
-              <span className={styles.panelCount}>{totals.actionable.toLocaleString("id-ID")} antrean</span>
+              <span className={styles.panelCount}>{actionableCount.toLocaleString("id-ID")} antrean</span>
             </header>
             {loading && dashboardQueue.length === 0 ? <div className={styles.emptyState}>Memuat antrean tindakan...</div>
               : dashboardQueue.length === 0 ? (
