@@ -740,6 +740,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   };
   const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
+  const latestActivities = dashboardRecent.slice(0, 8);
   const roomResourceNames = Array.from(new Set([
     ...state.roomResources,
     ...state.schedules.filter((item) => item.kind === "room").flatMap((item) => item.resources),
@@ -1042,7 +1043,10 @@ export default function DashboardContent({ me }: { me: Me }) {
                       <div className={styles.resourceTimeline}>
                         <div className={styles.resourceTimelineScale} aria-hidden="true">
                           <span />
-                          <div>{SCHEDULE_HOURS.map((hour) => <time key={hour} style={{ left: `${((hour * 60 - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100}%` }}>{String(hour).padStart(2, "0")}</time>)}</div>
+                          <div>{SCHEDULE_HOURS.slice(0, -1).map((hour, index) => {
+                            const endHour = SCHEDULE_HOURS[index + 1];
+                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{`${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(2, "0")}:00`}</time>;
+                          })}</div>
                         </div>
                         {schedule.rows.map((row) => (
                           <div className={styles.resourceTimelineRow} key={row.resource}>
@@ -1077,11 +1081,11 @@ export default function DashboardContent({ me }: { me: Me }) {
         )}
 
         <section className={`${styles.panel} ${styles.activityPanelTall}`}>
-          <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>Pembaruan status lintas modul</p></div></header>
+          <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>{latestActivities.length} transaksi terbaru</p></div></header>
           <div className={styles.activityList}>
-            {loading && dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
-              : dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
-              : dashboardRecent.map((item) => (
+            {loading && latestActivities.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
+              : latestActivities.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
+              : latestActivities.map((item) => (
                 <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.activityRow}>
                   <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
                   <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
@@ -1116,16 +1120,16 @@ export default function DashboardContent({ me }: { me: Me }) {
           </section>
 
           <section className={styles.performancePanel}>
-            <header><div><h2>Kinerja Periode Ini</h2><p>Status dari {selectedModules.length} modul pada tampilan aktif</p></div><strong>{totals.total.toLocaleString("id-ID")} pengajuan</strong></header>
-            <div className={styles.progressTrack} aria-label={`${completedPercent}% pengajuan selesai`}>
+            <header><div><h2>Performance Overview</h2><p>Status summary across {selectedModules.length} active modules</p></div><strong>{totals.total.toLocaleString("id-ID")} transactions</strong></header>
+            <div className={styles.progressTrack} aria-label={`${completedPercent}% completed transactions`}>
               <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
               <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
               <span className={styles.progressRejected} style={{ width: `${progressWidths.rejected}%` }} />
             </div>
             <div className={styles.progressLegend}>
-              <span><i className={styles.legendCompleted} />Selesai <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>
-              <span><i className={styles.legendPending} />Diproses <strong>{totals.pending.toLocaleString("id-ID")}</strong></span>
-              <span><i className={styles.legendRejected} />Ditolak/Batal <strong>{totals.rejected.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendCompleted} />Completed <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendPending} />In Progress <strong>{totals.pending.toLocaleString("id-ID")}</strong></span>
+              <span><i className={styles.legendRejected} />Rejected/Cancelled <strong>{totals.rejected.toLocaleString("id-ID")}</strong></span>
             </div>
           </section>
         </div>
