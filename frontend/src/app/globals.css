@@ -643,6 +643,7 @@ body {
   border: none;
   border-radius: 10px;
   padding: 11px 20px;
+  font-family: inherit;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-theme), transform 150ms ease, box-shadow 150ms ease;
@@ -679,6 +680,7 @@ body {
   background: var(--bg-surface-alt);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
+  font-family: inherit;
   font-weight: 400;
 }
 

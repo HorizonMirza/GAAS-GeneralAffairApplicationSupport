@@ -933,7 +933,7 @@ export default function DashboardContent({ me }: { me: Me }) {
                 aria-haspopup="menu"
                 onClick={() => { setOrganizationMenuOpen((value) => !value); setFilterOpen(false); }}
               >
-                {organizationDimensionLabel}
+                <span>{organizationDimensionLabel}</span>
                 <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
               </button>
               {organizationMenuOpen && (
