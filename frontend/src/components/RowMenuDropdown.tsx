@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Download, FileText, ListChecks, MessageSquare } from "lucide-react";
+import { Download, FileText, ListChecks, MessageSquare, SquarePen } from "lucide-react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 
@@ -99,7 +99,7 @@ export default function RowMenuDropdown({
       {canEditDelete && (
         <motion.div variants={itemVariants}>
           <button type="button" className="row-menu-item" onClick={onUpdates}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"></path></svg>
+            <SquarePen width={16} height={16} />
             Updates
           </button>
         </motion.div>

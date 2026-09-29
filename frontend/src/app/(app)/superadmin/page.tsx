@@ -3696,7 +3696,7 @@ function SuperAdminPageInner() {
                       + Booking Ruang Meeting
                     </button>
                   )}
-                  <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field field-select-blue" style={{ marginBottom: 0 }}>
                     <label htmlFor="sa-calendar-room-select">Ruangan</label>
                     <SearchableSelect
                       id="sa-calendar-room-select"
@@ -4620,7 +4620,7 @@ function SuperAdminPageInner() {
                       + Booking Kendaraan
                     </button>
                   )}
-                  <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field field-select-blue" style={{ marginBottom: 0 }}>
                     <label htmlFor="sa-calendar-kendaraan-select">Kendaraan</label>
                     <SearchableSelect
                       id="sa-calendar-kendaraan-select"

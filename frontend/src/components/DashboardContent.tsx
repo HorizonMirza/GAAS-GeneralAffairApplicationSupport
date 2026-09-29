@@ -812,7 +812,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       className={styles.dashboard}
       style={tabBoxWidth ? ({ "--tab-box-width": `${tabBoxWidth}px` } as React.CSSProperties) : undefined}
     >
-      <header className={`${styles.header} ${isFullModules ? styles.headerGrid7 : ""}`}>
+      <header className={`${styles.header} ${isFullModules ? styles.headerGrid7 : ""} ${me.role === "KPU" ? styles.headerKpu : ""}`}>
         <div className={styles.greeting}><WelcomeGreeting me={me} /></div>
         <div className={styles.headerActions}>
           <button type="button" className={styles.refreshButton} onClick={resetDashboard} disabled={loading} title="Reset filter dan muat ulang dashboard" aria-label="Reset filter dan muat ulang dashboard">
@@ -877,7 +877,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         </section>
       )}
 
-      <section className={`${styles.moduleGrid} ${selectedWorkflowCards.length > 0 ? styles.workflowModuleGrid : ""}`} aria-label="Total transaksi per modul">
+      <section className={`${styles.moduleGrid} ${selectedWorkflowCards.length > 0 ? styles.workflowModuleGrid : ""} ${me.role === "KPU" && activeView === "all" ? styles.kpuModuleGrid : ""}`} aria-label="Total transaksi per modul">
         {selectedWorkflowCards.length > 0
           ? selectedWorkflowCards.map((stage) => (
             <Link key={stage.key} href={selectedModules[0].overviewHref} className={styles.moduleCard} aria-label={`Buka Overview ${activeModuleLabel}: ${stage.label}`}>

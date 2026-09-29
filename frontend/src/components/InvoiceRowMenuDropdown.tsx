@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, Download, Eye, FileText, SquarePen, Trash2 } from "lucide-react";
+import { Download, Eye, FileText, ListChecks, SquarePen, Trash2 } from "lucide-react";
 import { itemVariants, sidebarVariants } from "./ui/menu";
 
 interface Props {
@@ -41,7 +41,7 @@ export default function InvoiceRowMenuDropdown({
     >
       <motion.div variants={itemVariants}>
         <button type="button" className="row-menu-item" onClick={onDetail}>
-          <FileText width={16} height={16} />
+          <ListChecks width={16} height={16} />
           Detail
         </button>
       </motion.div>
@@ -55,7 +55,7 @@ export default function InvoiceRowMenuDropdown({
       )}
       <motion.div variants={itemVariants}>
         <button type="button" className="row-menu-item" onClick={onRiwayat}>
-          <CheckCircle2 width={16} height={16} />
+          <FileText width={16} height={16} />
           History
         </button>
       </motion.div>
