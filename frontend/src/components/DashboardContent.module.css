@@ -93,7 +93,7 @@
 }
 
 .moreFilter {
-  width: 170px;
+  width: 155px;
 }
 
 .monthFilter :global(.filter-picker) {
@@ -103,25 +103,55 @@
 .monthFilter :global(.filter-picker-trigger),
 .filterToggle {
   width: 100%;
-  height: 42px;
-  min-height: 42px;
-  border-radius: 9px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
   background: var(--bg-surface);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 0.81rem;
-  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
-.monthFilter :global(.filter-picker-trigger) > span {
+.monthFilter :global(.filter-picker-trigger) > span,
+.filterToggle > span {
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--text-primary);
   -webkit-text-fill-color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
   opacity: 1;
 }
 
-.filterToggle {
-  padding: 0 13px;
-  justify-content: space-between;
+.monthFilter :global(.filter-picker-trigger) :global(.account-chevron),
+.filterToggle :global(.account-chevron) {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 150ms ease;
+}
+
+.monthFilter :global(.filter-picker-trigger:hover),
+.monthFilter :global(.filter-picker-trigger:focus-visible),
+.filterToggle:hover,
+.filterToggle:focus-visible,
+.filterToggle[aria-expanded="true"] {
+  border-color: var(--blue-400);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.12);
 }
 
 .filterToggle[aria-expanded="true"] :global(.account-chevron) {
@@ -135,15 +165,16 @@
 }
 
 .refreshButton {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex: 0 0 36px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-subtle);
-  border-radius: 9px;
+  border-radius: 8px;
   color: var(--text-primary);
   background: var(--bg-surface);
   cursor: pointer;
@@ -792,9 +823,9 @@
   border-radius: 8px;
   color: var(--text-primary);
   background: var(--bg-surface);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
   line-height: 1.2;
   cursor: pointer;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
@@ -806,6 +837,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
 }
 
 .organizationDropdownToggle:hover,
@@ -848,9 +883,9 @@
   color: var(--text-primary);
   background: transparent;
   cursor: pointer;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
   text-align: left;
   transition: background 150ms ease, color 150ms ease;
 }
@@ -865,7 +900,7 @@
 .organizationOptionActive {
   color: var(--text-primary);
   background: rgba(75, 141, 255, 0.12);
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
 @keyframes organization-dropdown-in {

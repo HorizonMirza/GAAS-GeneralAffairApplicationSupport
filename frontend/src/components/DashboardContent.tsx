@@ -777,8 +777,8 @@ export default function DashboardContent({ me }: { me: Me }) {
             />
           </div>
           <div className={`filter-dropdown-wrap ${styles.moreFilter}`} ref={filterWrapRef}>
-            <button type="button" className={`btn filter-dropdown-toggle ${styles.filterToggle}`} id="dashboard-filter-toggle" aria-expanded={filterOpen} onClick={() => { setFilterOpen((value) => !value); setOrganizationMenuOpen(false); }}>
-              Semua Filter
+            <button type="button" className={`filter-dropdown-toggle ${styles.filterToggle}`} id="dashboard-filter-toggle" aria-expanded={filterOpen} onClick={() => { setFilterOpen((value) => !value); setOrganizationMenuOpen(false); }}>
+              <span>Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
             {filterOpen && (
@@ -928,7 +928,7 @@ export default function DashboardContent({ me }: { me: Me }) {
             <div className={`filter-dropdown-wrap ${styles.organizationDropdown}`} ref={organizationWrapRef}>
               <button
                 type="button"
-                className={`btn filter-dropdown-toggle ${styles.organizationDropdownToggle}`}
+                className={`filter-dropdown-toggle ${styles.organizationDropdownToggle}`}
                 aria-expanded={organizationMenuOpen}
                 aria-haspopup="menu"
                 onClick={() => { setOrganizationMenuOpen((value) => !value); setFilterOpen(false); }}
