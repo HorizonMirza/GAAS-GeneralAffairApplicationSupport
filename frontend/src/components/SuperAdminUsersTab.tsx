@@ -194,6 +194,20 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     }, "Reset Password");
   }
 
+  // "Paksa logout" - memutus semua sesi login akun ini seketika tanpa mengubah passwordnya (lihat
+  // UsersAdminController.ForceLogout) - akun bisa langsung login lagi dengan password yang sama.
+  function handleForceLogout(user: AdminUserListItem) {
+    confirm(`Paksa logout akun "${user.nama}" (${user.username})? Semua sesi login akun ini akan terputus seketika - password tidak berubah.`, async () => {
+      try {
+        await api.forceLogoutAdminUser(user.id);
+        showToast("Akun berhasil dipaksa logout");
+        await load();
+      } catch (err) {
+        showToast(errorMessage(err), "error");
+      }
+    }, "Paksa Logout");
+  }
+
   function handleToggleActive(user: AdminUserListItem) {
     const action = user.isActive ? "menonaktifkan" : "mengaktifkan";
     confirm(`Yakin ingin ${action} akun "${user.nama}" (${user.username})?`, async () => {
@@ -361,6 +375,9 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => openEdit(user)}>Edit</button>
                     <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleResetPassword(user)}>Reset Password</button>
+                    {user.isActive && (
+                      <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleForceLogout(user)}>Paksa Logout</button>
+                    )}
                     <button
                       type="button"
                       className={user.isActive ? "btn btn-confirm-danger" : "btn btn-confirm-approve"}

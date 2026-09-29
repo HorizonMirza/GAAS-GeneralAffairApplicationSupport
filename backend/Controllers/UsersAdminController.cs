@@ -193,6 +193,26 @@ public class UsersAdminController : ApiControllerBase
         return Ok(new ResetPasswordOut(password));
     }
 
+    // "Paksa logout" - same PasswordChangedAt-bump mechanism ResetPassword uses to revoke every
+    // session already issued for this account, but without touching PasswordHash: the account's
+    // real password is untouched, so it can log back in immediately with what it already knows.
+    // Cheaper than a real session registry (no way to list which sessions are active or from
+    // where) but covers the actual ask - "kick this account out right now".
+    [HttpPost("{id:int}/force-logout")]
+    public async Task<IActionResult> ForceLogout(int id)
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
+
+        user.PasswordChangedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(AdminUserOut.From(user));
+    }
+
     [HttpPost("{id:int}/deactivate")]
     public async Task<IActionResult> Deactivate(int id)
     {
