@@ -60,6 +60,7 @@
   border-radius: 8px;
   color: var(--text-secondary);
   background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.86rem;
@@ -77,12 +78,14 @@
 .moduleTabs button:focus-visible {
   border-color: var(--blue-400);
   color: var(--blue-500);
+  box-shadow: 0 2px 6px rgba(15, 40, 90, 0.09);
 }
 
 .moduleTabs .moduleTabActive {
   border-color: var(--blue-500);
   color: #fff;
   background: var(--blue-500);
+  box-shadow: 0 2px 6px rgba(28, 109, 255, 0.28);
 }
 
 .moduleTabs .moduleTabActive:hover,
@@ -90,6 +93,7 @@
   border-color: var(--blue-500);
   color: #fff;
   background: var(--blue-500);
+  box-shadow: 0 4px 10px rgba(28, 109, 255, 0.32);
 }
 
 .monthFilter {
@@ -185,6 +189,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 0.82rem !important;
@@ -249,6 +254,7 @@
   border-radius: 8px;
   color: var(--text-primary);
   background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   cursor: pointer;
   transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
 }
@@ -262,7 +268,7 @@
   transform: translateY(-1px);
   border-color: var(--blue-400);
   color: var(--blue-500);
-  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.13);
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.13), 0 2px 6px rgba(15, 40, 90, 0.09);
 }
 
 .refreshButton:disabled {
@@ -435,10 +441,12 @@
 }
 
 .panelHeader {
+  height: 68px;
   min-height: 68px;
-  padding: 15px 18px;
+  box-sizing: border-box;
+  padding: 13px 18px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
   border-bottom: 1px solid var(--border-subtle);
@@ -452,19 +460,21 @@
 }
 
 .panelHeader p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--text-secondary);
   font-size: 0.72rem;
   line-height: 1.4;
 }
 
 .statusContent {
-  min-height: 286px;
-  padding: 22px 22px 18px;
+  height: 312px;
+  min-height: 312px;
+  box-sizing: border-box;
+  padding: 18px 22px 14px;
   display: grid;
   grid-template-rows: 1fr auto;
   justify-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .donut {
@@ -639,14 +649,20 @@
 
 .chartViewport {
   position: relative;
-  min-height: 306px;
-  padding: 50px 24px 14px 48px;
+  min-height: 312px;
+  height: 312px;
+  box-sizing: border-box;
+  padding: 40px 24px 14px 48px;
   overflow-x: auto;
 }
 
 .chartGrid {
   position: absolute;
-  inset: 50px 24px 52px 48px;
+  top: 40px;
+  bottom: 50px;
+  left: 48px;
+  right: 24px;
+  min-width: 540px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -659,27 +675,30 @@
 }
 
 .barGroups {
-  position: relative;
+  position: absolute;
+  top: 40px;
+  bottom: 50px;
+  left: 48px;
+  right: 24px;
+  min-width: 540px;
   z-index: 1;
-  min-width: 700px;
-  height: 242px;
   display: grid;
   grid-template-columns: repeat(6, minmax(62px, 1fr));
-  align-items: end;
   gap: 14px;
 }
 
 .barGroup {
   height: 100%;
   min-width: 0;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) 28px;
-  gap: 8px;
-  align-items: end;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .bars {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -775,6 +794,15 @@
 .rejectedBar { background: #dc2626; }
 
 .barGroup > strong {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 24px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   color: var(--text-secondary);
   font-size: 0.68rem;
@@ -786,17 +814,23 @@
 
 .yAxis {
   position: absolute;
-  top: 43px;
-  bottom: 47px;
-  left: 18px;
+  top: 40px;
+  bottom: 50px;
+  left: 14px;
+  width: 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   color: var(--text-secondary);
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
   pointer-events: none;
   text-align: right;
+}
+
+.yAxis span {
+  transform: translateY(-50%);
 }
 
 .insightGrid {
@@ -895,6 +929,7 @@
   border-radius: 8px;
   color: var(--text-primary);
   background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 0.82rem !important;
   font-weight: 400 !important;
@@ -1291,7 +1326,9 @@
 }
 
 .resourceScheduleHeader {
-  min-height: 72px;
+  height: 68px;
+  min-height: 68px;
+  box-sizing: border-box;
   padding: 13px 18px;
   display: flex;
   align-items: center;
@@ -1454,8 +1491,10 @@
 
 .legacyPanelHeader,
 .performancePanel header {
+  height: 68px;
   min-height: 68px;
-  padding: 15px 20px;
+  box-sizing: border-box;
+  padding: 13px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1890,6 +1929,8 @@
   }
 
   .panelHeader {
+    height: auto;
+    min-height: 68px;
     flex-direction: column;
   }
 
