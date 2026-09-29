@@ -69,7 +69,6 @@ import InvoiceChatModal from "@/components/InvoiceChatModal";
 import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
-import dashboardStyles from "@/components/DashboardContent.module.css";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
@@ -77,7 +76,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Activity, Building2, Calendar, Car, ClipboardList, Database, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
+import { Activity, Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
@@ -88,7 +87,7 @@ import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
 import SuperAdminAppSettingsTab from "@/components/SuperAdminAppSettingsTab";
 import { useMasterDataOptions } from "@/lib/useMasterData";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "app-settings" | "organisasi" | "users" | "activity-log";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "app-settings" | "organisasi" | "users" | "activity-log";
 
 // Labels/icons here mirror AppShell's SUPER_ADMIN_TABS + SETTINGS_TABS (the sidebar submenus
 // that are the actual navigation UI now) - this array itself only validates ?tab= against known
@@ -101,41 +100,10 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
-  { key: "master-data", label: "Master Data", icon: <Database width={16} height={16} /> },
   { key: "app-settings", label: "App Settings", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
   { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
-];
-
-// Master Data's own 8 categories grouped by the module each one's dropdown actually lives in -
-// Vehicle Booking has no master data category of its own, so it has no group here. First-level
-// pills pick the module (styled like DashboardContent's own Overall/Expedition/... pills, see
-// dashboardStyles.moduleTabs); a second-level row (superadmin-subtabs) only appears for a module
-// with more than one category, picking which of that module's own categories is shown.
-const MASTER_DATA_MODULES: {
-  key: string;
-  label: string;
-  categories: { key: MasterDataCategory; label: string; hasExtra?: boolean; extraLabel?: string }[];
-}[] = [
-  { key: "ekspedisi", label: "Expedition", categories: [
-    { key: "ASURANSI", label: "Asuransi" },
-    { key: "PENGEMASAN", label: "Pengemasan Tambahan" },
-  ] },
-  { key: "booking-ruang", label: "Room Booking", categories: [
-    { key: "TIPE_BOOKING", label: "Tipe Booking" },
-  ] },
-  { key: "atk", label: "Office Supplies", categories: [
-    { key: "ATK_KATEGORI", label: "Kategori ATK" },
-    { key: "ATK_NAMA_BARANG", label: "Nama Barang", hasExtra: true, extraLabel: "Satuan" },
-  ] },
-  { key: "sarana", label: "Maintenance", categories: [
-    { key: "KATEGORI_KERUSAKAN", label: "Kategori Kerusakan" },
-  ] },
-  { key: "arsip", label: "Archive", categories: [
-    { key: "ARCHIVE_KATEGORI", label: "Kategori Arsip" },
-    { key: "ARSIP_TAHUN", label: "Tahun Arsip" },
-  ] },
 ];
 
 interface BookingFilterState {
@@ -497,7 +465,7 @@ function SuperAdminPageInner() {
     if (fromUrl && TABS.some((t) => t.key === fromUrl) && fromUrl !== activeTab) setActiveTabState(fromUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"overview" | "pengiriman" | "invoice">("overview");
+  const [ekspedisiSubtab, setEkspedisiSubtab] = useState<"overview" | "pengiriman" | "invoice" | "settings">("overview");
 
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -698,7 +666,7 @@ function SuperAdminPageInner() {
   const arsipRowMenu = useRowMenu(arsipItems);
   // Archive tab now switches between Overview/Transaction/Repository via sub-tab buttons, same
   // pattern as Ekspedisi/ATK/Room/Vehicle Booking, instead of stacking both cards unconditionally.
-  const [arsipSubtab, setArsipSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
+  const [arsipSubtab, setArsipSubtab] = useState<"overview" | "transaksi" | "katalog" | "settings">("overview");
 
   // Overview sub-tab - mirrors arsip/overview/page.tsx exactly.
   const [arsipOvItems, setArsipOvItems] = useState<PermintaanArsip[]>([]);
@@ -743,7 +711,7 @@ function SuperAdminPageInner() {
   const [atkChatItem, setAtkChatItem] = useState<PermintaanAtk | null>(null);
   const [atkRejectTarget, setAtkRejectTarget] = useState<{ id: number; type: RejectType; originLabel: string } | null>(null);
   const atkRowMenu = useRowMenu(atkItems);
-  const [atkSubtab, setAtkSubtab] = useState<"overview" | "pesanan" | "invoice">("overview");
+  const [atkSubtab, setAtkSubtab] = useState<"overview" | "pesanan" | "invoice" | "settings">("overview");
 
   // Overview sub-tab - mirrors office-supplies/overview/page.tsx exactly.
   const [atkOvItems, setAtkOvItems] = useState<PermintaanAtk[]>([]);
@@ -801,9 +769,7 @@ function SuperAdminPageInner() {
   const saranaRowMenu = useRowMenu(saranaItems);
   // Maintenance tab now switches between Overview/Transaction/Repository via sub-tab buttons,
   // same pattern as Ekspedisi/ATK/Room/Vehicle Booking.
-  const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
-  const [masterDataModule, setMasterDataModule] = useState<string>(MASTER_DATA_MODULES[0].key);
-  const [masterDataSubtab, setMasterDataSubtab] = useState<MasterDataCategory>(MASTER_DATA_MODULES[0].categories[0].key);
+  const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog" | "settings">("overview");
 
   // Pressing a module in the sidebar always lands on that module's own Overview sub-tab, even if
   // a previous visit had left it on Transaction/Calendar/etc. - this only fires on an actual
@@ -815,10 +781,6 @@ function SuperAdminPageInner() {
     else if (activeTab === "atk") setAtkSubtab("overview");
     else if (activeTab === "sarana") setSaranaSubtab("overview");
     else if (activeTab === "arsip") setArsipSubtab("overview");
-    else if (activeTab === "master-data") {
-      setMasterDataModule(MASTER_DATA_MODULES[0].key);
-      setMasterDataSubtab(MASTER_DATA_MODULES[0].categories[0].key);
-    }
   }, [activeTab]);
 
   // Overview sub-tab - mirrors maintenance/overview/page.tsx exactly.
@@ -2470,7 +2432,21 @@ function SuperAdminPageInner() {
             >
               Invoices ({invoiceTotal})
             </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${ekspedisiSubtab === "settings" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setEkspedisiSubtab("settings")}
+            >
+              Settings
+            </button>
           </div>
+
+          {ekspedisiSubtab === "settings" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" />
+              <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" />
+            </div>
+          )}
 
           {ekspedisiSubtab === "overview" && (
             <>
@@ -3397,7 +3373,12 @@ function SuperAdminPageInner() {
             </>
           )}
 
-          {bookingRuangSubtab === "roster" && <SuperAdminMeetingRoomTab />}
+          {bookingRuangSubtab === "roster" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <SuperAdminMeetingRoomTab />
+              <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" />
+            </div>
+          )}
 
           {bookingRuangSubtab === "transaksi" && (
         <>
@@ -4923,7 +4904,21 @@ function SuperAdminPageInner() {
             >
               Repository ({arsipKatalogTotal})
             </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${arsipSubtab === "settings" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setArsipSubtab("settings")}
+            >
+              Settings
+            </button>
           </div>
+
+          {arsipSubtab === "settings" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" />
+              <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" />
+            </div>
+          )}
 
           {arsipSubtab === "overview" && (
             <>
@@ -5632,7 +5627,21 @@ function SuperAdminPageInner() {
             >
               Invoice ({atkInvoiceTotal})
             </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${atkSubtab === "settings" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setAtkSubtab("settings")}
+            >
+              Settings
+            </button>
           </div>
+
+          {atkSubtab === "settings" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" />
+              <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" />
+            </div>
+          )}
 
           {atkSubtab === "overview" && (
             <>
@@ -6236,7 +6245,20 @@ function SuperAdminPageInner() {
             >
               Repository ({saranaKatalogTotal})
             </button>
+            <button
+              type="button"
+              className={`superadmin-subtab-btn ${saranaSubtab === "settings" ? "superadmin-subtab-btn-active" : ""}`}
+              onClick={() => setSaranaSubtab("settings")}
+            >
+              Settings
+            </button>
           </div>
+
+          {saranaSubtab === "settings" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" />
+            </div>
+          )}
 
           {saranaSubtab === "overview" && (
             <>
@@ -6911,50 +6933,6 @@ function SuperAdminPageInner() {
           )}
         </>
       )}
-
-      {activeTab === "master-data" && (() => {
-        const currentModule = MASTER_DATA_MODULES.find((m) => m.key === masterDataModule) ?? MASTER_DATA_MODULES[0];
-        const currentCategory = currentModule.categories.find((c) => c.key === masterDataSubtab) ?? currentModule.categories[0];
-        return (
-          <>
-            <nav className={dashboardStyles.moduleTabs} aria-label="Modul Master Data" style={{ marginBottom: 16 }}>
-              {MASTER_DATA_MODULES.map((m) => (
-                <button
-                  key={m.key}
-                  type="button"
-                  className={masterDataModule === m.key ? dashboardStyles.moduleTabActive : ""}
-                  onClick={() => { setMasterDataModule(m.key); setMasterDataSubtab(m.categories[0].key); }}
-                >
-                  <span>{m.label}</span>
-                </button>
-              ))}
-            </nav>
-
-            {currentModule.categories.length > 1 && (
-              <div className="superadmin-subtabs">
-                {currentModule.categories.map((c) => (
-                  <button
-                    key={c.key}
-                    type="button"
-                    className={`superadmin-subtab-btn ${masterDataSubtab === c.key ? "superadmin-subtab-btn-active" : ""}`}
-                    onClick={() => setMasterDataSubtab(c.key)}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <SuperAdminMasterDataTab
-              key={currentCategory.key}
-              category={currentCategory.key}
-              itemLabel={currentCategory.label}
-              hasExtra={currentCategory.hasExtra}
-              extraLabel={currentCategory.extraLabel}
-            />
-          </>
-        );
-      })()}
 
       {activeTab === "app-settings" && <SuperAdminAppSettingsTab />}
 

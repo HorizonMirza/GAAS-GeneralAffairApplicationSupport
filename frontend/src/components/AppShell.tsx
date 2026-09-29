@@ -115,12 +115,12 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "arsip", label: "Archive" },
 ];
 
-// Master Data/Pengaturan Aplikasi/Organization/Users/Activity Log live under their own "Settings"
-// collapsible (own trigger, own submenu) instead of mixed into the flat Super Admin list above -
-// same route (/superadmin?tab=...) as every other Super Admin tab, just grouped separately so
-// they read as "app configuration" rather than getting lost among the seven business modules.
+// App Settings/Organization/Users/Activity Log live under their own "Settings" collapsible (own
+// trigger, own submenu) instead of mixed into the flat Super Admin list above - same route
+// (/superadmin?tab=...) as every other Super Admin tab, just grouped separately so they read as
+// "app configuration" rather than getting lost among the seven business modules. Master data now
+// lives inside each business module's own "Settings" sub-tab instead of a standalone entry here.
 const SETTINGS_TABS: { key: string; label: string }[] = [
-  { key: "master-data", label: "Master Data" },
   { key: "app-settings", label: "App Settings" },
   { key: "organisasi", label: "Organization" },
   { key: "users", label: "Users" },
@@ -548,7 +548,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                         aria-expanded={isOpen}
                         onClick={() => {
                           if (isIconCollapsed) {
-                            router.push("/superadmin?tab=master-data");
+                            router.push("/superadmin?tab=app-settings");
                           } else {
                             setOpenCategory(isOpen ? null : SETTINGS_LABEL);
                           }

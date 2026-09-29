@@ -139,7 +139,8 @@ export default function SuperAdminMeetingRoomTab() {
 
   return (
     <div className="card">
-      <div className="card-header" style={{ justifyContent: "flex-end" }}>
+      <div className="card-header">
+        <h3>Ruang Meeting</h3>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Ruang Meeting
         </button>
