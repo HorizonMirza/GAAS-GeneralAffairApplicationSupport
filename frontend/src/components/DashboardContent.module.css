@@ -1,5 +1,17 @@
 .dashboard {
   min-width: 0;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+.dashboard button,
+.dashboard input,
+.dashboard select,
+.dashboard textarea,
+.dashboard svg text {
+  font-family: inherit;
+  letter-spacing: 0;
 }
 
 .header {
@@ -758,40 +770,26 @@
   min-width: 0;
 }
 
-.organizationToggle {
+.organizationSelect {
+  width: 126px;
+  min-height: 34px;
   flex: none;
   margin-left: auto;
-  padding: 3px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
+  padding: 0 30px 0 10px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--bg-surface-alt);
-}
-
-.organizationToggle button {
-  min-width: 0;
-  min-height: 28px;
-  padding: 4px 7px;
-  border: none;
-  border-radius: 6px;
   color: #000;
-  background: transparent;
+  background-color: var(--bg-surface);
   cursor: pointer;
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
-.organizationToggle button:hover {
-  color: var(--blue-600);
-  background: rgba(75, 141, 255, 0.08);
-}
-
-.organizationToggle .organizationToggleActive {
-  color: #fff;
-  background: var(--blue-500);
-  box-shadow: 0 2px 6px rgba(28, 109, 255, 0.2);
+.organizationSelect:hover,
+.organizationSelect:focus-visible {
+  border-color: var(--blue-400);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.12);
 }
 
 .divisionChart {
@@ -984,26 +982,25 @@
 }
 
 .spendingTotal {
-  min-width: 128px;
-  flex: none;
+  min-width: 0;
+  padding-top: 14px;
   display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--border-subtle);
   color: #000;
-  line-height: 1.1;
-  text-align: right;
 }
 
 .spendingTotal span {
-  font-size: 0.65rem;
-  font-weight: 650;
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .spendingTotal strong {
-  display: block;
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -1014,7 +1011,7 @@
   display: grid;
   grid-template-columns: 1fr;
   align-content: start;
-  gap: 20px;
+  gap: 18px;
 }
 
 .spendingItem {
@@ -1061,16 +1058,28 @@
   transition: width 220ms ease;
 }
 
-.resourceScheduleGrid {
+.resourceActivityGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   gap: 18px;
+  align-items: stretch;
   margin-bottom: 18px;
+}
+
+.resourceActivityGridKpu {
+  grid-template-columns: 1fr;
+}
+
+.resourceScheduleStack {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: repeat(2, 300px);
+  gap: 18px;
 }
 
 .resourceSchedulePanel {
   min-width: 0;
-  height: 320px;
+  height: 300px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1083,10 +1092,8 @@
 .resourceScheduleHeader {
   min-height: 72px;
   padding: 13px 18px;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 11px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1101,36 +1108,6 @@
   margin: 3px 0 0;
   color: #000;
   font-size: 0.68rem;
-}
-
-.resourceScheduleHeader > strong {
-  padding: 5px 8px;
-  border-radius: 7px;
-  color: #000;
-  background: var(--bg-surface-alt);
-  font-size: 0.66rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.resourceScheduleIcon {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  color: var(--blue-600);
-  background: rgba(75, 141, 255, 0.1);
-}
-
-.resourceScheduleIcon svg {
-  width: 17px;
-  height: 17px;
-}
-
-.vehicleScheduleIcon {
-  color: #15803d;
-  background: rgba(22, 163, 74, 0.1);
 }
 
 .resourceScheduleViewport {
@@ -1231,19 +1208,23 @@
   text-align: center;
 }
 
+.activityPanelTall {
+  height: 618px;
+  display: flex;
+  flex-direction: column;
+}
+
+.activityPanelTall .activityList {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
 .workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(330px, 0.85fr);
-  gap: 18px;
-  align-items: start;
+  min-width: 0;
 }
 
-.workspaceKpu {
-  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.72fr);
-}
-
-.leftColumn,
-.rightColumn {
+.leftColumn {
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1489,107 +1470,8 @@
 .legendPending { background: #f59e0b; }
 .legendRejected { background: #dc2626; }
 
-.scheduleTabs {
-  padding: 3px;
-  display: flex;
-  gap: 3px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 9px;
-  background: var(--bg-surface-alt);
-}
-
-.scheduleTabs button {
-  min-height: 29px;
-  padding: 4px 9px;
-  border: none;
-  border-radius: 7px;
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.69rem;
-  font-weight: 700;
-}
-
-.scheduleTabs button:hover {
-  color: var(--blue-500);
-}
-
-.scheduleTabs .scheduleTabActive {
-  color: #fff;
-  background: var(--blue-500);
-}
-
-.scheduleList,
 .activityList {
   padding: 6px 20px 10px;
-}
-
-.scheduleRow {
-  min-height: 68px;
-  padding: 10px 0;
-  display: grid;
-  grid-template-columns: 72px 3px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 11px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.scheduleRow:last-child {
-  border-bottom: none;
-}
-
-.scheduleTime {
-  color: var(--text-primary);
-  font-size: 0.72rem;
-  font-weight: 750;
-  line-height: 1.35;
-}
-
-.scheduleRail {
-  width: 3px;
-  height: 100%;
-  min-height: 37px;
-  border-radius: 2px;
-  background: var(--blue-400);
-}
-
-.vehicleRail {
-  background: #16a34a;
-}
-
-.scheduleDetail {
-  min-width: 0;
-}
-
-.scheduleDetail strong,
-.scheduleDetail small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.scheduleDetail strong {
-  font-size: 0.8rem;
-}
-
-.scheduleDetail small {
-  margin-top: 3px;
-  color: var(--text-secondary);
-  font-size: 0.68rem;
-}
-
-.resourceBadge {
-  max-width: 120px;
-  padding: 5px 8px;
-  overflow: hidden;
-  border-radius: 7px;
-  color: var(--blue-600);
-  background: rgba(75, 141, 255, 0.1);
-  font-size: 0.67rem;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .activityRow {
@@ -1685,18 +1567,6 @@
   }
 }
 
-@media (max-width: 1320px) {
-  .workspace,
-  .workspaceKpu {
-    grid-template-columns: 1fr;
-  }
-
-  .rightColumn {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 1100px) {
   .header {
     align-items: stretch;
@@ -1715,8 +1585,13 @@
     grid-template-columns: 1fr;
   }
 
-  .resourceScheduleGrid {
+  .resourceActivityGrid {
     grid-template-columns: 1fr;
+  }
+
+  .activityPanelTall {
+    height: auto;
+    min-height: 360px;
   }
 
   .statusContent {
@@ -1772,9 +1647,6 @@
   .ageBadge { grid-row: 1; }
   .rowAction { grid-row: 2; }
 
-  .rightColumn {
-    display: flex;
-  }
 }
 
 @media (max-width: 560px) {
@@ -1819,8 +1691,8 @@
   }
 
   .spendingTotal {
-    align-items: flex-start;
-    text-align: left;
+    align-items: center;
+    text-align: initial;
   }
 
   .spendingBreakdown {
@@ -1837,27 +1709,10 @@
     height: 300px;
   }
 
-  .resourceScheduleHeader {
-    grid-template-columns: 32px minmax(0, 1fr);
-  }
-
-  .resourceScheduleHeader > strong {
-    grid-column: 2;
-    justify-self: start;
-  }
-
   .progressLegend {
     align-items: flex-start;
     flex-direction: column;
     gap: 7px;
   }
 
-  .scheduleRow {
-    grid-template-columns: 66px 3px minmax(0, 1fr);
-  }
-
-  .resourceBadge {
-    grid-column: 3;
-    justify-self: start;
-  }
 }

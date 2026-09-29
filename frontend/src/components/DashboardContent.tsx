@@ -4,8 +4,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
-  CalendarDays,
-  CarFront,
   ChevronRight,
   Clock3,
   PackageCheck,
@@ -51,7 +49,6 @@ type DashboardStatusFilter =
   | "ON_APPROVAL";
 type DashboardStatusSelection = "DRAFT" | "ON_APPROVAL" | "REJECTED" | "COMPLETED" | "";
 type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
-type ScheduleTab = "all" | "room" | "vehicle";
 type ChartStatusKey = "completed" | "pending" | "rejected";
 type OrganizationDimension = "direktorat" | "divisi" | "departemen";
 
@@ -117,11 +114,10 @@ interface DashboardItem {
 
 interface ScheduleItem {
   id: string;
-  kind: Exclude<ScheduleTab, "all">;
+  kind: "room" | "vehicle";
   time: string;
   title: string;
   detail: string;
-  resource: string;
   resources: string[];
   startMinutes: number;
   endMinutes: number;
@@ -419,7 +415,6 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
-  const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -564,7 +559,6 @@ export default function DashboardContent({ me }: { me: Me }) {
         time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
         title: item.namaKegiatan,
         detail: `${item.jumlahPeserta} peserta${item.pic ? ` · PIC ${item.pic}` : ""}`,
-        resource: resources.join(", "),
         resources,
         startMinutes: item.isWholeDay ? SCHEDULE_START_MINUTES : timeToMinutes(item.jamMulai, SCHEDULE_START_MINUTES),
         endMinutes: item.isWholeDay ? SCHEDULE_END_MINUTES : timeToMinutes(item.jamSelesai, SCHEDULE_END_MINUTES),
@@ -576,7 +570,6 @@ export default function DashboardContent({ me }: { me: Me }) {
       time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
       title: item.keperluan,
       detail: `${item.jumlahPenumpang} penumpang${item.supir ? ` · ${item.supir}` : ""}`,
-      resource: item.namaKendaraan,
       resources: [item.namaKendaraan],
       startMinutes: item.isWholeDay ? SCHEDULE_START_MINUTES : timeToMinutes(item.jamMulai, SCHEDULE_START_MINUTES),
       endMinutes: item.isWholeDay ? SCHEDULE_END_MINUTES : timeToMinutes(item.jamSelesai, SCHEDULE_END_MINUTES),
@@ -586,7 +579,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     setState({
       summaries,
       queue: queue.slice(0, 8),
-      recent: recent.slice(0, 5),
+      recent: recent.slice(0, 10),
       schedules: [...rooms, ...vehicles].sort((a, b) => scheduleTimeValue(a.time) - scheduleTimeValue(b.time)),
       roomResources: scheduleResult.roomOptions.map((item) => item.nama),
       vehicleResources: scheduleResult.vehicleOptions.map((item) => item.nama),
@@ -607,7 +600,6 @@ export default function DashboardContent({ me }: { me: Me }) {
     setDivisi("");
     setDepartemen("");
     setOrganizationDimension("direktorat");
-    setScheduleTab("all");
     setFilterOpen(false);
     setRefreshToken((value) => value + 1);
   }
@@ -738,7 +730,6 @@ export default function DashboardContent({ me }: { me: Me }) {
   };
   const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
-  const filteredSchedules = state.schedules.filter((item) => scheduleTab === "all" || item.kind === scheduleTab);
   const roomResourceNames = Array.from(new Set([
     ...state.roomResources,
     ...state.schedules.filter((item) => item.kind === "room").flatMap((item) => item.resources),
@@ -923,20 +914,16 @@ export default function DashboardContent({ me }: { me: Me }) {
         <article className={styles.insightPanel}>
           <header className={`${styles.insightHeader} ${styles.distributionHeader}`}>
             <div><h2>Distribusi Volume {organizationDimensionLabel}</h2><p>{distributionContext}</p></div>
-            <div className={styles.organizationToggle} aria-label="Dimensi distribusi volume">
-              {(["direktorat", "divisi", "departemen"] as const).map((dimension) => (
-                <button
-                  key={dimension}
-                  type="button"
-                  className={organizationDimension === dimension ? styles.organizationToggleActive : ""}
-                  aria-pressed={organizationDimension === dimension}
-                  title={`Tampilkan distribusi per ${dimension}`}
-                  onClick={() => setOrganizationDimension(dimension)}
-                >
-                  {({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[dimension]}
-                </button>
-              ))}
-            </div>
+            <select
+              className={styles.organizationSelect}
+              aria-label="Dimensi distribusi volume"
+              value={organizationDimension}
+              onChange={(event) => setOrganizationDimension(event.target.value as OrganizationDimension)}
+            >
+              <option value="direktorat">Direktorat</option>
+              <option value="divisi">Divisi</option>
+              <option value="departemen">Departemen</option>
+            </select>
           </header>
           <div className={styles.divisionChart}>
             {organizationVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada struktur organisasi pada filter ini.</div> : organizationVolumes.map((item) => (
@@ -978,7 +965,6 @@ export default function DashboardContent({ me }: { me: Me }) {
         <article className={`${styles.insightPanel} ${styles.spendingPanel}`} aria-label="Uang keluar Expedition dan Office Supplies">
           <header className={styles.spendingHeader}>
             <div><h2>Uang Keluar</h2><p>{spendingContext}</p></div>
-            <div className={styles.spendingTotal}><span>Total</span><strong>{formatRupiah(totalSpending)}</strong></div>
           </header>
           <div className={styles.spendingBreakdown}>
             {spendingRows.map((item) => (
@@ -990,66 +976,79 @@ export default function DashboardContent({ me }: { me: Me }) {
                 <span className={styles.spendingTrack}><i style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
               </div>
             ))}
+            <div className={styles.spendingTotal}><span>Total</span><strong>{formatRupiah(totalSpending)}</strong></div>
           </div>
         </article>
       </section>
 
-      {me.role !== "KPU" && (
-        <section className={styles.resourceScheduleGrid} aria-label="Jadwal fasilitas hari ini">
-          {([
-            { kind: "room" as const, title: "Jadwal Ruang Meeting Hari Ini", countLabel: "ruangan", rows: roomScheduleRows },
-            { kind: "vehicle" as const, title: "Jadwal Vehicle Booking Hari Ini", countLabel: "kendaraan", rows: vehicleScheduleRows },
-          ]).map((schedule) => (
-            <article className={styles.resourceSchedulePanel} key={schedule.kind}>
-              <header className={styles.resourceScheduleHeader}>
-                <span className={`${styles.resourceScheduleIcon} ${schedule.kind === "vehicle" ? styles.vehicleScheduleIcon : ""}`}>
-                  {schedule.kind === "room" ? <CalendarDays aria-hidden="true" /> : <CarFront aria-hidden="true" />}
-                </span>
-                <div><h2>{schedule.title}</h2><p>{scheduleDateLabel}</p></div>
-                <strong>{schedule.rows.length.toLocaleString("id-ID")} {schedule.countLabel}</strong>
-              </header>
-              <div className={styles.resourceScheduleViewport}>
-                {loading && schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Memuat jadwal fasilitas...</div>
-                  : schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Belum ada data {schedule.countLabel}.</div>
-                  : (
-                    <div className={styles.resourceTimeline}>
-                      <div className={styles.resourceTimelineScale} aria-hidden="true">
-                        <span />
-                        <div>{SCHEDULE_HOURS.map((hour) => <time key={hour} style={{ left: `${((hour * 60 - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100}%` }}>{String(hour).padStart(2, "0")}</time>)}</div>
-                      </div>
-                      {schedule.rows.map((row) => (
-                        <div className={styles.resourceTimelineRow} key={row.resource}>
-                          <strong title={row.resource}>{row.resource}</strong>
-                          <div className={styles.resourceTimelineTrack} style={{ minHeight: `${Math.max(36, row.items.length * 27 + 9)}px` }}>
-                            {row.items.map((item, index) => {
-                              const start = Math.max(SCHEDULE_START_MINUTES, Math.min(item.startMinutes, SCHEDULE_END_MINUTES));
-                              const end = Math.max(start + 15, Math.min(item.endMinutes, SCHEDULE_END_MINUTES));
-                              const left = ((start - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100;
-                              const width = Math.max(2, ((end - start) / SCHEDULE_DURATION_MINUTES) * 100);
-                              return (
-                                <span
-                                  className={`${styles.resourceBooking} ${schedule.kind === "vehicle" ? styles.vehicleBooking : ""}`}
-                                  key={item.id}
-                                  style={{ left: `${left}%`, top: `${5 + index * 27}px`, width: `${Math.min(width, 100 - left)}%` }}
-                                  title={`${item.time} · ${item.title} · ${item.detail}`}
-                                  tabIndex={0}
-                                >
-                                  {item.title}
-                                </span>
-                              );
-                            })}
-                          </div>
+      <section className={`${styles.resourceActivityGrid} ${me.role === "KPU" ? styles.resourceActivityGridKpu : ""}`} aria-label="Jadwal fasilitas dan aktivitas terbaru">
+        {me.role !== "KPU" && (
+          <div className={styles.resourceScheduleStack}>
+            {([
+              { kind: "room" as const, title: "Jadwal Ruang Meeting Hari Ini", countLabel: "ruangan", rows: roomScheduleRows },
+              { kind: "vehicle" as const, title: "Jadwal Vehicle Booking Hari Ini", countLabel: "kendaraan", rows: vehicleScheduleRows },
+            ]).map((schedule) => (
+              <article className={styles.resourceSchedulePanel} key={schedule.kind}>
+                <header className={styles.resourceScheduleHeader}>
+                  <div><h2>{schedule.title}</h2><p>{scheduleDateLabel}</p></div>
+                </header>
+                <div className={styles.resourceScheduleViewport}>
+                  {loading && schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Memuat jadwal fasilitas...</div>
+                    : schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Belum ada data {schedule.countLabel}.</div>
+                    : (
+                      <div className={styles.resourceTimeline}>
+                        <div className={styles.resourceTimelineScale} aria-hidden="true">
+                          <span />
+                          <div>{SCHEDULE_HOURS.map((hour) => <time key={hour} style={{ left: `${((hour * 60 - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100}%` }}>{String(hour).padStart(2, "0")}</time>)}</div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
+                        {schedule.rows.map((row) => (
+                          <div className={styles.resourceTimelineRow} key={row.resource}>
+                            <strong title={row.resource}>{row.resource}</strong>
+                            <div className={styles.resourceTimelineTrack} style={{ minHeight: `${Math.max(36, row.items.length * 27 + 9)}px` }}>
+                              {row.items.map((item, index) => {
+                                const start = Math.max(SCHEDULE_START_MINUTES, Math.min(item.startMinutes, SCHEDULE_END_MINUTES));
+                                const end = Math.max(start + 15, Math.min(item.endMinutes, SCHEDULE_END_MINUTES));
+                                const left = ((start - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100;
+                                const width = Math.max(2, ((end - start) / SCHEDULE_DURATION_MINUTES) * 100);
+                                return (
+                                  <span
+                                    className={`${styles.resourceBooking} ${schedule.kind === "vehicle" ? styles.vehicleBooking : ""}`}
+                                    key={item.id}
+                                    style={{ left: `${left}%`, top: `${5 + index * 27}px`, width: `${Math.min(width, 100 - left)}%` }}
+                                    title={`${item.time} · ${item.title} · ${item.detail}`}
+                                    tabIndex={0}
+                                  >
+                                    {item.title}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
 
-      <div className={`${styles.workspace} ${me.role === "KPU" ? styles.workspaceKpu : ""}`}>
+        <section className={`${styles.panel} ${styles.activityPanelTall}`}>
+          <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>Pembaruan status lintas modul</p></div></header>
+          <div className={styles.activityList}>
+            {loading && dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
+              : dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
+              : dashboardRecent.map((item) => (
+                <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.activityRow}>
+                  <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
+                  <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
+                </Link>
+              ))}
+          </div>
+        </section>
+      </section>
+
+      <div className={styles.workspace}>
         <div className={styles.leftColumn}>
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
@@ -1087,47 +1086,6 @@ export default function DashboardContent({ me }: { me: Me }) {
             </div>
           </section>
         </div>
-
-        <aside className={styles.rightColumn}>
-          {me.role !== "KPU" && (
-            <section className={styles.panel}>
-              <header className={styles.legacyPanelHeader}>
-                <div><h2>Jadwal Hari Ini</h2><p>Ruang meeting dan kendaraan operasional</p></div>
-                <div className={styles.scheduleTabs}>
-                  {(["all", "room", "vehicle"] as const).map((tab) => (
-                    <button key={tab} type="button" className={scheduleTab === tab ? styles.scheduleTabActive : ""} onClick={() => setScheduleTab(tab)}>
-                      {tab === "all" ? "Semua" : tab === "room" ? "Ruang" : "Kendaraan"}
-                    </button>
-                  ))}
-                </div>
-              </header>
-              <div className={styles.scheduleList}>
-                {loading && state.schedules.length === 0 ? <div className={styles.compactEmpty}>Memuat jadwal...</div>
-                  : filteredSchedules.length === 0 ? <div className={styles.compactEmpty}>Tidak ada jadwal pada kategori ini.</div>
-                  : filteredSchedules.slice(0, 4).map((item) => (
-                    <div key={item.id} className={styles.scheduleRow}>
-                      <span className={styles.scheduleTime}>{item.time}</span><span className={`${styles.scheduleRail} ${item.kind === "vehicle" ? styles.vehicleRail : ""}`} />
-                      <span className={styles.scheduleDetail}><strong>{item.title}</strong><small>{item.detail}</small></span><span className={styles.resourceBadge}>{item.resource}</span>
-                    </div>
-                  ))}
-              </div>
-            </section>
-          )}
-
-          <section className={styles.panel}>
-            <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>Pembaruan status lintas modul</p></div></header>
-            <div className={styles.activityList}>
-              {loading && dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
-                : dashboardRecent.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
-                : dashboardRecent.map((item) => (
-                  <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.activityRow}>
-                    <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
-                    <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
-                  </Link>
-                ))}
-            </div>
-          </section>
-        </aside>
       </div>
     </div>
   );
