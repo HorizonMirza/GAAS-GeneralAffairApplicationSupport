@@ -1112,9 +1112,9 @@ export default function DashboardContent({ me }: { me: Me }) {
                       <div className={styles.resourceTimeline}>
                         <div className={styles.resourceTimelineScale} aria-hidden="true">
                           <strong>{schedule.kind === "room" ? "Ruangan" : "Kendaraan"}</strong>
-                          <div>{SCHEDULE_HOURS.map((hour, index) => {
-                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{String(hour).padStart(2, "0")}</time>;
-                          })}</div>
+                          <div>{SCHEDULE_HOURS.slice(0, -1).map((hour) => (
+                            <time key={hour}>{String(hour).padStart(2, "0")}</time>
+                          ))}</div>
                         </div>
                         {schedule.rows.map((row) => (
                           <div className={styles.resourceTimelineRow} key={row.resource}>
@@ -1154,7 +1154,7 @@ export default function DashboardContent({ me }: { me: Me }) {
             {loading && latestActivities.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
               : latestActivities.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
               : latestActivities.map((item) => (
-                <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.activityRow}>
+                <Link key={`${item.moduleKey}-${item.id}`} href={`${item.href}?highlight=${item.id}`} className={styles.activityRow}>
                   <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
                   <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
                 </Link>

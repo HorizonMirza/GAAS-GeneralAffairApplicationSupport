@@ -8,7 +8,7 @@ import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { useMasterDataOptions } from "@/lib/useMasterData";
 import { useHolidayDates } from "@/lib/useAppSettings";
 import type { BookingRuangCreatePayload, Me, RecurrenceFrequency, Role, RoomOption } from "@/lib/types";
-import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL } from "@/lib/constants";
+import { MAX_JUMLAH_PESERTA, RECURRENCE_FREQUENCY_LABELS, ROLE_LABEL_FULL } from "@/lib/constants";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
 import RoomMultiSelect from "./RoomMultiSelect";
@@ -419,7 +419,7 @@ export default function RoomBookingFormModal({ open, me, onClose, onCreated, ini
                     setForm((f) => ({ ...f, divisi: undefined, departemen: undefined }));
                   }}
                   options={AS_ROLE_OPTIONS}
-                  getLabel={(v) => ROLE_LABEL[v as Role]}
+                  getLabel={(v) => ROLE_LABEL_FULL[v as Role]}
                   placeholder="Pilih Role"
                   searchable={false}
                 />

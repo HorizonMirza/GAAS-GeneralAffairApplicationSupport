@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { isValidPengirimanPhone, ROLE_LABEL } from "@/lib/constants";
+import { isValidPengirimanPhone, ROLE_LABEL_FULL } from "@/lib/constants";
 import { todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { useMasterDataOptions } from "@/lib/useMasterData";
@@ -193,7 +193,7 @@ export default function PengirimanFormModal({ open, me, onClose, onCreated }: Pr
                     setForm((f) => ({ ...f, divisi: undefined, departemen: undefined }));
                   }}
                   options={AS_ROLE_OPTIONS}
-                  getLabel={(v) => ROLE_LABEL[v as Role]}
+                  getLabel={(v) => ROLE_LABEL_FULL[v as Role]}
                   placeholder="Pilih Role"
                   searchable={false}
                 />

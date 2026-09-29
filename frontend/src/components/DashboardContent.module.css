@@ -1400,30 +1400,22 @@
 }
 
 .resourceTimelineScale > div {
-  position: relative;
   height: 100%;
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  border-left: 1px solid var(--border-subtle);
 }
 
 .resourceTimelineScale time {
-  position: absolute;
-  top: 0;
-  width: max-content;
+  min-width: 0;
   height: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: var(--text-secondary);
   font-size: 0.62rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  transform: translateX(-50%);
-}
-
-.resourceTimelineScale time:first-child {
-  transform: none;
-}
-
-.resourceTimelineScale time:last-child {
-  transform: translateX(-100%);
 }
 
 .resourceTimelineRow {
@@ -1455,6 +1447,7 @@
   min-height: 34px;
   margin-right: 0;
   align-self: stretch;
+  border-left: 1px solid var(--border-subtle);
   background-color: var(--bg-surface-alt);
   transition: background-color 150ms ease;
 }
