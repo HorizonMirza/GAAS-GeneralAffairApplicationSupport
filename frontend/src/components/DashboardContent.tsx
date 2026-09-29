@@ -434,6 +434,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [org, setOrg] = useState<OrgStructure | null>(null);
   const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
+  const [hoveredProgressStatusKey, setHoveredProgressStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
   const [state, setState] = useState<DashboardState>({
@@ -605,7 +606,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       if (unitScope.departemen && item.departemen !== unitScope.departemen) return false;
       return true;
     };
-    const rooms = scheduleResult.rooms.filter(matchesUnit).map<ScheduleItem>((item) => {
+    const rooms = scheduleResult.rooms.filter((item) => item.status === "APPROVED_GA_APPROVAL" && matchesUnit(item)).map<ScheduleItem>((item) => {
       const resources = [item.namaRuang, ...item.additionalRooms];
       return {
         id: `room-${item.id}`,
@@ -618,7 +619,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         endMinutes: item.isWholeDay ? SCHEDULE_END_MINUTES : timeToMinutes(item.jamSelesai, SCHEDULE_END_MINUTES),
       };
     });
-    const vehicles = scheduleResult.vehicles.filter(matchesUnit).map<ScheduleItem>((item) => ({
+    const vehicles = scheduleResult.vehicles.filter((item) => item.status === "APPROVED_GA_APPROVAL" && matchesUnit(item)).map<ScheduleItem>((item) => ({
       id: `vehicle-${item.id}`,
       kind: "vehicle",
       time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
@@ -685,6 +686,24 @@ export default function DashboardContent({ me }: { me: Me }) {
     return segment;
   });
   const hoveredStatus = statusChartData.find((item) => item.key === hoveredStatusKey) ?? null;
+  const progressTotal = totals.completed + totals.pending + totals.rejected;
+  let progressOffset = 0;
+  const progressSegments = statusChartData.map((item) => {
+    const width = progressTotal > 0 ? (item.value / progressTotal) * 100 : 0;
+    const segment = {
+      ...item,
+      width,
+      center: Math.min(94, Math.max(6, progressOffset + width / 2)),
+      progressClassName: item.key === "completed"
+        ? styles.progressCompleted
+        : item.key === "pending"
+          ? styles.progressPending
+          : styles.progressRejected,
+    };
+    progressOffset += width;
+    return segment;
+  });
+  const hoveredProgressStatus = progressSegments.find((item) => item.key === hoveredProgressStatusKey) ?? null;
   const maxBarValue = Math.max(
     1,
     ...selectedModules.flatMap((module) => {
@@ -777,12 +796,6 @@ export default function DashboardContent({ me }: { me: Me }) {
   const latestTrendValue = trendData.at(-1)?.value ?? 0;
   const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
   const yAxisTicks = [maxBarValue, Math.round((maxBarValue * 2) / 3), Math.round(maxBarValue / 3), 0];
-  const progressTotal = totals.completed + totals.pending + totals.rejected;
-  const progressWidths = {
-    completed: progressTotal > 0 ? (totals.completed / progressTotal) * 100 : 0,
-    pending: progressTotal > 0 ? (totals.pending / progressTotal) * 100 : 0,
-    rejected: progressTotal > 0 ? (totals.rejected / progressTotal) * 100 : 0,
-  };
   const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const latestActivities = dashboardRecent.slice(0, 9);
@@ -1096,18 +1109,18 @@ export default function DashboardContent({ me }: { me: Me }) {
                   {loading && schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Memuat jadwal fasilitas...</div>
                     : schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Belum ada data {schedule.countLabel}.</div>
                     : (
-                      <div className={styles.resourceTimeline} style={{ "--schedule-slot-count": SCHEDULE_HOURS.length - 1 } as React.CSSProperties}>
+                      <div className={styles.resourceTimeline}>
                         <div className={styles.resourceTimelineScale} aria-hidden="true">
-                          <strong>{schedule.kind === "room" ? "RUANG" : "KENDARAAN"}</strong>
+                          <strong>{schedule.kind === "room" ? "Ruangan" : "Kendaraan"}</strong>
                           <div>{SCHEDULE_HOURS.map((hour, index) => {
-                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{`${String(hour).padStart(2, "0")}:00`}</time>;
+                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{String(hour).padStart(2, "0")}</time>;
                           })}</div>
                         </div>
                         {schedule.rows.map((row) => (
                           <div className={styles.resourceTimelineRow} key={row.resource}>
                             <strong title={row.resource}>{row.resource}</strong>
-                            <div className={styles.resourceTimelineTrack} style={{ minHeight: `${Math.max(36, row.items.length * 27 + 9)}px` }}>
-                              {row.items.map((item, index) => {
+                            <div className={styles.resourceTimelineTrack}>
+                              {row.items.map((item) => {
                                 const start = Math.max(SCHEDULE_START_MINUTES, Math.min(item.startMinutes, SCHEDULE_END_MINUTES));
                                 const end = Math.max(start + 15, Math.min(item.endMinutes, SCHEDULE_END_MINUTES));
                                 const left = ((start - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100;
@@ -1116,7 +1129,7 @@ export default function DashboardContent({ me }: { me: Me }) {
                                   <span
                                     className={`${styles.resourceBooking} ${schedule.kind === "vehicle" ? styles.vehicleBooking : ""}`}
                                     key={item.id}
-                                    style={{ left: `${left}%`, top: `${5 + index * 27}px`, width: `${Math.min(width, 100 - left)}%` }}
+                                    style={{ left: `${left}%`, width: `${Math.min(width, 100 - left)}%` }}
                                     title={`${item.time} · ${item.title} · ${item.detail}`}
                                     tabIndex={0}
                                   >
@@ -1176,10 +1189,28 @@ export default function DashboardContent({ me }: { me: Me }) {
 
           <section className={styles.performancePanel}>
             <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} Transaction</strong></header>
-            <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
-              <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
-              <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
-              <span className={styles.progressRejected} style={{ width: `${progressWidths.rejected}%` }} />
+            <div className={styles.progressArea}>
+              <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
+                {progressSegments.filter((item) => item.value > 0).map((item) => (
+                  <span
+                    className={`${styles.progressSegment} ${item.progressClassName}`}
+                    key={item.key}
+                    style={{ width: `${item.width}%` }}
+                    tabIndex={0}
+                    aria-label={`${item.label}: ${item.value.toLocaleString("id-ID")} (${item.percent}%)`}
+                    onMouseEnter={() => setHoveredProgressStatusKey(item.key)}
+                    onMouseLeave={() => setHoveredProgressStatusKey(null)}
+                    onFocus={() => setHoveredProgressStatusKey(item.key)}
+                    onBlur={() => setHoveredProgressStatusKey(null)}
+                  />
+                ))}
+              </div>
+              {hoveredProgressStatus && (
+                <div className={styles.progressTooltip} style={{ left: `${hoveredProgressStatus.center}%` }} role="status">
+                  <span>{hoveredProgressStatus.label}</span>
+                  <strong>{hoveredProgressStatus.value.toLocaleString("id-ID")} ({hoveredProgressStatus.percent}%)</strong>
+                </div>
+              )}
             </div>
             <div className={styles.progressLegend}>
               <span><i className={styles.legendCompleted} />Approved <strong>{totals.completed.toLocaleString("id-ID")}</strong></span>

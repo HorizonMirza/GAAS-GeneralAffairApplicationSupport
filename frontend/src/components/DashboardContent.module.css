@@ -1366,11 +1366,13 @@
   min-height: 0;
   padding: 9px 14px 12px;
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .resourceTimeline {
-  min-width: 920px;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
@@ -1379,7 +1381,7 @@
 .resourceTimelineScale,
 .resourceTimelineRow {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
+  grid-template-columns: minmax(128px, 18%) minmax(0, 1fr);
   gap: 0;
 }
 
@@ -1400,7 +1402,6 @@
 .resourceTimelineScale > div {
   position: relative;
   height: 100%;
-  border-left: 1px solid var(--border-subtle);
 }
 
 .resourceTimelineScale time {
@@ -1428,6 +1429,7 @@
 .resourceTimelineRow {
   align-items: center;
   min-height: 34px;
+  transition: background-color 150ms ease;
 }
 
 .resourceTimelineRow + .resourceTimelineRow {
@@ -1445,19 +1447,26 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .resourceTimelineTrack {
   position: relative;
+  min-height: 34px;
   margin-right: 0;
   align-self: stretch;
-  border-left: 1px solid var(--border-subtle);
   background-color: var(--bg-surface-alt);
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc((100% / var(--schedule-slot-count)) - 1px), var(--border-subtle) calc((100% / var(--schedule-slot-count)) - 1px), var(--border-subtle) calc(100% / var(--schedule-slot-count)));
+  transition: background-color 150ms ease;
+}
+
+.resourceTimelineRow:hover > strong,
+.resourceTimelineRow:hover .resourceTimelineTrack {
+  background-color: rgba(75, 141, 255, 0.09);
 }
 
 .resourceBooking {
   position: absolute;
+  top: 50%;
   height: 22px;
   padding: 4px 7px;
   overflow: hidden;
@@ -1472,6 +1481,7 @@
   line-height: 12px;
   outline: none;
   text-overflow: ellipsis;
+  transform: translateY(-50%);
   white-space: nowrap;
 }
 
@@ -1711,28 +1721,67 @@
 
 .performancePanel header > strong {
   align-self: flex-end;
-  margin-bottom: 1px;
+  margin-bottom: -7px;
   font-size: 0.78rem;
   font-weight: 700;
 }
 
+.progressArea {
+  position: relative;
+  padding-top: 3px;
+}
+
 .progressTrack {
   height: 11px;
-  margin: 3px 20px 0;
+  margin: 0 20px;
   display: flex;
   overflow: hidden;
   border-radius: 5px;
   background: var(--bg-surface-alt);
 }
 
-.progressTrack span {
+.progressSegment {
   display: block;
   height: 100%;
+  cursor: help;
+  outline: none;
+  transition: filter 150ms ease, transform 150ms ease;
+}
+
+.progressSegment:hover,
+.progressSegment:focus-visible {
+  z-index: 1;
+  filter: brightness(1.12);
+  transform: scaleY(1.35);
 }
 
 .progressCompleted { background: #16a34a; }
 .progressPending { background: #f59e0b; }
 .progressRejected { background: #dc2626; }
+
+.progressTooltip {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 8px);
+  min-width: 126px;
+  padding: 7px 10px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  color: #fff;
+  background: #10275a;
+  box-shadow: 0 8px 22px rgba(15, 40, 90, 0.22);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  pointer-events: none;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.progressTooltip strong {
+  font-size: 0.74rem;
+}
 
 .progressLegend {
   padding: 13px 20px 0;
