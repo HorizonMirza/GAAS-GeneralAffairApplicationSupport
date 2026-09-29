@@ -145,9 +145,9 @@ interface AnalyticsItem {
 
 const MODULES: ModuleDefinition[] = [
   { key: "expedition", label: "Expedition", shortLabel: "Expedition", overviewHref: "/ekspedisi/overview", transactionHref: "/ekspedisi/transaksi" },
-  { key: "room", label: "Room Booking", shortLabel: "Room Book.", overviewHref: "/booking-ruang-meeting/overview", transactionHref: "/booking-ruang-meeting/transaksi", hiddenForKpu: true },
-  { key: "vehicle", label: "Vehicle Booking", shortLabel: "Vehicle Book.", overviewHref: "/booking-kendaraan/overview", transactionHref: "/booking-kendaraan/transaksi", hiddenForKpu: true },
-  { key: "atk", label: "Office Supplies", shortLabel: "Office Sup.", overviewHref: "/office-supplies/overview", transactionHref: "/office-supplies/transaksi" },
+  { key: "room", label: "Room Booking", shortLabel: "Room Booking", overviewHref: "/booking-ruang-meeting/overview", transactionHref: "/booking-ruang-meeting/transaksi", hiddenForKpu: true },
+  { key: "vehicle", label: "Vehicle Booking", shortLabel: "Vehicle Booking", overviewHref: "/booking-kendaraan/overview", transactionHref: "/booking-kendaraan/transaksi", hiddenForKpu: true },
+  { key: "atk", label: "Office Supplies", shortLabel: "Office Supplies", overviewHref: "/office-supplies/overview", transactionHref: "/office-supplies/transaksi" },
   { key: "maintenance", label: "Maintenance", shortLabel: "Maintenance", overviewHref: "/maintenance/overview", transactionHref: "/maintenance/transaksi", hiddenForKpu: true },
   { key: "archive", label: "Archive", shortLabel: "Archive", overviewHref: "/arsip/overview", transactionHref: "/arsip/transaksi", hiddenForKpu: true },
 ];
@@ -1070,7 +1070,7 @@ export default function DashboardContent({ me }: { me: Me }) {
             {spendingRows.map((item) => (
               <div className={styles.spendingItem} key={item.key}>
                 <div className={styles.spendingItemHeader}>
-                  <strong>{item.label} ({item.count.toLocaleString("id-ID")} Trasaction)</strong>
+                  <strong>{item.label} ({item.count.toLocaleString("id-ID")} Transaction)</strong>
                   <strong>{formatRupiah(item.value)}</strong>
                 </div>
                 <span className={styles.spendingTrack}><i style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
@@ -1098,8 +1098,8 @@ export default function DashboardContent({ me }: { me: Me }) {
                     : (
                       <div className={styles.resourceTimeline} style={{ "--schedule-slot-count": SCHEDULE_HOURS.length - 1 } as React.CSSProperties}>
                         <div className={styles.resourceTimelineScale} aria-hidden="true">
-                          <span />
-                          <div>{SCHEDULE_HOURS.slice(0, -1).map((hour, index) => {
+                          <strong>{schedule.kind === "room" ? "RUANG" : "KENDARAAN"}</strong>
+                          <div>{SCHEDULE_HOURS.map((hour, index) => {
                             return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{`${String(hour).padStart(2, "0")}:00`}</time>;
                           })}</div>
                         </div>
@@ -1175,7 +1175,7 @@ export default function DashboardContent({ me }: { me: Me }) {
           </section>
 
           <section className={styles.performancePanel}>
-            <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} transaksi</strong></header>
+            <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} Transaction</strong></header>
             <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
               <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
               <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
