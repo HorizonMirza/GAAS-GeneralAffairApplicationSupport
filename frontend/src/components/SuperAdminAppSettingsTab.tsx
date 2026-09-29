@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Lock, Plus, Trash2, Upload } from "lucide-react";
+import { Download, Lock, Plus, Trash2, Upload } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
 import ModalOverlay from "@/components/ModalOverlay";
@@ -48,6 +48,28 @@ export default function SuperAdminAppSettingsTab() {
       <BrandingCard settings={settings} onSaved={setSettings} />
       <OperatingHoursCard settings={settings} onSaved={setSettings} />
       <HolidaysCard />
+      <BackupCard />
+    </div>
+  );
+}
+
+function BackupCard() {
+  return (
+    <div className="card">
+      <div className="card-header"><h3>Backup Data</h3></div>
+      <p style={{ marginTop: -8, marginBottom: 16, color: "var(--text-muted, #666)", fontSize: 13 }}>
+        Unduh satu file Excel berisi seluruh data sistem (Ekspedisi, Office Supplies, Maintenance,
+        Arsip, Booking Ruang Meeting, Booking Kendaraan, Users, Organisasi, Master Data,
+        Pengaturan Aplikasi, dan Riwayat Penghapusan) - untuk kebutuhan arsip/backup tahunan.
+      </p>
+      <button
+        type="button"
+        className="btn btn-approve"
+        style={{ width: "auto" }}
+        onClick={() => window.open(api.globalExportUrl(), "_blank")}
+      >
+        <Download width={16} height={16} /> Unduh Backup (.xlsx)
+      </button>
     </div>
   );
 }

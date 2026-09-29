@@ -263,6 +263,12 @@ export const api = {
   deleteHoliday: (id: number, password: string) =>
     apiRequest<null>(`/app-settings/holidays/${id}`, { method: "DELETE", body: { password } }),
 
+  // One .xlsx with every table (Ekspedisi/ATK/Sarana/Arsip/Booking + their logs, Users,
+  // Organisasi, Master Data, Pengaturan Aplikasi, Hari Libur, Riwayat Penghapusan) - Superadmin
+  // only (see SuperAdminExportController). Unlike the per-module export URLs above, not scoped to
+  // any filter - opened the same way (window.open) since it's a plain authenticated GET.
+  globalExportUrl: () => `${API_BASE}/superadmin/export-all`,
+
   getNotificationSoundSettings: () => apiRequest<NotificationSoundSettings>("/notification-settings"),
   updateNotificationSoundSettings: (payload: NotificationSoundSettings) =>
     apiRequest<NotificationSoundSettings>("/notification-settings", { method: "PUT", body: payload }),
