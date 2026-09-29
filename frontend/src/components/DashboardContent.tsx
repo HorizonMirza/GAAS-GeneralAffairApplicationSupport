@@ -4,6 +4,8 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarDays,
+  CarFront,
   ChevronRight,
   Clock3,
   PackageCheck,
@@ -27,8 +29,10 @@ import type {
   PermintaanArsip,
   PermintaanAtk,
   Role,
+  RoomOption,
   Status,
   SumberPembelian,
+  VehicleOption,
 } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
@@ -118,6 +122,9 @@ interface ScheduleItem {
   title: string;
   detail: string;
   resource: string;
+  resources: string[];
+  startMinutes: number;
+  endMinutes: number;
 }
 
 interface DashboardState {
@@ -125,6 +132,8 @@ interface DashboardState {
   queue: DashboardItem[];
   recent: DashboardItem[];
   schedules: ScheduleItem[];
+  roomResources: string[];
+  vehicleResources: string[];
   analytics: AnalyticsItem[];
   errors: number;
 }
@@ -346,6 +355,18 @@ function scheduleTimeValue(time: string): number {
   return match ? Number(match[1]) * 60 + Number(match[2]) : Number.MAX_SAFE_INTEGER;
 }
 
+const SCHEDULE_START_MINUTES = 7 * 60;
+const SCHEDULE_END_MINUTES = 18 * 60;
+const SCHEDULE_DURATION_MINUTES = SCHEDULE_END_MINUTES - SCHEDULE_START_MINUTES;
+const SCHEDULE_HOURS = [7, 9, 11, 13, 15, 17];
+
+function timeToMinutes(value: string | null, fallback: number): number {
+  if (!value) return fallback;
+  const [hours, minutes] = value.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return fallback;
+  return hours * 60 + minutes;
+}
+
 function periodDescription(month: string, date: string): string {
   if (date) {
     return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "long", year: "numeric" })
@@ -356,7 +377,7 @@ function periodDescription(month: string, date: string): string {
     return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" })
       .format(new Date(year, monthNumber - 1, 1));
   }
-  return "Semua periode";
+  return "Semua Periode";
 }
 
 function monthKey(value: Date): string {
@@ -397,11 +418,21 @@ export default function DashboardContent({ me }: { me: Me }) {
   const [departemen, setDepartemen] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [org, setOrg] = useState<OrgStructure | null>(null);
+  const [organizationDimension, setOrganizationDimension] = useState<OrganizationDimension>("direktorat");
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>("all");
   const [hoveredStatusKey, setHoveredStatusKey] = useState<ChartStatusKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
-  const [state, setState] = useState<DashboardState>({ summaries: emptySummaries(), queue: [], recent: [], schedules: [], analytics: [], errors: 0 });
+  const [state, setState] = useState<DashboardState>({
+    summaries: emptySummaries(),
+    queue: [],
+    recent: [],
+    schedules: [],
+    roomResources: [],
+    vehicleResources: [],
+    analytics: [],
+    errors: 0,
+  });
   const filterWrapRef = useRef<HTMLDivElement>(null);
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
@@ -481,12 +512,25 @@ export default function DashboardContent({ me }: { me: Me }) {
     });
 
     const schedulePromise = me.role === "KPU"
-      ? Promise.resolve({ rooms: [] as BookingRuang[], vehicles: [] as BookingKendaraan[], errors: 0 })
-      : Promise.allSettled([api.getBookingSchedule(todayLocalDate()), api.getKendaraanSchedule(todayLocalDate())])
-        .then(([rooms, vehicles]) => ({
+      ? Promise.resolve({
+        rooms: [] as BookingRuang[],
+        vehicles: [] as BookingKendaraan[],
+        roomOptions: [] as RoomOption[],
+        vehicleOptions: [] as VehicleOption[],
+        errors: 0,
+      })
+      : Promise.allSettled([
+        api.getBookingSchedule(todayLocalDate()),
+        api.getKendaraanSchedule(todayLocalDate()),
+        api.listRooms(),
+        api.listVehicles(),
+      ])
+        .then(([rooms, vehicles, roomOptions, vehicleOptions]) => ({
           rooms: rooms.status === "fulfilled" ? rooms.value : [],
           vehicles: vehicles.status === "fulfilled" ? vehicles.value : [],
-          errors: Number(rooms.status === "rejected") + Number(vehicles.status === "rejected"),
+          roomOptions: roomOptions.status === "fulfilled" ? roomOptions.value : [],
+          vehicleOptions: vehicleOptions.status === "fulfilled" ? vehicleOptions.value : [],
+          errors: [rooms, vehicles, roomOptions, vehicleOptions].filter((result) => result.status === "rejected").length,
         }));
 
     const [moduleResults, scheduleResult] = await Promise.all([Promise.all(moduleTasks), schedulePromise]);
@@ -512,14 +556,20 @@ export default function DashboardContent({ me }: { me: Me }) {
       if (unitScope.departemen && item.departemen !== unitScope.departemen) return false;
       return true;
     };
-    const rooms = scheduleResult.rooms.filter(matchesUnit).map<ScheduleItem>((item) => ({
-      id: `room-${item.id}`,
-      kind: "room",
-      time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
-      title: item.namaKegiatan,
-      detail: `${item.jumlahPeserta} peserta${item.pic ? ` · PIC ${item.pic}` : ""}`,
-      resource: [item.namaRuang, ...item.additionalRooms].join(", "),
-    }));
+    const rooms = scheduleResult.rooms.filter(matchesUnit).map<ScheduleItem>((item) => {
+      const resources = [item.namaRuang, ...item.additionalRooms];
+      return {
+        id: `room-${item.id}`,
+        kind: "room",
+        time: formatTimeRange(item.jamMulai, item.jamSelesai, item.isWholeDay),
+        title: item.namaKegiatan,
+        detail: `${item.jumlahPeserta} peserta${item.pic ? ` · PIC ${item.pic}` : ""}`,
+        resource: resources.join(", "),
+        resources,
+        startMinutes: item.isWholeDay ? SCHEDULE_START_MINUTES : timeToMinutes(item.jamMulai, SCHEDULE_START_MINUTES),
+        endMinutes: item.isWholeDay ? SCHEDULE_END_MINUTES : timeToMinutes(item.jamSelesai, SCHEDULE_END_MINUTES),
+      };
+    });
     const vehicles = scheduleResult.vehicles.filter(matchesUnit).map<ScheduleItem>((item) => ({
       id: `vehicle-${item.id}`,
       kind: "vehicle",
@@ -527,6 +577,9 @@ export default function DashboardContent({ me }: { me: Me }) {
       title: item.keperluan,
       detail: `${item.jumlahPenumpang} penumpang${item.supir ? ` · ${item.supir}` : ""}`,
       resource: item.namaKendaraan,
+      resources: [item.namaKendaraan],
+      startMinutes: item.isWholeDay ? SCHEDULE_START_MINUTES : timeToMinutes(item.jamMulai, SCHEDULE_START_MINUTES),
+      endMinutes: item.isWholeDay ? SCHEDULE_END_MINUTES : timeToMinutes(item.jamSelesai, SCHEDULE_END_MINUTES),
     }));
     queue.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
     recent.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -535,6 +588,8 @@ export default function DashboardContent({ me }: { me: Me }) {
       queue: queue.slice(0, 8),
       recent: recent.slice(0, 5),
       schedules: [...rooms, ...vehicles].sort((a, b) => scheduleTimeValue(a.time) - scheduleTimeValue(b.time)),
+      roomResources: scheduleResult.roomOptions.map((item) => item.nama),
+      vehicleResources: scheduleResult.vehicleOptions.map((item) => item.nama),
       analytics,
       errors,
     });
@@ -551,6 +606,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     setDirektorat("");
     setDivisi("");
     setDepartemen("");
+    setOrganizationDimension("direktorat");
     setScheduleTab("all");
     setFilterOpen(false);
     setRefreshToken((value) => value + 1);
@@ -594,8 +650,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const statusContext = status
     ? ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
     : "";
-  const analyticsContext = [activeView === "all" ? "Seluruh modul" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
-  const organizationDimension: OrganizationDimension = departemen ? "departemen" : divisi ? "divisi" : "direktorat";
+  const analyticsContext = [activeView === "all" ? "Seluruh Modul" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const selectedAnalytics = state.analytics.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const periodScopedAnalytics = state.analytics.filter((item) => {
     const itemDate = item.createdAt.slice(0, 10);
@@ -638,7 +693,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   ].sort((left, right) => right.value - left.value || left.label.localeCompare(right.label));
   const maxOrganizationVolume = Math.max(1, ...organizationVolumes.map((item) => item.value));
   const organizationDimensionLabel = ({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[organizationDimension];
-  const distributionPeriodText = periodText === "Semua periode" ? "Semua Periode" : periodText;
+  const distributionPeriodText = periodText;
   const distributionContext = [activeView === "all" ? "" : activeModuleLabel, distributionPeriodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const spendingRows = ([
     { key: "expedition" as const, label: "Expedition" },
@@ -653,7 +708,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   });
   const totalSpending = spendingRows.reduce((total, item) => total + item.value, 0);
   const maxSpending = Math.max(1, ...spendingRows.map((item) => item.value));
-  const spendingContext = ["Expedition & Office Supplies", periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
+  const spendingContext = [periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const trendReference = date
     ? new Date(`${date}T00:00:00`)
     : month
@@ -666,11 +721,11 @@ export default function DashboardContent({ me }: { me: Me }) {
   const trendMax = Math.max(1, ...trendData.map((item) => item.value));
   const trendPoints = trendData.map((item, index) => ({
     ...item,
-    x: 36 + (index * 448) / Math.max(1, trendData.length - 1),
-    y: 20 + (1 - item.value / trendMax) * 170,
+    x: 34 + (index * 412) / Math.max(1, trendData.length - 1),
+    y: 18 + (1 - item.value / trendMax) * 207,
   }));
   const trendLinePoints = trendPoints.map((point) => `${point.x},${point.y}`).join(" ");
-  const trendAreaPoints = `36,190 ${trendLinePoints} 484,190`;
+  const trendAreaPoints = `34,225 ${trendLinePoints} 446,225`;
   const previousTrendValue = trendData.at(-2)?.value ?? 0;
   const latestTrendValue = trendData.at(-1)?.value ?? 0;
   const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
@@ -684,6 +739,24 @@ export default function DashboardContent({ me }: { me: Me }) {
   const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const filteredSchedules = state.schedules.filter((item) => scheduleTab === "all" || item.kind === scheduleTab);
+  const roomResourceNames = Array.from(new Set([
+    ...state.roomResources,
+    ...state.schedules.filter((item) => item.kind === "room").flatMap((item) => item.resources),
+  ])).sort((left, right) => left.localeCompare(right));
+  const vehicleResourceNames = Array.from(new Set([
+    ...state.vehicleResources,
+    ...state.schedules.filter((item) => item.kind === "vehicle").flatMap((item) => item.resources),
+  ])).sort((left, right) => left.localeCompare(right));
+  const roomScheduleRows = roomResourceNames.map((resource) => ({
+    resource,
+    items: state.schedules.filter((item) => item.kind === "room" && item.resources.includes(resource)),
+  }));
+  const vehicleScheduleRows = vehicleResourceNames.map((resource) => ({
+    resource,
+    items: state.schedules.filter((item) => item.kind === "vehicle" && item.resources.includes(resource)),
+  }));
+  const scheduleDateLabel = new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "long", year: "numeric" })
+    .format(new Date(`${todayLocalDate()}T00:00:00`));
   const overallTotal = visibleModules.reduce((total, module) => total + state.summaries[module.key].total, 0);
 
   return (
@@ -848,8 +921,22 @@ export default function DashboardContent({ me }: { me: Me }) {
 
       <section className={styles.insightGrid} aria-label="Analitik organisasi dan tren">
         <article className={styles.insightPanel}>
-          <header className={styles.insightHeader}>
+          <header className={`${styles.insightHeader} ${styles.distributionHeader}`}>
             <div><h2>Distribusi Volume {organizationDimensionLabel}</h2><p>{distributionContext}</p></div>
+            <div className={styles.organizationToggle} aria-label="Dimensi distribusi volume">
+              {(["direktorat", "divisi", "departemen"] as const).map((dimension) => (
+                <button
+                  key={dimension}
+                  type="button"
+                  className={organizationDimension === dimension ? styles.organizationToggleActive : ""}
+                  aria-pressed={organizationDimension === dimension}
+                  title={`Tampilkan distribusi per ${dimension}`}
+                  onClick={() => setOrganizationDimension(dimension)}
+                >
+                  {({ direktorat: "Direktorat", divisi: "Divisi", departemen: "Departemen" } as const)[dimension]}
+                </button>
+              ))}
+            </div>
           </header>
           <div className={styles.divisionChart}>
             {organizationVolumes.length === 0 ? <div className={styles.insightEmpty}>Belum ada struktur organisasi pada filter ini.</div> : organizationVolumes.map((item) => (
@@ -863,16 +950,16 @@ export default function DashboardContent({ me }: { me: Me }) {
 
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
-            <div><h2>Tren Transaksi</h2><p>{[activeView === "all" ? "Seluruh modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
+            <div><h2>Tren Transaksi</h2><p>{[activeView === "all" ? "Seluruh Modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
             {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
           </header>
           <div className={styles.trendChart}>
-            <svg viewBox="0 0 520 235" role="img" aria-label="Tren volume transaksi enam bulan terakhir">
+            <svg viewBox="0 0 480 265" role="img" aria-label="Tren volume transaksi enam bulan terakhir">
               <title>Tren volume transaksi enam bulan terakhir</title>
               {[0, 1, 2, 3].map((line) => {
-                const y = 20 + (line * 170) / 3;
+                const y = 18 + (line * 207) / 3;
                 const value = Math.round(trendMax * (1 - line / 3));
-                return <g key={line}><line className={styles.trendGridLine} x1="36" x2="484" y1={y} y2={y} /><text className={styles.trendAxisText} x="27" y={y + 4} textAnchor="end">{value}</text></g>;
+                return <g key={line}><line className={styles.trendGridLine} x1="34" x2="446" y1={y} y2={y} /><text className={styles.trendAxisText} x="26" y={y + 4} textAnchor="end">{value}</text></g>;
               })}
               <polygon className={styles.trendArea} points={trendAreaPoints} />
               <polyline className={styles.trendLine} points={trendLinePoints} />
@@ -880,7 +967,7 @@ export default function DashboardContent({ me }: { me: Me }) {
                 <g className={styles.trendPoint} key={point.key} tabIndex={0} aria-label={`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}>
                   <circle cx={point.x} cy={point.y} r="5" />
                   <text x={point.x} y={Math.max(13, point.y - 11)} textAnchor="middle">{point.value}</text>
-                  <text className={styles.trendMonthLabel} x={point.x} y="220" textAnchor="middle">{point.label}</text>
+                  <text className={styles.trendMonthLabel} x={point.x} y="252" textAnchor="middle">{point.label}</text>
                   <title>{`${point.label}: ${point.value.toLocaleString("id-ID")} transaksi`}</title>
                 </g>
               ))}
@@ -897,15 +984,70 @@ export default function DashboardContent({ me }: { me: Me }) {
             {spendingRows.map((item) => (
               <div className={styles.spendingItem} key={item.key}>
                 <div className={styles.spendingItemHeader}>
-                  <div><strong>{item.label}</strong><span>{item.count.toLocaleString("id-ID")} transaksi berbiaya</span></div>
+                  <strong>{item.label} ({item.count.toLocaleString("id-ID")} Trasaction)</strong>
                   <strong>{formatRupiah(item.value)}</strong>
                 </div>
-                <span className={styles.spendingTrack}><i className={item.key === "atk" ? styles.spendingAtk : ""} style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
+                <span className={styles.spendingTrack}><i style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
               </div>
             ))}
           </div>
         </article>
       </section>
+
+      {me.role !== "KPU" && (
+        <section className={styles.resourceScheduleGrid} aria-label="Jadwal fasilitas hari ini">
+          {([
+            { kind: "room" as const, title: "Jadwal Ruang Meeting Hari Ini", countLabel: "ruangan", rows: roomScheduleRows },
+            { kind: "vehicle" as const, title: "Jadwal Vehicle Booking Hari Ini", countLabel: "kendaraan", rows: vehicleScheduleRows },
+          ]).map((schedule) => (
+            <article className={styles.resourceSchedulePanel} key={schedule.kind}>
+              <header className={styles.resourceScheduleHeader}>
+                <span className={`${styles.resourceScheduleIcon} ${schedule.kind === "vehicle" ? styles.vehicleScheduleIcon : ""}`}>
+                  {schedule.kind === "room" ? <CalendarDays aria-hidden="true" /> : <CarFront aria-hidden="true" />}
+                </span>
+                <div><h2>{schedule.title}</h2><p>{scheduleDateLabel}</p></div>
+                <strong>{schedule.rows.length.toLocaleString("id-ID")} {schedule.countLabel}</strong>
+              </header>
+              <div className={styles.resourceScheduleViewport}>
+                {loading && schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Memuat jadwal fasilitas...</div>
+                  : schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Belum ada data {schedule.countLabel}.</div>
+                  : (
+                    <div className={styles.resourceTimeline}>
+                      <div className={styles.resourceTimelineScale} aria-hidden="true">
+                        <span />
+                        <div>{SCHEDULE_HOURS.map((hour) => <time key={hour} style={{ left: `${((hour * 60 - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100}%` }}>{String(hour).padStart(2, "0")}</time>)}</div>
+                      </div>
+                      {schedule.rows.map((row) => (
+                        <div className={styles.resourceTimelineRow} key={row.resource}>
+                          <strong title={row.resource}>{row.resource}</strong>
+                          <div className={styles.resourceTimelineTrack} style={{ minHeight: `${Math.max(36, row.items.length * 27 + 9)}px` }}>
+                            {row.items.map((item, index) => {
+                              const start = Math.max(SCHEDULE_START_MINUTES, Math.min(item.startMinutes, SCHEDULE_END_MINUTES));
+                              const end = Math.max(start + 15, Math.min(item.endMinutes, SCHEDULE_END_MINUTES));
+                              const left = ((start - SCHEDULE_START_MINUTES) / SCHEDULE_DURATION_MINUTES) * 100;
+                              const width = Math.max(2, ((end - start) / SCHEDULE_DURATION_MINUTES) * 100);
+                              return (
+                                <span
+                                  className={`${styles.resourceBooking} ${schedule.kind === "vehicle" ? styles.vehicleBooking : ""}`}
+                                  key={item.id}
+                                  style={{ left: `${left}%`, top: `${5 + index * 27}px`, width: `${Math.min(width, 100 - left)}%` }}
+                                  title={`${item.time} · ${item.title} · ${item.detail}`}
+                                  tabIndex={0}
+                                >
+                                  {item.title}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
 
       <div className={`${styles.workspace} ${me.role === "KPU" ? styles.workspaceKpu : ""}`}>
         <div className={styles.leftColumn}>
