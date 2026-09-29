@@ -3140,6 +3140,7 @@ body.auth-ready .app-shell {
 .invoices-page-toolbar .invoice-search-field input,
 .invoices-page-toolbar #invoice-filter-bulan,
 .invoices-page-toolbar #atk-invoice-filter-bulan,
+.invoices-page-toolbar .field .filter-picker-trigger,
 .invoices-page-toolbar .field .btn {
   height: 38px;
   box-sizing: border-box;
@@ -3148,8 +3149,13 @@ body.auth-ready .app-shell {
 .invoice-input-btn { margin-left: auto; }
 
 .invoice-toolbar-slim .field input,
-.invoice-toolbar-slim .field select {
+.invoice-toolbar-slim .field select,
+.invoice-toolbar-slim .field .filter-picker-trigger {
   padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.invoice-toolbar-slim .field .filter-picker-trigger > span {
   font-size: 0.85rem;
 }
 

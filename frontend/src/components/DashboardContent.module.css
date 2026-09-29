@@ -104,6 +104,70 @@
   flex: 0 0 var(--tab-box-width, calc((100% - 48px) / 7));
 }
 
+@media (min-width: 1101px) {
+  .headerGrid7 {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    align-items: center;
+    justify-content: normal;
+  }
+
+  .headerGrid7 .greeting {
+    grid-column: 1 / 5;
+    min-width: 0;
+  }
+
+  .headerGrid7 .headerActions {
+    grid-column: 5 / 8;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: center;
+    justify-content: normal;
+    min-width: 0;
+  }
+
+  .headerGrid7 .refreshButton {
+    grid-column: 1;
+    justify-self: end;
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    flex: none;
+  }
+
+  .headerGrid7 .monthFilter {
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: none;
+  }
+
+  .headerGrid7 .moreFilter {
+    grid-column: 3;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: none;
+  }
+
+  .moduleTabsGrid7 {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    overflow-x: visible;
+  }
+
+  .moduleTabsGrid7 button {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+    padding: 0 8px;
+  }
+}
+
 .monthFilter :global(.filter-picker) {
   width: 100%;
 }
@@ -1197,7 +1261,7 @@
 .resourceActivityGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 11px;
   align-items: stretch;
   margin-bottom: 18px;
 }
@@ -1211,7 +1275,7 @@
   grid-column: span 2;
   display: grid;
   grid-template-rows: repeat(2, 300px);
-  gap: 18px;
+  gap: 11px;
 }
 
 .resourceSchedulePanel {
@@ -1356,7 +1420,7 @@
 }
 
 .activityPanelTall {
-  height: 618px;
+  height: 611px;
   display: flex;
   flex-direction: column;
 }

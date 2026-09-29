@@ -608,7 +608,7 @@ export default function DashboardContent({ me }: { me: Me }) {
     setState({
       summaries,
       queue: queue.slice(0, 8),
-      recent: recent.slice(0, 10),
+      recent: recent.slice(0, 15),
       schedules: [...rooms, ...vehicles].sort((a, b) => scheduleTimeValue(a.time) - scheduleTimeValue(b.time)),
       roomResources: scheduleResult.roomOptions.map((item) => item.nama),
       vehicleResources: scheduleResult.vehicleOptions.map((item) => item.nama),
@@ -760,7 +760,8 @@ export default function DashboardContent({ me }: { me: Me }) {
   };
   const dashboardQueue = state.queue.filter((item) => activeView === "all" || item.moduleKey === activeView);
   const dashboardRecent = state.recent.filter((item) => activeView === "all" || item.moduleKey === activeView);
-  const latestActivities = dashboardRecent.slice(0, 8);
+  const latestActivities = dashboardRecent.slice(0, 9);
+  const isFullModules = visibleModules.length === 6;
   const roomResourceNames = Array.from(new Set([
     ...state.roomResources,
     ...state.schedules.filter((item) => item.kind === "room").flatMap((item) => item.resources),
@@ -786,7 +787,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       className={styles.dashboard}
       style={tabBoxWidth ? ({ "--tab-box-width": `${tabBoxWidth}px` } as React.CSSProperties) : undefined}
     >
-      <header className={styles.header}>
+      <header className={`${styles.header} ${isFullModules ? styles.headerGrid7 : ""}`}>
         <div className={styles.greeting}><WelcomeGreeting me={me} /></div>
         <div className={styles.headerActions}>
           <button type="button" className={styles.refreshButton} onClick={resetDashboard} disabled={loading} title="Reset filter dan muat ulang dashboard" aria-label="Reset filter dan muat ulang dashboard">
@@ -831,7 +832,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         </div>
       </header>
 
-      <nav className={styles.moduleTabs} ref={moduleTabsRef} aria-label="Dashboard per modul">
+      <nav className={`${styles.moduleTabs} ${isFullModules ? styles.moduleTabsGrid7 : ""}`} ref={moduleTabsRef} aria-label="Dashboard per modul">
         <button type="button" className={activeView === "all" ? styles.moduleTabActive : ""} aria-pressed={activeView === "all"} onClick={() => setActiveView("all")}>
           <span>Overall ({overallTotal.toLocaleString("id-ID")})</span>
         </button>
