@@ -1431,12 +1431,12 @@
 .resourceTimelineRow > strong {
   align-self: stretch;
   padding: 0 10px;
-  display: flex;
-  align-items: center;
+  display: block;
   overflow: hidden;
   color: var(--text-primary);
   font-size: 0.68rem;
   font-weight: 600;
+  line-height: 34px;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: background-color 150ms ease, color 150ms ease;
@@ -1461,6 +1461,7 @@
   position: absolute;
   top: 50%;
   height: 22px;
+  margin-left: 4px;
   padding: 4px 7px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.32);
