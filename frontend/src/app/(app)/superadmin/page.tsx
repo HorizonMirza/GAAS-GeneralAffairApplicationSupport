@@ -69,6 +69,7 @@ import InvoiceChatModal from "@/components/InvoiceChatModal";
 import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
+import dashboardStyles from "@/components/DashboardContent.module.css";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
@@ -76,7 +77,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Building2, Calendar, Car, ClipboardList, Database, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
+import { Activity, Building2, Calendar, Car, ClipboardList, Database, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
@@ -87,11 +88,11 @@ import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
 import SuperAdminAppSettingsTab from "@/components/SuperAdminAppSettingsTab";
 import { useMasterDataOptions } from "@/lib/useMasterData";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "app-settings" | "organisasi" | "users";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "app-settings" | "organisasi" | "users" | "activity-log";
 
 // Labels/icons here mirror AppShell's SUPER_ADMIN_TABS (the sidebar submenu that's the actual
-// navigation UI now) - this array itself only validates ?tab= against known keys, since the pill
-// bar that used to render these was removed as redundant with that sidebar submenu.
+// navigation UI now, for the first 7) plus QUICK_ACCESS_TABS below (for the last 5) - this array
+// itself only validates ?tab= against known keys, since neither of those renders from here.
 const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "overview", label: "Dashboard", icon: <Shield width={16} height={16} /> },
   { key: "ekspedisi", label: "Expedition", icon: <Layers width={16} height={16} /> },
@@ -104,6 +105,18 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "app-settings", label: "Pengaturan Aplikasi", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
+  { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
+];
+
+// Quick-access pill row rendered at the top of the Dashboard tab only (above the greeting/period
+// filter) - the one place Master Data/Pengaturan Aplikasi/Organization/Users/Activity Log are
+// reachable from, now that they no longer have their own sidebar submenu entries.
+const QUICK_ACCESS_TABS: { key: SuperAdminTab; label: string }[] = [
+  { key: "master-data", label: "Master Data" },
+  { key: "app-settings", label: "Pengaturan Aplikasi" },
+  { key: "organisasi", label: "Organization" },
+  { key: "users", label: "Users" },
+  { key: "activity-log", label: "Activity Log" },
 ];
 
 interface BookingFilterState {
@@ -2391,9 +2404,21 @@ function SuperAdminPageInner() {
     <>
       {activeTab === "overview" && (
         <>
-          <DashboardContent me={me} />
+          <nav className={dashboardStyles.moduleTabs} aria-label="Navigasi cepat Super Admin" style={{ marginBottom: 16 }}>
+            {QUICK_ACCESS_TABS.map((t) => (
+              <button key={t.key} type="button" onClick={() => router.push(`/superadmin?tab=${t.key}`)}>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </nav>
 
-          <div style={{ marginTop: 28 }}>
+          <DashboardContent me={me} />
+        </>
+      )}
+
+      {activeTab === "activity-log" && (
+        <>
+          <div>
             <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
               Activity Log (Riwayat Aktivitas Lintas Modul)
             </h3>

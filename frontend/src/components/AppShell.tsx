@@ -104,6 +104,11 @@ const SUPER_ADMIN_LABEL = "Super Admin";
 // own small list here rather than importing that page's TABS const, which would pull that whole
 // ~3000-line page (and every modal it imports) into every route's bundle just for two label
 // strings.
+//
+// Master Data/Pengaturan Aplikasi/Organization/Users/Activity Log are deliberately NOT listed
+// here - they moved out of this sidebar submenu into their own quick-access pill row rendered at
+// the top of the Dashboard tab (see superadmin/page.tsx's QUICK_ACCESS_TABS), reachable only from
+// there rather than from every tab.
 const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "overview", label: "Dashboard" },
   { key: "ekspedisi", label: "Expedition" },
@@ -112,10 +117,6 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
   { key: "atk", label: "Office Supplies" },
   { key: "sarana", label: "Maintenance" },
   { key: "arsip", label: "Archive" },
-  { key: "master-data", label: "Master Data" },
-  { key: "app-settings", label: "Pengaturan Aplikasi" },
-  { key: "organisasi", label: "Organization" },
-  { key: "users", label: "Users" },
 ];
 
 // Isolated into its own component so only this fragment (not the whole AppShell, mounted on every
