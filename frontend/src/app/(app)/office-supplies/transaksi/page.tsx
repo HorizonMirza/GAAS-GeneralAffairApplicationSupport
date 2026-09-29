@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  KATEGORI_ATK_LABEL,
   SUMBER_PEMBELIAN_LABEL,
   atkItemsSummary,
   canGaUpdateAtk,
@@ -20,6 +19,7 @@ import { formatCurrency, formatDate, formatDateTime, truncateText } from "@/lib/
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { PermintaanAtk, Status, SumberPembelian } from "@/lib/types";
 import AtkStatusBadge from "@/components/AtkStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -52,6 +52,7 @@ function defaultFilters(): FilterState {
 
 function OfficeSuppliesTransaksiPageInner() {
   const { me, orgStructure } = useAuth();
+  const kategoriOptions = useMasterDataOptions("ATK_KATEGORI");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -370,7 +371,7 @@ function OfficeSuppliesTransaksiPageInner() {
                       <td>{item.nomorPermintaan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
-                      <td>{KATEGORI_ATK_LABEL[item.kategori] || item.kategori}</td>
+                      <td>{kategoriOptions.getLabel(item.kategori)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
                       <td>{item.items.length}</td>

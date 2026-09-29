@@ -8,7 +8,6 @@ import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   EXECUTION_STAGE_LABEL,
-  KATEGORI_KERUSAKAN_LABEL,
   canGaKoreksiSarana,
   isBookingOriginRole,
   isSaranaEditableByOrigin,
@@ -18,6 +17,7 @@ import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { BookingStatus, KategoriKerusakan, PerbaikanSarana } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -49,10 +49,9 @@ function defaultFilters(): FilterState {
   return { page: 1, limit: 10, tanggal: "", bulan: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "", search: "" };
 }
 
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-
 function MaintenanceTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
+  const kategoriOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -280,8 +279,8 @@ function MaintenanceTransaksiPageInner() {
                     id="filter-sarana-kategori"
                     value={filters.kategori}
                     onChange={(v) => updateFilter({ kategori: v as KategoriKerusakan | "" })}
-                    options={KATEGORI_OPTIONS}
-                    getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                    options={kategoriOptions.options}
+                    getLabel={kategoriOptions.getLabel}
                     clearLabel="Semua Kategori"
                     placeholder="Semua Kategori"
                   />
@@ -370,7 +369,7 @@ function MaintenanceTransaksiPageInner() {
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
-                      <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                      <td>{kategoriOptions.getLabel(item.kategori)}</td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>

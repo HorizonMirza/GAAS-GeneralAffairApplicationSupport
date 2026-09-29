@@ -14,12 +14,12 @@ import {
   isBookingEditableByOrigin,
   isBookingOriginRole,
   isBookingPdfAvailable,
-  TIPE_BOOKING_LABELS,
 } from "@/lib/constants";
 import { formatDate, formatDateTime, formatTimeRange, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { BookingRuang, BookingRuangCreatePayload, BookingStatus, RoomOption } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -58,6 +58,7 @@ function defaultFilters(): FilterState {
 
 function BookingTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
+  const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -402,7 +403,7 @@ function BookingTransaksiPageInner() {
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
-                      <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
+                      <td>{tipeBookingOptions.getLabel(item.tipe)}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>

@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  ARCHIVE_KATEGORI_LABEL,
   canGaKoreksiArsip,
   isArsipEditableByOrigin,
   isArsipPdfAvailable,
@@ -17,6 +16,7 @@ import { formatDate, formatDateTime, truncateText } from "@/lib/format";
 import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { ArchiveKategori, BookingStatus, PermintaanArsip } from "@/lib/types";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
 import RowMenuDropdown from "@/components/RowMenuDropdown";
@@ -50,6 +50,7 @@ function defaultFilters(): FilterState {
 
 function ArsipTransaksiPageInner() {
   const { me, orgStructure, loading } = useAuth();
+  const kategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -277,8 +278,8 @@ function ArsipTransaksiPageInner() {
                     id="filter-arsip-kategori"
                     value={filters.kategori}
                     onChange={(v) => updateFilter({ kategori: v as ArchiveKategori | "" })}
-                    options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
-                    getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                    options={kategoriOptions.options}
+                    getLabel={kategoriOptions.getLabel}
                     clearLabel="Semua Kategori"
                     placeholder="Semua Kategori"
                   />
@@ -369,7 +370,7 @@ function ArsipTransaksiPageInner() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{item.jumlahArsip}</td>
                       <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>
-                      <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                      <td>{kategoriOptions.getLabel(item.kategori)}</td>
                       <td>{item.tahunArsip}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>

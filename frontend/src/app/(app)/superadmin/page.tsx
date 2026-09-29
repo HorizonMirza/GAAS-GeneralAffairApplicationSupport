@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, atkItemsSummary, bookingRoomsLabel, BOOKING_ON_APPROVAL_STATUSES, BOOKING_REJECTED_STATUSES, BOOKING_STATUS_LABEL, bookingStatusBorderClass, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, KATEGORI_ATK_LABEL, KATEGORI_KERUSAKAN_LABEL, ON_APPROVAL_STATUSES, REJECTED_STATUSES, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { atkItemsSummary, bookingRoomsLabel, BOOKING_ON_APPROVAL_STATUSES, BOOKING_REJECTED_STATUSES, BOOKING_STATUS_LABEL, bookingStatusBorderClass, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, ON_APPROVAL_STATUSES, REJECTED_STATUSES, STATUS_LABEL, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, todayLocalDate, truncateText } from "@/lib/format";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
@@ -84,6 +84,7 @@ import SuperAdminUsersTab from "@/components/SuperAdminUsersTab";
 import SuperAdminMeetingRoomTab from "@/components/SuperAdminMeetingRoomTab";
 import SuperAdminVehicleTab from "@/components/SuperAdminVehicleTab";
 import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 
 export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "master-data" | "organisasi" | "users";
 
@@ -445,6 +446,10 @@ function SuperAdminPageInner() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const confirm = useConfirm();
+  const atkKategoriOptions = useMasterDataOptions("ATK_KATEGORI");
+  const kategoriKerusakanOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
+  const archiveKategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
+  const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
 
   const [activeTab, setActiveTabState] = useState<SuperAdminTab>(() => {
     const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
@@ -2380,8 +2385,6 @@ function SuperAdminPageInner() {
       ? saranaKatalogSelectedDirektoratNode.divisi.flatMap((v) => v.departemen)
       : orgStructure?.departemen || [];
 
-  const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
-
   return (
     <>
       {activeTab === "overview" && (
@@ -3481,7 +3484,7 @@ function SuperAdminPageInner() {
                       <td title={item.pic || ""}>{truncateText(item.pic, 15)}</td>
                       <td>{item.noTeleponPic || "-"}</td>
                       <td title={bookingRoomsLabel(item)}>{truncateText(bookingRoomsLabel(item), 20)}</td>
-                      <td>{TIPE_BOOKING_LABELS[item.tipe]}</td>
+                      <td>{tipeBookingOptions.getLabel(item.tipe)}</td>
                       <td>{item.jumlahPeserta}</td>
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
@@ -5101,8 +5104,8 @@ function SuperAdminPageInner() {
                     id="filter-arsip-kategori"
                     value={arsipFilters.kategori}
                     onChange={(v) => updateArsipFilter({ kategori: v as ArchiveKategori | "" })}
-                    options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
-                    getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                    options={archiveKategoriOptions.options}
+                    getLabel={archiveKategoriOptions.getLabel}
                     clearLabel="Semua Kategori"
                     placeholder="Semua Kategori"
                   />
@@ -5185,7 +5188,7 @@ function SuperAdminPageInner() {
                       <td>{formatDate(item.tanggal)}</td>
                       <td>{item.jumlahArsip}</td>
                       <td title={item.namaArsip}>{truncateText(item.namaArsip, 25)}</td>
-                      <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                      <td>{archiveKategoriOptions.getLabel(item.kategori)}</td>
                       <td>{item.tahunArsip}</td>
                       <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
@@ -5365,8 +5368,8 @@ function SuperAdminPageInner() {
                         id="filter-arsip-katalog-kategori"
                         value={arsipKatalogFilters.kategori}
                         onChange={(v) => updateArsipKatalogFilter({ kategori: v as ArchiveKategori | "" })}
-                        options={Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[]}
-                        getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                        options={archiveKategoriOptions.options}
+                        getLabel={archiveKategoriOptions.getLabel}
                         clearLabel="Semua Kategori"
                         placeholder="Semua Kategori"
                       />
@@ -5446,7 +5449,7 @@ function SuperAdminPageInner() {
                         <td>{formatDate(item.tanggal)}</td>
                         <td>{item.jumlahArsip}</td>
                         <td title={item.namaArsip}>{truncateText(item.namaArsip, 30)}</td>
-                        <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                        <td>{archiveKategoriOptions.getLabel(item.kategori)}</td>
                         <td>{item.tahunArsip}</td>
                         <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                         <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
@@ -5884,7 +5887,7 @@ function SuperAdminPageInner() {
                       <td>{item.nomorPermintaan || "-"}</td>
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
-                      <td>{KATEGORI_ATK_LABEL[item.kategori] || item.kategori}</td>
+                      <td>{atkKategoriOptions.getLabel(item.kategori)}</td>
                       <td title={item.keperluan}>{truncateText(item.keperluan, 25)}</td>
                       <td title={barang}>{truncateText(barang, 35)}</td>
                       <td>{item.items.length}</td>
@@ -6409,8 +6412,8 @@ function SuperAdminPageInner() {
                     id="filter-sarana-kategori"
                     value={saranaFilters.kategori}
                     onChange={(v) => updateSaranaFilter({ kategori: v as KategoriKerusakan | "" })}
-                    options={KATEGORI_OPTIONS}
-                    getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                    options={kategoriKerusakanOptions.options}
+                    getLabel={kategoriKerusakanOptions.getLabel}
                     clearLabel="Semua Kategori"
                     placeholder="Semua Kategori"
                   />
@@ -6489,7 +6492,7 @@ function SuperAdminPageInner() {
                       <td>{formatDateTime(item.createdAt)}</td>
                       <td>{formatDate(item.tanggal)}</td>
                       <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
-                      <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                      <td>{kategoriKerusakanOptions.getLabel(item.kategori)}</td>
                       <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 35)}</td>
                       <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                       <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>
@@ -6671,8 +6674,8 @@ function SuperAdminPageInner() {
                         id="filter-sarana-katalog-kategori"
                         value={saranaKatalogFilters.kategori}
                         onChange={(v) => updateSaranaKatalogFilter({ kategori: v as KategoriKerusakan | "" })}
-                        options={KATEGORI_OPTIONS}
-                        getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                        options={kategoriKerusakanOptions.options}
+                        getLabel={kategoriKerusakanOptions.getLabel}
                         clearLabel="Semua Kategori"
                         placeholder="Semua Kategori"
                       />
@@ -6751,7 +6754,7 @@ function SuperAdminPageInner() {
                         <td>{item.nomorPerbaikan || "-"}</td>
                         <td>{formatDate(item.tanggal)}</td>
                         <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
-                        <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                        <td>{kategoriKerusakanOptions.getLabel(item.kategori)}</td>
                         <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 30)}</td>
                         <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                         <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>

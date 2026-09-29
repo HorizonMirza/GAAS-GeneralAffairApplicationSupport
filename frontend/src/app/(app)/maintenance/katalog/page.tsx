@@ -5,11 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { KATEGORI_KERUSAKAN_LABEL, isBookingOriginRole } from "@/lib/constants";
+import { isBookingOriginRole } from "@/lib/constants";
 import { formatDate, truncateText } from "@/lib/format";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { KategoriKerusakan, PerbaikanSarana, PerbaikanSaranaCatalogItem } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -18,8 +19,6 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import SaranaDetailModal from "@/components/SaranaDetailModal";
 import SaranaStatusHistoryModal from "@/components/SaranaStatusHistoryModal";
 import SaranaChatModal from "@/components/SaranaChatModal";
-
-const KATEGORI_OPTIONS = Object.keys(KATEGORI_KERUSAKAN_LABEL) as KategoriKerusakan[];
 
 interface FilterState {
   page: number;
@@ -41,6 +40,7 @@ export default function MaintenanceKatalogPage() {
   const { me, orgStructure, loading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
+  const kategoriOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -184,8 +184,8 @@ export default function MaintenanceKatalogPage() {
                   id="filter-sarana-katalog-kategori"
                   value={filters.kategori}
                   onChange={(v) => updateFilter({ kategori: v as KategoriKerusakan | "" })}
-                  options={KATEGORI_OPTIONS}
-                  getLabel={(v) => KATEGORI_KERUSAKAN_LABEL[v as KategoriKerusakan] || v}
+                  options={kategoriOptions.options}
+                  getLabel={kategoriOptions.getLabel}
                   clearLabel="Semua Kategori"
                   placeholder="Semua Kategori"
                 />
@@ -268,7 +268,7 @@ export default function MaintenanceKatalogPage() {
                   <td>{item.nomorPerbaikan || "-"}</td>
                   <td>{formatDate(item.tanggal)}</td>
                   <td title={item.lokasi}>{truncateText(item.lokasi, 25)}</td>
-                  <td>{KATEGORI_KERUSAKAN_LABEL[item.kategori]}</td>
+                  <td>{kategoriOptions.getLabel(item.kategori)}</td>
                   <td title={item.deskripsiKerusakan}>{truncateText(item.deskripsiKerusakan, 30)}</td>
                   <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>
                   <td title={item.departemen || ""}>{truncateText(item.departemen, 18)}</td>

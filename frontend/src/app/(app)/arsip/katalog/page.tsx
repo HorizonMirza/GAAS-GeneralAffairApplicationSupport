@@ -5,11 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ARCHIVE_KATEGORI_LABEL, isBookingOriginRole } from "@/lib/constants";
+import { isBookingOriginRole } from "@/lib/constants";
 import { formatDate, truncateText } from "@/lib/format";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import { useRowMenu } from "@/lib/useRowMenu";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { ArchiveKategori, PermintaanArsip, PermintaanArsipCatalogItem } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -18,8 +19,6 @@ import RowMenuDropdown from "@/components/RowMenuDropdown";
 import ArsipDetailModal from "@/components/ArsipDetailModal";
 import ArsipStatusHistoryModal from "@/components/ArsipStatusHistoryModal";
 import ArsipChatModal from "@/components/ArsipChatModal";
-
-const KATEGORI_OPTIONS = Object.keys(ARCHIVE_KATEGORI_LABEL) as ArchiveKategori[];
 
 interface FilterState {
   page: number;
@@ -39,6 +38,7 @@ function defaultFilters(): FilterState {
 
 export default function ArsipKatalogPage() {
   const { me, orgStructure, loading } = useAuth();
+  const kategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -184,8 +184,8 @@ export default function ArsipKatalogPage() {
                   id="filter-katalog-kategori"
                   value={filters.kategori}
                   onChange={(v) => updateFilter({ kategori: v as ArchiveKategori | "" })}
-                  options={KATEGORI_OPTIONS}
-                  getLabel={(v) => ARCHIVE_KATEGORI_LABEL[v as ArchiveKategori] || v}
+                  options={kategoriOptions.options}
+                  getLabel={kategoriOptions.getLabel}
                   clearLabel="Semua Kategori"
                   placeholder="Semua Kategori"
                 />
@@ -269,7 +269,7 @@ export default function ArsipKatalogPage() {
                   <td>{formatDate(item.tanggal)}</td>
                   <td>{item.jumlahArsip}</td>
                   <td title={item.namaArsip}>{truncateText(item.namaArsip, 30)}</td>
-                  <td>{ARCHIVE_KATEGORI_LABEL[item.kategori]}</td>
+                  <td>{kategoriOptions.getLabel(item.kategori)}</td>
                   <td>{item.tahunArsip}</td>
                   <td title={item.lokasiPenyimpanan}>{truncateText(item.lokasiPenyimpanan, 25)}</td>
                   <td title={item.divisi}>{truncateText(item.divisi, 18)}</td>

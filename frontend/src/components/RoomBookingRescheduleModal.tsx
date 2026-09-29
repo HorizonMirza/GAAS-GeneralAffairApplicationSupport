@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Lock, Pencil } from "lucide-react";
 import { api } from "@/lib/api";
-import { MAX_JUMLAH_PESERTA, TIPE_BOOKING_LABELS } from "@/lib/constants";
+import { MAX_JUMLAH_PESERTA } from "@/lib/constants";
 import { formatDateTime, todayLocalDate } from "@/lib/format";
 import { focusNextFieldOnEnter, useAutofocusFirstField } from "@/lib/formNav";
 import { getAvailableEndHours, getAvailableStartHours, isWholeDayAllowed } from "@/lib/bookingTime";
+import { useMasterDataOptions } from "@/lib/useMasterData";
 import type { BookingRuang, BookingRuangReschedulePayload, RoomOption } from "@/lib/types";
 import DateFilterPicker from "./DateFilterPicker";
 import ModalOverlay from "./ModalOverlay";
@@ -63,6 +64,7 @@ function toFormFields(item: BookingRuang): BookingRuangReschedulePayload {
 // most of it locked" rather than a separate mini-form - only Tanggal/Jam/Durasi/Ruangan/Ruangan
 // Tambahan/PIC are live.
 export default function RoomBookingRescheduleModal({ open, item, onClose, onSaved }: Props) {
+  const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
   const [form, setForm] = useState<BookingRuangReschedulePayload | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [error, setError] = useState("");
@@ -344,9 +346,9 @@ export default function RoomBookingRescheduleModal({ open, item, onClose, onSave
                 id="rs-tipe"
                 value={item.tipe}
                 onChange={() => {}}
-                options={Object.keys(TIPE_BOOKING_LABELS)}
-                getLabel={(v) => TIPE_BOOKING_LABELS[v as keyof typeof TIPE_BOOKING_LABELS] || v}
-                placeholder={TIPE_BOOKING_LABELS[item.tipe]}
+                options={tipeBookingOptions.options}
+                getLabel={tipeBookingOptions.getLabel}
+                placeholder={tipeBookingOptions.getLabel(item.tipe)}
                 disabled
               />
             </div>
