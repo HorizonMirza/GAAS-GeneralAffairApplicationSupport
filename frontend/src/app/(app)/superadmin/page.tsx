@@ -69,6 +69,7 @@ import InvoiceChatModal from "@/components/InvoiceChatModal";
 import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import DashboardStats from "@/components/DashboardStats";
 import DashboardContent from "@/components/DashboardContent";
+import dashboardStyles from "@/components/DashboardContent.module.css";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
@@ -101,10 +102,40 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
   { key: "master-data", label: "Master Data", icon: <Database width={16} height={16} /> },
-  { key: "app-settings", label: "Pengaturan Aplikasi", icon: <Shield width={16} height={16} /> },
+  { key: "app-settings", label: "App Settings", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
   { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
+];
+
+// Master Data's own 8 categories grouped by the module each one's dropdown actually lives in -
+// Vehicle Booking has no master data category of its own, so it has no group here. First-level
+// pills pick the module (styled like DashboardContent's own Overall/Expedition/... pills, see
+// dashboardStyles.moduleTabs); a second-level row (superadmin-subtabs) only appears for a module
+// with more than one category, picking which of that module's own categories is shown.
+const MASTER_DATA_MODULES: {
+  key: string;
+  label: string;
+  categories: { key: MasterDataCategory; label: string; hasExtra?: boolean; extraLabel?: string }[];
+}[] = [
+  { key: "ekspedisi", label: "Expedition", categories: [
+    { key: "ASURANSI", label: "Asuransi" },
+    { key: "PENGEMASAN", label: "Pengemasan Tambahan" },
+  ] },
+  { key: "booking-ruang", label: "Room Booking", categories: [
+    { key: "TIPE_BOOKING", label: "Tipe Booking" },
+  ] },
+  { key: "atk", label: "Office Supplies", categories: [
+    { key: "ATK_KATEGORI", label: "Kategori ATK" },
+    { key: "ATK_NAMA_BARANG", label: "Nama Barang", hasExtra: true, extraLabel: "Satuan" },
+  ] },
+  { key: "sarana", label: "Maintenance", categories: [
+    { key: "KATEGORI_KERUSAKAN", label: "Kategori Kerusakan" },
+  ] },
+  { key: "arsip", label: "Archive", categories: [
+    { key: "ARCHIVE_KATEGORI", label: "Kategori Arsip" },
+    { key: "ARSIP_TAHUN", label: "Tahun Arsip" },
+  ] },
 ];
 
 interface BookingFilterState {
@@ -771,7 +802,8 @@ function SuperAdminPageInner() {
   // Maintenance tab now switches between Overview/Transaction/Repository via sub-tab buttons,
   // same pattern as Ekspedisi/ATK/Room/Vehicle Booking.
   const [saranaSubtab, setSaranaSubtab] = useState<"overview" | "transaksi" | "katalog">("overview");
-  const [masterDataSubtab, setMasterDataSubtab] = useState<MasterDataCategory>("ASURANSI");
+  const [masterDataModule, setMasterDataModule] = useState<string>(MASTER_DATA_MODULES[0].key);
+  const [masterDataSubtab, setMasterDataSubtab] = useState<MasterDataCategory>(MASTER_DATA_MODULES[0].categories[0].key);
 
   // Pressing a module in the sidebar always lands on that module's own Overview sub-tab, even if
   // a previous visit had left it on Transaction/Calendar/etc. - this only fires on an actual
@@ -783,7 +815,10 @@ function SuperAdminPageInner() {
     else if (activeTab === "atk") setAtkSubtab("overview");
     else if (activeTab === "sarana") setSaranaSubtab("overview");
     else if (activeTab === "arsip") setArsipSubtab("overview");
-    else if (activeTab === "master-data") setMasterDataSubtab("ASURANSI");
+    else if (activeTab === "master-data") {
+      setMasterDataModule(MASTER_DATA_MODULES[0].key);
+      setMasterDataSubtab(MASTER_DATA_MODULES[0].categories[0].key);
+    }
   }, [activeTab]);
 
   // Overview sub-tab - mirrors maintenance/overview/page.tsx exactly.
@@ -6877,29 +6912,49 @@ function SuperAdminPageInner() {
         </>
       )}
 
-      {activeTab === "master-data" && (
-        <>
-          <div className="superadmin-subtabs">
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ASURANSI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ASURANSI")}>Asuransi</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "PENGEMASAN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("PENGEMASAN")}>Pengemasan Tambahan</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "TIPE_BOOKING" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("TIPE_BOOKING")}>Tipe Booking</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ATK_KATEGORI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ATK_KATEGORI")}>Kategori ATK</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ATK_NAMA_BARANG" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ATK_NAMA_BARANG")}>Nama Barang ATK</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "KATEGORI_KERUSAKAN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("KATEGORI_KERUSAKAN")}>Kategori Kerusakan</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ARCHIVE_KATEGORI" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ARCHIVE_KATEGORI")}>Kategori Arsip</button>
-            <button type="button" className={`superadmin-subtab-btn ${masterDataSubtab === "ARSIP_TAHUN" ? "superadmin-subtab-btn-active" : ""}`} onClick={() => setMasterDataSubtab("ARSIP_TAHUN")}>Tahun Arsip</button>
-          </div>
+      {activeTab === "master-data" && (() => {
+        const currentModule = MASTER_DATA_MODULES.find((m) => m.key === masterDataModule) ?? MASTER_DATA_MODULES[0];
+        const currentCategory = currentModule.categories.find((c) => c.key === masterDataSubtab) ?? currentModule.categories[0];
+        return (
+          <>
+            <nav className={dashboardStyles.moduleTabs} aria-label="Modul Master Data" style={{ marginBottom: 16 }}>
+              {MASTER_DATA_MODULES.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  className={masterDataModule === m.key ? dashboardStyles.moduleTabActive : ""}
+                  onClick={() => { setMasterDataModule(m.key); setMasterDataSubtab(m.categories[0].key); }}
+                >
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </nav>
 
-          {masterDataSubtab === "ASURANSI" && <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" />}
-          {masterDataSubtab === "PENGEMASAN" && <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" />}
-          {masterDataSubtab === "TIPE_BOOKING" && <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" />}
-          {masterDataSubtab === "ATK_KATEGORI" && <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" />}
-          {masterDataSubtab === "ATK_NAMA_BARANG" && <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" />}
-          {masterDataSubtab === "KATEGORI_KERUSAKAN" && <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" />}
-          {masterDataSubtab === "ARCHIVE_KATEGORI" && <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" />}
-          {masterDataSubtab === "ARSIP_TAHUN" && <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" />}
-        </>
-      )}
+            {currentModule.categories.length > 1 && (
+              <div className="superadmin-subtabs">
+                {currentModule.categories.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    className={`superadmin-subtab-btn ${masterDataSubtab === c.key ? "superadmin-subtab-btn-active" : ""}`}
+                    onClick={() => setMasterDataSubtab(c.key)}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <SuperAdminMasterDataTab
+              key={currentCategory.key}
+              category={currentCategory.key}
+              itemLabel={currentCategory.label}
+              hasExtra={currentCategory.hasExtra}
+              extraLabel={currentCategory.extraLabel}
+            />
+          </>
+        );
+      })()}
 
       {activeTab === "app-settings" && <SuperAdminAppSettingsTab />}
 

@@ -121,7 +121,7 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
 // they read as "app configuration" rather than getting lost among the seven business modules.
 const SETTINGS_TABS: { key: string; label: string }[] = [
   { key: "master-data", label: "Master Data" },
-  { key: "app-settings", label: "Pengaturan Aplikasi" },
+  { key: "app-settings", label: "App Settings" },
   { key: "organisasi", label: "Organization" },
   { key: "users", label: "Users" },
   { key: "activity-log", label: "Activity Log" },
@@ -166,6 +166,27 @@ function SettingsSubmenuItems() {
       ))}
     </>
   );
+}
+
+// Renders nothing - just keeps openCategory in sync with which of the two /superadmin groups
+// (Super Admin's seven modules vs Settings' five) the current tab actually belongs to, so
+// navigating between them (e.g. Dashboard -> Master Data) auto-switches which one shows
+// expanded, matching how every other sidebar category already behaves. Isolated the same way as
+// Su/SettingsSubmenuItems above, purely for the useSearchParams Suspense requirement - doesn't
+// fight a manual click on either trigger, since a manual toggle never changes the tab query
+// param, so this effect simply doesn't re-fire from it.
+function SuperAdminGroupSync({ setOpenCategory }: { setOpenCategory: (v: string | null) => void }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") || "overview";
+
+  useEffect(() => {
+    if (pathname !== "/superadmin") return;
+    setOpenCategory(SETTINGS_TABS.some((t) => t.key === tab) ? SETTINGS_LABEL : SUPER_ADMIN_LABEL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, tab]);
+
+  return null;
 }
 
 // Tracks a media query client-side, defaulting to false until mount so the server-rendered and
@@ -346,8 +367,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
     // different one closes whatever was previously expanded, instead of leaving it open. The user
     // can still expand/collapse by hand in between navigations, since this effect only re-runs
     // when pathname changes.
+    // /superadmin is handled by SuperAdminGroupSync instead, which knows which of the two
+    // Super Admin / Settings groups the current tab actually belongs to.
+    if (pathname === "/superadmin") return;
     const active = NAV_CATEGORIES.find((cat) => cat.items.some((item) => item.href === pathname));
-    setOpenCategory(active ? active.label : pathname === "/superadmin" ? SUPER_ADMIN_LABEL : null);
+    setOpenCategory(active ? active.label : null);
   }, [pathname]);
 
   useEffect(() => {
@@ -461,9 +485,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
             {isSuperAdmin && (
               <>
                 <div className="sidebar-divider" role="separator" />
+                <Suspense fallback={null}>
+                  <SuperAdminGroupSync setOpenCategory={setOpenCategory} />
+                </Suspense>
                 {(() => {
+                  // Whether we're anywhere in Super Admin at all - still used for the icon-
+                  // collapsed pill styling below, but no longer decides isOpen by itself: that's
+                  // openCategory alone now (kept in sync with the actual tab by
+                  // SuperAdminGroupSync above), so a manual click on either trigger always wins
+                  // instead of this route-level signal fighting it back open.
                   const hasActive = pathname === "/superadmin";
-                  const isOpen = !isIconCollapsed && (openCategory === SUPER_ADMIN_LABEL || hasActive);
+                  const isOpen = !isIconCollapsed && openCategory === SUPER_ADMIN_LABEL;
                   return (
                     <Collapsible
                       open={isOpen}
@@ -499,12 +531,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 })()}
 
                 {(() => {
-                  // Same route as Super Admin's own section above (/superadmin), so it shares the
-                  // same pathname-only hasActive - both sections show open together while
-                  // anywhere in Super Admin, same as Super Admin's own trigger already does for
-                  // every one of its seven tabs regardless of which is current.
                   const hasActive = pathname === "/superadmin";
-                  const isOpen = !isIconCollapsed && (openCategory === SETTINGS_LABEL || hasActive);
+                  const isOpen = !isIconCollapsed && openCategory === SETTINGS_LABEL;
                   return (
                     <Collapsible
                       open={isOpen}
