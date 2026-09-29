@@ -870,7 +870,11 @@ export type RiwayatModul =
   | "invoice"
   // 8th source (see backend's RiwayatAktivitasController) - a Super Admin delete, sourced
   // straight from deletion_log instead of one of the other seven modules' own *_logs table.
-  | "deleted";
+  | "deleted"
+  // 9th source - every OTHER Super Admin write (user account changes, org structure edits,
+  // Master Data CRUD, app settings/branding/hours/holiday changes), sourced from
+  // admin_activity_log.
+  | "admin";
 
 export interface RiwayatAktivitas {
   modul: RiwayatModul;

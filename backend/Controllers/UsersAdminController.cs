@@ -67,7 +67,7 @@ public class UsersAdminController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var username = payload.Username?.Trim() ?? "";
@@ -99,6 +99,7 @@ public class UsersAdminController : ApiControllerBase
             MustChangePassword = true,
         };
         _db.Users.Add(user);
+        LogAdminActivity(_db, "USER_CREATE", $"Buat akun {user.Nama} ({user.Username}, {user.Role})", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -117,7 +118,7 @@ public class UsersAdminController : ApiControllerBase
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
@@ -169,6 +170,7 @@ public class UsersAdminController : ApiControllerBase
         user.Departemen = departemen;
         user.Role = effectiveRole;
 
+        LogAdminActivity(_db, "USER_UPDATE", $"Ubah data akun {user.Nama} ({user.Username})", actor!);
         await _db.SaveChangesAsync();
         return Ok(AdminUserOut.From(user));
     }
@@ -176,7 +178,7 @@ public class UsersAdminController : ApiControllerBase
     [HttpPost("{id:int}/reset-password")]
     public async Task<IActionResult> ResetPassword(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
@@ -188,6 +190,7 @@ public class UsersAdminController : ApiControllerBase
         // Same reasoning as ProfileController.ChangePassword: stamping this revokes every session
         // issued before the reset, so a stolen/expired session on this account doesn't outlive it.
         user.PasswordChangedAt = DateTime.UtcNow;
+        LogAdminActivity(_db, "USER_RESET_PASSWORD", $"Reset password akun {user.Nama} ({user.Username})", actor!);
         await _db.SaveChangesAsync();
 
         return Ok(new ResetPasswordOut(password));
@@ -201,13 +204,14 @@ public class UsersAdminController : ApiControllerBase
     [HttpPost("{id:int}/force-logout")]
     public async Task<IActionResult> ForceLogout(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
 
         user.PasswordChangedAt = DateTime.UtcNow;
+        LogAdminActivity(_db, "USER_FORCE_LOGOUT", $"Paksa logout akun {user.Nama} ({user.Username})", actor!);
         await _db.SaveChangesAsync();
 
         return Ok(AdminUserOut.From(user));
@@ -227,6 +231,7 @@ public class UsersAdminController : ApiControllerBase
             return StatusCode(400, new { detail = "Tidak dapat menonaktifkan - ini satu-satunya akun Super Admin aktif" });
 
         user.IsActive = false;
+        LogAdminActivity(_db, "USER_DEACTIVATE", $"Nonaktifkan akun {user.Nama} ({user.Username})", currentUser);
         await _db.SaveChangesAsync();
         return Ok(AdminUserOut.From(user));
     }
@@ -234,13 +239,14 @@ public class UsersAdminController : ApiControllerBase
     [HttpPost("{id:int}/activate")]
     public async Task<IActionResult> Activate(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
 
         user.IsActive = true;
+        LogAdminActivity(_db, "USER_ACTIVATE", $"Aktifkan akun {user.Nama} ({user.Username})", actor!);
         await _db.SaveChangesAsync();
         return Ok(AdminUserOut.From(user));
     }

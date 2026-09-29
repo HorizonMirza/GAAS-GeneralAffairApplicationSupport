@@ -61,9 +61,25 @@ public class RiwayatAktivitasController : ApiControllerBase
       LEFT JOIN users u ON u.id = dl.deleted_by
       """;
 
+    // 9th source: every OTHER Super Admin write (user account changes, org structure edits,
+    // Master Data CRUD, app settings/branding/hours/holiday changes) that isn't one of the seven
+    // business modules or a delete - see AdminActivityLog's own class comment. Same "fixed literal
+    // fragment, no parent row to join to" shape as DeletedSql above, for the same reason: there is
+    // no single business row this action belongs to. Reason carries the human description since
+    // Nomor has nothing to hold here.
+    private const string AdminSourceKey = "admin";
+    private const string AdminSql = """
+      SELECT 'admin' AS modul, aal.id AS item_id, NULL::text AS nomor,
+             aal.action AS action, aal.deskripsi::text AS reason,
+             aal.actor_id AS actor_id, aal.actor_nama::text AS actor_nama, u.role::text AS actor_role,
+             aal.created_at
+      FROM admin_activity_log aal
+      LEFT JOIN users u ON u.id = aal.actor_id
+      """;
+
     // Every modul key BuildUnion/List/Aktor accept - the seven per-module log sources plus the
-    // deletion_log-backed "deleted" feed.
-    private static readonly HashSet<string> AllModuls = new(Sources.Keys) { DeletedSourceKey };
+    // deletion_log-backed "deleted" feed and the admin_activity_log-backed "admin" feed.
+    private static readonly HashSet<string> AllModuls = new(Sources.Keys) { DeletedSourceKey, AdminSourceKey };
 
     private readonly AppDbContext _db;
 
@@ -74,11 +90,12 @@ public class RiwayatAktivitasController : ApiControllerBase
 
     // One SELECT per module, UNION ALL-ed. Every value the caller supplies travels as a parameter;
     // the only interpolated text is table/column names taken from Sources above (or the fixed
-    // DeletedSql literal for "deleted").
+    // DeletedSql/AdminSql literals for "deleted"/"admin").
     private static string BuildUnion(IEnumerable<string> moduls) =>
         string.Join("\n  UNION ALL\n", moduls.Select(m =>
         {
             if (m == DeletedSourceKey) return DeletedSql;
+            if (m == AdminSourceKey) return AdminSql;
             var s = Sources[m];
             return $"""
               SELECT '{m}' AS modul, l.{s.Fk} AS item_id, p.{s.Nomor}::text AS nomor,

@@ -60,6 +60,7 @@ public class AppDbContext : DbContext
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<Holiday> Holidays => Set<Holiday>();
+    public DbSet<AdminActivityLog> AdminActivityLogs => Set<AdminActivityLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -183,6 +184,10 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
         foreach (var entry in ChangeTracker.Entries<DeletionLog>())
+        {
+            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
+        }
+        foreach (var entry in ChangeTracker.Entries<AdminActivityLog>())
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
         }
@@ -1321,6 +1326,25 @@ public class AppDbContext : DbContext
             e.HasOne(l => l.Aktor)
                 .WithMany()
                 .HasForeignKey(l => l.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AdminActivityLog>(e =>
+        {
+            e.ToTable("admin_activity_log");
+            e.HasKey(l => l.Id);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.ActorId).HasColumnName("actor_id");
+            e.Property(l => l.ActorNama).HasColumnName("actor_nama").HasMaxLength(255).IsRequired();
+            e.Property(l => l.Action).HasColumnName("action").HasMaxLength(50).IsRequired();
+            e.Property(l => l.Deskripsi).HasColumnName("deskripsi").IsRequired();
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
+
+            // Same reasoning as DeletionLog - not cascading from users, so the row survives even
+            // if the acting admin's own account is later deactivated or (in principle) removed.
+            e.HasOne(l => l.Aktor)
+                .WithMany()
+                .HasForeignKey(l => l.ActorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

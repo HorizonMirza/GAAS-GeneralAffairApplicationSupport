@@ -124,6 +124,22 @@ public abstract class ApiControllerBase : ControllerBase
         });
     }
 
+    // Queues one admin_activity_log row (see Models/AdminActivityLog.cs) - called right after a
+    // Super Admin write in UsersAdminController/OrgAdminController/MasterDataController/
+    // AppSettingsController succeeds, for the same reason LogDeletion exists: those writes used to
+    // leave no trace at all besides the row's current value. Not saved here - rides along in the
+    // same SaveChangesAsync as the write itself, same convention as LogDeletion.
+    protected static void LogAdminActivity(AppDbContext db, string action, string deskripsi, User actor)
+    {
+        db.AdminActivityLogs.Add(new AdminActivityLog
+        {
+            ActorId = actor.Id,
+            ActorNama = actor.Nama,
+            Action = action,
+            Deskripsi = deskripsi,
+        });
+    }
+
     // Short human-readable summary of whatever filters a bulk-delete request actually carried
     // ("status: REJECTED, divisi: Finance") - stored on each row's DeletionLog.FilterSummary so
     // the cross-module activity feed (RiwayatAktivitasController) can show why a batch of items

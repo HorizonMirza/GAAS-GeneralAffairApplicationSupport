@@ -71,6 +71,7 @@ public class MasterDataController : ApiControllerBase
             SortOrder = maxOrder + 1,
         };
         _db.MasterDataItems.Add(row);
+        LogAdminActivity(_db, "MASTER_DATA_CREATE", $"Tambah Master Data {payload.Category}: {label}", user!);
         try
         {
             await _db.SaveChangesAsync();
@@ -103,8 +104,10 @@ public class MasterDataController : ApiControllerBase
         // Key never changes on edit - it's what every existing business record already has
         // stored, so renaming would silently orphan them. Only the display Label (and Extra)
         // are editable.
+        var labelLama = row.Label;
         row.Label = label;
         row.Extra = string.IsNullOrWhiteSpace(payload.Extra) ? null : payload.Extra.Trim();
+        LogAdminActivity(_db, "MASTER_DATA_UPDATE", $"Ubah Master Data {row.Category}: {labelLama} -> {label}", user!);
         await _db.SaveChangesAsync();
         MasterData.LoadFromDb(_db);
 
@@ -127,6 +130,7 @@ public class MasterDataController : ApiControllerBase
             return StatusCode(409, new { detail = "Data ini masih dipakai oleh transaksi yang sudah ada dan tidak dapat dihapus." });
 
         _db.MasterDataItems.Remove(row);
+        LogAdminActivity(_db, "MASTER_DATA_DELETE", $"Hapus Master Data {row.Category}: {row.Label}", user!);
         await _db.SaveChangesAsync();
         MasterData.LoadFromDb(_db);
 

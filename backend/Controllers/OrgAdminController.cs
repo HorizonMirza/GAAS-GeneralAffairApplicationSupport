@@ -41,7 +41,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpPost("direktorat")]
     public async Task<IActionResult> CreateDirektorat([FromBody] CreateDirektoratRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var nama = payload.Nama?.Trim() ?? "";
@@ -52,6 +52,7 @@ public class OrgAdminController : ApiControllerBase
 
         var row = new OrgDirektorat { Nama = nama };
         _db.OrgDirektorats.Add(row);
+        LogAdminActivity(_db, "ORG_DIREKTORAT_CREATE", $"Buat Direktorat {nama}", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -71,12 +72,13 @@ public class OrgAdminController : ApiControllerBase
     [HttpPatch("direktorat/{id:int}")]
     public async Task<IActionResult> RenameDirektorat(int id, [FromBody] RenameRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var row = await _db.OrgDirektorats.Include(d => d.Divisi).ThenInclude(v => v.Departemen).FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Direktorat tidak ditemukan" });
 
+        var namaLama = row.Nama;
         var nama = payload.Nama?.Trim() ?? "";
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama direktorat wajib diisi" });
@@ -89,6 +91,7 @@ public class OrgAdminController : ApiControllerBase
         // even there this deliberately leaves it as-is, same "renaming doesn't rewrite history"
         // rule OrgAdminController applies to Divisi/Departemen below).
         row.Nama = nama;
+        LogAdminActivity(_db, "ORG_DIREKTORAT_RENAME", $"Ubah nama Direktorat {namaLama} -> {nama}", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -105,7 +108,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpDelete("direktorat/{id:int}")]
     public async Task<IActionResult> DeleteDirektorat(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
@@ -118,6 +121,7 @@ public class OrgAdminController : ApiControllerBase
             return StatusCode(409, new { detail = "Direktorat masih memiliki Divisi. Hapus atau pindahkan Divisi di dalamnya terlebih dahulu." });
 
         _db.OrgDirektorats.Remove(row);
+        LogAdminActivity(_db, "ORG_DIREKTORAT_DELETE", $"Hapus Direktorat {row.Nama}", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -130,7 +134,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpPost("divisi")]
     public async Task<IActionResult> CreateDivisi([FromBody] CreateDivisiRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var nama = payload.Nama?.Trim() ?? "";
@@ -167,6 +171,7 @@ public class OrgAdminController : ApiControllerBase
             adminUsername: $"{nama} Admin Div", approvalUsername: $"{nama} Approval Div",
             nama, RoleEnum.ADMIN_DIVISI, RoleEnum.APPROVAL_DIVISI,
             direktorat: direktorat.Nama, divisi: nama, departemen: null);
+        LogAdminActivity(_db, "ORG_DIVISI_CREATE", $"Buat Divisi {nama} di Direktorat {direktorat.Nama} (beserta {accounts.Count} akun baru)", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -177,12 +182,13 @@ public class OrgAdminController : ApiControllerBase
     [HttpPatch("divisi/{id:int}")]
     public async Task<IActionResult> UpdateDivisi(int id, [FromBody] UpdateDivisiRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var row = await _db.OrgDivisis.Include(v => v.Departemen).FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Divisi tidak ditemukan" });
 
+        var namaLama = row.Nama;
         var nama = payload.Nama?.Trim() ?? "";
         var kode = payload.KodeSatuanKerja?.Trim() ?? "";
         if (nama.Length == 0)
@@ -197,6 +203,7 @@ public class OrgAdminController : ApiControllerBase
         // have; only NEW records/dropdowns pick up the renamed value or the new kode.
         row.Nama = nama;
         row.KodeSatuanKerja = kode;
+        LogAdminActivity(_db, "ORG_DIVISI_UPDATE", $"Ubah Divisi {namaLama} -> {nama} (kode: {kode})", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -213,7 +220,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpDelete("divisi/{id:int}")]
     public async Task<IActionResult> DeleteDivisi(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
@@ -237,6 +244,7 @@ public class OrgAdminController : ApiControllerBase
             return StatusCode(409, new { detail = "Divisi masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
 
         _db.OrgDivisis.Remove(row);
+        LogAdminActivity(_db, "ORG_DIVISI_DELETE", $"Hapus Divisi {row.Nama}", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -249,7 +257,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpPost("departemen")]
     public async Task<IActionResult> CreateDepartemen([FromBody] CreateDepartemenRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var nama = payload.Nama?.Trim() ?? "";
@@ -280,6 +288,7 @@ public class OrgAdminController : ApiControllerBase
             adminUsername: $"{nama} Admin", approvalUsername: $"{nama} Approval",
             nama, RoleEnum.ADMIN_DEPARTEMEN, RoleEnum.APPROVAL_DEPARTEMEN,
             direktorat: divisi.Direktorat.Nama, divisi: divisi.Nama, departemen: nama);
+        LogAdminActivity(_db, "ORG_DEPARTEMEN_CREATE", $"Buat Departemen {nama} di Divisi {divisi.Nama} (beserta {accounts.Count} akun baru)", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -290,12 +299,13 @@ public class OrgAdminController : ApiControllerBase
     [HttpPatch("departemen/{id:int}")]
     public async Task<IActionResult> UpdateDepartemen(int id, [FromBody] RenameRequest payload)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         var row = await _db.OrgDepartemens.FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Departemen tidak ditemukan" });
 
+        var namaLama = row.Nama;
         var nama = payload.Nama?.Trim() ?? "";
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama departemen wajib diisi" });
@@ -304,6 +314,7 @@ public class OrgAdminController : ApiControllerBase
 
         // Same "does not touch history" rule as UpdateDivisi above.
         row.Nama = nama;
+        LogAdminActivity(_db, "ORG_DEPARTEMEN_UPDATE", $"Ubah nama Departemen {namaLama} -> {nama}", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -320,7 +331,7 @@ public class OrgAdminController : ApiControllerBase
     [HttpDelete("departemen/{id:int}")]
     public async Task<IActionResult> DeleteDepartemen(int id)
     {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
@@ -336,6 +347,7 @@ public class OrgAdminController : ApiControllerBase
             return StatusCode(409, new { detail = "Departemen masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
 
         _db.OrgDepartemens.Remove(row);
+        LogAdminActivity(_db, "ORG_DEPARTEMEN_DELETE", $"Hapus Departemen {row.Nama}", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);

@@ -939,6 +939,20 @@ using (var scope = app.Services.CreateScope())
             created_at TIMESTAMP NOT NULL DEFAULT NOW()
         )");
 
+    // Admin activity log (Part 8) - same reasoning as deletion_log above, but for every OTHER
+    // Super Admin write (user account changes, org structure edits, Master Data CRUD, app
+    // settings/branding/hours/holiday changes) that used to leave no trace at all. See
+    // AdminActivityLog's own class comment.
+    migrateDb.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS admin_activity_log (
+            id SERIAL PRIMARY KEY,
+            actor_id INT REFERENCES users(id),
+            actor_nama VARCHAR(255) NOT NULL,
+            action VARCHAR(50) NOT NULL,
+            deskripsi TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )");
+
     // "Login As" session log (Part 6) - see ImpersonationLog's own class comment for why this is
     // deliberately separate from every business table's own CreatedBy/ApprovedBy.
     migrateDb.Database.ExecuteSqlRaw(@"
@@ -1173,7 +1187,7 @@ if (args.Contains("resetdb"))
     // appended here so they don't inherit the same "left off resetdb's list" gap that
     // notification_sound_settings and perbaikan_sarana_foto_kerusakan already have above (a
     // pre-existing bug in this same list, left untouched per product owner instruction).
-    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoice_chat_reads, invoice_chat_messages, invoices, atk_invoice_log, atk_invoice_chat_reads, atk_invoice_chat_messages, atk_invoice, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
+    db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS chat_reads, chat_messages, booking_chat_reads, booking_chat_messages, booking_kendaraan_chat_reads, booking_kendaraan_chat_messages, booking_kendaraan_logs, booking_kendaraan, kendaraan_booking_counters, permintaan_atk_chat_reads, permintaan_atk_chat_messages, permintaan_atk_logs, permintaan_atk_items, permintaan_atk, atk_counters, perbaikan_sarana_chat_reads, perbaikan_sarana_chat_messages, perbaikan_sarana_logs, perbaikan_sarana, sarana_counters, permintaan_arsip_chat_reads, permintaan_arsip_chat_messages, permintaan_arsip_logs, permintaan_arsip_items, permintaan_arsip, arsip_counters, archive_documents, room_booking_counters, pengiriman_logs, invoice_logs, invoice_chat_reads, invoice_chat_messages, invoices, atk_invoice_log, atk_invoice_chat_reads, atk_invoice_chat_messages, atk_invoice, pengiriman, divisi_counters, booking_ruang_logs, booking_ruang_rooms, booking_ruang, deletion_log, admin_activity_log, impersonation_log, org_departemen, org_divisi, org_direktorat, meeting_room, vehicle, users CASCADE;");
     DbSeeder.Seed(db);
     return;
 }

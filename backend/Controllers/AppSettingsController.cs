@@ -86,6 +86,7 @@ public class AppSettingsController : ApiControllerBase
         settings.OperatingStart = start;
         settings.OperatingEnd = end;
         settings.UpdatedAt = DateTime.UtcNow;
+        LogAdminActivity(_db, "APP_SETTINGS_UPDATE", $"Ubah Pengaturan Aplikasi: nama '{settings.CompanyName}', jam operasional {start:HH:mm}-{end:HH:mm}", user!);
         await _db.SaveChangesAsync();
         AppSettingsCache.LoadFromDb(_db);
 
@@ -154,6 +155,7 @@ public class AppSettingsController : ApiControllerBase
         settings.LogoContentType = contentType;
         settings.LogoOriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
         settings.UpdatedAt = DateTime.UtcNow;
+        LogAdminActivity(_db, "APP_LOGO_UPLOAD", $"Unggah logo perusahaan baru ({settings.LogoOriginalFilename})", user!);
         await _db.SaveChangesAsync();
         AppSettingsCache.LoadFromDb(_db);
 
@@ -179,6 +181,7 @@ public class AppSettingsController : ApiControllerBase
         settings.LogoContentType = null;
         settings.LogoOriginalFilename = null;
         settings.UpdatedAt = DateTime.UtcNow;
+        LogAdminActivity(_db, "APP_LOGO_DELETE", "Kembalikan logo perusahaan ke default", user!);
         await _db.SaveChangesAsync();
         AppSettingsCache.LoadFromDb(_db);
 
@@ -216,6 +219,7 @@ public class AppSettingsController : ApiControllerBase
 
         var row = new Holiday { Date = date, Label = payload.Label.Trim(), CreatedAt = DateTime.UtcNow };
         _db.Holidays.Add(row);
+        LogAdminActivity(_db, "HOLIDAY_CREATE", $"Tambah Hari Libur {date:yyyy-MM-dd} ({row.Label})", user!);
         try
         {
             await _db.SaveChangesAsync();
@@ -242,6 +246,7 @@ public class AppSettingsController : ApiControllerBase
         if (row == null) return NotFound(new { detail = "Hari libur tidak ditemukan" });
 
         _db.Holidays.Remove(row);
+        LogAdminActivity(_db, "HOLIDAY_DELETE", $"Hapus Hari Libur {row.Date:yyyy-MM-dd} ({row.Label})", user!);
         await _db.SaveChangesAsync();
         AppSettingsCache.LoadFromDb(_db);
 

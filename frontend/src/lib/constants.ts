@@ -732,6 +732,7 @@ export const RIWAYAT_MODUL_LABEL: Record<RiwayatModul, string> = {
   "permintaan-arsip": "Archive",
   "invoice": "Invoice",
   "deleted": "Dihapus (Super Admin)",
+  "admin": "Konfigurasi & Akun (Super Admin)",
 };
 
 // Deep-link target per module, so a row can take Super Admin to the record it describes. A
@@ -745,6 +746,10 @@ export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
   "permintaan-arsip": "/arsip/transaksi",
   "invoice": "/ekspedisi/invoice-history",
   "deleted": "/superadmin",
+  // Spans four different Super Admin tabs (Users/Organisasi/Master Data/Pengaturan Aplikasi)
+  // depending on the row - no single deep link fits, so this goes back to the overview like
+  // "deleted" does.
+  "admin": "/superadmin",
 };
 
 // Two actions the backend writes that LOG_ACTION_META never got an entry for - the per-item
@@ -754,6 +759,31 @@ const RIWAYAT_EXTRA_ACTION_META: Record<string, { label: string; type: "neutral"
   CANCELLED: { label: "Dibatalkan Pengaju", type: "reject" },
   EKSEKUSI_DIBATALKAN: { label: "Tahap Eksekusi Dimundurkan", type: "neutral" },
   DELETED: { label: "Dihapus oleh Super Admin", type: "reject" },
+  // "admin" source's own action vocabulary (see AdminActivityLog/RiwayatAktivitasController) -
+  // every other Super Admin write across Users/Organisasi/Master Data/Pengaturan Aplikasi.
+  USER_CREATE: { label: "Akun Dibuat", type: "neutral" },
+  USER_UPDATE: { label: "Akun Diubah", type: "neutral" },
+  USER_RESET_PASSWORD: { label: "Password Akun Direset", type: "neutral" },
+  USER_DEACTIVATE: { label: "Akun Dinonaktifkan", type: "reject" },
+  USER_ACTIVATE: { label: "Akun Diaktifkan", type: "approve" },
+  USER_FORCE_LOGOUT: { label: "Akun Dipaksa Logout", type: "reject" },
+  ORG_DIREKTORAT_CREATE: { label: "Direktorat Dibuat", type: "neutral" },
+  ORG_DIREKTORAT_RENAME: { label: "Direktorat Diubah", type: "neutral" },
+  ORG_DIREKTORAT_DELETE: { label: "Direktorat Dihapus", type: "reject" },
+  ORG_DIVISI_CREATE: { label: "Divisi Dibuat", type: "neutral" },
+  ORG_DIVISI_UPDATE: { label: "Divisi Diubah", type: "neutral" },
+  ORG_DIVISI_DELETE: { label: "Divisi Dihapus", type: "reject" },
+  ORG_DEPARTEMEN_CREATE: { label: "Departemen Dibuat", type: "neutral" },
+  ORG_DEPARTEMEN_UPDATE: { label: "Departemen Diubah", type: "neutral" },
+  ORG_DEPARTEMEN_DELETE: { label: "Departemen Dihapus", type: "reject" },
+  MASTER_DATA_CREATE: { label: "Master Data Ditambah", type: "neutral" },
+  MASTER_DATA_UPDATE: { label: "Master Data Diubah", type: "neutral" },
+  MASTER_DATA_DELETE: { label: "Master Data Dihapus", type: "reject" },
+  APP_SETTINGS_UPDATE: { label: "Pengaturan Aplikasi Diubah", type: "neutral" },
+  APP_LOGO_UPLOAD: { label: "Logo Perusahaan Diunggah", type: "neutral" },
+  APP_LOGO_DELETE: { label: "Logo Perusahaan Dikembalikan ke Default", type: "neutral" },
+  HOLIDAY_CREATE: { label: "Hari Libur Ditambah", type: "neutral" },
+  HOLIDAY_DELETE: { label: "Hari Libur Dihapus", type: "reject" },
 };
 
 // Invoice uses its own action vocabulary (UPLOADED/DRAFT_UPDATED, and a bare APPROVED/REJECTED
@@ -793,6 +823,29 @@ export const RIWAYAT_ACTION_OPTIONS: string[] = [
   "APPROVED",
   "REJECTED",
   "DELETED",
+  "USER_CREATE",
+  "USER_UPDATE",
+  "USER_RESET_PASSWORD",
+  "USER_DEACTIVATE",
+  "USER_ACTIVATE",
+  "USER_FORCE_LOGOUT",
+  "ORG_DIREKTORAT_CREATE",
+  "ORG_DIREKTORAT_RENAME",
+  "ORG_DIREKTORAT_DELETE",
+  "ORG_DIVISI_CREATE",
+  "ORG_DIVISI_UPDATE",
+  "ORG_DIVISI_DELETE",
+  "ORG_DEPARTEMEN_CREATE",
+  "ORG_DEPARTEMEN_UPDATE",
+  "ORG_DEPARTEMEN_DELETE",
+  "MASTER_DATA_CREATE",
+  "MASTER_DATA_UPDATE",
+  "MASTER_DATA_DELETE",
+  "APP_SETTINGS_UPDATE",
+  "APP_LOGO_UPLOAD",
+  "APP_LOGO_DELETE",
+  "HOLIDAY_CREATE",
+  "HOLIDAY_DELETE",
 ];
 
 // The Aksi dropdown has no module context, so a code that means different things in different
