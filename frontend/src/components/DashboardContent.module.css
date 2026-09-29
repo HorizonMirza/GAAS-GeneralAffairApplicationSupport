@@ -372,8 +372,8 @@
   margin-bottom: 18px;
 }
 
-.moduleGrid.singleModule {
-  grid-template-columns: minmax(240px, 330px);
+.workflowModuleGrid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
 .moduleCard {
@@ -1357,7 +1357,7 @@
 }
 
 .resourceTimeline {
-  min-width: 620px;
+  min-width: 820px;
 }
 
 .resourceTimelineScale,
@@ -1381,7 +1381,7 @@
 .resourceTimelineScale time {
   position: absolute;
   top: 3px;
-  width: calc(20% - 4px);
+  width: calc((100% / var(--schedule-slot-count)) - 3px);
   height: 29px;
   display: grid;
   place-items: center;
@@ -1389,7 +1389,7 @@
   border-radius: 5px;
   color: #000;
   background: var(--bg-surface-alt);
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   transform: none;
@@ -1414,7 +1414,7 @@
   margin-right: 0;
   border: 1px solid var(--border-subtle);
   background-color: var(--bg-surface-alt);
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(20% - 1px), var(--border-subtle) calc(20% - 1px), var(--border-subtle) 20%);
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc((100% / var(--schedule-slot-count)) - 1px), var(--border-subtle) calc((100% / var(--schedule-slot-count)) - 1px), var(--border-subtle) calc(100% / var(--schedule-slot-count)));
 }
 
 .resourceBooking {
@@ -1872,7 +1872,7 @@
   }
 
   .moduleGrid,
-  .moduleGrid.singleModule {
+  .moduleGrid.workflowModuleGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1913,7 +1913,7 @@
   }
 
   .moduleGrid,
-  .moduleGrid.singleModule {
+  .moduleGrid.workflowModuleGrid {
     grid-template-columns: 1fr;
   }
 

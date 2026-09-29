@@ -94,6 +94,7 @@ interface ModuleSummary {
   rejected: number;
   actionable: number;
   failed: boolean;
+  countsByStatus: Partial<Record<string, number>>;
 }
 
 interface DashboardItem {
@@ -151,7 +152,7 @@ const MODULES: ModuleDefinition[] = [
   { key: "archive", label: "Archive", shortLabel: "Archive", overviewHref: "/arsip/overview", transactionHref: "/arsip/transaksi", hiddenForKpu: true },
 ];
 
-const EMPTY_SUMMARY: ModuleSummary = { total: 0, pending: 0, completed: 0, rejected: 0, actionable: 0, failed: false };
+const EMPTY_SUMMARY: ModuleSummary = { total: 0, pending: 0, completed: 0, rejected: 0, actionable: 0, failed: false, countsByStatus: {} };
 
 function emptySummaries(): Record<ModuleKey, ModuleSummary> {
   return {
@@ -222,7 +223,7 @@ function sumStatuses(counts: Partial<Record<string, number>>, statuses: string[]
   return statuses.reduce((total, status) => total + (counts[status] ?? 0), 0);
 }
 
-function summarizeModule(key: ModuleKey, counts: Partial<Record<string, number>>): Omit<ModuleSummary, "actionable" | "failed"> {
+function summarizeModule(key: ModuleKey, counts: Partial<Record<string, number>>): Omit<ModuleSummary, "actionable" | "failed" | "countsByStatus"> {
   const isFourTier = key === "expedition" || key === "atk";
   const pendingStatuses = isFourTier
     ? ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"]
@@ -354,7 +355,23 @@ function scheduleTimeValue(time: string): number {
 const SCHEDULE_START_MINUTES = 7 * 60;
 const SCHEDULE_END_MINUTES = 18 * 60;
 const SCHEDULE_DURATION_MINUTES = SCHEDULE_END_MINUTES - SCHEDULE_START_MINUTES;
-const SCHEDULE_HOURS = [7, 9, 11, 13, 15, 17];
+const SCHEDULE_HOURS = Array.from({ length: 12 }, (_, index) => index + 7);
+
+function workflowStages(key: ModuleKey, countsByStatus: Partial<Record<string, number>>) {
+  const stages = [
+    { key: "SUBMITTED", label: "Approval Departemen/Divisi" },
+    { key: "APPROVED_L1", label: "Admin General Affair" },
+    { key: "APPROVED_GA", label: "Approval General Affair" },
+  ];
+
+  if (key === "expedition" || key === "atk") {
+    stages.push({ key: "APPROVED_GA_APPROVAL", label: "Mitra" }, { key: "COMPLETED", label: "Approved" });
+  } else {
+    stages.push({ key: "APPROVED_GA_APPROVAL", label: "Approved" });
+  }
+
+  return stages.map((stage) => ({ ...stage, value: countsByStatus[stage.key] ?? 0 }));
+}
 
 function timeToMinutes(value: string | null, fallback: number): number {
   if (!value) return fallback;
@@ -472,6 +489,9 @@ export default function DashboardContent({ me }: { me: Me }) {
   const activeModuleLabel = activeView === "all"
     ? "Overall"
     : visibleModules.find((module) => module.key === activeView)?.label ?? "Overall";
+  const selectedWorkflowCards = activeView === "all"
+    ? []
+    : workflowStages(activeView, state.summaries[activeView].countsByStatus);
 
   const selectedDirektoratNode = org?.direktoratTree.find((node) => node.nama === direktorat) ?? null;
   const divisiOptions = selectedDirektoratNode ? selectedDirektoratNode.divisi.map((node) => node.nama) : org?.divisi ?? [];
@@ -519,7 +539,12 @@ export default function DashboardContent({ me }: { me: Me }) {
         : queueResult.status === "fulfilled" && actionMatchesSelection(actionFilter, status) ? queueResult.value.total : 0;
       return {
         module,
-        summary: { ...stats, actionable: actionCount, failed: statsResult.status === "rejected" } satisfies ModuleSummary,
+        summary: {
+          ...stats,
+          actionable: actionCount,
+          failed: statsResult.status === "rejected",
+          countsByStatus: filteredCounts,
+        } satisfies ModuleSummary,
         queue: filteredQueue.map((item) => adaptItem(module, item)),
         recent: recentResult.status === "fulfilled" ? recentResult.value.items.map((item) => adaptItem(module, item)) : [],
         analytics: analyticsResult.status === "fulfilled"
@@ -852,16 +877,23 @@ export default function DashboardContent({ me }: { me: Me }) {
         </section>
       )}
 
-      <section className={`${styles.moduleGrid} ${selectedModules.length === 1 ? styles.singleModule : ""}`} aria-label="Total transaksi per modul">
-        {selectedModules.map(({ key, label, overviewHref }) => {
-          const summary = state.summaries[key];
-          return (
-            <Link key={key} href={overviewHref} className={styles.moduleCard} aria-label={`Buka Overview ${label}`}>
-              <span className={styles.moduleCardValue}>{summary.failed ? "-" : summary.total.toLocaleString("id-ID")}</span>
-              <span className={styles.moduleCardLabel}>{summary.failed ? "Data tidak tersedia" : label}</span>
+      <section className={`${styles.moduleGrid} ${selectedWorkflowCards.length > 0 ? styles.workflowModuleGrid : ""}`} aria-label="Total transaksi per modul">
+        {selectedWorkflowCards.length > 0
+          ? selectedWorkflowCards.map((stage) => (
+            <Link key={stage.key} href={selectedModules[0].overviewHref} className={styles.moduleCard} aria-label={`Buka Overview ${activeModuleLabel}: ${stage.label}`}>
+              <span className={styles.moduleCardValue}>{state.summaries[activeView as ModuleKey].failed ? "-" : stage.value.toLocaleString("id-ID")}</span>
+              <span className={styles.moduleCardLabel}>{stage.label}</span>
             </Link>
-          );
-        })}
+          ))
+          : selectedModules.map(({ key, label, overviewHref }) => {
+            const summary = state.summaries[key];
+            return (
+              <Link key={key} href={overviewHref} className={styles.moduleCard} aria-label={`Buka Overview ${label}`}>
+                <span className={styles.moduleCardValue}>{summary.failed ? "-" : summary.total.toLocaleString("id-ID")}</span>
+                <span className={styles.moduleCardLabel}>{summary.failed ? "Data tidak tersedia" : label}</span>
+              </Link>
+            );
+          })}
       </section>
 
       <section className={styles.analyticsGrid} aria-label="Analitik dashboard">
@@ -1064,12 +1096,11 @@ export default function DashboardContent({ me }: { me: Me }) {
                   {loading && schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Memuat jadwal fasilitas...</div>
                     : schedule.rows.length === 0 ? <div className={styles.resourceScheduleEmpty}>Belum ada data {schedule.countLabel}.</div>
                     : (
-                      <div className={styles.resourceTimeline}>
+                      <div className={styles.resourceTimeline} style={{ "--schedule-slot-count": SCHEDULE_HOURS.length - 1 } as React.CSSProperties}>
                         <div className={styles.resourceTimelineScale} aria-hidden="true">
                           <span />
                           <div>{SCHEDULE_HOURS.slice(0, -1).map((hour, index) => {
-                            const endHour = SCHEDULE_HOURS[index + 1];
-                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{`${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(2, "0")}:00`}</time>;
+                            return <time key={hour} style={{ left: `${(index / (SCHEDULE_HOURS.length - 1)) * 100}%` }}>{`${String(hour).padStart(2, "0")}:00`}</time>;
                           })}</div>
                         </div>
                         {schedule.rows.map((row) => (
@@ -1144,7 +1175,7 @@ export default function DashboardContent({ me }: { me: Me }) {
           </section>
 
           <section className={styles.performancePanel}>
-            <header><div><h2>Ringkasan Kinerja</h2><p>Ringkasan status {selectedModules.length} modul aktif</p></div><strong>{totals.total.toLocaleString("id-ID")} transaksi</strong></header>
+            <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} transaksi</strong></header>
             <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
               <span className={styles.progressCompleted} style={{ width: `${progressWidths.completed}%` }} />
               <span className={styles.progressPending} style={{ width: `${progressWidths.pending}%` }} />
