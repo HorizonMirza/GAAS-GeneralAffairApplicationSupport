@@ -39,11 +39,13 @@ export default function SuperAdminMasterDataTab({
   itemLabel,
   hasExtra,
   extraLabel,
+  hideTitle,
 }: {
   category: MasterDataCategory;
   itemLabel: string;
   hasExtra?: boolean;
   extraLabel?: string;
+  hideTitle?: boolean;
 }) {
   const { showToast } = useToast();
 
@@ -128,8 +130,8 @@ export default function SuperAdminMasterDataTab({
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>{itemLabel}</h3>
+      <div className="card-header" style={hideTitle ? { justifyContent: "flex-end" } : undefined}>
+        {!hideTitle && <h3>{itemLabel}</h3>}
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah {itemLabel}
         </button>

@@ -74,7 +74,7 @@ function routeApiError(message: string): VehicleFormErrors {
 // Super Admin's vehicle fleet editor - the UI for VehicleAdminController, replacing the hardcoded
 // 10-vehicle list Services/Vehicles.cs used to carry (see its own SeedData/LoadFromDb). Same
 // list+modal-form shape as SuperAdminUsersTab, without pagination - the fleet is small.
-export default function SuperAdminVehicleTab() {
+export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolean } = {}) {
   const { showToast } = useToast();
 
   const [items, setItems] = useState<VehicleItem[]>([]);
@@ -181,8 +181,8 @@ export default function SuperAdminVehicleTab() {
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Kendaraan</h3>
+      <div className="card-header" style={hideTitle ? { justifyContent: "flex-end" } : undefined}>
+        {!hideTitle && <h3>Kendaraan</h3>}
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Kendaraan
         </button>

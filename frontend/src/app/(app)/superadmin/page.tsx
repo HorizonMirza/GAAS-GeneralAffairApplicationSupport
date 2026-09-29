@@ -76,7 +76,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
-import { Activity, Building2, Calendar, Car, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
+import { Activity, Building2, Calendar, Car, ChevronRight, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SuperAdminOrgTab from "@/components/SuperAdminOrgTab";
@@ -441,6 +441,26 @@ interface FilterState {
 }
 
 const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
+
+// Each module's Settings sub-tab lists its master-data categories as a collapsible accordion
+// (one card per category, click the header to expand) instead of stacking every table open at
+// once - the wrapped component (SuperAdminMasterDataTab etc.) keeps owning its own data/CRUD,
+// this just supplies the collapsible chrome and the section title around it (hideTitle removes
+// the child's own now-redundant heading).
+function SettingsAccordionSection({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className={`settings-accordion-item ${open ? "open" : ""}`}>
+      <button type="button" className="settings-accordion-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="settings-accordion-head-left">
+          <ChevronRight className="settings-accordion-chevron" width={16} height={16} />
+          <h3>{title}</h3>
+        </span>
+      </button>
+      {open && <div className="settings-accordion-body">{children}</div>}
+    </div>
+  );
+}
 
 function SuperAdminPageInner() {
   const { me, orgStructure, loading } = useAuth();
@@ -2442,9 +2462,13 @@ function SuperAdminPageInner() {
           </div>
 
           {ekspedisiSubtab === "settings" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" />
-              <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" />
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Asuransi" defaultOpen>
+                <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" hideTitle />
+              </SettingsAccordionSection>
+              <SettingsAccordionSection title="Pengemasan Tambahan">
+                <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" hideTitle />
+              </SettingsAccordionSection>
             </div>
           )}
 
@@ -3374,9 +3398,13 @@ function SuperAdminPageInner() {
           )}
 
           {bookingRuangSubtab === "roster" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SuperAdminMeetingRoomTab />
-              <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" />
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Ruang Meeting" defaultOpen>
+                <SuperAdminMeetingRoomTab hideTitle />
+              </SettingsAccordionSection>
+              <SettingsAccordionSection title="Tipe Booking">
+                <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" hideTitle />
+              </SettingsAccordionSection>
             </div>
           )}
 
@@ -4303,7 +4331,13 @@ function SuperAdminPageInner() {
             </>
           )}
 
-          {kendaraanSubtab === "roster" && <SuperAdminVehicleTab />}
+          {kendaraanSubtab === "roster" && (
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Kendaraan" defaultOpen>
+                <SuperAdminVehicleTab hideTitle />
+              </SettingsAccordionSection>
+            </div>
+          )}
 
           {kendaraanSubtab === "transaksi" && (
         <>
@@ -4914,9 +4948,13 @@ function SuperAdminPageInner() {
           </div>
 
           {arsipSubtab === "settings" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" />
-              <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" />
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Kategori Arsip" defaultOpen>
+                <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" hideTitle />
+              </SettingsAccordionSection>
+              <SettingsAccordionSection title="Tahun Arsip">
+                <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" hideTitle />
+              </SettingsAccordionSection>
             </div>
           )}
 
@@ -5637,9 +5675,13 @@ function SuperAdminPageInner() {
           </div>
 
           {atkSubtab === "settings" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" />
-              <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" />
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Kategori ATK" defaultOpen>
+                <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" hideTitle />
+              </SettingsAccordionSection>
+              <SettingsAccordionSection title="Nama Barang">
+                <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" hideTitle />
+              </SettingsAccordionSection>
             </div>
           )}
 
@@ -6255,8 +6297,10 @@ function SuperAdminPageInner() {
           </div>
 
           {saranaSubtab === "settings" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" />
+            <div className="settings-accordion">
+              <SettingsAccordionSection title="Kategori Kerusakan" defaultOpen>
+                <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" hideTitle />
+              </SettingsAccordionSection>
             </div>
           )}
 

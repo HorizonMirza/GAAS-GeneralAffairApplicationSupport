@@ -1938,6 +1938,75 @@ body.auth-ready .app-shell {
   color: #fff;
 }
 
+/* ---------- Settings master-data accordion (Super Admin per-module Settings sub-tab) ---------- */
+.settings-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-accordion-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.settings-accordion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.settings-accordion-head:hover {
+  background: var(--bg-surface-alt);
+}
+
+.settings-accordion-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-accordion-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.settings-accordion-chevron {
+  color: var(--text-secondary);
+  transition: transform 160ms ease;
+  flex-shrink: 0;
+}
+
+.settings-accordion-item.open .settings-accordion-chevron {
+  transform: rotate(90deg);
+}
+
+.settings-accordion-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* The wrapped component (SuperAdminMasterDataTab etc.) still renders its own .card - strip its
+   border/shadow/padding-top here so it reads as one seamless surface with the accordion item
+   around it, instead of a card nested inside a card. */
+.settings-accordion-body .card {
+  border: none;
+  padding: 20px 0 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 /* ---------- Room booking: room picker grid ---------- */
 .room-grid {
   display: grid;

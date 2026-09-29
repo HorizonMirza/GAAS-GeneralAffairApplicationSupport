@@ -44,7 +44,7 @@ function routeApiError(message: string): RoomFormErrors {
 // Super Admin's meeting room roster editor - the UI for MeetingRoomAdminController, replacing the
 // hardcoded 10-room list Services/MeetingRooms.cs used to carry (see its own SeedData/LoadFromDb).
 // Same list+modal-form shape as SuperAdminUsersTab, without pagination - the roster is small.
-export default function SuperAdminMeetingRoomTab() {
+export default function SuperAdminMeetingRoomTab({ hideTitle }: { hideTitle?: boolean } = {}) {
   const { showToast } = useToast();
 
   const [items, setItems] = useState<MeetingRoomItem[]>([]);
@@ -139,8 +139,8 @@ export default function SuperAdminMeetingRoomTab() {
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Ruang Meeting</h3>
+      <div className="card-header" style={hideTitle ? { justifyContent: "flex-end" } : undefined}>
+        {!hideTitle && <h3>Ruang Meeting</h3>}
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Ruang Meeting
         </button>
