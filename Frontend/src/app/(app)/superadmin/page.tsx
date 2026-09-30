@@ -449,21 +449,15 @@ const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "",
 function SettingsAccordionSection({
   title,
   description,
-  badge,
   icon,
-  iconVariant = "blue",
-  defaultOpen,
   children,
 }: {
   title: string;
   description?: string;
-  badge?: string | number;
   icon?: React.ReactNode;
-  iconVariant?: "blue" | "purple" | "emerald" | "amber";
-  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(!!defaultOpen);
+  const [open, setOpen] = useState(false);
   return (
     <div className={`settings-accordion-item ${open ? "open" : ""}`}>
       <button
@@ -474,19 +468,12 @@ function SettingsAccordionSection({
       >
         <div className="settings-accordion-head-left">
           {icon && (
-            <div className={`settings-accordion-icon-box icon-${iconVariant}`}>
+            <div className="settings-accordion-icon-box">
               {icon}
             </div>
           )}
           <div className="settings-accordion-info">
-            <div className="settings-accordion-title-row">
-              <h3>{title}</h3>
-              {badge != null && (
-                <span className={`settings-accordion-badge badge-${iconVariant}`}>
-                  {badge}
-                </span>
-              )}
-            </div>
+            <h3>{title}</h3>
             {description && (
               <p className="settings-accordion-desc">{description}</p>
             )}
@@ -513,9 +500,6 @@ function SuperAdminPageInner() {
   const kategoriKerusakanOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
   const archiveKategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
   const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
-  const asuransiOptions = useMasterDataOptions("ASURANSI");
-  const pengemasanOptions = useMasterDataOptions("PENGEMASAN");
-  const arsipTahunOptions = useMasterDataOptions("ARSIP_TAHUN");
 
   const [activeTab, setActiveTabState] = useState<SuperAdminTab>(() => {
     const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
@@ -2510,19 +2494,14 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Asuransi Pengiriman"
                 description="Kelola opsi asuransi perlindungan barang dan dokumen berharga ekspedisi"
-                badge={`${asuransiOptions.items.length > 0 ? asuransiOptions.items.length : "Master"} Opsi`}
-                icon={<Shield width={20} height={20} />}
-                iconVariant="emerald"
-                defaultOpen
+                icon={<Shield width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Pengemasan Tambahan"
                 description="Pilihan proteksi packing barang ekspedisi (bubble wrap, peti kayu, kardus tebal)"
-                badge={`${pengemasanOptions.items.length > 0 ? pengemasanOptions.items.length : "Master"} Opsi`}
-                icon={<Layers width={20} height={20} />}
-                iconVariant="amber"
+                icon={<Layers width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" hideTitle />
               </SettingsAccordionSection>
@@ -3459,19 +3438,14 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Ruang Meeting"
                 description="Kelola daftar ruangan rapat, kapasitas peserta, lokasi lantai, dan kelengkapan fasilitas"
-                badge={`${rooms.length > 0 ? rooms.length : "Master"} Ruangan`}
-                icon={<Building2 width={20} height={20} />}
-                iconVariant="blue"
-                defaultOpen
+                icon={<Building2 width={18} height={18} />}
               >
                 <SuperAdminMeetingRoomTab hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tipe Booking"
                 description="Klasifikasi agenda reservasi ruangan (internal tim, rapat direksi, presentasi vendor, dsb.)"
-                badge={`${tipeBookingOptions.items.length > 0 ? tipeBookingOptions.items.length : "Master"} Tipe`}
-                icon={<Calendar width={20} height={20} />}
-                iconVariant="purple"
+                icon={<Calendar width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" hideTitle />
               </SettingsAccordionSection>
@@ -4406,10 +4380,7 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Armada Kendaraan Dinas"
                 description="Kelola daftar armada mobil kantor, nomor plat polisi, kapasitas, merek/model, dan data supir"
-                badge={`${vehicles.length > 0 ? vehicles.length : "Master"} Armada`}
-                icon={<Car width={20} height={20} />}
-                iconVariant="blue"
-                defaultOpen
+                icon={<Car width={18} height={18} />}
               >
                 <SuperAdminVehicleTab hideTitle />
               </SettingsAccordionSection>
@@ -5029,19 +5000,14 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Kategori Arsip"
                 description="Klasifikasi berkas dokumen fisik berdasarkan retensi dan jenis dokumen arsip"
-                badge={`${archiveKategoriOptions.items.length > 0 ? archiveKategoriOptions.items.length : "Master"} Kategori`}
-                icon={<Folder width={20} height={20} />}
-                iconVariant="blue"
-                defaultOpen
+                icon={<Folder width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tahun Arsip"
                 description="Pilihan tahun penciptaan arsip fisik untuk pencarian dan penataan lokasi rak gudang"
-                badge={`${arsipTahunOptions.items.length > 0 ? arsipTahunOptions.items.length : "Master"} Tahun`}
-                icon={<Calendar width={20} height={20} />}
-                iconVariant="purple"
+                icon={<Calendar width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" hideTitle />
               </SettingsAccordionSection>
@@ -5769,19 +5735,14 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Kategori ATK"
                 description="Pengelompokan jenis alat tulis kantor dan perlengkapan inventaris divisi"
-                badge={`${atkKategoriOptions.items.length > 0 ? atkKategoriOptions.items.length : "Master"} Kategori`}
-                icon={<Layers width={20} height={20} />}
-                iconVariant="blue"
-                defaultOpen
+                icon={<Layers width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Nama Barang ATK"
                 description="Katalog barang perlengkapan kantor lengkap dengan standar satuan (Rim, Pcs, Box, Pack)"
-                badge="Katalog Barang"
-                icon={<ClipboardList width={20} height={20} />}
-                iconVariant="purple"
+                icon={<ClipboardList width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" hideTitle />
               </SettingsAccordionSection>
@@ -6404,10 +6365,7 @@ function SuperAdminPageInner() {
               <SettingsAccordionSection
                 title="Kategori Kerusakan"
                 description="Klasifikasi jenis perbaikan fasilitas gedung (listrik, AC, plumbing, sipil, furnitur)"
-                badge={`${kategoriKerusakanOptions.items.length > 0 ? kategoriKerusakanOptions.items.length : "Master"} Kategori`}
-                icon={<Wrench width={20} height={20} />}
-                iconVariant="amber"
-                defaultOpen
+                icon={<Wrench width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" hideTitle />
               </SettingsAccordionSection>
