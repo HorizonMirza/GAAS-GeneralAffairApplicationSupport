@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Calendar,
   Car,
-  ChevronRight,
   Folder,
   Layers,
   Pencil,
@@ -257,7 +256,16 @@ function isOriginCorrection(moduleKey: ModuleKey, item: SourceItem, me: Me): boo
   return true;
 }
 
+// STATUS_LABEL/BOOKING_STATUS_LABEL's SUBMITTED/REJECTED_L1 wording names both possible approver
+// roles ("Approval Departemen/Divisi") since the constant is shared across every module and role
+// page. Here we know the specific item, so we can say which one actually applies: a unit with a
+// departemen is approved at departemen level, one without goes straight to its divisi.
+function resolveApprovalLabel(label: string, hasDepartemen: boolean): string {
+  return label.replace("Approval Departemen/Divisi", hasDepartemen ? "Approval Departemen" : "Approval Divisi");
+}
+
 function adaptItem(module: ModuleDefinition, item: SourceItem): DashboardItem {
+  const hasDepartemen = !!item.departemen;
   const base = {
     id: item.id,
     moduleKey: module.key,
@@ -267,32 +275,32 @@ function adaptItem(module: ModuleDefinition, item: SourceItem): DashboardItem {
     updatedAt: item.updatedAt,
     ageMilliseconds: Math.max(0, Date.now() - new Date(item.updatedAt).getTime()),
     href: module.transactionHref,
-    unit: item.departemen ? `${item.divisi} / ${item.departemen}` : item.divisi,
+    unit: hasDepartemen ? `${item.divisi} / ${item.departemen}` : item.divisi,
   };
   switch (module.key) {
     case "expedition": {
       const value = item as Pengiriman;
-      return { ...base, number: value.nomorTransmittal || value.noResi || `EXP-${value.id}`, title: value.tujuanPenerimaan || value.catatan || "Pengiriman barang atau dokumen", requester: value.namaPengirim, statusLabel: STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorTransmittal || value.noResi || `EXP-${value.id}`, title: value.tujuanPenerimaan || value.catatan || "Pengiriman barang atau dokumen", requester: value.namaPengirim, statusLabel: resolveApprovalLabel(STATUS_LABEL[value.status], hasDepartemen) };
     }
     case "room": {
       const value = item as BookingRuang;
-      return { ...base, number: value.nomorPemesanan || `ROOM-${value.id}`, title: value.namaKegiatan, requester: value.pic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorPemesanan || `ROOM-${value.id}`, title: value.namaKegiatan, requester: value.pic || value.divisi, statusLabel: resolveApprovalLabel(BOOKING_STATUS_LABEL[value.status], hasDepartemen) };
     }
     case "vehicle": {
       const value = item as BookingKendaraan;
-      return { ...base, number: value.nomorPemesanan || `VEH-${value.id}`, title: value.keperluan, requester: value.pic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorPemesanan || `VEH-${value.id}`, title: value.keperluan, requester: value.pic || value.divisi, statusLabel: resolveApprovalLabel(BOOKING_STATUS_LABEL[value.status], hasDepartemen) };
     }
     case "atk": {
       const value = item as PermintaanAtk;
-      return { ...base, number: value.nomorPermintaan || `ATK-${value.id}`, title: value.keperluan, requester: value.namaPemohon, statusLabel: STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorPermintaan || `ATK-${value.id}`, title: value.keperluan, requester: value.namaPemohon, statusLabel: resolveApprovalLabel(STATUS_LABEL[value.status], hasDepartemen) };
     }
     case "maintenance": {
       const value = item as PerbaikanSarana;
-      return { ...base, number: value.nomorPerbaikan || `MNT-${value.id}`, title: value.deskripsiKerusakan, requester: value.namaPelapor, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorPerbaikan || `MNT-${value.id}`, title: value.deskripsiKerusakan, requester: value.namaPelapor, statusLabel: resolveApprovalLabel(BOOKING_STATUS_LABEL[value.status], hasDepartemen) };
     }
     case "archive": {
       const value = item as PermintaanArsip;
-      return { ...base, number: value.nomorArsip || `ARC-${value.id}`, title: value.namaArsip, requester: value.namaPic || value.divisi, statusLabel: BOOKING_STATUS_LABEL[value.status] };
+      return { ...base, number: value.nomorArsip || `ARC-${value.id}`, title: value.namaArsip, requester: value.namaPic || value.divisi, statusLabel: resolveApprovalLabel(BOOKING_STATUS_LABEL[value.status], hasDepartemen) };
     }
   }
 }
@@ -342,8 +350,21 @@ function relativeAge(milliseconds: number): string {
   return `${Math.floor(hours / 24)} hari`;
 }
 
-function statusTone(status: Status | BookingStatus): "success" | "warning" | "danger" | "neutral" {
-  if (status === "COMPLETED" || status === "APPROVED_GA_APPROVAL") return "success";
+// Same wording as relativeAge, Title Case (e.g. "1 Jam") for the queue rows specifically -
+// Aktivitas Terbaru keeps relativeAge's own lowercase styling.
+function relativeAgeTitleCase(milliseconds: number): string {
+  return relativeAge(milliseconds)
+    .split(" ")
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
+}
+
+function statusTone(status: Status | BookingStatus, moduleKey: ModuleKey): "success" | "warning" | "danger" | "neutral" {
+  if (status === "COMPLETED") return "success";
+  // Expedition/Office Supplies still have a Mitra stage after APPROVED_GA_APPROVAL (see
+  // workflowStages), so that status is still on-approval (orange) there - it's only the truly
+  // final status, and thus green, for every other module.
+  if (status === "APPROVED_GA_APPROVAL") return moduleKey === "expedition" || moduleKey === "atk" ? "warning" : "success";
   if (status.includes("REJECTED") || status === "CANCELLED") return "danger";
   if (status === "DRAFT") return "neutral";
   return "warning";
@@ -1313,7 +1334,7 @@ export default function DashboardContent({ me }: { me: Me }) {
               : latestActivities.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
               : latestActivities.map((item) => (
                 <Link key={`${item.moduleKey}-${item.id}`} href={`${item.href}?highlight=${item.id}`} className={styles.activityRow}>
-                  <span className={`${styles.activityDot} ${styles[statusTone(item.status)]}`} />
+                  <span className={`${styles.activityDot} ${styles[statusTone(item.status, item.moduleKey)]}`} />
                   <span><strong>{item.number}</strong><small>{item.moduleLabel} · {item.statusLabel}</small></span><time>{relativeAge(item.ageMilliseconds)}</time>
                 </Link>
               ))}
@@ -1325,7 +1346,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         <div className={styles.leftColumn}>
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
-              <div><h2>Menunggu Tindakan Anda</h2><p>Permohonan yang perlu Anda proses</p></div>
+              <div><h2>Menunggu Tindakan Anda</h2><p>Ada {dashboardQueue.length.toLocaleString("id-ID")} Antrian Yang Perlu Anda Proses</p></div>
             </header>
             {loading && dashboardQueue.length === 0 ? <div className={styles.compactEmpty}>Memuat antrean tindakan...</div>
               : dashboardQueue.length === 0 ? (
@@ -1335,14 +1356,13 @@ export default function DashboardContent({ me }: { me: Me }) {
                   <div className={styles.queueListWrap}>
                     <div className={styles.queueList}>
                       {(queueExpanded ? dashboardQueue : dashboardQueue.slice(0, QUEUE_COLLAPSED_COUNT)).map((item) => (
-                        <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
+                        <Link key={`${item.moduleKey}-${item.id}`} href={`${item.href}?highlight=${item.id}`} className={styles.queueRow}>
                           <span className={styles.queueIcon} title={item.moduleLabel}>{QUEUE_MODULE_ICON[item.moduleKey]}</span>
                           <div className={styles.queueRequest}>
                             <strong>{item.title} - {item.number}</strong>
                             <span>{formatQueueDate(item.createdAt)} · {item.unit}</span>
                           </div>
-                          <span className={`${styles.queueAge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
-                          <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>
+                          <span className={`${styles.queueAge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAgeTitleCase(item.ageMilliseconds)}</span>
                         </Link>
                       ))}
                     </div>
