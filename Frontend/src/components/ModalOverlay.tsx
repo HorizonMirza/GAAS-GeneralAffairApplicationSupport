@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -16,14 +17,16 @@ interface Props {
  *  - Escape key
  *  - clicking the backdrop itself (not a click that started inside the modal box and bubbled up)
  *
- * Deliberately does NOT touch the History API (no pushState/popstate) - Next.js's App Router
- * patches history.pushState/replaceState for its own client-side routing, and calling the native
- * pushState directly here caused the router to swallow the very state update that opens the
- * modal, breaking every modal-opening button on the page. A back-button-closes-modal feature
- * would need to go through next/navigation's router instead, not raw history.pushState.
+ * Portals directly into `document.body` so fixed positioning is always relative to the viewport
+ * and never trapped or clipped inside parent containers with transforms, filters, or overflow:hidden.
  */
 export default function ModalOverlay({ open, onClose, className, children }: Props) {
+  const [mounted, setMounted] = useState(false);
   const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     closeRef.current = onClose;
@@ -42,7 +45,9 @@ export default function ModalOverlay({ open, onClose, className, children }: Pro
     };
   }, [open]);
 
-  return (
+  if (!mounted) return null;
+
+  const content = (
     <div
       className={className}
       onClick={(e) => {
@@ -52,4 +57,6 @@ export default function ModalOverlay({ open, onClose, className, children }: Pro
       {children}
     </div>
   );
+
+  return createPortal(content, document.body);
 }

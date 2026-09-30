@@ -2500,14 +2500,14 @@ function SuperAdminPageInner() {
                 description="Kelola opsi asuransi pengiriman barang untuk operasional modul Expedition"
                 icon={<Shield width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" hideTitle />
+                <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" searchPlaceholder="Cari Asuransi Pengiriman" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Pengemasan Tambahan"
                 description="Kelola opsi perlindungan pengemasan barang untuk operasional modul Expedition"
                 icon={<Layers width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" hideTitle />
+                <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" searchPlaceholder="Cari Pengemasan Tambahan" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -3444,14 +3444,14 @@ function SuperAdminPageInner() {
                 description="Kelola daftar ruangan rapat dan fasilitas untuk operasional modul Room Booking"
                 icon={<Building2 width={18} height={18} />}
               >
-                <SuperAdminMeetingRoomTab hideTitle />
+                <SuperAdminMeetingRoomTab searchPlaceholder="Cari Ruang Meeting" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tipe Booking"
                 description="Kelola opsi tipe booking dan agenda untuk operasional modul Room Booking"
                 icon={<Calendar width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" hideTitle />
+                <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" searchPlaceholder="Cari Tipe Booking" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -4386,7 +4386,7 @@ function SuperAdminPageInner() {
                 description="Kelola daftar armada kendaraan dinas untuk operasional modul Vehicle Booking"
                 icon={<Car width={18} height={18} />}
               >
-                <SuperAdminVehicleTab hideTitle />
+                <SuperAdminVehicleTab searchPlaceholder="Cari Kendaraan" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -5006,14 +5006,14 @@ function SuperAdminPageInner() {
                 description="Kelola opsi kategori arsip fisik untuk operasional modul Archive"
                 icon={<Folder width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" hideTitle />
+                <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" searchPlaceholder="Cari Kategori Arsip" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tahun Arsip"
                 description="Kelola opsi tahun penciptaan arsip fisik untuk operasional modul Archive"
                 icon={<Calendar width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" hideTitle />
+                <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" searchPlaceholder="Cari Tahun Arsip" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -5741,14 +5741,14 @@ function SuperAdminPageInner() {
                 description="Kelola opsi kategori barang perlengkapan untuk operasional modul Office Supplies"
                 icon={<Layers width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori Perlengkapan Kantor" hideTitle />
+                <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori Perlengkapan Kantor" searchPlaceholder="Cari Kategori Perlengkapan Kantor" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Nama Barang Perlengkapan Kantor"
                 description="Kelola daftar nama barang dan satuan untuk operasional modul Office Supplies"
                 icon={<ClipboardList width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Barang Perlengkapan Kantor" hasExtra extraLabel="Satuan" hideTitle />
+                <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Barang Perlengkapan Kantor" searchPlaceholder="Cari Nama Barang Perlengkapan Kantor" hasExtra extraLabel="Satuan" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -6371,7 +6371,7 @@ function SuperAdminPageInner() {
                 description="Kelola opsi kategori kerusakan fasilitas untuk operasional modul Maintenance"
                 icon={<Wrench width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" hideTitle />
+                <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" searchPlaceholder="Cari Kategori Kerusakan" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}

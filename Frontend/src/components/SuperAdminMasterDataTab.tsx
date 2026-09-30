@@ -40,12 +40,14 @@ export default function SuperAdminMasterDataTab({
   hasExtra,
   extraLabel,
   hideTitle,
+  searchPlaceholder,
 }: {
   category: MasterDataCategory;
   itemLabel: string;
   hasExtra?: boolean;
   extraLabel?: string;
   hideTitle?: boolean;
+  searchPlaceholder?: string;
 }) {
   const { showToast } = useToast();
 
@@ -147,14 +149,14 @@ export default function SuperAdminMasterDataTab({
             <Search width={15} height={15} />
             <input
               type="text"
-              placeholder={`Cari ${itemLabel.toLowerCase()}...`}
+              placeholder={searchPlaceholder || `Cari ${itemLabel}`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <span className="settings-table-count-badge">
+          <div className="settings-table-count-box">
             {search.trim() ? `${filteredItems.length} dari ${items.length}` : `${items.length} Data`}
-          </span>
+          </div>
         </div>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah {itemLabel}

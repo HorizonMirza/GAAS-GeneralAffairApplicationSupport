@@ -73,8 +73,13 @@ function routeApiError(message: string): VehicleFormErrors {
 
 // Super Admin's vehicle fleet editor - the UI for VehicleAdminController, replacing the hardcoded
 // 10-vehicle list Services/Vehicles.cs used to carry (see its own SeedData/LoadFromDb). Same
-// list+modal-form shape as SuperAdminUsersTab, without pagination - the fleet is small.
-export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolean } = {}) {
+export default function SuperAdminVehicleTab({
+  hideTitle,
+  searchPlaceholder,
+}: {
+  hideTitle?: boolean;
+  searchPlaceholder?: string;
+} = {}) {
   const { showToast } = useToast();
 
   const [items, setItems] = useState<VehicleItem[]>([]);
@@ -198,18 +203,18 @@ export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolea
         {!hideTitle && <h3>Kendaraan</h3>}
         <div className="settings-table-toolbar-left">
           <div className="settings-table-search">
-            <Search width={15} height={15} />
-            <input
-              type="text"
-              placeholder="Cari armada kendaraan..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <span className="settings-table-count-badge">
-            {search.trim() ? `${filteredItems.length} dari ${items.length}` : `${items.length} Data`}
-          </span>
-        </div>
+             <Search width={15} height={15} />
+             <input
+               type="text"
+               placeholder={searchPlaceholder || "Cari Kendaraan"}
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+             />
+           </div>
+           <div className="settings-table-count-box">
+             {search.trim() ? `${filteredItems.length} dari ${items.length}` : `${items.length} Data`}
+           </div>
+         </div>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Kendaraan
         </button>
