@@ -69,7 +69,6 @@ import InvoiceChatModal from "@/components/InvoiceChatModal";
 import AtkInvoiceChatModal from "@/components/AtkInvoiceChatModal";
 import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
-import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
 import MonthFilterPicker from "@/components/MonthFilterPicker";
@@ -2446,18 +2445,12 @@ function SuperAdminPageInner() {
       )}
 
       {activeTab === "activity-log" && (
-        <>
-          <div>
-            <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
-              Activity Log (Riwayat Aktivitas Lintas Modul)
-            </h3>
-            <RiwayatAktivitasCard />
-          </div>
-
-          <div style={{ marginTop: 28 }}>
-            <NotificationSoundSettingsCard />
-          </div>
-        </>
+        <div>
+          <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
+            Activity Log (Riwayat Aktivitas Lintas Modul)
+          </h3>
+          <RiwayatAktivitasCard />
+        </div>
       )}
 
       {activeTab === "ekspedisi" && (

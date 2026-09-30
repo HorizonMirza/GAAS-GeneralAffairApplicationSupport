@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import ModalOverlay from "@/components/ModalOverlay";
 import PasswordField from "@/components/PasswordField";
 import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
+import NotificationSoundSettingsCard from "@/components/NotificationSoundSettingsCard";
 import type { AppSettings, Holiday } from "@/lib/types";
 
 function errorMessage(err: unknown): string {
@@ -48,6 +49,7 @@ export default function SuperAdminAppSettingsTab() {
       <BrandingCard settings={settings} onSaved={setSettings} />
       <OperatingHoursCard settings={settings} onSaved={setSettings} />
       <HolidaysCard />
+      <NotificationSoundSettingsCard />
       <BackupCard />
     </div>
   );
