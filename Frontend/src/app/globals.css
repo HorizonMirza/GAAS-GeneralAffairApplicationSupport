@@ -2033,8 +2033,34 @@ body.auth-ready .app-shell {
 .settings-accordion-head-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
+}
+
+.settings-accordion-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--bg-hover, #f1f5f9);
+  color: var(--text-secondary, #64748b);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  white-space: nowrap;
+  transition: all 180ms ease;
+}
+
+.settings-accordion-item.open .settings-accordion-badge {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--blue-500, #2563eb);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+@media (max-width: 640px) {
+  .settings-accordion-badge {
+    display: none;
+  }
 }
 
 .settings-accordion-chevron-wrap {
