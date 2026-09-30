@@ -1953,14 +1953,14 @@ body.auth-ready .app-shell {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-/* Saat di-hover: HANYA border yang berubah biru, background box TIDAK berubah warna */
-.settings-accordion-item:hover {
+/* Saat di-hover dalam kondisi tertutup: garis tepi berubah biru */
+.settings-accordion-item:not(.open):hover {
   border-color: var(--blue-500);
 }
 
-/* Saat terbuka: Garis tepi BIRU halus 1px (tidak tebal), seperti pada subtab di Gambar 2 */
+/* Saat sudah dibuka: garis tepi biru HILANG (Gambar 2), kembali ke border normal */
 .settings-accordion-item.open {
-  border-color: var(--blue-500);
+  border-color: var(--border-subtle);
 }
 
 .settings-accordion-head {
@@ -2160,7 +2160,7 @@ body.auth-ready .app-shell {
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
-  color: var(--blue-500);
+  color: var(--text-primary);
   white-space: nowrap;
   flex-shrink: 0;
 }
