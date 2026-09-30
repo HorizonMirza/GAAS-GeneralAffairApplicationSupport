@@ -1560,10 +1560,10 @@
 }
 
 .queueRow {
-  min-height: 78px;
+  min-height: 68px;
   padding: 12px 20px;
   display: grid;
-  grid-template-columns: minmax(142px, 0.82fr) minmax(220px, 1.7fr) auto 32px;
+  grid-template-columns: auto minmax(200px, 1.7fr) auto 20px;
   align-items: center;
   gap: 13px;
   border-bottom: 1px solid var(--border-subtle);
@@ -1579,23 +1579,33 @@
   background: var(--bg-surface-alt);
 }
 
-.queueDocument,
+.queueIcon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--blue-500);
+}
+
+.queueIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
 .queueRequest {
   min-width: 0;
 }
 
-.queueDocument strong,
 .queueRequest strong,
-.queueRequest span {
+.queueRequest span,
+.queueDocNum {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.queueDocument strong {
-  margin-top: 5px;
-  font-size: 0.78rem;
 }
 
 .queueRequest strong {
@@ -1603,61 +1613,38 @@
 }
 
 .queueRequest span {
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--text-secondary);
   font-size: 0.72rem;
 }
 
-.moduleTag {
-  min-height: 23px;
-  padding: 3px 8px;
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(28, 109, 255, 0.2);
-  border-radius: 7px;
-  color: #1450c9;
-  background: rgba(28, 109, 255, 0.08);
+.queueDocNum {
+  margin-top: 3px;
+  color: var(--text-secondary);
   font-size: 0.68rem;
-  font-weight: 750;
+  font-weight: 600;
 }
 
-.moduleTag.room { color: #047857; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); }
-.moduleTag.vehicle { color: #a16207; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.22); }
-.moduleTag.atk { color: #4338ca; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); }
-.moduleTag.maintenance { color: #c2410c; background: rgba(249, 115, 22, 0.1); border-color: rgba(249, 115, 22, 0.2); }
-.moduleTag.archive { color: #475569; background: rgba(100, 116, 139, 0.1); border-color: rgba(100, 116, 139, 0.2); }
-
-.ageBadge {
-  padding: 6px 9px;
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  border-radius: 7px;
-  color: #a76404;
-  background: rgba(245, 158, 11, 0.1);
-  font-size: 0.7rem;
-  font-weight: 750;
+.queueAge {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .ageUrgent {
-  border-color: rgba(220, 38, 38, 0.25);
   color: #b91c1c;
-  background: rgba(220, 38, 38, 0.08);
 }
 
 .rowAction {
-  width: 32px;
-  height: 32px;
   display: grid;
   place-items: center;
-  justify-self: end;
-  border-radius: 8px;
-  color: #fff;
-  background: var(--blue-500);
+  color: var(--text-secondary);
 }
 
 .rowAction svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 .performancePanel {
@@ -1923,22 +1910,25 @@
   }
 
   .queueRow {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 12px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px 10px;
   }
 
-  .queueDocument,
-  .queueRequest {
-    grid-column: 1;
-  }
-
-  .ageBadge,
+  .queueIcon,
   .rowAction {
-    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
   }
 
-  .ageBadge { grid-row: 1; }
-  .rowAction { grid-row: 2; }
+  .queueRequest {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .queueAge {
+    grid-column: 2;
+    grid-row: 2;
+  }
 
 }
 

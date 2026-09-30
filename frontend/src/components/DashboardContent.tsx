@@ -3,8 +3,14 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  Calendar,
+  Car,
   ChevronRight,
+  Folder,
+  Layers,
+  Pencil,
   RefreshCw,
+  Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
@@ -555,6 +561,17 @@ function formatRupiah(value: number): string {
 }
 
 const QUEUE_COLLAPSED_COUNT = 5;
+
+// Same icon each module already uses in the sidebar (AppShell's NAV_CATEGORIES) - so a queue row
+// reads as "the same Expedition/Room Booking/..." the sidebar already trained the eye to spot.
+const QUEUE_MODULE_ICON: Record<ModuleKey, React.ReactNode> = {
+  expedition: <Layers aria-hidden="true" />,
+  room: <Calendar aria-hidden="true" />,
+  vehicle: <Car aria-hidden="true" />,
+  atk: <Pencil aria-hidden="true" />,
+  maintenance: <Wrench aria-hidden="true" />,
+  archive: <Folder aria-hidden="true" />,
+};
 
 export default function DashboardContent({ me }: { me: Me }) {
   const [demoMode, setDemoMode] = useState(false);
@@ -1315,9 +1332,13 @@ export default function DashboardContent({ me }: { me: Me }) {
                     <div className={styles.queueList}>
                       {(queueExpanded ? dashboardQueue : dashboardQueue.slice(0, QUEUE_COLLAPSED_COUNT)).map((item) => (
                         <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
-                          <div className={styles.queueDocument}><span className={`${styles.moduleTag} ${styles[item.moduleKey]}`}>{item.moduleLabel}</span><strong>{item.number}</strong></div>
-                          <div className={styles.queueRequest}><strong>{item.title}</strong><span>{item.requester} · {item.unit}</span></div>
-                          <span className={`${styles.ageBadge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
+                          <span className={styles.queueIcon} title={item.moduleLabel}>{QUEUE_MODULE_ICON[item.moduleKey]}</span>
+                          <div className={styles.queueRequest}>
+                            <strong>{item.title}</strong>
+                            <span>{item.requester} · {item.unit}</span>
+                            <span className={styles.queueDocNum}>{item.number}</span>
+                          </div>
+                          <span className={`${styles.queueAge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
                           <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>
                         </Link>
                       ))}
