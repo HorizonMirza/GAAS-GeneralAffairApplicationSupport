@@ -3,9 +3,7 @@
 import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowRight,
   ChevronRight,
-  Clock3,
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -958,7 +956,6 @@ export default function DashboardContent({ me }: { me: Me }) {
     resource,
     items: schedulesForDisplay.filter((item) => item.kind === "vehicle" && item.resources.includes(resource)),
   }));
-  const actionableCount = demoMode ? dashboardQueue.length : totals.actionable;
   const scheduleDateLabel = new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "long", year: "numeric" })
     .format(new Date(`${todayLocalDate()}T00:00:00`));
   const overallTotal = visibleModules.reduce((total, module) => total + state.summaries[module.key].total, 0);
@@ -1026,13 +1023,6 @@ export default function DashboardContent({ me }: { me: Me }) {
 
       {demoMode && <div className={styles.demoBanner} role="status"><strong>Mode Demo</strong><span>Data contoh hanya ditampilkan di halaman ini dan tidak disimpan.</span></div>}
       {state.errors > 0 && !loading && <div className={styles.partialWarning} role="status"><AlertTriangle aria-hidden="true" />Sebagian data belum dapat dimuat. Gunakan tombol muat ulang untuk mencoba kembali.</div>}
-      {actionableCount > 0 && (
-        <section className={styles.attentionBanner}>
-          <span className={styles.attentionIcon}><Clock3 aria-hidden="true" /></span>
-          <div><strong>{actionableCount.toLocaleString("id-ID")} permohonan memerlukan tindakan Anda</strong><span>Antrean disusun dari permohonan yang paling lama menunggu.</span></div>
-          <a href="#dashboard-action-queue">Buka antrean <ArrowRight aria-hidden="true" /></a>
-        </section>
-      )}
 
       <section className={`${styles.moduleGrid} ${selectedWorkflowCards.length > 0 ? styles.workflowModuleGrid : ""} ${me.role === "KPU" && activeView === "all" ? styles.kpuModuleGrid : ""}`} aria-label="Total transaksi per modul">
         {selectedWorkflowCards.length > 0
@@ -1312,14 +1302,13 @@ export default function DashboardContent({ me }: { me: Me }) {
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
               <div><h2>Menunggu Tindakan Anda</h2><p>Permohonan yang perlu Anda proses</p></div>
-              <span className={styles.panelCount}>{actionableCount.toLocaleString("id-ID")} antrean</span>
             </header>
             {loading && dashboardQueue.length === 0 ? <div className={styles.compactEmpty}>Memuat antrean tindakan...</div>
               : dashboardQueue.length === 0 ? (
                 <div className={styles.compactEmpty}>Tidak ada tindakan yang perlu dilakukan saat ini.</div>
               ) : (
                 <div className={styles.queueList}>
-                  {dashboardQueue.slice(0, 5).map((item) => (
+                  {dashboardQueue.map((item) => (
                     <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
                       <div className={styles.queueDocument}><span className={`${styles.moduleTag} ${styles[item.moduleKey]}`}>{item.moduleLabel}</span><strong>{item.number}</strong></div>
                       <div className={styles.queueRequest}><strong>{item.title}</strong><span>{item.requester} · {item.unit}</span></div>

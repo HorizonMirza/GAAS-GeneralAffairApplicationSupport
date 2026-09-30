@@ -330,67 +330,6 @@
   font-weight: 750;
 }
 
-.attentionBanner {
-  min-height: 62px;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-left: 4px solid #f59e0b;
-  border-radius: 10px;
-  background: rgba(245, 158, 11, 0.07);
-}
-
-.attentionIcon {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  color: #d97706;
-  background: rgba(245, 158, 11, 0.15);
-}
-
-.attentionIcon svg {
-  width: 17px;
-  height: 17px;
-}
-
-.attentionBanner strong,
-.attentionBanner span {
-  display: block;
-}
-
-.attentionBanner strong {
-  font-size: 0.88rem;
-}
-
-.attentionBanner div span {
-  margin-top: 2px;
-  color: var(--text-secondary);
-  font-size: 0.76rem;
-}
-
-.attentionBanner a {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--blue-600);
-  text-decoration: none;
-  font-size: 0.76rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.attentionBanner a svg {
-  width: 14px;
-  height: 14px;
-}
-
 .moduleGrid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1586,18 +1525,10 @@
   font-size: 0.72rem;
 }
 
-.panelCount {
-  padding: 6px 10px;
-  border-radius: 8px;
-  color: #a76404;
-  background: rgba(245, 158, 11, 0.12);
-  font-size: 0.74rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .queueList {
   width: 100%;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .queueRow {
@@ -1961,16 +1892,6 @@
   .moduleGrid,
   .moduleGrid.workflowModuleGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .attentionBanner {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .attentionBanner a {
-    width: 100%;
-    margin-left: 43px;
   }
 
   .queueRow {
