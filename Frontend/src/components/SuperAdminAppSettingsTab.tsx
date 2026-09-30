@@ -500,7 +500,7 @@ function HolidaysCard() {
   );
 
   return (
-    <div className="bento-settings-card bento-settings-card-full">
+    <div className="bento-settings-card">
       <div className="bento-settings-header">
         <div className="bento-settings-header-left">
           <div className="bento-settings-icon-box">
@@ -509,14 +509,14 @@ function HolidaysCard() {
           <div className="bento-settings-title-wrap">
             <h3>Kalender Hari Libur</h3>
             <p className="bento-settings-desc">
-              Tanggal libur nasional dan cuti kantor yang otomatis menonaktifkan pemesanan fasilitas gedung
+              Tanggal libur yang menonaktifkan pemesanan fasilitas gedung
             </p>
           </div>
         </div>
       </div>
 
-      <div className="settings-table-toolbar">
-        <div className="settings-table-toolbar-left">
+      <div className="settings-table-toolbar" style={{ gap: 8, marginBottom: 12 }}>
+        <div className="settings-table-toolbar-left" style={{ minWidth: 160 }}>
           <div className="settings-table-search">
             <Search width={16} height={16} />
             <input
@@ -535,14 +535,14 @@ function HolidaysCard() {
         </button>
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap" style={{ flex: 1, minHeight: 160 }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: 64 }}>No</th>
-              <th style={{ width: 180 }}>Tanggal</th>
+              <th style={{ width: 44 }}>No</th>
+              <th style={{ width: 110 }}>Tanggal</th>
               <th>Nama Hari Libur</th>
-              <th style={{ width: 80, textAlign: "right" }}>Aksi</th>
+              <th style={{ width: 50, textAlign: "right" }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -644,28 +644,58 @@ function HolidaysCard() {
   );
 }
 
-// Bento Item 6: Backup Data Global (Full Width)
+// Bento Item 6: Backup Data Global (Side-by-side with HolidaysCard)
 function BackupCard() {
   return (
-    <div className="bento-settings-card bento-settings-card-full">
-      <div className="bento-backup-card-inner">
-        <div className="bento-backup-left">
-          <div className="bento-settings-icon-box emerald">
+    <div className="bento-settings-card">
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
             <Database width={18} height={18} />
           </div>
           <div className="bento-settings-title-wrap">
             <h3>Backup Data Global</h3>
-            <p className="bento-settings-desc" style={{ maxWidth: 800 }}>
-              Unduh satu file Excel (.xlsx) komprehensif berisi seluruh data sistem (Ekspedisi, Office Supplies,
-              Maintenance, Arsip, Booking Ruang Meeting, Booking Kendaraan, Users, Organisasi, Master Data,
-              Pengaturan Aplikasi, dan Riwayat Penghapusan) untuk kebutuhan arsip dan cadangan tahunan.
+            <p className="bento-settings-desc">
+              Arsip komprehensif seluruh modul dan database sistem
             </p>
           </div>
         </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+          Unduh satu file Excel (.xlsx) komprehensif berisi seluruh data sistem (Ekspedisi, Office Supplies,
+          Maintenance, Arsip, Booking Ruang Meeting, Booking Kendaraan, Users, Organisasi, Master Data,
+          Pengaturan Aplikasi, dan Riwayat Penghapusan) untuk kebutuhan arsip dan cadangan tahunan.
+        </p>
+
+        <div style={{ padding: "12px 14px", borderRadius: 10, background: "var(--bg-hover, #f8fafc)", border: "1px solid var(--border-subtle)" }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
+            Cakupan Data Cadangan:
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {["Ekspedisi", "Office Supplies", "Maintenance", "Arsip", "Ruang Meeting", "Kendaraan", "Users & Organisasi", "Master Data"].map((item) => (
+              <span
+                key={item}
+                style={{
+                  fontSize: "0.72rem",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-subtle)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <button
           type="button"
           className="btn btn-approve"
-          style={{ width: "auto", flexShrink: 0 }}
+          style={{ width: "auto", alignSelf: "flex-start", marginTop: "auto" }}
           onClick={() => window.open(api.globalExportUrl(), "_blank")}
         >
           <Download width={16} height={16} /> Unduh Backup (.xlsx)
