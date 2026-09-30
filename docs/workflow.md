@@ -26,6 +26,8 @@ Repo ini dikerjakan 4 pihak, jadi setiap commit dari AI assistant diberi prefix 
 
 Claude Code menambahkan `[CLAUDIA] ` di awal setiap commit message yang dibuatnya di repo ini (judul commit saja, bukan di body).
 
+Commit dari Claude Code **tidak** menyertakan trailer `Co-Authored-By`/`Claude-Session` di body pesan commit - kontributor GitHub repo ini dimaksudkan hanya user sendiri (lihat permintaan housekeeping repo). Prefix `[CLAUDIA]` di judul sudah cukup untuk menandai commit mana yang dibuat AI assistant mana.
+
 ## Kenapa Alur Ini?
 
 Sandbox pengembangan sudah dikonfigurasi dengan kredensial Git yang mengarah ke repository GitHub asli milik user, jadi perubahan bisa langsung ter-sync lewat `git push` tanpa perlu langkah manual "kirim file lalu user commit sendiri". Sandbox tidak mengakses database PostgreSQL milik user secara langsung — verifikasi backend/database dilakukan di database sandbox sendiri, terpisah dari database production/lokal user.
