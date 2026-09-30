@@ -1695,35 +1695,6 @@
   height: 15px;
 }
 
-.emptyState {
-  min-height: 200px;
-  padding: 28px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  text-align: center;
-  font-size: 0.84rem;
-}
-
-.emptyState svg {
-  width: 34px;
-  height: 34px;
-  margin-bottom: 11px;
-  color: #16a34a;
-}
-
-.emptyState strong {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.emptyState span {
-  margin-top: 4px;
-  font-size: 0.76rem;
-}
-
 .performancePanel {
   padding-bottom: 18px;
 }

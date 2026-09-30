@@ -6,7 +6,6 @@ import {
   ArrowRight,
   ChevronRight,
   Clock3,
-  PackageCheck,
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1312,12 +1311,12 @@ export default function DashboardContent({ me }: { me: Me }) {
         <div className={styles.leftColumn}>
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
-              <div><h2>Perlu Tindakan Saya</h2><p>Permohonan yang sedang menunggu tahap kerja Anda</p></div>
+              <div><h2>Menunggu Tindakan Anda</h2><p>Permohonan yang perlu Anda proses</p></div>
               <span className={styles.panelCount}>{actionableCount.toLocaleString("id-ID")} antrean</span>
             </header>
-            {loading && dashboardQueue.length === 0 ? <div className={styles.emptyState}>Memuat antrean tindakan...</div>
+            {loading && dashboardQueue.length === 0 ? <div className={styles.compactEmpty}>Memuat antrean tindakan...</div>
               : dashboardQueue.length === 0 ? (
-                <div className={styles.emptyState}><PackageCheck aria-hidden="true" /><strong>Tidak ada antrean</strong><span>Semua permohonan untuk tahap Anda sudah ditangani.</span></div>
+                <div className={styles.compactEmpty}>Tidak ada tindakan yang perlu dilakukan saat ini.</div>
               ) : (
                 <div className={styles.queueList}>
                   {dashboardQueue.slice(0, 5).map((item) => (
