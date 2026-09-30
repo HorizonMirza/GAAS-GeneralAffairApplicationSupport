@@ -1243,7 +1243,7 @@ export default function DashboardContent({ me }: { me: Me }) {
           <div className={styles.resourceScheduleStack}>
             {([
               { kind: "room" as const, title: "Jadwal Ruang Meeting Hari Ini", countLabel: "ruangan", rows: roomScheduleRows },
-              { kind: "vehicle" as const, title: "Jadwal Vehicle Booking Hari Ini", countLabel: "kendaraan", rows: vehicleScheduleRows },
+              { kind: "vehicle" as const, title: "Jadwal Kendaraan Hari Ini", countLabel: "kendaraan", rows: vehicleScheduleRows },
             ]).map((schedule) => (
               <article className={styles.resourceSchedulePanel} key={schedule.kind}>
                 <header className={styles.resourceScheduleHeader}>
