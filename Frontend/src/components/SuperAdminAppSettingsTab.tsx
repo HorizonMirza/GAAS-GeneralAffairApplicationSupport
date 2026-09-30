@@ -1,7 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Lock, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Building2,
+  Calendar,
+  Clock,
+  Database,
+  Download,
+  Image as ImageIcon,
+  Lock,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
 import ModalOverlay from "@/components/ModalOverlay";
@@ -14,10 +27,11 @@ function errorMessage(err: unknown): string {
   return err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Terjadi kesalahan";
 }
 
-// Super Admin-managed company branding (name + logo, shown in the sidebar, login page and every
-// PDF export - see useAppSettings) and Room/Vehicle Booking's operating hours + holiday calendar
-// (see AppSettingsCache/BookingRuangController/BookingKendaraanController). Three independent
-// cards, each its own password-gated save, same convention as SuperAdminMasterDataTab.
+// Super Admin-managed App Settings rendered in a modern Bento Grid Dashboard layout (Concept 4):
+// Row 1: Nama Perusahaan & Logo Perusahaan (separated into independent cards)
+// Row 2: Jam Operasional Fasilitas & Pengaturan Suara Notifikasi
+// Row 3: Kalender Hari Libur (Full Width Table with Search & Add)
+// Row 4: Backup Data Global (Full Width Administrative Archive)
 export default function SuperAdminAppSettingsTab() {
   const { showToast } = useToast();
 
@@ -45,40 +59,20 @@ export default function SuperAdminAppSettingsTab() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <BrandingCard settings={settings} onSaved={setSettings} />
+    <div className="bento-settings-grid">
+      <CompanyNameCard settings={settings} onSaved={setSettings} />
+      <CompanyLogoCard settings={settings} onSaved={setSettings} />
       <OperatingHoursCard settings={settings} onSaved={setSettings} />
-      <HolidaysCard />
       <NotificationSoundSettingsCard />
+      <HolidaysCard />
       <BackupCard />
     </div>
   );
 }
 
-function BackupCard() {
-  return (
-    <div className="card">
-      <div className="card-header"><h3>Backup Data</h3></div>
-      <p style={{ marginTop: -8, marginBottom: 16, color: "var(--text-muted, #666)", fontSize: 13 }}>
-        Unduh satu file Excel berisi seluruh data sistem (Ekspedisi, Office Supplies, Maintenance,
-        Arsip, Booking Ruang Meeting, Booking Kendaraan, Users, Organisasi, Master Data,
-        Pengaturan Aplikasi, dan Riwayat Penghapusan) - untuk kebutuhan arsip/backup tahunan.
-      </p>
-      <button
-        type="button"
-        className="btn btn-approve"
-        style={{ width: "auto" }}
-        onClick={() => window.open(api.globalExportUrl(), "_blank")}
-      >
-        <Download width={16} height={16} /> Unduh Backup (.xlsx)
-      </button>
-    </div>
-  );
-}
-
-function BrandingCard({ settings, onSaved }: { settings: AppSettings; onSaved: (s: AppSettings) => void }) {
+// Bento Item 1: Nama / Identitas Perusahaan
+function CompanyNameCard({ settings, onSaved }: { settings: AppSettings; onSaved: (s: AppSettings) => void }) {
   const { showToast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [companyName, setCompanyName] = useState(settings.companyName);
   const [namePassword, setNamePassword] = useState("");
@@ -86,31 +80,20 @@ function BrandingCard({ settings, onSaved }: { settings: AppSettings; onSaved: (
   const [namePasswordError, setNamePasswordError] = useState("");
   const [savingName, setSavingName] = useState(false);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadPassword, setUploadPassword] = useState("");
-  const [uploadError, setUploadError] = useState("");
-  const [uploading, setUploading] = useState(false);
-
-  const [revertOpen, setRevertOpen] = useState(false);
-
   useEffect(() => {
     setCompanyName(settings.companyName);
   }, [settings.companyName]);
-
-  useEffect(() => {
-    if (!selectedFile) { setPreviewUrl(null); return; }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
 
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault();
     const errs = { field: "", password: "" };
     if (!companyName.trim()) errs.field = "Nama perusahaan wajib diisi";
     if (!namePassword) errs.password = "Password wajib diisi";
-    if (errs.field || errs.password) { setNameFieldError(errs.field); setNamePasswordError(errs.password); return; }
+    if (errs.field || errs.password) {
+      setNameFieldError(errs.field);
+      setNamePasswordError(errs.password);
+      return;
+    }
     setNameFieldError("");
     setNamePasswordError("");
     setSavingName(true);
@@ -133,10 +116,91 @@ function BrandingCard({ settings, onSaved }: { settings: AppSettings; onSaved: (
     }
   }
 
+  return (
+    <div className="bento-settings-card">
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
+            <Building2 width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Identitas Perusahaan</h3>
+            <p className="bento-settings-desc">Nama instansi pada sidebar, halaman login, dan kop dokumen PDF</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSaveName} style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+        <div className="field full" style={{ marginBottom: 0 }}>
+          <label htmlFor="app-settings-company-name">Nama Perusahaan</label>
+          <input
+            id="app-settings-company-name"
+            type="text"
+            placeholder="Contoh: PT Perusahaan Gas Negara"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+          {nameFieldError && <div className="field-error-text">{nameFieldError}</div>}
+        </div>
+        <div className="field full" style={{ marginBottom: 0 }}>
+          <PasswordField
+            id="app-settings-name-password"
+            label="Password Super Admin"
+            placeholder="Masukkan Password"
+            icon={<Lock width={15} height={15} />}
+            value={namePassword}
+            error={namePasswordError}
+            onChange={(v) => {
+              setNamePassword(v);
+              if (namePasswordError) setNamePasswordError("");
+            }}
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn btn-approve"
+          style={{ width: "auto", alignSelf: "flex-start", marginTop: "auto" }}
+          disabled={savingName}
+        >
+          {savingName ? "Menyimpan..." : "Simpan Nama Perusahaan"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// Bento Item 2: Logo Perusahaan (Dipisah dari Identitas)
+function CompanyLogoCard({ settings, onSaved }: { settings: AppSettings; onSaved: (s: AppSettings) => void }) {
+  const { showToast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadPassword, setUploadPassword] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [revertOpen, setRevertOpen] = useState(false);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
+
   async function handleUploadLogo(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFile) { setUploadError("Pilih file logo terlebih dahulu"); return; }
-    if (!uploadPassword) { setUploadError("Password wajib diisi"); return; }
+    if (!selectedFile) {
+      setUploadError("Pilih file logo terlebih dahulu");
+      return;
+    }
+    if (!uploadPassword) {
+      setUploadError("Password wajib diisi");
+      return;
+    }
     setUploadError("");
     setUploading(true);
     try {
@@ -161,82 +225,82 @@ function BrandingCard({ settings, onSaved }: { settings: AppSettings; onSaved: (
   }
 
   return (
-    <div className="card">
-      <div className="card-header"><h3>Nama & Logo Perusahaan</h3></div>
+    <div className="bento-settings-card">
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
+            <ImageIcon width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Logo Perusahaan</h3>
+            <p className="bento-settings-desc">Format JPG atau PNG transparan, ukuran file maksimal 5MB</p>
+          </div>
+        </div>
+      </div>
 
-      <form onSubmit={handleSaveName} className="form-grid" style={{ marginBottom: 20 }}>
-        <div className="field full">
-          <label htmlFor="app-settings-company-name">Nama Perusahaan</label>
-          <input
-            id="app-settings-company-name"
-            type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-          {nameFieldError && <div className="field-error-text">{nameFieldError}</div>}
-        </div>
-        <div className="field full">
-          <PasswordField
-            id="app-settings-name-password"
-            label="Password Super Admin"
-            placeholder="Masukkan Password"
-            icon={<Lock width={15} height={15} />}
-            value={namePassword}
-            error={namePasswordError}
-            onChange={(v) => { setNamePassword(v); if (namePasswordError) setNamePasswordError(""); }}
-          />
-        </div>
-        <div className="field full">
-          <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={savingName}>
-            {savingName ? "Menyimpan..." : "Simpan Nama Perusahaan"}
-          </button>
-        </div>
-      </form>
-
-      <div style={{ borderTop: "1px solid var(--border-color, #e5e7eb)", paddingTop: 16 }}>
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Logo</label>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+      <div className="bento-logo-preview-box">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <img
             src={previewUrl ?? api.appLogoUrl(settings.updatedAt)}
             alt="Logo saat ini"
-            style={{ maxWidth: 200, maxHeight: 64, width: "auto", height: "auto", background: "#f5f5f5", padding: 8, borderRadius: 6 }}
+            className="bento-logo-img"
           />
-          {settings.hasCustomLogo && (
-            <button type="button" className="card-icon-btn card-icon-btn-danger" onClick={() => setRevertOpen(true)}>
-              Kembalikan ke Default
-            </button>
-          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {selectedFile ? selectedFile.name : (settings.hasCustomLogo ? "Logo Kustom Aktif" : "Logo Default Sistem")}
+            </div>
+            <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", marginTop: 2 }}>
+              {selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : (settings.hasCustomLogo ? "Kustom diunggah" : "Bawaan sistem")}
+            </div>
+          </div>
         </div>
-
-        <form onSubmit={handleUploadLogo} className="form-grid">
-          <div className="field full">
-            <label htmlFor="app-settings-logo-file">File Logo Baru (JPG/PNG, maks 5MB)</label>
-            <input
-              id="app-settings-logo-file"
-              ref={fileInputRef}
-              type="file"
-              accept=".jpg,.jpeg,.png"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-            />
-          </div>
-          <div className="field full">
-            <PasswordField
-              id="app-settings-logo-password"
-              label="Password Super Admin"
-              placeholder="Masukkan Password"
-              icon={<Lock width={15} height={15} />}
-              value={uploadPassword}
-              error={uploadError}
-              onChange={(v) => { setUploadPassword(v); if (uploadError) setUploadError(""); }}
-            />
-          </div>
-          <div className="field full">
-            <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={uploading}>
-              <Upload width={16} height={16} /> {uploading ? "Mengunggah..." : "Unggah Logo"}
-            </button>
-          </div>
-        </form>
+        {settings.hasCustomLogo && (
+          <button
+            type="button"
+            className="card-icon-btn card-icon-btn-danger"
+            style={{ padding: "6px 10px", fontSize: "0.76rem", height: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}
+            onClick={() => setRevertOpen(true)}
+            title="Kembalikan ke Default"
+          >
+            <RotateCcw width={13} height={13} /> Default
+          </button>
+        )}
       </div>
+
+      <form onSubmit={handleUploadLogo} style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+        <div className="field full" style={{ marginBottom: 0 }}>
+          <label htmlFor="app-settings-logo-file">Pilih File Logo Baru</label>
+          <input
+            id="app-settings-logo-file"
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png"
+            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <div className="field full" style={{ marginBottom: 0 }}>
+          <PasswordField
+            id="app-settings-logo-password"
+            label="Password Super Admin"
+            placeholder="Masukkan Password"
+            icon={<Lock width={15} height={15} />}
+            value={uploadPassword}
+            error={uploadError}
+            onChange={(v) => {
+              setUploadPassword(v);
+              if (uploadError) setUploadError("");
+            }}
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn btn-approve"
+          style={{ width: "auto", alignSelf: "flex-start", marginTop: "auto" }}
+          disabled={uploading}
+        >
+          <Upload width={16} height={16} /> {uploading ? "Mengunggah..." : "Unggah Logo"}
+        </button>
+      </form>
 
       <DeleteWithPasswordModal
         open={revertOpen}
@@ -249,6 +313,7 @@ function BrandingCard({ settings, onSaved }: { settings: AppSettings; onSaved: (
   );
 }
 
+// Bento Item 3: Jam Operasional Kantor
 function OperatingHoursCard({ settings, onSaved }: { settings: AppSettings; onSaved: (s: AppSettings) => void }) {
   const { showToast } = useToast();
   const [start, setStart] = useState(settings.operatingStart);
@@ -264,7 +329,10 @@ function OperatingHoursCard({ settings, onSaved }: { settings: AppSettings; onSa
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!password) { setError("Password wajib diisi"); return; }
+    if (!password) {
+      setError("Password wajib diisi");
+      return;
+    }
     setError("");
     setSaving(true);
     try {
@@ -285,21 +353,41 @@ function OperatingHoursCard({ settings, onSaved }: { settings: AppSettings; onSa
   }
 
   return (
-    <div className="card">
-      <div className="card-header"><h3>Jam Operasional</h3></div>
-      <p style={{ marginTop: -8, marginBottom: 16, color: "var(--text-muted, #666)", fontSize: 13 }}>
-        Rentang jam yang diizinkan untuk Booking Ruang Meeting dan Booking Kendaraan.
-      </p>
-      <form onSubmit={handleSubmit} className="form-grid">
-        <div className="field">
-          <label htmlFor="app-settings-hours-start">Jam Mulai</label>
-          <input id="app-settings-hours-start" type="time" value={start} onChange={(e) => setStart(e.target.value)} />
+    <div className="bento-settings-card">
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
+            <Clock width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Jam Operasional</h3>
+            <p className="bento-settings-desc">Rentang jam yang diizinkan untuk Booking Ruang Meeting & Kendaraan</p>
+          </div>
         </div>
-        <div className="field">
-          <label htmlFor="app-settings-hours-end">Jam Selesai</label>
-          <input id="app-settings-hours-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="app-settings-hours-start">Jam Mulai</label>
+            <input
+              id="app-settings-hours-start"
+              type="time"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="app-settings-hours-end">Jam Selesai</label>
+            <input
+              id="app-settings-hours-end"
+              type="time"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="field full">
+        <div className="field full" style={{ marginBottom: 0 }}>
           <PasswordField
             id="app-settings-hours-password"
             label="Password Super Admin"
@@ -307,19 +395,26 @@ function OperatingHoursCard({ settings, onSaved }: { settings: AppSettings; onSa
             icon={<Lock width={15} height={15} />}
             value={password}
             error={error}
-            onChange={(v) => { setPassword(v); if (error) setError(""); }}
+            onChange={(v) => {
+              setPassword(v);
+              if (error) setError("");
+            }}
           />
         </div>
-        <div className="field full">
-          <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-            {saving ? "Menyimpan..." : "Simpan Jam Operasional"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="btn btn-approve"
+          style={{ width: "auto", alignSelf: "flex-start", marginTop: "auto" }}
+          disabled={saving}
+        >
+          {saving ? "Menyimpan..." : "Simpan Jam Operasional"}
+        </button>
       </form>
     </div>
   );
 }
 
+// Bento Item 5: Kalender Hari Libur (Full Width)
 interface HolidayFormState {
   date: string;
   label: string;
@@ -332,6 +427,7 @@ function HolidaysCard() {
   const { showToast } = useToast();
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [busy, setBusy] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<HolidayFormState>(EMPTY_HOLIDAY_FORM);
@@ -368,7 +464,10 @@ function HolidaysCard() {
     if (!form.date) errs.date = "Tanggal wajib diisi";
     if (!form.label.trim()) errs.label = "Nama hari libur wajib diisi";
     if (!form.password) errs.password = "Password wajib diisi";
-    if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
+      return;
+    }
     setFormErrors({});
 
     setSaving(true);
@@ -395,36 +494,76 @@ function HolidaysCard() {
     await load();
   }
 
+  const query = search.trim().toLowerCase();
+  const filteredHolidays = holidays.filter(
+    (h) => h.label.toLowerCase().includes(query) || h.date.includes(query)
+  );
+
   return (
-    <div className="card">
-      <div className="card-header" style={{ justifyContent: "space-between" }}>
-        <h3>Hari Libur</h3>
+    <div className="bento-settings-card bento-settings-card-full">
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
+            <Calendar width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Kalender Hari Libur</h3>
+            <p className="bento-settings-desc">
+              Tanggal libur nasional dan cuti kantor yang otomatis menonaktifkan pemesanan fasilitas gedung
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-table-toolbar">
+        <div className="settings-table-toolbar-left">
+          <div className="settings-table-search">
+            <Search width={16} height={16} />
+            <input
+              type="text"
+              placeholder="Cari Hari Libur"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="settings-table-count-box">
+            {filteredHolidays.length} Data
+          </div>
+        </div>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-          <Plus width={16} height={16} /> Tambah Hari Libur
+          <Plus width={16} height={16} /> Tambah
         </button>
       </div>
-      <p style={{ marginTop: -8, marginBottom: 16, color: "var(--text-muted, #666)", fontSize: 13 }}>
-        Tanggal yang tercantum di sini tidak bisa dipilih saat Booking Ruang Meeting atau Booking Kendaraan.
-      </p>
 
       <div className="table-wrap">
         <table className="data-table">
           <thead>
-            <tr><th>No</th><th>Tanggal</th><th>Nama Hari Libur</th><th></th></tr>
+            <tr>
+              <th style={{ width: 64 }}>No</th>
+              <th style={{ width: 180 }}>Tanggal</th>
+              <th>Nama Hari Libur</th>
+              <th style={{ width: 80, textAlign: "right" }}>Aksi</th>
+            </tr>
           </thead>
           <tbody>
             {busy ? (
               <tr><td colSpan={4} className="table-empty">Memuat data...</td></tr>
-            ) : holidays.length === 0 ? (
+            ) : filteredHolidays.length === 0 ? (
               <tr><td colSpan={4} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
-              holidays.map((h, index) => (
+              filteredHolidays.map((h, index) => (
                 <tr key={h.id}>
                   <td>{index + 1}</td>
-                  <td>{h.date}</td>
+                  <td style={{ fontWeight: 600 }}>{h.date}</td>
                   <td>{h.label}</td>
                   <td style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button type="button" className="card-icon-btn card-icon-btn-danger" aria-label="Hapus" title="Hapus" onClick={() => setDeleteTarget(h)}>
+                    <button
+                      type="button"
+                      className="card-icon-btn card-icon-btn-danger"
+                      aria-label="Hapus"
+                      title="Hapus"
+                      onClick={() => setDeleteTarget(h)}
+                    >
                       <Trash2 width={16} height={16} />
                     </button>
                   </td>
@@ -474,7 +613,7 @@ function HolidaysCard() {
 
             <div className="modal-actions">
               <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-                {saving ? "Menyimpan..." : "Save"}
+                {saving ? "Menyimpan..." : "Simpan Hari Libur"}
               </button>
             </div>
           </form>
@@ -501,6 +640,37 @@ function HolidaysCard() {
           </div>
         )}
       </DeleteWithPasswordModal>
+    </div>
+  );
+}
+
+// Bento Item 6: Backup Data Global (Full Width)
+function BackupCard() {
+  return (
+    <div className="bento-settings-card bento-settings-card-full">
+      <div className="bento-backup-card-inner">
+        <div className="bento-backup-left">
+          <div className="bento-settings-icon-box emerald">
+            <Database width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Backup Data Global</h3>
+            <p className="bento-settings-desc" style={{ maxWidth: 800 }}>
+              Unduh satu file Excel (.xlsx) komprehensif berisi seluruh data sistem (Ekspedisi, Office Supplies,
+              Maintenance, Arsip, Booking Ruang Meeting, Booking Kendaraan, Users, Organisasi, Master Data,
+              Pengaturan Aplikasi, dan Riwayat Penghapusan) untuk kebutuhan arsip dan cadangan tahunan.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn btn-approve"
+          style={{ width: "auto", flexShrink: 0 }}
+          onClick={() => window.open(api.globalExportUrl(), "_blank")}
+        >
+          <Download width={16} height={16} /> Unduh Backup (.xlsx)
+        </button>
+      </div>
     </div>
   );
 }

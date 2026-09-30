@@ -15,7 +15,7 @@ const soundLabel = (id: string) => SOUND_PRESETS[id]?.label || id;
 // single global choice shared by every user (see NotificationSettingsController), not a per-user
 // preference. Saving broadcasts live to every open tab via ChatHub, so this component also
 // updates its own local playback cache immediately rather than waiting for that round trip.
-export default function NotificationSoundSettingsCard() {
+export default function NotificationSoundSettingsCard({ className }: { className?: string }) {
   const { showToast } = useToast();
   const [chatSoundId, setChatSoundId] = useState<string>("");
   const [activitySoundId, setActivitySoundId] = useState<string>("");
@@ -52,66 +52,80 @@ export default function NotificationSoundSettingsCard() {
   }
 
   return (
-    <div className="card notification-sound-settings-card">
-      <h3 style={{ margin: "0 0 4px" }}>Pengaturan Suara Notifikasi</h3>
-      <p className="text-secondary" style={{ margin: "0 0 16px", fontSize: "0.85rem" }}>
-        Suara ini berlaku untuk semua pengguna. Klik ▶ untuk mendengarkan pilihan sebelum disimpan.
-      </p>
-      <div className="notification-sound-settings-row">
-        <div className="field" style={{ marginBottom: 0, flex: 1 }}>
-          <label htmlFor="notif-sound-chat">Suara Chat</label>
-          <SearchableSelect
-            id="notif-sound-chat"
-            value={busy ? undefined : chatSoundId}
-            onChange={setChatSoundId}
-            options={SOUND_OPTIONS}
-            getLabel={soundLabel}
-            placeholder="Pilih suara"
-            disabled={busy}
-          />
+    <div className={className ?? "bento-settings-card notification-sound-settings-card"}>
+      <div className="bento-settings-header">
+        <div className="bento-settings-header-left">
+          <div className="bento-settings-icon-box">
+            <Volume2 width={18} height={18} />
+          </div>
+          <div className="bento-settings-title-wrap">
+            <h3>Pengaturan Suara Notifikasi</h3>
+            <p className="bento-settings-desc">Preset audio untuk pesan chat real-time dan notifikasi approval transaksi</p>
+          </div>
         </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+        <div className="notification-sound-settings-row">
+          <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+            <label htmlFor="notif-sound-chat">Suara Chat</label>
+            <SearchableSelect
+              id="notif-sound-chat"
+              value={busy ? undefined : chatSoundId}
+              onChange={setChatSoundId}
+              options={SOUND_OPTIONS}
+              getLabel={soundLabel}
+              placeholder="Pilih suara"
+              disabled={busy}
+            />
+          </div>
+          <button
+            type="button"
+            className="icon-btn notification-sound-preview-btn"
+            aria-label="Dengarkan suara chat"
+            disabled={!chatSoundId}
+            onClick={() => previewSound(chatSoundId)}
+            title="Dengarkan suara chat"
+          >
+            <Volume2 width={18} height={18} />
+          </button>
+        </div>
+
+        <div className="notification-sound-settings-row">
+          <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+            <label htmlFor="notif-sound-activity">Suara Transaksi/Approval</label>
+            <SearchableSelect
+              id="notif-sound-activity"
+              value={busy ? undefined : activitySoundId}
+              onChange={setActivitySoundId}
+              options={SOUND_OPTIONS}
+              getLabel={soundLabel}
+              placeholder="Pilih suara"
+              disabled={busy}
+            />
+          </div>
+          <button
+            type="button"
+            className="icon-btn notification-sound-preview-btn"
+            aria-label="Dengarkan suara transaksi"
+            disabled={!activitySoundId}
+            onClick={() => previewSound(activitySoundId)}
+            title="Dengarkan suara transaksi"
+          >
+            <Volume2 width={18} height={18} />
+          </button>
+        </div>
+
         <button
           type="button"
-          className="icon-btn notification-sound-preview-btn"
-          aria-label="Dengarkan suara chat"
-          disabled={!chatSoundId}
-          onClick={() => previewSound(chatSoundId)}
+          className="btn btn-approve"
+          style={{ width: "auto", alignSelf: "flex-start", marginTop: "auto" }}
+          disabled={busy || saving || !dirty}
+          onClick={handleSave}
         >
-          <Volume2 width={18} height={18} />
+          {saving ? "Menyimpan..." : "Simpan Suara Notifikasi"}
         </button>
       </div>
-      <div className="notification-sound-settings-row">
-        <div className="field" style={{ marginBottom: 0, flex: 1 }}>
-          <label htmlFor="notif-sound-activity">Suara Transaksi/Approval</label>
-          <SearchableSelect
-            id="notif-sound-activity"
-            value={busy ? undefined : activitySoundId}
-            onChange={setActivitySoundId}
-            options={SOUND_OPTIONS}
-            getLabel={soundLabel}
-            placeholder="Pilih suara"
-            disabled={busy}
-          />
-        </div>
-        <button
-          type="button"
-          className="icon-btn notification-sound-preview-btn"
-          aria-label="Dengarkan suara transaksi"
-          disabled={!activitySoundId}
-          onClick={() => previewSound(activitySoundId)}
-        >
-          <Volume2 width={18} height={18} />
-        </button>
-      </div>
-      <button
-        type="button"
-        className="btn btn-primary"
-        style={{ width: "auto", marginTop: 4 }}
-        disabled={busy || saving || !dirty}
-        onClick={handleSave}
-      >
-        {saving ? "Menyimpan..." : "Simpan"}
-      </button>
     </div>
   );
 }
