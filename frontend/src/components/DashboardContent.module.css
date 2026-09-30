@@ -1186,33 +1186,39 @@
 }
 
 .comparisonPanel .panelHeader h2,
+.statusPanel .panelHeader h2,
+.statusPanel .donutCenter,
+.statusPanel .statusLegend strong,
+.statusPanel .statusLegend em,
+.insightPanel .insightHeader h2,
+.insightPanel .divisionRowHeader em,
+.insightPanel .spendingHeader h2,
+.insightPanel .spendingTotal,
+.insightPanel .spendingItemHeader {
+  color: var(--text-primary);
+}
+
 .comparisonPanel .panelHeader p,
 .comparisonPanel .chartLegend,
 .comparisonPanel .barGroup > strong,
 .comparisonPanel .bar small,
 .comparisonPanel .yAxis,
-.statusPanel .panelHeader h2,
 .statusPanel .panelHeader p,
-.statusPanel .donutCenter,
 .statusPanel .donutCenter span,
 .statusPanel .statusLegend > div,
-.statusPanel .statusLegend strong,
-.statusPanel .statusLegend em,
-.insightPanel .insightHeader h2,
 .insightPanel .insightHeader p,
 .insightPanel .divisionRowHeader strong,
-.insightPanel .divisionRowHeader em,
-.insightPanel .spendingHeader h2,
-.insightPanel .spendingHeader p,
-.insightPanel .spendingTotal,
-.insightPanel .spendingItemHeader {
-  color: #000;
+.insightPanel .spendingHeader p {
+  color: var(--text-secondary);
 }
 
 .insightPanel .trendAxisText,
-.insightPanel .trendMonthLabel,
+.insightPanel .trendMonthLabel {
+  fill: var(--text-secondary);
+}
+
 .insightPanel .trendPoint > text:not(.trendMonthLabel) {
-  fill: #000;
+  fill: var(--text-primary);
 }
 
 .spendingPanel {
@@ -1233,14 +1239,14 @@
 
 .spendingHeader h2 {
   margin: 0;
-  color: #000;
+  color: var(--text-primary);
   font-size: 0.98rem;
   font-weight: 700;
 }
 
 .spendingHeader p {
   margin: 4px 0 0;
-  color: #000;
+  color: var(--text-secondary);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -1253,7 +1259,7 @@
   justify-content: space-between;
   gap: 18px;
   border-top: 1px solid var(--border-subtle);
-  color: #000;
+  color: var(--text-primary);
 }
 
 .spendingTotal span {
@@ -1290,7 +1296,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
-  color: #000;
+  color: var(--text-primary);
 }
 
 .spendingItemHeader > strong:first-child {
@@ -1514,7 +1520,7 @@
   min-height: 190px;
   display: grid;
   place-items: center;
-  color: #000;
+  color: var(--text-secondary);
   font-size: 0.74rem;
   text-align: center;
 }
