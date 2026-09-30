@@ -564,6 +564,10 @@ const QUEUE_COLLAPSED_COUNT = 5;
 
 // Same icon each module already uses in the sidebar (AppShell's NAV_CATEGORIES) - so a queue row
 // reads as "the same Expedition/Room Booking/..." the sidebar already trained the eye to spot.
+function formatQueueDate(createdAt: string): string {
+  return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(createdAt));
+}
+
 const QUEUE_MODULE_ICON: Record<ModuleKey, React.ReactNode> = {
   expedition: <Layers aria-hidden="true" />,
   room: <Calendar aria-hidden="true" />,
@@ -1334,9 +1338,8 @@ export default function DashboardContent({ me }: { me: Me }) {
                         <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
                           <span className={styles.queueIcon} title={item.moduleLabel}>{QUEUE_MODULE_ICON[item.moduleKey]}</span>
                           <div className={styles.queueRequest}>
-                            <strong>{item.title}</strong>
-                            <span>{item.requester} · {item.unit}</span>
-                            <span className={styles.queueDocNum}>{item.number}</span>
+                            <strong>{item.title} - {item.number}</strong>
+                            <span>{formatQueueDate(item.createdAt)} · {item.unit}</span>
                           </div>
                           <span className={`${styles.queueAge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
                           <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>

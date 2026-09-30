@@ -1600,8 +1600,7 @@
 }
 
 .queueRequest strong,
-.queueRequest span,
-.queueDocNum {
+.queueRequest span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1616,13 +1615,6 @@
   margin-top: 3px;
   color: var(--text-secondary);
   font-size: 0.72rem;
-}
-
-.queueDocNum {
-  margin-top: 3px;
-  color: var(--text-secondary);
-  font-size: 0.68rem;
-  font-weight: 600;
 }
 
 .queueAge {
