@@ -10,8 +10,8 @@ Proyek ini dikembangkan dengan bantuan beberapa AI coding assistant yang masing-
 3. **Commit & push** — perubahan di-commit dan di-push langsung dari sandbox ke branch yang sedang dikerjakan (biasanya `main`) lewat `git add`/`git commit`/`git push`. Tidak ada langkah "paket zip" atau "terapkan manual di lokal" — begitu di-push, perubahan sudah ada di repo GitHub yang sama dengan yang dipakai user.
 4. **Sinkronkan lingkungan lokal user (kalau user menjalankan server sendiri di komputernya)**:
    - `git pull` di komputer user.
-   - Backend: `cd backend && dotnet run --launch-profile http` (tambahkan `-- resetdb` hanya kalau ada perubahan skema/model, atau `-- seed` untuk mengisi ulang akun tanpa drop tabel).
-   - Frontend: `cd frontend && npm install` (kalau ada perubahan dependency) lalu `npm run dev`.
+   - Backend: `cd Backend && dotnet run --launch-profile http` (tambahkan `-- resetdb` hanya kalau ada perubahan skema/model, atau `-- seed` untuk mengisi ulang akun tanpa drop tabel).
+   - Frontend: `cd Frontend && npm install` (kalau ada perubahan dependency) lalu `npm run dev`.
 
 ## Penamaan Commit (Multi-Kontributor)
 
@@ -34,7 +34,7 @@ Sandbox pengembangan sudah dikonfigurasi dengan kredensial Git yang mengarah ke 
 
 ## Rahasia yang Tidak Boleh Ikut Ter-commit
 
-- `backend/appsettings.json`, `backend/appsettings.Development.json` — connection string database & JWT secret.
-- `frontend/.env.local` — konfigurasi environment frontend (URL API, dll).
+- `Backend/appsettings.json`, `Backend/appsettings.Development.json` — connection string database & JWT secret.
+- `Frontend/.env.local` — konfigurasi environment frontend (URL API, dll).
 
 Semua file ini sudah masuk `.gitignore`. Sebelum setiap commit, periksa `git status`/`git diff` untuk memastikan tidak ada file rahasia yang ikut ter-stage, meskipun namanya terlihat tidak mencurigakan.

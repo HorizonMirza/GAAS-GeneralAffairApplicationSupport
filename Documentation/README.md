@@ -16,22 +16,22 @@ Detail lebih dalam ada di [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 ## Struktur Proyek
 
 ```
-backend/    ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
-frontend/   Next.js app (src/app, src/components, src/lib)
-database/   dump referensi struktur tabel PostgreSQL (lihat catatan di ARCHITECTURE.md - sudah usang, bukan sumber kebenaran)
-docs/       dokumentasi proyek (file ini dan lainnya)
+Backend/         ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
+Frontend/        Next.js app (src/app, src/components, src/lib)
+Database/        dump referensi struktur tabel PostgreSQL (lihat catatan di ARCHITECTURE.md - sudah usang, bukan sumber kebenaran)
+Documentation/   dokumentasi proyek (file ini dan lainnya)
 ```
 
 ## Menjalankan Secara Lokal
 
 ### 1. Database (PostgreSQL)
 
-Buat database dan user sesuai `backend/appsettings.Example.json`, lalu salin jadi `backend/appsettings.Development.json` dan sesuaikan connection string + JWT secret. File ini **tidak** boleh masuk git (sudah ada di `.gitignore`).
+Buat database dan user sesuai `Backend/appsettings.Example.json`, lalu salin jadi `Backend/appsettings.Development.json` dan sesuaikan connection string + JWT secret. File ini **tidak** boleh masuk git (sudah ada di `.gitignore`).
 
 ### 2. Backend
 
 ```bash
-cd backend
+cd Backend
 dotnet run --launch-profile http
 ```
 
@@ -42,12 +42,12 @@ dotnet run --launch-profile http
 ### 3. Frontend
 
 ```bash
-cd frontend
+cd Frontend
 npm install   # sekali saja / saat ada perubahan dependency
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Pastikan `frontend/.env.local` berisi `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api`.
+Buka `http://localhost:3000`. Pastikan `Frontend/.env.local` berisi `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api`.
 
 ## Alur Status Dokumen (Ekspedisi)
 
@@ -65,7 +65,7 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 
 ## Peran (Role)
 
-`ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA`, `KPU`, `SUPER_ADMIN`. Tidak ada pendaftaran akun mandiri — akun awal dibuat lewat seed (`backend/Data/DbSeeder.cs`), akun berikutnya bisa dibuat lewat halaman Super Admin.
+`ADMIN_DEPARTEMEN`, `APPROVAL_DEPARTEMEN`, `ADMIN_DIVISI`, `APPROVAL_DIVISI`, `ADMIN_GA`, `APPROVAL_GA`, `KPU`, `SUPER_ADMIN`. Tidak ada pendaftaran akun mandiri — akun awal dibuat lewat seed (`Backend/Data/DbSeeder.cs`), akun berikutnya bisa dibuat lewat halaman Super Admin.
 
 `SUPER_ADMIN` adalah role lintas-modul: akses penuh ke semua modul (melewati semua tahap approval) ditambah halaman khusus untuk kelola Organisasi (Direktorat/Divisi/Departemen) dan User (buat/edit/reset password/nonaktifkan akun), lengkap dengan jejak audit untuk data yang dihapus. Detail mekanismenya di [`ARCHITECTURE.md`](./ARCHITECTURE.md) bagian Super Admin.
 

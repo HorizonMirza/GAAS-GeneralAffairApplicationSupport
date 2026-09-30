@@ -1,1 +1,1 @@
-@docs/CLAUDE.md
+@Documentation/CLAUDE.md

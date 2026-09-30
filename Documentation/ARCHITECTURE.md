@@ -11,7 +11,7 @@ frontend (Next.js, browser)  <-- JWT httpOnly cookie -->  backend (ASP.NET Core 
 - Autentikasi: login mengirim username/password ke `/api/auth/login`, backend membalas JWT dalam httpOnly cookie. Semua request berikutnya membawa cookie ini otomatis; tidak ada token disimpan di localStorage.
 - Tidak ada API gateway/reverse proxy di lingkungan lokal — frontend memanggil backend langsung lewat `NEXT_PUBLIC_API_BASE_URL`.
 
-## Backend (`backend/`)
+## Backend (`Backend/`)
 
 ASP.NET Core 8 Web API, project `PengirimanApi`.
 
@@ -47,7 +47,7 @@ Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, s
 - ORM: Entity Framework Core dengan provider `Npgsql.EntityFrameworkCore.PostgreSQL`.
 - Export Excel via `ClosedXML`, export PDF via `QuestPDF` — tersedia di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive), lewat endpoint `export`/`export-pdf` di controller Export masing-masing. Semua modul transaksional juga punya endpoint `{id}/pdf` untuk cetak slip satu dokumen (beda dari `export-pdf` yang mencetak daftar hasil filter).
 - Password di-hash dengan `BCrypt.Net-Next`.
-- Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `database/` (lihat catatan di bagian Database).
+- Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `Database/` (lihat catatan di bagian Database).
 - Konfigurasi rahasia (connection string, JWT secret) ada di `appsettings.Development.json`, **tidak** masuk git — dikelola manual per environment.
 
 ## Pola Modul Transaksional (Room Booking, Vehicle Booking, Maintenance, Archive)
@@ -84,9 +84,9 @@ Super Admin bukan modul transaksional seperti enam modul lain — perannya linta
 
 ## SignalR (chat real-time)
 
-`ChatHub` (`backend/Hubs/ChatHub.cs`, di-map di `Program.cs` sebagai `/hubs/chat`) mem-broadcast pesan chat baru ke klien yang sedang membuka thread yang sama, menggantikan polling. Satu koneksi bisa join banyak "grup" (satu grup = satu item, mis. `pengiriman-chat-{id}`, `booking-chat-{id}`, `kendaraan-chat-{id}`, `atk-chat-{id}`, `sarana-chat-{id}`) lewat method `Join{Modul}Chat`/`Leave{Modul}Chat`, dipanggil dari frontend saat modal chat dibuka/ditutup (`frontend/src/lib/chatHub.ts`). Tidak ada middleware `[Authorize]` di aplikasi ini (lihat `CurrentUserService`), jadi setiap `Join{Modul}Chat` memvalidasi akses secara manual lewat method `CanAccess{Modul}` yang sama dengan yang dipakai controller REST-nya (`ApiControllerBase`), supaya aturan visibilitas tidak bisa dilewati lewat WebSocket.
+`ChatHub` (`Backend/Hubs/ChatHub.cs`, di-map di `Program.cs` sebagai `/hubs/chat`) mem-broadcast pesan chat baru ke klien yang sedang membuka thread yang sama, menggantikan polling. Satu koneksi bisa join banyak "grup" (satu grup = satu item, mis. `pengiriman-chat-{id}`, `booking-chat-{id}`, `kendaraan-chat-{id}`, `atk-chat-{id}`, `sarana-chat-{id}`) lewat method `Join{Modul}Chat`/`Leave{Modul}Chat`, dipanggil dari frontend saat modal chat dibuka/ditutup (`Frontend/src/lib/chatHub.ts`). Tidak ada middleware `[Authorize]` di aplikasi ini (lihat `CurrentUserService`), jadi setiap `Join{Modul}Chat` memvalidasi akses secara manual lewat method `CanAccess{Modul}` yang sama dengan yang dipakai controller REST-nya (`ApiControllerBase`), supaya aturan visibilitas tidak bisa dilewati lewat WebSocket.
 
-## Frontend (`frontend/`)
+## Frontend (`Frontend/`)
 
 Next.js (App Router) + React + TypeScript.
 
@@ -122,11 +122,11 @@ src/lib/                               api.ts (client HTTP ke backend, termasuk 
 
 ## Database
 
-PostgreSQL. Sumber kebenaran skema adalah `AppDbContext.OnModelCreating` + blok `CREATE TABLE IF NOT EXISTS`/`ALTER TABLE` di `Program.cs` (jalan otomatis tiap startup, non-destruktif) — **bukan** file mana pun di `database/`.
+PostgreSQL. Sumber kebenaran skema adalah `AppDbContext.OnModelCreating` + blok `CREATE TABLE IF NOT EXISTS`/`ALTER TABLE` di `Program.cs` (jalan otomatis tiap startup, non-destruktif) — **bukan** file mana pun di `Database/`.
 
 Tabel lintas-modul yang menopang fitur Super Admin (lihat bagian tersendiri di atas): `org_direktorat`/`org_divisi`/`org_departemen` (struktur organisasi, backfill sekali dari `OrgTree.SeedData` saat pertama kali tabel ini dibuat) dan `deletion_log` (jejak audit penghapusan, tanpa FK ke tabel item manapun).
 
-`database/pengiriman_barang_postgres.sql` adalah dump `pg_dump` dari database user di titik waktu yang jauh lebih lama (hanya berisi 4 tabel: `users`, `pengiriman`, `pengiriman_logs`, `invoices` — dari sebelum fitur chat, semua modul booking, ATK, Maintenance, dan Archive ada). File ini **sudah sangat usang** dan tidak dipakai/dieksekusi oleh aplikasi; kalau butuh melihat skema aktual, baca `AppDbContext.cs` langsung, atau jalankan `pg_dump` baru dari database yang sudah di-`resetdb`.
+`Database/pengiriman_barang_postgres.sql` adalah dump `pg_dump` dari database user di titik waktu yang jauh lebih lama (hanya berisi 4 tabel: `users`, `pengiriman`, `pengiriman_logs`, `invoices` — dari sebelum fitur chat, semua modul booking, ATK, Maintenance, dan Archive ada). File ini **sudah sangat usang** dan tidak dipakai/dieksekusi oleh aplikasi; kalau butuh melihat skema aktual, baca `AppDbContext.cs` langsung, atau jalankan `pg_dump` baru dari database yang sudah di-`resetdb`.
 
 Reset skema penuh dilakukan lewat `dotnet run -- resetdb` (drop semua tabel lalu re-seed) — dipakai kalau ada perubahan pada tabel yang sudah lama ada. Menambah tabel modul baru ke database yang sudah berjalan cukup lewat blok `CREATE TABLE IF NOT EXISTS` di `Program.cs` (lihat pola di modul Room Booking/Vehicle Booking/ATK/Maintenance/Archive), tanpa perlu reset data lama.
 

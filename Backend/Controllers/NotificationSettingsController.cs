@@ -10,7 +10,7 @@ namespace PengirimanApi.Controllers;
 
 // The one global setting in the app: which sound plays for chat notifications vs. workflow
 // (transaction/approval) notifications, chosen by Superadmin from a fixed list of 20 presets
-// (see frontend/src/lib/notificationSound.ts's SOUND_PRESETS - this list must stay in sync with
+// (see Frontend/src/lib/notificationSound.ts's SOUND_PRESETS - this list must stay in sync with
 // that one). There is no per-user override; every logged-in user reads the same singleton row.
 [Route("api/notification-settings")]
 public class NotificationSettingsController : ApiControllerBase

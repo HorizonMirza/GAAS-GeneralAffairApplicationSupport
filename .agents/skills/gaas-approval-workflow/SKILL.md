@@ -13,7 +13,7 @@ This skill documents the complete authorization matrix and multi-stage approval 
 
 ## 1. User Roles Matrix
 
-No self-registration exists in GAAS; all accounts are seeded (`backend/Data/DbSeeder.cs`).
+No self-registration exists in GAAS; all accounts are seeded (`Backend/Data/DbSeeder.cs`).
 
 | Role Code | Level | Description & Responsibilities |
 |---|---|---|

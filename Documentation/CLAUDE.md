@@ -8,7 +8,7 @@ Aplikasi internal **GAAS** (General Affair Application System, dibangun untuk **
 
 ## Stack
 
-Backend ASP.NET Core 8 (`backend/`) + Frontend Next.js/TypeScript (`frontend/`) + PostgreSQL. Detail lengkap di [`ARCHITECTURE.md`](./ARCHITECTURE.md), konvensi kode di [`skill.md`](./skill.md).
+Backend ASP.NET Core 8 (`Backend/`) + Frontend Next.js/TypeScript (`Frontend/`) + PostgreSQL. Detail lengkap di [`ARCHITECTURE.md`](./ARCHITECTURE.md), konvensi kode di [`skill.md`](./skill.md).
 
 ## Sebelum Membuat Perubahan
 

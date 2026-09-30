@@ -16,12 +16,12 @@ This skill documents the development, database architecture, and operational run
 ## 1. Service Overview & Launch Configuration
 
 - **Framework**: ASP.NET Core 8 Web API (C#)
-- **Project Directory**: `backend/`
-- **Default Port**: `http://localhost:8000` (configured in `backend/Properties/launchSettings.json`)
+- **Project Directory**: `Backend/`
+- **Default Port**: `http://localhost:8000` (configured in `Backend/Properties/launchSettings.json`)
 - **Swagger Documentation**: `http://localhost:8000/swagger` (enabled in Development mode)
 - **Start Command**:
   ```powershell
-  cd backend
+  cd Backend
   dotnet run
   ```
 
@@ -42,18 +42,18 @@ This skill documents the development, database architecture, and operational run
 3. **Additive-Only Philosophy**: Never drop or destructively alter existing columns. New columns must be nullable or provide default values so existing data survives restarts.
 4. **Database Reset (Dev Only)**:
    ```powershell
-   cd backend
+   cd Backend
    dotnet run -- resetdb
    ```
    *Wipes database tables and reseeds fresh master data from `DbSeeder.cs`.*
 
 ---
 
-## 3. Data Seeder Pipeline (`backend/Data/DbSeeder.cs`)
+## 3. Data Seeder Pipeline (`Backend/Data/DbSeeder.cs`)
 
 All user accounts, roles, vehicles, and meeting rooms are seeded programmatically.
 
-* **Master Organization**: Defined in `backend/Services/OrgTree.cs` (4 Direktorat, 17 Divisi, 30+ Departemen).
+* **Master Organization**: Defined in `Backend/Services/OrgTree.cs` (4 Direktorat, 17 Divisi, 30+ Departemen).
 * **Document Numbering Pattern**:
   Format: `{seq:D4}.{KodeSatuanKerja}.{MM}.{yyyy}` (e.g. `0012.PGA.09.2026`).
   Managed by atomic database counters (`divisi_counters`, `room_booking_counters`, etc.) using `INSERT ... ON CONFLICT DO UPDATE RETURNING`.
@@ -76,6 +76,6 @@ The compiled backend executable exposes built-in maintenance routines runnable d
 
 ## 5. File Uploads & Security Safeguards
 
-1. **Storage Path**: Physical files reside in `backend/Uploads/`.
+1. **Storage Path**: Physical files reside in `Backend/Uploads/`.
 2. **Magic Byte Validation (`SidikGambar.cs`)**: Uploaded images and invoice PDFs are verified by inspecting magic bytes (`%PDF-` for PDFs; JPEG/PNG/GIF/WebP magic signatures for images), preventing extension spoofing.
 3. **Export Row Limiter (`BatasEkspor.cs`)**: All Excel (`ClosedXML`) and PDF (`QuestPDF`) exports enforce a hard ceiling of 5,000 rows to prevent Out-Of-Memory (OOM) crashes.

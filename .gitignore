@@ -7,14 +7,14 @@ Thumbs.db
 *.log
 
 # .NET backend
-backend/bin/
-backend/obj/
-backend/backend.Tests/bin/
-backend/backend.Tests/obj/
-backend/appsettings.json
-backend/uploads/
+Backend/bin/
+Backend/obj/
+Backend/backend.Tests/bin/
+Backend/backend.Tests/obj/
+Backend/appsettings.json
+Backend/uploads/
 
 # Next.js frontend
-frontend/.next/
-frontend/tsconfig.tsbuildinfo
-frontend/.env.local
+Frontend/.next/
+Frontend/tsconfig.tsbuildinfo
+Frontend/.env.local

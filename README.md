@@ -1,5 +1,7 @@
 # GAAS — General Affair Application System
 
+![CI](https://github.com/HorizonMirza/GAAS-GeneralAffairApplicationSupport/actions/workflows/ci.yml/badge.svg)
+
 Aplikasi internal multi-modul untuk operasional kantor **PGN Solution**: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi.
 
 ## Stack
@@ -14,35 +16,35 @@ Aplikasi internal multi-modul untuk operasional kantor **PGN Solution**: Expedit
 ## Struktur Proyek
 
 ```
-backend/    ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
-frontend/   Next.js app (src/app, src/components, src/lib)
-database/   dump referensi struktur tabel PostgreSQL (usang, bukan sumber kebenaran)
-docs/       dokumentasi proyek
+Backend/         ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
+Frontend/        Next.js app (src/app, src/components, src/lib)
+Database/        dump referensi struktur tabel PostgreSQL (usang, bukan sumber kebenaran)
+Documentation/   dokumentasi proyek
 ```
 
 ## Dokumentasi
 
-Semua dokumentasi detail ada di [`docs/`](./docs):
+Semua dokumentasi detail ada di [`Documentation/`](./Documentation):
 
-- [`docs/README.md`](./docs/README.md) — setup lokal, arsitektur singkat, alur status dokumen, daftar role.
-- [`docs/Prd.md`](./docs/Prd.md) — kebutuhan produk & daftar modul.
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — detail teknis backend & frontend.
-- [`docs/skill.md`](./docs/skill.md) — stack & konvensi kode untuk kontribusi.
-- [`docs/workflow.md`](./docs/workflow.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
-- [`docs/TODO.md`](./docs/TODO.md) — ide/fitur yang sudah dibahas tapi belum dikerjakan.
-
-Mulai dari [`docs/README.md`](./docs/README.md) untuk instruksi menjalankan proyek secara lokal.
+| Dokumen | Isi |
+|---|---|
+| [`Documentation/README.md`](./Documentation/README.md) | Setup lokal, arsitektur singkat, alur status dokumen, daftar role — **mulai dari sini**. |
+| [`Documentation/Prd.md`](./Documentation/Prd.md) | Kebutuhan produk & daftar modul. |
+| [`Documentation/ARCHITECTURE.md`](./Documentation/ARCHITECTURE.md) | Detail teknis backend & frontend. |
+| [`Documentation/skill.md`](./Documentation/skill.md) | Stack & konvensi kode untuk kontribusi. |
+| [`Documentation/workflow.md`](./Documentation/workflow.md) | Alur kerja pengembangan (revisi → verifikasi → commit & push). |
+| [`Documentation/TODO.md`](./Documentation/TODO.md) | Ide/fitur yang sudah dibahas tapi belum dikerjakan. |
 
 ## Pengujian
 
 Jalankan automated test backend dari root repository:
 
 ```powershell
-dotnet test backend/backend.Tests/PengirimanApi.Tests.csproj
+dotnet test Backend/backend.Tests/PengirimanApi.Tests.csproj
 ```
 
 GitHub Actions menjalankan test backend dan build frontend secara otomatis pada setiap push ke
-`main` serta setiap pull request menuju `main`.
+`main` serta setiap pull request menuju `main` (lihat badge CI di atas).
 
 ## Status
 
