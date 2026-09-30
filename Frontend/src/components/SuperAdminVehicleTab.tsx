@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
+import { Lock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
 import ModalOverlay from "@/components/ModalOverlay";
@@ -80,6 +80,19 @@ export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolea
   const [items, setItems] = useState<VehicleItem[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filteredItems = items.filter((item) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      item.nama.toLowerCase().includes(q) ||
+      item.merek.toLowerCase().includes(q) ||
+      (item.model && item.model.toLowerCase().includes(q)) ||
+      item.platNomor.toLowerCase().includes(q) ||
+      item.supir.toLowerCase().includes(q)
+    );
+  });
 
   const [formOpen, setFormOpen] = useState<"create" | VehicleItem | null>(null);
   const [form, setForm] = useState<VehicleFormState>(EMPTY_FORM);
@@ -181,8 +194,22 @@ export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolea
 
   return (
     <div className="card">
-      <div className="card-header" style={hideTitle ? { justifyContent: "flex-end" } : undefined}>
+      <div className="card-header settings-table-toolbar">
         {!hideTitle && <h3>Kendaraan</h3>}
+        <div className="settings-table-toolbar-left">
+          <div className="settings-table-search">
+            <Search width={15} height={15} />
+            <input
+              type="text"
+              placeholder="Cari armada kendaraan..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <span className="settings-table-count-badge">
+            {search.trim() ? `${filteredItems.length} dari ${items.length}` : `${items.length} Data`}
+          </span>
+        </div>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Kendaraan
         </button>
@@ -202,8 +229,10 @@ export default function SuperAdminVehicleTab({ hideTitle }: { hideTitle?: boolea
               <tr><td colSpan={11} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
               <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
+            ) : filteredItems.length === 0 ? (
+              <tr><td colSpan={11} className="table-empty">Tidak ada data yang cocok dengan &quot;{search}&quot;</td></tr>
             ) : (
-              items.map((item, index) => (
+              filteredItems.map((item, index) => (
                 <tr key={item.id}>
                   <td>{index + 1}</td>
                   <td>{item.nama}</td>

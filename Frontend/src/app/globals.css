@@ -1950,7 +1950,7 @@ body.auth-ready .app-shell {
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   overflow: hidden;
-  transition: border-color 150ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 /* Saat di-hover: HANYA border yang berubah biru, background box TIDAK berubah warna */
@@ -1958,8 +1958,10 @@ body.auth-ready .app-shell {
   border-color: var(--blue-500);
 }
 
+/* Saat terbuka: Garis tepi BIRU (bukan hitam) dengan soft blue glow */
 .settings-accordion-item.open {
-  border-color: var(--border-color);
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 1px var(--blue-500), 0 4px 16px rgba(37, 99, 235, 0.08);
 }
 
 .settings-accordion-head {
@@ -2043,7 +2045,7 @@ body.auth-ready .app-shell {
   height: 28px;
   border-radius: 6px;
   color: var(--text-secondary);
-  transition: transform 180ms ease, color 150ms ease;
+  transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms ease;
 }
 
 .settings-accordion-item:hover .settings-accordion-chevron-wrap {
@@ -2055,10 +2057,35 @@ body.auth-ready .app-shell {
   color: var(--blue-500);
 }
 
+/* Animasi buka-tutup halus (smooth collapse via CSS Grid) */
+.settings-accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.settings-accordion-item.open .settings-accordion-collapse {
+  grid-template-rows: 1fr;
+}
+
+.settings-accordion-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .settings-accordion-body {
   padding: 0 18px 18px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-surface);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.settings-accordion-item.open .settings-accordion-body {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* The wrapped component (SuperAdminMasterDataTab etc.) still renders its own .card - strip its
@@ -2070,6 +2097,71 @@ body.auth-ready .app-shell {
   box-shadow: none;
   border-radius: 0;
   background: transparent;
+}
+
+/* Toolbar styling inside settings accordion tables (search input & counter badge) */
+.settings-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.settings-table-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+}
+
+.settings-table-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.settings-table-search svg {
+  position: absolute;
+  left: 11px;
+  color: var(--text-tertiary, #94a3b8);
+  pointer-events: none;
+}
+
+.settings-table-search input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 34px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.settings-table-search input:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.settings-table-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--blue-500);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  white-space: nowrap;
 }
 
 /* ---------- Room booking: room picker grid ---------- */

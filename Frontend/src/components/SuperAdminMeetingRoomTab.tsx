@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
+import { Lock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
 import ModalOverlay from "@/components/ModalOverlay";
@@ -50,6 +50,17 @@ export default function SuperAdminMeetingRoomTab({ hideTitle }: { hideTitle?: bo
   const [items, setItems] = useState<MeetingRoomItem[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filteredItems = items.filter((item) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      item.nama.toLowerCase().includes(q) ||
+      item.lantai.toLowerCase().includes(q) ||
+      item.fasilitas.some((f) => f.toLowerCase().includes(q))
+    );
+  });
 
   const [formOpen, setFormOpen] = useState<"create" | MeetingRoomItem | null>(null);
   const [form, setForm] = useState<RoomFormState>(EMPTY_FORM);
@@ -139,8 +150,22 @@ export default function SuperAdminMeetingRoomTab({ hideTitle }: { hideTitle?: bo
 
   return (
     <div className="card">
-      <div className="card-header" style={hideTitle ? { justifyContent: "flex-end" } : undefined}>
+      <div className="card-header settings-table-toolbar">
         {!hideTitle && <h3>Ruang Meeting</h3>}
+        <div className="settings-table-toolbar-left">
+          <div className="settings-table-search">
+            <Search width={15} height={15} />
+            <input
+              type="text"
+              placeholder="Cari ruang meeting..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <span className="settings-table-count-badge">
+            {search.trim() ? `${filteredItems.length} dari ${items.length}` : `${items.length} Data`}
+          </span>
+        </div>
         <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
           <Plus width={16} height={16} /> Tambah Ruang Meeting
         </button>
@@ -160,8 +185,10 @@ export default function SuperAdminMeetingRoomTab({ hideTitle }: { hideTitle?: bo
               <tr><td colSpan={6} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
               <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
+            ) : filteredItems.length === 0 ? (
+              <tr><td colSpan={6} className="table-empty">Tidak ada data yang cocok dengan &quot;{search}&quot;</td></tr>
             ) : (
-              items.map((item, index) => (
+              filteredItems.map((item, index) => (
                 <tr key={item.id}>
                   <td>{index + 1}</td>
                   <td>{item.nama}</td>

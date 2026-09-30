@@ -485,7 +485,11 @@ function SettingsAccordionSection({
           </div>
         </div>
       </button>
-      {open && <div className="settings-accordion-body">{children}</div>}
+      <div className="settings-accordion-collapse" aria-hidden={!open}>
+        <div className="settings-accordion-collapse-inner">
+          <div className="settings-accordion-body">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2493,14 +2497,14 @@ function SuperAdminPageInner() {
             <div className="settings-accordion">
               <SettingsAccordionSection
                 title="Asuransi Pengiriman"
-                description="Kelola opsi asuransi perlindungan barang dan dokumen berharga ekspedisi"
+                description="Kelola opsi asuransi pengiriman barang untuk operasional modul Expedition"
                 icon={<Shield width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Pengemasan Tambahan"
-                description="Pilihan proteksi packing barang ekspedisi (bubble wrap, peti kayu, kardus tebal)"
+                description="Kelola opsi perlindungan pengemasan barang untuk operasional modul Expedition"
                 icon={<Layers width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" hideTitle />
@@ -3437,14 +3441,14 @@ function SuperAdminPageInner() {
             <div className="settings-accordion">
               <SettingsAccordionSection
                 title="Ruang Meeting"
-                description="Kelola daftar ruangan rapat, kapasitas peserta, lokasi lantai, dan kelengkapan fasilitas"
+                description="Kelola daftar ruangan rapat dan fasilitas untuk operasional modul Room Booking"
                 icon={<Building2 width={18} height={18} />}
               >
                 <SuperAdminMeetingRoomTab hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tipe Booking"
-                description="Klasifikasi agenda reservasi ruangan (internal tim, rapat direksi, presentasi vendor, dsb.)"
+                description="Kelola opsi tipe booking dan agenda untuk operasional modul Room Booking"
                 icon={<Calendar width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" hideTitle />
@@ -4378,8 +4382,8 @@ function SuperAdminPageInner() {
           {kendaraanSubtab === "roster" && (
             <div className="settings-accordion">
               <SettingsAccordionSection
-                title="Armada Kendaraan Dinas"
-                description="Kelola daftar armada mobil kantor, nomor plat polisi, kapasitas, merek/model, dan data supir"
+                title="Kendaraan"
+                description="Kelola daftar armada kendaraan dinas untuk operasional modul Vehicle Booking"
                 icon={<Car width={18} height={18} />}
               >
                 <SuperAdminVehicleTab hideTitle />
@@ -4999,14 +5003,14 @@ function SuperAdminPageInner() {
             <div className="settings-accordion">
               <SettingsAccordionSection
                 title="Kategori Arsip"
-                description="Klasifikasi berkas dokumen fisik berdasarkan retensi dan jenis dokumen arsip"
+                description="Kelola opsi kategori arsip fisik untuk operasional modul Archive"
                 icon={<Folder width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
                 title="Tahun Arsip"
-                description="Pilihan tahun penciptaan arsip fisik untuk pencarian dan penataan lokasi rak gudang"
+                description="Kelola opsi tahun penciptaan arsip fisik untuk operasional modul Archive"
                 icon={<Calendar width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" hideTitle />
@@ -5733,18 +5737,18 @@ function SuperAdminPageInner() {
           {atkSubtab === "settings" && (
             <div className="settings-accordion">
               <SettingsAccordionSection
-                title="Kategori ATK"
-                description="Pengelompokan jenis alat tulis kantor dan perlengkapan inventaris divisi"
+                title="Kategori Perlengkapan Kantor"
+                description="Kelola opsi kategori barang perlengkapan untuk operasional modul Office Supplies"
                 icon={<Layers width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" hideTitle />
+                <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori Perlengkapan Kantor" hideTitle />
               </SettingsAccordionSection>
               <SettingsAccordionSection
-                title="Nama Barang ATK"
-                description="Katalog barang perlengkapan kantor lengkap dengan standar satuan (Rim, Pcs, Box, Pack)"
+                title="Nama Barang Perlengkapan Kantor"
+                description="Kelola daftar nama barang dan satuan untuk operasional modul Office Supplies"
                 icon={<ClipboardList width={18} height={18} />}
               >
-                <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" hideTitle />
+                <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Barang Perlengkapan Kantor" hasExtra extraLabel="Satuan" hideTitle />
               </SettingsAccordionSection>
             </div>
           )}
@@ -6364,7 +6368,7 @@ function SuperAdminPageInner() {
             <div className="settings-accordion">
               <SettingsAccordionSection
                 title="Kategori Kerusakan"
-                description="Klasifikasi jenis perbaikan fasilitas gedung (listrik, AC, plumbing, sipil, furnitur)"
+                description="Kelola opsi kategori kerusakan fasilitas untuk operasional modul Maintenance"
                 icon={<Wrench width={18} height={18} />}
               >
                 <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" hideTitle />
