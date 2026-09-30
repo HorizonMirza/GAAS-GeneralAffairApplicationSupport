@@ -1938,11 +1938,11 @@ body.auth-ready .app-shell {
   color: #fff;
 }
 
-/* ---------- Settings master-data accordion (Super Admin per-module Settings sub-tab) ---------- */
+/* ---------- Settings master-data accordion (Super Admin per-module Settings sub-tab - Accordion 2.0) ---------- */
 .settings-accordion {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .settings-accordion-item {
@@ -1950,51 +1950,175 @@ body.auth-ready .app-shell {
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.settings-accordion-item:hover {
+  border-color: var(--blue-400);
+}
+
+.settings-accordion-item.open {
+  border-color: var(--border-color);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .settings-accordion-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 16px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 18px 22px;
   background: transparent;
   border: none;
   cursor: pointer;
   font: inherit;
   color: var(--text-primary);
   text-align: left;
+  transition: background-color 150ms ease;
 }
 
 .settings-accordion-head:hover {
-  background: var(--bg-surface-alt);
+  background: var(--bg-surface-alt, rgba(0, 0, 0, 0.02));
 }
 
 .settings-accordion-head-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  min-width: 0;
 }
 
-.settings-accordion-head h3 {
+.settings-accordion-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  transition: transform 160ms ease;
+}
+
+.settings-accordion-item:hover .settings-accordion-icon-box {
+  transform: scale(1.05);
+}
+
+.settings-accordion-icon-box.icon-blue {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--blue-500, #2563eb);
+}
+
+.settings-accordion-icon-box.icon-purple {
+  background: rgba(147, 51, 234, 0.12);
+  color: #8b5cf6;
+}
+
+.settings-accordion-icon-box.icon-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.settings-accordion-icon-box.icon-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.settings-accordion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-accordion-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-accordion-title-row h3 {
   margin: 0;
   font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
-.settings-accordion-chevron {
+.settings-accordion-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--blue-500, #2563eb);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  letter-spacing: 0.01em;
+}
+
+.settings-accordion-badge.badge-purple {
+  background: rgba(147, 51, 234, 0.1);
+  color: #8b5cf6;
+  border-color: rgba(147, 51, 234, 0.2);
+}
+
+.settings-accordion-badge.badge-emerald {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.settings-accordion-badge.badge-amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.settings-accordion-desc {
+  margin: 0;
+  font-size: 0.81rem;
   color: var(--text-secondary);
-  transition: transform 160ms ease;
+  line-height: 1.35;
+}
+
+.settings-accordion-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-shrink: 0;
 }
 
-.settings-accordion-item.open .settings-accordion-chevron {
+.settings-accordion-chevron-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  transition: transform 200ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.settings-accordion-head:hover .settings-accordion-chevron-wrap {
+  background: var(--bg-surface-alt, rgba(0, 0, 0, 0.04));
+  color: var(--text-primary);
+}
+
+.settings-accordion-item.open .settings-accordion-chevron-wrap {
   transform: rotate(90deg);
+  color: var(--blue-500, #2563eb);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .settings-accordion-body {
-  padding: 0 20px 20px;
+  padding: 0 22px 22px;
   border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
 }
 
 /* The wrapped component (SuperAdminMasterDataTab etc.) still renders its own .card - strip its
@@ -2002,9 +2126,10 @@ body.auth-ready .app-shell {
    around it, instead of a card nested inside a card. */
 .settings-accordion-body .card {
   border: none;
-  padding: 20px 0 0;
+  padding: 18px 0 0;
   box-shadow: none;
   border-radius: 0;
+  background: transparent;
 }
 
 /* ---------- Room booking: room picker grid ---------- */

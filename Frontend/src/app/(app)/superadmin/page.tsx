@@ -446,15 +446,57 @@ const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "",
 // once - the wrapped component (SuperAdminMasterDataTab etc.) keeps owning its own data/CRUD,
 // this just supplies the collapsible chrome and the section title around it (hideTitle removes
 // the child's own now-redundant heading).
-function SettingsAccordionSection({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function SettingsAccordionSection({
+  title,
+  description,
+  badge,
+  icon,
+  iconVariant = "blue",
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  description?: string;
+  badge?: string | number;
+  icon?: React.ReactNode;
+  iconVariant?: "blue" | "purple" | "emerald" | "amber";
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(!!defaultOpen);
   return (
     <div className={`settings-accordion-item ${open ? "open" : ""}`}>
-      <button type="button" className="settings-accordion-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span className="settings-accordion-head-left">
-          <ChevronRight className="settings-accordion-chevron" width={16} height={16} />
-          <h3>{title}</h3>
-        </span>
+      <button
+        type="button"
+        className="settings-accordion-head"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="settings-accordion-head-left">
+          {icon && (
+            <div className={`settings-accordion-icon-box icon-${iconVariant}`}>
+              {icon}
+            </div>
+          )}
+          <div className="settings-accordion-info">
+            <div className="settings-accordion-title-row">
+              <h3>{title}</h3>
+              {badge != null && (
+                <span className={`settings-accordion-badge badge-${iconVariant}`}>
+                  {badge}
+                </span>
+              )}
+            </div>
+            {description && (
+              <p className="settings-accordion-desc">{description}</p>
+            )}
+          </div>
+        </div>
+        <div className="settings-accordion-head-right">
+          <div className="settings-accordion-chevron-wrap">
+            <ChevronRight width={18} height={18} />
+          </div>
+        </div>
       </button>
       {open && <div className="settings-accordion-body">{children}</div>}
     </div>
@@ -471,6 +513,9 @@ function SuperAdminPageInner() {
   const kategoriKerusakanOptions = useMasterDataOptions("KATEGORI_KERUSAKAN");
   const archiveKategoriOptions = useMasterDataOptions("ARCHIVE_KATEGORI");
   const tipeBookingOptions = useMasterDataOptions("TIPE_BOOKING");
+  const asuransiOptions = useMasterDataOptions("ASURANSI");
+  const pengemasanOptions = useMasterDataOptions("PENGEMASAN");
+  const arsipTahunOptions = useMasterDataOptions("ARSIP_TAHUN");
 
   const [activeTab, setActiveTabState] = useState<SuperAdminTab>(() => {
     const fromUrl = searchParams.get("tab") as SuperAdminTab | null;
@@ -2462,10 +2507,23 @@ function SuperAdminPageInner() {
 
           {ekspedisiSubtab === "settings" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Asuransi" defaultOpen>
+              <SettingsAccordionSection
+                title="Asuransi Pengiriman"
+                description="Kelola opsi asuransi perlindungan barang dan dokumen berharga ekspedisi"
+                badge={`${asuransiOptions.items.length > 0 ? asuransiOptions.items.length : "Master"} Opsi`}
+                icon={<Shield width={20} height={20} />}
+                iconVariant="emerald"
+                defaultOpen
+              >
                 <SuperAdminMasterDataTab category="ASURANSI" itemLabel="Asuransi" hideTitle />
               </SettingsAccordionSection>
-              <SettingsAccordionSection title="Pengemasan Tambahan">
+              <SettingsAccordionSection
+                title="Pengemasan Tambahan"
+                description="Pilihan proteksi packing barang ekspedisi (bubble wrap, peti kayu, kardus tebal)"
+                badge={`${pengemasanOptions.items.length > 0 ? pengemasanOptions.items.length : "Master"} Opsi`}
+                icon={<Layers width={20} height={20} />}
+                iconVariant="amber"
+              >
                 <SuperAdminMasterDataTab category="PENGEMASAN" itemLabel="Pengemasan Tambahan" hideTitle />
               </SettingsAccordionSection>
             </div>
@@ -3398,10 +3456,23 @@ function SuperAdminPageInner() {
 
           {bookingRuangSubtab === "roster" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Ruang Meeting" defaultOpen>
+              <SettingsAccordionSection
+                title="Ruang Meeting"
+                description="Kelola daftar ruangan rapat, kapasitas peserta, lokasi lantai, dan kelengkapan fasilitas"
+                badge={`${rooms.length > 0 ? rooms.length : "Master"} Ruangan`}
+                icon={<Building2 width={20} height={20} />}
+                iconVariant="blue"
+                defaultOpen
+              >
                 <SuperAdminMeetingRoomTab hideTitle />
               </SettingsAccordionSection>
-              <SettingsAccordionSection title="Tipe Booking">
+              <SettingsAccordionSection
+                title="Tipe Booking"
+                description="Klasifikasi agenda reservasi ruangan (internal tim, rapat direksi, presentasi vendor, dsb.)"
+                badge={`${tipeBookingOptions.items.length > 0 ? tipeBookingOptions.items.length : "Master"} Tipe`}
+                icon={<Calendar width={20} height={20} />}
+                iconVariant="purple"
+              >
                 <SuperAdminMasterDataTab category="TIPE_BOOKING" itemLabel="Tipe Booking" hideTitle />
               </SettingsAccordionSection>
             </div>
@@ -4332,7 +4403,14 @@ function SuperAdminPageInner() {
 
           {kendaraanSubtab === "roster" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Kendaraan" defaultOpen>
+              <SettingsAccordionSection
+                title="Armada Kendaraan Dinas"
+                description="Kelola daftar armada mobil kantor, nomor plat polisi, kapasitas, merek/model, dan data supir"
+                badge={`${vehicles.length > 0 ? vehicles.length : "Master"} Armada`}
+                icon={<Car width={20} height={20} />}
+                iconVariant="blue"
+                defaultOpen
+              >
                 <SuperAdminVehicleTab hideTitle />
               </SettingsAccordionSection>
             </div>
@@ -4948,10 +5026,23 @@ function SuperAdminPageInner() {
 
           {arsipSubtab === "settings" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Kategori Arsip" defaultOpen>
+              <SettingsAccordionSection
+                title="Kategori Arsip"
+                description="Klasifikasi berkas dokumen fisik berdasarkan retensi dan jenis dokumen arsip"
+                badge={`${archiveKategoriOptions.items.length > 0 ? archiveKategoriOptions.items.length : "Master"} Kategori`}
+                icon={<Folder width={20} height={20} />}
+                iconVariant="blue"
+                defaultOpen
+              >
                 <SuperAdminMasterDataTab category="ARCHIVE_KATEGORI" itemLabel="Kategori Arsip" hideTitle />
               </SettingsAccordionSection>
-              <SettingsAccordionSection title="Tahun Arsip">
+              <SettingsAccordionSection
+                title="Tahun Arsip"
+                description="Pilihan tahun penciptaan arsip fisik untuk pencarian dan penataan lokasi rak gudang"
+                badge={`${arsipTahunOptions.items.length > 0 ? arsipTahunOptions.items.length : "Master"} Tahun`}
+                icon={<Calendar width={20} height={20} />}
+                iconVariant="purple"
+              >
                 <SuperAdminMasterDataTab category="ARSIP_TAHUN" itemLabel="Tahun Arsip" hideTitle />
               </SettingsAccordionSection>
             </div>
@@ -5675,10 +5766,23 @@ function SuperAdminPageInner() {
 
           {atkSubtab === "settings" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Kategori ATK" defaultOpen>
+              <SettingsAccordionSection
+                title="Kategori ATK"
+                description="Pengelompokan jenis alat tulis kantor dan perlengkapan inventaris divisi"
+                badge={`${atkKategoriOptions.items.length > 0 ? atkKategoriOptions.items.length : "Master"} Kategori`}
+                icon={<Layers width={20} height={20} />}
+                iconVariant="blue"
+                defaultOpen
+              >
                 <SuperAdminMasterDataTab category="ATK_KATEGORI" itemLabel="Kategori ATK" hideTitle />
               </SettingsAccordionSection>
-              <SettingsAccordionSection title="Nama Barang">
+              <SettingsAccordionSection
+                title="Nama Barang ATK"
+                description="Katalog barang perlengkapan kantor lengkap dengan standar satuan (Rim, Pcs, Box, Pack)"
+                badge="Katalog Barang"
+                icon={<ClipboardList width={20} height={20} />}
+                iconVariant="purple"
+              >
                 <SuperAdminMasterDataTab category="ATK_NAMA_BARANG" itemLabel="Nama Barang" hasExtra extraLabel="Satuan" hideTitle />
               </SettingsAccordionSection>
             </div>
@@ -6297,7 +6401,14 @@ function SuperAdminPageInner() {
 
           {saranaSubtab === "settings" && (
             <div className="settings-accordion">
-              <SettingsAccordionSection title="Kategori Kerusakan" defaultOpen>
+              <SettingsAccordionSection
+                title="Kategori Kerusakan"
+                description="Klasifikasi jenis perbaikan fasilitas gedung (listrik, AC, plumbing, sipil, furnitur)"
+                badge={`${kategoriKerusakanOptions.items.length > 0 ? kategoriKerusakanOptions.items.length : "Master"} Kategori`}
+                icon={<Wrench width={20} height={20} />}
+                iconVariant="amber"
+                defaultOpen
+              >
                 <SuperAdminMasterDataTab category="KATEGORI_KERUSAKAN" itemLabel="Kategori Kerusakan" hideTitle />
               </SettingsAccordionSection>
             </div>
