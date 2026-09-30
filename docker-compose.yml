@@ -1,0 +1,96 @@
+services:
+  # ==========================================
+  # Database Service (PostgreSQL 16)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: gaas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pengiriman_barang}
+      POSTGRES_USER: ${DB_USER:-pengiriman_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pengiriman_app} -d ${DB_NAME:-pengiriman_barang}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gaas-network
+
+  # ==========================================
+  # Backend API (.NET 8 Web API)
+  # ==========================================
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: gaas-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${DB_NAME:-pengiriman_barang};Username=${DB_USER:-pengiriman_app};Password=${DB_PASSWORD}"
+      Jwt__SecretKey: ${JWT_SECRET:?JWT_SECRET wajib diisi}
+      Jwt__ExpireMinutes: ${JWT_EXPIRE_MINUTES:-480}
+      Cors__Origins: ${CORS_ORIGINS:-http://localhost}
+      UploadDir: /app/uploads/invoices
+      AtkInvoiceUploadDir: /app/uploads/atk-invoices
+      SaranaUploadDir: /app/uploads/sarana
+      ProfilePhotoUploadDir: /app/uploads/profile-photos
+      AppLogoUploadDir: /app/uploads/app-logo
+    volumes:
+      - gaas_uploads:/app/uploads
+    networks:
+      - gaas-network
+
+  # ==========================================
+  # Frontend Application (Next.js 16 Standalone)
+  # ==========================================
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+    container_name: gaas-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - gaas-network
+
+  # ==========================================
+  # Nginx Reverse Proxy (Unified Gateway)
+  # ==========================================
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: gaas-nginx
+    restart: unless-stopped
+    ports:
+      - "${PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - gaas-network
+
+# ==========================================
+# Persistent Volumes & Networks
+# ==========================================
+volumes:
+  pgdata:
+    name: gaas_pgdata
+  gaas_uploads:
+    name: gaas_uploads
+
+networks:
+  gaas-network:
+    name: gaas-network
+    driver: bridge

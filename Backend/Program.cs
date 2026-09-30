@@ -92,7 +92,7 @@ using (var scope = app.Services.CreateScope())
     foreach (var tableCol in new[] { "users", "pengiriman", "booking_ruang", "booking_kendaraan", "permintaan_atk", "perbaikan_sarana" })
     {
         migrateDb.Database.ExecuteSqlRaw(
-            $"UPDATE {tableCol} SET departemen = {{0}} WHERE departemen = {{1}}",
+            "UPDATE " + tableCol + " SET departemen = {0} WHERE departemen = {1}",
             "Engineering Project - EPC", "Engineering Project – EPC");
     }
 

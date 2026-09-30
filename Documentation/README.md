@@ -76,4 +76,5 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — detail teknis backend & frontend.
 - [`WORKFLOW.md`](./WORKFLOW.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
 - [`TODO.md`](./TODO.md) — ide/fitur yang sudah dibahas tapi belum dikerjakan.
+- [`DEPLOYMENT.md`](./DEPLOYMENT.md) — panduan deployment produksi di server kantor SIG (Docker Compose & Nginx).
 - [`SKILL.md`](./SKILL.md) — ringkasan stack & konvensi kode yang perlu dipahami untuk berkontribusi.

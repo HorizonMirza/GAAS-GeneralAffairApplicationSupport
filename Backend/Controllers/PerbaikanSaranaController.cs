@@ -1106,7 +1106,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         item.GambarDibuatBy = user!.Id;
         item.GambarDibuatAt = DateTime.UtcNow;
         item.GambarFilePath = storedFilename;
-        item.GambarOriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
+        item.GambarOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? storedFilename : file.FileName;
         item.GambarContentType = contentType!;
         AddLog(item, "GAMBAR_DIBUAT", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
         var saveError = await TrySaveChangesAsync(_db);

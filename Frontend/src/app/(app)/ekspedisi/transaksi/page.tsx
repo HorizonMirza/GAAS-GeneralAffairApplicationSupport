@@ -42,7 +42,7 @@ interface FilterState {
 const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, tanggal: "", bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "" };
 
 function TransaksiPageInner() {
-  const { me, orgStructure, loading } = useAuth();
+  const { me, orgStructure } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();

@@ -1,0 +1,9 @@
+bin/
+obj/
+appsettings.json
+appsettings.Development.json
+uploads/
+backend.Tests/
+.git/
+.vs/
+.vscode/

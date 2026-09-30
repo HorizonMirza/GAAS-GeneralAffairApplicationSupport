@@ -34,6 +34,7 @@ Semua dokumentasi detail ada di [`Documentation/`](./Documentation):
 | [`Documentation/SKILL.md`](./Documentation/SKILL.md) | Stack & konvensi kode untuk kontribusi. |
 | [`Documentation/WORKFLOW.md`](./Documentation/WORKFLOW.md) | Alur kerja pengembangan (revisi → verifikasi → commit & push). |
 | [`Documentation/TODO.md`](./Documentation/TODO.md) | Ide/fitur yang sudah dibahas tapi belum dikerjakan. |
+| [`Documentation/DEPLOYMENT.md`](./Documentation/DEPLOYMENT.md) | Panduan deployment produksi di server kantor SIG (Docker & Nginx). |
 
 ## Pengujian
 
