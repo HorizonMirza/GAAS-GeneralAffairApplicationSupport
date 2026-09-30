@@ -1,6 +1,6 @@
 # GAAS (General Affair Application System) — PGN Solution
 
-Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah tahap KPU di Expedition dan Office Supplies). Detail per modul di [`Prd.md`](./Prd.md).
+Aplikasi internal multi-modul untuk operasional kantor: Expedition (pengiriman barang), Room Booking, Vehicle Booking, Office Supplies (permintaan ATK), Maintenance (perbaikan sarana), dan Archive (permintaan pemindahan arsip) — dengan alur approval berjenjang sesuai struktur organisasi (Departemen/Divisi → Admin GA → Approval GA, ditambah tahap KPU di Expedition dan Office Supplies). Detail per modul di [`PRD.md`](./PRD.md).
 
 ## Arsitektur
 
@@ -61,7 +61,7 @@ DRAFT -> SUBMITTED
 
 Reject di tiap tahap mengembalikan dokumen ke pihak sebelumnya untuk direvisi lalu resubmit.
 
-Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi berhenti di Approval GA (tanpa tahap KPU). Office Supplies punya tahap KPU seperti Ekspedisi (KPU sign-off pembelian ATK, baik lewat KPU sendiri maupun kanal eksternal PaDi). Reject di kelima modul ini (semua kecuali Ekspedisi) selalu jalan buntu — tidak ada revisi-resubmit. Archive sendiri bukan penyimpanan file digital, melainkan permintaan pemindahan arsip fisik — begitu disetujui penuh, arsipnya muncul di halaman Catalog (read-only). Detail lengkap di [`Prd.md`](./Prd.md).
+Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi berhenti di Approval GA (tanpa tahap KPU). Office Supplies punya tahap KPU seperti Ekspedisi (KPU sign-off pembelian ATK, baik lewat KPU sendiri maupun kanal eksternal PaDi). Reject di kelima modul ini (semua kecuali Ekspedisi) selalu jalan buntu — tidak ada revisi-resubmit. Archive sendiri bukan penyimpanan file digital, melainkan permintaan pemindahan arsip fisik — begitu disetujui penuh, arsipnya muncul di halaman Catalog (read-only). Detail lengkap di [`PRD.md`](./PRD.md).
 
 ## Peran (Role)
 
@@ -72,8 +72,8 @@ Room Booking, Vehicle Booking, Maintenance, dan Archive pakai alur serupa tapi b
 ## Dokumen Lain
 
 - [`../README.md`](../README.md) — halaman utama repo di GitHub, ringkasan singkat yang mengarah balik ke sini.
-- [`Prd.md`](./Prd.md) — kebutuhan produk & daftar modul.
+- [`PRD.md`](./PRD.md) — kebutuhan produk & daftar modul.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — detail teknis backend & frontend.
-- [`workflow.md`](./workflow.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
+- [`WORKFLOW.md`](./WORKFLOW.md) — alur kerja pengembangan (revisi → verifikasi → commit & push).
 - [`TODO.md`](./TODO.md) — ide/fitur yang sudah dibahas tapi belum dikerjakan.
-- [`skill.md`](./skill.md) — ringkasan stack & konvensi kode yang perlu dipahami untuk berkontribusi.
+- [`SKILL.md`](./SKILL.md) — ringkasan stack & konvensi kode yang perlu dipahami untuk berkontribusi.

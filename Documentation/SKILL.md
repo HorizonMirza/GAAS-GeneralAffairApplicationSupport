@@ -17,11 +17,11 @@ Ringkasan pengetahuan/stack yang perlu dipahami untuk berkontribusi ke proyek in
 - **Komponen modal & UI bersama**: sebelum bikin modal/tombol baru, cek dulu apakah pola serupa sudah ada di `src/components/` (mis. `ConfirmProvider`/`useConfirm()` untuk konfirmasi, `ToastProvider` untuk notifikasi, `.card-icon-btn` untuk tombol ikon kotak seperti Chat/Aksi).
 - **Riwayat/log**: setiap perubahan status dokumen dicatat ke tabel log (`PengirimanLog`) — pertahankan pola ini kalau menambah alur status baru.
 - **Reject reason opsional**: alasan penolakan tidak wajib diisi di seluruh alur — jangan tambahkan validasi wajib tanpa diminta.
-- **Bahasa UI**: label & pesan yang tampil ke pengguna pakai Bahasa Indonesia, kecuali nama modul yang sudah sengaja diganti ke Bahasa Inggris ringkas (lihat `Prd.md`).
+- **Bahasa UI**: label & pesan yang tampil ke pengguna pakai Bahasa Indonesia, kecuali nama modul yang sudah sengaja diganti ke Bahasa Inggris ringkas (lihat `PRD.md`).
 - **Tidak ada 2-baris di label sidebar/menu** — pilih istilah singkat, karena `.nav-category-trigger` sengaja tidak dipotong dengan ellipsis.
 - **Modul transaksional baru (approval berjenjang)**: jangan desain dari nol — Room Booking, Vehicle Booking, Maintenance, dan Archive semuanya memakai pola & `BookingStatusEnum` yang sama, tanpa tahap KPU (lihat "Pola Modul Transaksional" di `ARCHITECTURE.md`). Office Supplies pengecualian: pakai `StatusEnum` yang sama dengan Ekspedisi karena ada tahap KPU, tapi reject-nya tetap jalan buntu seperti kelompok `BookingStatusEnum` (lihat catatan Office Supplies di `ARCHITECTURE.md`). Contek controller/model/DTO/frontend modul yang paling mirip kebutuhan modul barunya, lalu sesuaikan field-nya saja.
 - **Modul tanpa approval**: kalau suatu saat ada kebutuhan modul yang benar-benar tidak butuh alur approval (mis. penyimpanan langsung tanpa status), jangan paksakan pola `BookingStatusEnum`/chat/log ke modul itu — tapi saat ini semua modul transaksional yang ada (termasuk Archive) sudah memakai alur approval penuh, jadi belum ada contoh nyata di codebase untuk pola ini.
 
 ## Alur Kerja Kontribusi
 
-Lihat [`workflow.md`](./workflow.md) untuk siklus revisi → verifikasi → commit & push yang dipakai sepanjang proyek ini.
+Lihat [`WORKFLOW.md`](./WORKFLOW.md) untuk siklus revisi → verifikasi → commit & push yang dipakai sepanjang proyek ini.

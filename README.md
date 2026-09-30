@@ -29,10 +29,10 @@ Semua dokumentasi detail ada di [`Documentation/`](./Documentation):
 | Dokumen | Isi |
 |---|---|
 | [`Documentation/README.md`](./Documentation/README.md) | Setup lokal, arsitektur singkat, alur status dokumen, daftar role — **mulai dari sini**. |
-| [`Documentation/Prd.md`](./Documentation/Prd.md) | Kebutuhan produk & daftar modul. |
+| [`Documentation/PRD.md`](./Documentation/PRD.md) | Kebutuhan produk & daftar modul. |
 | [`Documentation/ARCHITECTURE.md`](./Documentation/ARCHITECTURE.md) | Detail teknis backend & frontend. |
-| [`Documentation/skill.md`](./Documentation/skill.md) | Stack & konvensi kode untuk kontribusi. |
-| [`Documentation/workflow.md`](./Documentation/workflow.md) | Alur kerja pengembangan (revisi → verifikasi → commit & push). |
+| [`Documentation/SKILL.md`](./Documentation/SKILL.md) | Stack & konvensi kode untuk kontribusi. |
+| [`Documentation/WORKFLOW.md`](./Documentation/WORKFLOW.md) | Alur kerja pengembangan (revisi → verifikasi → commit & push). |
 | [`Documentation/TODO.md`](./Documentation/TODO.md) | Ide/fitur yang sudah dibahas tapi belum dikerjakan. |
 
 ## Pengujian
