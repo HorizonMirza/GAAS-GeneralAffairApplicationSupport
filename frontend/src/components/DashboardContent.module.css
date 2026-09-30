@@ -1525,10 +1525,38 @@
   font-size: 0.72rem;
 }
 
+.queueListWrap {
+  position: relative;
+}
+
 .queueList {
   width: 100%;
-  max-height: 420px;
-  overflow-y: auto;
+}
+
+.queueFadeEdge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 56px;
+  background: linear-gradient(to bottom, transparent, var(--bg-surface));
+  pointer-events: none;
+}
+
+.queueShowMore {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  color: var(--blue-600);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.queueShowMore:hover {
+  background: var(--bg-surface);
 }
 
 .queueRow {

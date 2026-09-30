@@ -554,8 +554,11 @@ function formatRupiah(value: number): string {
   }).format(value);
 }
 
+const QUEUE_COLLAPSED_COUNT = 5;
+
 export default function DashboardContent({ me }: { me: Me }) {
   const [demoMode, setDemoMode] = useState(false);
+  const [queueExpanded, setQueueExpanded] = useState(false);
   const [activeView, setActiveView] = useState<DashboardView>("all");
   const [month, setMonth] = useState("");
   const [date, setDate] = useState("");
@@ -1307,16 +1310,26 @@ export default function DashboardContent({ me }: { me: Me }) {
               : dashboardQueue.length === 0 ? (
                 <div className={styles.compactEmpty}>Tidak ada tindakan yang perlu dilakukan saat ini.</div>
               ) : (
-                <div className={styles.queueList}>
-                  {dashboardQueue.map((item) => (
-                    <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
-                      <div className={styles.queueDocument}><span className={`${styles.moduleTag} ${styles[item.moduleKey]}`}>{item.moduleLabel}</span><strong>{item.number}</strong></div>
-                      <div className={styles.queueRequest}><strong>{item.title}</strong><span>{item.requester} · {item.unit}</span></div>
-                      <span className={`${styles.ageBadge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
-                      <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  <div className={styles.queueListWrap}>
+                    <div className={styles.queueList}>
+                      {(queueExpanded ? dashboardQueue : dashboardQueue.slice(0, QUEUE_COLLAPSED_COUNT)).map((item) => (
+                        <Link key={`${item.moduleKey}-${item.id}`} href={item.href} className={styles.queueRow}>
+                          <div className={styles.queueDocument}><span className={`${styles.moduleTag} ${styles[item.moduleKey]}`}>{item.moduleLabel}</span><strong>{item.number}</strong></div>
+                          <div className={styles.queueRequest}><strong>{item.title}</strong><span>{item.requester} · {item.unit}</span></div>
+                          <span className={`${styles.ageBadge} ${item.ageMilliseconds >= 86_400_000 ? styles.ageUrgent : ""}`}>{relativeAge(item.ageMilliseconds)}</span>
+                          <span className={styles.rowAction}><ChevronRight aria-hidden="true" /></span>
+                        </Link>
+                      ))}
+                    </div>
+                    {!queueExpanded && dashboardQueue.length > QUEUE_COLLAPSED_COUNT && <div className={styles.queueFadeEdge} />}
+                  </div>
+                  {dashboardQueue.length > QUEUE_COLLAPSED_COUNT && (
+                    <button type="button" className={styles.queueShowMore} onClick={() => setQueueExpanded((v) => !v)}>
+                      {queueExpanded ? "Tutup" : `Lihat ${dashboardQueue.length - QUEUE_COLLAPSED_COUNT} permohonan lainnya`}
+                    </button>
+                  )}
+                </>
               )}
           </section>
 
