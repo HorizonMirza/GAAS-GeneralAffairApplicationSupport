@@ -475,14 +475,16 @@ interface LogoHistoryRecord {
   previewUrl?: string;
 }
 
+const DEFAULT_SYSTEM_LOGO_URL = "/assets/logo-pgn-solution.png?v=colored";
+
 function getLogoSrc(item: LogoHistoryRecord, currentUpdatedAt?: string, hasCustomLogo?: boolean): string {
-  // 1. Default system logo ALWAYS returns the static default asset
+  // 1. Default system logo ALWAYS returns the colored static default asset
   if (
     item.type.includes("Default") ||
     item.filename.toLowerCase().includes("pgn") ||
     item.filename.toLowerCase().includes("pgm")
   ) {
-    return "/assets/logo-pgn-solution.png";
+    return DEFAULT_SYSTEM_LOGO_URL;
   }
   // 2. Custom logo with saved previewUrl (thumbnail data URL or stored URL)
   if (item.previewUrl) {
@@ -492,7 +494,7 @@ function getLogoSrc(item: LogoHistoryRecord, currentUpdatedAt?: string, hasCusto
   if (item.status === "Aktif" && hasCustomLogo) {
     return api.appLogoUrl(currentUpdatedAt);
   }
-  return "/assets/logo-pgn-solution.png";
+  return DEFAULT_SYSTEM_LOGO_URL;
 }
 
 async function createThumbnailDataUrl(file: File, maxDim = 320): Promise<string> {
@@ -567,7 +569,7 @@ function CompanyLogoTableAccordionItem({
               ...h,
               filename: isDefault ? "logo-pgn-solution.png" : h.filename,
               type: isDefault ? "Logo Default Sistem" : h.type,
-              previewUrl: isDefault ? "/assets/logo-pgn-solution.png" : h.previewUrl,
+              previewUrl: isDefault ? DEFAULT_SYSTEM_LOGO_URL : h.previewUrl,
             };
           });
         }
@@ -581,7 +583,7 @@ function CompanyLogoTableAccordionItem({
         status: "Aktif",
         updatedAt: settings.updatedAt,
         changeCount: 1,
-        previewUrl: settings.hasCustomLogo ? api.appLogoUrl(settings.updatedAt) : "/assets/logo-pgn-solution.png",
+        previewUrl: settings.hasCustomLogo ? api.appLogoUrl(settings.updatedAt) : DEFAULT_SYSTEM_LOGO_URL,
       },
     ];
   });
@@ -713,7 +715,7 @@ function CompanyLogoTableAccordionItem({
           status: "Aktif" as const,
           updatedAt: new Date().toISOString(),
           changeCount: history.length + 1,
-          previewUrl: "/assets/logo-pgn-solution.png",
+          previewUrl: DEFAULT_SYSTEM_LOGO_URL,
         },
         ...history.map((h) => ({ ...h, status: "Riwayat" as const })),
       ];
