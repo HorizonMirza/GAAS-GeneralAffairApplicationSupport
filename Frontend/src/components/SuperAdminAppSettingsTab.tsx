@@ -25,6 +25,8 @@ import PasswordField from "@/components/PasswordField";
 import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
 import SearchableSelect from "@/components/SearchableSelect";
 import { previewSound, setNotificationSoundIds, SOUND_PRESETS } from "@/lib/notificationSound";
+import DateFilterPicker from "@/components/DateFilterPicker";
+import { formatDate, todayLocalDate } from "@/lib/format";
 import type { AppSettings, Holiday } from "@/lib/types";
 
 function errorMessage(err: unknown): string {
@@ -108,6 +110,7 @@ export default function SuperAdminAppSettingsTab() {
         onToggle={() => toggleItem("hours")}
       />
       <NotificationSoundTableAccordionItem
+        settings={settings}
         isOpen={!!openItems["sound"]}
         onToggle={() => toggleItem("sound")}
       />
@@ -1397,9 +1400,11 @@ interface SoundHistoryRecord {
 }
 
 function NotificationSoundTableAccordionItem({
+  settings,
   isOpen,
   onToggle,
 }: {
+  settings: AppSettings;
   isOpen: boolean;
   onToggle: () => void;
 }) {
@@ -1420,6 +1425,8 @@ function NotificationSoundTableAccordionItem({
   const [formOpen, setFormOpen] = useState(false);
   const [formChat, setFormChat] = useState("digital");
   const [formActivity, setFormActivity] = useState("chime");
+  const [formPassword, setFormPassword] = useState("");
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SoundHistoryRecord | null>(null);
 
@@ -1464,13 +1471,28 @@ function NotificationSoundTableAccordionItem({
   function openEditModal() {
     setFormChat(chatSoundId || "digital");
     setFormActivity(activitySoundId || "chime");
+    setFormPassword("");
+    setFormError("");
     setFormOpen(true);
   }
 
   async function handleSaveSounds(e: React.FormEvent) {
     e.preventDefault();
+    if (!formPassword) {
+      setFormError("Password wajib diisi");
+      return;
+    }
+    setFormError("");
     setSaving(true);
     try {
+      // Validasi password Super Admin menggunakan updateAppSettings
+      await api.updateAppSettings({
+        companyName: settings.companyName,
+        operatingStart: settings.operatingStart,
+        operatingEnd: settings.operatingEnd,
+        password: formPassword,
+      });
+
       const result = await api.updateNotificationSoundSettings({
         chatSoundId: formChat,
         activitySoundId: formActivity,
@@ -1498,14 +1520,22 @@ function NotificationSoundTableAccordionItem({
       showToast("Pengaturan suara notifikasi disimpan");
       setFormOpen(false);
     } catch (err) {
-      showToast((err as Error).message, "error");
+      setFormError(errorMessage(err));
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDeleteConfirm() {
+  async function handleDeleteConfirm(password: string) {
     if (!deleteTarget) return;
+
+    // Validasi password Super Admin
+    await api.updateAppSettings({
+      companyName: settings.companyName,
+      operatingStart: settings.operatingStart,
+      operatingEnd: settings.operatingEnd,
+      password,
+    });
 
     if (deleteTarget.status === "Aktif") {
       const defaultChat = "digital";
@@ -1671,6 +1701,10 @@ function NotificationSoundTableAccordionItem({
                   <button type="button" className="modal-close" onClick={() => setFormOpen(false)}>&times;</button>
                 </div>
 
+                <div className={`alert-error ${formError ? "alert-error-visible" : ""}`}>
+                  <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
+                </div>
+
                 <form onSubmit={handleSaveSounds}>
                   <div className="form-grid">
                     <div className="field full">
@@ -1754,6 +1788,20 @@ function NotificationSoundTableAccordionItem({
                     </div>
                   </div>
 
+                  <div style={{ marginTop: 12 }}>
+                    <PasswordField
+                      id="modal-sound-password"
+                      label="Password Super Admin"
+                      placeholder="Masukkan Password"
+                      icon={<Lock width={15} height={15} />}
+                      value={formPassword}
+                      onChange={(v) => {
+                        setFormPassword(v);
+                        if (formError) setFormError("");
+                      }}
+                    />
+                  </div>
+
                   <div className="modal-actions" style={{ marginTop: 20 }}>
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
                       {saving ? "Saving..." : "Save"}
@@ -1763,27 +1811,27 @@ function NotificationSoundTableAccordionItem({
               </div>
             </ModalOverlay>
 
-            <ModalOverlay open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className={`modal-overlay modal-overlay-centered ${deleteTarget ? "" : "hidden"}`}>
-              <div className="modal" style={{ maxWidth: 440 }}>
-                <div className="modal-header">
-                  <h3>{deleteTarget?.status === "Aktif" ? "Reset Suara ke Default" : "Hapus Riwayat Suara"}</h3>
-                  <button type="button" className="modal-close" onClick={() => setDeleteTarget(null)}>&times;</button>
+            <DeleteWithPasswordModal
+              open={!!deleteTarget}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Suara ke Default (Digital / Chime)" : "Hapus Riwayat Suara"}
+              onConfirm={handleDeleteConfirm}
+              onClose={() => setDeleteTarget(null)}
+              passwordFieldId="modal-delete-sound-password"
+            >
+              {deleteTarget && (
+                <div className="form-grid">
+                  <div className="field full">
+                    <label>Suara Notifikasi</label>
+                    <input
+                      type="text"
+                      value={`${soundLabel(deleteTarget.chatSoundId)} & ${soundLabel(deleteTarget.activitySoundId)}`}
+                      disabled
+                      readOnly
+                    />
+                  </div>
                 </div>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: "0 0 16px" }}>
-                  {deleteTarget?.status === "Aktif"
-                    ? "Apakah Anda yakin ingin mengembalikan suara notifikasi ke preset bawaan (Digital / Chime)?"
-                    : "Apakah Anda yakin ingin menghapus baris riwayat suara ini?"}
-                </p>
-                <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setDeleteTarget(null)}>
-                    Batal
-                  </button>
-                  <button type="button" className="btn btn-danger" onClick={handleDeleteConfirm}>
-                    {deleteTarget?.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                  </button>
-                </div>
-              </div>
-            </ModalOverlay>
+              )}
+            </DeleteWithPasswordModal>
           </div>
         </div>
       </div>
@@ -1839,7 +1887,7 @@ function HolidaysTableAccordionItem({
 
   function openCreate() {
     setEditTarget(null);
-    setForm(EMPTY_HOLIDAY_FORM);
+    setForm({ date: todayLocalDate(), label: "", password: "" });
     setFormErrors({});
     setFormOpen(true);
   }
@@ -1963,7 +2011,7 @@ function HolidaysTableAccordionItem({
                       filteredHolidays.map((h, index) => (
                         <tr key={h.id}>
                           <td>{index + 1}</td>
-                          <td>{h.date}</td>
+                          <td>{formatDate(h.date)}</td>
                           <td>{h.label}</td>
                           <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                             <button
@@ -2008,12 +2056,15 @@ function HolidaysTableAccordionItem({
                   <div className="form-grid">
                     <div className="field full">
                       <label htmlFor="holiday-form-date">Tanggal</label>
-                      <input
+                      <DateFilterPicker
                         id="holiday-form-date"
-                        type="date"
-                        required
                         value={form.date}
-                        onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                        onChange={(val) => {
+                          setForm((f) => ({ ...f, date: val }));
+                          if (formErrors.date) setFormErrors((e) => ({ ...e, date: undefined }));
+                        }}
+                        clearable={false}
+                        placeholder="Pilih Tanggal"
                       />
                       {formErrors.date && <div className="field-error-text">{formErrors.date}</div>}
                     </div>
