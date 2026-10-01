@@ -165,7 +165,6 @@ function CompanyNameTableAccordionItem({
 
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<CompanyNameHistoryRecord | null>(null);
   const [formName, setFormName] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formErrors, setFormErrors] = useState<{ name?: string; password?: string; general?: string }>({});
@@ -200,17 +199,8 @@ function CompanyNameTableAccordionItem({
     return h.name.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
   });
 
-  function openCreate() {
-    setEditTarget(null);
-    setFormName("");
-    setFormPassword("");
-    setFormErrors({});
-    setFormOpen(true);
-  }
-
-  function openEdit(record: CompanyNameHistoryRecord) {
-    setEditTarget(record);
-    setFormName(record.name);
+  function openChange() {
+    setFormName(settings.companyName);
     setFormPassword("");
     setFormErrors({});
     setFormOpen(true);
@@ -326,92 +316,81 @@ function CompanyNameTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Nama Perusahaan"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Nama Perusahaan"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHistory.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHistory.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openChange}>
+                  <Pencil width={16} height={16} /> Ubah
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
-            </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th>Nama Perusahaan</th>
-                    <th style={{ width: 140 }}>Status</th>
-                    <th style={{ width: 180 }}>Terakhir Diubah</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan={5} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHistory.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td style={{ fontWeight: item.status === "Aktif" ? 700 : 500 }}>
-                          {item.name}
-                        </td>
-                        <td>
-                          {item.status === "Aktif" ? (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                              Aktif
-                            </span>
-                          ) : (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                              Pergantian ke-{item.changeCount}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {formatDateTimeWib(item.updatedAt)}
-                        </td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Edit"
-                            title="Edit / Ganti Nama"
-                            onClick={() => openEdit(item)}
-                          >
-                            <Pencil width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th>Nama Perusahaan</th>
+                      <th style={{ width: 140 }}>Status</th>
+                      <th style={{ width: 180 }}>Terakhir Diubah</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 ? (
+                      <tr><td colSpan={5} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHistory.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>{item.name}</td>
+                          <td>
+                            {item.status === "Aktif" ? (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                                Aktif
+                              </span>
+                            ) : (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
+                                Pergantian ke-{item.changeCount}
+                              </span>
+                            )}
+                          </td>
+                          <td>{formatDateTimeWib(item.updatedAt)}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 width={16} height={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 460 }}>
                 <div className="modal-header">
-                  <h3>{editTarget ? "Edit Nama Perusahaan" : "Tambah Nama Perusahaan Baru"}</h3>
+                  <h3>Ubah Nama Perusahaan</h3>
                   <button type="button" className="modal-close" onClick={() => setFormOpen(false)}>&times;</button>
                 </div>
 
@@ -534,6 +513,7 @@ function CompanyLogoTableAccordionItem({
   const [formError, setFormError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LogoHistoryRecord | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
@@ -646,109 +626,159 @@ function CompanyLogoTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Logo"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Logo"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHistory.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHistory.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openUpload}>
+                  <Pencil width={16} height={16} /> Ubah
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openUpload}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
+
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th style={{ width: 100 }}>Preview</th>
+                      <th>Tipe Logo</th>
+                      <th>Nama File</th>
+                      <th style={{ width: 140 }}>Status</th>
+                      <th style={{ width: 180 }}>Terakhir Diubah</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 ? (
+                      <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHistory.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage(api.appLogoUrl(settings.updatedAt))}
+                              title="Klik untuk melihat preview logo"
+                              style={{
+                                background: "#ffffff",
+                                border: "1px solid var(--border-subtle)",
+                                borderRadius: 6,
+                                padding: "3px 8px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                transition: "all 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = "var(--primary-color, #1c6dff)";
+                                e.currentTarget.style.boxShadow = "0 0 0 2px rgba(28, 109, 255, 0.15)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = "var(--border-subtle)";
+                                e.currentTarget.style.boxShadow = "none";
+                              }}
+                            >
+                              <img
+                                src={api.appLogoUrl(settings.updatedAt)}
+                                alt="Preview Logo Perusahaan"
+                                style={{
+                                  maxWidth: 72,
+                                  maxHeight: 28,
+                                  width: "auto",
+                                  height: "auto",
+                                  display: "block",
+                                }}
+                              />
+                            </button>
+                          </td>
+                          <td>{item.type}</td>
+                          <td>{item.filename}</td>
+                          <td>
+                            {item.status === "Aktif" ? (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                                Aktif
+                              </span>
+                            ) : (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
+                                Pergantian ke-{item.changeCount}
+                              </span>
+                            )}
+                          </td>
+                          <td>{formatDateTimeWib(item.updatedAt)}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 width={16} height={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th style={{ width: 100 }}>Preview</th>
-                    <th>Tipe Logo</th>
-                    <th>Nama File</th>
-                    <th style={{ width: 140 }}>Status</th>
-                    <th style={{ width: 180 }}>Terakhir Diubah</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHistory.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <img
-                            src={api.appLogoUrl(settings.updatedAt)}
-                            alt="Logo"
-                            style={{
-                              maxWidth: 72,
-                              maxHeight: 28,
-                              width: "auto",
-                              height: "auto",
-                              background: "#ffffff",
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              border: "1px solid var(--border-subtle)",
-                            }}
-                          />
-                        </td>
-                        <td>{item.type}</td>
-                        <td style={{ fontSize: "0.82rem" }}>{item.filename}</td>
-                        <td>
-                          {item.status === "Aktif" ? (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                              Aktif
-                            </span>
-                          ) : (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                              Pergantian ke-{item.changeCount}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {formatDateTimeWib(item.updatedAt)}
-                        </td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Edit / Ganti Logo"
-                            title="Edit / Ganti Logo"
-                            onClick={openUpload}
-                          >
-                            <Pencil width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <ModalOverlay open={!!previewImage} onClose={() => setPreviewImage(null)} className={`modal-overlay modal-overlay-centered ${previewImage ? "" : "hidden"}`}>
+              <div className="modal" style={{ maxWidth: 540 }}>
+                <div className="modal-header">
+                  <h3>Preview Logo Perusahaan</h3>
+                  <button type="button" className="modal-close" onClick={() => setPreviewImage(null)}>&times;</button>
+                </div>
+                <div style={{ padding: 24, textAlign: "center" }}>
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      padding: 32,
+                      borderRadius: 8,
+                      border: "1px solid var(--border-subtle)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 200,
+                    }}
+                  >
+                    <img
+                      src={previewImage || ""}
+                      alt="Preview Logo Perusahaan"
+                      style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
+                    />
+                  </div>
+                  <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                    {history.find((h) => h.status === "Aktif")?.filename || "logo-pgn-solution.png"}
+                  </p>
+                </div>
+                <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px", borderTop: "1px solid var(--border-subtle)" }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setPreviewImage(null)}>
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </ModalOverlay>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 460 }}>
                 <div className="modal-header">
-                  <h3>Unggah Logo Perusahaan Baru</h3>
+                  <h3>Ubah Logo Perusahaan</h3>
                   <button type="button" className="modal-close" onClick={() => setFormOpen(false)}>&times;</button>
                 </div>
 
@@ -862,7 +892,6 @@ function OperatingHoursTableAccordionItem({
 
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<OperatingHoursHistoryRecord | null>(null);
   const [formStart, setFormStart] = useState(settings.operatingStart);
   const [formEnd, setFormEnd] = useState(settings.operatingEnd);
   const [formPassword, setFormPassword] = useState("");
@@ -876,19 +905,9 @@ function OperatingHoursTableAccordionItem({
     return `${h.start} - ${h.end}`.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
   });
 
-  function openCreate() {
-    setEditTarget(null);
+  function openChange() {
     setFormStart(settings.operatingStart);
     setFormEnd(settings.operatingEnd);
-    setFormPassword("");
-    setFormError("");
-    setFormOpen(true);
-  }
-
-  function openEdit(record: OperatingHoursHistoryRecord) {
-    setEditTarget(record);
-    setFormStart(record.start);
-    setFormEnd(record.end);
     setFormPassword("");
     setFormError("");
     setFormOpen(true);
@@ -1000,94 +1019,85 @@ function OperatingHoursTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Jam Operasional"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Jam Operasional"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHistory.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHistory.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openChange}>
+                  <Pencil width={16} height={16} /> Ubah
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
-            </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th>Jam Mulai</th>
-                    <th>Jam Selesai</th>
-                    <th>Rentang Waktu</th>
-                    <th style={{ width: 140 }}>Status</th>
-                    <th style={{ width: 180 }}>Terakhir Diubah</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHistory.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{item.start}</td>
-                        <td style={{ fontWeight: 600 }}>{item.end}</td>
-                        <td>{item.start} - {item.end} WIB</td>
-                        <td>
-                          {item.status === "Aktif" ? (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                              Aktif
-                            </span>
-                          ) : (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                              Pergantian ke-{item.changeCount}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {formatDateTimeWib(item.updatedAt)}
-                        </td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Edit Jam Operasional"
-                            title="Edit Jam Operasional"
-                            onClick={() => openEdit(item)}
-                          >
-                            <Pencil width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th>Jam Mulai</th>
+                      <th>Jam Selesai</th>
+                      <th>Rentang Waktu</th>
+                      <th style={{ width: 140 }}>Status</th>
+                      <th style={{ width: 180 }}>Terakhir Diubah</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 ? (
+                      <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHistory.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>{item.start}</td>
+                          <td>{item.end}</td>
+                          <td>{item.start} - {item.end} WIB</td>
+                          <td>
+                            {item.status === "Aktif" ? (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                                Aktif
+                              </span>
+                            ) : (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
+                                Pergantian ke-{item.changeCount}
+                              </span>
+                            )}
+                          </td>
+                          <td>{formatDateTimeWib(item.updatedAt)}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 width={16} height={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 460 }}>
                 <div className="modal-header">
-                  <h3>{editTarget ? "Edit Jam Operasional" : "Atur Jam Operasional Baru"}</h3>
+                  <h3>Ubah Jam Operasional</h3>
                   <button type="button" className="modal-close" onClick={() => setFormOpen(false)}>&times;</button>
                 </div>
 
@@ -1349,118 +1359,109 @@ function NotificationSoundTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Suara Notifikasi"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Suara Notifikasi"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHistory.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHistory.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openEditModal}>
+                  <Pencil width={16} height={16} /> Ubah
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openEditModal}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
-            </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th>Suara Chat</th>
-                    <th>Suara Transaksi / Approval</th>
-                    <th style={{ width: 140 }}>Status</th>
-                    <th style={{ width: 180 }}>Terakhir Diubah</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHistory.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <span>{soundLabel(item.chatSoundId)}</span>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th>Suara Chat</th>
+                      <th>Suara Transaksi / Approval</th>
+                      <th style={{ width: 140 }}>Status</th>
+                      <th style={{ width: 180 }}>Terakhir Diubah</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 ? (
+                      <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHistory.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                              <span>{soundLabel(item.chatSoundId)}</span>
+                              <button
+                                type="button"
+                                className="card-icon-btn"
+                                style={{ width: 26, height: 26 }}
+                                onClick={() => previewSound(item.chatSoundId)}
+                                title="Dengarkan Suara Chat"
+                              >
+                                <Volume2 width={14} height={14} />
+                              </button>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                              <span>{soundLabel(item.activitySoundId)}</span>
+                              <button
+                                type="button"
+                                className="card-icon-btn"
+                                style={{ width: 26, height: 26 }}
+                                onClick={() => previewSound(item.activitySoundId)}
+                                title="Dengarkan Suara Approval"
+                              >
+                                <Volume2 width={14} height={14} />
+                              </button>
+                            </div>
+                          </td>
+                          <td>
+                            {item.status === "Aktif" ? (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                                Aktif
+                              </span>
+                            ) : (
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
+                                Pergantian ke-{item.changeCount}
+                              </span>
+                            )}
+                          </td>
+                          <td>{formatDateTimeWib(item.updatedAt)}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                             <button
                               type="button"
-                              className="card-icon-btn"
-                              style={{ width: 26, height: 26 }}
-                              onClick={() => previewSound(item.chatSoundId)}
-                              title="Dengarkan Suara Chat"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              onClick={() => setDeleteTarget(item)}
                             >
-                              <Volume2 width={14} height={14} />
+                              <Trash2 width={16} height={16} />
                             </button>
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <span>{soundLabel(item.activitySoundId)}</span>
-                            <button
-                              type="button"
-                              className="card-icon-btn"
-                              style={{ width: 26, height: 26 }}
-                              onClick={() => previewSound(item.activitySoundId)}
-                              title="Dengarkan Suara Approval"
-                            >
-                              <Volume2 width={14} height={14} />
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          {item.status === "Aktif" ? (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                              Aktif
-                            </span>
-                          ) : (
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                              Pergantian ke-{item.changeCount}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {formatDateTimeWib(item.updatedAt)}
-                        </td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Edit Suara"
-                            title="Edit Suara"
-                            onClick={openEditModal}
-                          >
-                            <Pencil width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 460 }}>
                 <div className="modal-header">
-                  <h3>Pengaturan Suara Notifikasi</h3>
+                  <h3>Ubah Suara Notifikasi</h3>
                   <button type="button" className="modal-close" onClick={() => setFormOpen(false)}>&times;</button>
                 </div>
 
@@ -1686,72 +1687,74 @@ function HolidaysTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Hari Libur"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Hari Libur"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHolidays.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHolidays.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
+                  <Plus width={16} height={16} /> Tambah
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
-            </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th style={{ width: 180 }}>Tanggal</th>
-                    <th>Nama Hari Libur</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {busy ? (
-                    <tr><td colSpan={4} className="table-empty">Memuat data...</td></tr>
-                  ) : filteredHolidays.length === 0 ? (
-                    <tr><td colSpan={4} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHolidays.map((h, index) => (
-                      <tr key={h.id}>
-                        <td>{index + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{h.date}</td>
-                        <td>{h.label}</td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Edit Hari Libur"
-                            title="Edit Hari Libur"
-                            onClick={() => openEdit(h)}
-                          >
-                            <Pencil width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title="Hapus"
-                            onClick={() => setDeleteTarget(h)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th style={{ width: 180 }}>Tanggal</th>
+                      <th>Nama Hari Libur</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {busy ? (
+                      <tr><td colSpan={4} className="table-empty">Memuat data...</td></tr>
+                    ) : filteredHolidays.length === 0 ? (
+                      <tr><td colSpan={4} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHolidays.map((h, index) => (
+                        <tr key={h.id}>
+                          <td>{index + 1}</td>
+                          <td>{h.date}</td>
+                          <td>{h.label}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="card-icon-btn"
+                              aria-label="Edit Hari Libur"
+                              title="Edit Hari Libur"
+                              onClick={() => openEdit(h)}
+                            >
+                              <Pencil width={16} height={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title="Hapus"
+                              onClick={() => setDeleteTarget(h)}
+                            >
+                              <Trash2 width={16} height={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
@@ -1941,80 +1944,80 @@ function BackupTableAccordionItem({
       <div className="settings-accordion-collapse">
         <div className="settings-accordion-collapse-inner">
           <div className="settings-accordion-body" style={{ paddingTop: 16 }}>
-            <div className="settings-table-toolbar">
-              <div className="settings-table-toolbar-left">
-                <div className="settings-table-search">
-                  <Search width={16} height={16} />
-                  <input
-                    type="text"
-                    placeholder="Cari Riwayat Backup"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+            <div className="card">
+              <div className="card-header settings-table-toolbar">
+                <div className="settings-table-toolbar-left">
+                  <div className="settings-table-search">
+                    <Search width={15} height={15} />
+                    <input
+                      type="text"
+                      placeholder="Cari Riwayat Backup"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-table-count-box">
+                    {filteredHistory.length} Data
+                  </div>
                 </div>
-                <div className="settings-table-count-box">
-                  {filteredHistory.length} Data
-                </div>
+                <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={handleTriggerDownload}>
+                  <Download width={16} height={16} /> Cadangkan
+                </button>
               </div>
-              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={handleTriggerDownload}>
-                <Plus width={16} height={16} /> Tambah
-              </button>
-            </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 64 }}>No</th>
-                    <th>Nama File Cadangan</th>
-                    <th>Cakupan Modul</th>
-                    <th style={{ width: 160 }}>Status</th>
-                    <th style={{ width: 180 }}>Waktu Ekspor</th>
-                    <th style={{ width: 90, textAlign: "right" }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
-                  ) : (
-                    filteredHistory.map((item, index) => (
-                      <tr key={item.id}>
-                        <td>{index + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{item.filename}</td>
-                        <td>{item.scope}</td>
-                        <td>
-                          <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                            {item.status}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {formatDateTimeWib(item.exportedAt)}
-                        </td>
-                        <td style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="card-icon-btn"
-                            aria-label="Unduh File"
-                            title="Unduh File Excel"
-                            onClick={() => window.open(api.globalExportUrl(), "_blank")}
-                          >
-                            <Download width={16} height={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="card-icon-btn card-icon-btn-danger"
-                            aria-label="Hapus"
-                            title="Hapus Riwayat"
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            <Trash2 width={16} height={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>No</th>
+                      <th>Nama File Cadangan</th>
+                      <th>Cakupan Modul</th>
+                      <th style={{ width: 160 }}>Status</th>
+                      <th style={{ width: 180 }}>Waktu Ekspor</th>
+                      <th style={{ width: 80, textAlign: "right" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 ? (
+                      <tr><td colSpan={6} className="table-empty">Tidak Ada Data</td></tr>
+                    ) : (
+                      filteredHistory.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>{item.filename}</td>
+                          <td>{item.scope}</td>
+                          <td>
+                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                              {item.status}
+                            </span>
+                          </td>
+                          <td>{formatDateTimeWib(item.exportedAt)}</td>
+                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="card-icon-btn"
+                              aria-label="Unduh File"
+                              title="Unduh File Excel"
+                              onClick={() => window.open(api.globalExportUrl(), "_blank")}
+                            >
+                              <Download width={16} height={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="card-icon-btn card-icon-btn-danger"
+                              aria-label="Hapus"
+                              title="Hapus Riwayat"
+                              onClick={() => setDeleteTarget(item)}
+                            >
+                              <Trash2 width={16} height={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <ModalOverlay open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className={`modal-overlay modal-overlay-centered ${deleteTarget ? "" : "hidden"}`}>
