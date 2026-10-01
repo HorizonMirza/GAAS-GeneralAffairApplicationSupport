@@ -2191,6 +2191,21 @@ body.auth-ready .app-shell {
   flex-shrink: 0;
 }
 
+/* Ukuran tombol toolbar (Ubah / Tambah / Cadangkan) sama persis dengan search box (Gambar 2) */
+.settings-table-toolbar .btn,
+.settings-table-toolbar button.btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
 /* ---------- Super Admin App Settings: Bento Grid Dashboard ---------- */
 .bento-settings-grid {
   display: grid;

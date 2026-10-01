@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Building2,
   Calendar,
+  CheckCircle2,
   ChevronRight,
   Clock,
   Database,
@@ -14,7 +15,7 @@ import {
   Plus,
   Search,
   Trash2,
-  Upload,
+  UploadCloud,
   Volume2,
 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
@@ -431,7 +432,7 @@ function CompanyNameTableAccordionItem({
 
                   <div className="modal-actions">
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-                      {saving ? "Menyimpan..." : "Simpan Nama Perusahaan"}
+                      {saving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
@@ -521,10 +522,58 @@ function CompanyLogoTableAccordionItem({
     return h.filename.toLowerCase().includes(q) || h.type.toLowerCase().includes(q);
   });
 
+  const [dragging, setDragging] = useState(false);
+
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function handleFileChange(file: File | null) {
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    if (!/\.(jpe?g|png)$/i.test(file.name)) {
+      setFormError("Format file harus berupa PNG atau JPG");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Ukuran file maksimal 5 MB");
+      return;
+    }
+    setFormError("");
+    setSelectedFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileChange(files[0]);
+    }
+  }
+
   function openUpload() {
     setSelectedFile(null);
     setFormPassword("");
     setFormError("");
+    setDragging(false);
     setFormOpen(true);
   }
 
@@ -767,11 +816,6 @@ function CompanyLogoTableAccordionItem({
                     {history.find((h) => h.status === "Aktif")?.filename || "logo-pgn-solution.png"}
                   </p>
                 </div>
-                <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px", borderTop: "1px solid var(--border-subtle)" }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setPreviewImage(null)}>
-                    Tutup
-                  </button>
-                </div>
               </div>
             </ModalOverlay>
 
@@ -787,21 +831,56 @@ function CompanyLogoTableAccordionItem({
                 </div>
 
                 <form onSubmit={handleUploadLogo}>
-                  <div className="form-grid">
-                    <div className="field full">
-                      <label htmlFor="modal-logo-file">Pilih File Logo (JPG/PNG, maks 5MB)</label>
+                  <div className="field">
+                    <label htmlFor="modal-logo-file">File Logo (PNG / JPG)</label>
+                    <div
+                      className={`file-dropzone${dragging ? " file-dropzone-dragging" : ""}`}
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <UploadCloud width={32} height={32} />
+                      <div className="photo-drop-title">Pilih file atau Drag and Drop disini.</div>
+                      <div className="photo-drop-caption">Format PNG, JPG, Max 5 MB</div>
                       <input
+                        type="file"
                         id="modal-logo-file"
                         ref={fileInputRef}
-                        type="file"
-                        required
-                        accept=".jpg,.jpeg,.png"
-                        onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+                        accept=".jpg,.jpeg,.png,image/png,image/jpeg"
+                        className="file-dropzone-input"
+                        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                       />
                     </div>
+                    {selectedFile && (
+                      <div className="photo-drop-list">
+                        <div className="photo-drop-item">
+                          <span className="photo-drop-item-index">1.</span>
+                          <div className="photo-drop-item-thumb">
+                            <ImageIcon width={18} height={18} />
+                          </div>
+                          <div className="photo-drop-item-info">
+                            <span className="photo-drop-item-name">{selectedFile.name}</span>
+                            <span className="photo-drop-item-size">{formatFileSize(selectedFile.size)}</span>
+                          </div>
+                          <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
+                          <button
+                            type="button"
+                            className="photo-drop-item-remove"
+                            aria-label="Hapus file"
+                            onClick={() => {
+                              setSelectedFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
+                          >
+                            <Trash2 width={14} height={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div style={{ marginTop: 12 }}>
+                  <div style={{ marginTop: 14 }}>
                     <PasswordField
                       id="modal-logo-password"
                       label="Password Super Admin"
@@ -815,9 +894,9 @@ function CompanyLogoTableAccordionItem({
                     />
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="modal-actions" style={{ marginTop: 18 }}>
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={uploading}>
-                      <Upload width={16} height={16} /> {uploading ? "Mengunggah..." : "Unggah Logo"}
+                      {uploading ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
@@ -1145,7 +1224,7 @@ function OperatingHoursTableAccordionItem({
 
                   <div className="modal-actions">
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-                      {saving ? "Menyimpan..." : "Simpan Jam Operasional"}
+                      {saving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
@@ -1520,7 +1599,7 @@ function NotificationSoundTableAccordionItem({
 
                   <div className="modal-actions" style={{ marginTop: 20 }}>
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-                      {saving ? "Menyimpan..." : "Simpan Suara Notifikasi"}
+                      {saving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
@@ -1811,7 +1890,7 @@ function HolidaysTableAccordionItem({
 
                   <div className="modal-actions">
                     <button type="submit" className="btn btn-approve" style={{ width: "auto" }} disabled={saving}>
-                      {saving ? "Menyimpan..." : "Simpan Hari Libur"}
+                      {saving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </form>
