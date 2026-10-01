@@ -44,6 +44,9 @@ public class OrgAdminController : ApiControllerBase
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
+
         var nama = payload.Nama?.Trim() ?? "";
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama direktorat wajib diisi" });
@@ -74,6 +77,9 @@ public class OrgAdminController : ApiControllerBase
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var row = await _db.OrgDirektorats.Include(d => d.Divisi).ThenInclude(v => v.Departemen).FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Direktorat tidak ditemukan" });
@@ -106,10 +112,13 @@ public class OrgAdminController : ApiControllerBase
     }
 
     [HttpDelete("direktorat/{id:int}")]
-    public async Task<IActionResult> DeleteDirektorat(int id)
+    public async Task<IActionResult> DeleteDirektorat(int id, [FromBody] DeleteOrgRequest payload)
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // Paired with the same lock in CreateDivisi above - see comment there.
@@ -136,6 +145,9 @@ public class OrgAdminController : ApiControllerBase
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var nama = payload.Nama?.Trim() ?? "";
         var kode = payload.KodeSatuanKerja?.Trim() ?? "";
@@ -185,6 +197,9 @@ public class OrgAdminController : ApiControllerBase
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
+
         var row = await _db.OrgDivisis.Include(v => v.Departemen).FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Divisi tidak ditemukan" });
 
@@ -218,10 +233,13 @@ public class OrgAdminController : ApiControllerBase
     }
 
     [HttpDelete("divisi/{id:int}")]
-    public async Task<IActionResult> DeleteDivisi(int id)
+    public async Task<IActionResult> DeleteDivisi(int id, [FromBody] DeleteOrgRequest payload)
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // Paired with the same lock in CreateDepartemen above, fully closing that race. Also
@@ -259,6 +277,9 @@ public class OrgAdminController : ApiControllerBase
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         var nama = payload.Nama?.Trim() ?? "";
         if (nama.Length == 0)
@@ -302,6 +323,9 @@ public class OrgAdminController : ApiControllerBase
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
 
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
+
         var row = await _db.OrgDepartemens.FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Departemen tidak ditemukan" });
 
@@ -329,10 +353,13 @@ public class OrgAdminController : ApiControllerBase
     }
 
     [HttpDelete("departemen/{id:int}")]
-    public async Task<IActionResult> DeleteDepartemen(int id)
+    public async Task<IActionResult> DeleteDepartemen(int id, [FromBody] DeleteOrgRequest payload)
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password salah" });
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // Same reasoning as DeleteDivisi above - no create-under-a-Departemen counterpart exists

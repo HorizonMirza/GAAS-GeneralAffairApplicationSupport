@@ -19,11 +19,12 @@ public record OrgDirektoratOut(int Id, string Nama, List<OrgDivisiOut> Divisi)
 
 public record OrgTreeResponse(List<OrgDirektoratOut> Direktorat);
 
-public record CreateDirektoratRequest(string Nama);
-public record RenameRequest(string Nama);
-public record CreateDivisiRequest(int DirektoratId, string Nama, string KodeSatuanKerja);
-public record UpdateDivisiRequest(string Nama, string KodeSatuanKerja);
-public record CreateDepartemenRequest(int DivisiId, string Nama);
+public record CreateDirektoratRequest(string Nama, string? Password = null);
+public record RenameRequest(string Nama, string? Password = null);
+public record CreateDivisiRequest(int DirektoratId, string Nama, string KodeSatuanKerja, string? Password = null);
+public record UpdateDivisiRequest(string Nama, string KodeSatuanKerja, string? Password = null);
+public record CreateDepartemenRequest(int DivisiId, string Nama, string? Password = null);
+public record DeleteOrgRequest(string? Password = null);
 
 // One-time credential for an account OrgAdminController auto-provisioned (POST divisi/departemen)
 // or UsersAdminController created/reset - Password is only ever present in this one response, the

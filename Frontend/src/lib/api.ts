@@ -936,21 +936,24 @@ export const api = {
 
   // --- Organisasi (Super Admin only) ---
   getOrgTree: () => apiRequest<OrgTreeResponse>("/org-admin/tree"),
-  createDirektorat: (nama: string) =>
-    apiRequest<{ id: number; nama: string }>("/org-admin/direktorat", { method: "POST", body: { nama } }),
-  renameDirektorat: (id: number, nama: string) =>
-    apiRequest<{ id: number; nama: string }>(`/org-admin/direktorat/${id}`, { method: "PATCH", body: { nama } }),
-  deleteDirektorat: (id: number) => apiRequest(`/org-admin/direktorat/${id}`, { method: "DELETE" }),
-  createDivisi: (direktoratId: number, nama: string, kodeSatuanKerja: string) =>
-    apiRequest<CreateDivisiResult>("/org-admin/divisi", { method: "POST", body: { direktoratId, nama, kodeSatuanKerja } }),
-  updateDivisi: (id: number, nama: string, kodeSatuanKerja: string) =>
-    apiRequest("/org-admin/divisi/" + id, { method: "PATCH", body: { nama, kodeSatuanKerja } }),
-  deleteDivisi: (id: number) => apiRequest(`/org-admin/divisi/${id}`, { method: "DELETE" }),
-  createDepartemen: (divisiId: number, nama: string) =>
-    apiRequest<CreateDepartemenResult>("/org-admin/departemen", { method: "POST", body: { divisiId, nama } }),
-  renameDepartemen: (id: number, nama: string) =>
-    apiRequest(`/org-admin/departemen/${id}`, { method: "PATCH", body: { nama } }),
-  deleteDepartemen: (id: number) => apiRequest(`/org-admin/departemen/${id}`, { method: "DELETE" }),
+  createDirektorat: (nama: string, password: string) =>
+    apiRequest<{ id: number; nama: string }>("/org-admin/direktorat", { method: "POST", body: { nama, password } }),
+  renameDirektorat: (id: number, nama: string, password: string) =>
+    apiRequest<{ id: number; nama: string }>(`/org-admin/direktorat/${id}`, { method: "PATCH", body: { nama, password } }),
+  deleteDirektorat: (id: number, password: string) =>
+    apiRequest(`/org-admin/direktorat/${id}`, { method: "DELETE", body: { password } }),
+  createDivisi: (direktoratId: number, nama: string, kodeSatuanKerja: string, password: string) =>
+    apiRequest<CreateDivisiResult>("/org-admin/divisi", { method: "POST", body: { direktoratId, nama, kodeSatuanKerja, password } }),
+  updateDivisi: (id: number, nama: string, kodeSatuanKerja: string, password: string) =>
+    apiRequest("/org-admin/divisi/" + id, { method: "PATCH", body: { nama, kodeSatuanKerja, password } }),
+  deleteDivisi: (id: number, password: string) =>
+    apiRequest(`/org-admin/divisi/${id}`, { method: "DELETE", body: { password } }),
+  createDepartemen: (divisiId: number, nama: string, password: string) =>
+    apiRequest<CreateDepartemenResult>("/org-admin/departemen", { method: "POST", body: { divisiId, nama, password } }),
+  renameDepartemen: (id: number, nama: string, password: string) =>
+    apiRequest(`/org-admin/departemen/${id}`, { method: "PATCH", body: { nama, password } }),
+  deleteDepartemen: (id: number, password: string) =>
+    apiRequest(`/org-admin/departemen/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Meeting Room (Super Admin only) ---
   listAdminMeetingRooms: () => apiRequest<MeetingRoomListResult>("/meeting-room-admin"),
