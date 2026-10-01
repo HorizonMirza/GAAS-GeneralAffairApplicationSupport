@@ -880,35 +880,39 @@ function CompanyLogoTableAccordionItem({
             </div>
 
             <ModalOverlay open={!!previewItem} onClose={() => setPreviewItem(null)} className={`modal-overlay modal-overlay-centered ${previewItem ? "" : "hidden"}`}>
-              <div className="modal" style={{ maxWidth: 540 }}>
-                <div className="modal-header">
-                  <h3>Preview Logo Perusahaan</h3>
-                  <button type="button" className="modal-close" onClick={() => setPreviewItem(null)}>&times;</button>
-                </div>
-                <div style={{ padding: 24, textAlign: "center" }}>
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      padding: 32,
-                      borderRadius: 8,
-                      border: "1px solid var(--border-subtle)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 200,
-                    }}
-                  >
-                    <img
-                      src={previewItem?.url || ""}
-                      alt={previewItem?.filename || "Preview Logo Perusahaan"}
-                      style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
-                    />
+              {previewItem && (
+                <div className="modal" style={{ maxWidth: 540 }}>
+                  <div className="modal-header">
+                    <h3>Preview Logo Perusahaan</h3>
+                    <button type="button" className="modal-close" onClick={() => setPreviewItem(null)}>&times;</button>
                   </div>
-                  <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    {previewItem ? `${previewItem.filename} (${previewItem.type})` : ""}
-                  </p>
+                  <div style={{ padding: 24, textAlign: "center" }}>
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        padding: 32,
+                        borderRadius: 8,
+                        border: "1px solid var(--border-subtle)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: 200,
+                      }}
+                    >
+                      {previewItem.url ? (
+                        <img
+                          src={previewItem.url}
+                          alt={previewItem.filename || "Preview Logo Perusahaan"}
+                          style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
+                        />
+                      ) : null}
+                    </div>
+                    <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                      {previewItem.filename} &bull; {previewItem.type}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </ModalOverlay>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
