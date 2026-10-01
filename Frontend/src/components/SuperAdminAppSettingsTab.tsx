@@ -360,13 +360,9 @@ function CompanyNameTableAccordionItem({
                           <td>{item.name}</td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                                Aktif
-                              </span>
+                              <span className="badge badge-approved">Aktif</span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
-                                Non Aktif
-                              </span>
+                              <span className="badge badge-rejected">Non Aktif</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -854,13 +850,9 @@ function CompanyLogoTableAccordionItem({
                             <td>{item.filename}</td>
                             <td>
                               {item.status === "Aktif" ? (
-                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                                  Aktif
-                                </span>
+                                <span className="badge badge-approved">Aktif</span>
                               ) : (
-                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
-                                  Non Aktif
-                                </span>
+                                <span className="badge badge-rejected">Non Aktif</span>
                               )}
                             </td>
                             <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -1274,13 +1266,9 @@ function OperatingHoursTableAccordionItem({
                           <td>{item.start} - {item.end} WIB</td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                                Aktif
-                              </span>
+                              <span className="badge badge-approved">Aktif</span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
-                                Non Aktif
-                              </span>
+                              <span className="badge badge-rejected">Non Aktif</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -1651,13 +1639,9 @@ function NotificationSoundTableAccordionItem({
                           </td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                                Aktif
-                              </span>
+                              <span className="badge badge-approved">Aktif</span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
-                                Non Aktif
-                              </span>
+                              <span className="badge badge-rejected">Non Aktif</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>

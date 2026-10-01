@@ -3490,6 +3490,7 @@ body.auth-ready .app-shell {
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .badge-draft { background: var(--badge-draft-bg); color: var(--badge-draft-fg); }
