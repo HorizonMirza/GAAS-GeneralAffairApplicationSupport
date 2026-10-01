@@ -197,7 +197,8 @@ function CompanyNameTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return h.name.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
+    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    return h.name.toLowerCase().includes(q) || statusText.includes(q);
   });
 
   function openChange() {
@@ -363,8 +364,8 @@ function CompanyNameTableAccordionItem({
                                 Aktif
                               </span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                                Pergantian ke-{item.changeCount}
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
+                                Non Aktif
                               </span>
                             )}
                           </td>
@@ -441,7 +442,7 @@ function CompanyNameTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title={deleteTarget?.status === "Aktif" ? "Kembalikan Nama ke Default (PGN Solution)" : "Hapus Riwayat Pergantian"}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Nama ke Default (PGN Solution)" : "Hapus Riwayat"}
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="modal-delete-company-password"
@@ -600,7 +601,8 @@ function CompanyLogoTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return h.filename.toLowerCase().includes(q) || h.type.toLowerCase().includes(q);
+    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    return h.filename.toLowerCase().includes(q) || h.type.toLowerCase().includes(q) || statusText.includes(q);
   });
 
   const [dragging, setDragging] = useState(false);
@@ -856,8 +858,8 @@ function CompanyLogoTableAccordionItem({
                                   Aktif
                                 </span>
                               ) : (
-                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                                  Pergantian ke-{item.changeCount}
+                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
+                                  Non Aktif
                                 </span>
                               )}
                             </td>
@@ -1108,7 +1110,8 @@ function OperatingHoursTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return `${h.start} - ${h.end}`.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
+    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    return `${h.start} - ${h.end}`.toLowerCase().includes(q) || statusText.includes(q);
   });
 
   function openChange() {
@@ -1275,8 +1278,8 @@ function OperatingHoursTableAccordionItem({
                                 Aktif
                               </span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                                Pergantian ke-{item.changeCount}
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
+                                Non Aktif
                               </span>
                             )}
                           </td>
@@ -1462,10 +1465,11 @@ function NotificationSoundTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
+    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
     return (
       soundLabel(h.chatSoundId).toLowerCase().includes(q) ||
       soundLabel(h.activitySoundId).toLowerCase().includes(q) ||
-      h.status.toLowerCase().includes(q)
+      statusText.includes(q)
     );
   });
 
@@ -1651,8 +1655,8 @@ function NotificationSoundTableAccordionItem({
                                 Aktif
                               </span>
                             ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                                Pergantian ke-{item.changeCount}
+                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#fee2e2", color: "#991b1b" }}>
+                                Non Aktif
                               </span>
                             )}
                           </td>
