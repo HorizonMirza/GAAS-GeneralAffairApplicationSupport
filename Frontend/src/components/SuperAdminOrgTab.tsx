@@ -507,57 +507,62 @@ export default function SuperAdminOrgTab() {
       <div className="card-header">
         <h3>Struktur Organisasi</h3>
       </div>
-      <p className="text-secondary" style={{ marginTop: 0 }}>
-        Direktorat, Divisi, dan Departemen di sini menggantikan struktur yang dulu di-hardcode di kode program.
-        Mengganti nama tidak mengubah data transaksi/akun yang sudah ada - hanya memengaruhi pilihan pada form baru
-        ke depannya. Menambah Divisi/Departemen otomatis membuat akun Admin dan Approval standarnya.
-      </p>
 
-      {/* Standard Settings Toolbar */}
-      <div className="settings-table-toolbar" style={{ marginTop: 16 }}>
-        <div className="settings-table-toolbar-left" style={{ flexWrap: "wrap", gap: 10 }}>
-          <div className="settings-table-search">
-            <Search width={16} height={16} />
-            <input
-              type="text"
-              placeholder="Cari direktorat, divisi, kode, atau departemen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="settings-table-count-box">
-            {stats.totalDir} Direktorat &bull; {stats.totalDiv} Divisi &bull; {stats.totalDept} Departemen
-          </div>
-        </div>
-      </div>
-
-      {/* Clean Navigation Breadcrumb */}
+      {/* Navigasi Aktif (Breadcrumb) - di atas search, warna hitam semua */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "9px 14px",
+          padding: "10px 14px",
           background: "var(--bg-surface-alt)",
           border: "1px solid var(--border-subtle)",
           borderRadius: 8,
           fontSize: "0.82rem",
+          marginTop: 12,
+          marginBottom: 14,
+          flexWrap: "wrap",
+          color: "var(--text-primary)",
+        }}
+      >
+        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Navigasi Aktif:</span>
+        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+          {currentDirektorat ? currentDirektorat.nama : "Pilih Direktorat"}
+        </span>
+        <span style={{ color: "var(--text-primary)", opacity: 0.5 }}>/</span>
+        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+          {currentDivisi ? `${currentDivisi.nama} (${currentDivisi.kodeSatuanKerja})` : "Pilih Divisi"}
+        </span>
+        <span style={{ color: "var(--text-primary)", opacity: 0.5 }}>/</span>
+        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+          {currentDivisi ? `${currentDivisi.departemen.length} Departemen` : "0 Departemen"}
+        </span>
+      </div>
+
+      {/* Toolbar: Search di Ujung Kiri dan Count Box di Ujung Kanan */}
+      <div
+        className="settings-table-toolbar"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
           marginBottom: 16,
           flexWrap: "wrap",
         }}
       >
-        <span className="text-secondary" style={{ fontWeight: 500 }}>Navigasi Aktif:</span>
-        <span style={{ color: "var(--blue-500)", fontWeight: 600 }}>
-          {currentDirektorat ? currentDirektorat.nama : "Pilih Direktorat"}
-        </span>
-        <span className="text-secondary" style={{ opacity: 0.5 }}>/</span>
-        <span style={{ color: "var(--blue-500)", fontWeight: 600 }}>
-          {currentDivisi ? `${currentDivisi.nama} (${currentDivisi.kodeSatuanKerja})` : "Pilih Divisi"}
-        </span>
-        <span className="text-secondary" style={{ opacity: 0.5 }}>/</span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-          {currentDivisi ? `${currentDivisi.departemen.length} Departemen` : "0 Departemen"}
-        </span>
+        <div className="settings-table-search">
+          <Search width={16} height={16} />
+          <input
+            type="text"
+            placeholder="Cari direktorat, divisi, kode, atau departemen..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="settings-table-count-box">
+          {stats.totalDir} Direktorat &bull; {stats.totalDiv} Divisi &bull; {stats.totalDept} Departemen
+        </div>
       </div>
 
       {error ? (
