@@ -475,10 +475,10 @@ interface LogoHistoryRecord {
   previewUrl?: string;
 }
 
-const DEFAULT_SYSTEM_LOGO_URL = "/assets/logo-pgn-solution.png?v=colored";
+const DEFAULT_SYSTEM_LOGO_URL = "/assets/logo-pgn-solution.png?v=white";
 
 function getLogoSrc(item: LogoHistoryRecord, currentUpdatedAt?: string, hasCustomLogo?: boolean): string {
-  // 1. Default system logo ALWAYS returns the colored static default asset
+  // 1. Default system logo ALWAYS returns the white static default asset (Gambar 3)
   if (
     item.type.includes("Default") ||
     item.filename.toLowerCase().includes("pgn") ||
@@ -799,6 +799,7 @@ function CompanyLogoTableAccordionItem({
                     ) : (
                       filteredHistory.map((item, index) => {
                         const itemSrc = getLogoSrc(item, settings.updatedAt, settings.hasCustomLogo);
+                        const isDefaultLogo = item.type.includes("Default") || item.filename.toLowerCase().includes("pgn");
                         return (
                           <tr key={item.id}>
                             <td>{index + 1}</td>
@@ -814,8 +815,8 @@ function CompanyLogoTableAccordionItem({
                                 }
                                 title="Klik untuk melihat preview logo"
                                 style={{
-                                  background: "#ffffff",
-                                  border: "1px solid var(--border-subtle)",
+                                  background: isDefaultLogo ? "var(--gradient-navy, #0f285a)" : "#ffffff",
+                                  border: isDefaultLogo ? "1px solid rgba(255, 255, 255, 0.2)" : "1px solid var(--border-subtle)",
                                   borderRadius: 6,
                                   padding: "3px 8px",
                                   cursor: "pointer",
@@ -829,7 +830,7 @@ function CompanyLogoTableAccordionItem({
                                   e.currentTarget.style.boxShadow = "0 0 0 2px rgba(28, 109, 255, 0.15)";
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.borderColor = "var(--border-subtle)";
+                                  e.currentTarget.style.borderColor = isDefaultLogo ? "rgba(255, 255, 255, 0.2)" : "var(--border-subtle)";
                                   e.currentTarget.style.boxShadow = "none";
                                 }}
                               >
@@ -882,39 +883,43 @@ function CompanyLogoTableAccordionItem({
             </div>
 
             <ModalOverlay open={!!previewItem} onClose={() => setPreviewItem(null)} className={`modal-overlay modal-overlay-centered ${previewItem ? "" : "hidden"}`}>
-              {previewItem && (
-                <div className="modal" style={{ maxWidth: 540 }}>
-                  <div className="modal-header">
-                    <h3>Preview Logo Perusahaan</h3>
-                    <button type="button" className="modal-close" onClick={() => setPreviewItem(null)}>&times;</button>
-                  </div>
-                  <div style={{ padding: 24, textAlign: "center" }}>
-                    <div
-                      style={{
-                        background: "#ffffff",
-                        padding: 32,
-                        borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minHeight: 200,
-                      }}
-                    >
-                      {previewItem.url ? (
-                        <img
-                          src={previewItem.url}
-                          alt={previewItem.filename || "Preview Logo Perusahaan"}
-                          style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
-                        />
-                      ) : null}
+              {previewItem && (() => {
+                const isDefault = previewItem.type.includes("Default") || previewItem.filename.toLowerCase().includes("pgn");
+                return (
+                  <div className="modal" style={{ maxWidth: 540 }}>
+                    <div className="modal-header">
+                      <h3>Preview Logo Perusahaan</h3>
+                      <button type="button" className="modal-close" onClick={() => setPreviewItem(null)}>&times;</button>
                     </div>
-                    <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                      {previewItem.filename} &bull; {previewItem.type}
-                    </p>
+                    <div style={{ padding: 24, textAlign: "center" }}>
+                      <div
+                        style={{
+                          background: isDefault ? "var(--gradient-navy, #0f285a)" : "#ffffff",
+                          padding: 32,
+                          borderRadius: 8,
+                          border: isDefault ? "1px solid rgba(255, 255, 255, 0.2)" : "1px solid var(--border-subtle)",
+                          boxShadow: isDefault ? "inset 0 1px 3px rgba(0, 0, 0, 0.2)" : undefined,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: 200,
+                        }}
+                      >
+                        {previewItem.url ? (
+                          <img
+                            src={previewItem.url}
+                            alt={previewItem.filename || "Preview Logo Perusahaan"}
+                            style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
+                          />
+                        ) : null}
+                      </div>
+                      <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                        {previewItem.filename} &bull; {previewItem.type}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </ModalOverlay>
 
             <ModalOverlay open={formOpen} onClose={() => setFormOpen(false)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
