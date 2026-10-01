@@ -95,7 +95,7 @@ export default function SuperAdminOrgTab() {
     load();
   }, [load]);
 
-  // Sync selected nodes when tree loads or changes
+  // Validate selected nodes if tree changed (e.g. after deletion)
   useEffect(() => {
     if (!tree || tree.length === 0) {
       setSelectedDirektoratId(null);
@@ -103,18 +103,15 @@ export default function SuperAdminOrgTab() {
       return;
     }
 
-    const activeDir =
-      tree.find((d) => d.id === selectedDirektoratId) || tree[0];
-    if (activeDir.id !== selectedDirektoratId) {
-      setSelectedDirektoratId(activeDir.id);
+    if (selectedDirektoratId && !tree.some((d) => d.id === selectedDirektoratId)) {
+      setSelectedDirektoratId(null);
     }
 
-    const activeDiv =
-      activeDir.divisi.find((dv) => dv.id === selectedDivisiId) ||
-      activeDir.divisi[0] ||
-      null;
-    if (activeDiv?.id !== selectedDivisiId) {
-      setSelectedDivisiId(activeDiv ? activeDiv.id : null);
+    if (selectedDivisiId) {
+      const exists = tree.some((d) => d.divisi.some((dv) => dv.id === selectedDivisiId));
+      if (!exists) {
+        setSelectedDivisiId(null);
+      }
     }
   }, [tree, selectedDirektoratId, selectedDivisiId]);
 
@@ -126,20 +123,48 @@ export default function SuperAdminOrgTab() {
       : "Terjadi kesalahan";
   }
 
-  // Active nodes lookup
+  // Active nodes lookup (null if none selected)
   const currentDirektorat = useMemo(() => {
-    if (!tree || tree.length === 0) return null;
-    return tree.find((d) => d.id === selectedDirektoratId) || tree[0] || null;
+    if (!tree || selectedDirektoratId === null) return null;
+    return tree.find((d) => d.id === selectedDirektoratId) || null;
   }, [tree, selectedDirektoratId]);
 
   const currentDivisi = useMemo(() => {
-    if (!currentDirektorat || currentDirektorat.divisi.length === 0) return null;
-    return (
-      currentDirektorat.divisi.find((dv) => dv.id === selectedDivisiId) ||
-      currentDirektorat.divisi[0] ||
-      null
+    if (!tree || selectedDivisiId === null) return null;
+    for (const d of tree) {
+      const dv = d.divisi.find((item) => item.id === selectedDivisiId);
+      if (dv) return dv;
+    }
+    return null;
+  }, [tree, selectedDivisiId]);
+
+  // Flattened lists for full organization drilldown & scroll
+  const allDivisiList = useMemo(() => {
+    if (!tree) return [];
+    return tree.flatMap((d) =>
+      d.divisi.map((dv) => ({
+        ...dv,
+        direktoratId: d.id,
+        direktoratNama: d.nama,
+      }))
     );
-  }, [currentDirektorat, selectedDivisiId]);
+  }, [tree]);
+
+  const allDepartemenList = useMemo(() => {
+    if (!tree) return [];
+    return tree.flatMap((d) =>
+      d.divisi.flatMap((dv) =>
+        dv.departemen.map((dp) => ({
+          ...dp,
+          divisiId: dv.id,
+          divisiNama: dv.nama,
+          kodeSatuanKerja: dv.kodeSatuanKerja,
+          direktoratId: d.id,
+          direktoratNama: d.nama,
+        }))
+      )
+    );
+  }, [tree]);
 
   // Overall statistics
   const stats = useMemo(() => {
@@ -169,12 +194,12 @@ export default function SuperAdminOrgTab() {
   }
 
   function openCreateDivisi() {
-    if (!currentDirektorat) return;
+    const parent = currentDirektorat || (tree && tree.length > 0 ? tree[0] : null);
     setFormModal({
       mode: "create",
       level: "divisi",
-      parentId: currentDirektorat.id,
-      parentName: currentDirektorat.nama,
+      parentId: parent?.id,
+      parentName: parent?.nama,
       nama: "",
       kodeSatuanKerja: "",
     });
@@ -195,12 +220,12 @@ export default function SuperAdminOrgTab() {
   }
 
   function openCreateDepartemen() {
-    if (!currentDivisi) return;
+    const parent = currentDivisi || (allDivisiList.length > 0 ? allDivisiList[0] : null);
     setFormModal({
       mode: "create",
       level: "departemen",
-      parentId: currentDivisi.id,
-      parentName: currentDivisi.nama,
+      parentId: parent?.id,
+      parentName: parent?.nama,
       nama: "",
     });
     setFormPassword("");
@@ -252,10 +277,16 @@ export default function SuperAdminOrgTab() {
           showToast("Direktorat berhasil diubah");
         }
       } else if (formModal.level === "divisi") {
-        if (formModal.mode === "create" && formModal.parentId) {
-          const res = await api.createDivisi(formModal.parentId, trimmedNama, trimmedKode, formPassword);
+        if (formModal.mode === "create") {
+          const parentId = formModal.parentId || (tree && tree.length > 0 ? tree[0].id : undefined);
+          if (!parentId) {
+            setFormErrors({ general: "Direktorat belum dipilih" });
+            return;
+          }
+          const res = await api.createDivisi(parentId, trimmedNama, trimmedKode, formPassword);
           showToast("Divisi berhasil ditambahkan");
           setSelectedDivisiId(res.divisi.id);
+          setSelectedDirektoratId(parentId);
           if (res.accounts.length > 0) {
             setCredentials({
               title: `Akun Baru untuk Divisi "${trimmedNama}"`,
@@ -267,9 +298,17 @@ export default function SuperAdminOrgTab() {
           showToast("Divisi berhasil diubah");
         }
       } else if (formModal.level === "departemen") {
-        if (formModal.mode === "create" && formModal.parentId) {
-          const res = await api.createDepartemen(formModal.parentId, trimmedNama, formPassword);
+        if (formModal.mode === "create") {
+          const parentId = formModal.parentId || (allDivisiList.length > 0 ? allDivisiList[0].id : undefined);
+          if (!parentId) {
+            setFormErrors({ general: "Divisi belum dipilih" });
+            return;
+          }
+          const res = await api.createDepartemen(parentId, trimmedNama, formPassword);
           showToast("Departemen berhasil ditambahkan");
+          setSelectedDivisiId(parentId);
+          const foundDiv = allDivisiList.find((dv) => dv.id === parentId);
+          if (foundDiv) setSelectedDirektoratId(foundDiv.direktoratId);
           if (res.accounts.length > 0) {
             setCredentials({
               title: `Akun Baru untuk Departemen "${trimmedNama}"`,
@@ -336,23 +375,43 @@ export default function SuperAdminOrgTab() {
   }, [tree, queryLower]);
 
   const filteredDivisi = useMemo(() => {
-    if (!currentDirektorat) return [];
-    if (!queryLower) return currentDirektorat.divisi;
-    return currentDirektorat.divisi.filter(
+    const baseList = currentDirektorat
+      ? currentDirektorat.divisi.map((dv) => ({
+          ...dv,
+          direktoratId: currentDirektorat.id,
+          direktoratNama: currentDirektorat.nama,
+        }))
+      : allDivisiList;
+
+    if (!queryLower) return baseList;
+
+    return baseList.filter(
       (dv) =>
         dv.nama.toLowerCase().includes(queryLower) ||
         dv.kodeSatuanKerja.toLowerCase().includes(queryLower) ||
-        dv.departemen.some((dp) => dp.nama.toLowerCase().includes(queryLower))
+        dv.departemen.some((dp) => dp.nama.toLowerCase().includes(queryLower)) ||
+        dv.direktoratNama.toLowerCase().includes(queryLower)
     );
-  }, [currentDirektorat, queryLower]);
+  }, [currentDirektorat, allDivisiList, queryLower]);
 
   const filteredDepartemen = useMemo(() => {
-    if (!currentDivisi) return [];
-    if (!queryLower) return currentDivisi.departemen;
-    return currentDivisi.departemen.filter((dp) =>
-      dp.nama.toLowerCase().includes(queryLower)
+    let baseList = allDepartemenList;
+    if (currentDivisi) {
+      baseList = baseList.filter((dp) => dp.divisiId === currentDivisi.id);
+    } else if (currentDirektorat) {
+      baseList = baseList.filter((dp) => dp.direktoratId === currentDirektorat.id);
+    }
+
+    if (!queryLower) return baseList;
+
+    return baseList.filter(
+      (dp) =>
+        dp.nama.toLowerCase().includes(queryLower) ||
+        dp.divisiNama.toLowerCase().includes(queryLower) ||
+        dp.kodeSatuanKerja.toLowerCase().includes(queryLower) ||
+        dp.direktoratNama.toLowerCase().includes(queryLower)
     );
-  }, [currentDivisi, queryLower]);
+  }, [currentDivisi, currentDirektorat, allDepartemenList, queryLower]);
 
   return (
     <div className="card">
@@ -361,33 +420,38 @@ export default function SuperAdminOrgTab() {
         <h3>Struktur Organisasi</h3>
       </div>
 
-      {/* Path Breadcrumb (Revisi 1: Tanpa "Navigasi Aktif", hanya Direktorat -> Divisi -> Departemen dengan warna hitam) */}
+      {/* Path Breadcrumb (Revisi 1: Tanpa box biru, hanya teks breadcrumb minimalis) */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          padding: "10px 14px",
-          background: "var(--bg-surface-alt)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 8,
-          fontSize: "0.84rem",
-          marginTop: 12,
+          gap: 8,
+          fontSize: "0.85rem",
+          marginTop: 6,
           marginBottom: 14,
           flexWrap: "wrap",
           color: "var(--text-primary)",
+          fontWeight: 600,
         }}
       >
-        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-          {currentDirektorat ? currentDirektorat.nama : "Pilih Direktorat"}
+        <span>
+          {currentDirektorat ? currentDirektorat.nama : "Semua Direktorat"}
         </span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 600, opacity: 0.6 }}>&rarr;</span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-          {currentDivisi ? `${currentDivisi.nama} (${currentDivisi.kodeSatuanKerja})` : "Pilih Divisi"}
+        <span style={{ opacity: 0.45 }}>&rarr;</span>
+        <span>
+          {currentDivisi
+            ? `${currentDivisi.nama} (${currentDivisi.kodeSatuanKerja})`
+            : currentDirektorat
+            ? `${currentDirektorat.divisi.length} Divisi`
+            : "Semua Divisi"}
         </span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 600, opacity: 0.6 }}>&rarr;</span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-          {currentDivisi ? `${currentDivisi.departemen.length} Departemen` : "0 Departemen"}
+        <span style={{ opacity: 0.45 }}>&rarr;</span>
+        <span>
+          {currentDivisi
+            ? `${currentDivisi.departemen.length} Departemen`
+            : currentDirektorat
+            ? `${currentDirektorat.divisi.reduce((acc, dv) => acc + dv.departemen.length, 0)} Departemen`
+            : `${stats.totalDept} Departemen`}
         </span>
       </div>
 
@@ -462,19 +526,28 @@ export default function SuperAdminOrgTab() {
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
                   Direktorat
                 </span>
-                <span
-                  style={{
-                    fontSize: "0.74rem",
-                    padding: "1px 8px",
-                    borderRadius: 10,
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-subtle)",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {filteredDirektorat.length}
-                </span>
+                {selectedDirektoratId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDirektoratId(null);
+                      setSelectedDivisiId(null);
+                    }}
+                    style={{
+                      fontSize: "0.72rem",
+                      padding: "2px 7px",
+                      borderRadius: 6,
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--blue-500)",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                    title="Tampilkan semua Direktorat"
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -512,21 +585,22 @@ export default function SuperAdminOrgTab() {
                     <div
                       key={direktorat.id}
                       onClick={() => {
-                        setSelectedDirektoratId(direktorat.id);
-                        const firstDiv = direktorat.divisi[0] || null;
-                        setSelectedDivisiId(firstDiv ? firstDiv.id : null);
+                        if (selectedDirektoratId === direktorat.id) {
+                          setSelectedDirektoratId(null);
+                          setSelectedDivisiId(null);
+                        } else {
+                          setSelectedDirektoratId(direktorat.id);
+                          setSelectedDivisiId(null);
+                        }
                       }}
                       style={{
                         padding: "10px 12px",
                         borderRadius: 8,
                         cursor: "pointer",
                         border: isSelected
-                          ? "1px solid var(--blue-500)"
+                          ? "1.5px solid var(--blue-500)"
                           : "1px solid var(--border-subtle)",
-                        borderLeft: isSelected
-                          ? "4px solid var(--blue-500)"
-                          : "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
+                        background: isSelected ? "rgba(28, 109, 255, 0.03)" : "var(--bg-surface)",
                         boxShadow: isSelected ? "0 2px 8px rgba(28, 109, 255, 0.12)" : "none",
                         transition: "all 150ms ease",
                         display: "flex",
@@ -639,19 +713,28 @@ export default function SuperAdminOrgTab() {
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
                   Divisi
                 </span>
-                <span
-                  style={{
-                    fontSize: "0.74rem",
-                    padding: "1px 8px",
-                    borderRadius: 10,
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-subtle)",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {filteredDivisi.length}
-                </span>
+                {selectedDirektoratId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDirektoratId(null);
+                      setSelectedDivisiId(null);
+                    }}
+                    style={{
+                      fontSize: "0.72rem",
+                      padding: "2px 7px",
+                      borderRadius: 6,
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--blue-500)",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                    title="Tampilkan semua Divisi"
+                  >
+                    Semua
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -662,11 +745,10 @@ export default function SuperAdminOrgTab() {
                   padding: "0 10px",
                   fontSize: "0.75rem",
                   gap: 4,
-                  opacity: currentDirektorat ? 1 : 0.5,
                 }}
-                disabled={saving || !currentDirektorat}
+                disabled={saving || !tree || tree.length === 0}
                 onClick={openCreateDivisi}
-                title={currentDirektorat ? `Tambah Divisi di ${currentDirektorat.nama}` : "Pilih Direktorat dahulu"}
+                title="Tambah Divisi"
               >
                 <Plus width={13} height={13} /> Tambah
               </button>
@@ -684,15 +766,11 @@ export default function SuperAdminOrgTab() {
                 gap: 6,
               }}
             >
-              {!currentDirektorat ? (
-                <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-                  Pilih Direktorat di kolom kiri
-                </div>
-              ) : filteredDivisi.length === 0 ? (
+              {filteredDivisi.length === 0 ? (
                 <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.82rem" }}>
                   {searchQuery ? "Tidak ditemukan" : (
                     <div>
-                      <p style={{ margin: "0 0 10px 0" }}>Belum ada Divisi di {currentDirektorat.nama}</p>
+                      <p style={{ margin: "0 0 10px 0" }}>Belum ada Divisi</p>
                       <button
                         type="button"
                         className="btn btn-secondary"
@@ -712,18 +790,24 @@ export default function SuperAdminOrgTab() {
                   return (
                     <div
                       key={divisi.id}
-                      onClick={() => setSelectedDivisiId(divisi.id)}
+                      onClick={() => {
+                        if (selectedDivisiId === divisi.id) {
+                          setSelectedDivisiId(null);
+                        } else {
+                          setSelectedDivisiId(divisi.id);
+                          if (!selectedDirektoratId) {
+                            setSelectedDirektoratId(divisi.direktoratId);
+                          }
+                        }
+                      }}
                       style={{
                         padding: "10px 12px",
                         borderRadius: 8,
                         cursor: "pointer",
                         border: isSelected
-                          ? "1px solid var(--blue-500)"
+                          ? "1.5px solid var(--blue-500)"
                           : "1px solid var(--border-subtle)",
-                        borderLeft: isSelected
-                          ? "4px solid var(--blue-500)"
-                          : "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
+                        background: isSelected ? "rgba(28, 109, 255, 0.03)" : "var(--bg-surface)",
                         boxShadow: isSelected ? "0 2px 8px rgba(28, 109, 255, 0.12)" : "none",
                         transition: "all 150ms ease",
                         display: "flex",
@@ -746,7 +830,7 @@ export default function SuperAdminOrgTab() {
                         >
                           {divisi.nama}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
                           <span
                             style={{
                               fontSize: "0.68rem",
@@ -769,6 +853,15 @@ export default function SuperAdminOrgTab() {
                           >
                             {divisi.departemen.length} Dept
                           </span>
+                          {!selectedDirektoratId && (
+                            <span
+                              className="text-secondary"
+                              style={{ fontSize: "0.7rem", opacity: 0.75 }}
+                              title={divisi.direktoratNama}
+                            >
+                              &bull; {divisi.direktoratNama}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -852,19 +945,25 @@ export default function SuperAdminOrgTab() {
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
                   Departemen
                 </span>
-                <span
-                  style={{
-                    fontSize: "0.74rem",
-                    padding: "1px 8px",
-                    borderRadius: 10,
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-subtle)",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {filteredDepartemen.length}
-                </span>
+                {selectedDivisiId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDivisiId(null)}
+                    style={{
+                      fontSize: "0.72rem",
+                      padding: "2px 7px",
+                      borderRadius: 6,
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--blue-500)",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                    title="Tampilkan semua Departemen"
+                  >
+                    Semua
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -875,11 +974,10 @@ export default function SuperAdminOrgTab() {
                   padding: "0 10px",
                   fontSize: "0.75rem",
                   gap: 4,
-                  opacity: currentDivisi ? 1 : 0.5,
                 }}
-                disabled={saving || !currentDivisi}
+                disabled={saving || allDivisiList.length === 0}
                 onClick={openCreateDepartemen}
-                title={currentDivisi ? `Tambah Departemen di ${currentDivisi.nama}` : "Pilih Divisi dahulu"}
+                title="Tambah Departemen"
               >
                 <Plus width={13} height={13} /> Tambah
               </button>
@@ -897,20 +995,16 @@ export default function SuperAdminOrgTab() {
                 gap: 6,
               }}
             >
-              {!currentDivisi ? (
-                <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-                  Pilih Divisi di kolom tengah
-                </div>
-              ) : filteredDepartemen.length === 0 ? (
+              {filteredDepartemen.length === 0 ? (
                 <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.82rem" }}>
                   {searchQuery ? "Tidak ditemukan" : (
                     <div>
-                      <p style={{ margin: "0 0 10px 0" }}>Belum ada Departemen di {currentDivisi.nama}</p>
+                      <p style={{ margin: "0 0 10px 0" }}>Belum ada Departemen</p>
                       <button
                         type="button"
                         className="btn btn-secondary"
                         style={{ width: "auto", height: 30, padding: "0 12px", fontSize: "0.78rem" }}
-                        disabled={saving}
+                        disabled={saving || allDivisiList.length === 0}
                         onClick={openCreateDepartemen}
                       >
                         <Plus width={13} height={13} /> Tambah Departemen Pertama
@@ -950,6 +1044,21 @@ export default function SuperAdminOrgTab() {
                         >
                           {departemen.nama}
                         </span>
+                        {!selectedDivisiId && (
+                          <div
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "var(--text-secondary)",
+                              marginTop: 2,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                            title={`${departemen.divisiNama} (${departemen.kodeSatuanKerja})`}
+                          >
+                            {departemen.divisiNama} ({departemen.kodeSatuanKerja})
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions */}
@@ -1026,6 +1135,52 @@ export default function SuperAdminOrgTab() {
 
             <form onSubmit={handleFormSubmit}>
               <div className="form-grid">
+                {formModal.mode === "create" && formModal.level === "divisi" && (
+                  <div className="field full">
+                    <label htmlFor="org-form-parent-dir">Direktorat</label>
+                    <select
+                      id="org-form-parent-dir"
+                      value={formModal.parentId || (tree?.[0]?.id ?? "")}
+                      onChange={(e) => {
+                        const dirId = Number(e.target.value);
+                        const dir = tree?.find((d) => d.id === dirId);
+                        setFormModal((prev) =>
+                          prev ? { ...prev, parentId: dirId, parentName: dir?.nama } : null
+                        );
+                      }}
+                    >
+                      {tree?.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {formModal.mode === "create" && formModal.level === "departemen" && (
+                  <div className="field full">
+                    <label htmlFor="org-form-parent-div">Divisi</label>
+                    <select
+                      id="org-form-parent-div"
+                      value={formModal.parentId || (allDivisiList[0]?.id ?? "")}
+                      onChange={(e) => {
+                        const divId = Number(e.target.value);
+                        const div = allDivisiList.find((dv) => dv.id === divId);
+                        setFormModal((prev) =>
+                          prev ? { ...prev, parentId: divId, parentName: div?.nama } : null
+                        );
+                      }}
+                    >
+                      {allDivisiList.map((dv) => (
+                        <option key={dv.id} value={dv.id}>
+                          {dv.nama} ({dv.kodeSatuanKerja})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="field full">
                   <label htmlFor="org-form-nama">
                     Nama {formModal.level === "direktorat" ? "Direktorat" : formModal.level === "divisi" ? "Divisi" : "Departemen"}
