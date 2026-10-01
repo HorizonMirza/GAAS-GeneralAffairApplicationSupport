@@ -85,7 +85,7 @@ import SuperAdminMasterDataTab from "@/components/SuperAdminMasterDataTab";
 import SuperAdminAppSettingsTab from "@/components/SuperAdminAppSettingsTab";
 import { useMasterDataOptions } from "@/lib/useMasterData";
 
-export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "app-settings" | "organisasi" | "users" | "activity-log";
+export type SuperAdminTab = "overview" | "ekspedisi" | "booking-ruang" | "booking-kendaraan" | "atk" | "sarana" | "arsip" | "system" | "app-settings" | "organisasi" | "users" | "activity-log";
 
 // Labels/icons here mirror AppShell's SUPER_ADMIN_TABS + SETTINGS_TABS (the sidebar submenus
 // that are the actual navigation UI now) - this array itself only validates ?tab= against known
@@ -98,7 +98,8 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
-  { key: "app-settings", label: "App Settings", icon: <Shield width={16} height={16} /> },
+  { key: "system", label: "System", icon: <Shield width={16} height={16} /> },
+  { key: "app-settings", label: "System", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
   { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
   { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
@@ -7043,7 +7044,7 @@ function SuperAdminPageInner() {
         </>
       )}
 
-      {activeTab === "app-settings" && <SuperAdminAppSettingsTab />}
+      {(activeTab === "system" || activeTab === "app-settings") && <SuperAdminAppSettingsTab />}
 
       {activeTab === "organisasi" && <SuperAdminOrgTab />}
 

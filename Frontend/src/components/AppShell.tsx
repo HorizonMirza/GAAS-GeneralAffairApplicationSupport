@@ -121,7 +121,7 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
 // "app configuration" rather than getting lost among the seven business modules. Master data now
 // lives inside each business module's own "Settings" sub-tab instead of a standalone entry here.
 const SETTINGS_TABS: { key: string; label: string }[] = [
-  { key: "app-settings", label: "App Settings" },
+  { key: "system", label: "System" },
   { key: "organisasi", label: "Organization" },
   { key: "users", label: "Users" },
   { key: "activity-log", label: "Activity Log" },
@@ -156,7 +156,8 @@ function SuperAdminSubmenuItems() {
 function SettingsSubmenuItems() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeTab = pathname === "/superadmin" ? searchParams.get("tab") || "" : "";
+  const rawTab = pathname === "/superadmin" ? searchParams.get("tab") || "" : "";
+  const activeTab = rawTab === "app-settings" ? "system" : rawTab;
   return (
     <>
       {SETTINGS_TABS.map((tab) => (
@@ -178,7 +179,8 @@ function SettingsSubmenuItems() {
 function SuperAdminGroupSync({ setOpenCategory }: { setOpenCategory: (v: string | null) => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") || "overview";
+  const rawTab = searchParams.get("tab") || "overview";
+  const tab = rawTab === "app-settings" ? "system" : rawTab;
 
   useEffect(() => {
     if (pathname !== "/superadmin") return;
@@ -548,7 +550,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                         aria-expanded={isOpen}
                         onClick={() => {
                           if (isIconCollapsed) {
-                            router.push("/superadmin?tab=app-settings");
+                            router.push("/superadmin?tab=system");
                           } else {
                             setOpenCategory(isOpen ? null : SETTINGS_LABEL);
                           }
