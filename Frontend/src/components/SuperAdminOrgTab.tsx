@@ -9,9 +9,7 @@ import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import type { OrgDirektoratNode, OrgDivisiNode } from "@/lib/types";
 import {
-  Building2,
-  Layers,
-  FolderTree,
+  RotateCcw,
   ChevronRight,
   Pencil,
   Plus,
@@ -63,6 +61,7 @@ export default function SuperAdminOrgTab() {
   // Selected column nodes (Miller navigation state)
   const [selectedDirektoratId, setSelectedDirektoratId] = useState<number | null>(null);
   const [selectedDivisiId, setSelectedDivisiId] = useState<number | null>(null);
+  const [selectedDepartemenId, setSelectedDepartemenId] = useState<number | null>(null);
 
   // Search filter across columns
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,6 +99,7 @@ export default function SuperAdminOrgTab() {
     if (!tree || tree.length === 0) {
       setSelectedDirektoratId(null);
       setSelectedDivisiId(null);
+      setSelectedDepartemenId(null);
       return;
     }
 
@@ -113,7 +113,16 @@ export default function SuperAdminOrgTab() {
         setSelectedDivisiId(null);
       }
     }
-  }, [tree, selectedDirektoratId, selectedDivisiId]);
+
+    if (selectedDepartemenId) {
+      const exists = tree.some((d) =>
+        d.divisi.some((dv) => dv.departemen.some((dp) => dp.id === selectedDepartemenId))
+      );
+      if (!exists) {
+        setSelectedDepartemenId(null);
+      }
+    }
+  }, [tree, selectedDirektoratId, selectedDivisiId, selectedDepartemenId]);
 
   function errorMessage(err: unknown): string {
     return err instanceof ApiError
@@ -165,6 +174,18 @@ export default function SuperAdminOrgTab() {
       )
     );
   }, [tree]);
+
+  const currentDepartemen = useMemo(() => {
+    if (!selectedDepartemenId) return null;
+    return allDepartemenList.find((dp) => dp.id === selectedDepartemenId) || null;
+  }, [allDepartemenList, selectedDepartemenId]);
+
+  function handleResetAll() {
+    setSelectedDirektoratId(null);
+    setSelectedDivisiId(null);
+    setSelectedDepartemenId(null);
+    setSearchQuery("");
+  }
 
   // Overall statistics
   const stats = useMemo(() => {
@@ -340,16 +361,21 @@ export default function SuperAdminOrgTab() {
       if (selectedDirektoratId === deleteTarget.id) {
         setSelectedDirektoratId(null);
         setSelectedDivisiId(null);
+        setSelectedDepartemenId(null);
       }
     } else if (deleteTarget.level === "divisi") {
       await api.deleteDivisi(deleteTarget.id, password);
       showToast("Divisi berhasil dihapus");
       if (selectedDivisiId === deleteTarget.id) {
         setSelectedDivisiId(null);
+        setSelectedDepartemenId(null);
       }
     } else if (deleteTarget.level === "departemen") {
       await api.deleteDepartemen(deleteTarget.id, password);
       showToast("Departemen berhasil dihapus");
+      if (selectedDepartemenId === deleteTarget.id) {
+        setSelectedDepartemenId(null);
+      }
     }
 
     setDeleteTarget(null);
@@ -447,7 +473,9 @@ export default function SuperAdminOrgTab() {
         </span>
         <span style={{ opacity: 0.45 }}>&rarr;</span>
         <span>
-          {currentDivisi
+          {currentDepartemen
+            ? currentDepartemen.nama
+            : currentDivisi
             ? `${currentDivisi.departemen.length} Departemen`
             : currentDirektorat
             ? `${currentDirektorat.divisi.reduce((acc, dv) => acc + dv.departemen.length, 0)} Departemen`
@@ -455,7 +483,7 @@ export default function SuperAdminOrgTab() {
         </span>
       </div>
 
-      {/* Toolbar: Search normal di Ujung Kiri dan Count Box di Ujung Kanan (Revisi 2) */}
+      {/* Toolbar: Search normal di Ujung Kiri dan Count Box + Tombol Reset di Ujung Kanan (Revisi 1) */}
       <div
         className="settings-table-toolbar"
         style={{
@@ -476,8 +504,31 @@ export default function SuperAdminOrgTab() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="settings-table-count-box">
-          {stats.totalDir} Direktorat &bull; {stats.totalDiv} Divisi &bull; {stats.totalDept} Departemen
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="settings-table-count-box">
+            {stats.totalDir} Direktorat &bull; {stats.totalDiv} Divisi &bull; {stats.totalDept} Departemen
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{
+              width: 36,
+              height: 36,
+              padding: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 8,
+              cursor: "pointer",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+            }}
+            onClick={handleResetAll}
+            title="Reset Pilihan dan Muat Ulang"
+            aria-label="Reset Pilihan"
+          >
+            <RotateCcw width={16} height={16} />
+          </button>
         </div>
       </div>
 
@@ -506,7 +557,6 @@ export default function SuperAdminOrgTab() {
               border: "1px solid var(--border-subtle)",
               background: "var(--bg-surface-alt)",
               overflow: "hidden",
-              minHeight: 440,
             }}
           >
             {/* Column Header */}
@@ -521,43 +571,28 @@ export default function SuperAdminOrgTab() {
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Building2 width={16} height={16} style={{ color: "var(--blue-500)" }} />
-                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
-                  Direktorat
-                </span>
-                {selectedDirektoratId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDirektoratId(null);
-                      setSelectedDivisiId(null);
-                    }}
-                    style={{
-                      fontSize: "0.72rem",
-                      padding: "2px 7px",
-                      borderRadius: 6,
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-subtle)",
-                      color: "var(--blue-500)",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                    title="Tampilkan semua Direktorat"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
+              <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                Direktorat
+              </span>
               <button
                 type="button"
                 className="btn btn-primary"
-                style={{ width: "auto", height: 28, padding: "0 10px", fontSize: "0.75rem", gap: 4 }}
+                style={{
+                  height: 32,
+                  padding: "0 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  width: "auto",
+                }}
                 disabled={saving}
                 onClick={openCreateDirektorat}
                 title="Tambah Direktorat baru"
               >
-                <Plus width={13} height={13} /> Tambah
+                <Plus width={14} height={14} /> Tambah
               </button>
             </div>
 
@@ -567,7 +602,7 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 520,
+                maxHeight: 345,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -588,9 +623,11 @@ export default function SuperAdminOrgTab() {
                         if (selectedDirektoratId === direktorat.id) {
                           setSelectedDirektoratId(null);
                           setSelectedDivisiId(null);
+                          setSelectedDepartemenId(null);
                         } else {
                           setSelectedDirektoratId(direktorat.id);
                           setSelectedDivisiId(null);
+                          setSelectedDepartemenId(null);
                         }
                       }}
                       style={{
@@ -693,7 +730,6 @@ export default function SuperAdminOrgTab() {
               border: "1px solid var(--border-subtle)",
               background: "var(--bg-surface-alt)",
               overflow: "hidden",
-              minHeight: 440,
             }}
           >
             {/* Column Header */}
@@ -708,49 +744,28 @@ export default function SuperAdminOrgTab() {
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <Layers width={16} height={16} style={{ color: "var(--blue-500)" }} />
-                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
-                  Divisi
-                </span>
-                {selectedDirektoratId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDirektoratId(null);
-                      setSelectedDivisiId(null);
-                    }}
-                    style={{
-                      fontSize: "0.72rem",
-                      padding: "2px 7px",
-                      borderRadius: 6,
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-subtle)",
-                      color: "var(--blue-500)",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                    title="Tampilkan semua Divisi"
-                  >
-                    Semua
-                  </button>
-                )}
-              </div>
+              <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                Divisi
+              </span>
               <button
                 type="button"
                 className="btn btn-primary"
                 style={{
+                  height: 32,
+                  padding: "0 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
                   width: "auto",
-                  height: 28,
-                  padding: "0 10px",
-                  fontSize: "0.75rem",
-                  gap: 4,
                 }}
                 disabled={saving || !tree || tree.length === 0}
                 onClick={openCreateDivisi}
                 title="Tambah Divisi"
               >
-                <Plus width={13} height={13} /> Tambah
+                <Plus width={14} height={14} /> Tambah
               </button>
             </div>
 
@@ -760,7 +775,7 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 520,
+                maxHeight: 345,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -793,8 +808,10 @@ export default function SuperAdminOrgTab() {
                       onClick={() => {
                         if (selectedDivisiId === divisi.id) {
                           setSelectedDivisiId(null);
+                          setSelectedDepartemenId(null);
                         } else {
                           setSelectedDivisiId(divisi.id);
+                          setSelectedDepartemenId(null);
                           if (!selectedDirektoratId) {
                             setSelectedDirektoratId(divisi.direktoratId);
                           }
@@ -925,7 +942,6 @@ export default function SuperAdminOrgTab() {
               border: "1px solid var(--border-subtle)",
               background: "var(--bg-surface-alt)",
               overflow: "hidden",
-              minHeight: 440,
             }}
           >
             {/* Column Header */}
@@ -940,46 +956,28 @@ export default function SuperAdminOrgTab() {
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <FolderTree width={16} height={16} style={{ color: "var(--blue-500)" }} />
-                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)" }}>
-                  Departemen
-                </span>
-                {selectedDivisiId && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDivisiId(null)}
-                    style={{
-                      fontSize: "0.72rem",
-                      padding: "2px 7px",
-                      borderRadius: 6,
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-subtle)",
-                      color: "var(--blue-500)",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                    title="Tampilkan semua Departemen"
-                  >
-                    Semua
-                  </button>
-                )}
-              </div>
+              <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                Departemen
+              </span>
               <button
                 type="button"
                 className="btn btn-primary"
                 style={{
+                  height: 32,
+                  padding: "0 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
                   width: "auto",
-                  height: 28,
-                  padding: "0 10px",
-                  fontSize: "0.75rem",
-                  gap: 4,
                 }}
                 disabled={saving || allDivisiList.length === 0}
                 onClick={openCreateDepartemen}
                 title="Tambah Departemen"
               >
-                <Plus width={13} height={13} /> Tambah
+                <Plus width={14} height={14} /> Tambah
               </button>
             </div>
 
@@ -989,7 +987,7 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 520,
+                maxHeight: 345,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -1014,27 +1012,46 @@ export default function SuperAdminOrgTab() {
                 </div>
               ) : (
                 filteredDepartemen.map((departemen) => {
+                  const isSelected = selectedDepartemenId === departemen.id;
+
                   return (
                     <div
                       key={departemen.id}
+                      onClick={() => {
+                        if (selectedDepartemenId === departemen.id) {
+                          setSelectedDepartemenId(null);
+                        } else {
+                          setSelectedDepartemenId(departemen.id);
+                          if (!selectedDivisiId) {
+                            setSelectedDivisiId(departemen.divisiId);
+                          }
+                          if (!selectedDirektoratId) {
+                            setSelectedDirektoratId(departemen.direktoratId);
+                          }
+                        }
+                      }}
                       style={{
                         padding: "10px 12px",
                         borderRadius: 8,
-                        border: "1px solid var(--border-subtle)",
-                        background: "var(--bg-surface)",
+                        cursor: "pointer",
+                        border: isSelected
+                          ? "1.5px solid var(--blue-500)"
+                          : "1px solid var(--border-subtle)",
+                        background: isSelected ? "rgba(28, 109, 255, 0.03)" : "var(--bg-surface)",
+                        boxShadow: isSelected ? "0 2px 8px rgba(28, 109, 255, 0.12)" : "none",
+                        transition: "all 150ms ease",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
                         gap: 8,
-                        transition: "all 150ms ease",
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <span
                           style={{
-                            fontWeight: 500,
+                            fontWeight: isSelected ? 700 : 500,
                             fontSize: "0.84rem",
-                            color: "var(--text-primary)",
+                            color: isSelected ? "var(--blue-500)" : "var(--text-primary)",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -1062,7 +1079,10 @@ export default function SuperAdminOrgTab() {
                       </div>
 
                       {/* Actions */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div
+                        style={{ display: "flex", alignItems: "center", gap: 5 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           className="card-icon-btn"
