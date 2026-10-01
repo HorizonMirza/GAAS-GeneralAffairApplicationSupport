@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   Calendar,
@@ -472,6 +472,69 @@ interface LogoHistoryRecord {
   status: "Aktif" | "Riwayat";
   updatedAt: string;
   changeCount: number;
+  previewUrl?: string;
+}
+
+function getLogoSrc(item: LogoHistoryRecord, currentUpdatedAt?: string, hasCustomLogo?: boolean): string {
+  // 1. Default system logo ALWAYS returns the static default asset
+  if (
+    item.type.includes("Default") ||
+    item.filename.toLowerCase().includes("pgn") ||
+    item.filename.toLowerCase().includes("pgm")
+  ) {
+    return "/assets/logo-pgn-solution.png";
+  }
+  // 2. Custom logo with saved previewUrl (thumbnail data URL or stored URL)
+  if (item.previewUrl) {
+    return item.previewUrl;
+  }
+  // 3. Active custom logo fallback
+  if (item.status === "Aktif" && hasCustomLogo) {
+    return api.appLogoUrl(currentUpdatedAt);
+  }
+  return "/assets/logo-pgn-solution.png";
+}
+
+async function createThumbnailDataUrl(file: File, maxDim = 320): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          const canvas = document.createElement("canvas");
+          let w = img.width || maxDim;
+          let h = img.height || maxDim;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = Math.max(1, w);
+          canvas.height = Math.max(1, h);
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/png", 0.85));
+            return;
+          }
+        } catch {}
+        resolve("");
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve("");
+      };
+      img.src = url;
+    } catch {
+      resolve("");
+    }
+  });
 }
 
 function CompanyLogoTableAccordionItem({
@@ -492,17 +555,33 @@ function CompanyLogoTableAccordionItem({
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("gaas_logo_history");
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const parsed: LogoHistoryRecord[] = JSON.parse(raw);
+          // Migrate old records: fix typos and guarantee default logos point to /assets/logo-pgn-solution.png
+          return parsed.map((h) => {
+            const isDefault =
+              h.type.includes("Default") ||
+              h.filename.toLowerCase().includes("pgn") ||
+              h.filename.toLowerCase().includes("pgm");
+            return {
+              ...h,
+              filename: isDefault ? "logo-pgn-solution.png" : h.filename,
+              type: isDefault ? "Logo Default Sistem" : h.type,
+              previewUrl: isDefault ? "/assets/logo-pgn-solution.png" : h.previewUrl,
+            };
+          });
+        }
       } catch {}
     }
     return [
       {
         id: "logo-init",
         type: settings.hasCustomLogo ? "Logo Kustom (PNG/JPG)" : "Logo Default Sistem",
-        filename: settings.hasCustomLogo ? "logo_custom.png" : "logo-pgm-solution.png",
+        filename: settings.hasCustomLogo ? "logo_custom.png" : "logo-pgn-solution.png",
         status: "Aktif",
         updatedAt: settings.updatedAt,
         changeCount: 1,
+        previewUrl: settings.hasCustomLogo ? api.appLogoUrl(settings.updatedAt) : "/assets/logo-pgn-solution.png",
       },
     ];
   });
@@ -514,7 +593,7 @@ function CompanyLogoTableAccordionItem({
   const [formError, setFormError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LogoHistoryRecord | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<{ url: string; filename: string; type: string } | null>(null);
 
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
@@ -590,6 +669,7 @@ function CompanyLogoTableAccordionItem({
     setFormError("");
     setUploading(true);
     try {
+      const thumbUrl = await createThumbnailDataUrl(selectedFile);
       const updated = await api.uploadAppLogo(selectedFile, formPassword);
       onSaved(updated);
 
@@ -601,6 +681,7 @@ function CompanyLogoTableAccordionItem({
           status: "Aktif",
           updatedAt: new Date().toISOString(),
           changeCount: history.length + 1,
+          previewUrl: thumbUrl || api.appLogoUrl(updated.updatedAt),
         },
         ...history.map((h) => ({ ...h, status: "Riwayat" as const })),
       ];
@@ -624,14 +705,15 @@ function CompanyLogoTableAccordionItem({
     if (deleteTarget.status === "Aktif") {
       const updated = await api.deleteAppLogo(password);
       onSaved(updated);
-      const nextHistory = [
+      const nextHistory: LogoHistoryRecord[] = [
         {
           id: String(Date.now()),
           type: "Logo Default Sistem",
-          filename: "logo-pgm-solution.png",
+          filename: "logo-pgn-solution.png",
           status: "Aktif" as const,
           updatedAt: new Date().toISOString(),
           changeCount: history.length + 1,
+          previewUrl: "/assets/logo-pgn-solution.png",
         },
         ...history.map((h) => ({ ...h, status: "Riwayat" as const })),
       ];
@@ -713,85 +795,95 @@ function CompanyLogoTableAccordionItem({
                     {filteredHistory.length === 0 ? (
                       <tr><td colSpan={7} className="table-empty">Tidak Ada Data</td></tr>
                     ) : (
-                      filteredHistory.map((item, index) => (
-                        <tr key={item.id}>
-                          <td>{index + 1}</td>
-                          <td>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewImage(api.appLogoUrl(settings.updatedAt))}
-                              title="Klik untuk melihat preview logo"
-                              style={{
-                                background: "#ffffff",
-                                border: "1px solid var(--border-subtle)",
-                                borderRadius: 6,
-                                padding: "3px 8px",
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "all 0.15s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = "var(--primary-color, #1c6dff)";
-                                e.currentTarget.style.boxShadow = "0 0 0 2px rgba(28, 109, 255, 0.15)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = "var(--border-subtle)";
-                                e.currentTarget.style.boxShadow = "none";
-                              }}
-                            >
-                              <img
-                                src={api.appLogoUrl(settings.updatedAt)}
-                                alt="Preview Logo Perusahaan"
+                      filteredHistory.map((item, index) => {
+                        const itemSrc = getLogoSrc(item, settings.updatedAt, settings.hasCustomLogo);
+                        return (
+                          <tr key={item.id}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewItem({
+                                    url: itemSrc,
+                                    filename: item.filename,
+                                    type: item.type,
+                                  })
+                                }
+                                title="Klik untuk melihat preview logo"
                                 style={{
-                                  maxWidth: 72,
-                                  maxHeight: 28,
-                                  width: "auto",
-                                  height: "auto",
-                                  display: "block",
+                                  background: "#ffffff",
+                                  border: "1px solid var(--border-subtle)",
+                                  borderRadius: 6,
+                                  padding: "3px 8px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  transition: "all 0.15s ease",
                                 }}
-                              />
-                            </button>
-                          </td>
-                          <td>{item.type}</td>
-                          <td>{item.filename}</td>
-                          <td>
-                            {item.status === "Aktif" ? (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                                Aktif
-                              </span>
-                            ) : (
-                              <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
-                                Pergantian ke-{item.changeCount}
-                              </span>
-                            )}
-                          </td>
-                          <td>{formatDateTimeWib(item.updatedAt)}</td>
-                          <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                            <button
-                              type="button"
-                              className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
-                              onClick={() => setDeleteTarget(item)}
-                            >
-                              <Trash2 width={16} height={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = "var(--primary-color, #1c6dff)";
+                                  e.currentTarget.style.boxShadow = "0 0 0 2px rgba(28, 109, 255, 0.15)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = "var(--border-subtle)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <img
+                                  src={itemSrc}
+                                  alt={`Preview ${item.filename}`}
+                                  style={{
+                                    maxWidth: 72,
+                                    maxHeight: 28,
+                                    width: "auto",
+                                    height: "auto",
+                                    display: "block",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              </button>
+                            </td>
+                            <td>{item.type}</td>
+                            <td>{item.filename}</td>
+                            <td>
+                              {item.status === "Aktif" ? (
+                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
+                                  Aktif
+                                </span>
+                              ) : (
+                                <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 500, background: "var(--bg-hover, #f1f5f9)", color: "var(--text-secondary)" }}>
+                                  Pergantian ke-{item.changeCount}
+                                </span>
+                              )}
+                            </td>
+                            <td>{formatDateTimeWib(item.updatedAt)}</td>
+                            <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                              <button
+                                type="button"
+                                className="card-icon-btn card-icon-btn-danger"
+                                aria-label="Hapus"
+                                title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                                onClick={() => setDeleteTarget(item)}
+                              >
+                                <Trash2 width={16} height={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <ModalOverlay open={!!previewImage} onClose={() => setPreviewImage(null)} className={`modal-overlay modal-overlay-centered ${previewImage ? "" : "hidden"}`}>
+            <ModalOverlay open={!!previewItem} onClose={() => setPreviewItem(null)} className={`modal-overlay modal-overlay-centered ${previewItem ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 540 }}>
                 <div className="modal-header">
                   <h3>Preview Logo Perusahaan</h3>
-                  <button type="button" className="modal-close" onClick={() => setPreviewImage(null)}>&times;</button>
+                  <button type="button" className="modal-close" onClick={() => setPreviewItem(null)}>&times;</button>
                 </div>
                 <div style={{ padding: 24, textAlign: "center" }}>
                   <div
@@ -807,13 +899,13 @@ function CompanyLogoTableAccordionItem({
                     }}
                   >
                     <img
-                      src={previewImage || ""}
-                      alt="Preview Logo Perusahaan"
+                      src={previewItem?.url || ""}
+                      alt={previewItem?.filename || "Preview Logo Perusahaan"}
                       style={{ maxWidth: "100%", maxHeight: 260, objectFit: "contain" }}
                     />
                   </div>
                   <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    {history.find((h) => h.status === "Aktif")?.filename || "logo-pgn-solution.png"}
+                    {previewItem ? `${previewItem.filename} (${previewItem.type})` : ""}
                   </p>
                 </div>
               </div>
@@ -929,6 +1021,12 @@ function CompanyLogoTableAccordionItem({
 // ---------------------------------------------------------------------------
 // 3. Jam Operasional (Tabel Riwayat & Pengaturan)
 // ---------------------------------------------------------------------------
+const OPERATING_HOUR_OPTIONS = [
+  "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
+  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
+  "21:00", "22:00", "23:00"
+];
+
 interface OperatingHoursHistoryRecord {
   id: string;
   start: string;
@@ -977,6 +1075,24 @@ function OperatingHoursTableAccordionItem({
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<OperatingHoursHistoryRecord | null>(null);
+
+  const startOptions = useMemo(() => {
+    const list = [...OPERATING_HOUR_OPTIONS.slice(0, -1)];
+    if (formStart && !list.includes(formStart)) {
+      list.push(formStart);
+      list.sort();
+    }
+    return list;
+  }, [formStart]);
+
+  const endOptions = useMemo(() => {
+    const list = OPERATING_HOUR_OPTIONS.filter((h) => h > formStart);
+    if (formEnd && !list.includes(formEnd)) {
+      list.push(formEnd);
+      list.sort();
+    }
+    return list;
+  }, [formStart, formEnd]);
 
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
@@ -1188,22 +1304,34 @@ function OperatingHoursTableAccordionItem({
                   <div className="form-grid">
                     <div className="field">
                       <label htmlFor="modal-hours-start">Jam Mulai</label>
-                      <input
+                      <SearchableSelect
                         id="modal-hours-start"
-                        type="time"
-                        required
                         value={formStart}
-                        onChange={(e) => setFormStart(e.target.value)}
+                        onChange={(val) => {
+                          setFormStart(val);
+                          if (formError) setFormError("");
+                          if (formEnd && val >= formEnd) {
+                            const next = OPERATING_HOUR_OPTIONS.find((h) => h > val);
+                            if (next) setFormEnd(next);
+                          }
+                        }}
+                        options={startOptions}
+                        placeholder="Pilih Jam Mulai"
+                        searchable={false}
                       />
                     </div>
                     <div className="field">
                       <label htmlFor="modal-hours-end">Jam Selesai</label>
-                      <input
+                      <SearchableSelect
                         id="modal-hours-end"
-                        type="time"
-                        required
                         value={formEnd}
-                        onChange={(e) => setFormEnd(e.target.value)}
+                        onChange={(val) => {
+                          setFormEnd(val);
+                          if (formError) setFormError("");
+                        }}
+                        options={endOptions}
+                        placeholder="Pilih Jam Selesai"
+                        searchable={false}
                       />
                     </div>
                   </div>
@@ -1548,7 +1676,7 @@ function NotificationSoundTableAccordionItem({
                   <div className="form-grid">
                     <div className="field full">
                       <label htmlFor="modal-sound-chat">Suara Chat</label>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
                         <div style={{ flex: 1 }}>
                           <SearchableSelect
                             id="modal-sound-chat"
@@ -1562,7 +1690,22 @@ function NotificationSoundTableAccordionItem({
                         <button
                           type="button"
                           className="icon-btn"
-                          style={{ height: 38, width: 38, flexShrink: 0 }}
+                          style={{
+                            alignSelf: "stretch",
+                            width: 44,
+                            height: "auto",
+                            borderRadius: 10,
+                            border: "1px solid var(--border-subtle)",
+                            background: "var(--bg-surface)",
+                            boxShadow: "0 1px 3px rgba(15, 40, 90, 0.06)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            cursor: "pointer",
+                            color: "var(--text-secondary)",
+                            transition: "all 0.15s ease",
+                          }}
                           onClick={() => previewSound(formChat)}
                           title="Dengarkan suara chat"
                         >
@@ -1573,7 +1716,7 @@ function NotificationSoundTableAccordionItem({
 
                     <div className="field full">
                       <label htmlFor="modal-sound-activity">Suara Transaksi / Approval</label>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
                         <div style={{ flex: 1 }}>
                           <SearchableSelect
                             id="modal-sound-activity"
@@ -1587,7 +1730,22 @@ function NotificationSoundTableAccordionItem({
                         <button
                           type="button"
                           className="icon-btn"
-                          style={{ height: 38, width: 38, flexShrink: 0 }}
+                          style={{
+                            alignSelf: "stretch",
+                            width: 44,
+                            height: "auto",
+                            borderRadius: 10,
+                            border: "1px solid var(--border-subtle)",
+                            background: "var(--bg-surface)",
+                            boxShadow: "0 1px 3px rgba(15, 40, 90, 0.06)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            cursor: "pointer",
+                            color: "var(--text-secondary)",
+                            transition: "all 0.15s ease",
+                          }}
                           onClick={() => previewSound(formActivity)}
                           title="Dengarkan suara approval"
                         >
