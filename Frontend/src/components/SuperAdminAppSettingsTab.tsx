@@ -2155,7 +2155,15 @@ function BackupTableAccordionItem({
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("gaas_backup_history");
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((item, idx) => ({
+              ...item,
+              status: idx === 0 ? "Aktif" : (item.status === "Aktif" ? "Aktif" : "Non Aktif"),
+            }));
+          }
+        }
       } catch {}
     }
     return [
@@ -2163,7 +2171,7 @@ function BackupTableAccordionItem({
         id: "backup-initial",
         filename: "GAAS_Master_Backup.xlsx",
         scope: "Seluruh Database (11 Modul & Log)",
-        status: "Tersedia / Siap Unduh",
+        status: "Aktif",
         exportedAt: new Date().toISOString(),
       },
     ];
@@ -2175,7 +2183,12 @@ function BackupTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return h.filename.toLowerCase().includes(q) || h.scope.toLowerCase().includes(q);
+    const statusText = h.status === "Non Aktif" ? "non aktif" : "aktif";
+    return (
+      h.filename.toLowerCase().includes(q) ||
+      h.scope.toLowerCase().includes(q) ||
+      statusText.includes(q)
+    );
   });
 
   function handleTriggerDownload() {
@@ -2184,10 +2197,10 @@ function BackupTableAccordionItem({
       id: String(Date.now()),
       filename,
       scope: "Seluruh Database (11 Modul & Log)",
-      status: "Berhasil Diunduh",
+      status: "Aktif",
       exportedAt: new Date().toISOString(),
     };
-    const nextHistory = [newEntry, ...history];
+    const nextHistory = [newEntry, ...history.map((h) => ({ ...h, status: "Non Aktif" as const }))];
     setHistory(nextHistory);
     try {
       localStorage.setItem("gaas_backup_history", JSON.stringify(nextHistory));
@@ -2274,21 +2287,14 @@ function BackupTableAccordionItem({
                           <td>{item.filename}</td>
                           <td>{item.scope}</td>
                           <td>
-                            <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: "0.74rem", fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
-                              {item.status}
-                            </span>
+                            {item.status === "Non Aktif" ? (
+                              <span className="badge badge-rejected">Non Aktif</span>
+                            ) : (
+                              <span className="badge badge-approved">Aktif</span>
+                            )}
                           </td>
                           <td>{formatDateTimeWib(item.exportedAt)}</td>
                           <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                            <button
-                              type="button"
-                              className="card-icon-btn"
-                              aria-label="Unduh File"
-                              title="Unduh File Excel"
-                              onClick={() => window.open(api.globalExportUrl(), "_blank")}
-                            >
-                              <Download width={16} height={16} />
-                            </button>
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
