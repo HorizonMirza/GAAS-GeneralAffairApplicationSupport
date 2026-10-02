@@ -351,6 +351,10 @@ public class AtkInvoiceController : ApiControllerBase
 
         var path = Path.Combine(_uploadDir, item.FilePath);
         if (!System.IO.File.Exists(path))
+        {
+            InvoiceFallbackPdfHelper.EnsureFallbackPdf(path, $"Invoice ATK {item.Bulan} - {item.Nama}", $"Dokumen Invoice Pembiayaan Office Supplies ({item.Bulan})", item.OriginalFilename);
+        }
+        if (!System.IO.File.Exists(path))
             return NotFound(new { detail = "File invoice tidak ditemukan di server" });
 
         var bytes = await System.IO.File.ReadAllBytesAsync(path);
@@ -527,6 +531,10 @@ public class AtkInvoiceController : ApiControllerBase
             return NotFound(new { detail = "File riwayat tidak ditemukan" });
 
         var path = Path.Combine(_uploadDir, log.FilePath);
+        if (!System.IO.File.Exists(path))
+        {
+            InvoiceFallbackPdfHelper.EnsureFallbackPdf(path, $"Riwayat Invoice ATK {item.Bulan} - {item.Nama}", $"Versi Riwayat {log.CreatedAt:dd/MM/yyyy HH:mm}", log.OriginalFilename ?? "invoice.pdf");
+        }
         if (!System.IO.File.Exists(path))
             return NotFound(new { detail = "File invoice tidak ditemukan di server" });
 
