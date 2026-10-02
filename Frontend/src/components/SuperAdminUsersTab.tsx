@@ -358,7 +358,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         type: "delete",
         user,
         title: "Konfirmasi Hapus Akun",
-        message: `Yakin ingin menghapus akun "${user.nama}" (${user.username})?`,
+        message: "",
         actionButtonText: "Delete",
         actionButtonVariant: "danger",
       });
@@ -381,9 +381,9 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     setActionModal({
       type: "impersonate",
       user,
-      title: "Konfirmasi Login As",
-      message: `Login As akun "${user.nama}" (${user.username})? Anda akan bertindak penuh sebagai akun ini sampai memilih "Kembali ke Super Admin".`,
-      actionButtonText: "Login As",
+      title: "Konfirmasi Login",
+      message: "",
+      actionButtonText: "Login",
       actionButtonVariant: "primary",
     });
     setActionPassword("");
@@ -667,7 +667,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 }}
               >
                 <LogOut width={16} height={16} />
-                Paksa Logout
+                Logout
               </button>
             </motion.div>
           )}
@@ -683,10 +683,9 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                   rowMenu.close();
                   handleImpersonate(u);
                 }}
-                style={{ color: "var(--blue-500)", fontWeight: 600 }}
               >
                 <LogIn width={16} height={16} />
-                {impersonating === rowMenu.menuItem.id ? "Memuat..." : "Login As"}
+                {impersonating === rowMenu.menuItem.id ? "Memuat..." : "Login"}
               </button>
             </motion.div>
           )}
@@ -1037,12 +1036,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </button>
           </div>
 
-          {actionModal?.type !== "force-logout" && actionModal?.message && (
-            <div style={{ marginBottom: 16, fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              {actionModal.message}
-            </div>
-          )}
-
           <form
             className="user-form-modal"
             onSubmit={async (e) => {
@@ -1095,17 +1088,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </div>
 
             <div className="modal-actions" style={{ marginTop: 20 }}>
-              {actionModal?.type !== "force-logout" && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ width: "auto" }}
-                  disabled={actionBusy}
-                  onClick={() => { setActionModal(null); setActionPassword(""); setActionError(""); }}
-                >
-                  Batal
-                </button>
-              )}
               <button
                 type="submit"
                 className={`btn ${actionModal?.actionButtonVariant === "danger" ? "btn-confirm-danger" : "btn-primary"}`}
