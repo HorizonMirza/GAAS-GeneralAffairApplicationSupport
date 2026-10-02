@@ -5081,6 +5081,14 @@ table.data-table {
 
 .field-select-blue .searchable-select-trigger:not(:disabled) {
   background: var(--bg-surface-alt);
+  box-shadow: none;
+}
+
+.user-form-modal .field input,
+.user-form-modal .field .searchable-select-trigger:not(:disabled) {
+  background: var(--bg-surface-alt);
+  border-color: var(--border-subtle);
+  box-shadow: none;
 }
 
 .searchable-select-trigger:hover { border-color: var(--blue-400); }

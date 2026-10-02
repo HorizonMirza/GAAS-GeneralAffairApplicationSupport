@@ -310,10 +310,10 @@ public class UsersAdminController : ApiControllerBase
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
+        if (user.Role == RoleEnum.SUPER_ADMIN && await IsLastActiveSuperAdmin(_db, user))
+            return StatusCode(400, new { detail = "Akun Super Admin tidak bisa dihapus jika akun Super Admin cuma 1" });
         if (user.Id == currentUser!.Id)
-            return StatusCode(400, new { detail = "Tidak dapat menonaktifkan akun yang sedang digunakan" });
-        if (await IsLastActiveSuperAdmin(_db, user))
-            return StatusCode(400, new { detail = "Tidak dapat menonaktifkan - ini satu-satunya akun Super Admin aktif" });
+            return StatusCode(400, new { detail = "Tidak dapat menghapus akun yang sedang digunakan" });
 
         user.IsActive = false;
         LogAdminActivity(_db, "USER_DEACTIVATE", $"Nonaktifkan akun {user.Nama} ({user.Username})", currentUser);

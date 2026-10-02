@@ -12,9 +12,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
 import PasswordField from "@/components/PasswordField";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
-import { formatDateTime } from "@/lib/format";
 import {
-  ListChecks,
   SquarePen,
   KeyRound,
   LogOut,
@@ -100,7 +98,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
   const rowMenu = useRowMenu(items);
 
-  const [detailUser, setDetailUser] = useState<AdminUserListItem | null>(null);
+  const [activeSuperAdminCount, setActiveSuperAdminCount] = useState(1);
   const [formOpen, setFormOpen] = useState<"create" | AdminUserListItem | null>(null);
   const [form, setForm] = useState<UserFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
@@ -118,9 +116,13 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     setBusy(true);
     setError("");
     try {
-      const data = await api.listAdminUsers(filters);
+      const [data, saData] = await Promise.all([
+        api.listAdminUsers(filters),
+        api.listAdminUsers({ role: "SUPER_ADMIN", isActive: true, limit: 10 }),
+      ]);
       setItems(data.items);
       setTotal(data.total);
+      setActiveSuperAdminCount(saData.total);
     } catch (err) {
       setItems([]);
       setTotal(0);
@@ -327,13 +329,28 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     }, "Paksa Logout");
   }
 
-  function handleToggleActive(user: AdminUserListItem) {
-    const actionText = user.isActive ? "menonaktifkan / menghapus" : "mengaktifkan";
+  async function handleToggleActive(user: AdminUserListItem) {
+    if (user.isActive && user.role === "SUPER_ADMIN") {
+      try {
+        const saData = await api.listAdminUsers({ role: "SUPER_ADMIN", isActive: true, limit: 10 });
+        setActiveSuperAdminCount(saData.total);
+        if (saData.total <= 1) {
+          showToast("Akun Super Admin tidak bisa dihapus jika akun Super Admin cuma 1", "error");
+          return;
+        }
+      } catch {
+        if (activeSuperAdminCount <= 1) {
+          showToast("Akun Super Admin tidak bisa dihapus jika akun Super Admin cuma 1", "error");
+          return;
+        }
+      }
+    }
+    const actionText = user.isActive ? "menghapus" : "mengaktifkan";
     confirm(`Yakin ingin ${actionText} akun "${user.nama}" (${user.username})?`, async () => {
       try {
         if (user.isActive) await api.deactivateAdminUser(user.id);
         else await api.activateAdminUser(user.id);
-        showToast(`Akun berhasil ${user.isActive ? "dinonaktifkan" : "diaktifkan"}`);
+        showToast(`Akun berhasil ${user.isActive ? "dihapus" : "diaktifkan"}`);
         await load();
       } catch (err) {
         showToast(errorMessage(err), "error");
@@ -589,21 +606,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               onClick={() => {
                 const u = rowMenu.menuItem!;
                 rowMenu.close();
-                setDetailUser(u);
-              }}
-            >
-              <ListChecks width={16} height={16} />
-              Detail
-            </button>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <button
-              type="button"
-              className="row-menu-item"
-              onClick={() => {
-                const u = rowMenu.menuItem!;
-                rowMenu.close();
                 openEdit(u);
               }}
             >
@@ -683,6 +685,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               type="button"
               className={`row-menu-item ${rowMenu.menuItem.isActive ? "row-menu-item-danger" : ""}`}
               style={!rowMenu.menuItem.isActive ? { color: "var(--green-500)", fontWeight: 600 } : undefined}
+              title={
+                rowMenu.menuItem.isActive && rowMenu.menuItem.role === "SUPER_ADMIN" && activeSuperAdminCount <= 1
+                  ? "Akun Super Admin tidak bisa dihapus jika akun Super Admin cuma 1"
+                  : undefined
+              }
               onClick={() => {
                 const u = rowMenu.menuItem!;
                 rowMenu.close();
@@ -705,90 +712,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         </motion.div>
       )}
 
-      <ModalOverlay open={!!detailUser} onClose={() => setDetailUser(null)} className={`modal-overlay modal-overlay-centered ${detailUser ? "" : "hidden"}`}>
-        <div className="modal" style={{ maxWidth: 520 }}>
-          <div className="modal-header">
-            <h3>Detail Akun</h3>
-            <button type="button" className="modal-close" onClick={() => setDetailUser(null)}>&times;</button>
-          </div>
-          {detailUser && (
-            <div style={{ padding: "0 4px" }}>
-              <div className="detail-grid">
-                <div className="detail-row">
-                  <span className="detail-label">Username</span>
-                  <span className="detail-value">{detailUser.username}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Nama</span>
-                  <span className="detail-value">{detailUser.nama}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Role</span>
-                  <span className="detail-value">{ROLE_LABEL[detailUser.role] || detailUser.role}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Status</span>
-                  <div className="detail-value" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                    <span className={`badge ${detailUser.isActive ? "badge-approved" : "badge-rejected"}`}>
-                      {detailUser.isActive ? "Aktif" : "Nonaktif"}
-                    </span>
-                    {detailUser.mustChangePassword && (
-                      <span className="badge badge-pending">
-                        Belum Ganti Password
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Direktorat</span>
-                  <span className="detail-value">{detailUser.direktorat || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Divisi</span>
-                  <span className="detail-value">{detailUser.divisi || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Departemen</span>
-                  <span className="detail-value">{detailUser.departemen || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Dibuat</span>
-                  <span className="detail-value">
-                    {!detailUser.createdAt || detailUser.createdAt.startsWith("0001")
-                      ? "-"
-                      : formatDateTime(detailUser.createdAt)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email</span>
-                  <span className="detail-value">{detailUser.email || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">No. HP</span>
-                  <span className="detail-value">{detailUser.noHp || "-"}</span>
-                </div>
-              </div>
-              <div className="modal-actions" style={{ marginTop: 24 }}>
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setDetailUser(null)}>
-                  Tutup
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ width: "auto" }}
-                  onClick={() => {
-                    const u = detailUser;
-                    setDetailUser(null);
-                    openEdit(u);
-                  }}
-                >
-                  Edit Akun
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </ModalOverlay>
 
       <ModalOverlay
         open={!!passwordTarget}
@@ -943,18 +866,18 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
           </div>
 
-          <form onSubmit={handleFormSubmit}>
+          <form onSubmit={handleFormSubmit} className="user-form-modal">
             {formOpen === "create" && (
-              <div className="field">
+              <div className="field field-select-blue">
                 <label htmlFor="user-form-username">Username</label>
                 <input id="user-form-username" type="text" required value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
               </div>
             )}
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-nama">Nama</label>
               <input id="user-form-nama" type="text" required value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-role">Role</label>
               <SearchableSelect
                 id="user-form-role"
@@ -965,7 +888,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 placeholder="Pilih Role"
               />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-direktorat">Direktorat</label>
               <SearchableSelect
                 id="user-form-direktorat"
@@ -976,7 +899,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 placeholder="Pilih Direktorat"
               />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-divisi">Divisi</label>
               <SearchableSelect
                 id="user-form-divisi"
@@ -987,7 +910,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 placeholder="Pilih Divisi"
               />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-departemen">Departemen</label>
               <SearchableSelect
                 id="user-form-departemen"
@@ -998,11 +921,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 placeholder="Pilih Departemen"
               />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-email">Email</label>
               <input id="user-form-email" type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
-            <div className="field" style={{ marginTop: 12 }}>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-nohp">No. HP</label>
               <input id="user-form-nohp" type="text" required value={form.noHp} onChange={(e) => setForm((f) => ({ ...f, noHp: e.target.value }))} />
             </div>
