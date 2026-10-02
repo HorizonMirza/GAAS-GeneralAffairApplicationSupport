@@ -224,6 +224,57 @@ public class UsersAdminController : ApiControllerBase
         return Ok(new ResetPasswordOut(password));
     }
 
+    [HttpPut("{id:int}/password")]
+    public async Task<IActionResult> ChangePassword(int id, [FromBody] AdminChangePasswordRequest payload)
+    {
+        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.CurrentPassword) ||
+            !BCrypt.Net.BCrypt.Verify(payload.CurrentPassword, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password Super Admin salah" });
+
+        var passwordError = ValidatePasswordStrength(payload.NewPassword);
+        if (passwordError != null)
+            return StatusCode(400, new { detail = passwordError });
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
+        if (BCrypt.Net.BCrypt.Verify(payload.NewPassword, user.PasswordHash))
+            return StatusCode(400, new { detail = "Password baru harus berbeda dari password akun saat ini" });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
+        user.PasswordChangedAt = DateTime.UtcNow;
+        // Changing one's own Super Admin password must not immediately gate that same operator
+        // behind the forced-change screen. Other targets can optionally receive a temporary
+        // password and will be required to replace it after their next login.
+        user.MustChangePassword = user.Id != actor.Id && payload.MustChangePassword;
+        LogAdminActivity(
+            _db,
+            "USER_CHANGE_PASSWORD",
+            $"Ganti password akun {user.Nama} ({user.Username})" +
+            (user.MustChangePassword ? " - wajib diganti saat login berikutnya" : ""),
+            actor);
+        await _db.SaveChangesAsync();
+
+        // PasswordChangedAt revokes every old session. When the target is the operator's own
+        // account, issue a fresh token so this intentional self-change does not sign them out.
+        if (user.Id == actor.Id)
+        {
+            var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
+            Response.Cookies.Append(CurrentUserService.CookieName, token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = ResolveCookieSecure(_config),
+                SameSite = SameSiteMode.Lax,
+                MaxAge = TimeSpan.FromMinutes(_jwt.ExpireMinutes),
+                Path = "/",
+            });
+        }
+
+        return Ok(AdminUserOut.From(user));
+    }
+
     // "Paksa logout" - same PasswordChangedAt-bump mechanism ResetPassword uses to revoke every
     // session already issued for this account, but without touching PasswordHash: the account's
     // real password is untouched, so it can log back in immediately with what it already knows.
@@ -470,6 +521,19 @@ public class UsersAdminController : ApiControllerBase
                     return "Role ini wajib memiliki Divisi dan Departemen";
                 break;
         }
+        return null;
+    }
+
+    public static string? ValidatePasswordStrength(string? password)
+    {
+        if (string.IsNullOrEmpty(password) ||
+            password.Length < 8 ||
+            !System.Text.RegularExpressions.Regex.IsMatch(password, "[0-9]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(password, "[a-z]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(password, "[A-Z]") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(password, "[^A-Za-z0-9]"))
+            return "Password baru belum memenuhi syarat (minimal 8 karakter, 1 angka, 1 huruf kecil, 1 huruf besar, 1 karakter spesial)";
+
         return null;
     }
 }

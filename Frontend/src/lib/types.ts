@@ -1075,6 +1075,12 @@ export interface ResetPasswordResult {
   password: string;
 }
 
+export interface AdminChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  mustChangePassword: boolean;
+}
+
 // "Login As" - see UsersAdminController.Impersonate. Mirrors LoginResponse's shape so the
 // frontend can route it the same way (dashboard, or the forced change-password screen).
 export interface ImpersonateResult {

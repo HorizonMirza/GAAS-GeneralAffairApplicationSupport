@@ -41,6 +41,14 @@ public record UpdateUserRequest(
 public record CreatedUserOut(AdminUserOut User, string Password);
 public record ResetPasswordOut(string Password);
 
+// A sensitive Super Admin action: CurrentPassword re-authenticates the operator, NewPassword is
+// applied to the selected account, and MustChangePassword optionally turns it into a temporary
+// credential that the user must replace at their next login.
+public record AdminChangePasswordRequest(
+    string CurrentPassword,
+    string NewPassword,
+    bool MustChangePassword = true);
+
 // Mirrors LoginResponse's shape - the frontend routes "Login As" the same way a real login result
 // would (dashboard, or the forced change-password screen).
 public record ImpersonateResponse(string Message, string Role, bool MustChangePassword);

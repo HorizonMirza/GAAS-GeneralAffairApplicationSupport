@@ -10,6 +10,7 @@ import { ROLE_LABEL } from "@/lib/constants";
 import type { AdminUserListItem, ImpersonationLogEntry, OrgStructure, Role } from "@/lib/types";
 import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
+import PasswordField from "@/components/PasswordField";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import { formatDateTime } from "@/lib/format";
 import {
@@ -55,6 +56,28 @@ interface UserFormState {
 
 const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "" };
 
+const PASSWORD_REQUIREMENTS = [
+  { regex: /[0-9]/, text: "Minimal 1 angka" },
+  { regex: /.{8,}/, text: "Minimal 8 karakter" },
+  { regex: /[a-z]/, text: "Minimal 1 huruf kecil" },
+  { regex: /[A-Z]/, text: "Minimal 1 huruf besar" },
+  { regex: /[^A-Za-z0-9]/, text: "Minimal 1 karakter spesial" },
+] as const;
+
+interface AdminPasswordFormState {
+  newPassword: string;
+  confirmPassword: string;
+  currentPassword: string;
+  mustChangePassword: boolean;
+}
+
+const EMPTY_PASSWORD_FORM: AdminPasswordFormState = {
+  newPassword: "",
+  confirmPassword: "",
+  currentPassword: "",
+  mustChangePassword: true,
+};
+
 function formatDuration(startedAt: string, endedAt: string | null): string {
   const start = new Date(startedAt).getTime();
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
@@ -96,6 +119,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [saving, setSaving] = useState(false);
 
   const [credentials, setCredentials] = useState<{ title: string; accounts: RevealedCredential[] } | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<AdminUserListItem | null>(null);
+  const [passwordForm, setPasswordForm] = useState<AdminPasswordFormState>(EMPTY_PASSWORD_FORM);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const [impersonating, setImpersonating] = useState<number | null>(null);
   const [logOpen, setLogOpen] = useState(false);
@@ -235,6 +262,61 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         showToast(errorMessage(err), "error");
       }
     }, "Reset Password");
+  }
+
+  function openChangePassword(user: AdminUserListItem) {
+    setPasswordTarget(user);
+    setPasswordForm({
+      ...EMPTY_PASSWORD_FORM,
+      mustChangePassword: user.id !== me?.id,
+    });
+    setPasswordError("");
+  }
+
+  function closeChangePassword() {
+    if (passwordSaving) return;
+    setPasswordTarget(null);
+    setPasswordForm(EMPTY_PASSWORD_FORM);
+    setPasswordError("");
+  }
+
+  async function handleChangePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!passwordTarget) return;
+
+    setPasswordError("");
+    if (!PASSWORD_REQUIREMENTS.every((requirement) => requirement.regex.test(passwordForm.newPassword))) {
+      setPasswordError("Password baru belum memenuhi seluruh persyaratan");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("Konfirmasi password baru tidak cocok");
+      return;
+    }
+    if (!passwordForm.currentPassword) {
+      setPasswordError("Password Super Admin wajib diisi untuk konfirmasi");
+      return;
+    }
+
+    const target = passwordTarget;
+    const changingOwnPassword = target.id === me?.id;
+    setPasswordSaving(true);
+    try {
+      await api.changeAdminUserPassword(target.id, {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        mustChangePassword: changingOwnPassword ? false : passwordForm.mustChangePassword,
+      });
+      setPasswordTarget(null);
+      setPasswordForm(EMPTY_PASSWORD_FORM);
+      showToast(`Password akun ${target.nama} berhasil diubah`);
+      if (changingOwnPassword) await refresh();
+      await load();
+    } catch (err) {
+      setPasswordError(errorMessage(err));
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   // "Paksa logout" - memutus semua sesi login akun ini seketika tanpa mengubah passwordnya (lihat
@@ -473,7 +555,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                         aria-label="Aksi"
                         onClick={(e) => {
                           e.stopPropagation();
-                          rowMenu.toggle(e, user.id, 240);
+                          rowMenu.toggle(e, user.id, 280);
                         }}
                       >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -572,11 +654,26 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               onClick={() => {
                 const u = rowMenu.menuItem!;
                 rowMenu.close();
+                openChangePassword(u);
+              }}
+            >
+              <KeyRound width={16} height={16} />
+              Ganti Password
+            </button>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
                 handleResetPassword(u);
               }}
             >
               <KeyRound width={16} height={16} />
-              Reset Password
+              Reset Password Acak
             </button>
           </motion.div>
 
@@ -724,6 +821,148 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 </button>
               </div>
             </div>
+          )}
+        </div>
+      </ModalOverlay>
+
+      <ModalOverlay
+        open={!!passwordTarget}
+        onClose={closeChangePassword}
+        className={`modal-overlay modal-overlay-centered ${passwordTarget ? "" : "hidden"}`}
+      >
+        <div className="modal" style={{ maxWidth: 520 }}>
+          <div className="modal-header">
+            <div>
+              <h3>Ganti Password</h3>
+              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                Atur password baru untuk akun yang dipilih
+              </p>
+            </div>
+            <button type="button" className="modal-close" onClick={closeChangePassword} disabled={passwordSaving}>&times;</button>
+          </div>
+
+          {passwordTarget && (
+            <form onSubmit={handleChangePasswordSubmit}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  padding: "12px 14px",
+                  marginBottom: 18,
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 8,
+                  background: "var(--bg-surface-alt)",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {passwordTarget.nama}
+                  </div>
+                  <div style={{ marginTop: 2, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                    {passwordTarget.username}
+                  </div>
+                </div>
+                <span className="badge badge-approved" style={{ flexShrink: 0 }}>
+                  {ROLE_LABEL[passwordTarget.role] || passwordTarget.role}
+                </span>
+              </div>
+
+              <div className={`alert-error ${passwordError ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
+                <div className="alert-error-text"><strong>Error</strong><span>{passwordError}</span></div>
+              </div>
+
+              <PasswordField
+                id="admin-user-new-password"
+                label="Password Baru"
+                placeholder="Masukkan password baru"
+                minLength={8}
+                value={passwordForm.newPassword}
+                onChange={(value) => {
+                  setPasswordForm((current) => ({ ...current, newPassword: value }));
+                  setPasswordError("");
+                }}
+              />
+
+              <ul className="password-requirement-list" aria-label="Syarat password" style={{ marginTop: 8 }}>
+                {PASSWORD_REQUIREMENTS.map((requirement) => {
+                  const met = requirement.regex.test(passwordForm.newPassword);
+                  return (
+                    <li key={requirement.text} className={`password-requirement-item${met ? " met" : ""}`}>
+                      {met ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      )}
+                      <span>{requirement.text}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div style={{ marginTop: 16 }}>
+                <PasswordField
+                  id="admin-user-confirm-password"
+                  label="Konfirmasi Password Baru"
+                  placeholder="Ulangi password baru"
+                  minLength={8}
+                  value={passwordForm.confirmPassword}
+                  onChange={(value) => {
+                    setPasswordForm((current) => ({ ...current, confirmPassword: value }));
+                    setPasswordError("");
+                  }}
+                />
+              </div>
+
+              {passwordTarget.id !== me?.id ? (
+                <div className="field" style={{ marginTop: 16 }}>
+                  <label htmlFor="admin-user-must-change-password">Pengaturan Login</label>
+                  <button
+                    id="admin-user-must-change-password"
+                    type="button"
+                    className={`field-toggle${passwordForm.mustChangePassword ? " field-toggle-active" : ""}`}
+                    aria-pressed={passwordForm.mustChangePassword}
+                    onClick={() => setPasswordForm((current) => ({ ...current, mustChangePassword: !current.mustChangePassword }))}
+                  >
+                    <span className="field-toggle-box">
+                      {passwordForm.mustChangePassword && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      )}
+                    </span>
+                    Wajib ganti password saat login berikutnya
+                  </button>
+                  <div className="field-hint-text">Semua sesi akun tersebut akan langsung dihentikan.</div>
+                </div>
+              ) : (
+                <div className="field-hint-text" style={{ marginTop: 16 }}>
+                  Anda sedang mengganti password akun sendiri. Sesi ini akan diperbarui secara otomatis.
+                </div>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                <PasswordField
+                  id="admin-user-current-password"
+                  label="Password Super Admin"
+                  placeholder="Masukkan password Anda"
+                  value={passwordForm.currentPassword}
+                  onChange={(value) => {
+                    setPasswordForm((current) => ({ ...current, currentPassword: value }));
+                    setPasswordError("");
+                  }}
+                  hint="Diperlukan untuk memverifikasi tindakan sensitif ini."
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={closeChangePassword} disabled={passwordSaving}>
+                  Batal
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={passwordSaving}>
+                  {passwordSaving ? "Menyimpan..." : "Ganti Password"}
+                </button>
+              </div>
+            </form>
           )}
         </div>
       </ModalOverlay>

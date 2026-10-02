@@ -1,4 +1,5 @@
 import type {
+  AdminChangePasswordPayload,
   AdminUserListItem,
   AdminUserListResponse,
   AppSettings,
@@ -995,6 +996,8 @@ export const api = {
     apiRequest<AdminUserListItem>(`/users-admin/${id}`, { method: "PATCH", body: payload }),
   resetAdminUserPassword: (id: number) =>
     apiRequest<ResetPasswordResult>(`/users-admin/${id}/reset-password`, { method: "POST" }),
+  changeAdminUserPassword: (id: number, payload: AdminChangePasswordPayload) =>
+    apiRequest<AdminUserListItem>(`/users-admin/${id}/password`, { method: "PUT", body: payload }),
   deactivateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/deactivate`, { method: "POST" }),
   activateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/activate`, { method: "POST" }),
   // Revokes every session already issued for this account (same PasswordChangedAt-bump mechanism

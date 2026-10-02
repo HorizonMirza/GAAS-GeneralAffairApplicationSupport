@@ -108,6 +108,29 @@ public class SuperAdminOrgUserTests
         Assert.False(await UsersAdminController.IsLastActiveSuperAdmin(db, admin));
     }
 
+    // ---- ValidatePasswordStrength ----
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Pndek1!")]
+    [InlineData("tanpahurufbesar1!")]
+    [InlineData("TANPAHURUFKECIL1!")]
+    [InlineData("TanpaAngka!")]
+    [InlineData("TanpaSpesial1")]
+    public void Weak_passwords_are_rejected(string? password)
+    {
+        Assert.NotNull(UsersAdminController.ValidatePasswordStrength(password));
+    }
+
+    [Theory]
+    [InlineData("Password1!")]
+    [InlineData("AmanSekali2026#")]
+    public void Strong_passwords_are_accepted(string password)
+    {
+        Assert.Null(UsersAdminController.ValidatePasswordStrength(password));
+    }
+
     // ---- IsDivisiInUse / IsDepartemenInUse ----
 
     [Fact]
