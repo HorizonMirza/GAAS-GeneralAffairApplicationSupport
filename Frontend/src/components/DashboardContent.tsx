@@ -1116,7 +1116,7 @@ export default function DashboardContent({ me }: { me: Me }) {
                   </circle>
                 ))}
               </svg>
-              <div className={styles.donutCenter}><strong>{totals.total.toLocaleString("id-ID")}</strong><span>transaksi</span></div>
+              <div className={styles.donutCenter}><strong>{totals.total.toLocaleString("id-ID")}</strong><span>Transaksi</span></div>
               {hoveredStatus && (
                 <div className={styles.chartTooltip} role="status">
                   <span>{hoveredStatus.label}</span>
@@ -1261,7 +1261,7 @@ export default function DashboardContent({ me }: { me: Me }) {
             {spendingRows.map((item) => (
               <div className={styles.spendingItem} key={item.key}>
                 <div className={styles.spendingItemHeader}>
-                  <strong>{item.label} ({item.count.toLocaleString("id-ID")} Transaction)</strong>
+                  <strong>{item.label} ({item.count.toLocaleString("id-ID")} Transaksi)</strong>
                   <strong>{formatRupiah(item.value)}</strong>
                 </div>
                 <span className={styles.spendingTrack}><i style={{ width: item.value > 0 ? `${Math.max(4, (item.value / maxSpending) * 100)}%` : 0 }} /></span>
@@ -1345,7 +1345,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         <div className={styles.leftColumn}>
           <section className={styles.panel} id="dashboard-action-queue">
             <header className={styles.legacyPanelHeader}>
-              <div><h2>Menunggu Tindakan Anda</h2><p>Ada {dashboardQueue.length.toLocaleString("id-ID")} Antrian Yang Perlu Anda Proses</p></div>
+              <div><h2>Menunggu Tindakan Anda</h2><p>Ada {dashboardQueue.length.toLocaleString("id-ID")} Antrean Yang Perlu Anda Proses</p></div>
             </header>
             {loading && dashboardQueue.length === 0 ? <div className={styles.compactEmpty}>Memuat antrean tindakan...</div>
               : dashboardQueue.length === 0 ? (
@@ -1377,7 +1377,7 @@ export default function DashboardContent({ me }: { me: Me }) {
           </section>
 
           <section className={styles.performancePanel}>
-            <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} Transaction</strong></header>
+            <header><div><h2>Ringkasan Transaksi</h2><p>Ringkasan Transaksi dari {selectedModules.length} Modul</p></div><strong>{totals.total.toLocaleString("id-ID")} Transaksi</strong></header>
             <div className={styles.progressArea}>
               <div className={styles.progressTrack} aria-label={`${completedPercent}% transaksi approved`}>
                 {progressSegments.filter((item) => item.value > 0).map((item) => (
