@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -13,6 +13,8 @@ import ModalOverlay from "@/components/ModalOverlay";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import { formatDateTime } from "@/lib/format";
 import { UserPlus, RefreshCw } from "lucide-react";
+import { useClickOutside } from "@/lib/useClickOutside";
+import { useExclusivePanel } from "@/lib/exclusivePanel";
 
 const ROLE_OPTIONS = Object.keys(ROLE_LABEL) as Role[];
 const LIMIT_OPTIONS = [10, 20, 50, 100];
@@ -71,6 +73,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [logPage, setLogPage] = useState(1);
   const [logTotal, setLogTotal] = useState(0);
   const [logBusy, setLogBusy] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterWrapRef = useRef<HTMLDivElement>(null);
+  useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -114,6 +120,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     ? (directoratNode?.divisi || orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === form.divisi)
     : null;
   const departemenOptions = divisiNode ? divisiNode.departemen : orgStructure?.departemen || [];
+
+  const filterDivisiNode = filters.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === filters.divisi)
+    : null;
+  const filterDepartemenOptions = filterDivisiNode ? filterDivisiNode.departemen : orgStructure?.departemen || [];
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -269,68 +280,84 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
   return (
     <div className="card">
-      <div className="card-header" style={{ justifyContent: "flex-end" }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={openImpersonationLog}>
-            Riwayat Login As
-          </button>
-          <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={openCreate}>
-            <UserPlus width={16} height={16} /> Tambah Akun
-          </button>
-        </div>
-      </div>
-
       <div className="toolbar transactions-page-toolbar">
-        <div className="field">
+        <div className="field toolbar-search-field">
           <label htmlFor="users-search">Cari Username</label>
-          <input id="users-search" type="text" placeholder="Username" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="users-role">Role</label>
-          <SearchableSelect
-            id="users-role"
-            value={filters.role}
-            onChange={(v) => setFilters((prev) => ({ ...prev, role: v as Role | "", page: 1 }))}
-            options={ROLE_OPTIONS}
-            getLabel={(v) => ROLE_LABEL[v as Role] || v}
-            clearLabel="Semua Role"
-            placeholder="Semua Role"
+          <input
+            id="users-search"
+            type="text"
+            placeholder="Username"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
-        <div className="field">
-          <label htmlFor="users-divisi">Divisi</label>
-          <SearchableSelect
-            id="users-divisi"
-            value={filters.divisi}
-            onChange={(v) => setFilters((prev) => ({ ...prev, divisi: v, page: 1 }))}
-            options={orgStructure?.divisi || []}
-            clearLabel="Semua Divisi"
-            placeholder="Semua Divisi"
-          />
+
+        <div className="filter-dropdown-wrap" ref={filterWrapRef}>
+          <label className="filter-dropdown-label">Filter Lainnya</label>
+          <button
+            type="button"
+            className="btn filter-dropdown-toggle"
+            id="users-filter-toggle"
+            style={{ minWidth: 120, justifyContent: "space-between" }}
+            onClick={() => setFilterOpen((v) => !v)}
+          >
+            Semua Filter
+            <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          {filterOpen && (
+            <div className="filter-dropdown-panel">
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label htmlFor="users-role">Role</label>
+                <SearchableSelect
+                  id="users-role"
+                  value={filters.role}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, role: v as Role | "", page: 1 }))}
+                  options={ROLE_OPTIONS}
+                  getLabel={(v) => ROLE_LABEL[v as Role] || v}
+                  clearLabel="Semua Role"
+                  placeholder="Semua Role"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="users-divisi">Divisi</label>
+                <SearchableSelect
+                  id="users-divisi"
+                  value={filters.divisi}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, divisi: v, departemen: "", page: 1 }))}
+                  options={orgStructure?.divisi || []}
+                  clearLabel="Semua Divisi"
+                  placeholder="Semua Divisi"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="users-departemen">Departemen</label>
+                <SearchableSelect
+                  id="users-departemen"
+                  value={filters.departemen}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, departemen: v, page: 1 }))}
+                  options={filterDepartemenOptions}
+                  clearLabel="Semua Departemen"
+                  placeholder="Semua Departemen"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="users-active">Status</label>
+                <SearchableSelect
+                  id="users-active"
+                  value={filters.isActive === "" ? "" : String(filters.isActive)}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, isActive: e === "" ? "" : e === "true", page: 1 }))}
+                  options={["true", "false"]}
+                  getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
+                  clearLabel="Semua Status"
+                  placeholder="Semua Status"
+                />
+              </div>
+            </div>
+          )}
         </div>
-        <div className="field">
-          <label htmlFor="users-departemen">Departemen</label>
-          <SearchableSelect
-            id="users-departemen"
-            value={filters.departemen}
-            onChange={(v) => setFilters((prev) => ({ ...prev, departemen: v, page: 1 }))}
-            options={orgStructure?.departemen || []}
-            clearLabel="Semua Departemen"
-            placeholder="Semua Departemen"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="users-active">Status</label>
-          <SearchableSelect
-            id="users-active"
-            value={filters.isActive === "" ? "" : String(filters.isActive)}
-            onChange={(e) => setFilters((prev) => ({ ...prev, isActive: e === "" ? "" : e === "true", page: 1 }))}
-            options={["true", "false"]}
-            getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
-            clearLabel="Semua Status"
-            placeholder="Semua Status"
-          />
-        </div>
+
         <button
           type="button"
           className="settings-table-refresh-btn"
@@ -340,6 +367,25 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         >
           <RefreshCw />
         </button>
+
+        <div className="toolbar-actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
+            onClick={openImpersonationLog}
+          >
+            Riwayat Login
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
+            onClick={openCreate}
+          >
+            + Tambah Akun
+          </button>
+        </div>
       </div>
 
       <div className="table-wrap">
