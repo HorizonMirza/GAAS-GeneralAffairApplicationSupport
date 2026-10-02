@@ -188,7 +188,7 @@ export default function AtkInvoiceHistoryPage() {
           ) : invoices == null ? (
             <p className="text-secondary">Memuat data invoice...</p>
           ) : invoices.length === 0 ? (
-            <p className="text-secondary">{invoiceFilterBulan ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
+            <p className="text-secondary">{invoiceFilterBulan || invoiceFilterTanggal || invoiceSearch || invoiceFilterUploader ? "Tidak ada invoice untuk filter ini." : "Belum ada invoice."}</p>
           ) : (
             invoices.map((inv) => (
               <div className="invoice-row" key={inv.id}>
