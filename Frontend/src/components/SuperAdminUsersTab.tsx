@@ -20,6 +20,7 @@ import {
   LogIn,
   Trash2,
   UserCheck,
+  Lock,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { itemVariants, sidebarVariants } from "@/components/ui/menu";
@@ -328,8 +329,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       type: "force-logout",
       user,
       title: "Konfirmasi Paksa Logout",
-      message: `Paksa logout akun "${user.nama}" (${user.username})? Semua sesi login akun ini akan terputus seketika - password tidak berubah.`,
-      actionButtonText: "Paksa Logout",
+      message: "",
+      actionButtonText: "Logout",
       actionButtonVariant: "primary",
     });
     setActionPassword("");
@@ -842,13 +843,13 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 <PasswordField
                   id="admin-user-current-password"
                   label="Password Super Admin"
-                  placeholder="Masukkan password Anda"
+                  placeholder="Masukkan Password"
+                  icon={<Lock width={15} height={15} />}
                   value={passwordForm.currentPassword}
                   onChange={(value) => {
                     setPasswordForm((current) => ({ ...current, currentPassword: value }));
                     setPasswordError("");
                   }}
-                  hint="Diperlukan untuk memverifikasi tindakan sensitif ini."
                 />
               </div>
 
@@ -941,17 +942,17 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </div>
 
             {formOpen !== "create" && (
-              <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 12 }}>
                 <PasswordField
                   id="user-edit-admin-password"
                   label="Password Super Admin"
-                  placeholder="Masukkan Password Super Admin"
+                  placeholder="Masukkan Password"
+                  icon={<Lock width={15} height={15} />}
                   value={form.adminPassword || ""}
                   onChange={(v) => {
                     setForm((f) => ({ ...f, adminPassword: v }));
                     setFormError("");
                   }}
-                  hint="Diperlukan untuk memverifikasi tindakan edit akun ini."
                 />
               </div>
             )}
@@ -1014,17 +1015,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               <label>No. HP</label>
               <input type="text" readOnly value={detailUser?.noHp || "-"} />
             </div>
-
-            <div className="modal-actions" style={{ marginTop: 20 }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: "auto" }}
-                onClick={() => setDetailUser(null)}
-              >
-                Tutup
-              </button>
-            </div>
           </div>
         </div>
       </ModalOverlay>
@@ -1047,11 +1037,14 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </button>
           </div>
 
-          <div style={{ marginBottom: 16, fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-            {actionModal?.message}
-          </div>
+          {actionModal?.type !== "force-logout" && actionModal?.message && (
+            <div style={{ marginBottom: 16, fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+              {actionModal.message}
+            </div>
+          )}
 
           <form
+            className="user-form-modal"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!actionPassword.trim()) {
@@ -1086,11 +1079,12 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               }
             }}
           >
-            <div className="field field-select-blue">
+            <div>
               <PasswordField
                 id="action-admin-password"
                 label="Password Super Admin"
-                placeholder="Masukkan Password Super Admin"
+                placeholder="Masukkan Password"
+                icon={<Lock width={15} height={15} />}
                 value={actionPassword}
                 error={actionError}
                 onChange={(v) => {
@@ -1101,15 +1095,17 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </div>
 
             <div className="modal-actions" style={{ marginTop: 20 }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: "auto" }}
-                disabled={actionBusy}
-                onClick={() => { setActionModal(null); setActionPassword(""); setActionError(""); }}
-              >
-                Batal
-              </button>
+              {actionModal?.type !== "force-logout" && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ width: "auto" }}
+                  disabled={actionBusy}
+                  onClick={() => { setActionModal(null); setActionPassword(""); setActionError(""); }}
+                >
+                  Batal
+                </button>
+              )}
               <button
                 type="submit"
                 className={`btn ${actionModal?.actionButtonVariant === "danger" ? "btn-confirm-danger" : "btn-primary"}`}
