@@ -101,7 +101,7 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "system", label: "System", icon: <Shield width={16} height={16} /> },
   { key: "app-settings", label: "System", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
-  { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
+  { key: "activity-log", label: "Activity Logs", icon: <Activity width={16} height={16} /> },
 ];
 
 interface BookingFilterState {
