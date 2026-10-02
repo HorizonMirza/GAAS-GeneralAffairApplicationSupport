@@ -20,6 +20,7 @@ public class RiwayatAktivitasOut
     public int? ActorId { get; set; }
     public string? ActorNama { get; set; }
     public string? ActorRole { get; set; }
+    public string? ActorDirektorat { get; set; }
     public string? ActorDivisi { get; set; }
     public string? ActorDepartemen { get; set; }
     public DateTime CreatedAt { get; set; }

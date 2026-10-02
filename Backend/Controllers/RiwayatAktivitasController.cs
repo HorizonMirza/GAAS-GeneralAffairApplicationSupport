@@ -48,14 +48,15 @@ public class RiwayatAktivitasController : ApiControllerBase
     // Aksi-feed's own filterable label for "any delete", independent of that.
     private const string DeletedSourceKey = "deleted";
     private const string DeletedSql = """
-      SELECT 'deleted' AS modul, dl.item_id AS item_id, dl.item_nomor::text AS nomor,
+      SELECT COALESCE(NULLIF(dl.modul, ''), 'deleted') AS modul, dl.item_id AS item_id, dl.item_nomor::text AS nomor,
              'DELETED' AS action,
              (CASE
                WHEN dl.filter_summary IS NOT NULL AND dl.filter_summary <> ''
-                 THEN COALESCE(dl.item_nomor, '') || CASE WHEN dl.item_nomor IS NOT NULL THEN ' - ' ELSE '' END || dl.filter_summary
-               ELSE dl.item_nomor
+                 THEN dl.filter_summary
+               ELSE 'Dihapus oleh Super Admin'
              END)::text AS reason,
              dl.deleted_by AS actor_id, dl.deleted_by_nama::text AS actor_nama, u.role::text AS actor_role,
+             u.direktorat AS actor_direktorat,
              u.divisi AS actor_divisi, u.departemen AS actor_departemen,
              dl.created_at
       FROM deletion_log dl
@@ -73,6 +74,7 @@ public class RiwayatAktivitasController : ApiControllerBase
       SELECT 'admin' AS modul, aal.id AS item_id, NULL::text AS nomor,
              aal.action AS action, aal.deskripsi::text AS reason,
              aal.actor_id AS actor_id, aal.actor_nama::text AS actor_nama, u.role::text AS actor_role,
+             u.direktorat AS actor_direktorat,
              u.divisi AS actor_divisi, u.departemen AS actor_departemen,
              aal.created_at
       FROM admin_activity_log aal
@@ -99,10 +101,14 @@ public class RiwayatAktivitasController : ApiControllerBase
             if (m == DeletedSourceKey) return DeletedSql;
             if (m == AdminSourceKey) return AdminSql;
             var s = Sources[m];
+            var divCol = m == "invoice" ? "u.divisi" : "COALESCE(u.divisi, p.divisi)";
+            var deptCol = m == "invoice" ? "u.departemen" : "COALESCE(u.departemen, p.departemen)";
             return $"""
               SELECT '{m}' AS modul, l.{s.Fk} AS item_id, p.{s.Nomor}::text AS nomor,
                      l.action, l.reason, l.actor_id, u.nama AS actor_nama, u.role::text AS actor_role,
-                     u.divisi AS actor_divisi, u.departemen AS actor_departemen,
+                     u.direktorat AS actor_direktorat,
+                     {divCol} AS actor_divisi,
+                     {deptCol} AS actor_departemen,
                      l.created_at
               FROM {s.Log} l
               LEFT JOIN {s.Parent} p ON p.id = l.{s.Fk}
@@ -120,6 +126,7 @@ public class RiwayatAktivitasController : ApiControllerBase
         [FromQuery] string? modul = null,
         [FromQuery(Name = "actor_id")] int? actorId = null,
         [FromQuery] string? role = null,
+        [FromQuery] string? direktorat = null,
         [FromQuery] string? divisi = null,
         [FromQuery] string? departemen = null,
         [FromQuery] string? action = null,
@@ -158,6 +165,11 @@ public class RiwayatAktivitasController : ApiControllerBase
         {
             where.Add("actor_role = @role");
             parameters.Add(new NpgsqlParameter("role", role.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(direktorat))
+        {
+            where.Add("actor_direktorat = @direktorat");
+            parameters.Add(new NpgsqlParameter("direktorat", direktorat.Trim()));
         }
         if (!string.IsNullOrWhiteSpace(divisi))
         {
@@ -222,7 +234,7 @@ public class RiwayatAktivitasController : ApiControllerBase
 
         var rows = new List<RiwayatAktivitasOut>();
         var sql = $"""
-            SELECT modul, item_id, nomor, action, reason, actor_id, actor_nama, actor_role, actor_divisi, actor_departemen, created_at
+            SELECT modul, item_id, nomor, action, reason, actor_id, actor_nama, actor_role, actor_direktorat, actor_divisi, actor_departemen, created_at
             FROM (
             {union}
             ) AS gabungan
@@ -253,9 +265,10 @@ public class RiwayatAktivitasController : ApiControllerBase
                     ActorId = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                     ActorNama = reader.IsDBNull(6) ? null : reader.GetString(6),
                     ActorRole = reader.IsDBNull(7) ? null : reader.GetString(7),
-                    ActorDivisi = reader.IsDBNull(8) ? null : reader.GetString(8),
-                    ActorDepartemen = reader.IsDBNull(9) ? null : reader.GetString(9),
-                    CreatedAt = reader.GetDateTime(10),
+                    ActorDirektorat = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    ActorDivisi = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    ActorDepartemen = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    CreatedAt = reader.GetDateTime(11),
                 });
             }
         }

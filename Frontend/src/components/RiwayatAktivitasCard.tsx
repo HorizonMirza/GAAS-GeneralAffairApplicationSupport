@@ -266,13 +266,14 @@ export default function RiwayatAktivitasCard() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th>
+              <th style={{ width: 44, textAlign: "center" }}>No</th>
               <th>Waktu</th>
               <th>Modul</th>
               <th>Nomor</th>
               <th>Aksi</th>
               <th>Pelaku</th>
               <th>Role</th>
+              <th>Direktorat</th>
               <th>Divisi</th>
               <th>Departemen</th>
               <th>Catatan</th>
@@ -280,27 +281,33 @@ export default function RiwayatAktivitasCard() {
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={10} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={10} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={11} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={10} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((row, index) => {
                 const rowNumber = (filters.page - 1) * filters.limit + index + 1;
                 const meta = riwayatActionMeta(row.modul, row.action);
-                const hasDirectLink = row.itemId && row.modul !== "deleted" && row.modul !== "admin";
+                const hasDirectLink = !!(row.itemId && row.modul !== "deleted" && row.modul !== "admin");
                 return (
                   <tr key={`${row.modul}-${row.itemId}-${row.createdAt}-${row.action}-${index}`}>
-                    <td>{rowNumber}</td>
+                    <td style={{ textAlign: "center" }}>{rowNumber}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
-                      <Link
-                        href={`${RIWAYAT_MODUL_HREF[row.modul]}${hasDirectLink ? `?highlight=${row.itemId}` : ""}`}
-                        style={{ color: "var(--blue-600)", fontWeight: 500, textDecoration: "none" }}
-                      >
-                        {RIWAYAT_MODUL_LABEL[row.modul]}
-                      </Link>
+                      {hasDirectLink ? (
+                        <Link
+                          href={`${RIWAYAT_MODUL_HREF[row.modul]}?highlight=${row.itemId}`}
+                          style={{ color: "var(--text-strong, #111827)", fontWeight: 500, textDecoration: "none" }}
+                        >
+                          {RIWAYAT_MODUL_LABEL[row.modul] || row.modul}
+                        </Link>
+                      ) : (
+                        <span style={{ color: "var(--text-strong, #111827)", fontWeight: 500 }}>
+                          {RIWAYAT_MODUL_LABEL[row.modul] || row.modul}
+                        </span>
+                      )}
                     </td>
                     <td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>
                       {row.nomor ? (
@@ -323,9 +330,12 @@ export default function RiwayatAktivitasCard() {
                     </td>
                     <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{row.actorNama || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorRole ? LOG_ROLE_LABEL[row.actorRole as Role] || row.actorRole : "-"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{row.actorDirektorat || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDivisi || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDepartemen || "-"}</td>
-                    <td style={{ minWidth: 200, wordBreak: "break-word" }}>{row.reason || "-"}</td>
+                    <td style={{ minWidth: 160, maxWidth: 280, whiteSpace: "normal", wordBreak: "break-word" }} title={row.reason || ""}>
+                      {row.reason || "-"}
+                    </td>
                   </tr>
                 );
               })
