@@ -4428,6 +4428,107 @@ table.data-table {
   margin-bottom: 16px;
 }
 
+.toolbar-color-demo {
+  min-height: 58px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(28, 109, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(28, 109, 255, 0.07);
+}
+
+.toolbar-color-demo > div:first-child {
+  min-width: 0;
+}
+
+.toolbar-color-demo strong,
+.toolbar-color-demo span {
+  display: block;
+}
+
+.toolbar-color-demo strong {
+  color: var(--blue-600);
+  font-size: 0.84rem;
+}
+
+.toolbar-color-demo span {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+
+.toolbar-color-demo-toggle {
+  flex: 0 0 auto;
+  padding: 3px;
+  display: inline-flex;
+  gap: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+}
+
+.toolbar-color-demo-toggle button {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.toolbar-color-demo-toggle button:hover {
+  border-color: var(--blue-400);
+  color: var(--blue-500);
+}
+
+.toolbar-color-demo-toggle button.active {
+  border-color: var(--blue-500);
+  color: #fff;
+  background: var(--blue-500);
+}
+
+.toolbar-text-black-preview .field label,
+.toolbar-text-black-preview .filter-dropdown-label,
+.toolbar-text-black-preview .field input,
+.toolbar-text-black-preview .field select,
+.toolbar-text-black-preview .filter-picker-trigger,
+.toolbar-text-black-preview .filter-dropdown-toggle,
+.toolbar-text-black-preview > .btn-secondary,
+.toolbar-text-black-preview .toolbar-actions .btn-secondary,
+.toolbar-text-black-preview .searchable-select-trigger {
+  color: #000 !important;
+  -webkit-text-fill-color: #000;
+}
+
+.toolbar-text-black-preview .field input::placeholder {
+  color: #000;
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .toolbar-color-demo {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar-color-demo-toggle,
+  .toolbar-color-demo-toggle button {
+    width: 100%;
+  }
+
+  .toolbar-color-demo-toggle button {
+    flex: 1 1 0;
+  }
+}
+
 .toolbar-actions .btn-sm {
   padding: 5px 8px;
   font-size: 0.76rem;
