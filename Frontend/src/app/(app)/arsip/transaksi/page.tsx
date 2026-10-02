@@ -197,7 +197,7 @@ function ArsipTransaksiPageInner() {
   }
 
   function handleDelete(item: PermintaanArsip) {
-    confirm("Hapus Pemindahan Arsip ini secara permanen?", async () => {
+    confirm("Delete Pemindahan Arsip ini secara permanen?", async () => {
       try {
         await api.deleteArsip(item.id);
         showToast("Pemindahan berhasil dihapus");

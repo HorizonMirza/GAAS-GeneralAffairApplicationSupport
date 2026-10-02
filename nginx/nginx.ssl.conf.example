@@ -32,12 +32,6 @@ http {
         '' close;
     }
 
-    # Preserve forwarded protocol if behind upstream reverse proxy / SSL terminator
-    map $http_x_forwarded_proto $forwarded_proto {
-        default $http_x_forwarded_proto;
-        ''      $scheme;
-    }
-
     upstream frontend_upstream {
         server frontend:3000;
         keepalive 32;
@@ -48,15 +42,36 @@ http {
         keepalive 32;
     }
 
+    # Redirect HTTP (Port 80) to HTTPS (Port 443)
     server {
         listen 80;
         server_name _;
+        return 301 https://$host$request_uri;
+    }
 
-        # Security headers
+    # HTTPS Server (Port 443)
+    server {
+        listen 443 ssl http2;
+        server_name _;
+
+        # SSL Certificates (simpan cert & key Anda di direktori ./nginx/ssl/)
+        ssl_certificate /etc/nginx/ssl/server.crt;
+        ssl_certificate_key /etc/nginx/ssl/server.key;
+
+        # Modern SSL Configuration
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 1d;
+        ssl_session_tickets off;
+
+        # Hardened Security headers
         add_header X-Content-Type-Options nosniff always;
         add_header X-Frame-Options SAMEORIGIN always;
         add_header X-XSS-Protection "1; mode=block" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
         # SignalR Realtime Hub (WebSockets)
         location /hubs/chat {
@@ -67,7 +82,7 @@ http {
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $forwarded_proto;
+            proxy_set_header X-Forwarded-Proto https;
             proxy_cache_bypass $http_upgrade;
             proxy_read_timeout 86400s;
             proxy_send_timeout 86400s;
@@ -80,7 +95,7 @@ http {
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $forwarded_proto;
+            proxy_set_header X-Forwarded-Proto https;
             proxy_read_timeout 120s;
             proxy_send_timeout 120s;
         }
@@ -103,7 +118,7 @@ http {
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $forwarded_proto;
+            proxy_set_header X-Forwarded-Proto https;
             proxy_cache_bypass $http_upgrade;
         }
     }

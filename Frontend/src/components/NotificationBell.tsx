@@ -223,7 +223,7 @@ export default function NotificationBell() {
                     <button
                       type="button"
                       className="notification-item-delete"
-                      aria-label="Hapus notifikasi"
+                      aria-label="Delete notifikasi"
                       onClick={(e) => {
                         e.stopPropagation();
                         removeItem(item.key);

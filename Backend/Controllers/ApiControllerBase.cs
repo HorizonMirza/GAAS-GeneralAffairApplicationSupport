@@ -150,6 +150,14 @@ public abstract class ApiControllerBase : ControllerBase
         return parts.Count > 0 ? string.Join(", ", parts) : null;
     }
 
+    // Evaluates whether cookies should be issued with the Secure flag:
+    // true if explicitly configured in appsettings/env, OR if the current request is HTTPS
+    // (directly or through an upstream reverse proxy / SSL terminator forwarding X-Forwarded-Proto: https).
+    protected bool ResolveCookieSecure(IConfiguration config) =>
+        config.GetValue<bool>("CookieSecure")
+        || Request.IsHttps
+        || string.Equals(Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase);
+
     protected async Task<(User? user, IActionResult? error)> RequireRoleAsync(params RoleEnum[] roles)
     {
         var user = await CurrentUser.GetCurrentUserAsync();

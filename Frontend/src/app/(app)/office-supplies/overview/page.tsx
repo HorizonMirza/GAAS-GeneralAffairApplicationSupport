@@ -111,7 +111,7 @@ export default function OfficeSuppliesOverviewPage() {
       : "Approval Departemen/Divisi";
 
   function handleDelete(item: PermintaanAtk) {
-    confirm("Hapus Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
+    confirm("Delete Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
         showToast("Pesanan berhasil dihapus");

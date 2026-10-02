@@ -666,7 +666,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     className="edit-profile-icon-btn"
-                    aria-label="Hapus foto background"
+                    aria-label="Delete foto background"
                     disabled={savingProfile}
                     onClick={handleRemoveCoverPhoto}
                   >

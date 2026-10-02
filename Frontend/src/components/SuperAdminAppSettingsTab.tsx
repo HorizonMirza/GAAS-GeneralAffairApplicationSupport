@@ -373,8 +373,8 @@ function CompanyNameTableAccordionItem({
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              aria-label="Delete"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Delete Riwayat"}
                               onClick={() => setDeleteTarget(item)}
                             >
                               <Trash2 width={16} height={16} />
@@ -441,7 +441,7 @@ function CompanyNameTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title={deleteTarget?.status === "Aktif" ? "Kembalikan Nama ke Default (PGN Solution)" : "Hapus Riwayat"}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Nama ke Default (PGN Solution)" : "Delete Riwayat"}
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="modal-delete-company-password"
@@ -863,8 +863,8 @@ function CompanyLogoTableAccordionItem({
                               <button
                                 type="button"
                                 className="card-icon-btn card-icon-btn-danger"
-                                aria-label="Hapus"
-                                title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                                aria-label="Delete"
+                                title={item.status === "Aktif" ? "Kembalikan ke Default" : "Delete Riwayat"}
                                 onClick={() => setDeleteTarget(item)}
                               >
                                 <Trash2 width={16} height={16} />
@@ -967,7 +967,7 @@ function CompanyLogoTableAccordionItem({
                           <button
                             type="button"
                             className="photo-drop-item-remove"
-                            aria-label="Hapus file"
+                            aria-label="Delete file"
                             onClick={() => {
                               setSelectedFile(null);
                               if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1005,7 +1005,7 @@ function CompanyLogoTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title={deleteTarget?.status === "Aktif" ? "Kembalikan Logo ke Default Sistem" : "Hapus Riwayat Logo"}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Logo ke Default Sistem" : "Delete Riwayat Logo"}
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="modal-delete-logo-password"
@@ -1279,8 +1279,8 @@ function OperatingHoursTableAccordionItem({
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              aria-label="Delete"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Delete Riwayat"}
                               onClick={() => setDeleteTarget(item)}
                             >
                               <Trash2 width={16} height={16} />
@@ -1366,7 +1366,7 @@ function OperatingHoursTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title={deleteTarget?.status === "Aktif" ? "Kembalikan Jam Operasional ke Default (07:00 - 18:00)" : "Hapus Riwayat Jam Operasional"}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Jam Operasional ke Default (07:00 - 18:00)" : "Delete Riwayat Jam Operasional"}
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="modal-delete-hours-password"
@@ -1679,8 +1679,8 @@ function NotificationSoundTableAccordionItem({
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Hapus Riwayat"}
+                              aria-label="Delete"
+                              title={item.status === "Aktif" ? "Kembalikan ke Default" : "Delete Riwayat"}
                               onClick={() => setDeleteTarget(item)}
                             >
                               <Trash2 width={16} height={16} />
@@ -1813,7 +1813,7 @@ function NotificationSoundTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title={deleteTarget?.status === "Aktif" ? "Kembalikan Suara ke Default (Digital / Chime)" : "Hapus Riwayat Suara"}
+              title={deleteTarget?.status === "Aktif" ? "Kembalikan Suara ke Default (Digital / Chime)" : "Delete Riwayat Suara"}
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="modal-delete-sound-password"
@@ -2026,8 +2026,8 @@ function HolidaysTableAccordionItem({
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title="Hapus"
+                              aria-label="Delete"
+                              title="Delete"
                               onClick={() => setDeleteTarget(h)}
                             >
                               <Trash2 width={16} height={16} />
@@ -2107,7 +2107,7 @@ function HolidaysTableAccordionItem({
 
             <DeleteWithPasswordModal
               open={!!deleteTarget}
-              title="Hapus Hari Libur"
+              title="Delete Hari Libur"
               onConfirm={handleDeleteConfirm}
               onClose={() => setDeleteTarget(null)}
               passwordFieldId="app-settings-delete-holiday-password"
@@ -2298,8 +2298,8 @@ function BackupTableAccordionItem({
                             <button
                               type="button"
                               className="card-icon-btn card-icon-btn-danger"
-                              aria-label="Hapus"
-                              title="Hapus Riwayat"
+                              aria-label="Delete"
+                              title="Delete Riwayat"
                               onClick={() => setDeleteTarget(item)}
                             >
                               <Trash2 width={16} height={16} />
@@ -2316,7 +2316,7 @@ function BackupTableAccordionItem({
             <ModalOverlay open={!!deleteTarget} onClose={() => setDeleteTarget(null)} className={`modal-overlay modal-overlay-centered ${deleteTarget ? "" : "hidden"}`}>
               <div className="modal" style={{ maxWidth: 440 }}>
                 <div className="modal-header">
-                  <h3>Hapus Riwayat Ekspor</h3>
+                  <h3>Delete Riwayat Ekspor</h3>
                   <button type="button" className="modal-close" onClick={() => setDeleteTarget(null)}>&times;</button>
                 </div>
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: "0 0 16px" }}>
@@ -2327,7 +2327,7 @@ function BackupTableAccordionItem({
                     Batal
                   </button>
                   <button type="button" className="btn btn-danger" onClick={() => deleteTarget && handleDelete(deleteTarget)}>
-                    Hapus Baris
+                    Delete Baris
                   </button>
                 </div>
               </div>

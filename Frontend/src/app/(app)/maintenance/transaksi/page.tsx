@@ -198,7 +198,7 @@ function MaintenanceTransaksiPageInner() {
   }
 
   function handleDelete(item: PerbaikanSarana) {
-    confirm("Hapus Pengajuan Perbaikan ini secara permanen?", async () => {
+    confirm("Delete Pengajuan Perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
         showToast("Pengajuan berhasil dihapus");

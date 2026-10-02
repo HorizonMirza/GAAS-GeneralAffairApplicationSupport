@@ -150,7 +150,7 @@ public class ProfileController : ApiControllerBase
         // token (carrying the new PasswordChangedAt) keeps the session that just changed the
         // password logged in, exactly like AuthController.Login does after a fresh login.
         var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
-        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        var cookieSecure = ResolveCookieSecure(_config);
         Response.Cookies.Append(CurrentUserService.CookieName, token, new CookieOptions
         {
             HttpOnly = true,

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using PengirimanApi.Controllers;
 using PengirimanApi.Data;
@@ -6,12 +7,7 @@ using PengirimanApi.Services;
 
 namespace PengirimanApi.Hubs;
 
-// Real-time push for chat messages, replacing ChatModal/RoomBookingChatModal's fixed-interval
-// polling - ChatController.Send/BookingChatController.Send broadcast to these groups right after
-// saving a message (see IHubContext<ChatHub> usage there). This app has no ASP.NET Core
-// [Authorize]/cookie-auth middleware wired up (see CurrentUserService - every controller reads
-// the "access_token" cookie and validates it itself), so the same manual check is repeated here
-// per group-join instead of relying on an [Authorize] attribute that would silently no-op.
+[Authorize]
 public class ChatHub : Hub
 {
     private readonly CurrentUserService _currentUser;

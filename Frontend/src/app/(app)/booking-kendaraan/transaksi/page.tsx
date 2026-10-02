@@ -209,7 +209,7 @@ function VehicleBookingTransaksiPageInner() {
   }
 
   function handleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+    confirm("Delete booking kendaraan ini secara permanen?", async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
         showToast("Booking berhasil dihapus");

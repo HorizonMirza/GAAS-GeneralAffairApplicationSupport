@@ -132,7 +132,7 @@ export default function MonthFilterPicker({ id, value, onChange, placeholder = "
                 setOpen(false);
               }}
             >
-              Hapus
+              Delete
             </motion.button>
           )}
         </motion.div>

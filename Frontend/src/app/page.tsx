@@ -34,7 +34,7 @@ export default function LoginPage() {
     } catch (err) {
       const status = (err as { status?: number }).status;
       const message = (err as Error).message;
-      setError(status === 401 ? "Invalid username or password" : message || "Login failed");
+      setError(status === 401 ? "Username atau password salah" : message || "Login gagal");
       setPassword("");
     } finally {
       setSubmitting(false);

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 using PengirimanApi.Dtos;
@@ -22,6 +24,8 @@ public class AuthController : ApiControllerBase
         _config = config;
     }
 
+    [AllowAnonymous]
+    [EnableRateLimiting("LoginRateLimit")]
     [HttpPost("auth/login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest payload)
     {
@@ -35,7 +39,7 @@ public class AuthController : ApiControllerBase
             return StatusCode(401, new { detail = "Akun ini telah dinonaktifkan" });
 
         var token = _jwt.CreateAccessToken(user.Id, user.Role, user.PasswordChangedAt);
-        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        var cookieSecure = ResolveCookieSecure(_config);
 
         Response.Cookies.Append(CurrentUserService.CookieName, token, new CookieOptions
         {

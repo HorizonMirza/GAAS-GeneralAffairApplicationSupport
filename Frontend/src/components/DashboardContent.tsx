@@ -1215,7 +1215,6 @@ export default function DashboardContent({ me }: { me: Me }) {
         <article className={styles.insightPanel}>
           <header className={styles.insightHeader}>
             <div><h2>Tren Transaksi</h2><p>{[activeView === "all" ? "Seluruh Modul" : activeModuleLabel, organizationContext, statusContext].filter(Boolean).join(" · ")}</p></div>
-            {trendGrowth !== null && <span className={trendGrowth >= 0 ? styles.positiveTrend : styles.negativeTrend}>{trendGrowth >= 0 ? "+" : ""}{trendGrowth}% vs bulan lalu</span>}
           </header>
           <div className={styles.trendChart}>
             <svg viewBox="0 0 480 265" role="img" aria-label="Tren volume transaksi enam bulan terakhir">

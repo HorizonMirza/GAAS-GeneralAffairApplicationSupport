@@ -263,7 +263,7 @@ export default function DateFilterPicker({ id, value, onChange, placeholder = "S
                   setOpen(false);
                 }}
               >
-                Hapus
+                Delete
               </button>
             )}
           </motion.div>

@@ -286,7 +286,7 @@ export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, 
               </motion.div>
               <motion.div className="filter-picker-footer" variants={itemVariants}>
                 <button type="button" className="filter-picker-link" onClick={() => selectDay(today)}>Hari Ini</button>
-                {hasValue && <button type="button" className="filter-picker-link" onClick={clear}>Hapus</button>}
+                {hasValue && <button type="button" className="filter-picker-link" onClick={clear}>Delete</button>}
               </motion.div>
             </>
           )}
@@ -314,7 +314,7 @@ export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, 
                 })}
               </motion.div>
               {hasValue && (
-                <motion.button type="button" className="filter-picker-clear" variants={itemVariants} onClick={clear}>Hapus</motion.button>
+                <motion.button type="button" className="filter-picker-clear" variants={itemVariants} onClick={clear}>Delete</motion.button>
               )}
             </>
           )}
@@ -335,7 +335,7 @@ export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, 
                 ))}
               </motion.div>
               {hasValue && (
-                <motion.button type="button" className="filter-picker-clear" variants={itemVariants} onClick={clear}>Hapus</motion.button>
+                <motion.button type="button" className="filter-picker-clear" variants={itemVariants} onClick={clear}>Delete</motion.button>
               )}
             </>
           )}

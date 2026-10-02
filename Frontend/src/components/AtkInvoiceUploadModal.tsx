@@ -151,7 +151,7 @@ export default function AtkInvoiceUploadModal({ open, onClose, onDone }: Props) 
                     <span className="photo-drop-item-size">{formatFileSize(file.size)}</span>
                   </div>
                   <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
-                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => handleFileChange(null)}>
+                  <button type="button" className="photo-drop-item-remove" aria-label="Delete file" onClick={() => handleFileChange(null)}>
                     <Trash2 width={14} height={14} />
                   </button>
                 </div>

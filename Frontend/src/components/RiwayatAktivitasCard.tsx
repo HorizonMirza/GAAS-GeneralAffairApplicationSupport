@@ -192,7 +192,7 @@ export default function RiwayatAktivitasCard() {
             </div>
           )}
         </div>
-        <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Hapus Filter</button>
+        <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Delete Filter</button>
       </div>
 
       <div className="table-wrap">

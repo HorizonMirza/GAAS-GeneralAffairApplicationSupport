@@ -95,7 +95,7 @@ export default function PhotoDropUploader({ id, files, onChange, maxFiles = 5, n
               </div>
               <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
               {!disabled && (
-                <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => removeFile(index)}>
+                <button type="button" className="photo-drop-item-remove" aria-label="Delete foto" onClick={() => removeFile(index)}>
                   <Trash2 width={14} height={14} />
                 </button>
               )}

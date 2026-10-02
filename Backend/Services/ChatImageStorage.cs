@@ -29,9 +29,27 @@ public static class ChatImageStorage
 
     public static bool IsAllowedContentType(string? contentType) => contentType != null && AllowedContentTypes.ContainsKey(contentType);
 
+    // Validates both file size and magic bytes header using SidikGambar
+    public static async Task<(bool ok, string? contentType, string? error)> ValidateAsync(IFormFile? image)
+    {
+        if (image == null || image.Length == 0)
+            return (false, null, "File gambar wajib diunggah");
+        if (image.Length > MaxSizeBytes)
+            return (false, null, $"Ukuran gambar maksimal {MaxSizeBytes / 1024 / 1024} MB");
+
+        var detectedType = await SidikGambar.DeteksiTipeAsync(image);
+        if (detectedType == null || !AllowedContentTypes.ContainsKey(detectedType))
+            return (false, null, "File bukan gambar yang didukung (gunakan JPG, PNG, GIF, atau WebP)");
+
+        return (true, detectedType, null);
+    }
+
     public static async Task<string> SaveAsync(IFormFile image, string uploadDir)
     {
-        var ext = AllowedContentTypes[image.ContentType];
+        var detectedType = await SidikGambar.DeteksiTipeAsync(image);
+        if (detectedType == null || !AllowedContentTypes.TryGetValue(detectedType, out var ext))
+            throw new InvalidOperationException("File bukan gambar yang didukung atau rusak");
+
         var storedFilename = $"{Guid.NewGuid():N}{ext}";
         var destPath = Path.Combine(uploadDir, storedFilename);
         using (var stream = File.Create(destPath))

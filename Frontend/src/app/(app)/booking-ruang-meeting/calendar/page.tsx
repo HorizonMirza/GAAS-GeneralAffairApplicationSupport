@@ -213,7 +213,7 @@ function BookingCalendarPageInner() {
   function handleDelete(item: BookingRuang) {
     const message = item.seriesId
       ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
-      : "Hapus booking ruangan ini secara permanen?";
+      : "Delete booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);

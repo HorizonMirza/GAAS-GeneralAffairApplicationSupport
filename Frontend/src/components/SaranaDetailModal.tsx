@@ -249,7 +249,7 @@ export default function SaranaDetailModal({ open, mode, item, me, onClose, onSav
                         </div>
                         <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
                         {isEdit && (
-                          <button type="button" className="photo-drop-item-remove" aria-label="Hapus foto" onClick={() => handleRemoveFoto(foto.id)}>
+                          <button type="button" className="photo-drop-item-remove" aria-label="Delete foto" onClick={() => handleRemoveFoto(foto.id)}>
                             <Trash2 width={14} height={14} />
                           </button>
                         )}

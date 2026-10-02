@@ -204,7 +204,7 @@ export default function SuperAdminMeetingRoomTab({
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
                     </button>
-                    <button type="button" className="card-icon-btn card-icon-btn-danger" aria-label="Hapus" title="Hapus" onClick={() => setDeleteTarget(item)}>
+                    <button type="button" className="card-icon-btn card-icon-btn-danger" aria-label="Delete" title="Delete" onClick={() => setDeleteTarget(item)}>
                       <Trash2 width={16} height={16} />
                     </button>
                   </td>
@@ -269,7 +269,7 @@ export default function SuperAdminMeetingRoomTab({
 
       <DeleteWithPasswordModal
         open={!!deleteTarget}
-        title="Hapus Ruang Meeting"
+        title="Delete Ruang Meeting"
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       >

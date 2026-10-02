@@ -309,7 +309,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
                       <button
                         type="button"
                         className="card-icon-btn card-icon-btn-danger item-row-delete-btn"
-                        aria-label={`Hapus baris barang ${idx + 1}`}
+                        aria-label={`Delete baris barang ${idx + 1}`}
                         disabled={form.items.length <= 1}
                         style={{ opacity: form.items.length <= 1 ? 0.4 : 1 }}
                         onClick={() => removeItemRow(idx)}

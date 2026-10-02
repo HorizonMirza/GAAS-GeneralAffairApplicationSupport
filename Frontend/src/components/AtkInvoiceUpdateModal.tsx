@@ -174,7 +174,7 @@ export default function AtkInvoiceUpdateModal({ open, item, onClose, onDone }: P
                     </a>
                   </div>
                   <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
-                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => setExistingRemoved(true)}>
+                  <button type="button" className="photo-drop-item-remove" aria-label="Delete file" onClick={() => setExistingRemoved(true)}>
                     <Trash2 width={14} height={14} />
                   </button>
                 </div>
@@ -192,7 +192,7 @@ export default function AtkInvoiceUpdateModal({ open, item, onClose, onDone }: P
                     <span className="photo-drop-item-size">{formatFileSize(file.size)}</span>
                   </div>
                   <CheckCircle2 width={18} height={18} className="photo-drop-item-check" />
-                  <button type="button" className="photo-drop-item-remove" aria-label="Hapus file" onClick={() => handleFileChange(null)}>
+                  <button type="button" className="photo-drop-item-remove" aria-label="Delete file" onClick={() => handleFileChange(null)}>
                     <Trash2 width={14} height={14} />
                   </button>
                 </div>
