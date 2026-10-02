@@ -463,7 +463,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                     value={filters.isActive === "" ? "" : String(filters.isActive)}
                     onChange={(v) => setFilters((prev) => ({ ...prev, isActive: v === "" ? "" : v === "true", page: 1 }))}
                     options={["true", "false"]}
-                    getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
+                    getLabel={(v) => (v === "true" ? "Active" : "Inactive")}
                     clearLabel="Semua Status"
                     placeholder="Semua Status"
                   />
@@ -532,7 +532,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
-                          {user.isActive ? "Aktif" : "Nonaktif"}
+                          {user.isActive ? "Active" : "Inactive"}
                         </span>
                         {user.mustChangePassword && (
                           <span className="badge badge-pending" title="Belum mengganti password sementara">

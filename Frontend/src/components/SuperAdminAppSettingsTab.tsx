@@ -200,7 +200,7 @@ function CompanyNameTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    const statusText = h.status === "Aktif" ? "active aktif" : "inactive non aktif riwayat";
     return h.name.toLowerCase().includes(q) || statusText.includes(q);
   });
 
@@ -363,9 +363,9 @@ function CompanyNameTableAccordionItem({
                           <td>{item.name}</td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span className="badge badge-approved">Aktif</span>
+                              <span className="badge badge-approved">Active</span>
                             ) : (
-                              <span className="badge badge-rejected">Non Aktif</span>
+                              <span className="badge badge-rejected">Inactive</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -600,7 +600,7 @@ function CompanyLogoTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    const statusText = h.status === "Aktif" ? "active aktif" : "inactive non aktif riwayat";
     return h.filename.toLowerCase().includes(q) || h.type.toLowerCase().includes(q) || statusText.includes(q);
   });
 
@@ -853,9 +853,9 @@ function CompanyLogoTableAccordionItem({
                             <td>{item.filename}</td>
                             <td>
                               {item.status === "Aktif" ? (
-                                <span className="badge badge-approved">Aktif</span>
+                                <span className="badge badge-approved">Active</span>
                               ) : (
-                                <span className="badge badge-rejected">Non Aktif</span>
+                                <span className="badge badge-rejected">Inactive</span>
                               )}
                             </td>
                             <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -1105,7 +1105,7 @@ function OperatingHoursTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    const statusText = h.status === "Aktif" ? "active aktif" : "inactive non aktif riwayat";
     return `${h.start} - ${h.end}`.toLowerCase().includes(q) || statusText.includes(q);
   });
 
@@ -1269,9 +1269,9 @@ function OperatingHoursTableAccordionItem({
                           <td>{item.start} - {item.end} WIB</td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span className="badge badge-approved">Aktif</span>
+                              <span className="badge badge-approved">Active</span>
                             ) : (
-                              <span className="badge badge-rejected">Non Aktif</span>
+                              <span className="badge badge-rejected">Inactive</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -1460,7 +1460,7 @@ function NotificationSoundTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const statusText = h.status === "Aktif" ? "aktif" : "non aktif riwayat";
+    const statusText = h.status === "Aktif" ? "active aktif" : "inactive non aktif riwayat";
     return (
       soundLabel(h.chatSoundId).toLowerCase().includes(q) ||
       soundLabel(h.activitySoundId).toLowerCase().includes(q) ||
@@ -1669,9 +1669,9 @@ function NotificationSoundTableAccordionItem({
                           </td>
                           <td>
                             {item.status === "Aktif" ? (
-                              <span className="badge badge-approved">Aktif</span>
+                              <span className="badge badge-approved">Active</span>
                             ) : (
-                              <span className="badge badge-rejected">Non Aktif</span>
+                              <span className="badge badge-rejected">Inactive</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.updatedAt)}</td>
@@ -2183,7 +2183,7 @@ function BackupTableAccordionItem({
   const filteredHistory = history.filter((h) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const statusText = h.status === "Non Aktif" ? "non aktif" : "aktif";
+    const statusText = h.status === "Non Aktif" ? "inactive non aktif" : "active aktif";
     return (
       h.filename.toLowerCase().includes(q) ||
       h.scope.toLowerCase().includes(q) ||
@@ -2288,9 +2288,9 @@ function BackupTableAccordionItem({
                           <td>{item.scope}</td>
                           <td>
                             {item.status === "Non Aktif" ? (
-                              <span className="badge badge-rejected">Non Aktif</span>
+                              <span className="badge badge-rejected">Inactive</span>
                             ) : (
-                              <span className="badge badge-approved">Aktif</span>
+                              <span className="badge badge-approved">Active</span>
                             )}
                           </td>
                           <td>{formatDateTimeWib(item.exportedAt)}</td>
