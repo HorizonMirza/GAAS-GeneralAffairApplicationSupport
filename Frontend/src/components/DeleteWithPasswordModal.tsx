@@ -73,7 +73,7 @@ export default function DeleteWithPasswordModal({ open, title, children, onConfi
 
         <div className="modal-actions">
           <button type="button" className="btn btn-confirm-danger" style={{ width: "auto" }} disabled={!password || busy} onClick={handleConfirm}>
-            {busy ? "Menghapus..." : "Hapus"}
+            {busy ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>

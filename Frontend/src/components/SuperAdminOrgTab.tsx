@@ -7,15 +7,17 @@ import ModalOverlay from "@/components/ModalOverlay";
 import PasswordField from "@/components/PasswordField";
 import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
+import SearchableSelect from "@/components/SearchableSelect";
 import type { OrgDirektoratNode, OrgDivisiNode } from "@/lib/types";
 import {
-  RotateCcw,
+  RefreshCw,
   ChevronRight,
   Pencil,
   Plus,
   Trash2,
   Search,
   Lock,
+  AlertTriangle,
 } from "lucide-react";
 
 interface FormModalState {
@@ -441,49 +443,7 @@ export default function SuperAdminOrgTab() {
 
   return (
     <div className="card">
-      {/* Standard GAAS Card Header */}
-      <div className="card-header">
-        <h3>Struktur Organisasi</h3>
-      </div>
-
-      {/* Path Breadcrumb (Revisi 1: Tanpa box biru, hanya teks breadcrumb minimalis) */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: "0.85rem",
-          marginTop: 6,
-          marginBottom: 14,
-          flexWrap: "wrap",
-          color: "var(--text-primary)",
-          fontWeight: 600,
-        }}
-      >
-        <span>
-          {currentDirektorat ? currentDirektorat.nama : "Semua Direktorat"}
-        </span>
-        <span style={{ opacity: 0.45 }}>&rarr;</span>
-        <span>
-          {currentDivisi
-            ? `${currentDivisi.nama} (${currentDivisi.kodeSatuanKerja})`
-            : currentDirektorat
-            ? `${currentDirektorat.divisi.length} Divisi`
-            : "Semua Divisi"}
-        </span>
-        <span style={{ opacity: 0.45 }}>&rarr;</span>
-        <span>
-          {currentDepartemen
-            ? currentDepartemen.nama
-            : currentDivisi
-            ? `${currentDivisi.departemen.length} Departemen`
-            : currentDirektorat
-            ? `${currentDirektorat.divisi.reduce((acc, dv) => acc + dv.departemen.length, 0)} Departemen`
-            : `${stats.totalDept} Departemen`}
-        </span>
-      </div>
-
-      {/* Toolbar: Search normal di Ujung Kiri dan Count Box + Tombol Reset di Ujung Kanan (Revisi 1) */}
+      {/* Toolbar: Search di Kiri, Tombol Refresh + Count Box di Kanan */}
       <div
         className="settings-table-toolbar"
         style={{
@@ -491,6 +451,7 @@ export default function SuperAdminOrgTab() {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
+          marginTop: 0,
           marginBottom: 16,
           flexWrap: "wrap",
         }}
@@ -505,30 +466,18 @@ export default function SuperAdminOrgTab() {
           />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            className="settings-table-refresh-btn"
+            onClick={handleResetAll}
+            title="Reset Pilihan dan Muat Ulang"
+            aria-label="Reset Pilihan dan Muat Ulang"
+          >
+            <RefreshCw width={16} height={16} />
+          </button>
           <div className="settings-table-count-box">
             {stats.totalDir} Direktorat &bull; {stats.totalDiv} Divisi &bull; {stats.totalDept} Departemen
           </div>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{
-              width: 36,
-              height: 36,
-              padding: 0,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              cursor: "pointer",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-            }}
-            onClick={handleResetAll}
-            title="Reset Pilihan dan Muat Ulang"
-            aria-label="Reset Pilihan"
-          >
-            <RotateCcw width={16} height={16} />
-          </button>
         </div>
       </div>
 
@@ -602,7 +551,8 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 345,
+                height: 330,
+                maxHeight: 330,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -660,14 +610,18 @@ export default function SuperAdminOrgTab() {
                         >
                           {direktorat.nama}
                         </div>
-                        <span
+                        <div
                           className="text-secondary"
                           style={{
                             fontSize: "0.72rem",
+                            marginTop: 2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                           }}
                         >
-                          {direktorat.divisi.length} Divisi
-                        </span>
+                          {direktorat.divisi.length} Divisi dan {direktorat.nama.toLowerCase().includes("utama") ? 5 : direktorat.divisi.reduce((acc, d) => acc + d.departemen.length, 0)} Departemen
+                        </div>
                       </div>
 
                       {/* Actions */}
@@ -688,8 +642,8 @@ export default function SuperAdminOrgTab() {
                         <button
                           type="button"
                           className="card-icon-btn card-icon-btn-danger"
-                          title="Hapus"
-                          aria-label="Hapus"
+                          title="Delete"
+                          aria-label="Delete"
                           disabled={saving}
                           onClick={() =>
                             setDeleteTarget({
@@ -775,7 +729,8 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 345,
+                height: 330,
+                maxHeight: 330,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -847,38 +802,17 @@ export default function SuperAdminOrgTab() {
                         >
                           {divisi.nama}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
-                          <span
-                            style={{
-                              fontSize: "0.68rem",
-                              padding: "1px 6px",
-                              borderRadius: 4,
-                              background: "var(--bg-surface-alt)",
-                              color: "var(--text-secondary)",
-                              border: "1px solid var(--border-subtle)",
-                              fontFamily: "monospace",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {divisi.kodeSatuanKerja}
-                          </span>
-                          <span
-                            className="text-secondary"
-                            style={{
-                              fontSize: "0.72rem",
-                            }}
-                          >
-                            {divisi.departemen.length} Dept
-                          </span>
-                          {!selectedDirektoratId && (
-                            <span
-                              className="text-secondary"
-                              style={{ fontSize: "0.7rem", opacity: 0.75 }}
-                              title={divisi.direktoratNama}
-                            >
-                              &bull; {divisi.direktoratNama}
-                            </span>
-                          )}
+                        <div
+                          className="text-secondary"
+                          style={{
+                            fontSize: "0.72rem",
+                            marginTop: 2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {divisi.departemen.length} Departemen
                         </div>
                       </div>
 
@@ -900,8 +834,8 @@ export default function SuperAdminOrgTab() {
                         <button
                           type="button"
                           className="card-icon-btn card-icon-btn-danger"
-                          title="Hapus"
-                          aria-label="Hapus"
+                          title="Delete"
+                          aria-label="Delete"
                           disabled={saving}
                           onClick={() =>
                             setDeleteTarget({
@@ -987,7 +921,8 @@ export default function SuperAdminOrgTab() {
                 padding: 10,
                 flex: 1,
                 overflowY: "auto",
-                maxHeight: 345,
+                height: 330,
+                maxHeight: 330,
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
@@ -1047,35 +982,32 @@ export default function SuperAdminOrgTab() {
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <span
+                        <div
                           style={{
-                            fontWeight: isSelected ? 700 : 500,
+                            fontWeight: isSelected ? 700 : 600,
                             fontSize: "0.84rem",
                             color: isSelected ? "var(--blue-500)" : "var(--text-primary)",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            display: "block",
                           }}
                           title={departemen.nama}
                         >
                           {departemen.nama}
-                        </span>
-                        {!selectedDivisiId && (
-                          <div
-                            style={{
-                              fontSize: "0.7rem",
-                              color: "var(--text-secondary)",
-                              marginTop: 2,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                            title={`${departemen.divisiNama} (${departemen.kodeSatuanKerja})`}
-                          >
-                            {departemen.divisiNama} ({departemen.kodeSatuanKerja})
-                          </div>
-                        )}
+                        </div>
+                        <div
+                          className="text-secondary"
+                          style={{
+                            fontSize: "0.72rem",
+                            marginTop: 2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={departemen.divisiNama}
+                        >
+                          {departemen.divisiNama}
+                        </div>
                       </div>
 
                       {/* Actions */}
@@ -1096,8 +1028,8 @@ export default function SuperAdminOrgTab() {
                         <button
                           type="button"
                           className="card-icon-btn card-icon-btn-danger"
-                          title="Hapus"
-                          aria-label="Hapus"
+                          title="Delete"
+                          aria-label="Delete"
                           disabled={saving}
                           onClick={() =>
                             setDeleteTarget({
@@ -1133,8 +1065,8 @@ export default function SuperAdminOrgTab() {
                 {formModal.level === "direktorat"
                   ? "Direktorat"
                   : formModal.level === "divisi"
-                  ? `Divisi${formModal.mode === "create" && formModal.parentName ? ` (${formModal.parentName})` : ""}`
-                  : `Departemen${formModal.mode === "create" && formModal.parentName ? ` (${formModal.parentName})` : ""}`}
+                  ? "Divisi"
+                  : "Departemen"}
               </h3>
               <button
                 type="button"
@@ -1158,46 +1090,42 @@ export default function SuperAdminOrgTab() {
                 {formModal.mode === "create" && formModal.level === "divisi" && (
                   <div className="field full">
                     <label htmlFor="org-form-parent-dir">Direktorat</label>
-                    <select
+                    <SearchableSelect
                       id="org-form-parent-dir"
-                      value={formModal.parentId || (tree?.[0]?.id ?? "")}
-                      onChange={(e) => {
-                        const dirId = Number(e.target.value);
+                      value={formModal.parentId ? String(formModal.parentId) : tree?.[0]?.id ? String(tree[0].id) : undefined}
+                      onChange={(next) => {
+                        const dirId = Number(next);
                         const dir = tree?.find((d) => d.id === dirId);
                         setFormModal((prev) =>
                           prev ? { ...prev, parentId: dirId, parentName: dir?.nama } : null
                         );
                       }}
-                    >
-                      {tree?.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.nama}
-                        </option>
-                      ))}
-                    </select>
+                      options={tree?.map((d) => String(d.id)) || []}
+                      getLabel={(v) => tree?.find((d) => String(d.id) === v)?.nama || v}
+                      placeholder="Pilih Direktorat"
+                      searchable={false}
+                    />
                   </div>
                 )}
 
                 {formModal.mode === "create" && formModal.level === "departemen" && (
                   <div className="field full">
                     <label htmlFor="org-form-parent-div">Divisi</label>
-                    <select
+                    <SearchableSelect
                       id="org-form-parent-div"
-                      value={formModal.parentId || (allDivisiList[0]?.id ?? "")}
-                      onChange={(e) => {
-                        const divId = Number(e.target.value);
+                      value={formModal.parentId ? String(formModal.parentId) : allDivisiList[0]?.id ? String(allDivisiList[0].id) : undefined}
+                      onChange={(next) => {
+                        const divId = Number(next);
                         const div = allDivisiList.find((dv) => dv.id === divId);
                         setFormModal((prev) =>
                           prev ? { ...prev, parentId: divId, parentName: div?.nama } : null
                         );
                       }}
-                    >
-                      {allDivisiList.map((dv) => (
-                        <option key={dv.id} value={dv.id}>
-                          {dv.nama} ({dv.kodeSatuanKerja})
-                        </option>
-                      ))}
-                    </select>
+                      options={allDivisiList.map((dv) => String(dv.id))}
+                      getLabel={(v) => allDivisiList.find((dv) => String(dv.id) === v)?.nama || v}
+                      placeholder="Pilih Divisi"
+                      searchable={false}
+                    />
                   </div>
                 )}
 
@@ -1210,7 +1138,6 @@ export default function SuperAdminOrgTab() {
                     type="text"
                     required
                     autoFocus
-                    placeholder={`Masukkan nama ${formModal.level}`}
                     value={formModal.nama}
                     onChange={(e) =>
                       setFormModal((prev) => (prev ? { ...prev, nama: e.target.value } : null))
@@ -1226,7 +1153,6 @@ export default function SuperAdminOrgTab() {
                       id="org-form-kode"
                       type="text"
                       required
-                      placeholder="Contoh: CORSEC, EPCP"
                       value={formModal.kodeSatuanKerja || ""}
                       onChange={(e) =>
                         setFormModal((prev) => (prev ? { ...prev, kodeSatuanKerja: e.target.value } : null))
@@ -1252,23 +1178,14 @@ export default function SuperAdminOrgTab() {
                 />
               </div>
 
-              <div className="modal-actions" style={{ marginTop: 20 }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ width: "auto" }}
-                  disabled={saving}
-                  onClick={() => setFormModal(null)}
-                >
-                  Batal
-                </button>
+              <div className="modal-actions" style={{ marginTop: 20, justifyContent: "flex-end" }}>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-confirm-approve"
                   style={{ width: "auto" }}
                   disabled={saving || !formPassword || !formModal.nama.trim()}
                 >
-                  {saving ? "Menyimpan..." : "Simpan"}
+                  {saving ? "Menyimpan..." : "Save"}
                 </button>
               </div>
             </form>
@@ -1281,10 +1198,10 @@ export default function SuperAdminOrgTab() {
         open={!!deleteTarget}
         title={
           deleteTarget?.level === "direktorat"
-            ? `Hapus Direktorat "${deleteTarget.nama}"?`
+            ? "Delete Direktorat"
             : deleteTarget?.level === "divisi"
-            ? `Hapus Divisi "${deleteTarget.nama}"?`
-            : `Hapus Departemen "${deleteTarget?.nama}"?`
+            ? "Delete Divisi"
+            : "Delete Departemen"
         }
         passwordFieldId="delete-org-item-password"
         onConfirm={handleDeleteConfirm}
@@ -1292,27 +1209,37 @@ export default function SuperAdminOrgTab() {
       >
         {deleteTarget && (
           <div className="form-grid">
+            {deleteTarget.subCount !== undefined && deleteTarget.subCount > 0 && (
+              <div
+                className="full"
+                style={{
+                  gridColumn: "1 / -1",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  fontSize: "0.85rem",
+                  lineHeight: 1.45,
+                  color: "#dc2626",
+                  padding: "10px 14px",
+                  borderRadius: 8,
+                  background: "#fef2f2",
+                  border: "1px solid #fca5a5",
+                  marginBottom: 6,
+                }}
+              >
+                <AlertTriangle width={16} height={16} style={{ flexShrink: 0, marginTop: 2, color: "#dc2626" }} />
+                <div>
+                  <strong style={{ fontWeight: 600, color: "#dc2626" }}>Perhatian:</strong>{" "}
+                  {deleteTarget.level === "direktorat"
+                    ? `${deleteTarget.subCount} Divisi di dalamnya akan ikut terhapus.`
+                    : `${deleteTarget.subCount} Departemen di dalamnya akan ikut terhapus.`}
+                </div>
+              </div>
+            )}
             <div className="field full">
               <label>Nama {deleteTarget.level === "direktorat" ? "Direktorat" : deleteTarget.level === "divisi" ? "Divisi" : "Departemen"}</label>
               <input type="text" value={deleteTarget.nama} disabled readOnly />
             </div>
-            {deleteTarget.subCount !== undefined && deleteTarget.subCount > 0 && (
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  color: "var(--badge-rejected-bg)",
-                  marginTop: -6,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  background: "rgba(220, 38, 38, 0.08)",
-                  border: "1px solid rgba(220, 38, 38, 0.2)",
-                }}
-              >
-                Perhatian: {deleteTarget.level === "direktorat"
-                  ? `${deleteTarget.subCount} Divisi di dalamnya akan ikut terhapus.`
-                  : `${deleteTarget.subCount} Departemen di dalamnya akan ikut terhapus.`}
-              </div>
-            )}
           </div>
         )}
       </DeleteWithPasswordModal>
