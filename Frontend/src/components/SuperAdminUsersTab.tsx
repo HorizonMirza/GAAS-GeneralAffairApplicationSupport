@@ -328,7 +328,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     setActionModal({
       type: "force-logout",
       user,
-      title: "Konfirmasi Paksa Logout",
+      title: "Konfirmasi Logout",
       message: "",
       actionButtonText: "Logout",
       actionButtonVariant: "primary",
