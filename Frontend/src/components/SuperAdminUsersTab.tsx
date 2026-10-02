@@ -12,7 +12,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import { formatDateTime } from "@/lib/format";
-import { UserPlus } from "lucide-react";
+import { UserPlus, RefreshCw } from "lucide-react";
 
 const ROLE_OPTIONS = Object.keys(ROLE_LABEL) as Role[];
 const LIMIT_OPTIONS = [10, 20, 50, 100];
@@ -27,7 +27,7 @@ interface FilterState {
   isActive: boolean | "";
 }
 
-const EMPTY_FILTERS: FilterState = { page: 1, limit: 20, role: "", divisi: "", departemen: "", search: "", isActive: "" };
+const EMPTY_FILTERS: FilterState = { page: 1, limit: 10, role: "", divisi: "", departemen: "", search: "", isActive: "" };
 
 interface UserFormState {
   username: string;
@@ -103,6 +103,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   }
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
+  const pageStart = Math.min(Math.max(1, filters.page), totalPages);
+  const pageEnd = Math.min(totalPages, pageStart + 1);
+  const pageButtons: number[] = [];
+  for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
   const directoratNode = orgStructure?.direktoratTree.find((d) => d.nama === form.direktorat) || null;
   const divisiOptions = directoratNode ? directoratNode.divisi.map((v) => v.nama) : orgStructure?.divisi || [];
@@ -265,8 +269,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Manajemen Akun</h3>
+      <div className="card-header" style={{ justifyContent: "flex-end" }}>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={openImpersonationLog}>
             Riwayat Login As
@@ -279,8 +282,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
       <div className="toolbar transactions-page-toolbar">
         <div className="field">
-          <label htmlFor="users-search">Cari</label>
-          <input id="users-search" type="text" placeholder="Username atau nama" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+          <label htmlFor="users-search">Cari Username</label>
+          <input id="users-search" type="text" placeholder="Username" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
         </div>
         <div className="field">
           <label htmlFor="users-role">Role</label>
@@ -321,7 +324,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           <SearchableSelect
             id="users-active"
             value={filters.isActive === "" ? "" : String(filters.isActive)}
-            onChange={(v) => setFilters((prev) => ({ ...prev, isActive: v === "" ? "" : v === "true", page: 1 }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, isActive: e === "" ? "" : e === "true", page: 1 }))}
             options={["true", "false"]}
             getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
             clearLabel="Semua Status"
@@ -330,11 +333,12 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         </div>
         <button
           type="button"
-          className="btn btn-secondary"
-          style={{ width: "auto", alignSelf: "flex-end" }}
+          className="settings-table-refresh-btn"
+          style={{ alignSelf: "flex-end" }}
           onClick={() => { setFilters(EMPTY_FILTERS); setSearchInput(""); }}
+          title="Reset Filter"
         >
-          Hapus Filter
+          <RefreshCw />
         </button>
       </div>
 
@@ -423,6 +427,15 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           <span className="text-secondary">Total {total} Akun · Halaman {filters.page} dari {totalPages}</span>
           <div className="pages">
             <button className="page-btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>‹</button>
+            {pageButtons.map((p) => (
+              <button
+                key={p}
+                className={`page-btn ${p === filters.page ? "active" : ""}`}
+                onClick={() => setFilters((prev) => ({ ...prev, page: p }))}
+              >
+                {p}
+              </button>
+            ))}
             <button className="page-btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>›</button>
           </div>
         </div>

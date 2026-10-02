@@ -984,6 +984,8 @@ export const api = {
     apiRequest(`/master-data/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Users Admin (Super Admin only) ---
+  getAdminUserStats: () =>
+    apiRequest<{ total: number; active: number; mustChange: number; approver: number }>("/users-admin/stats"),
   listAdminUsers: (params: ListAdminUsersParams) =>
     apiRequest<AdminUserListResponse>("/users-admin", { params: adminUsersListParams(params) }),
   createAdminUser: (payload: CreateUserPayload) =>
