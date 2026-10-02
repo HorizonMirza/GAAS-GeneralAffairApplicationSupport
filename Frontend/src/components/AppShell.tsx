@@ -124,7 +124,7 @@ const SETTINGS_TABS: { key: string; label: string }[] = [
   { key: "users", label: "Users" },
   { key: "system", label: "System" },
   { key: "organisasi", label: "Organization" },
-  { key: "activity-log", label: "Activity Logs" },
+  { key: "activity-log", label: "Activity Log" },
 ];
 
 // Isolated into its own component so only this fragment (not the whole AppShell, mounted on every
