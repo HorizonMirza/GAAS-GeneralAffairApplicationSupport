@@ -55,6 +55,7 @@ public static class DbSeeder
             {
                 Username = account.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(account.Password),
+                PlainPassword = account.Password,
                 Nama = account.Nama,
                 Role = account.Role,
                 Direktorat = account.Direktorat,

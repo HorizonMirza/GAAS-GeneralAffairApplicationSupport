@@ -2,14 +2,13 @@ using PengirimanApi.Models;
 
 namespace PengirimanApi.Dtos;
 
-// Never carries PasswordHash - see UsersAdminController.List/Get.
 public record AdminUserOut(
-    int Id, string Username, string Nama, RoleEnum Role,
+    int Id, string Username, string? Password, string Nama, RoleEnum Role,
     string? Direktorat, string? Divisi, string? Departemen,
     string? Email, string? NoHp, bool IsActive, bool MustChangePassword, DateTime CreatedAt)
 {
     public static AdminUserOut From(User u) => new(
-        u.Id, u.Username, u.Nama, u.Role, u.Direktorat, u.Divisi, u.Departemen,
+        u.Id, u.Username, u.PlainPassword ?? "123456789", u.Nama, u.Role, u.Direktorat, u.Divisi, u.Departemen,
         u.Email, u.NoHp, u.IsActive, u.MustChangePassword, u.CreatedAt);
 }
 

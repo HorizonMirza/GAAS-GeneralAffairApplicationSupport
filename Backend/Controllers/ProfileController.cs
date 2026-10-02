@@ -136,6 +136,7 @@ public class ProfileController : ApiControllerBase
             return StatusCode(400, new { detail = "Password baru belum memenuhi syarat (minimal 8 karakter, 1 angka, 1 huruf kecil, 1 huruf besar, 1 karakter spesial)" });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
+        user.PlainPassword = payload.NewPassword;
         user.PasswordChangedAt = DateTime.UtcNow;
         // Clears the forced-change flag Super Admin set on create/reset-password (see
         // UsersAdminController) - this is the one place it's ever cleared, so a Super

@@ -36,6 +36,16 @@ public static class DatabaseMigrator
                 migration01, DateTime.UtcNow);
         }
 
+        const string migration02 = "20261002_01_plain_password";
+        if (!appliedMigrations.Contains(migration02))
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS plain_password VARCHAR(255)");
+            db.Database.ExecuteSqlRaw("UPDATE users SET plain_password = '123456789' WHERE plain_password IS NULL");
+            db.Database.ExecuteSqlRaw(
+                "INSERT INTO schema_migrations (id, applied_at) VALUES ({0}, {1}) ON CONFLICT DO NOTHING",
+                migration02, DateTime.UtcNow);
+        }
+
         // 3. Organization structure seeding & cache load
         SeedAndLoadOrgTree(db);
 
@@ -70,6 +80,8 @@ public static class DatabaseMigrator
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS cover_preset VARCHAR(50)");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE");
+        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS plain_password VARCHAR(255)");
+        db.Database.ExecuteSqlRaw("UPDATE users SET plain_password = '123456789' WHERE plain_password IS NULL");
 
         // En-dash backfill
         foreach (var tableCol in new[] { "users", "pengiriman", "booking_ruang", "booking_kendaraan", "permintaan_atk", "perbaikan_sarana" })

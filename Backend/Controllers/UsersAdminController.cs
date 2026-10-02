@@ -123,6 +123,7 @@ public class UsersAdminController : ApiControllerBase
         {
             Username = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            PlainPassword = password,
             Nama = nama,
             Role = payload.Role,
             Direktorat = direktorat,
@@ -223,6 +224,7 @@ public class UsersAdminController : ApiControllerBase
 
         var password = PasswordGenerator.Generate();
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        user.PlainPassword = password;
         user.MustChangePassword = true;
         // Same reasoning as ProfileController.ChangePassword: stamping this revokes every session
         // issued before the reset, so a stolen/expired session on this account doesn't outlive it.
@@ -253,6 +255,7 @@ public class UsersAdminController : ApiControllerBase
             return StatusCode(400, new { detail = "Password baru harus berbeda dari password akun saat ini" });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
+        user.PlainPassword = payload.NewPassword;
         user.PasswordChangedAt = DateTime.UtcNow;
         // Changing one's own Super Admin password must not immediately gate that same operator
         // behind the forced-change screen. Other targets can optionally receive a temporary

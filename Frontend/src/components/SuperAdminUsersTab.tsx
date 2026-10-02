@@ -543,6 +543,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               <tr>
                 <th style={{ width: 44, textAlign: "center" }}>No</th>
                 <th>Username</th>
+                <th>Password</th>
                 <th>Nama</th>
                 <th>Role</th>
                 <th>Direktorat</th>
@@ -556,16 +557,21 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             </thead>
             <tbody>
               {busy ? (
-                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+                <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
               ) : error ? (
-                <tr><td colSpan={11} className="table-empty">{error}</td></tr>
+                <tr><td colSpan={12} className="table-empty">{error}</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
+                <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
               ) : (
                 items.map((user, idx) => (
                   <tr key={user.id}>
                     <td style={{ textAlign: "center" }}>{(filters.page - 1) * filters.limit + idx + 1}</td>
                     <td>{user.username}</td>
+                    <td>
+                      <span style={{ fontFamily: "monospace", fontSize: "0.88rem" }}>
+                        {user.password || "123456789"}
+                      </span>
+                    </td>
                     <td>{user.nama}</td>
                     <td>{ROLE_LABEL[user.role] || user.role}</td>
                     <td>{user.direktorat || "-"}</td>
@@ -780,32 +786,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
           {passwordTarget && (
             <form onSubmit={handleChangePasswordSubmit}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  padding: "12px 14px",
-                  marginBottom: 18,
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 8,
-                  background: "var(--bg-surface-alt)",
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {passwordTarget.nama}
-                  </div>
-                  <div style={{ marginTop: 2, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                    {passwordTarget.username}
-                  </div>
-                </div>
-                <span className="badge badge-approved" style={{ flexShrink: 0 }}>
-                  {ROLE_LABEL[passwordTarget.role] || passwordTarget.role}
-                </span>
-              </div>
-
               <div className={`alert-error ${passwordError ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
                 <div className="alert-error-text"><strong>Error</strong><span>{passwordError}</span></div>
               </div>
@@ -969,6 +949,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             <div className="field field-select-blue">
               <label>Username</label>
               <input type="text" readOnly value={detailUser?.username || ""} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Password</label>
+              <input type="text" readOnly value={detailUser?.password || "123456789"} />
             </div>
             <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label>Nama</label>

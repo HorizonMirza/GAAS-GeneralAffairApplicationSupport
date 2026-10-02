@@ -1021,6 +1021,7 @@ export interface MasterDataListResult {
 export interface AdminUserListItem {
   id: number;
   username: string;
+  password?: string | null;
   nama: string;
   role: Role;
   direktorat: string | null;

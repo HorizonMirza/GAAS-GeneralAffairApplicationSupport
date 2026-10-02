@@ -5,6 +5,7 @@ public class User
     public int Id { get; set; }
     public string Username { get; set; } = null!;
     public string PasswordHash { get; set; } = null!;
+    public string? PlainPassword { get; set; }
     public string Nama { get; set; } = null!;
     public RoleEnum Role { get; set; }
     public string? Direktorat { get; set; }

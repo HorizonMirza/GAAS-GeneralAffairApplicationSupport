@@ -555,6 +555,7 @@ public class OrgAdminController : ApiControllerBase
             {
                 Username = username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                PlainPassword = password,
                 Nama = nama,
                 Role = role,
                 Direktorat = direktorat,

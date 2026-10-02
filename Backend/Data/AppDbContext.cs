@@ -222,6 +222,7 @@ public class AppDbContext : DbContext
             e.Property(u => u.PasswordChangedAt).HasColumnName("password_changed_at");
             e.Property(u => u.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             e.Property(u => u.MustChangePassword).HasColumnName("must_change_password").HasDefaultValue(false);
+            e.Property(u => u.PlainPassword).HasColumnName("plain_password").HasMaxLength(255);
         });
 
         modelBuilder.Entity<Pengiriman>(e =>
