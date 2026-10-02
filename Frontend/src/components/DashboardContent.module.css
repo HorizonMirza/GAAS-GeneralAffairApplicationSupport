@@ -197,7 +197,7 @@
   border-radius: 8px;
   background: var(--bg-surface);
   box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
-  color: #000000;
+  color: var(--text-strong);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 0.95rem !important;
   font-weight: 400 !important;
@@ -695,7 +695,7 @@
   position: absolute;
   top: -19px;
   left: 50%;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.61rem;
   font-weight: 700;
   transform: translateX(-50%);
@@ -773,7 +773,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.68rem;
   font-weight: 700;
   text-align: center;
@@ -790,7 +790,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -896,7 +896,7 @@
   gap: 8px;
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  color: #000000;
+  color: var(--text-strong);
   background: var(--bg-surface);
   box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
@@ -913,7 +913,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #000000;
+  color: var(--text-strong);
   font-family: inherit;
   font-size: 0.95rem !important;
   font-weight: 400 !important;
@@ -1009,7 +1009,7 @@
 
 .divisionRowHeader strong {
   overflow: hidden;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.72rem;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -1018,7 +1018,7 @@
 
 .divisionRowHeader em {
   flex: none;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.7rem;
   font-style: normal;
   font-variant-numeric: tabular-nums;
@@ -1072,7 +1072,7 @@
 
 .trendAxisText,
 .trendMonthLabel {
-  fill: #000000;
+  fill: var(--text-strong);
   font-family: inherit;
   font-size: 11px;
 }
@@ -1102,7 +1102,7 @@
 }
 
 .trendPoint > text:not(.trendMonthLabel) {
-  fill: #000000;
+  fill: var(--text-strong);
   font-family: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -1147,13 +1147,13 @@
 .insightPanel .spendingHeader p,
 .insightPanel .spendingTotal,
 .insightPanel .spendingItemHeader {
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .insightPanel .trendAxisText,
 .insightPanel .trendMonthLabel,
 .insightPanel .trendPoint > text {
-  fill: #000000;
+  fill: var(--text-strong);
 }
 
 .spendingPanel {
@@ -1194,13 +1194,13 @@
   justify-content: space-between;
   gap: 18px;
   border-top: 1px solid var(--border-subtle);
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingTotal span {
   font-size: 1rem;
   font-weight: 700;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingTotal strong {
@@ -1209,7 +1209,7 @@
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingBreakdown {
@@ -1233,7 +1233,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingItemHeader > strong:first-child {
@@ -1243,7 +1243,7 @@
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingItemHeader > strong {
@@ -1251,7 +1251,7 @@
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .spendingTrack {
@@ -1315,14 +1315,14 @@
 
 .resourceScheduleHeader h2 {
   margin: 0;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.98rem;
   font-weight: 700;
 }
 
 .resourceScheduleHeader p {
   margin: 3px 0 0;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.72rem;
 }
 
@@ -1358,7 +1358,7 @@
 
 .resourceTimelineScale > strong {
   padding: 0 10px;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.64rem;
   font-weight: 700;
 }
@@ -1376,7 +1376,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.62rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1397,7 +1397,7 @@
   padding: 0 10px;
   display: block;
   overflow: hidden;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.68rem;
   font-weight: 600;
   line-height: 34px;
@@ -1513,7 +1513,7 @@
 .legacyPanelHeader h2,
 .performancePanel h2 {
   margin: 0;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.98rem;
   font-weight: 700;
 }
@@ -1521,7 +1521,7 @@
 .legacyPanelHeader p,
 .performancePanel p {
   margin: 3px 0 0;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.72rem;
 }
 
@@ -1609,17 +1609,17 @@
 
 .queueRequest strong {
   font-size: 0.84rem;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .queueRequest span {
   margin-top: 3px;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.72rem;
 }
 
 .queueAge {
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
@@ -1642,7 +1642,7 @@
   margin-bottom: -7px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .progressArea {
@@ -1707,7 +1707,7 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.74rem;
 }
 
@@ -1715,7 +1715,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .progressLegend i {
@@ -1725,7 +1725,7 @@
 }
 
 .progressLegend strong {
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .legendCompleted { background: #16a34a; }
@@ -1779,23 +1779,23 @@
 
 .activityPanelTall .legacyPanelHeader h2,
 .activityPanelTall .legacyPanelHeader p {
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .activityRow strong {
   font-size: 0.74rem;
   font-weight: 700;
-  color: #000000;
+  color: var(--text-strong);
 }
 
 .activityRow small {
   margin-top: 3px;
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.68rem;
 }
 
 .activityRow time {
-  color: #000000;
+  color: var(--text-strong);
   font-size: 0.68rem;
   white-space: nowrap;
 }
