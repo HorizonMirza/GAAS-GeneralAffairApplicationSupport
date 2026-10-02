@@ -158,6 +158,9 @@ public class UsersAdminController : ApiControllerBase
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
 
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password Super Admin salah" });
+
         if (payload.Nama != null)
         {
             var nama = payload.Nama.Trim();
@@ -287,10 +290,13 @@ public class UsersAdminController : ApiControllerBase
     // Cheaper than a real session registry (no way to list which sessions are active or from
     // where) but covers the actual ask - "kick this account out right now".
     [HttpPost("{id:int}/force-logout")]
-    public async Task<IActionResult> ForceLogout(int id)
+    public async Task<IActionResult> ForceLogout(int id, [FromBody] AdminPasswordConfirmRequest payload)
     {
         var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
+            return StatusCode(400, new { detail = "Password Super Admin salah" });
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
@@ -303,10 +309,13 @@ public class UsersAdminController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/deactivate")]
-    public async Task<IActionResult> Deactivate(int id)
+    public async Task<IActionResult> Deactivate(int id, [FromBody] AdminPasswordConfirmRequest payload)
     {
         var (currentUser, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, currentUser!.PasswordHash))
+            return StatusCode(400, new { detail = "Password Super Admin salah" });
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
@@ -350,10 +359,13 @@ public class UsersAdminController : ApiControllerBase
     // main auth cookie is overwritten with a freshly minted token for the target account, so every
     // other endpoint in the app needs zero changes - it just sees a normal session for that user.
     [HttpPost("{id:int}/impersonate")]
-    public async Task<IActionResult> Impersonate(int id)
+    public async Task<IActionResult> Impersonate(int id, [FromBody] AdminPasswordConfirmRequest payload)
     {
         var (currentUser, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
         if (error != null) return error;
+
+        if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, currentUser!.PasswordHash))
+            return StatusCode(400, new { detail = "Password Super Admin salah" });
 
         if (Request.Cookies.ContainsKey(CurrentUserService.ImpersonatorCookieName))
             return StatusCode(400, new { detail = "Sedang dalam mode Login As - kembali ke Super Admin dahulu" });

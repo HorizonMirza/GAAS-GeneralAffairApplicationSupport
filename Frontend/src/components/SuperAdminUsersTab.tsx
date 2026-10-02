@@ -13,6 +13,7 @@ import ModalOverlay from "@/components/ModalOverlay";
 import PasswordField from "@/components/PasswordField";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import {
+  ListChecks,
   SquarePen,
   KeyRound,
   LogOut,
@@ -50,9 +51,19 @@ interface UserFormState {
   departemen: string;
   email: string;
   noHp: string;
+  adminPassword?: string;
 }
 
-const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "" };
+const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "", adminPassword: "" };
+
+interface PasswordActionState {
+  type: "force-logout" | "impersonate" | "delete";
+  user: AdminUserListItem;
+  title: string;
+  message: string;
+  actionButtonText: string;
+  actionButtonVariant: "danger" | "primary";
+}
 
 const PASSWORD_REQUIREMENTS = [
   { regex: /[0-9]/, text: "Minimal 1 angka" },
@@ -99,6 +110,12 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const rowMenu = useRowMenu(items);
 
   const [activeSuperAdminCount, setActiveSuperAdminCount] = useState(1);
+  const [detailUser, setDetailUser] = useState<AdminUserListItem | null>(null);
+  const [actionModal, setActionModal] = useState<PasswordActionState | null>(null);
+  const [actionPassword, setActionPassword] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+
   const [formOpen, setFormOpen] = useState<"create" | AdminUserListItem | null>(null);
   const [form, setForm] = useState<UserFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
@@ -180,6 +197,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       departemen: user.departemen || "",
       email: user.email || "",
       noHp: user.noHp || "",
+      adminPassword: "",
     });
     setFormError("");
     setFormOpen(user);
@@ -203,6 +221,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
     if (!form.email.trim()) { setFormError("Email wajib diisi"); return; }
     if (!form.noHp.trim()) { setFormError("No. HP wajib diisi"); return; }
+
+    if (formOpen !== "create" && !form.adminPassword?.trim()) {
+      setFormError("Password Super Admin wajib diisi");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -232,6 +255,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           clearDepartemen: !form.departemen,
           email: form.email.trim() || null,
           noHp: form.noHp.trim() || null,
+          password: form.adminPassword?.trim(),
         });
         setFormOpen(null);
         showToast("Akun berhasil diperbarui");
@@ -242,22 +266,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     } finally {
       setSaving(false);
     }
-  }
-
-  function handleResetPassword(user: AdminUserListItem) {
-    confirm(`Reset password akun "${user.nama}" (${user.username})? Password lama tidak akan berlaku lagi.`, async () => {
-      try {
-        const result = await api.resetAdminUserPassword(user.id);
-        showToast("Password berhasil direset");
-        setCredentials({
-          title: `Password Baru: ${user.nama}`,
-          accounts: [{ username: user.username, nama: user.nama, role: user.role, password: result.password }],
-        });
-        await load();
-      } catch (err) {
-        showToast(errorMessage(err), "error");
-      }
-    }, "Reset Password");
   }
 
   function openChangePassword(user: AdminUserListItem) {
@@ -315,18 +323,17 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
     }
   }
 
-  // "Paksa logout" - memutus semua sesi login akun ini seketika tanpa mengubah passwordnya (lihat
-  // UsersAdminController.ForceLogout) - akun bisa langsung login lagi dengan password yang sama.
   function handleForceLogout(user: AdminUserListItem) {
-    confirm(`Paksa logout akun "${user.nama}" (${user.username})? Semua sesi login akun ini akan terputus seketika - password tidak berubah.`, async () => {
-      try {
-        await api.forceLogoutAdminUser(user.id);
-        showToast("Akun berhasil dipaksa logout");
-        await load();
-      } catch (err) {
-        showToast(errorMessage(err), "error");
-      }
-    }, "Paksa Logout");
+    setActionModal({
+      type: "force-logout",
+      user,
+      title: "Konfirmasi Paksa Logout",
+      message: `Paksa logout akun "${user.nama}" (${user.username})? Semua sesi login akun ini akan terputus seketika - password tidak berubah.`,
+      actionButtonText: "Paksa Logout",
+      actionButtonVariant: "primary",
+    });
+    setActionPassword("");
+    setActionError("");
   }
 
   async function handleToggleActive(user: AdminUserListItem) {
@@ -345,38 +352,41 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         }
       }
     }
-    const actionText = user.isActive ? "menghapus" : "mengaktifkan";
-    confirm(`Yakin ingin ${actionText} akun "${user.nama}" (${user.username})?`, async () => {
-      try {
-        if (user.isActive) await api.deactivateAdminUser(user.id);
-        else await api.activateAdminUser(user.id);
-        showToast(`Akun berhasil ${user.isActive ? "dihapus" : "diaktifkan"}`);
-        await load();
-      } catch (err) {
-        showToast(errorMessage(err), "error");
-      }
-    }, user.isActive ? "Delete" : "Aktifkan");
-  }
-
-  // "Login As" - bertindak penuh sebagai akun ini (approve/reject/edit/buat baru, dst persis
-  // seperti akun tsb login sendiri). Lihat UsersAdminController.Impersonate untuk mekanismenya.
-  function handleImpersonate(user: AdminUserListItem) {
-    confirm(
-      `Login As akun "${user.nama}" (${user.username})? Anda akan bertindak penuh sebagai akun ini sampai memilih "Kembali ke Super Admin".`,
-      async () => {
-        setImpersonating(user.id);
+    if (user.isActive) {
+      setActionModal({
+        type: "delete",
+        user,
+        title: "Konfirmasi Hapus Akun",
+        message: `Yakin ingin menghapus akun "${user.nama}" (${user.username})?`,
+        actionButtonText: "Delete",
+        actionButtonVariant: "danger",
+      });
+      setActionPassword("");
+      setActionError("");
+    } else {
+      confirm(`Yakin ingin mengaktifkan akun "${user.nama}" (${user.username})?`, async () => {
         try {
-          await api.impersonateUser(user.id);
-          await refresh();
-          router.push("/dashboard");
+          await api.activateAdminUser(user.id);
+          showToast("Akun berhasil diaktifkan");
+          await load();
         } catch (err) {
           showToast(errorMessage(err), "error");
-        } finally {
-          setImpersonating(null);
         }
-      },
-      "Login As"
-    );
+      }, "Aktifkan");
+    }
+  }
+
+  function handleImpersonate(user: AdminUserListItem) {
+    setActionModal({
+      type: "impersonate",
+      user,
+      title: "Konfirmasi Login As",
+      message: `Login As akun "${user.nama}" (${user.username})? Anda akan bertindak penuh sebagai akun ini sampai memilih "Kembali ke Super Admin".`,
+      actionButtonText: "Login As",
+      actionButtonVariant: "primary",
+    });
+    setActionPassword("");
+    setActionError("");
   }
 
 
@@ -606,11 +616,26 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               onClick={() => {
                 const u = rowMenu.menuItem!;
                 rowMenu.close();
+                setDetailUser(u);
+              }}
+            >
+              <ListChecks width={16} height={16} />
+              Detail
+            </button>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
                 openEdit(u);
               }}
             >
               <SquarePen width={16} height={16} />
-              Updates
+              Edit Akun
             </button>
           </motion.div>
 
@@ -626,21 +651,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             >
               <KeyRound width={16} height={16} />
               Ganti Password
-            </button>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <button
-              type="button"
-              className="row-menu-item"
-              onClick={() => {
-                const u = rowMenu.menuItem!;
-                rowMenu.close();
-                handleResetPassword(u);
-              }}
-            >
-              <KeyRound width={16} height={16} />
-              Reset Password Acak
             </button>
           </motion.div>
 
@@ -930,6 +940,22 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               <input id="user-form-nohp" type="text" required value={form.noHp} onChange={(e) => setForm((f) => ({ ...f, noHp: e.target.value }))} />
             </div>
 
+            {formOpen !== "create" && (
+              <div className="field field-select-blue" style={{ marginTop: 12 }}>
+                <PasswordField
+                  id="user-edit-admin-password"
+                  label="Password Super Admin"
+                  placeholder="Masukkan Password Super Admin"
+                  value={form.adminPassword || ""}
+                  onChange={(v) => {
+                    setForm((f) => ({ ...f, adminPassword: v }));
+                    setFormError("");
+                  }}
+                  hint="Diperlukan untuk memverifikasi tindakan edit akun ini."
+                />
+              </div>
+            )}
+
             <div className="modal-actions">
               <button
                 type="submit"
@@ -938,6 +964,159 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 disabled={saving}
               >
                 {saving ? "Menyimpan..." : "Save"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </ModalOverlay>
+
+      <ModalOverlay
+        open={!!detailUser}
+        onClose={() => setDetailUser(null)}
+        className={`modal-overlay modal-overlay-centered ${detailUser ? "" : "hidden"}`}
+      >
+        <div className="modal" style={{ maxWidth: 480 }}>
+          <div className="modal-header">
+            <h3>Detail Akun</h3>
+            <button type="button" className="modal-close" onClick={() => setDetailUser(null)}>&times;</button>
+          </div>
+
+          <div className="user-form-modal">
+            <div className="field field-select-blue">
+              <label>Username</label>
+              <input type="text" readOnly value={detailUser?.username || ""} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Nama</label>
+              <input type="text" readOnly value={detailUser?.nama || ""} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Role</label>
+              <input type="text" readOnly value={detailUser ? (ROLE_LABEL[detailUser.role] || detailUser.role) : ""} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Direktorat</label>
+              <input type="text" readOnly value={detailUser?.direktorat || "Tidak Terkait Direktorat"} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Divisi</label>
+              <input type="text" readOnly value={detailUser?.divisi || "Tidak Terkait Divisi"} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Departemen</label>
+              <input type="text" readOnly value={detailUser?.departemen || "Tanpa Departmen"} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>Email</label>
+              <input type="text" readOnly value={detailUser?.email || "-"} />
+            </div>
+            <div className="field field-select-blue" style={{ marginTop: 12 }}>
+              <label>No. HP</label>
+              <input type="text" readOnly value={detailUser?.noHp || "-"} />
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ width: "auto" }}
+                onClick={() => setDetailUser(null)}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalOverlay>
+
+      <ModalOverlay
+        open={!!actionModal}
+        onClose={() => { if (!actionBusy) { setActionModal(null); setActionPassword(""); setActionError(""); } }}
+        className={`modal-overlay modal-overlay-centered ${actionModal ? "" : "hidden"}`}
+      >
+        <div className="modal" style={{ maxWidth: 480 }}>
+          <div className="modal-header">
+            <h3>{actionModal?.title || "Konfirmasi"}</h3>
+            <button
+              type="button"
+              className="modal-close"
+              disabled={actionBusy}
+              onClick={() => { setActionModal(null); setActionPassword(""); setActionError(""); }}
+            >
+              &times;
+            </button>
+          </div>
+
+          <div style={{ marginBottom: 16, fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+            {actionModal?.message}
+          </div>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!actionPassword.trim()) {
+                setActionError("Password Super Admin wajib diisi");
+                return;
+              }
+              if (!actionModal) return;
+              setActionBusy(true);
+              setActionError("");
+              try {
+                if (actionModal.type === "force-logout") {
+                  await api.forceLogoutAdminUser(actionModal.user.id, actionPassword.trim());
+                  showToast("Akun berhasil dipaksa logout");
+                  await load();
+                } else if (actionModal.type === "impersonate") {
+                  setImpersonating(actionModal.user.id);
+                  await api.impersonateUser(actionModal.user.id, actionPassword.trim());
+                  await refresh();
+                  router.push("/dashboard");
+                } else if (actionModal.type === "delete") {
+                  await api.deactivateAdminUser(actionModal.user.id, actionPassword.trim());
+                  showToast("Akun berhasil dihapus");
+                  await load();
+                }
+                setActionModal(null);
+                setActionPassword("");
+              } catch (err) {
+                setActionError(errorMessage(err));
+              } finally {
+                setActionBusy(false);
+                setImpersonating(null);
+              }
+            }}
+          >
+            <div className="field field-select-blue">
+              <PasswordField
+                id="action-admin-password"
+                label="Password Super Admin"
+                placeholder="Masukkan Password Super Admin"
+                value={actionPassword}
+                error={actionError}
+                onChange={(v) => {
+                  setActionPassword(v);
+                  if (actionError) setActionError("");
+                }}
+              />
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ width: "auto" }}
+                disabled={actionBusy}
+                onClick={() => { setActionModal(null); setActionPassword(""); setActionError(""); }}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className={`btn ${actionModal?.actionButtonVariant === "danger" ? "btn-confirm-danger" : "btn-primary"}`}
+                style={{ width: "auto" }}
+                disabled={actionBusy}
+              >
+                {actionBusy ? "Memproses..." : actionModal?.actionButtonText}
               </button>
             </div>
           </form>

@@ -34,7 +34,10 @@ public record CreateUserRequest(
 public record UpdateUserRequest(
     string? Nama, string? Email, string? NoHp, RoleEnum? Role,
     string? Direktorat, string? Divisi, string? Departemen,
-    bool ClearDivisi = false, bool ClearDepartemen = false);
+    bool ClearDivisi = false, bool ClearDepartemen = false,
+    string? Password = null);
+
+public record AdminPasswordConfirmRequest(string Password);
 
 // One-time plaintext password - see ProvisionedAccountOut's own comment in OrgAdminDtos.cs, same
 // idea.

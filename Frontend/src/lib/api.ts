@@ -998,13 +998,16 @@ export const api = {
     apiRequest<ResetPasswordResult>(`/users-admin/${id}/reset-password`, { method: "POST" }),
   changeAdminUserPassword: (id: number, payload: AdminChangePasswordPayload) =>
     apiRequest<AdminUserListItem>(`/users-admin/${id}/password`, { method: "PUT", body: payload }),
-  deactivateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/deactivate`, { method: "POST" }),
+  deactivateAdminUser: (id: number, password: string) =>
+    apiRequest<AdminUserListItem>(`/users-admin/${id}/deactivate`, { method: "POST", body: { password } }),
   activateAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/activate`, { method: "POST" }),
   // Revokes every session already issued for this account (same PasswordChangedAt-bump mechanism
   // as reset-password) without touching the account's actual password - it can log back in
   // immediately with what it already knows.
-  forceLogoutAdminUser: (id: number) => apiRequest<AdminUserListItem>(`/users-admin/${id}/force-logout`, { method: "POST" }),
-  impersonateUser: (id: number) => apiRequest<ImpersonateResult>(`/users-admin/${id}/impersonate`, { method: "POST" }),
+  forceLogoutAdminUser: (id: number, password: string) =>
+    apiRequest<AdminUserListItem>(`/users-admin/${id}/force-logout`, { method: "POST", body: { password } }),
+  impersonateUser: (id: number, password: string) =>
+    apiRequest<ImpersonateResult>(`/users-admin/${id}/impersonate`, { method: "POST", body: { password } }),
   endImpersonation: () => apiRequest<{ message: string }>("/users-admin/impersonate/end", { method: "POST" }),
   listImpersonationLog: (params: { page?: number; limit?: number }) =>
     apiRequest<ImpersonationLogListResponse>("/users-admin/impersonation-log", { params }),

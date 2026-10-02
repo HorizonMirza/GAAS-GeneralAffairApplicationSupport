@@ -1064,6 +1064,7 @@ export interface UpdateUserPayload {
   departemen?: string | null;
   clearDivisi?: boolean;
   clearDepartemen?: boolean;
+  password?: string;
 }
 
 export interface CreatedUserResult {
