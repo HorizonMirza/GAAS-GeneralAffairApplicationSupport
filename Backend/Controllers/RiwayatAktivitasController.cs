@@ -119,6 +119,9 @@ public class RiwayatAktivitasController : ApiControllerBase
         [FromQuery] DateOnly? tanggal = null,
         [FromQuery] string? modul = null,
         [FromQuery(Name = "actor_id")] int? actorId = null,
+        [FromQuery] string? role = null,
+        [FromQuery] string? divisi = null,
+        [FromQuery] string? departemen = null,
         [FromQuery] string? action = null,
         [FromQuery(Name = "dari_tanggal")] DateOnly? dariTanggal = null,
         [FromQuery(Name = "sampai_tanggal")] DateOnly? sampaiTanggal = null)
@@ -150,6 +153,21 @@ public class RiwayatAktivitasController : ApiControllerBase
         {
             where.Add("actor_id = @actorId");
             parameters.Add(new NpgsqlParameter("actorId", actorId.Value));
+        }
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            where.Add("actor_role = @role");
+            parameters.Add(new NpgsqlParameter("role", role.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(divisi))
+        {
+            where.Add("actor_divisi = @divisi");
+            parameters.Add(new NpgsqlParameter("divisi", divisi.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(departemen))
+        {
+            where.Add("actor_departemen = @departemen");
+            parameters.Add(new NpgsqlParameter("departemen", departemen.Trim()));
         }
         if (!string.IsNullOrEmpty(action))
         {

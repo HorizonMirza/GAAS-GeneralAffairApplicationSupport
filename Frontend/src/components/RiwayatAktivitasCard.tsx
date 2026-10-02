@@ -9,14 +9,15 @@ import {
   RIWAYAT_ACTION_OPTIONS,
   RIWAYAT_MODUL_HREF,
   RIWAYAT_MODUL_LABEL,
+  ROLE_LABEL,
   riwayatActionMeta,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
-import type { RiwayatAktivitas, RiwayatAktor, RiwayatModul, Role } from "@/lib/types";
+import type { RiwayatAktivitas, RiwayatModul, Role } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
+import { useAuth } from "@/lib/auth-context";
 import SearchableSelect from "@/components/SearchableSelect";
-import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 
 interface FilterState {
@@ -26,10 +27,10 @@ interface FilterState {
   bulan: string;
   tanggal: string;
   modul: RiwayatModul | "";
-  actorId: string;
+  role: Role | "";
+  divisi: string;
+  departemen: string;
   action: string;
-  dariTanggal: string;
-  sampaiTanggal: string;
 }
 
 const EMPTY_FILTERS: FilterState = {
@@ -39,13 +40,14 @@ const EMPTY_FILTERS: FilterState = {
   bulan: "",
   tanggal: "",
   modul: "",
-  actorId: "",
+  role: "",
+  divisi: "",
+  departemen: "",
   action: "",
-  dariTanggal: "",
-  sampaiTanggal: "",
 };
 
 const MODUL_OPTIONS = Object.keys(RIWAYAT_MODUL_LABEL) as RiwayatModul[];
+const ROLE_OPTIONS = Object.keys(ROLE_LABEL) as Role[];
 
 // APPROVED_L1/REJECTED_L1 name a track, not a fixed role - an Approval Divisi and an Approval
 // Departemen both produce the same action code, so the actor's own role decides the wording,
@@ -70,13 +72,13 @@ const BADGE_CLASS: Record<"neutral" | "approve" | "reject", string> = {
 // did this person do last week") had no answer inside the app. This is the Super Admin view over
 // the backend's union of all seven.
 export default function RiwayatAktivitasCard() {
+  const { orgStructure } = useAuth();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [searchInput, setSearchInput] = useState("");
   const [items, setItems] = useState<RiwayatAktivitas[]>([]);
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
-  const [aktor, setAktor] = useState<RiwayatAktor[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const filterWrapRef = useRef<HTMLDivElement>(null);
 
@@ -101,10 +103,10 @@ export default function RiwayatAktivitasCard() {
         bulan: filters.bulan,
         tanggal: filters.tanggal,
         modul: filters.modul,
-        actorId: filters.actorId ? Number(filters.actorId) : "",
+        role: filters.role,
+        divisi: filters.divisi,
+        departemen: filters.departemen,
         action: filters.action,
-        dariTanggal: filters.dariTanggal,
-        sampaiTanggal: filters.sampaiTanggal,
       });
       setItems(data.items);
       setTotal(data.total);
@@ -121,11 +123,11 @@ export default function RiwayatAktivitasCard() {
     load();
   }, [load]);
 
-  // Loaded once: the actor list only grows when someone acts, and a stale entry here costs
-  // nothing (the row it filters to still exists).
-  useEffect(() => {
-    api.listRiwayatAktor().then(setAktor).catch(() => setAktor([]));
-  }, []);
+  // Cascading departemen options based on selected divisi
+  const filterDivisiNode = filters.divisi
+    ? (orgStructure?.direktoratTree.flatMap((d) => d.divisi) || []).find((v) => v.nama === filters.divisi)
+    : null;
+  const filterDepartemenOptions = filterDivisiNode ? filterDivisiNode.departemen : orgStructure?.departemen || [];
 
   // Any filter change resets to page 1 - staying on page 7 of a narrower result set would show
   // an empty table with no explanation.
@@ -143,14 +145,7 @@ export default function RiwayatAktivitasCard() {
   const pageButtons: number[] = [];
   for (let p = pageStart; p <= pageEnd; p++) pageButtons.push(p);
 
-  const aktorLabel = (id: string) => {
-    const found = aktor.find((a) => String(a.id) === id);
-    if (!found) return id;
-    const role = LOG_ROLE_LABEL[found.role as Role] || found.role;
-    return `${found.nama} (${role})`;
-  };
-
-  const hasOtherFilters = !!filters.modul || !!filters.actorId || !!filters.action || !!filters.dariTanggal || !!filters.sampaiTanggal;
+  const hasOtherFilters = !!filters.modul || !!filters.role || !!filters.divisi || !!filters.departemen || !!filters.action;
 
   return (
     <div className="card">
@@ -208,16 +203,37 @@ export default function RiwayatAktivitasCard() {
                 />
               </div>
               <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="filter-riwayat-aktor">Pelaku</label>
+                <label htmlFor="filter-riwayat-role">Role</label>
                 <SearchableSelect
-                  id="filter-riwayat-aktor"
-                  value={filters.actorId}
-                  onChange={(v) => updateFilter({ actorId: v })}
-                  options={aktor.map((a) => String(a.id))}
-                  getLabel={aktorLabel}
-                  clearLabel="Semua Pelaku"
-                  placeholder="Semua Pelaku"
-                  emptyOptionsText="Belum ada aktivitas tercatat"
+                  id="filter-riwayat-role"
+                  value={filters.role}
+                  onChange={(v) => updateFilter({ role: v as Role | "" })}
+                  options={ROLE_OPTIONS}
+                  getLabel={(v) => ROLE_LABEL[v as Role] || v}
+                  clearLabel="Semua Role"
+                  placeholder="Semua Role"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="filter-riwayat-divisi">Divisi</label>
+                <SearchableSelect
+                  id="filter-riwayat-divisi"
+                  value={filters.divisi}
+                  onChange={(v) => updateFilter({ divisi: v, departemen: "" })}
+                  options={orgStructure?.divisi || []}
+                  clearLabel="Semua Divisi"
+                  placeholder="Semua Divisi"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="filter-riwayat-departemen">Departemen</label>
+                <SearchableSelect
+                  id="filter-riwayat-departemen"
+                  value={filters.departemen}
+                  onChange={(v) => updateFilter({ departemen: v })}
+                  options={filterDepartemenOptions}
+                  clearLabel="Semua Departemen"
+                  placeholder="Semua Departemen"
                 />
               </div>
               <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
@@ -230,24 +246,6 @@ export default function RiwayatAktivitasCard() {
                   getLabel={(v) => RIWAYAT_ACTION_FILTER_LABEL[v] || riwayatActionMeta("ekspedisi", v).label}
                   clearLabel="Semua Aksi"
                   placeholder="Semua Aksi"
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="filter-riwayat-dari">Dari Tanggal (Kustom)</label>
-                <DateFilterPicker
-                  id="filter-riwayat-dari"
-                  value={filters.dariTanggal}
-                  onChange={(v) => updateFilter({ dariTanggal: v })}
-                  placeholder="Semua Tanggal"
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="filter-riwayat-sampai">Sampai Tanggal (Kustom)</label>
-                <DateFilterPicker
-                  id="filter-riwayat-sampai"
-                  value={filters.sampaiTanggal}
-                  onChange={(v) => updateFilter({ sampaiTanggal: v })}
-                  placeholder="Semua Tanggal"
                 />
               </div>
             </div>

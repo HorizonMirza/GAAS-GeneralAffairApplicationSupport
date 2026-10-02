@@ -1047,6 +1047,9 @@ export interface ListRiwayatParams {
   tanggal?: string;
   modul?: RiwayatModul | "";
   actorId?: number | "";
+  role?: string;
+  divisi?: string;
+  departemen?: string;
   action?: string;
   dariTanggal?: string;
   sampaiTanggal?: string;
@@ -1061,6 +1064,9 @@ function riwayatListParams(p: ListRiwayatParams) {
     tanggal: p.tanggal || undefined,
     modul: p.modul || undefined,
     actor_id: p.actorId || undefined,
+    role: p.role || undefined,
+    divisi: p.divisi || undefined,
+    departemen: p.departemen || undefined,
     action: p.action || undefined,
     dari_tanggal: p.dariTanggal || undefined,
     sampai_tanggal: p.sampaiTanggal || undefined,
