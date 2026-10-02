@@ -3826,13 +3826,14 @@ table.data-table {
   padding: 12px 14px;
   text-align: left;
   font-size: 0.85rem;
+  color: #000;
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
 }
 
 .data-table th {
   background: var(--bg-surface-alt);
-  color: var(--text-secondary);
+  color: #000;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 0.7rem;
