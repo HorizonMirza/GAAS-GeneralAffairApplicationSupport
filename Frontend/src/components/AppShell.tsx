@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, Settings, Shield, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Settings, Shield, ShieldCheck, Undo2, Wrench } from "lucide-react";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";
@@ -348,6 +348,18 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [endingImpersonation, setEndingImpersonation] = useState(false);
+  const [demoVariant, setDemoVariant] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("gaas_login_as_variant");
+      if (saved && ["1", "2", "3", "4", "5"].includes(saved)) {
+        setDemoVariant(Number(saved) as 1 | 2 | 3 | 4 | 5);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
@@ -592,13 +604,213 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         {me.impersonatedBy && (
-          <div className="impersonation-banner">
-            <span>
-              Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
-            </span>
-            <button type="button" className="btn btn-secondary" disabled={endingImpersonation} onClick={handleEndImpersonation}>
-              Kembali ke Super Admin
-            </button>
+          <div className="impersonation-banner-wrapper">
+            {demoVariant === 1 && (
+              <div className="impersonation-banner-v1">
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span className="impersonation-pill-badge green-solid">
+                    <ShieldCheck width={13} height={13} />
+                    Login As
+                  </span>
+                  <span>
+                    Bertindak sebagai <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) — sesi {me.impersonatedBy.nama}
+                  </span>
+                  <div className="impersonation-demo-switcher">
+                    <span className="demo-label">Demo:</span>
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
+                        onClick={() => {
+                          setDemoVariant(v as 1 | 2 | 3 | 4 | 5);
+                          localStorage.setItem("gaas_login_as_variant", String(v));
+                        }}
+                        title={`Pilih Style Demo ${v}`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn impersonation-btn-emerald-outline"
+                  disabled={endingImpersonation}
+                  onClick={handleEndImpersonation}
+                >
+                  <Undo2 width={15} height={15} />
+                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+                </button>
+              </div>
+            )}
+
+            {demoVariant === 2 && (
+              <div className="impersonation-banner-v2">
+                <div className="impersonation-banner-v2-card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="impersonation-pulsing-dot" />
+                      <span className="impersonation-pill-badge green-soft">
+                        <ShieldCheck width={13} height={13} />
+                        Mode Impersonasi
+                      </span>
+                    </div>
+                    <span>
+                      Login As: <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) · sesi Super Admin
+                    </span>
+                    <div className="impersonation-demo-switcher">
+                      <span className="demo-label">Demo:</span>
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          className={`demo-btn ${demoVariant === v ? "active" : ""}`}
+                          onClick={() => {
+                            setDemoVariant(v as 1 | 2 | 3 | 4 | 5);
+                            localStorage.setItem("gaas_login_as_variant", String(v));
+                          }}
+                          title={`Pilih Style Demo ${v}`}
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-confirm-approve"
+                    style={{ width: "auto", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 700 }}
+                    disabled={endingImpersonation}
+                    onClick={handleEndImpersonation}
+                  >
+                    <Undo2 width={15} height={15} />
+                    {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {demoVariant === 3 && (
+              <div className="impersonation-banner-v3">
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span className="impersonation-pill-badge white-soft">
+                    <ShieldCheck width={13} height={13} />
+                    Sesi Aktif
+                  </span>
+                  <span>
+                    Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) — sesi {me.impersonatedBy.nama}
+                  </span>
+                  <div className="impersonation-demo-switcher" style={{ background: "rgba(255,255,255,0.2)" }}>
+                    <span className="demo-label" style={{ color: "#ffffff" }}>Demo:</span>
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
+                        style={{ color: "#ffffff", ...(demoVariant === v ? { background: "#ffffff", color: "#065f46" } : {}) }}
+                        onClick={() => {
+                          setDemoVariant(v as 1 | 2 | 3 | 4 | 5);
+                          localStorage.setItem("gaas_login_as_variant", String(v));
+                        }}
+                        title={`Pilih Style Demo ${v}`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn impersonation-btn-white-blue"
+                  disabled={endingImpersonation}
+                  onClick={handleEndImpersonation}
+                >
+                  <Undo2 width={15} height={15} />
+                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+                </button>
+              </div>
+            )}
+
+            {demoVariant === 4 && (
+              <div className="impersonation-banner-v4">
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ background: "#047857", color: "#ffffff", padding: "3px 8px", borderRadius: 6, fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    SUPER ADMIN SESSION
+                  </span>
+                  <span>
+                    Bertindak sebagai: <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]})
+                  </span>
+                  <div className="impersonation-demo-switcher">
+                    <span className="demo-label">Demo:</span>
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
+                        onClick={() => {
+                          setDemoVariant(v as 1 | 2 | 3 | 4 | 5);
+                          localStorage.setItem("gaas_login_as_variant", String(v));
+                        }}
+                        title={`Pilih Style Demo ${v}`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "auto", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 700 }}
+                  disabled={endingImpersonation}
+                  onClick={handleEndImpersonation}
+                >
+                  <Undo2 width={15} height={15} />
+                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+                </button>
+              </div>
+            )}
+
+            {demoVariant === 5 && (
+              <div className="impersonation-banner-v5">
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span className="impersonation-pulsing-dot" />
+                  <strong style={{ color: "#065f46", textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "0.03em" }}>Login As:</strong>
+                  <strong>{me.nama}</strong>
+                  <span style={{ opacity: 0.4 }}>|</span>
+                  <span>{ROLE_LABEL_FULL[me.role]}</span>
+                  <span style={{ opacity: 0.4 }}>|</span>
+                  <span style={{ color: "#059669", fontWeight: 500 }}>sesi Super Admin</span>
+                  <div className="impersonation-demo-switcher">
+                    <span className="demo-label">Demo:</span>
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
+                        onClick={() => {
+                          setDemoVariant(v as 1 | 2 | 3 | 4 | 5);
+                          localStorage.setItem("gaas_login_as_variant", String(v));
+                        }}
+                        title={`Pilih Style Demo ${v}`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn impersonation-btn-slim-emerald"
+                  disabled={endingImpersonation}
+                  onClick={handleEndImpersonation}
+                >
+                  <Undo2 width={14} height={14} />
+                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
