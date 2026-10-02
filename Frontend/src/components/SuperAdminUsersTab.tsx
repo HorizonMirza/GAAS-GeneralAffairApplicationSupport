@@ -792,10 +792,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
           {passwordTarget && (
             <form onSubmit={handleChangePasswordSubmit}>
-              <div className={`alert-error ${passwordError ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
-                <div className="alert-error-text"><strong>Error</strong><span>{passwordError}</span></div>
-              </div>
-
               <PasswordField
                 id="admin-user-new-password"
                 label="New Password"
@@ -825,6 +821,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 />
               </div>
 
+              <div className={`alert-error ${passwordError ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
+                <div className="alert-error-text"><strong>Error</strong><span>{passwordError}</span></div>
+              </div>
+
               <div className="modal-actions" style={{ marginTop: 20 }}>
                 <button type="submit" className="btn btn-confirm-approve" style={{ width: "auto" }} disabled={passwordSaving}>
                   {passwordSaving ? "Menyimpan..." : "Save"}
@@ -840,10 +840,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           <div className="modal-header">
             <h3>{formOpen === "create" ? "Tambah Akun" : "Updates Akun"}</h3>
             <button type="button" className="modal-close" onClick={() => setFormOpen(null)}>&times;</button>
-          </div>
-
-          <div className={`alert-error ${formError ? "alert-error-visible" : ""}`}>
-            <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
           </div>
 
           <form onSubmit={handleFormSubmit} className="user-form-modal">
@@ -939,6 +935,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 />
               </div>
             )}
+
+            <div className={`alert-error ${formError ? "alert-error-visible" : ""}`} role="alert" aria-live="polite">
+              <div className="alert-error-text"><strong>Error</strong><span>{formError}</span></div>
+            </div>
 
             <div className="modal-actions">
               <button
