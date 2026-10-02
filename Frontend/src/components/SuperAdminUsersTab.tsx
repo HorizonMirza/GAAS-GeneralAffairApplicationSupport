@@ -12,7 +12,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import { formatDateTime } from "@/lib/format";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 
@@ -298,7 +298,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             type="button"
             className="btn filter-dropdown-toggle"
             id="users-filter-toggle"
-            style={{ minWidth: 120, justifyContent: "space-between" }}
+            style={{ minWidth: 145, justifyContent: "space-between" }}
             onClick={() => setFilterOpen((v) => !v)}
           >
             Semua Filter
@@ -360,12 +360,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
         <button
           type="button"
-          className="settings-table-refresh-btn"
-          style={{ alignSelf: "flex-end" }}
+          className="btn btn-secondary"
+          style={{ width: "auto", alignSelf: "flex-end", height: 38, padding: "0 16px", borderRadius: 8, boxSizing: "border-box" }}
           onClick={() => { setFilters(EMPTY_FILTERS); setSearchInput(""); }}
-          title="Reset Filter"
         >
-          <RefreshCw />
+          Semua Akun
         </button>
 
         <div className="toolbar-actions">
@@ -392,34 +391,50 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
         <table className="data-table">
           <thead>
             <tr>
-              <th>Username</th><th>Nama</th><th>Role</th><th>Divisi / Departemen</th><th>Email</th><th>No. HP</th><th>Status</th><th>Dibuat</th><th></th>
+              <th style={{ width: 44, textAlign: "center" }}>No</th>
+              <th>Username</th>
+              <th>Nama</th>
+              <th>Role</th>
+              <th>Direktorat</th>
+              <th>Divisi</th>
+              <th>Departemen</th>
+              <th>Email</th>
+              <th>No. HP</th>
+              <th>Status</th>
+              <th>Dibuat</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={9} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={9} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={12} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={9} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
-              items.map((user) => (
+              items.map((user, idx) => (
                 <tr key={user.id}>
+                  <td style={{ textAlign: "center" }}>{(filters.page - 1) * filters.limit + idx + 1}</td>
                   <td>{user.username}</td>
                   <td>{user.nama}</td>
                   <td>{ROLE_LABEL[user.role] || user.role}</td>
-                  <td>{user.departemen || user.divisi || "-"}</td>
+                  <td>{user.direktorat || "-"}</td>
+                  <td>{user.divisi || "-"}</td>
+                  <td>{user.departemen || "-"}</td>
                   <td>{user.email || "-"}</td>
                   <td>{user.noHp || "-"}</td>
                   <td>
-                    <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
-                      {user.isActive ? "Aktif" : "Nonaktif"}
-                    </span>
-                    {user.mustChangePassword && (
-                      <span className="badge badge-pending" style={{ marginLeft: 4 }} title="Belum mengganti password sementara">
-                        Belum Ganti Password
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
+                        {user.isActive ? "Aktif" : "Nonaktif"}
                       </span>
-                    )}
+                      {user.mustChangePassword && (
+                        <span className="badge badge-pending" title="Belum mengganti password sementara">
+                          Belum Ganti Password
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>{formatDateTime(user.createdAt)}</td>
                   <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -464,8 +479,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               value={String(filters.limit)}
               onChange={(v) => setFilters((prev) => ({ ...prev, limit: Number(v), page: 1 }))}
               options={LIMIT_OPTIONS.map(String)}
-              getLabel={(v) => `${v} akun`}
-              placeholder={`${filters.limit} akun`}
+              getLabel={(v) => `${v} Akun`}
+              placeholder={`${filters.limit} Akun`}
             />
           </div>
         </div>

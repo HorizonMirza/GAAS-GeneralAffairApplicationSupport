@@ -55,13 +55,41 @@ public class UsersAdminController : ApiControllerBase
 
         var total = await query.CountAsync();
         var items = await query
-            .OrderBy(u => u.Nama)
+            .OrderBy(u => u.Role == RoleEnum.SUPER_ADMIN ? 1 :
+                          u.Role == RoleEnum.ADMIN_GA ? 2 :
+                          u.Role == RoleEnum.KPU ? 3 :
+                          u.Role == RoleEnum.APPROVAL_GA ? 4 : 5)
+            .ThenBy(u => u.Direktorat)
+            .ThenBy(u => u.Divisi)
+            .ThenBy(u => u.Departemen == null ? 0 : 1)
+            .ThenBy(u => u.Departemen)
+            .ThenBy(u => (u.Role == RoleEnum.ADMIN_DIVISI || u.Role == RoleEnum.ADMIN_DEPARTEMEN) ? 0 : 1)
+            .ThenBy(u => u.Nama)
             .Skip((page - 1) * limit)
             .Take(limit)
             .Select(u => AdminUserOut.From(u))
             .ToListAsync();
 
         return Ok(new AdminUserListResponse(items, total, page, limit));
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
+    {
+        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
+        if (error != null) return error;
+
+        var total = await _db.Users.CountAsync();
+        var active = await _db.Users.CountAsync(u => u.IsActive);
+        var mustChange = await _db.Users.CountAsync(u => u.MustChangePassword);
+        var approver = await _db.Users.CountAsync(u =>
+            u.Role == RoleEnum.SUPER_ADMIN ||
+            u.Role == RoleEnum.ADMIN_GA ||
+            u.Role == RoleEnum.APPROVAL_GA ||
+            u.Role == RoleEnum.APPROVAL_DIVISI ||
+            u.Role == RoleEnum.APPROVAL_DEPARTEMEN);
+
+        return Ok(new { total, active, mustChange, approver });
     }
 
     [HttpPost]
@@ -297,7 +325,7 @@ public class UsersAdminController : ApiControllerBase
         });
         await _db.SaveChangesAsync();
 
-        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        var cookieSecure = ResolveCookieSecure(_config);
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
@@ -340,7 +368,7 @@ public class UsersAdminController : ApiControllerBase
             await _db.SaveChangesAsync();
         }
 
-        var cookieSecure = _config.GetValue<bool>("CookieSecure");
+        var cookieSecure = ResolveCookieSecure(_config);
         Response.Cookies.Append(CurrentUserService.CookieName, impersonatorToken, new CookieOptions
         {
             HttpOnly = true,
