@@ -56,7 +56,7 @@ function actionTitle(row: RiwayatAktivitas): string {
   const meta = riwayatActionMeta(row.modul, row.action);
   if (row.action === "APPROVED_L1" || row.action === "REJECTED_L1") {
     const track = row.actorRole === "APPROVAL_DIVISI" ? "Divisi" : "Departemen";
-    return row.action === "APPROVED_L1" ? `Disetujui Approval ${track}` : `Ditolak Approval ${track}`;
+    return row.action === "APPROVED_L1" ? `Approved (Approval ${track})` : `Rejected (Approval ${track})`;
   }
   return meta.label;
 }

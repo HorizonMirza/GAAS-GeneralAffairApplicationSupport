@@ -155,28 +155,28 @@ export function getSimpleWaitingLabel(status: BookingStatus | Status, item: { cr
 }
 
 export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
-  CREATED: { label: "Draft Dibuat", type: "neutral" },
-  REVISED: { label: "Data Direvisi & Dikirim Ulang", type: "neutral" },
-  SUBMITTED: { label: "Dikirim untuk Approval", type: "neutral" },
-  APPROVED_L1: { label: "Disetujui Approval Departemen/Divisi", type: "approve" },
-  REJECTED_L1: { label: "Ditolak Approval Departemen/Divisi", type: "reject" },
-  APPROVED_GA: { label: "Disetujui Admin GA", type: "approve" },
-  REJECTED_GA: { label: "Ditolak Admin GA", type: "reject" },
-  APPROVED_GA_APPROVAL: { label: "Disetujui Approval GA", type: "approve" },
-  REJECTED_GA_APPROVAL: { label: "Ditolak Approval GA", type: "reject" },
-  APPROVED_KPU: { label: "Disetujui Mitra & Resi Diterbitkan", type: "approve" },
-  REJECTED_KPU: { label: "Ditolak Mitra", type: "reject" },
-  RESCHEDULED: { label: "Ruang/Jadwal Dipindahkan oleh GA", type: "neutral" },
-  CORRECTED: { label: "Data Diperbarui oleh GA", type: "neutral" },
-  UPDATED_BY_GA: { label: "Data Diperbarui oleh GA", type: "neutral" },
+  CREATED: { label: "Draft Created", type: "neutral" },
+  REVISED: { label: "Revised & Resubmitted", type: "neutral" },
+  SUBMITTED: { label: "Submitted", type: "neutral" },
+  APPROVED_L1: { label: "Approved (Approval Departemen/Divisi)", type: "approve" },
+  REJECTED_L1: { label: "Rejected (Approval Departemen/Divisi)", type: "reject" },
+  APPROVED_GA: { label: "Approved (Admin GA)", type: "approve" },
+  REJECTED_GA: { label: "Rejected (Admin GA)", type: "reject" },
+  APPROVED_GA_APPROVAL: { label: "Approved (Approval GA)", type: "approve" },
+  REJECTED_GA_APPROVAL: { label: "Rejected (Approval GA)", type: "reject" },
+  APPROVED_KPU: { label: "Approved (Mitra)", type: "approve" },
+  REJECTED_KPU: { label: "Rejected (Mitra)", type: "reject" },
+  RESCHEDULED: { label: "Rescheduled by GA", type: "neutral" },
+  CORRECTED: { label: "Updated by GA", type: "neutral" },
+  UPDATED_BY_GA: { label: "Updated by GA", type: "neutral" },
   // Mitra's own post-Approved price fix (Pengiriman's Resi/Berat/Asuransi/Ongkir, ATK's Total
   // Harga Barang) - see PengirimanController.KoreksiHarga/PermintaanAtkController.KoreksiHarga.
-  KOREKSI_HARGA: { label: "Harga Dikoreksi oleh Mitra", type: "neutral" },
-  CANCELLED: { label: "Booking Dibatalkan", type: "reject" },
+  KOREKSI_HARGA: { label: "Price Corrected by Mitra", type: "neutral" },
+  CANCELLED: { label: "Cancelled", type: "reject" },
   // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
-  LOKASI_DICEK: { label: "Lokasi Dicek", type: "neutral" },
-  GAMBAR_DIBUAT: { label: "Gambar Rencana Perbaikan Dibuat", type: "neutral" },
-  SELESAI: { label: "Eksekusi Perbaikan Selesai", type: "approve" },
+  LOKASI_DICEK: { label: "Site Checked", type: "neutral" },
+  GAMBAR_DIBUAT: { label: "Repair Plan Created", type: "neutral" },
+  SELESAI: { label: "Completed", type: "approve" },
 };
 
 export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
@@ -255,12 +255,12 @@ export const INVOICE_STATUS_CLASS: Record<string, string> = {
 export const MAX_INVOICE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
-  UPLOADED: { label: "Invoice Disimpan sebagai Draft", type: "neutral" },
-  SUBMITTED: { label: "Invoice Dikirim untuk Approval", type: "neutral" },
-  DRAFT_UPDATED: { label: "Draft Invoice Diperbarui", type: "neutral" },
-  REVISED: { label: "Invoice Direvisi & Dikirim Ulang", type: "neutral" },
-  APPROVED: { label: "Disetujui Admin GA", type: "approve" },
-  REJECTED: { label: "Ditolak Admin GA", type: "reject" },
+  UPLOADED: { label: "Draft Invoice Created", type: "neutral" },
+  SUBMITTED: { label: "Invoice Submitted", type: "neutral" },
+  DRAFT_UPDATED: { label: "Draft Invoice Updated", type: "neutral" },
+  REVISED: { label: "Invoice Revised & Resubmitted", type: "neutral" },
+  APPROVED: { label: "Approved (Admin GA)", type: "approve" },
+  REJECTED: { label: "Rejected (Admin GA)", type: "reject" },
 };
 
 // --- Booking Ruang Meeting (sama pola dengan versi Pengiriman di atas, tanpa tahap KPU) ---
@@ -755,34 +755,34 @@ export const RIWAYAT_MODUL_HREF: Record<RiwayatModul, string> = {
 // history modals fall back to the raw string for them, which is tolerable there because the
 // surrounding rows give context, but a cross-module list has none to lean on.
 const RIWAYAT_EXTRA_ACTION_META: Record<string, { label: string; type: "neutral" | "approve" | "reject" }> = {
-  CANCELLED: { label: "Dibatalkan Pengaju", type: "reject" },
-  EKSEKUSI_DIBATALKAN: { label: "Tahap Eksekusi Dimundurkan", type: "neutral" },
-  DELETED: { label: "Dihapus oleh Super Admin", type: "reject" },
+  CANCELLED: { label: "Cancelled", type: "reject" },
+  EKSEKUSI_DIBATALKAN: { label: "Execution Stage Reverted", type: "neutral" },
+  DELETED: { label: "Deleted (Super Admin)", type: "reject" },
   // "admin" source's own action vocabulary (see AdminActivityLog/RiwayatAktivitasController) -
   // every other Super Admin write across Users/Organisasi/Master Data/Pengaturan Aplikasi.
-  USER_CREATE: { label: "Akun Dibuat", type: "neutral" },
-  USER_UPDATE: { label: "Akun Diubah", type: "neutral" },
-  USER_RESET_PASSWORD: { label: "Password Akun Direset", type: "neutral" },
-  USER_DEACTIVATE: { label: "Akun Dinonaktifkan", type: "reject" },
-  USER_ACTIVATE: { label: "Akun Diaktifkan", type: "approve" },
-  USER_FORCE_LOGOUT: { label: "Akun Dipaksa Logout", type: "reject" },
-  ORG_DIREKTORAT_CREATE: { label: "Direktorat Dibuat", type: "neutral" },
-  ORG_DIREKTORAT_RENAME: { label: "Direktorat Diubah", type: "neutral" },
-  ORG_DIREKTORAT_DELETE: { label: "Direktorat Dihapus", type: "reject" },
-  ORG_DIVISI_CREATE: { label: "Divisi Dibuat", type: "neutral" },
-  ORG_DIVISI_UPDATE: { label: "Divisi Diubah", type: "neutral" },
-  ORG_DIVISI_DELETE: { label: "Divisi Dihapus", type: "reject" },
-  ORG_DEPARTEMEN_CREATE: { label: "Departemen Dibuat", type: "neutral" },
-  ORG_DEPARTEMEN_UPDATE: { label: "Departemen Diubah", type: "neutral" },
-  ORG_DEPARTEMEN_DELETE: { label: "Departemen Dihapus", type: "reject" },
-  MASTER_DATA_CREATE: { label: "Master Data Ditambah", type: "neutral" },
-  MASTER_DATA_UPDATE: { label: "Master Data Diubah", type: "neutral" },
-  MASTER_DATA_DELETE: { label: "Master Data Dihapus", type: "reject" },
-  APP_SETTINGS_UPDATE: { label: "Pengaturan Aplikasi Diubah", type: "neutral" },
-  APP_LOGO_UPLOAD: { label: "Logo Perusahaan Diunggah", type: "neutral" },
-  APP_LOGO_DELETE: { label: "Logo Perusahaan Dikembalikan ke Default", type: "neutral" },
-  HOLIDAY_CREATE: { label: "Hari Libur Ditambah", type: "neutral" },
-  HOLIDAY_DELETE: { label: "Hari Libur Dihapus", type: "reject" },
+  USER_CREATE: { label: "User Created", type: "neutral" },
+  USER_UPDATE: { label: "User Updated", type: "neutral" },
+  USER_RESET_PASSWORD: { label: "Password Reset", type: "neutral" },
+  USER_DEACTIVATE: { label: "User Deactivated", type: "reject" },
+  USER_ACTIVATE: { label: "User Activated", type: "approve" },
+  USER_FORCE_LOGOUT: { label: "User Force Logout", type: "reject" },
+  ORG_DIREKTORAT_CREATE: { label: "Direktorat Created", type: "neutral" },
+  ORG_DIREKTORAT_RENAME: { label: "Direktorat Updated", type: "neutral" },
+  ORG_DIREKTORAT_DELETE: { label: "Direktorat Deleted", type: "reject" },
+  ORG_DIVISI_CREATE: { label: "Divisi Created", type: "neutral" },
+  ORG_DIVISI_UPDATE: { label: "Divisi Updated", type: "neutral" },
+  ORG_DIVISI_DELETE: { label: "Divisi Deleted", type: "reject" },
+  ORG_DEPARTEMEN_CREATE: { label: "Departemen Created", type: "neutral" },
+  ORG_DEPARTEMEN_UPDATE: { label: "Departemen Updated", type: "neutral" },
+  ORG_DEPARTEMEN_DELETE: { label: "Departemen Deleted", type: "reject" },
+  MASTER_DATA_CREATE: { label: "Master Data Added", type: "neutral" },
+  MASTER_DATA_UPDATE: { label: "Master Data Updated", type: "neutral" },
+  MASTER_DATA_DELETE: { label: "Master Data Deleted", type: "reject" },
+  APP_SETTINGS_UPDATE: { label: "App Settings Updated", type: "neutral" },
+  APP_LOGO_UPLOAD: { label: "App Logo Uploaded", type: "neutral" },
+  APP_LOGO_DELETE: { label: "App Logo Reset", type: "neutral" },
+  HOLIDAY_CREATE: { label: "Holiday Added", type: "neutral" },
+  HOLIDAY_DELETE: { label: "Holiday Deleted", type: "reject" },
 };
 
 // Invoice uses its own action vocabulary (UPLOADED/DRAFT_UPDATED, and a bare APPROVED/REJECTED
@@ -850,8 +850,8 @@ export const RIWAYAT_ACTION_OPTIONS: string[] = [
 // The Aksi dropdown has no module context, so a code that means different things in different
 // modules is spelled out rather than shown under one module's label.
 export const RIWAYAT_ACTION_FILTER_LABEL: Record<string, string> = {
-  APPROVED: "Invoice Disetujui",
-  REJECTED: "Invoice Ditolak",
-  UPLOADED: "Invoice Disimpan sebagai Draft",
-  DRAFT_UPDATED: "Draft Invoice Diperbarui",
+  APPROVED: "Invoice Approved",
+  REJECTED: "Invoice Rejected",
+  UPLOADED: "Draft Invoice Created",
+  DRAFT_UPDATED: "Draft Invoice Updated",
 };
