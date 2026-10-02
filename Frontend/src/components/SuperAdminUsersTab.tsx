@@ -55,6 +55,18 @@ interface UserFormState {
 
 const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "" };
 
+function formatDuration(startedAt: string, endedAt: string | null): string {
+  const start = new Date(startedAt).getTime();
+  const end = endedAt ? new Date(endedAt).getTime() : Date.now();
+  if (isNaN(start) || isNaN(end)) return "-";
+  const diffMinutes = Math.max(0, Math.round((end - start) / 60000));
+  if (diffMinutes < 1) return "< 1 mnt";
+  if (diffMinutes < 60) return `${diffMinutes} mnt`;
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  return mins > 0 ? `${hours} jam ${mins} mnt` : `${hours} jam`;
+}
+
 // Super Admin's account management table - the UI for UsersAdminController, and the direct fix
 // for DbSeeder's shared DefaultPassword ("123456789") never having a way to actually change per
 // account. Extracted out of superadmin/page.tsx (already 2000+ lines) rather than added inline.
@@ -91,6 +103,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [logPage, setLogPage] = useState(1);
   const [logTotal, setLogTotal] = useState(0);
   const [logBusy, setLogBusy] = useState(false);
+  const [logSearch, setLogSearch] = useState("");
+  const [logStatusFilter, setLogStatusFilter] = useState<"all" | "active" | "ended">("all");
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -288,6 +302,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   }, []);
 
   function openImpersonationLog() {
+    setLogSearch("");
+    setLogStatusFilter("all");
     setLogOpen(true);
     loadImpersonationLog(1);
   }
@@ -805,38 +821,252 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       />
 
       <ModalOverlay open={logOpen} onClose={() => setLogOpen(false)} className={`modal-overlay modal-overlay-centered ${logOpen ? "" : "hidden"}`}>
-        <div className="modal" style={{ maxWidth: 640 }}>
-          <div className="modal-header">
-            <h3>Riwayat Login As</h3>
+        <div className="modal" style={{ maxWidth: 880, width: "95vw" }}>
+          <div className="modal-header" style={{ paddingBottom: 12 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "1.15rem" }}>Riwayat Login As</h3>
+              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                Log audit sesi penyamaran akun yang dilakukan oleh Super Admin
+              </p>
+            </div>
             <button type="button" className="modal-close" onClick={() => setLogOpen(false)}>&times;</button>
           </div>
-          <div className="table-wrap">
+
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+            <div style={{ position: "relative", width: 280, maxWidth: "100%" }}>
+              <input
+                type="text"
+                placeholder="Cari nama akun atau role..."
+                value={logSearch}
+                onChange={(e) => setLogSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 36,
+                  padding: "0 12px 0 34px",
+                  fontSize: 13,
+                  borderRadius: 8,
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--bg-surface)",
+                  boxSizing: "border-box"
+                }}
+              />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ position: "absolute", left: 12, top: 11, color: "var(--text-secondary)" }}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", background: "var(--bg-surface-alt, #f1f5f9)", padding: 3, borderRadius: 8, gap: 2 }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: "none",
+                    background: logStatusFilter === "all" ? "var(--bg-surface, #ffffff)" : "transparent",
+                    color: logStatusFilter === "all" ? "var(--blue-500, #0073e6)" : "var(--text-secondary)",
+                    boxShadow: logStatusFilter === "all" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setLogStatusFilter("all")}
+                >
+                  Semua ({logItems.length})
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: "none",
+                    background: logStatusFilter === "active" ? "var(--bg-surface, #ffffff)" : "transparent",
+                    color: logStatusFilter === "active" ? "var(--blue-500, #0073e6)" : "var(--text-secondary)",
+                    boxShadow: logStatusFilter === "active" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5
+                  }}
+                  onClick={() => setLogStatusFilter("active")}
+                >
+                  {logItems.filter((e) => e.endedAt == null).length > 0 && (
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+                  )}
+                  Aktif ({logItems.filter((e) => e.endedAt == null).length})
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: "none",
+                    background: logStatusFilter === "ended" ? "var(--bg-surface, #ffffff)" : "transparent",
+                    color: logStatusFilter === "ended" ? "var(--blue-500, #0073e6)" : "var(--text-secondary)",
+                    boxShadow: logStatusFilter === "ended" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setLogStatusFilter("ended")}
+                >
+                  Selesai ({logItems.filter((e) => e.endedAt != null).length})
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ width: "auto", height: 36, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 8, fontSize: 12 }}
+                onClick={() => loadImpersonationLog(logPage)}
+                disabled={logBusy}
+                title="Segarkan data"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="table-wrap" style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}>
             <table className="data-table">
               <thead>
-                <tr><th>Super Admin</th><th>Login As</th><th>Mulai</th><th>Selesai</th></tr>
+                <tr>
+                  <th style={{ width: 44, textAlign: "center" }}>No</th>
+                  <th>Operator</th>
+                  <th>Akun Dituju (Login As)</th>
+                  <th>Waktu Mulai</th>
+                  <th>Waktu Selesai</th>
+                  <th style={{ textAlign: "center" }}>Status & Durasi</th>
+                </tr>
               </thead>
               <tbody>
                 {logBusy ? (
-                  <tr><td colSpan={4} className="table-empty">Memuat data...</td></tr>
-                ) : logItems.length === 0 ? (
-                  <tr><td colSpan={4} className="table-empty">Belum ada riwayat</td></tr>
+                  <tr><td colSpan={6} className="table-empty">Memuat data...</td></tr>
                 ) : (
-                  logItems.map((entry) => (
-                    <tr key={entry.id}>
-                      <td>{entry.superAdminNama}</td>
-                      <td>{entry.targetNama} ({ROLE_LABEL[entry.targetRole] || entry.targetRole})</td>
-                      <td>{formatDateTime(entry.startedAt)}</td>
-                      <td>{entry.endedAt ? formatDateTime(entry.endedAt) : "Masih berlangsung"}</td>
-                    </tr>
-                  ))
+                  (() => {
+                    const filtered = logItems.filter((entry) => {
+                      if (logStatusFilter === "active" && entry.endedAt != null) return false;
+                      if (logStatusFilter === "ended" && entry.endedAt == null) return false;
+                      if (logSearch.trim()) {
+                        const q = logSearch.toLowerCase();
+                        const matchTarget = entry.targetNama.toLowerCase().includes(q);
+                        const matchRole = (ROLE_LABEL[entry.targetRole] || entry.targetRole).toLowerCase().includes(q);
+                        const matchAdmin = entry.superAdminNama.toLowerCase().includes(q);
+                        if (!matchTarget && !matchRole && !matchAdmin) return false;
+                      }
+                      return true;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={6} className="table-empty">
+                            {logSearch ? "Tidak ada sesi yang cocok dengan pencarian" : "Belum ada riwayat"}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.map((entry, idx) => {
+                      const isOngoing = !entry.endedAt;
+                      const durationText = formatDuration(entry.startedAt, entry.endedAt);
+                      return (
+                        <tr key={entry.id}>
+                          <td style={{ textAlign: "center" }}>{(logPage - 1) * 20 + idx + 1}</td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background: "rgba(99, 102, 241, 0.12)",
+                                color: "#6366f1",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700,
+                                fontSize: 11
+                              }}>
+                                SA
+                              </div>
+                              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{entry.superAdminNama}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{entry.targetNama}</span>
+                              <span style={{
+                                fontSize: 11,
+                                padding: "2px 8px",
+                                borderRadius: 12,
+                                background: "rgba(0, 115, 230, 0.08)",
+                                color: "var(--blue-500, #0073e6)",
+                                fontWeight: 600
+                              }}>
+                                {ROLE_LABEL[entry.targetRole] || entry.targetRole}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                            {formatDateTime(entry.startedAt)}
+                          </td>
+                          <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                            {entry.endedAt ? (
+                              formatDateTime(entry.endedAt)
+                            ) : (
+                              <span style={{ fontStyle: "italic", color: "var(--text-secondary)" }}>Masih berlangsung</span>
+                            )}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {isOngoing ? (
+                              <span className="badge badge-approved" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                                <span style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: "50%",
+                                  background: "#10b981",
+                                  boxShadow: "0 0 0 2px rgba(16, 185, 129, 0.2)"
+                                }} />
+                                Aktif ({durationText})
+                              </span>
+                            ) : (
+                              <span className="badge" style={{ background: "var(--bg-surface-alt, #f1f5f9)", color: "var(--text-secondary, #475569)", border: "1px solid var(--border-subtle, #e2e8f0)" }}>
+                                Selesai ({durationText})
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
           </div>
-          <div className="pagination">
-            <div className="pagination-left" />
+
+          <div className="pagination" style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="pagination-left">
+              <span className="text-secondary" style={{ fontSize: 13 }}>
+                Total {logTotal} sesi tercatat
+              </span>
+            </div>
             <div className="pagination-right">
-              <span className="text-secondary">Total {logTotal} sesi · Halaman {logPage} dari {Math.max(1, Math.ceil(logTotal / 20))}</span>
+              <span className="text-secondary">Halaman {logPage} dari {Math.max(1, Math.ceil(logTotal / 20))}</span>
               <div className="pages">
                 <button className="page-btn" disabled={logPage <= 1} onClick={() => loadImpersonationLog(logPage - 1)}>‹</button>
                 <button className="page-btn" disabled={logPage >= Math.ceil(logTotal / 20)} onClick={() => loadImpersonationLog(logPage + 1)}>›</button>
