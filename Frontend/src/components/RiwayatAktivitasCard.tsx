@@ -161,7 +161,7 @@ export default function RiwayatAktivitasCard() {
           />
         </div>
 
-        <div className="field">
+        <div className="field" style={{ flex: "0 0 auto", width: 160 }}>
           <label htmlFor="filter-riwayat-bulan">Filter Periode</label>
           <PeriodFilterPicker
             id="filter-riwayat-bulan"
@@ -271,7 +271,7 @@ export default function RiwayatAktivitasCard() {
               <th>Modul</th>
               <th>Nomor</th>
               <th>Aksi</th>
-              <th>Pelaku</th>
+              <th>User</th>
               <th>Role</th>
               <th>Direktorat</th>
               <th>Divisi</th>
@@ -333,7 +333,7 @@ export default function RiwayatAktivitasCard() {
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDirektorat || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDivisi || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDepartemen || "-"}</td>
-                    <td style={{ minWidth: 160, maxWidth: 280, whiteSpace: "normal", wordBreak: "break-word" }} title={row.reason || ""}>
+                    <td style={{ whiteSpace: "nowrap" }} title={row.reason || ""}>
                       {row.reason || "-"}
                     </td>
                   </tr>
