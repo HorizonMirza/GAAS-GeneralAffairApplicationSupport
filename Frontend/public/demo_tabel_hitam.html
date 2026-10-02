@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Pilihan Kontras Tulisan Tabel Hitam Pekat - GAAS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #eef4ff;
+      color: #0b1a33;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbar for table */
+    .table-scrollbar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .table-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .table-scrollbar::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    .table-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* Style variants */
+    /* Variant 0: Tampilan Saat Ini (Muted Navy/Slate #4a5b7a) */
+    .table-theme-current th {
+      color: #4a5b7a !important;
+      font-weight: 700 !important;
+    }
+    .table-theme-current td {
+      color: #334155 !important;
+    }
+    .table-theme-current .dim-text {
+      color: #64748b !important;
+    }
+
+    /* Variant 1: Pure Black (#000000 Solid) */
+    .table-theme-pure th {
+      color: #000000 !important;
+      font-weight: 800 !important;
+    }
+    .table-theme-pure td {
+      color: #000000 !important;
+      font-weight: 600 !important;
+    }
+    .table-theme-pure .dim-text {
+      color: #000000 !important;
+      font-weight: 500 !important;
+    }
+
+    /* Variant 2: Hierarchical Black (#000000 Primary + #111827 Secondary) */
+    .table-theme-hierarchical th {
+      color: #000000 !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.05em;
+    }
+    .table-theme-hierarchical td {
+      color: #000000 !important;
+      font-weight: 600 !important;
+    }
+    .table-theme-hierarchical .dim-text {
+      color: #1e293b !important;
+      font-weight: 500 !important;
+    }
+
+    /* Variant 3: Soft-Stripe Pure Black (Hitam Pekat + Zebra Lembut) */
+    .table-theme-stripe th {
+      color: #000000 !important;
+      font-weight: 800 !important;
+      background-color: #f1f5f9 !important;
+    }
+    .table-theme-stripe tbody tr:nth-child(even) {
+      background-color: #f8fafc !important;
+    }
+    .table-theme-stripe tbody tr:nth-child(odd) {
+      background-color: #ffffff !important;
+    }
+    .table-theme-stripe td {
+      color: #000000 !important;
+      font-weight: 600 !important;
+    }
+    .table-theme-stripe .dim-text {
+      color: #000000 !important;
+      font-weight: 500 !important;
+    }
+
+    /* Variant 4: Deep Obsidian Charcoal (#090D16) */
+    .table-theme-obsidian th {
+      color: #090d16 !important;
+      font-weight: 800 !important;
+    }
+    .table-theme-obsidian td {
+      color: #090d16 !important;
+      font-weight: 600 !important;
+    }
+    .table-theme-obsidian .dim-text {
+      color: #182235 !important;
+      font-weight: 500 !important;
+    }
+
+    /* Active Tab indicator */
+    .tab-btn.active {
+      background: #1c6dff;
+      color: #ffffff;
+      border-color: #1c6dff;
+      box-shadow: 0 4px 12px rgba(28, 109, 255, 0.28);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-3 sm:p-6 pb-20">
+
+  <!-- Main Container -->
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Showcase Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-xl border border-slate-700/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+            DEMO INTERAKTIF TABEL HITAM PEKAT
+          </span>
+          <span class="text-xs text-slate-400">Modul: Ekspedisi / Seluruh Data Table GAAS</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">
+          Uji Coba Tampilan Teks Tabel Berwarna Hitam Pekat
+        </h1>
+        <p class="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">
+          Bandingkan tampilan tabel saat ini (abu-abu/slate) dengan 4 variasi kontras teks hitam pekat (<code class="text-amber-300 font-mono">#000000</code>). Klik tombol di bawah untuk mengganti mode secara langsung!
+        </p>
+      </div>
+
+      <!-- Quick Toggle Action -->
+      <div class="flex items-center gap-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+        <span class="text-xs font-semibold text-slate-300 pl-2">Mode Cepat:</span>
+        <button onclick="setConcept(0)" id="quick-btn-before" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+          Saat Ini (Abu-abu)
+        </button>
+        <button onclick="setConcept(1)" id="quick-btn-after" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md transition">
+          Hitam Pekat (#000000)
+        </button>
+      </div>
+    </div>
+
+    <!-- 5 Tab Buttons -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-white/80 backdrop-blur p-2 rounded-2xl border border-slate-200 shadow-sm">
+      <button onclick="setConcept(1)" id="tab-1" class="tab-btn active px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 transition text-center flex flex-col items-center justify-center">
+        <span>1. Solid Pure Black</span>
+        <span class="text-[10px] opacity-80 font-normal">#000000 100% Tebal Pekat</span>
+      </button>
+      <button onclick="setConcept(2)" id="tab-2" class="tab-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center">
+        <span>2. Hierarchical Black</span>
+        <span class="text-[10px] opacity-80 font-normal">Header & ID #000 + Body Tajam</span>
+      </button>
+      <button onclick="setConcept(3)" id="tab-3" class="tab-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center">
+        <span>3. Soft-Stripe Black</span>
+        <span class="text-[10px] opacity-80 font-normal">Hitam Pekat + Zebra Lembut</span>
+      </button>
+      <button onclick="setConcept(4)" id="tab-4" class="tab-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center">
+        <span>4. Deep Obsidian Charcoal</span>
+        <span class="text-[10px] opacity-80 font-normal">#090D16 Pekat Elegan Modern</span>
+      </button>
+      <button onclick="setConcept(0)" id="tab-0" class="tab-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center">
+        <span>5. Asli (Saat Ini)</span>
+        <span class="text-[10px] opacity-80 font-normal">Abu-abu / Slate #4a5b7a</span>
+      </button>
+    </div>
+
+    <!-- Info Box for Active Concept -->
+    <div id="concept-info-card" class="bg-blue-50 border border-blue-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+      <div>
+        <h3 id="concept-title" class="text-sm font-bold text-blue-950 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+          Konsep 1: Solid Pure Black (#000000)
+        </h3>
+        <p id="concept-desc" class="text-xs text-blue-800 mt-0.5">
+          Semua huruf dan angka di dalam tabel (Header kolom, Nomor Transmittal, Resi, Tanggal, Tujuan, Unit, dan Nama) diatur ke <strong>#000000</strong> murni dengan ketebalan teks optimal. Kontras sangat tinggi dan sangat mudah dibaca di layar monitor terang.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="contrast-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          Kontras: 21:1 (Maksimal)
+        </span>
+      </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- PREVIEW AREA (Exact Replica of GAAS /ekspedisi/transaksi Screen)        -->
+    <!-- ====================================================================== -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+      
+      <!-- Toolbar Filter & Actions -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <!-- Left Filter Controls -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-col">
+            <label class="text-[11px] font-bold text-slate-700 mb-1">Cari Transaksi</label>
+            <input type="text" placeholder="No Transmittal" class="text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg w-44 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-[11px] font-bold text-slate-700 mb-1">Filter Periode</label>
+            <div class="flex items-center justify-between text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg w-36 text-slate-800 cursor-pointer">
+              <span>Semua Periode</span>
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-[11px] font-bold text-slate-700 mb-1">Filter Lainnya</label>
+            <div class="flex items-center justify-between text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg w-36 text-slate-800 cursor-pointer">
+              <span>Semua Filter</span>
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <div class="flex flex-col justify-end">
+            <button class="mt-5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition">
+              Semua Transaksi
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Action Buttons -->
+        <div class="flex items-center gap-2 self-end lg:self-center mt-2 lg:mt-5">
+          <button class="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition shadow-xs">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download PDF
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition shadow-xs">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Excel
+          </button>
+          <button class="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-xs">
+            + Input Data Barang
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Interactive Table Container -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+        <div class="table-scrollbar overflow-x-auto">
+          <table id="demo-table" class="table-theme-pure w-full text-left text-xs border-collapse min-w-[1100px]">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold tracking-wider">
+                <th class="py-3 px-3.5 text-center w-12">NO</th>
+                <th class="py-3 px-3.5">NO TRANSMITTAL</th>
+                <th class="py-3 px-3.5">NO RESI</th>
+                <th class="py-3 px-3.5">DIAJUKAN</th>
+                <th class="py-3 px-3.5">TANGGAL</th>
+                <th class="py-3 px-3.5">TUJUAN</th>
+                <th class="py-3 px-3.5 text-center">JUMLAH BARANG</th>
+                <th class="py-3 px-3.5">DIVISI</th>
+                <th class="py-3 px-3.5">DEPARTEMEN</th>
+                <th class="py-3 px-3.5">NAMA PENGIRIM</th>
+                <th class="py-3 px-3.5 text-center">STATUS</th>
+                <th class="py-3 px-3.5 text-center w-14">AKSI</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              <!-- Row 1 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 font-bold mono">0019.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST87656785</td>
+                <td class="py-3 px-3.5 dim-text">29 September 2026, 21.59</td>
+                <td class="py-3 px-3.5 dim-text">29 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 21</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 21</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 2 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">2</td>
+                <td class="py-3 px-3.5 font-bold mono">0018.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST983739123</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026, 00.29</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 19</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 19</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 3 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">3</td>
+                <td class="py-3 px-3.5 font-bold mono">0017.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST34565342356</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026, 00.17</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 18</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 18</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 4 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">4</td>
+                <td class="py-3 px-3.5 font-bold mono">0016.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST3443978924</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026, 00.11</td>
+                <td class="py-3 px-3.5 dim-text">23 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 17</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 17</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    On-Approval
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 5 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">5</td>
+                <td class="py-3 px-3.5 font-bold mono">0015.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST123456789</td>
+                <td class="py-3 px-3.5 dim-text">17 September 2026, 10.20</td>
+                <td class="py-3 px-3.5 dim-text">17 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 15</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 15</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 6 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">6</td>
+                <td class="py-3 px-3.5 font-bold mono">0013.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST87656785</td>
+                <td class="py-3 px-3.5 dim-text">17 September 2026, 09.44</td>
+                <td class="py-3 px-3.5 dim-text">17 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 13</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 13</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 7 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">7</td>
+                <td class="py-3 px-3.5 font-bold mono">0010.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST34565342356</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026, 12.51</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 10</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 10</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 8 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">8</td>
+                <td class="py-3 px-3.5 font-bold mono">0009.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST123456789</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026, 12.51</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 9</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 9</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 9 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">9</td>
+                <td class="py-3 px-3.5 font-bold mono">0008.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST123456123</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026, 12.40</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 4</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 4</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+
+              <!-- Row 10 -->
+              <tr class="hover:bg-blue-50/40 transition">
+                <td class="py-3 px-3.5 text-center font-bold">10</td>
+                <td class="py-3 px-3.5 font-bold mono">0007.Corsec.09.2026</td>
+                <td class="py-3 px-3.5 mono">TEST123456712</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026, 12.39</td>
+                <td class="py-3 px-3.5 dim-text">16 September 2026</td>
+                <td class="py-3 px-3.5 font-medium">Uji Coba 3</td>
+                <td class="py-3 px-3.5 text-center font-bold">1</td>
+                <td class="py-3 px-3.5 dim-text">Corporate Secretary</td>
+                <td class="py-3 px-3.5 dim-text">Legal and Compliance</td>
+                <td class="py-3 px-3.5 font-semibold">Mirza 3</td>
+                <td class="py-3 px-3.5 text-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Approved
+                  </span>
+                </td>
+                <td class="py-3 px-3.5 text-center text-slate-400 hover:text-slate-700 cursor-pointer font-bold">•••</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Table Footer (Total Akumulasi & Pagination) -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <!-- Total Akumulasi -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-800 tracking-wider">TOTAL AKUMULASI BIAYA:</span>
+          <span class="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+            Rp 562.000
+          </span>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="flex items-center gap-3 text-xs text-slate-600">
+          <div class="flex items-center gap-1.5">
+            <span>Tampilkan</span>
+            <div class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-bold text-slate-800 flex items-center gap-1 cursor-pointer">
+              <span>10 Transaksi</span>
+              <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <span class="text-slate-400">·</span>
+
+          <span>Total 12 Transaksi · Halaman 1 dari 2</span>
+
+          <div class="flex items-center gap-1">
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 cursor-not-allowed">‹</button>
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white font-bold">1</button>
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold">2</button>
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Execution Confirmation Box -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <h4 class="text-sm font-bold text-slate-900">Bagaimana Cara Menerapkan Perubahan Ini?</h4>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Pilih konsep yang Anda sukai di atas, lalu beri tahu kami nomor konsepnya (misalnya: <em>"Terapkan Konsep 1"</em> atau <em>"Terapkan Konsep 3"</em>). Kami akan langsung mengubah CSS global aplikasi secara permanen!
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="copyConceptFeedback()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span id="copy-btn-text">Salin Pilihan Konsep Ini</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const concepts = {
+      0: {
+        themeClass: 'table-theme-current',
+        title: 'Tampilan Saat Ini (Muted Navy/Slate #4a5b7a)',
+        desc: 'Header tabel berwarna abu-abu/slate (#4a5b7a) dan baris data berwarna navy gelap standar. Ini adalah tampilan asli sebelum diubah menjadi hitam pekat.',
+        contrast: 'Kontras Standar (Sedang)',
+        contrastClass: 'bg-slate-100 text-slate-700 border-slate-300'
+      },
+      1: {
+        themeClass: 'table-theme-pure',
+        title: 'Konsep 1: Solid Pure Black (#000000 100%)',
+        desc: 'Semua huruf dan angka di dalam tabel (Header kolom, Nomor Transmittal, Resi, Tanggal, Tujuan, Unit, dan Nama) diatur ke #000000 murni dengan ketebalan teks optimal. Kontras sangat tinggi dan sangat mudah dibaca.',
+        contrast: 'Kontras Maksimal (21:1)',
+        contrastClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      },
+      2: {
+        themeClass: 'table-theme-hierarchical',
+        title: 'Konsep 2: Hierarchical Black (#000000 Header & ID + Dark Body)',
+        desc: 'Header dan ID/No Transmittal menggunakan #000000 tebal (Bold 800), sedangkan deskripsi pendukung menggunakan hitam charcoal pekat (#1e293b). Memberikan keseimbangan keterbacaan yang sangat rapi dan profesional.',
+        contrast: 'Kontras Sangat Tinggi (18:1)',
+        contrastClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      },
+      3: {
+        themeClass: 'table-theme-stripe',
+        title: 'Konsep 3: Soft-Stripe Pure Black (Hitam Pekat + Zebra Lembut)',
+        desc: 'Tulisan hitam pekat (#000000) dipadukan dengan latar baris selang-seling ultra-halus (Zebra stripe). Sangat memudahkan mata saat menyusuri tabel dengan banyak kolom horizontal agar data tidak tertukar antar baris.',
+        contrast: 'Kontras Maksimal + Ergonomis',
+        contrastClass: 'bg-blue-100 text-blue-800 border-blue-300'
+      },
+      4: {
+        themeClass: 'table-theme-obsidian',
+        title: 'Konsep 4: Deep Obsidian Charcoal (#090D16)',
+        desc: 'Menggunakan warna hitam arang modern (Deep Obsidian #090d16) yang sangat pekat namun terasa lebih lembut dan elegan di mata untuk penggunaan jangka panjang di monitor kerja.',
+        contrast: 'Kontras Tinggi & Elegan (19:1)',
+        contrastClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      }
+    };
+
+    let activeConceptId = 1;
+
+    function setConcept(id) {
+      activeConceptId = id;
+      const conf = concepts[id];
+      const table = document.getElementById('demo-table');
+
+      // Remove all theme classes
+      table.className = 'w-full text-left text-xs border-collapse min-w-[1100px] ' + conf.themeClass;
+
+      // Update info cards
+      document.getElementById('concept-title').innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> ' + conf.title;
+      document.getElementById('concept-desc').innerHTML = conf.desc;
+      
+      const badge = document.getElementById('contrast-badge');
+      badge.textContent = conf.contrast;
+      badge.className = 'px-3 py-1 rounded-full text-xs font-bold border ' + conf.contrastClass;
+
+      // Update Tabs active state
+      for (let i = 0; i <= 4; i++) {
+        const btn = document.getElementById('tab-' + i);
+        if (btn) {
+          if (i === id) {
+            btn.className = 'tab-btn active px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 transition text-center flex flex-col items-center justify-center';
+          } else {
+            btn.className = 'tab-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center';
+          }
+        }
+      }
+
+      // Update quick toggle buttons state
+      const beforeBtn = document.getElementById('quick-btn-before');
+      const afterBtn = document.getElementById('quick-btn-after');
+      if (id === 0) {
+        beforeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-md transition';
+        afterBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600 transition';
+      } else {
+        beforeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600 transition';
+        afterBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-md transition';
+      }
+    }
+
+    function copyConceptFeedback() {
+      const text = "Saya memilih " + concepts[activeConceptId].title + ", tolong terapkan ke tabel aplikasi!";
+      navigator.clipboard.writeText(text).then(() => {
+        const btnText = document.getElementById('copy-btn-text');
+        btnText.textContent = "Tersalin ke Clipboard! Kirim ke chat";
+        setTimeout(() => {
+          btnText.textContent = "Salin Pilihan Konsep Ini";
+        }, 2500);
+      });
+    }
+
+    // Initialize with concept 1
+    setConcept(1);
+  </script>
+</body>
+</html>
