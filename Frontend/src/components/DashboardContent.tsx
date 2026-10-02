@@ -41,7 +41,6 @@ import styles from "./DashboardContent.module.css";
 type ModuleKey = "expedition" | "room" | "vehicle" | "atk" | "maintenance" | "archive";
 type DashboardView = "all" | ModuleKey;
 type DashboardStatusFilter =
-  | "DRAFT"
   | "SUBMITTED"
   | "APPROVED_L1"
   | "APPROVED_GA"
@@ -49,7 +48,7 @@ type DashboardStatusFilter =
   | "COMPLETED"
   | "REJECTED"
   | "ON_APPROVAL";
-type DashboardStatusSelection = "DRAFT" | "ON_APPROVAL" | "REJECTED" | "COMPLETED" | "";
+type DashboardStatusSelection = "ON_APPROVAL" | "REJECTED" | "COMPLETED" | "";
 type SourceItem = Pengiriman | BookingRuang | BookingKendaraan | PermintaanAtk | PerbaikanSarana | PermintaanArsip;
 type ChartStatusKey = "completed" | "pending" | "rejected";
 type OrganizationDimension = "direktorat" | "divisi" | "departemen";
@@ -235,11 +234,15 @@ function summarizeModule(key: ModuleKey, counts: Partial<Record<string, number>>
     ? ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "REJECTED_KPU"]
     : ["REJECTED_L1", "REJECTED_GA", "REJECTED_GA_APPROVAL", "CANCELLED"];
 
+  const pending = sumStatuses(counts, pendingStatuses);
+  const completed = counts[completedStatus] ?? 0;
+  const rejected = sumStatuses(counts, rejectedStatuses);
+
   return {
-    total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
-    pending: sumStatuses(counts, pendingStatuses),
-    completed: counts[completedStatus] ?? 0,
-    rejected: sumStatuses(counts, rejectedStatuses),
+    total: completed + pending + rejected,
+    pending,
+    completed,
+    rejected,
   };
 }
 
@@ -324,7 +327,6 @@ function filterCountsBySelection(
   status: DashboardStatusSelection,
 ): Partial<Record<string, number>> {
   if (!status) return counts;
-  if (status === "DRAFT") return { DRAFT: counts.DRAFT ?? 0 };
   if (status === "ON_APPROVAL") {
     const stages = key === "expedition" || key === "atk"
       ? ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"]
@@ -710,14 +712,15 @@ export default function DashboardContent({ me }: { me: Me }) {
         source.list({ ...scope, limit: 5, status: selectedStatusForModule(module.key, status) }),
         source.list({ page: 1, limit: 1000, ...unitScope, status: selectedStatusForModule(module.key, status) }),
       ]);
-      const filteredCounts = statsResult.status === "fulfilled"
-        ? filterCountsBySelection(module.key, statsResult.value.countsByStatus, status)
-        : {};
+      const rawCounts = statsResult.status === "fulfilled" ? { ...statsResult.value.countsByStatus } : {};
+      delete rawCounts.DRAFT;
+      const filteredCounts = filterCountsBySelection(module.key, rawCounts, status);
       const stats = statsResult.status === "fulfilled"
         ? summarizeModule(module.key, filteredCounts)
         : { total: 0, pending: 0, completed: 0, rejected: 0 };
       const rawQueue = queueResult.status === "fulfilled" && actionMatchesSelection(actionFilter, status) ? queueResult.value.items : [];
-      const filteredQueue = isOriginAdmin(me.role) ? rawQueue.filter((item) => isOriginCorrection(module.key, item, me)) : rawQueue;
+      const filteredQueue = (isOriginAdmin(me.role) ? rawQueue.filter((item) => isOriginCorrection(module.key, item, me)) : rawQueue)
+        .filter((item) => item.status !== "DRAFT");
       const actionCount = isOriginAdmin(me.role)
         ? filteredQueue.length
         : queueResult.status === "fulfilled" && actionMatchesSelection(actionFilter, status) ? queueResult.value.total : 0;
@@ -730,9 +733,11 @@ export default function DashboardContent({ me }: { me: Me }) {
           countsByStatus: filteredCounts,
         } satisfies ModuleSummary,
         queue: filteredQueue.map((item) => adaptItem(module, item)),
-        recent: recentResult.status === "fulfilled" ? recentResult.value.items.map((item) => adaptItem(module, item)) : [],
+        recent: recentResult.status === "fulfilled"
+          ? recentResult.value.items.filter((item) => item.status !== "DRAFT").map((item) => adaptItem(module, item))
+          : [],
         analytics: analyticsResult.status === "fulfilled"
-          ? analyticsResult.value.items.map<AnalyticsItem>((item) => ({
+          ? analyticsResult.value.items.filter((item) => item.status !== "DRAFT").map<AnalyticsItem>((item) => ({
             moduleKey: module.key,
             divisi: item.divisi,
             departemen: item.departemen,
@@ -897,7 +902,7 @@ export default function DashboardContent({ me }: { me: Me }) {
   const periodText = periodDescription(month, date);
   const organizationContext = departemen || divisi || direktorat;
   const statusContext = status
-    ? ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
+    ? ({ ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<Exclude<DashboardStatusSelection, "">, string>)[status]
     : "";
   const analyticsContext = [activeView === "all" ? "Seluruh Modul" : activeModuleLabel, periodText, organizationContext, statusContext].filter(Boolean).join(" · ");
   const selectedAnalytics = state.analytics.filter((item) => activeView === "all" || item.moduleKey === activeView);
@@ -1035,7 +1040,7 @@ export default function DashboardContent({ me }: { me: Me }) {
               <div className={`filter-dropdown-panel ${styles.filterPanel}`}>
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label htmlFor="dashboard-status">Status</label>
-                  <SearchableSelect id="dashboard-status" value={status} onChange={(value) => setStatus(value as DashboardStatusSelection)} options={["DRAFT", "ON_APPROVAL", "REJECTED", "COMPLETED"]} getLabel={(value) => ({ DRAFT: "Draft", ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<string, string>)[value] ?? value} clearLabel="Semua Status" placeholder="Semua Status" />
+                  <SearchableSelect id="dashboard-status" value={status} onChange={(value) => setStatus(value as DashboardStatusSelection)} options={["ON_APPROVAL", "REJECTED", "COMPLETED"]} getLabel={(value) => ({ ON_APPROVAL: "On-Approval", REJECTED: "Rejected", COMPLETED: "Approved" } as Record<string, string>)[value] ?? value} clearLabel="Semua Status" placeholder="Semua Status" />
                 </div>
                 <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                   <label htmlFor="dashboard-direktorat">Direktorat</label>
