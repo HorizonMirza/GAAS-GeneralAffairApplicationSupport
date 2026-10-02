@@ -12,7 +12,18 @@ import SearchableSelect from "@/components/SearchableSelect";
 import ModalOverlay from "@/components/ModalOverlay";
 import CredentialsRevealModal, { type RevealedCredential } from "@/components/CredentialsRevealModal";
 import { formatDateTime } from "@/lib/format";
-import { UserPlus } from "lucide-react";
+import {
+  ListChecks,
+  SquarePen,
+  KeyRound,
+  LogOut,
+  LogIn,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { itemVariants, sidebarVariants } from "@/components/ui/menu";
+import { useRowMenu } from "@/lib/useRowMenu";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 
@@ -59,7 +70,14 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterWrapRef = useRef<HTMLDivElement>(null);
+  useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
+  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
+  const rowMenu = useRowMenu(items);
+
+  const [detailUser, setDetailUser] = useState<AdminUserListItem | null>(null);
   const [formOpen, setFormOpen] = useState<"create" | AdminUserListItem | null>(null);
   const [form, setForm] = useState<UserFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
@@ -73,10 +91,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   const [logPage, setLogPage] = useState(1);
   const [logTotal, setLogTotal] = useState(0);
   const [logBusy, setLogBusy] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const filterWrapRef = useRef<HTMLDivElement>(null);
-  useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
-  useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -224,8 +238,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   }
 
   function handleToggleActive(user: AdminUserListItem) {
-    const action = user.isActive ? "menonaktifkan" : "mengaktifkan";
-    confirm(`Yakin ingin ${action} akun "${user.nama}" (${user.username})?`, async () => {
+    const actionText = user.isActive ? "menonaktifkan / menghapus" : "mengaktifkan";
+    confirm(`Yakin ingin ${actionText} akun "${user.nama}" (${user.username})?`, async () => {
       try {
         if (user.isActive) await api.deactivateAdminUser(user.id);
         else await api.activateAdminUser(user.id);
@@ -234,7 +248,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       } catch (err) {
         showToast(errorMessage(err), "error");
       }
-    }, user.isActive ? "Nonaktifkan" : "Aktifkan");
+    }, user.isActive ? "Delete" : "Aktifkan");
   }
 
   // "Login As" - bertindak penuh sebagai akun ini (approve/reject/edit/buat baru, dst persis
@@ -279,196 +293,186 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   }
 
   return (
-    <div className="card">
-      <div className="toolbar transactions-page-toolbar">
-        <div className="field toolbar-search-field">
-          <label htmlFor="users-search">Cari Username</label>
-          <input
-            id="users-search"
-            type="text"
-            placeholder="Username"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-        </div>
+    <>
+      <div className="card">
+        <div className="toolbar transactions-page-toolbar">
+          <div className="field toolbar-search-field">
+            <label htmlFor="users-search">Cari Username</label>
+            <input
+              id="users-search"
+              type="text"
+              placeholder="Username"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
 
-        <div className="filter-dropdown-wrap" ref={filterWrapRef}>
-          <label className="filter-dropdown-label">Filter Lainnya</label>
-          <button
-            type="button"
-            className="btn filter-dropdown-toggle"
-            id="users-filter-toggle"
-            style={{ minWidth: 145, justifyContent: "space-between" }}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            Semua Filter
-            <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          {filterOpen && (
-            <div className="filter-dropdown-panel">
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="users-role">Role</label>
-                <SearchableSelect
-                  id="users-role"
-                  value={filters.role}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, role: v as Role | "", page: 1 }))}
-                  options={ROLE_OPTIONS}
-                  getLabel={(v) => ROLE_LABEL[v as Role] || v}
-                  clearLabel="Semua Role"
-                  placeholder="Semua Role"
-                />
+          <div className="filter-dropdown-wrap" ref={filterWrapRef}>
+            <label className="filter-dropdown-label">Filter Lainnya</label>
+            <button
+              type="button"
+              className="btn filter-dropdown-toggle"
+              id="users-filter-toggle"
+              style={{ minWidth: 145, justifyContent: "space-between" }}
+              onClick={() => setFilterOpen((v) => !v)}
+            >
+              Semua Filter
+              <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            {filterOpen && (
+              <div className="filter-dropdown-panel">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor="users-role">Role</label>
+                  <SearchableSelect
+                    id="users-role"
+                    value={filters.role}
+                    onChange={(v) => setFilters((prev) => ({ ...prev, role: v as Role | "", page: 1 }))}
+                    options={ROLE_OPTIONS}
+                    getLabel={(v) => ROLE_LABEL[v as Role] || v}
+                    clearLabel="Semua Role"
+                    placeholder="Semua Role"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="users-divisi">Divisi</label>
+                  <SearchableSelect
+                    id="users-divisi"
+                    value={filters.divisi}
+                    onChange={(v) => setFilters((prev) => ({ ...prev, divisi: v, departemen: "", page: 1 }))}
+                    options={orgStructure?.divisi || []}
+                    clearLabel="Semua Divisi"
+                    placeholder="Semua Divisi"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="users-departemen">Departemen</label>
+                  <SearchableSelect
+                    id="users-departemen"
+                    value={filters.departemen}
+                    onChange={(v) => setFilters((prev) => ({ ...prev, departemen: v, page: 1 }))}
+                    options={filterDepartemenOptions}
+                    clearLabel="Semua Departemen"
+                    placeholder="Semua Departemen"
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <label htmlFor="users-active">Status</label>
+                  <SearchableSelect
+                    id="users-active"
+                    value={filters.isActive === "" ? "" : String(filters.isActive)}
+                    onChange={(v) => setFilters((prev) => ({ ...prev, isActive: v === "" ? "" : v === "true", page: 1 }))}
+                    options={["true", "false"]}
+                    getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
+                    clearLabel="Semua Status"
+                    placeholder="Semua Status"
+                  />
+                </div>
               </div>
-              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="users-divisi">Divisi</label>
-                <SearchableSelect
-                  id="users-divisi"
-                  value={filters.divisi}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, divisi: v, departemen: "", page: 1 }))}
-                  options={orgStructure?.divisi || []}
-                  clearLabel="Semua Divisi"
-                  placeholder="Semua Divisi"
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="users-departemen">Departemen</label>
-                <SearchableSelect
-                  id="users-departemen"
-                  value={filters.departemen}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, departemen: v, page: 1 }))}
-                  options={filterDepartemenOptions}
-                  clearLabel="Semua Departemen"
-                  placeholder="Semua Departemen"
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="users-active">Status</label>
-                <SearchableSelect
-                  id="users-active"
-                  value={filters.isActive === "" ? "" : String(filters.isActive)}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, isActive: e === "" ? "" : e === "true", page: 1 }))}
-                  options={["true", "false"]}
-                  getLabel={(v) => (v === "true" ? "Aktif" : "Nonaktif")}
-                  clearLabel="Semua Status"
-                  placeholder="Semua Status"
-                />
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ width: "auto", alignSelf: "flex-end", height: 38, padding: "0 16px", borderRadius: 8, boxSizing: "border-box" }}
-          onClick={() => { setFilters(EMPTY_FILTERS); setSearchInput(""); }}
-        >
-          Semua Akun
-        </button>
-
-        <div className="toolbar-actions">
           <button
             type="button"
             className="btn btn-secondary"
-            style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
-            onClick={openImpersonationLog}
+            style={{ width: "auto", alignSelf: "flex-end", height: 38, padding: "0 16px", borderRadius: 8, boxSizing: "border-box" }}
+            onClick={() => { setFilters(EMPTY_FILTERS); setSearchInput(""); }}
           >
-            Riwayat Login
+            Semua Akun
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
-            onClick={openCreate}
-          >
-            + Tambah Akun
-          </button>
-        </div>
-      </div>
 
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th style={{ width: 44, textAlign: "center" }}>No</th>
-              <th>Username</th>
-              <th>Nama</th>
-              <th>Role</th>
-              <th>Direktorat</th>
-              <th>Divisi</th>
-              <th>Departemen</th>
-              <th>Email</th>
-              <th>No. HP</th>
-              <th>Status</th>
-              <th>Dibuat</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {busy ? (
-              <tr><td colSpan={12} className="table-empty">Memuat data...</td></tr>
-            ) : error ? (
-              <tr><td colSpan={12} className="table-empty">{error}</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={12} className="table-empty">Tidak Ada Data</td></tr>
-            ) : (
-              items.map((user, idx) => (
-                <tr key={user.id}>
-                  <td style={{ textAlign: "center" }}>{(filters.page - 1) * filters.limit + idx + 1}</td>
-                  <td>{user.username}</td>
-                  <td>{user.nama}</td>
-                  <td>{ROLE_LABEL[user.role] || user.role}</td>
-                  <td>{user.direktorat || "-"}</td>
-                  <td>{user.divisi || "-"}</td>
-                  <td>{user.departemen || "-"}</td>
-                  <td>{user.email || "-"}</td>
-                  <td>{user.noHp || "-"}</td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
-                        {user.isActive ? "Aktif" : "Nonaktif"}
-                      </span>
-                      {user.mustChangePassword && (
-                        <span className="badge badge-pending" title="Belum mengganti password sementara">
-                          Belum Ganti Password
+          <div className="toolbar-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
+              onClick={openImpersonationLog}
+            >
+              Riwayat Login
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "auto", height: 38, padding: "0 16px", borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box" }}
+              onClick={openCreate}
+            >
+              + Tambah Akun
+            </button>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: 44, textAlign: "center" }}>No</th>
+                <th>Username</th>
+                <th>Nama</th>
+                <th>Role</th>
+                <th>Direktorat</th>
+                <th>Divisi</th>
+                <th>Departemen</th>
+                <th>Email</th>
+                <th>No. HP</th>
+                <th>Status</th>
+                <th style={{ width: 44, textAlign: "center" }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {busy ? (
+                <tr><td colSpan={11} className="table-empty">Memuat data...</td></tr>
+              ) : error ? (
+                <tr><td colSpan={11} className="table-empty">{error}</td></tr>
+              ) : items.length === 0 ? (
+                <tr><td colSpan={11} className="table-empty">Tidak Ada Data</td></tr>
+              ) : (
+                items.map((user, idx) => (
+                  <tr key={user.id}>
+                    <td style={{ textAlign: "center" }}>{(filters.page - 1) * filters.limit + idx + 1}</td>
+                    <td>{user.username}</td>
+                    <td>{user.nama}</td>
+                    <td>{ROLE_LABEL[user.role] || user.role}</td>
+                    <td>{user.direktorat || "-"}</td>
+                    <td>{user.divisi || "-"}</td>
+                    <td>{user.departemen || "-"}</td>
+                    <td>{user.email || "-"}</td>
+                    <td>{user.noHp || "-"}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
+                          {user.isActive ? "Aktif" : "Nonaktif"}
                         </span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{formatDateTime(user.createdAt)}</td>
-                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => openEdit(user)}>Edit</button>
-                    <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleResetPassword(user)}>Reset Password</button>
-                    {user.isActive && (
-                      <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "3px 8px" }} onClick={() => handleForceLogout(user)}>Paksa Logout</button>
-                    )}
-                    <button
-                      type="button"
-                      className={user.isActive ? "btn btn-confirm-danger" : "btn btn-confirm-approve"}
-                      style={{ width: "auto", padding: "3px 8px" }}
-                      onClick={() => handleToggleActive(user)}
-                    >
-                      {user.isActive ? "Nonaktifkan" : "Aktifkan"}
-                    </button>
-                    {user.isActive && user.role !== "SUPER_ADMIN" && user.id !== me?.id && (
+                        {user.mustChangePassword && (
+                          <span className="badge badge-pending" title="Belum mengganti password sementara">
+                            Belum Ganti Password
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
                       <button
                         type="button"
-                        className="btn btn-secondary"
-                        style={{ width: "auto", padding: "3px 8px" }}
-                        disabled={impersonating === user.id}
-                        onClick={() => handleImpersonate(user)}
+                        className="card-icon-btn"
+                        aria-label="Aksi"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          rowMenu.toggle(e, user.id, 240);
+                        }}
                       >
-                        {impersonating === user.id ? "Memuat..." : "Login As"}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="5" cy="12" r="2" />
+                          <circle cx="12" cy="12" r="2" />
+                          <circle cx="19" cy="12" r="2" />
+                        </svg>
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
       <div className="pagination">
         <div className="pagination-left">
@@ -501,6 +505,212 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           </div>
         </div>
       </div>
+    </div>
+
+      {rowMenu.position && rowMenu.menuItem && (
+        <motion.div
+          className="row-menu-dropdown"
+          style={{
+            top: rowMenu.position.top,
+            left: rowMenu.position.left,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          initial="hidden"
+          animate="visible"
+          variants={sidebarVariants}
+        >
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
+                setDetailUser(u);
+              }}
+            >
+              <ListChecks width={16} height={16} />
+              Detail
+            </button>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
+                openEdit(u);
+              }}
+            >
+              <SquarePen width={16} height={16} />
+              Updates
+            </button>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
+                handleResetPassword(u);
+              }}
+            >
+              <KeyRound width={16} height={16} />
+              Reset Password
+            </button>
+          </motion.div>
+
+          {rowMenu.menuItem.isActive && (
+            <motion.div variants={itemVariants}>
+              <button
+                type="button"
+                className="row-menu-item"
+                onClick={() => {
+                  const u = rowMenu.menuItem!;
+                  rowMenu.close();
+                  handleForceLogout(u);
+                }}
+              >
+                <LogOut width={16} height={16} />
+                Paksa Logout
+              </button>
+            </motion.div>
+          )}
+
+          {rowMenu.menuItem.isActive && rowMenu.menuItem.role !== "SUPER_ADMIN" && rowMenu.menuItem.id !== me?.id && (
+            <motion.div variants={itemVariants}>
+              <button
+                type="button"
+                className="row-menu-item"
+                disabled={impersonating === rowMenu.menuItem.id}
+                onClick={() => {
+                  const u = rowMenu.menuItem!;
+                  rowMenu.close();
+                  handleImpersonate(u);
+                }}
+                style={{ color: "var(--blue-500)", fontWeight: 600 }}
+              >
+                <LogIn width={16} height={16} />
+                {impersonating === rowMenu.menuItem.id ? "Memuat..." : "Login As"}
+              </button>
+            </motion.div>
+          )}
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className={`row-menu-item ${rowMenu.menuItem.isActive ? "row-menu-item-danger" : ""}`}
+              style={!rowMenu.menuItem.isActive ? { color: "var(--green-500)", fontWeight: 600 } : undefined}
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
+                handleToggleActive(u);
+              }}
+            >
+              {rowMenu.menuItem.isActive ? (
+                <>
+                  <Trash2 width={16} height={16} />
+                  Delete
+                </>
+              ) : (
+                <>
+                  <UserCheck width={16} height={16} />
+                  Aktifkan
+                </>
+              )}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+
+      <ModalOverlay open={!!detailUser} onClose={() => setDetailUser(null)} className={`modal-overlay modal-overlay-centered ${detailUser ? "" : "hidden"}`}>
+        <div className="modal" style={{ maxWidth: 520 }}>
+          <div className="modal-header">
+            <h3>Detail Akun</h3>
+            <button type="button" className="modal-close" onClick={() => setDetailUser(null)}>&times;</button>
+          </div>
+          {detailUser && (
+            <div style={{ padding: "0 4px" }}>
+              <div className="detail-grid">
+                <div className="detail-row">
+                  <span className="detail-label">Username</span>
+                  <span className="detail-value">{detailUser.username}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Nama</span>
+                  <span className="detail-value">{detailUser.nama}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Role</span>
+                  <span className="detail-value">{ROLE_LABEL[detailUser.role] || detailUser.role}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Status</span>
+                  <div className="detail-value" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    <span className={`badge ${detailUser.isActive ? "badge-approved" : "badge-rejected"}`}>
+                      {detailUser.isActive ? "Aktif" : "Nonaktif"}
+                    </span>
+                    {detailUser.mustChangePassword && (
+                      <span className="badge badge-pending">
+                        Belum Ganti Password
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Direktorat</span>
+                  <span className="detail-value">{detailUser.direktorat || "-"}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Divisi</span>
+                  <span className="detail-value">{detailUser.divisi || "-"}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Departemen</span>
+                  <span className="detail-value">{detailUser.departemen || "-"}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Dibuat</span>
+                  <span className="detail-value">
+                    {!detailUser.createdAt || detailUser.createdAt.startsWith("0001")
+                      ? "-"
+                      : formatDateTime(detailUser.createdAt)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Email</span>
+                  <span className="detail-value">{detailUser.email || "-"}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">No. HP</span>
+                  <span className="detail-value">{detailUser.noHp || "-"}</span>
+                </div>
+              </div>
+              <div className="modal-actions" style={{ marginTop: 24 }}>
+                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setDetailUser(null)}>
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "auto" }}
+                  onClick={() => {
+                    const u = detailUser;
+                    setDetailUser(null);
+                    openEdit(u);
+                  }}
+                >
+                  Edit Akun
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </ModalOverlay>
 
       <ModalOverlay open={!!formOpen} onClose={() => setFormOpen(null)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
         <div className="modal" style={{ maxWidth: 480 }}>
@@ -635,6 +845,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           </div>
         </div>
       </ModalOverlay>
-    </div>
+    </>
   );
 }
