@@ -100,10 +100,16 @@ public class UsersAdminController : ApiControllerBase
 
         var username = payload.Username?.Trim() ?? "";
         var nama = payload.Nama?.Trim() ?? "";
+        var email = payload.Email?.Trim() ?? "";
+        var noHp = payload.NoHp?.Trim() ?? "";
         if (username.Length == 0)
             return StatusCode(400, new { detail = "Username wajib diisi" });
         if (nama.Length == 0)
             return StatusCode(400, new { detail = "Nama akun wajib diisi" });
+        if (email.Length == 0)
+            return StatusCode(400, new { detail = "Email wajib diisi" });
+        if (noHp.Length == 0)
+            return StatusCode(400, new { detail = "No. HP wajib diisi" });
         if (await _db.Users.AnyAsync(u => u.Username == username))
             return StatusCode(400, new { detail = "Username sudah dipakai akun lain" });
 

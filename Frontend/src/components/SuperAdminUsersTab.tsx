@@ -205,8 +205,21 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
-    if (!form.nama.trim()) { setFormError("Nama akun wajib diisi"); return; }
     if (formOpen === "create" && !form.username.trim()) { setFormError("Username wajib diisi"); return; }
+    if (!form.nama.trim()) { setFormError("Nama akun wajib diisi"); return; }
+    if (!form.role) { setFormError("Role wajib dipilih"); return; }
+
+    const isDeptRole = form.role === "ADMIN_DEPARTEMEN" || form.role === "APPROVAL_DEPARTEMEN";
+    const isDivisiRole = form.role === "ADMIN_DIVISI" || form.role === "APPROVAL_DIVISI";
+
+    if (isDeptRole || isDivisiRole) {
+      if (!form.direktorat) { setFormError("Direktorat wajib dipilih"); return; }
+      if (!form.divisi) { setFormError("Divisi wajib dipilih"); return; }
+      if (isDeptRole && !form.departemen) { setFormError("Departemen wajib dipilih"); return; }
+    }
+
+    if (!form.email.trim()) { setFormError("Email wajib diisi"); return; }
+    if (!form.noHp.trim()) { setFormError("No. HP wajib diisi"); return; }
 
     setSaving(true);
     try {
@@ -1029,23 +1042,27 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 value={form.departemen}
                 onChange={(v) => setForm((f) => ({ ...f, departemen: v }))}
                 options={departemenOptions}
-                clearLabel="Kebutuhan Divisi ini (tanpa Departemen spesifik)"
+                clearLabel="Tanpa Departmen"
                 placeholder="Pilih Departemen"
               />
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-email">Email</label>
-              <input id="user-form-email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+              <input id="user-form-email" type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-nohp">No. HP</label>
-              <input id="user-form-nohp" type="text" value={form.noHp} onChange={(e) => setForm((f) => ({ ...f, noHp: e.target.value }))} />
+              <input id="user-form-nohp" type="text" required value={form.noHp} onChange={(e) => setForm((f) => ({ ...f, noHp: e.target.value }))} />
             </div>
 
             <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={() => setFormOpen(null)} disabled={saving}>Batal</button>
-              <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={saving}>
-                {saving ? "Menyimpan..." : formOpen === "create" ? "Buat Akun" : "Simpan"}
+              <button
+                type="submit"
+                className="btn btn-confirm-approve"
+                style={{ width: "auto" }}
+                disabled={saving}
+              >
+                {saving ? "Menyimpan..." : "Save"}
               </button>
             </div>
           </form>
