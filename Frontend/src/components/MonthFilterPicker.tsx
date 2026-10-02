@@ -44,7 +44,7 @@ interface Props {
 // Replaces the plain <input type="month"> used for every "Filter Bulan" across the app - the
 // native control renders the OS/browser's own picker UI, which CSS cannot restyle at all, so
 // matching the requested card-with-month-grid design meant building this instead.
-export default function MonthFilterPicker({ id, value, onChange, placeholder = "Semua Bulan", fillWidth = false }: Props) {
+export default function MonthFilterPicker({ id, value, onChange, placeholder = "Semua Periode", fillWidth = false }: Props) {
   const [open, setOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);

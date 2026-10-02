@@ -174,6 +174,7 @@ export default function PeriodFilterPicker({ id, bulan, tanggal, onChangeBulan, 
 
   function clear() {
     onChangeBulan("");
+    onChangeTanggal("");
     setOpen(false);
   }
 

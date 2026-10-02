@@ -71,7 +71,6 @@ import DashboardContent from "@/components/DashboardContent";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
 import RiwayatAktivitasCard from "@/components/RiwayatAktivitasCard";
 import SearchableSelect from "@/components/SearchableSelect";
-import MonthFilterPicker from "@/components/MonthFilterPicker";
 import DateFilterPicker from "@/components/DateFilterPicker";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import { Activity, Building2, Calendar, Car, ChevronRight, ClipboardList, Folder, Layers, Shield, Users, Wrench } from "lucide-react";
@@ -373,6 +372,7 @@ interface AtkFilterState {
   page: number;
   limit: number;
   bulan: string;
+  tanggal: string;
   search: string;
   status: Status | "REJECTED" | "ON_APPROVAL" | "";
   divisi: string;
@@ -381,12 +381,13 @@ interface AtkFilterState {
   sumberPembelian: SumberPembelian | "";
 }
 
-const EMPTY_ATK_FILTERS: AtkFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", divisi: "", departemen: "", direktorat: "", sumberPembelian: "" };
+const EMPTY_ATK_FILTERS: AtkFilterState = { page: 1, limit: 10, bulan: "", tanggal: "", search: "", status: "", divisi: "", departemen: "", direktorat: "", sumberPembelian: "" };
 
 interface SaranaFilterState {
   page: number;
   limit: number;
   bulan: string;
+  tanggal: string;
   search: string;
   status: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
   kategori: KategoriKerusakan | "";
@@ -395,7 +396,7 @@ interface SaranaFilterState {
   direktorat: string;
 }
 
-const EMPTY_SARANA_FILTERS: SaranaFilterState = { page: 1, limit: 10, bulan: "", search: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "" };
+const EMPTY_SARANA_FILTERS: SaranaFilterState = { page: 1, limit: 10, bulan: "", tanggal: "", search: "", status: "", kategori: "", divisi: "", departemen: "", direktorat: "" };
 
 // Repository (Katalog) - read-only, approved-only view, so no status filter like the Transaction
 // tables above (see PermintaanArsipController/PerbaikanSaranaController.GetCatalog).
@@ -1594,6 +1595,7 @@ function SuperAdminPageInner() {
         page: atkFilters.page,
         limit: atkFilters.limit,
         bulan: atkFilters.bulan,
+        tanggal: atkFilters.tanggal,
         status: atkFilters.status,
         divisi: atkFilters.divisi,
         departemen: atkFilters.departemen,
@@ -1677,6 +1679,7 @@ function SuperAdminPageInner() {
         page: saranaFilters.page,
         limit: saranaFilters.limit,
         bulan: saranaFilters.bulan,
+        tanggal: saranaFilters.tanggal,
         status: saranaFilters.status,
         kategori: saranaFilters.kategori,
         divisi: saranaFilters.divisi,
@@ -1944,7 +1947,7 @@ function SuperAdminPageInner() {
   function atkExportParams() {
     return {
       bulan: atkFilters.bulan,
-      tanggal: undefined,
+      tanggal: atkFilters.tanggal || undefined,
       status: atkFilters.status,
       divisi: atkFilters.divisi,
       departemen: atkFilters.departemen,
@@ -1957,7 +1960,7 @@ function SuperAdminPageInner() {
   function saranaExportParams() {
     return {
       bulan: saranaFilters.bulan,
-      tanggal: undefined,
+      tanggal: saranaFilters.tanggal || undefined,
       status: saranaFilters.status,
       kategori: saranaFilters.kategori,
       divisi: saranaFilters.divisi,
@@ -5933,8 +5936,14 @@ function SuperAdminPageInner() {
             <input type="text" id="filter-atk-search" placeholder="No Pesanan" value={atkSearchInput} onChange={(e) => handleAtkSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-atk-bulan">Filter Bulan</label>
-            <MonthFilterPicker id="filter-atk-bulan" value={atkFilters.bulan} onChange={(v) => updateAtkFilter({ bulan: v })} />
+            <label htmlFor="filter-atk-bulan">Filter Periode</label>
+            <PeriodFilterPicker
+              id="filter-atk-bulan"
+              bulan={atkFilters.bulan}
+              tanggal={atkFilters.tanggal}
+              onChangeBulan={(v) => updateAtkFilter({ bulan: v, tanggal: "" })}
+              onChangeTanggal={(v) => updateAtkFilter({ tanggal: v, bulan: "" })}
+            />
           </div>
           <div className="filter-dropdown-wrap" ref={atkFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
@@ -6560,8 +6569,14 @@ function SuperAdminPageInner() {
             <input type="text" id="filter-sarana-search" placeholder="No Pengajuan" value={saranaSearchInput} onChange={(e) => handleSaranaSearchChange(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filter-sarana-bulan">Filter Bulan</label>
-            <MonthFilterPicker id="filter-sarana-bulan" value={saranaFilters.bulan} onChange={(v) => updateSaranaFilter({ bulan: v })} />
+            <label htmlFor="filter-sarana-bulan">Filter Periode</label>
+            <PeriodFilterPicker
+              id="filter-sarana-bulan"
+              bulan={saranaFilters.bulan}
+              tanggal={saranaFilters.tanggal}
+              onChangeBulan={(v) => updateSaranaFilter({ bulan: v, tanggal: "" })}
+              onChangeTanggal={(v) => updateSaranaFilter({ tanggal: v, bulan: "" })}
+            />
           </div>
           <div className="filter-dropdown-wrap" ref={saranaFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
