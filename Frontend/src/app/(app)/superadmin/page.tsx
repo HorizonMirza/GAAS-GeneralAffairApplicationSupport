@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { atkItemsSummary, bookingRoomsLabel, BOOKING_ON_APPROVAL_STATUSES, BOOKING_REJECTED_STATUSES, bookingStatusBorderClass, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, EXECUTION_STAGE_LABEL, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, ON_APPROVAL_STATUSES, REJECTED_STATUSES, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
+import { atkItemsSummary, bookingRoomsLabel, BOOKING_ON_APPROVAL_STATUSES, BOOKING_REJECTED_STATUSES, bookingStatusBorderClass, canGaKoreksiArsip, canGaKoreksiPengiriman, canGaKoreksiSarana, canGaRescheduleBooking, canGaRescheduleKendaraan, canGaUpdateAtk, canKoreksiHargaAtk, canKoreksiHargaPengiriman, cardStatusBorderClass, INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL, isArsipEditableByOrigin, isArsipPdfAvailable, isAtkEditableByOrigin, isAtkPdfAvailable, isBookingCancellableByOrigin, isBookingDeletableByOrigin, isBookingEditableByOrigin, isBookingOriginRole, isBookingPdfAvailable, isEditableByOrigin, isKendaraanCancellableByOrigin, isKendaraanDeletableByOrigin, isKendaraanEditableByOrigin, isKendaraanPdfAvailable, isPengirimanPdfAvailable, isSaranaEditableByOrigin, isSaranaPdfAvailable, ON_APPROVAL_STATUSES, REJECTED_STATUSES, SUMBER_PEMBELIAN_LABEL } from "@/lib/constants";
 import { currentYear, currentYearMonth, formatCurrency, formatDate, formatDateTime, formatTimeRange, invoiceBulanLabel, nowWib, todayLocalDate, truncateText } from "@/lib/format";
 import { isWholeDayAllowed } from "@/lib/bookingTime";
 import { kendaraanAsBookingRuangShape } from "@/lib/kendaraanCalendarAdapter";
@@ -6439,9 +6439,6 @@ function SuperAdminPageInner() {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
-                          {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
-                            <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
-                          )}
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -6698,12 +6695,7 @@ function SuperAdminPageInner() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">
-                          <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
-                            {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
-                              <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
-                            )}
-                          </span>
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}

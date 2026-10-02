@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
-  EXECUTION_STAGE_LABEL,
   canGaKoreksiSarana,
   isBookingOriginRole,
   isSaranaEditableByOrigin,
@@ -378,12 +377,7 @@ function MaintenanceTransaksiPageInner() {
                       <td title={item.catatan || ""}>{truncateText(item.catatan, 20)}</td>
                       <td>
                         <div className="status-cell">
-                          <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
-                            {item.status === "APPROVED_GA_APPROVAL" && item.executionStage !== "MENUNGGU" && (
-                              <span className="badge badge-pending">{EXECUTION_STAGE_LABEL[item.executionStage]}</span>
-                            )}
-                          </span>
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} revisable />
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
