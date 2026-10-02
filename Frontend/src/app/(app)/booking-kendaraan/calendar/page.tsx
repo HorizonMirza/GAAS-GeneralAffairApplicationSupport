@@ -253,7 +253,7 @@ function VehicleCalendarPageInner() {
               + Booking Kendaraan
             </button>
           )}
-          <div className="field field-select-blue" style={{ marginBottom: 0 }}>
+          <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-select">Kendaraan</label>
             <SearchableSelect
               id="calendar-kendaraan-select"

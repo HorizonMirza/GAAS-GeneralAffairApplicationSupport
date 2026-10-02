@@ -4075,6 +4075,9 @@ table.data-table {
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 16px;
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0;
 }
 
 .calendar-sidebar-create-btn {
@@ -4083,15 +4086,41 @@ table.data-table {
   font-size: 0.85rem;
 }
 
-.calendar-sidebar .field label {
-  font-size: 0.78rem;
-  margin-bottom: 4px;
+.calendar-sidebar .field label,
+.calendar-sidebar > .field > label {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  font-family: inherit;
+  letter-spacing: 0;
+  margin-bottom: 6px;
 }
+
 .calendar-sidebar .field input,
-.calendar-sidebar .field select {
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  border-radius: 8px;
+.calendar-sidebar .field select,
+.calendar-sidebar .field .filter-picker-trigger,
+.calendar-sidebar .field .searchable-select-trigger {
+  padding: 8px 12px;
+  font-size: 0.85rem !important;
+  border-radius: 10px;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  font-family: inherit;
+  letter-spacing: 0;
+}
+
+.calendar-sidebar .field .filter-picker-trigger > span:not(.searchable-select-placeholder),
+.calendar-sidebar .field .searchable-select-trigger > span:not(.searchable-select-placeholder) {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
+.calendar-sidebar .field input::placeholder,
+.calendar-sidebar .field .searchable-select-placeholder {
+  color: var(--text-secondary) !important;
+  -webkit-text-fill-color: var(--text-secondary) !important;
+  opacity: 0.75;
 }
 
 .calendar-main {
@@ -4190,7 +4219,7 @@ table.data-table {
 .calendar-topbar-room {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--text-primary);
+  color: #000;
   margin-left: 6px;
 }
 
@@ -4519,7 +4548,9 @@ table.data-table {
 .transactions-page-toolbar > .toolbar-actions .btn:not(.btn-primary),
 .invoices-page-toolbar > .field > label,
 .invoices-page-toolbar > .btn:not(.btn-primary),
-.invoices-page-toolbar > .toolbar-actions .btn:not(.btn-primary) {
+.invoices-page-toolbar > .toolbar-actions .btn:not(.btn-primary),
+.calendar-sidebar > .field > label,
+.calendar-sidebar .field label {
   color: #000 !important;
   font-weight: 600;
   -webkit-text-fill-color: #000;
