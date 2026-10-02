@@ -636,22 +636,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               }}
             >
               <SquarePen width={16} height={16} />
-              Edit Akun
-            </button>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <button
-              type="button"
-              className="row-menu-item"
-              onClick={() => {
-                const u = rowMenu.menuItem!;
-                rowMenu.close();
-                openChangePassword(u);
-              }}
-            >
-              <KeyRound width={16} height={16} />
-              Ganti Password
+              Updates
             </button>
           </motion.div>
 
@@ -689,6 +674,21 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               </button>
             </motion.div>
           )}
+
+          <motion.div variants={itemVariants}>
+            <button
+              type="button"
+              className="row-menu-item"
+              onClick={() => {
+                const u = rowMenu.menuItem!;
+                rowMenu.close();
+                openChangePassword(u);
+              }}
+            >
+              <KeyRound width={16} height={16} />
+              Change Password
+            </button>
+          </motion.div>
 
           <motion.div variants={itemVariants}>
             <button
