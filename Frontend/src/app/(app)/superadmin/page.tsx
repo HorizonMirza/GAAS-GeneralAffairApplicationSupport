@@ -2702,7 +2702,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={filterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {filterOpen && (
@@ -3465,7 +3465,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={bookingFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" id="filter-booking-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setBookingFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {bookingFilterOpen && (
@@ -4400,7 +4400,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={kendaraanFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" id="filter-kendaraan-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setKendaraanFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {kendaraanFilterOpen && (
@@ -5205,7 +5205,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={arsipFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" id="filter-arsip-toggle" style={{ width: "auto" }} onClick={() => setArsipFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {arsipFilterOpen && (
@@ -5486,7 +5486,7 @@ function SuperAdminPageInner() {
               <div className="filter-dropdown-wrap" ref={arsipKatalogFilterWrapRef}>
                 <label className="filter-dropdown-label">Filter Lainnya</label>
                 <button type="button" className="btn filter-dropdown-toggle" id="filter-arsip-katalog-toggle" style={{ width: "auto" }} onClick={() => setArsipKatalogFilterOpen((v) => !v)}>
-                  Semua Filter
+                  <span className="searchable-select-placeholder">Semua Filter</span>
                   <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </button>
                 {arsipKatalogFilterOpen && (
@@ -5933,7 +5933,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={atkFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" id="filter-atk-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setAtkFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {atkFilterOpen && (
@@ -6558,7 +6558,7 @@ function SuperAdminPageInner() {
           <div className="filter-dropdown-wrap" ref={saranaFilterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-toggle" style={AUTO_WIDTH_STYLE} onClick={() => setSaranaFilterOpen((v) => !v)}>
-              Semua Filter
+              <span className="searchable-select-placeholder">Semua Filter</span>
               <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             {saranaFilterOpen && (
@@ -6837,7 +6837,7 @@ function SuperAdminPageInner() {
               <div className="filter-dropdown-wrap" ref={saranaKatalogFilterWrapRef}>
                 <label className="filter-dropdown-label">Filter Lainnya</label>
                 <button type="button" className="btn filter-dropdown-toggle" id="filter-sarana-katalog-toggle" style={{ width: "auto" }} onClick={() => setSaranaKatalogFilterOpen((v) => !v)}>
-                  Semua Filter
+                  <span className="searchable-select-placeholder">Semua Filter</span>
                   <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </button>
                 {saranaKatalogFilterOpen && (

@@ -674,19 +674,42 @@ body {
 }
 
 /* "Semua Filter" toggle - matches PeriodFilterPicker's trigger (.filter-picker-trigger) look:
-   muted secondary text at normal weight instead of .btn-secondary's bold primary text, so the two
+   muted secondary text at normal weight and exact same brightness/opacity, so the two
    toolbar triggers read as the same kind of control. */
 .filter-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   background: var(--bg-surface-alt);
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
+  -webkit-text-fill-color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 1px 3px rgba(15, 40, 90, 0.06);
   font-family: inherit;
   font-weight: 400;
+  text-align: left;
 }
 
 .filter-dropdown-toggle:hover:not(:disabled) {
   border-color: var(--blue-300);
+}
+
+.filter-dropdown-toggle svg,
+.filter-dropdown-toggle .account-chevron {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.filter-dropdown-toggle > span,
+.filter-dropdown-toggle .searchable-select-placeholder {
+  color: var(--text-secondary) !important;
+  -webkit-text-fill-color: var(--text-secondary) !important;
+  opacity: 0.75;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: inherit;
 }
 
 .btn-approve {
@@ -4506,9 +4529,9 @@ table.data-table {
 }
 
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle {
-  color: var(--text-secondary) !important;
+  color: color-mix(in srgb, var(--text-secondary) 75%, transparent) !important;
   font-weight: 400;
-  -webkit-text-fill-color: var(--text-secondary);
+  -webkit-text-fill-color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
 }
 
 .transactions-page-toolbar > .field > input::placeholder {
@@ -4517,9 +4540,12 @@ table.data-table {
   -webkit-text-fill-color: var(--text-secondary);
 }
 
-.transactions-page-toolbar > .field .searchable-select-placeholder {
+.transactions-page-toolbar > .field .searchable-select-placeholder,
+.transactions-page-toolbar > .filter-dropdown-wrap .searchable-select-placeholder,
+.transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle > span {
   color: var(--text-secondary) !important;
   opacity: 0.75;
+  font-weight: 400;
   -webkit-text-fill-color: var(--text-secondary);
 }
 

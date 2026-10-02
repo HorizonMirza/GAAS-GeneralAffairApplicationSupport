@@ -213,18 +213,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #000000;
-  -webkit-text-fill-color: #000000;
+  color: var(--text-secondary);
+  -webkit-text-fill-color: var(--text-secondary);
   font-family: inherit;
   font-size: 0.95rem !important;
   font-weight: 400 !important;
-  opacity: 1;
+  opacity: 0.75;
 }
 
 .monthFilter :global(.filter-picker-trigger) :global(.account-chevron),
 .filterToggle :global(.account-chevron) {
   flex-shrink: 0;
-  color: #000000;
+  color: var(--text-secondary);
   transition: transform 150ms ease;
 }
 

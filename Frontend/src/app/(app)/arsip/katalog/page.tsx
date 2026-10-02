@@ -173,7 +173,7 @@ export default function ArsipKatalogPage() {
         <div className="filter-dropdown-wrap" ref={filterWrapRef}>
           <label className="filter-dropdown-label">Filter Lainnya</label>
           <button type="button" className="btn filter-dropdown-toggle" id="filter-katalog-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
-            Semua Filter
+            <span className="searchable-select-placeholder">Semua Filter</span>
             <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           {filterOpen && (
