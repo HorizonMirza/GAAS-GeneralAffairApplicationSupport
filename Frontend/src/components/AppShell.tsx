@@ -121,9 +121,9 @@ const SUPER_ADMIN_TABS: { key: string; label: string }[] = [
 // "app configuration" rather than getting lost among the seven business modules. Master data now
 // lives inside each business module's own "Settings" sub-tab instead of a standalone entry here.
 const SETTINGS_TABS: { key: string; label: string }[] = [
+  { key: "users", label: "Users" },
   { key: "system", label: "System" },
   { key: "organisasi", label: "Organization" },
-  { key: "users", label: "Users" },
   { key: "activity-log", label: "Activity Log" },
 ];
 

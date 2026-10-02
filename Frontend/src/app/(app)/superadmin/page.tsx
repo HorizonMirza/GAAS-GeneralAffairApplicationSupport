@@ -98,10 +98,10 @@ const TABS: { key: SuperAdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "atk", label: "Office Supplies", icon: <ClipboardList width={16} height={16} /> },
   { key: "sarana", label: "Maintenance", icon: <Wrench width={16} height={16} /> },
   { key: "arsip", label: "Archive", icon: <Folder width={16} height={16} /> },
+  { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
   { key: "system", label: "System", icon: <Shield width={16} height={16} /> },
   { key: "app-settings", label: "System", icon: <Shield width={16} height={16} /> },
   { key: "organisasi", label: "Organization", icon: <Building2 width={16} height={16} /> },
-  { key: "users", label: "Users", icon: <Users width={16} height={16} /> },
   { key: "activity-log", label: "Activity Log", icon: <Activity width={16} height={16} /> },
 ];
 
@@ -994,7 +994,7 @@ function SuperAdminPageInner() {
   })();
 
   function ekspedisiOvHandleDelete(item: Pengiriman) {
-    confirm("Hapus data pengiriman ini secara permanen?", async () => {
+    confirm("Delete data pengiriman ini secara permanen?", async () => {
       try {
         await api.deletePengiriman(item.id);
         showToast("Data berhasil dihapus");
@@ -1136,7 +1136,7 @@ function SuperAdminPageInner() {
   function bookingOvHandleDelete(item: BookingRuang) {
     const message = item.seriesId
       ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
-      : "Hapus booking ruangan ini secara permanen?";
+      : "Delete booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);
@@ -1211,7 +1211,7 @@ function SuperAdminPageInner() {
   })();
 
   function kendaraanOvHandleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+    confirm("Delete booking kendaraan ini secara permanen?", async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
         showToast("Booking berhasil dihapus");
@@ -1422,7 +1422,7 @@ function SuperAdminPageInner() {
   function bookingCalHandleDelete(item: BookingRuang) {
     const message = item.seriesId
       ? "Booking ini bagian dari jadwal berulang\nmenghapusnya akan menghapus seluruh jadwal"
-      : "Hapus booking ruangan ini secara permanen?";
+      : "Delete booking ruangan ini secara permanen?";
     confirm(message, async () => {
       try {
         await api.deleteBooking(item.id);
@@ -1450,7 +1450,7 @@ function SuperAdminPageInner() {
     setKendaraanCalFormOpen(true);
   }
   function kendaraanCalHandleDelete(item: BookingKendaraan) {
-    confirm("Hapus booking kendaraan ini secara permanen?", async () => {
+    confirm("Delete booking kendaraan ini secara permanen?", async () => {
       try {
         await api.deleteKendaraanBooking(item.id);
         showToast("Booking berhasil dihapus");
@@ -1533,7 +1533,7 @@ function SuperAdminPageInner() {
   })();
 
   function arsipOvHandleDelete(item: PermintaanArsip) {
-    confirm("Hapus Pemindahan Arsip ini secara permanen?", async () => {
+    confirm("Delete Pemindahan Arsip ini secara permanen?", async () => {
       try {
         await api.deleteArsip(item.id);
         showToast("Pemindahan berhasil dihapus");
@@ -1651,7 +1651,7 @@ function SuperAdminPageInner() {
   })();
 
   function atkOvHandleDelete(item: PermintaanAtk) {
-    confirm("Hapus Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
+    confirm("Delete Pesanan Kebutuhan Kantor ini secara permanen?", async () => {
       try {
         await api.deleteAtk(item.id);
         showToast("Pesanan berhasil dihapus");
@@ -1745,7 +1745,7 @@ function SuperAdminPageInner() {
   })();
 
   function saranaOvHandleDelete(item: PerbaikanSarana) {
-    confirm("Hapus Pengajuan Perbaikan ini secara permanen?", async () => {
+    confirm("Delete Pengajuan Perbaikan ini secara permanen?", async () => {
       try {
         await api.deleteSarana(item.id);
         showToast("Pengajuan berhasil dihapus");
