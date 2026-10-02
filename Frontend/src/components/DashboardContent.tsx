@@ -1327,7 +1327,7 @@ export default function DashboardContent({ me }: { me: Me }) {
         )}
 
         <section className={`${styles.panel} ${styles.activityPanelTall}`}>
-          <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>{latestActivities.length} transaksi terbaru</p></div></header>
+          <header className={styles.legacyPanelHeader}><div><h2>Aktivitas Terbaru</h2><p>{latestActivities.length} Transaksi Terbaru</p></div></header>
           <div className={styles.activityList}>
             {loading && latestActivities.length === 0 ? <div className={styles.compactEmpty}>Memuat aktivitas...</div>
               : latestActivities.length === 0 ? <div className={styles.compactEmpty}>Belum ada aktivitas pada periode ini.</div>
