@@ -103,7 +103,7 @@ export default function AtkFormModal({ open, me, onClose, onCreated }: Props) {
   const unitName =
     me.departemen ||
     me.divisi ||
-    (me.role === "ADMIN_GA" ? "Admin GA" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
+    (me.role === "ADMIN_GA" ? "Admin General Affair" : me.role === "APPROVAL_GA" ? "Approval General Affair" : "");
 
   function set<K extends keyof AtkFormState>(key: K, value: AtkFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));

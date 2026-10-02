@@ -79,7 +79,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   APPROVAL_DEPARTEMEN: "Approval Departemen",
   ADMIN_DIVISI: "Admin Divisi",
   APPROVAL_DIVISI: "Approval Divisi",
-  ADMIN_GA: "Admin GA",
+  ADMIN_GA: "Admin General Affair",
   APPROVAL_GA: "Approval General Affair",
   KPU: "Mitra",
   SUPER_ADMIN: "Super Admin",
@@ -87,8 +87,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 // Unabbreviated role name for the topbar account chip specifically (AppShell's trigger + account
 // dropdown) - everywhere else (approval stepper, tables, chat mentions, PDF/Excel export labels)
-// deliberately uses the shorter "Admin GA" from ROLE_LABEL to match "Approval GA", but the
-// account chip is meant to show the role's full real name.
+// uses ROLE_LABEL, and the account chip uses ROLE_LABEL_FULL.
 export const ROLE_LABEL_FULL: Record<Role, string> = {
   ...ROLE_LABEL,
   ADMIN_GA: "Admin General Affair",
