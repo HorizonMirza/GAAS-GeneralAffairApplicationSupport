@@ -11,16 +11,20 @@ import {
   RIWAYAT_MODUL_LABEL,
   riwayatActionMeta,
 } from "@/lib/constants";
-import { formatDateTime, truncateText } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import type { RiwayatAktivitas, RiwayatAktor, RiwayatModul, Role } from "@/lib/types";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useExclusivePanel } from "@/lib/exclusivePanel";
 import SearchableSelect from "@/components/SearchableSelect";
 import DateFilterPicker from "@/components/DateFilterPicker";
+import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 
 interface FilterState {
   page: number;
   limit: number;
+  search: string;
+  bulan: string;
+  tanggal: string;
   modul: RiwayatModul | "";
   actorId: string;
   action: string;
@@ -28,7 +32,18 @@ interface FilterState {
   sampaiTanggal: string;
 }
 
-const EMPTY_FILTERS: FilterState = { page: 1, limit: 20, modul: "", actorId: "", action: "", dariTanggal: "", sampaiTanggal: "" };
+const EMPTY_FILTERS: FilterState = {
+  page: 1,
+  limit: 20,
+  search: "",
+  bulan: "",
+  tanggal: "",
+  modul: "",
+  actorId: "",
+  action: "",
+  dariTanggal: "",
+  sampaiTanggal: "",
+};
 
 const MODUL_OPTIONS = Object.keys(RIWAYAT_MODUL_LABEL) as RiwayatModul[];
 
@@ -56,6 +71,7 @@ const BADGE_CLASS: Record<"neutral" | "approve" | "reject", string> = {
 // the backend's union of all seven.
 export default function RiwayatAktivitasCard() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [searchInput, setSearchInput] = useState("");
   const [items, setItems] = useState<RiwayatAktivitas[]>([]);
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(true);
@@ -67,6 +83,13 @@ export default function RiwayatAktivitasCard() {
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
   useClickOutside([filterWrapRef], () => setFilterOpen(false), filterOpen);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => (prev.search === searchInput ? prev : { ...prev, search: searchInput, page: 1 }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const load = useCallback(async () => {
     setBusy(true);
     setError("");
@@ -74,6 +97,9 @@ export default function RiwayatAktivitasCard() {
       const data = await api.listRiwayatAktivitas({
         page: filters.page,
         limit: filters.limit,
+        search: filters.search,
+        bulan: filters.bulan,
+        tanggal: filters.tanggal,
         modul: filters.modul,
         actorId: filters.actorId ? Number(filters.actorId) : "",
         action: filters.action,
@@ -106,6 +132,7 @@ export default function RiwayatAktivitasCard() {
   const updateFilter = (patch: Partial<FilterState>) => setFilters((prev) => ({ ...prev, ...patch, page: 1 }));
   const goToPage = (page: number) => setFilters((prev) => ({ ...prev, page }));
   const resetFilters = () => {
+    setSearchInput("");
     setFilters(EMPTY_FILTERS);
     setFilterOpen(false);
   };
@@ -123,36 +150,33 @@ export default function RiwayatAktivitasCard() {
     return `${found.nama} (${role})`;
   };
 
-  const hasOtherFilters = !!filters.action || !!filters.dariTanggal || !!filters.sampaiTanggal;
+  const hasOtherFilters = !!filters.modul || !!filters.actorId || !!filters.action || !!filters.dariTanggal || !!filters.sampaiTanggal;
 
   return (
     <div className="card">
       <div className="toolbar transactions-page-toolbar">
-        <div className="field">
-          <label htmlFor="filter-riwayat-modul">Modul</label>
-          <SearchableSelect
-            id="filter-riwayat-modul"
-            value={filters.modul}
-            onChange={(v) => updateFilter({ modul: v as RiwayatModul | "" })}
-            options={MODUL_OPTIONS}
-            getLabel={(v) => RIWAYAT_MODUL_LABEL[v as RiwayatModul] || v}
-            clearLabel="Semua Modul"
-            placeholder="Semua Modul"
+        <div className="field toolbar-search-field">
+          <label htmlFor="filter-riwayat-search">Cari Nomor</label>
+          <input
+            type="text"
+            id="filter-riwayat-search"
+            placeholder="Nomor Transaksi"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
+
         <div className="field">
-          <label htmlFor="filter-riwayat-aktor">Pelaku</label>
-          <SearchableSelect
-            id="filter-riwayat-aktor"
-            value={filters.actorId}
-            onChange={(v) => updateFilter({ actorId: v })}
-            options={aktor.map((a) => String(a.id))}
-            getLabel={aktorLabel}
-            clearLabel="Semua Pelaku"
-            placeholder="Semua Pelaku"
-            emptyOptionsText="Belum ada aktivitas tercatat"
+          <label htmlFor="filter-riwayat-bulan">Filter Periode</label>
+          <PeriodFilterPicker
+            id="filter-riwayat-bulan"
+            bulan={filters.bulan}
+            tanggal={filters.tanggal}
+            onChangeBulan={(v) => updateFilter({ bulan: v, tanggal: "" })}
+            onChangeTanggal={(v) => updateFilter({ tanggal: v, bulan: "" })}
           />
         </div>
+
         <div className="filter-dropdown-wrap" ref={filterWrapRef}>
           <label className="filter-dropdown-label">Filter Lainnya</label>
           <button
@@ -172,6 +196,31 @@ export default function RiwayatAktivitasCard() {
           {filterOpen && (
             <div className="filter-dropdown-panel">
               <div className="field" style={{ marginBottom: 0 }}>
+                <label htmlFor="filter-riwayat-modul">Modul</label>
+                <SearchableSelect
+                  id="filter-riwayat-modul"
+                  value={filters.modul}
+                  onChange={(v) => updateFilter({ modul: v as RiwayatModul | "" })}
+                  options={MODUL_OPTIONS}
+                  getLabel={(v) => RIWAYAT_MODUL_LABEL[v as RiwayatModul] || v}
+                  clearLabel="Semua Modul"
+                  placeholder="Semua Modul"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
+                <label htmlFor="filter-riwayat-aktor">Pelaku</label>
+                <SearchableSelect
+                  id="filter-riwayat-aktor"
+                  value={filters.actorId}
+                  onChange={(v) => updateFilter({ actorId: v })}
+                  options={aktor.map((a) => String(a.id))}
+                  getLabel={aktorLabel}
+                  clearLabel="Semua Pelaku"
+                  placeholder="Semua Pelaku"
+                  emptyOptionsText="Belum ada aktivitas tercatat"
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
                 <label htmlFor="filter-riwayat-action">Aksi</label>
                 <SearchableSelect
                   id="filter-riwayat-action"
@@ -184,7 +233,7 @@ export default function RiwayatAktivitasCard() {
                 />
               </div>
               <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="filter-riwayat-dari">Dari Tanggal</label>
+                <label htmlFor="filter-riwayat-dari">Dari Tanggal (Kustom)</label>
                 <DateFilterPicker
                   id="filter-riwayat-dari"
                   value={filters.dariTanggal}
@@ -193,7 +242,7 @@ export default function RiwayatAktivitasCard() {
                 />
               </div>
               <div className="field" style={{ marginBottom: 0, marginTop: 12 }}>
-                <label htmlFor="filter-riwayat-sampai">Sampai Tanggal</label>
+                <label htmlFor="filter-riwayat-sampai">Sampai Tanggal (Kustom)</label>
                 <DateFilterPicker
                   id="filter-riwayat-sampai"
                   value={filters.sampaiTanggal}
@@ -204,6 +253,7 @@ export default function RiwayatAktivitasCard() {
             </div>
           )}
         </div>
+
         <button
           type="button"
           className="btn btn-secondary"
@@ -218,32 +268,66 @@ export default function RiwayatAktivitasCard() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>No</th><th>Waktu</th><th>Modul</th><th>Nomor</th><th>Aksi</th><th>Pelaku</th><th>Role</th><th>Catatan</th>
+              <th>No</th>
+              <th>Waktu</th>
+              <th>Modul</th>
+              <th>Nomor</th>
+              <th>Aksi</th>
+              <th>Pelaku</th>
+              <th>Role</th>
+              <th>Divisi</th>
+              <th>Departemen</th>
+              <th>Catatan</th>
             </tr>
           </thead>
           <tbody>
             {busy ? (
-              <tr><td colSpan={8} className="table-empty">Memuat data...</td></tr>
+              <tr><td colSpan={10} className="table-empty">Memuat data...</td></tr>
             ) : error ? (
-              <tr><td colSpan={8} className="table-empty">{error}</td></tr>
+              <tr><td colSpan={10} className="table-empty">{error}</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={8} className="table-empty">Tidak Ada Data</td></tr>
+              <tr><td colSpan={10} className="table-empty">Tidak Ada Data</td></tr>
             ) : (
               items.map((row, index) => {
                 const rowNumber = (filters.page - 1) * filters.limit + index + 1;
                 const meta = riwayatActionMeta(row.modul, row.action);
+                const hasDirectLink = row.itemId && row.modul !== "deleted" && row.modul !== "admin";
                 return (
-                  <tr key={`${row.modul}-${row.itemId}-${row.createdAt}-${row.action}`}>
+                  <tr key={`${row.modul}-${row.itemId}-${row.createdAt}-${row.action}-${index}`}>
                     <td>{rowNumber}</td>
-                    <td>{formatDateTime(row.createdAt)}</td>
-                    <td>
-                      <Link href={RIWAYAT_MODUL_HREF[row.modul]}>{RIWAYAT_MODUL_LABEL[row.modul]}</Link>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <Link
+                        href={`${RIWAYAT_MODUL_HREF[row.modul]}${hasDirectLink ? `?highlight=${row.itemId}` : ""}`}
+                        style={{ color: "var(--blue-600)", fontWeight: 500, textDecoration: "none" }}
+                      >
+                        {RIWAYAT_MODUL_LABEL[row.modul]}
+                      </Link>
                     </td>
-                    <td title={row.nomor || ""}>{truncateText(row.nomor, 24) || "-"}</td>
-                    <td><span className={`badge ${BADGE_CLASS[meta.type]}`}>{actionTitle(row)}</span></td>
-                    <td title={row.actorNama || ""}>{truncateText(row.actorNama, 22) || "-"}</td>
-                    <td>{row.actorRole ? LOG_ROLE_LABEL[row.actorRole as Role] || row.actorRole : "-"}</td>
-                    <td title={row.reason || ""}>{truncateText(row.reason, 40) || "-"}</td>
+                    <td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>
+                      {row.nomor ? (
+                        hasDirectLink ? (
+                          <Link
+                            href={`${RIWAYAT_MODUL_HREF[row.modul]}?highlight=${row.itemId}`}
+                            style={{ color: "inherit", textDecoration: "underline" }}
+                          >
+                            {row.nomor}
+                          </Link>
+                        ) : (
+                          row.nomor
+                        )
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge ${BADGE_CLASS[meta.type]}`}>{actionTitle(row)}</span>
+                    </td>
+                    <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{row.actorNama || "-"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{row.actorRole ? LOG_ROLE_LABEL[row.actorRole as Role] || row.actorRole : "-"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{row.actorDivisi || "-"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{row.actorDepartemen || "-"}</td>
+                    <td style={{ minWidth: 200, wordBreak: "break-word" }}>{row.reason || "-"}</td>
                   </tr>
                 );
               })

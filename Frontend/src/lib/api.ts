@@ -1042,6 +1042,9 @@ export interface BulkDeleteResult {
 export interface ListRiwayatParams {
   page?: number;
   limit?: number;
+  search?: string;
+  bulan?: string;
+  tanggal?: string;
   modul?: RiwayatModul | "";
   actorId?: number | "";
   action?: string;
@@ -1053,11 +1056,14 @@ function riwayatListParams(p: ListRiwayatParams) {
   return {
     page: p.page,
     limit: p.limit,
-    modul: p.modul,
-    actor_id: p.actorId,
-    action: p.action,
-    dari_tanggal: p.dariTanggal,
-    sampai_tanggal: p.sampaiTanggal,
+    search: p.search || undefined,
+    bulan: p.bulan || undefined,
+    tanggal: p.tanggal || undefined,
+    modul: p.modul || undefined,
+    actor_id: p.actorId || undefined,
+    action: p.action || undefined,
+    dari_tanggal: p.dariTanggal || undefined,
+    sampai_tanggal: p.sampaiTanggal || undefined,
   };
 }
 

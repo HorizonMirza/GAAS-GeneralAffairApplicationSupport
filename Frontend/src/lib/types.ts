@@ -887,6 +887,8 @@ export interface RiwayatAktivitas {
   actorId: number | null;
   actorNama: string | null;
   actorRole: string | null;
+  actorDivisi?: string | null;
+  actorDepartemen?: string | null;
   createdAt: string;
 }
 

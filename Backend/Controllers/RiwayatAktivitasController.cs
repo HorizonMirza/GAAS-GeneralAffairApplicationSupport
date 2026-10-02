@@ -56,6 +56,7 @@ public class RiwayatAktivitasController : ApiControllerBase
                ELSE dl.item_nomor
              END)::text AS reason,
              dl.deleted_by AS actor_id, dl.deleted_by_nama::text AS actor_nama, u.role::text AS actor_role,
+             u.divisi AS actor_divisi, u.departemen AS actor_departemen,
              dl.created_at
       FROM deletion_log dl
       LEFT JOIN users u ON u.id = dl.deleted_by
@@ -72,6 +73,7 @@ public class RiwayatAktivitasController : ApiControllerBase
       SELECT 'admin' AS modul, aal.id AS item_id, NULL::text AS nomor,
              aal.action AS action, aal.deskripsi::text AS reason,
              aal.actor_id AS actor_id, aal.actor_nama::text AS actor_nama, u.role::text AS actor_role,
+             u.divisi AS actor_divisi, u.departemen AS actor_departemen,
              aal.created_at
       FROM admin_activity_log aal
       LEFT JOIN users u ON u.id = aal.actor_id
@@ -100,6 +102,7 @@ public class RiwayatAktivitasController : ApiControllerBase
             return $"""
               SELECT '{m}' AS modul, l.{s.Fk} AS item_id, p.{s.Nomor}::text AS nomor,
                      l.action, l.reason, l.actor_id, u.nama AS actor_nama, u.role::text AS actor_role,
+                     u.divisi AS actor_divisi, u.departemen AS actor_departemen,
                      l.created_at
               FROM {s.Log} l
               LEFT JOIN {s.Parent} p ON p.id = l.{s.Fk}
@@ -111,6 +114,9 @@ public class RiwayatAktivitasController : ApiControllerBase
     public async Task<IActionResult> List(
         [FromQuery] int page = 1,
         [FromQuery] int limit = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] string? bulan = null,
+        [FromQuery] DateOnly? tanggal = null,
         [FromQuery] string? modul = null,
         [FromQuery(Name = "actor_id")] int? actorId = null,
         [FromQuery] string? action = null,
@@ -133,6 +139,13 @@ public class RiwayatAktivitasController : ApiControllerBase
 
         var where = new List<string>();
         var parameters = new List<NpgsqlParameter>();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            where.Add("(nomor ILIKE @search OR reason ILIKE @search OR actor_nama ILIKE @search)");
+            parameters.Add(new NpgsqlParameter("search", $"%{search.Trim()}%"));
+        }
+
         if (actorId.HasValue)
         {
             where.Add("actor_id = @actorId");
@@ -143,6 +156,34 @@ public class RiwayatAktivitasController : ApiControllerBase
             where.Add("action = @action");
             parameters.Add(new NpgsqlParameter("action", action));
         }
+
+        if (tanggal.HasValue)
+        {
+            where.Add("created_at >= @tglDari AND created_at < @tglSampai");
+            parameters.Add(new NpgsqlParameter("tglDari", tanggal.Value.ToDateTime(TimeOnly.MinValue) - WaktuWib.Offset));
+            parameters.Add(new NpgsqlParameter("tglSampai", tanggal.Value.AddDays(1).ToDateTime(TimeOnly.MinValue) - WaktuWib.Offset));
+        }
+        else if (!string.IsNullOrWhiteSpace(bulan))
+        {
+            var parts = bulan.Trim().Split('-');
+            if (parts.Length == 1 && int.TryParse(parts[0], out var yr))
+            {
+                var start = new DateTime(yr, 1, 1, 0, 0, 0, DateTimeKind.Unspecified) - WaktuWib.Offset;
+                var end = new DateTime(yr + 1, 1, 1, 0, 0, 0, DateTimeKind.Unspecified) - WaktuWib.Offset;
+                where.Add("created_at >= @blnStart AND created_at < @blnEnd");
+                parameters.Add(new NpgsqlParameter("blnStart", start));
+                parameters.Add(new NpgsqlParameter("blnEnd", end));
+            }
+            else if (parts.Length == 2 && int.TryParse(parts[0], out var yr2) && int.TryParse(parts[1], out var mo))
+            {
+                var start = new DateTime(yr2, mo, 1, 0, 0, 0, DateTimeKind.Unspecified) - WaktuWib.Offset;
+                var end = start.AddMonths(1);
+                where.Add("created_at >= @blnStart AND created_at < @blnEnd");
+                parameters.Add(new NpgsqlParameter("blnStart", start));
+                parameters.Add(new NpgsqlParameter("blnEnd", end));
+            }
+        }
+
         // Dates are the WIB calendar days the user picked, but created_at is UTC - shift the
         // boundaries by the same +7h the rest of the app uses so "16 September" means the WIB day,
         // not the UTC one (see Services/WaktuWib.cs).
@@ -163,7 +204,7 @@ public class RiwayatAktivitasController : ApiControllerBase
 
         var rows = new List<RiwayatAktivitasOut>();
         var sql = $"""
-            SELECT modul, item_id, nomor, action, reason, actor_id, actor_nama, actor_role, created_at
+            SELECT modul, item_id, nomor, action, reason, actor_id, actor_nama, actor_role, actor_divisi, actor_departemen, created_at
             FROM (
             {union}
             ) AS gabungan
@@ -194,7 +235,9 @@ public class RiwayatAktivitasController : ApiControllerBase
                     ActorId = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                     ActorNama = reader.IsDBNull(6) ? null : reader.GetString(6),
                     ActorRole = reader.IsDBNull(7) ? null : reader.GetString(7),
-                    CreatedAt = reader.GetDateTime(8),
+                    ActorDivisi = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    ActorDepartemen = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    CreatedAt = reader.GetDateTime(10),
                 });
             }
         }
