@@ -2453,12 +2453,7 @@ function SuperAdminPageInner() {
       )}
 
       {activeTab === "activity-log" && (
-        <div>
-          <h3 style={{ margin: "0 0 14px", fontSize: "1.05rem", fontWeight: 700 }}>
-            Activity Log (Riwayat Aktivitas Lintas Modul)
-          </h3>
-          <RiwayatAktivitasCard />
-        </div>
+        <RiwayatAktivitasCard />
       )}
 
       {activeTab === "ekspedisi" && (

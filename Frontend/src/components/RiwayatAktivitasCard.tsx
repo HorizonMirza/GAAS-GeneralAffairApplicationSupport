@@ -105,7 +105,10 @@ export default function RiwayatAktivitasCard() {
   // an empty table with no explanation.
   const updateFilter = (patch: Partial<FilterState>) => setFilters((prev) => ({ ...prev, ...patch, page: 1 }));
   const goToPage = (page: number) => setFilters((prev) => ({ ...prev, page }));
-  const resetFilters = () => setFilters(EMPTY_FILTERS);
+  const resetFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    setFilterOpen(false);
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
   const pageStart = Math.min(Math.max(1, filters.page), totalPages);
@@ -120,11 +123,10 @@ export default function RiwayatAktivitasCard() {
     return `${found.nama} (${role})`;
   };
 
+  const hasOtherFilters = !!filters.action || !!filters.dariTanggal || !!filters.sampaiTanggal;
+
   return (
     <div className="card">
-      <div className="card-header">
-        <h3>Riwayat Aktivitas Seluruh Modul</h3>
-      </div>
       <div className="toolbar transactions-page-toolbar">
         <div className="field">
           <label htmlFor="filter-riwayat-modul">Modul</label>
@@ -153,9 +155,19 @@ export default function RiwayatAktivitasCard() {
         </div>
         <div className="filter-dropdown-wrap" ref={filterWrapRef}>
           <label className="filter-dropdown-label">Filter Lainnya</label>
-          <button type="button" className="btn filter-dropdown-toggle" id="filter-riwayat-toggle" style={{ width: "auto" }} onClick={() => setFilterOpen((v) => !v)}>
-            <span className="searchable-select-placeholder">Semua Filter</span>
-            <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <button
+            type="button"
+            className="btn filter-dropdown-toggle"
+            id="filter-riwayat-toggle"
+            style={{ minWidth: 145, justifyContent: "space-between" }}
+            onClick={() => setFilterOpen((v) => !v)}
+          >
+            <span className={hasOtherFilters ? "" : "searchable-select-placeholder"}>
+              {hasOtherFilters ? "Filter Aktif" : "Semua Filter"}
+            </span>
+            <svg className="account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </button>
           {filterOpen && (
             <div className="filter-dropdown-panel">
@@ -192,7 +204,14 @@ export default function RiwayatAktivitasCard() {
             </div>
           )}
         </div>
-        <button className="btn btn-secondary" style={{ width: "auto", alignSelf: "flex-end" }} onClick={resetFilters}>Delete Filter</button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "auto", alignSelf: "flex-end", height: 38, padding: "0 16px", borderRadius: 8, boxSizing: "border-box" }}
+          onClick={resetFilters}
+        >
+          Semua Aktivitas
+        </button>
       </div>
 
       <div className="table-wrap">
