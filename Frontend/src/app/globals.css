@@ -4499,17 +4499,27 @@ table.data-table {
 
 .transactions-page-toolbar > .field > select,
 .transactions-page-toolbar > .field .filter-picker-trigger,
-.transactions-page-toolbar > .field .searchable-select-trigger,
+.transactions-page-toolbar > .field .searchable-select-trigger {
+  color: var(--text-primary) !important;
+  font-weight: 400;
+  -webkit-text-fill-color: var(--text-primary);
+}
+
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle {
   color: var(--text-secondary) !important;
   font-weight: 400;
   -webkit-text-fill-color: var(--text-secondary);
 }
 
-.transactions-page-toolbar > .field > input::placeholder,
-.transactions-page-toolbar > .field .searchable-select-placeholder {
+.transactions-page-toolbar > .field > input::placeholder {
   color: var(--text-secondary) !important;
   opacity: 0.65;
+  -webkit-text-fill-color: var(--text-secondary);
+}
+
+.transactions-page-toolbar > .field .searchable-select-placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.75;
   -webkit-text-fill-color: var(--text-secondary);
 }
 
