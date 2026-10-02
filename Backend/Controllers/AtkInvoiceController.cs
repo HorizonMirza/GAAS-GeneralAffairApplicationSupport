@@ -238,6 +238,7 @@ public class AtkInvoiceController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
         [FromQuery] string? bulan = null,
+        [FromQuery] string? tanggal = null,
         [FromQuery] string? search = null,
         [FromQuery] int? uploadedBy = null)
     {
@@ -255,7 +256,20 @@ public class AtkInvoiceController : ApiControllerBase
         else
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
-        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(bulan))
+        {
+            var parts = bulan.Split('-');
+            if (parts.Length == 1)
+                query = query.Where(i => i.Bulan.StartsWith(bulan));
+            else
+                query = query.Where(i => i.Bulan == bulan);
+        }
+        if (!string.IsNullOrEmpty(tanggal) && DateOnly.TryParse(tanggal, out var tDate))
+        {
+            var dtStart = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+            var dtEnd = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+            query = query.Where(i => i.UploadedAt >= dtStart && i.UploadedAt <= dtEnd);
+        }
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
         int total;
@@ -401,6 +415,7 @@ public class AtkInvoiceController : ApiControllerBase
     [HttpDelete("super-admin/bulk")]
     public async Task<IActionResult> SuperAdminBulkDelete(
         [FromQuery] string? bulan = null,
+        [FromQuery] string? tanggal = null,
         [FromQuery] string? search = null,
         [FromQuery] int? uploadedBy = null)
     {
@@ -408,7 +423,20 @@ public class AtkInvoiceController : ApiControllerBase
         if (error != null) return error;
 
         var query = _db.AtkInvoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
-        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(bulan))
+        {
+            var parts = bulan.Split('-');
+            if (parts.Length == 1)
+                query = query.Where(i => i.Bulan.StartsWith(bulan));
+            else
+                query = query.Where(i => i.Bulan == bulan);
+        }
+        if (!string.IsNullOrEmpty(tanggal) && DateOnly.TryParse(tanggal, out var tDate))
+        {
+            var dtStart = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+            var dtEnd = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+            query = query.Where(i => i.UploadedAt >= dtStart && i.UploadedAt <= dtEnd);
+        }
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
         var candidates = await query.Include(i => i.Logs).ToListAsync();

@@ -560,6 +560,7 @@ function SuperAdminPageInner() {
   const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceFilterTanggal, setInvoiceFilterTanggal] = useState("");
   const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
   const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
   const [invoicePage, setInvoicePage] = useState(1);
@@ -784,6 +785,7 @@ function SuperAdminPageInner() {
   const [atkInvoiceSearchInput, setAtkInvoiceSearchInput] = useState("");
   const [atkInvoiceSearch, setAtkInvoiceSearch] = useState("");
   const [atkInvoiceFilterBulan, setAtkInvoiceFilterBulan] = useState("");
+  const [atkInvoiceFilterTanggal, setAtkInvoiceFilterTanggal] = useState("");
   const [atkInvoiceUploaders, setAtkInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
   const [atkInvoiceFilterUploader, setAtkInvoiceFilterUploader] = useState<number | "">("");
   const [atkInvoicePage, setAtkInvoicePage] = useState(1);
@@ -1012,6 +1014,7 @@ function SuperAdminPageInner() {
         page: invoicePage,
         limit: invoiceLimit,
         bulan: invoiceFilterBulan,
+        tanggal: invoiceFilterTanggal,
         search: invoiceSearch,
         uploadedBy: invoiceFilterUploader === "" ? undefined : invoiceFilterUploader,
       });
@@ -1028,7 +1031,7 @@ function SuperAdminPageInner() {
       if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
-  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch, invoiceFilterUploader]);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceFilterTanggal, invoiceSearch, invoiceFilterUploader]);
 
   useEffect(() => {
     if (activeTab !== "ekspedisi") return;
@@ -1042,6 +1045,7 @@ function SuperAdminPageInner() {
         page: atkInvoicePage,
         limit: atkInvoiceLimit,
         bulan: atkInvoiceFilterBulan,
+        tanggal: atkInvoiceFilterTanggal,
         search: atkInvoiceSearch,
         uploadedBy: atkInvoiceFilterUploader === "" ? undefined : atkInvoiceFilterUploader,
       });
@@ -1058,7 +1062,7 @@ function SuperAdminPageInner() {
       if (reqId !== atkInvoiceReqIdRef.current) return;
       setAtkInvoiceError((err as Error).message);
     }
-  }, [atkInvoicePage, atkInvoiceLimit, atkInvoiceFilterBulan, atkInvoiceSearch, atkInvoiceFilterUploader]);
+  }, [atkInvoicePage, atkInvoiceLimit, atkInvoiceFilterBulan, atkInvoiceFilterTanggal, atkInvoiceSearch, atkInvoiceFilterUploader]);
 
   useEffect(() => {
     if (activeTab !== "atk") return;
@@ -2961,8 +2965,8 @@ function SuperAdminPageInner() {
 
           {ekspedisiSubtab === "invoice" && (
       <div className="card">
-        <div className="invoice-toolbar-slim invoices-page-toolbar">
-          <div className="field invoice-search-field" style={FIELD_NO_MARGIN_STYLE}>
+        <div className="toolbar transactions-page-toolbar invoices-page-toolbar">
+          <div className="field toolbar-search-field">
             <label htmlFor="invoice-filter-search">Cari Invoice</label>
             <input
               type="text"
@@ -2972,16 +2976,19 @@ function SuperAdminPageInner() {
               onChange={(e) => handleInvoiceSearchChange(e.target.value)}
             />
           </div>
-          <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
-            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <MonthFilterPicker
+          <div className="field">
+            <label htmlFor="invoice-filter-bulan">Filter Periode</label>
+            <PeriodFilterPicker
               id="invoice-filter-bulan"
-              value={invoiceFilterBulan}
-              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
+              bulan={invoiceFilterBulan}
+              tanggal={invoiceFilterTanggal}
+              onChangeBulan={(v) => { setInvoiceFilterBulan(v); setInvoiceFilterTanggal(""); setInvoicePage(1); }}
+              onChangeTanggal={(v) => { setInvoiceFilterTanggal(v); setInvoiceFilterBulan(""); setInvoicePage(1); }}
+              placeholder="Semua Periode"
             />
           </div>
           {invoiceUploaders.length > 1 && (
-            <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
+            <div className="field">
               <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
               <SearchableSelect
                 id="invoice-filter-uploader"
@@ -2994,20 +3001,19 @@ function SuperAdminPageInner() {
               />
             </div>
           )}
-          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
-            <span className="field-label-spacer">Semua Invoice</span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={AUTO_WIDTH_STYLE}
-              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
-            >
-              Semua Invoice
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "auto", alignSelf: "flex-end" }}
+            onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterTanggal(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
+          >
+            Semua Invoice
+          </button>
+          <div className="toolbar-actions">
+            <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
+              + Input Invoice
             </button>
           </div>
-          <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setInvoiceUploadOpen(true)}>
-            + Input Invoice
-          </button>
         </div>
 
         <div className="invoice-list">
@@ -6193,8 +6199,8 @@ function SuperAdminPageInner() {
 
           {atkSubtab === "invoice" && (
       <div className="card">
-        <div className="invoice-toolbar-slim invoices-page-toolbar">
-          <div className="field invoice-search-field" style={FIELD_NO_MARGIN_STYLE}>
+        <div className="toolbar transactions-page-toolbar invoices-page-toolbar">
+          <div className="field toolbar-search-field">
             <label htmlFor="atk-invoice-filter-search">Cari Invoice</label>
             <input
               type="text"
@@ -6204,16 +6210,19 @@ function SuperAdminPageInner() {
               onChange={(e) => handleAtkInvoiceSearchChange(e.target.value)}
             />
           </div>
-          <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
-            <label htmlFor="atk-invoice-filter-bulan">Filter Bulan</label>
-            <MonthFilterPicker
+          <div className="field">
+            <label htmlFor="atk-invoice-filter-bulan">Filter Periode</label>
+            <PeriodFilterPicker
               id="atk-invoice-filter-bulan"
-              value={atkInvoiceFilterBulan}
-              onChange={(v) => { setAtkInvoiceFilterBulan(v); setAtkInvoicePage(1); }}
+              bulan={atkInvoiceFilterBulan}
+              tanggal={atkInvoiceFilterTanggal}
+              onChangeBulan={(v) => { setAtkInvoiceFilterBulan(v); setAtkInvoiceFilterTanggal(""); setAtkInvoicePage(1); }}
+              onChangeTanggal={(v) => { setAtkInvoiceFilterTanggal(v); setAtkInvoiceFilterBulan(""); setAtkInvoicePage(1); }}
+              placeholder="Semua Periode"
             />
           </div>
           {atkInvoiceUploaders.length > 1 && (
-            <div className="field invoice-filter-field" style={FIELD_NO_MARGIN_STYLE}>
+            <div className="field">
               <label htmlFor="atk-invoice-filter-uploader">Diunggah Oleh</label>
               <SearchableSelect
                 id="atk-invoice-filter-uploader"
@@ -6226,20 +6235,19 @@ function SuperAdminPageInner() {
               />
             </div>
           )}
-          <div className="field" style={FIELD_NO_MARGIN_STYLE}>
-            <span className="field-label-spacer">Semua Invoice</span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={AUTO_WIDTH_STYLE}
-              onClick={() => { setAtkInvoiceSearchInput(""); setAtkInvoiceSearch(""); setAtkInvoiceFilterBulan(""); setAtkInvoiceFilterUploader(""); setAtkInvoicePage(1); }}
-            >
-              Semua Invoice
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "auto", alignSelf: "flex-end" }}
+            onClick={() => { setAtkInvoiceSearchInput(""); setAtkInvoiceSearch(""); setAtkInvoiceFilterBulan(""); setAtkInvoiceFilterTanggal(""); setAtkInvoiceFilterUploader(""); setAtkInvoicePage(1); }}
+          >
+            Semua Invoice
+          </button>
+          <div className="toolbar-actions">
+            <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setAtkInvoiceUploadOpen(true)}>
+              + Input Invoice
             </button>
           </div>
-          <button type="button" className="btn btn-primary invoice-input-btn" style={AUTO_WIDTH_STYLE} onClick={() => setAtkInvoiceUploadOpen(true)}>
-            + Input Invoice
-          </button>
         </div>
 
         <div className="invoice-list">

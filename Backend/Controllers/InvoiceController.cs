@@ -247,6 +247,7 @@ public class InvoiceController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int limit = 10,
         [FromQuery] string? bulan = null,
+        [FromQuery] string? tanggal = null,
         [FromQuery] string? search = null,
         [FromQuery] int? uploadedBy = null)
     {
@@ -264,7 +265,20 @@ public class InvoiceController : ApiControllerBase
         else
             query = query.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
 
-        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(bulan))
+        {
+            var parts = bulan.Split('-');
+            if (parts.Length == 1)
+                query = query.Where(i => i.Bulan.StartsWith(bulan));
+            else
+                query = query.Where(i => i.Bulan == bulan);
+        }
+        if (!string.IsNullOrEmpty(tanggal) && DateOnly.TryParse(tanggal, out var tDate))
+        {
+            var dtStart = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+            var dtEnd = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+            query = query.Where(i => i.UploadedAt >= dtStart && i.UploadedAt <= dtEnd);
+        }
         // Relevant when Admin/Approval GA/Super Admin review invoices from more than one KPU
         // account - a no-op for KPU itself, which is already scoped to its own uploads above.
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
@@ -437,6 +451,7 @@ public class InvoiceController : ApiControllerBase
     [HttpDelete("super-admin/bulk")]
     public async Task<IActionResult> SuperAdminBulkDelete(
         [FromQuery] string? bulan = null,
+        [FromQuery] string? tanggal = null,
         [FromQuery] string? search = null,
         [FromQuery] int? uploadedBy = null)
     {
@@ -446,7 +461,20 @@ public class InvoiceController : ApiControllerBase
         // Mirrors ListInvoice's non-KPU branch - Super Admin never sees anyone's DRAFT, so
         // "Hapus Semua" must not delete one either.
         var query = _db.Invoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
-        if (!string.IsNullOrEmpty(bulan)) query = query.Where(i => i.Bulan == bulan);
+        if (!string.IsNullOrEmpty(bulan))
+        {
+            var parts = bulan.Split('-');
+            if (parts.Length == 1)
+                query = query.Where(i => i.Bulan.StartsWith(bulan));
+            else
+                query = query.Where(i => i.Bulan == bulan);
+        }
+        if (!string.IsNullOrEmpty(tanggal) && DateOnly.TryParse(tanggal, out var tDate))
+        {
+            var dtStart = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+            var dtEnd = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
+            query = query.Where(i => i.UploadedAt >= dtStart && i.UploadedAt <= dtEnd);
+        }
         if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
 
         var candidates = await query.Include(i => i.Logs).ToListAsync();

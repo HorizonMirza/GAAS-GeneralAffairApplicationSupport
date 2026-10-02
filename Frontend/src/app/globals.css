@@ -4485,7 +4485,8 @@ table.data-table {
    The same fixed width now also covers every other PeriodFilterPicker trigger (Archive's two
    tables, ATK, Maintenance) - they all sit in an identical transactions-page-toolbar and were
    missing from this list, which is why only Ekspedisi/Booking Kendaraan matched it before. */
-.transactions-page-toolbar {
+.transactions-page-toolbar,
+.invoices-page-toolbar {
   color: #000;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   letter-spacing: 0;
@@ -4499,7 +4500,14 @@ table.data-table {
 .transactions-page-toolbar > .field .searchable-select-trigger,
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle,
 .transactions-page-toolbar > .btn,
-.transactions-page-toolbar > .toolbar-actions .btn {
+.transactions-page-toolbar > .toolbar-actions .btn,
+.invoices-page-toolbar > .field > label,
+.invoices-page-toolbar > .field > input,
+.invoices-page-toolbar > .field > select,
+.invoices-page-toolbar > .field .filter-picker-trigger,
+.invoices-page-toolbar > .field .searchable-select-trigger,
+.invoices-page-toolbar > .btn,
+.invoices-page-toolbar > .toolbar-actions .btn {
   font-family: inherit;
   font-size: 0.85rem !important;
   letter-spacing: 0;
@@ -4507,14 +4515,29 @@ table.data-table {
 
 .transactions-page-toolbar > .field > label,
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-label,
-.transactions-page-toolbar > .btn,
-.transactions-page-toolbar > .toolbar-actions .btn {
+.transactions-page-toolbar > .btn:not(.btn-primary),
+.transactions-page-toolbar > .toolbar-actions .btn:not(.btn-primary),
+.invoices-page-toolbar > .field > label,
+.invoices-page-toolbar > .btn:not(.btn-primary),
+.invoices-page-toolbar > .toolbar-actions .btn:not(.btn-primary) {
   color: #000 !important;
   font-weight: 600;
   -webkit-text-fill-color: #000;
 }
 
-.transactions-page-toolbar > .field > input {
+.btn.btn-primary,
+.btn-primary,
+.transactions-page-toolbar .btn.btn-primary,
+.transactions-page-toolbar > .toolbar-actions .btn.btn-primary,
+.invoices-page-toolbar .btn.btn-primary,
+.invoices-page-toolbar > .toolbar-actions .btn.btn-primary {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-weight: 600;
+}
+
+.transactions-page-toolbar > .field > input,
+.invoices-page-toolbar > .field > input {
   color: var(--text-primary) !important;
   font-weight: 400;
   -webkit-text-fill-color: var(--text-primary);
@@ -4522,7 +4545,10 @@ table.data-table {
 
 .transactions-page-toolbar > .field > select,
 .transactions-page-toolbar > .field .filter-picker-trigger,
-.transactions-page-toolbar > .field .searchable-select-trigger {
+.transactions-page-toolbar > .field .searchable-select-trigger,
+.invoices-page-toolbar > .field > select,
+.invoices-page-toolbar > .field .filter-picker-trigger,
+.invoices-page-toolbar > .field .searchable-select-trigger {
   color: var(--text-primary) !important;
   font-weight: 400;
   -webkit-text-fill-color: var(--text-primary);
@@ -4534,7 +4560,8 @@ table.data-table {
   -webkit-text-fill-color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
 }
 
-.transactions-page-toolbar > .field > input::placeholder {
+.transactions-page-toolbar > .field > input::placeholder,
+.invoices-page-toolbar > .field > input::placeholder {
   color: var(--text-secondary) !important;
   opacity: 0.65;
   -webkit-text-fill-color: var(--text-secondary);
@@ -4542,7 +4569,8 @@ table.data-table {
 
 .transactions-page-toolbar > .field .searchable-select-placeholder,
 .transactions-page-toolbar > .filter-dropdown-wrap .searchable-select-placeholder,
-.transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle > span {
+.transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle > span,
+.invoices-page-toolbar > .field .searchable-select-placeholder {
   color: var(--text-secondary) !important;
   opacity: 0.75;
   font-weight: 400;
@@ -4567,8 +4595,8 @@ table.data-table {
 
 .settings-table-toolbar h3,
 .settings-table-count-box,
-.settings-table-toolbar .btn,
-.settings-table-toolbar button.btn {
+.settings-table-toolbar .btn:not(.btn-primary),
+.settings-table-toolbar button.btn:not(.btn-primary) {
   color: #000 !important;
   font-weight: 600;
   -webkit-text-fill-color: #000;
@@ -4586,7 +4614,9 @@ table.data-table {
   -webkit-text-fill-color: var(--text-secondary);
 }
 
-.transactions-page-toolbar .toolbar-search-field {
+.transactions-page-toolbar .toolbar-search-field,
+.invoices-page-toolbar .toolbar-search-field,
+.invoices-page-toolbar .invoice-search-field {
   flex: 0 0 auto;
   width: 160px;
   min-width: 0;
@@ -4598,7 +4628,12 @@ table.data-table {
 .toolbar.transactions-page-toolbar #filter-katalog-bulan,
 .toolbar.transactions-page-toolbar #filter-atk-bulan,
 .toolbar.transactions-page-toolbar #filter-sarana-bulan,
-.toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan {
+.toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan,
+.toolbar.transactions-page-toolbar #invoice-filter-bulan,
+.toolbar.transactions-page-toolbar #atk-invoice-filter-bulan,
+.invoices-page-toolbar #invoice-filter-bulan,
+.invoices-page-toolbar #atk-invoice-filter-bulan,
+.invoices-page-toolbar .invoice-filter-field {
   max-width: none;
   width: 160px;
 }
@@ -4607,6 +4642,8 @@ table.data-table {
    renders taller than a text input/button under identical padding in some browsers - an
    explicit height + border-box keeps it visually level with Cari Transaksi and Semua Transaksi. */
 .transactions-page-toolbar .toolbar-search-field input,
+.invoices-page-toolbar .toolbar-search-field input,
+.invoices-page-toolbar .invoice-search-field input,
 .toolbar.transactions-page-toolbar #filter-bulan,
 .toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
 .toolbar.transactions-page-toolbar #filter-arsip-bulan,
@@ -4614,7 +4651,13 @@ table.data-table {
 .toolbar.transactions-page-toolbar #filter-atk-bulan,
 .toolbar.transactions-page-toolbar #filter-sarana-bulan,
 .toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan,
-.transactions-page-toolbar > .btn {
+.toolbar.transactions-page-toolbar #invoice-filter-bulan,
+.toolbar.transactions-page-toolbar #atk-invoice-filter-bulan,
+.invoices-page-toolbar #invoice-filter-bulan,
+.invoices-page-toolbar #atk-invoice-filter-bulan,
+.transactions-page-toolbar > .btn,
+.invoices-page-toolbar > .btn,
+.invoices-page-toolbar .field .btn {
   height: 38px;
   box-sizing: border-box;
 }

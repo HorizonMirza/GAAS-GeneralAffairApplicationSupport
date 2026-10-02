@@ -180,6 +180,7 @@ export interface ListInvoiceParams {
   page?: number;
   limit?: number;
   bulan?: string;
+  tanggal?: string;
   search?: string;
   uploadedBy?: number;
 }
@@ -374,7 +375,7 @@ export const api = {
     apiRequest<ChatMessage>(`/pengiriman/${id}/chat`, { method: "POST", body: { message } }),
 
   listInvoice: (params: ListInvoiceParams = {}) =>
-    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
+    apiRequest<InvoiceListResponse>("/invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, tanggal: params.tanggal, search: params.search, uploadedBy: params.uploadedBy } }),
   listInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/invoice/uploaders"),
   uploadInvoice: async (nama: string, bulan: string, file: File) => {
     const formData = new FormData();
@@ -434,7 +435,7 @@ export const api = {
 
   // --- Office Supplies Invoice (mirrors Invoice above exactly, own table/endpoint) ---
   listAtkInvoice: (params: ListInvoiceParams = {}) =>
-    apiRequest<InvoiceListResponse>("/atk-invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, search: params.search, uploadedBy: params.uploadedBy } }),
+    apiRequest<InvoiceListResponse>("/atk-invoice", { params: { page: params.page, limit: params.limit, bulan: params.bulan, tanggal: params.tanggal, search: params.search, uploadedBy: params.uploadedBy } }),
   listAtkInvoiceUploaders: () => apiRequest<{ id: number; nama: string }[]>("/atk-invoice/uploaders"),
   uploadAtkInvoice: async (nama: string, bulan: string, file: File) => {
     const formData = new FormData();
@@ -929,9 +930,9 @@ export const api = {
     apiRequest<BulkDeleteResult>("/perbaikan-sarana/super-admin/bulk", { method: "DELETE", params: saranaListParams(params) }),
   superAdminBulkDeleteArsip: (params: ListArsipParams) =>
     apiRequest<BulkDeleteResult>("/permintaan-arsip/super-admin/bulk", { method: "DELETE", params: arsipListParams(params) }),
-  superAdminBulkDeleteInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
+  superAdminBulkDeleteInvoice: (params: { bulan?: string; tanggal?: string; search?: string; uploadedBy?: number }) =>
     apiRequest<BulkDeleteResult>("/invoice/super-admin/bulk", { method: "DELETE", params }),
-  superAdminBulkDeleteAtkInvoice: (params: { bulan?: string; search?: string; uploadedBy?: number }) =>
+  superAdminBulkDeleteAtkInvoice: (params: { bulan?: string; tanggal?: string; search?: string; uploadedBy?: number }) =>
     apiRequest<BulkDeleteResult>("/atk-invoice/super-admin/bulk", { method: "DELETE", params }),
 
   // --- Organisasi (Super Admin only) ---

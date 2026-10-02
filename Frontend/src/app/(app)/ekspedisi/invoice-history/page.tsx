@@ -19,7 +19,7 @@ import InvoiceChatModal from "@/components/InvoiceChatModal";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import SearchableSelect from "@/components/SearchableSelect";
-import MonthFilterPicker from "@/components/MonthFilterPicker";
+import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 
 // Invoice pembiayaan history is only relevant to the 3 roles that ever touch it: Admin GA
 // uploads, Approval GA reviews, KPU is the final approver - plus Super Admin, who bypasses
@@ -38,6 +38,7 @@ export default function InvoiceHistoryPage() {
   const [invoiceSearchInput, setInvoiceSearchInput] = useState("");
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilterBulan, setInvoiceFilterBulan] = useState("");
+  const [invoiceFilterTanggal, setInvoiceFilterTanggal] = useState("");
   const [invoiceUploaders, setInvoiceUploaders] = useState<{ id: number; nama: string }[]>([]);
   const [invoiceFilterUploader, setInvoiceFilterUploader] = useState<number | "">("");
   const [invoicePage, setInvoicePage] = useState(1);
@@ -73,6 +74,7 @@ export default function InvoiceHistoryPage() {
         page: invoicePage,
         limit: invoiceLimit,
         bulan: invoiceFilterBulan,
+        tanggal: invoiceFilterTanggal,
         search: invoiceSearch,
         uploadedBy: invoiceFilterUploader === "" ? undefined : invoiceFilterUploader,
       });
@@ -91,7 +93,7 @@ export default function InvoiceHistoryPage() {
       if (reqId !== invoiceReqIdRef.current) return;
       setInvoiceError((err as Error).message);
     }
-  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceSearch, invoiceFilterUploader]);
+  }, [invoicePage, invoiceLimit, invoiceFilterBulan, invoiceFilterTanggal, invoiceSearch, invoiceFilterUploader]);
 
   useEffect(() => {
     loadInvoices();
@@ -128,8 +130,8 @@ export default function InvoiceHistoryPage() {
   return (
     <>
       <div className="card">
-        <div className="invoice-toolbar-slim invoices-page-toolbar">
-          <div className="field invoice-search-field" style={{ marginBottom: 0 }}>
+        <div className="toolbar transactions-page-toolbar invoices-page-toolbar">
+          <div className="field toolbar-search-field">
             <label htmlFor="invoice-filter-search">Cari Invoice</label>
             <input
               type="text"
@@ -139,16 +141,19 @@ export default function InvoiceHistoryPage() {
               onChange={(e) => handleInvoiceSearchChange(e.target.value)}
             />
           </div>
-          <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
-            <label htmlFor="invoice-filter-bulan">Filter Bulan</label>
-            <MonthFilterPicker
+          <div className="field">
+            <label htmlFor="invoice-filter-bulan">Filter Periode</label>
+            <PeriodFilterPicker
               id="invoice-filter-bulan"
-              value={invoiceFilterBulan}
-              onChange={(v) => { setInvoiceFilterBulan(v); setInvoicePage(1); }}
+              bulan={invoiceFilterBulan}
+              tanggal={invoiceFilterTanggal}
+              onChangeBulan={(v) => { setInvoiceFilterBulan(v); setInvoiceFilterTanggal(""); setInvoicePage(1); }}
+              onChangeTanggal={(v) => { setInvoiceFilterTanggal(v); setInvoiceFilterBulan(""); setInvoicePage(1); }}
+              placeholder="Semua Periode"
             />
           </div>
           {invoiceUploaders.length > 1 && (
-            <div className="field invoice-filter-field" style={{ marginBottom: 0 }}>
+            <div className="field">
               <label htmlFor="invoice-filter-uploader">Diunggah Oleh</label>
               <SearchableSelect
                 id="invoice-filter-uploader"
@@ -161,22 +166,21 @@ export default function InvoiceHistoryPage() {
               />
             </div>
           )}
-          <div className="field" style={{ marginBottom: 0 }}>
-            <span className="field-label-spacer">Semua Invoice</span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: "auto" }}
-              onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
-            >
-              Semua Invoice
-            </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "auto", alignSelf: "flex-end" }}
+            onClick={() => { setInvoiceSearchInput(""); setInvoiceSearch(""); setInvoiceFilterBulan(""); setInvoiceFilterTanggal(""); setInvoiceFilterUploader(""); setInvoicePage(1); }}
+          >
+            Semua Invoice
+          </button>
+          <div className="toolbar-actions">
+            {(me.role === "KPU" || me.role === "SUPER_ADMIN") && (
+              <button type="button" className="btn btn-primary" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
+                + Input Invoice
+              </button>
+            )}
           </div>
-          {(me.role === "KPU" || me.role === "SUPER_ADMIN") && (
-            <button type="button" className="btn btn-primary invoice-input-btn" style={{ width: "auto" }} onClick={() => setInvoiceUploadOpen(true)}>
-              + Input Invoice
-            </button>
-          )}
         </div>
 
         <div className="invoice-list">
