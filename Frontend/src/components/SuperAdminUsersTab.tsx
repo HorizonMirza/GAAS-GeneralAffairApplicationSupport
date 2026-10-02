@@ -52,10 +52,11 @@ interface UserFormState {
   departemen: string;
   email: string;
   noHp: string;
+  password: string;
   adminPassword?: string;
 }
 
-const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "", adminPassword: "" };
+const EMPTY_FORM: UserFormState = { username: "", nama: "", role: "ADMIN_DEPARTEMEN", direktorat: "", divisi: "", departemen: "", email: "", noHp: "", password: "", adminPassword: "" };
 
 interface PasswordActionState {
   type: "force-logout" | "impersonate" | "delete";
@@ -246,6 +247,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       departemen: user.departemen || "",
       email: user.email || "",
       noHp: user.noHp || "",
+      password: user.password || "123456789",
       adminPassword: "",
     });
     setFormError("");
@@ -270,6 +272,8 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
     if (!form.email.trim()) { setFormError("Email wajib diisi"); return; }
     if (!form.noHp.trim()) { setFormError("No. HP wajib diisi"); return; }
+    if (!form.password.trim()) { setFormError("Password wajib diisi"); return; }
+    if (form.password.trim().length < 8) { setFormError("Password minimal 8 karakter"); return; }
 
     if (formOpen !== "create" && !form.adminPassword?.trim()) {
       setFormError("Password Super Admin wajib diisi");
@@ -287,6 +291,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           departemen: form.departemen || null,
           email: form.email.trim() || null,
           noHp: form.noHp.trim() || null,
+          password: form.password.trim(),
         });
         setFormOpen(null);
         showToast("Akun berhasil dibuat");
@@ -305,6 +310,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
           email: form.email.trim() || null,
           noHp: form.noHp.trim() || null,
           password: form.adminPassword?.trim(),
+          newPassword: form.password.trim(),
         });
         setFormOpen(null);
         showToast("Akun berhasil diperbarui");
@@ -543,7 +549,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
               <tr>
                 <th style={{ width: 44, textAlign: "center" }}>No</th>
                 <th>Username</th>
-                <th>Password</th>
                 <th>Nama</th>
                 <th>Role</th>
                 <th>Direktorat</th>
@@ -551,6 +556,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 <th>Departemen</th>
                 <th>Email</th>
                 <th>No. HP</th>
+                <th>Password</th>
                 <th>Status</th>
                 <th style={{ width: 44, textAlign: "center" }}>Aksi</th>
               </tr>
@@ -567,11 +573,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                   <tr key={user.id}>
                     <td style={{ textAlign: "center" }}>{(filters.page - 1) * filters.limit + idx + 1}</td>
                     <td>{user.username}</td>
-                    <td>
-                      <span style={{ fontFamily: "monospace", fontSize: "0.88rem" }}>
-                        {user.password || "123456789"}
-                      </span>
-                    </td>
                     <td>{user.nama}</td>
                     <td>{ROLE_LABEL[user.role] || user.role}</td>
                     <td>{user.direktorat || "-"}</td>
@@ -579,6 +580,11 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                     <td>{user.departemen || "-"}</td>
                     <td>{user.email || "-"}</td>
                     <td>{user.noHp || "-"}</td>
+                    <td>
+                      <span style={{ fontFamily: "monospace", fontSize: "0.88rem" }}>
+                        {user.password || "123456789"}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span className={`badge ${user.isActive ? "badge-approved" : "badge-rejected"}`}>
@@ -832,7 +838,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       <ModalOverlay open={!!formOpen} onClose={() => setFormOpen(null)} className={`modal-overlay modal-overlay-centered ${formOpen ? "" : "hidden"}`}>
         <div className="modal" style={{ maxWidth: 480 }}>
           <div className="modal-header">
-            <h3>{formOpen === "create" ? "Tambah Akun" : "Edit Akun"}</h3>
+            <h3>{formOpen === "create" ? "Tambah Akun" : "Updates Akun"}</h3>
             <button type="button" className="modal-close" onClick={() => setFormOpen(null)}>&times;</button>
           </div>
 
@@ -902,6 +908,20 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             <div className="field field-select-blue" style={{ marginTop: 12 }}>
               <label htmlFor="user-form-nohp">No. HP</label>
               <input id="user-form-nohp" type="text" required value={form.noHp} onChange={(e) => setForm((f) => ({ ...f, noHp: e.target.value }))} />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <PasswordField
+                id="user-form-password"
+                label="Password"
+                placeholder="Min. 8 Karakter"
+                icon={<Lock width={15} height={15} />}
+                value={form.password}
+                onChange={(v) => {
+                  setForm((f) => ({ ...f, password: v }));
+                  setFormError("");
+                }}
+              />
             </div>
 
             {formOpen !== "create" && (

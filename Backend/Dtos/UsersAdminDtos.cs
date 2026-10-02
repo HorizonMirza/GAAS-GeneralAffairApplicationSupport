@@ -17,7 +17,8 @@ public record AdminUserListResponse(List<AdminUserOut> Items, int Total, int Pag
 public record CreateUserRequest(
     string Username, string Nama, RoleEnum Role,
     string? Direktorat, string? Divisi, string? Departemen,
-    string? Email, string? NoHp);
+    string? Email, string? NoHp,
+    string? Password = null);
 
 // Partial update - a field left out of the JSON body (or sent as null) is left untouched, same as
 // how every other field on the account it doesn't mention stays as it was. Username/PasswordHash
@@ -34,7 +35,8 @@ public record UpdateUserRequest(
     string? Nama, string? Email, string? NoHp, RoleEnum? Role,
     string? Direktorat, string? Divisi, string? Departemen,
     bool ClearDivisi = false, bool ClearDepartemen = false,
-    string? Password = null);
+    string? Password = null,
+    string? NewPassword = null);
 
 public record AdminPasswordConfirmRequest(string Password);
 

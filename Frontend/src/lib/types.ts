@@ -1050,6 +1050,7 @@ export interface CreateUserPayload {
   departemen?: string | null;
   email?: string | null;
   noHp?: string | null;
+  password?: string | null;
 }
 
 // Partial update - a field left out is left untouched server-side (see UsersAdminController.
@@ -1066,6 +1067,7 @@ export interface UpdateUserPayload {
   clearDivisi?: boolean;
   clearDepartemen?: boolean;
   password?: string;
+  newPassword?: string;
 }
 
 export interface CreatedUserResult {

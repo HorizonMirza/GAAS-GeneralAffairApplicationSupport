@@ -118,7 +118,7 @@ public class UsersAdminController : ApiControllerBase
         var consistencyError = ValidateRoleOrgConsistency(payload.Role, divisi, departemen);
         if (consistencyError != null) return StatusCode(400, new { detail = consistencyError });
 
-        var password = PasswordGenerator.Generate();
+        var password = !string.IsNullOrWhiteSpace(payload.Password) ? payload.Password.Trim() : PasswordGenerator.Generate();
         var user = new User
         {
             Username = username,
@@ -207,6 +207,13 @@ public class UsersAdminController : ApiControllerBase
         user.Divisi = divisi;
         user.Departemen = departemen;
         user.Role = effectiveRole;
+
+        if (!string.IsNullOrWhiteSpace(payload.NewPassword) && payload.NewPassword != user.PlainPassword)
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
+            user.PlainPassword = payload.NewPassword;
+            user.PasswordChangedAt = DateTime.UtcNow;
+        }
 
         LogAdminActivity(_db, "USER_UPDATE", $"Ubah data akun {user.Nama} ({user.Username})", actor!);
         await _db.SaveChangesAsync();
