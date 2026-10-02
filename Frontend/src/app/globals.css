@@ -4477,33 +4477,40 @@ table.data-table {
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle,
 .transactions-page-toolbar > .btn,
 .transactions-page-toolbar > .toolbar-actions .btn {
-  color: #000 !important;
   font-family: inherit;
   font-size: 0.85rem !important;
   letter-spacing: 0;
-  -webkit-text-fill-color: #000;
 }
 
 .transactions-page-toolbar > .field > label,
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-label,
 .transactions-page-toolbar > .btn,
 .transactions-page-toolbar > .toolbar-actions .btn {
+  color: #000 !important;
   font-weight: 600;
+  -webkit-text-fill-color: #000;
 }
 
-.transactions-page-toolbar > .field > input,
+.transactions-page-toolbar > .field > input {
+  color: var(--text-primary) !important;
+  font-weight: 400;
+  -webkit-text-fill-color: var(--text-primary);
+}
+
 .transactions-page-toolbar > .field > select,
 .transactions-page-toolbar > .field .filter-picker-trigger,
 .transactions-page-toolbar > .field .searchable-select-trigger,
 .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle {
+  color: var(--text-secondary) !important;
   font-weight: 400;
+  -webkit-text-fill-color: var(--text-secondary);
 }
 
 .transactions-page-toolbar > .field > input::placeholder,
 .transactions-page-toolbar > .field .searchable-select-placeholder {
-  color: #000 !important;
-  opacity: 1;
-  -webkit-text-fill-color: #000;
+  color: var(--text-secondary) !important;
+  opacity: 0.65;
+  -webkit-text-fill-color: var(--text-secondary);
 }
 
 .settings-table-toolbar {
@@ -4517,28 +4524,30 @@ table.data-table {
 .settings-table-count-box,
 .settings-table-toolbar .btn,
 .settings-table-toolbar button.btn {
-  color: #000 !important;
   font-family: inherit;
   font-size: 0.85rem !important;
   letter-spacing: 0;
-  -webkit-text-fill-color: #000;
 }
 
 .settings-table-toolbar h3,
 .settings-table-count-box,
 .settings-table-toolbar .btn,
 .settings-table-toolbar button.btn {
+  color: #000 !important;
   font-weight: 600;
+  -webkit-text-fill-color: #000;
 }
 
 .settings-table-search input {
+  color: var(--text-primary) !important;
   font-weight: 400;
+  -webkit-text-fill-color: var(--text-primary);
 }
 
 .settings-table-search input::placeholder {
-  color: #000 !important;
-  opacity: 1;
-  -webkit-text-fill-color: #000;
+  color: var(--text-secondary) !important;
+  opacity: 0.65;
+  -webkit-text-fill-color: var(--text-secondary);
 }
 
 .transactions-page-toolbar .toolbar-search-field {
