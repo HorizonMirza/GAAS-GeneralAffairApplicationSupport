@@ -91,13 +91,16 @@ public class OrgAdminController : ApiControllerBase
         if (await _db.OrgDirektorats.AnyAsync(d => d.Id != id && d.Nama == nama))
             return StatusCode(400, new { detail = "Nama direktorat sudah dipakai" });
 
-        // Rename only ever changes what the org tree/dropdowns show going forward - every existing
-        // Pengiriman/BookingRuang/.../user row keeps whatever Divisi/Departemen string it already
-        // has stored (Direktorat isn't stamped onto business rows at all, only onto users - and
-        // even there this deliberately leaves it as-is, same "renaming doesn't rewrite history"
-        // rule OrgAdminController applies to Divisi/Departemen below).
         row.Nama = nama;
-        LogAdminActivity(_db, "ORG_DIREKTORAT_RENAME", $"Ubah nama Direktorat {namaLama} -> {nama}", actor!);
+
+        // Synchronize with users: update Direktorat on all user accounts in this Direktorat
+        var affectedUsers = await _db.Users.Where(u => u.Direktorat == namaLama).ToListAsync();
+        foreach (var u in affectedUsers)
+        {
+            u.Direktorat = nama;
+        }
+
+        LogAdminActivity(_db, "ORG_DIREKTORAT_RENAME", $"Ubah nama Direktorat {namaLama} -> {nama} (sinkronisasi {affectedUsers.Count} akun pengguna)", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -128,6 +131,9 @@ public class OrgAdminController : ApiControllerBase
         if (row == null) return NotFound(new { detail = "Direktorat tidak ditemukan" });
         if (row.Divisi.Count > 0)
             return StatusCode(409, new { detail = "Direktorat masih memiliki Divisi. Hapus atau pindahkan Divisi di dalamnya terlebih dahulu." });
+
+        if (await _db.Users.AnyAsync(u => u.Direktorat == row.Nama))
+            return StatusCode(409, new { detail = "Direktorat masih digunakan oleh akun pengguna. Hapus atau pindahkan akun pengguna terlebih dahulu." });
 
         _db.OrgDirektorats.Remove(row);
         LogAdminActivity(_db, "ORG_DIREKTORAT_DELETE", $"Hapus Direktorat {row.Nama}", actor!);
@@ -200,7 +206,7 @@ public class OrgAdminController : ApiControllerBase
         if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
             return StatusCode(400, new { detail = "Password salah" });
 
-        var row = await _db.OrgDivisis.Include(v => v.Departemen).FirstOrDefaultAsync(v => v.Id == id);
+        var row = await _db.OrgDivisis.Include(v => v.Direktorat).Include(v => v.Departemen).FirstOrDefaultAsync(v => v.Id == id);
         if (row == null) return NotFound(new { detail = "Divisi tidak ditemukan" });
 
         var namaLama = row.Nama;
@@ -213,12 +219,44 @@ public class OrgAdminController : ApiControllerBase
         if (await _db.OrgDivisis.AnyAsync(v => v.Id != id && v.Nama == nama))
             return StatusCode(400, new { detail = "Nama divisi sudah dipakai" });
 
-        // Same "does not touch history" rule as RenameDirektorat above - existing rows across
-        // every business table and every user account keep whatever Divisi string they already
-        // have; only NEW records/dropdowns pick up the renamed value or the new kode.
         row.Nama = nama;
         row.KodeSatuanKerja = kode;
-        LogAdminActivity(_db, "ORG_DIVISI_UPDATE", $"Ubah Divisi {namaLama} -> {nama} (kode: {kode})", actor!);
+
+        // Synchronize with users: update Divisi on all user accounts in this Divisi
+        var affectedUsers = await _db.Users.Where(u => u.Divisi == namaLama).ToListAsync();
+        if (nama != namaLama)
+        {
+            foreach (var u in affectedUsers)
+            {
+                u.Divisi = nama;
+                if (row.Direktorat != null)
+                {
+                    u.Direktorat = row.Direktorat.Nama;
+                }
+                if (u.Nama == namaLama)
+                {
+                    u.Nama = nama;
+                }
+                if (u.Username == $"{namaLama} Admin Div")
+                {
+                    var newUsername = $"{nama} Admin Div";
+                    if (!await _db.Users.AnyAsync(x => x.Username == newUsername))
+                    {
+                        u.Username = newUsername;
+                    }
+                }
+                else if (u.Username == $"{namaLama} Approval Div")
+                {
+                    var newUsername = $"{nama} Approval Div";
+                    if (!await _db.Users.AnyAsync(x => x.Username == newUsername))
+                    {
+                        u.Username = newUsername;
+                    }
+                }
+            }
+        }
+
+        LogAdminActivity(_db, "ORG_DIVISI_UPDATE", $"Ubah Divisi {namaLama} -> {nama} (kode: {kode}, sinkronisasi {affectedUsers.Count} akun pengguna)", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -258,11 +296,28 @@ public class OrgAdminController : ApiControllerBase
         if (row.Departemen.Count > 0)
             return StatusCode(409, new { detail = "Divisi masih memiliki Departemen. Hapus atau pindahkan Departemen di dalamnya terlebih dahulu." });
 
-        if (await IsDivisiInUse(_db, row.Nama))
-            return StatusCode(409, new { detail = "Divisi masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
+        if (await HasDivisiTransactions(_db, row.Nama))
+            return StatusCode(409, new { detail = "Divisi masih digunakan dalam data transaksi (Pengiriman/Booking/ATK/Sarana/Arsip) dan tidak dapat dihapus." });
+
+        var usersInDivisi = await _db.Users.Where(u => u.Divisi == row.Nama).ToListAsync();
+        foreach (var u in usersInDivisi)
+        {
+            var hasLogs = await _db.AdminActivityLogs.AnyAsync(l => l.ActorId == u.Id) ||
+                          await _db.ImpersonationLogs.AnyAsync(l => l.TargetUserId == u.Id || l.SuperAdminId == u.Id);
+            if (hasLogs)
+            {
+                u.IsActive = false;
+                u.Divisi = null;
+                u.Departemen = null;
+            }
+            else
+            {
+                _db.Users.Remove(u);
+            }
+        }
 
         _db.OrgDivisis.Remove(row);
-        LogAdminActivity(_db, "ORG_DIVISI_DELETE", $"Hapus Divisi {row.Nama}", actor!);
+        LogAdminActivity(_db, "ORG_DIVISI_DELETE", $"Hapus Divisi {row.Nama} (membersihkan {usersInDivisi.Count} akun pengguna)", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -326,7 +381,7 @@ public class OrgAdminController : ApiControllerBase
         if (string.IsNullOrEmpty(payload.Password) || !BCrypt.Net.BCrypt.Verify(payload.Password, actor!.PasswordHash))
             return StatusCode(400, new { detail = "Password salah" });
 
-        var row = await _db.OrgDepartemens.FirstOrDefaultAsync(d => d.Id == id);
+        var row = await _db.OrgDepartemens.Include(d => d.Divisi).ThenInclude(v => v.Direktorat).FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Departemen tidak ditemukan" });
 
         var namaLama = row.Nama;
@@ -336,9 +391,47 @@ public class OrgAdminController : ApiControllerBase
         if (await _db.OrgDepartemens.AnyAsync(d => d.Id != id && d.Nama == nama))
             return StatusCode(400, new { detail = "Nama departemen sudah dipakai" });
 
-        // Same "does not touch history" rule as UpdateDivisi above.
         row.Nama = nama;
-        LogAdminActivity(_db, "ORG_DEPARTEMEN_UPDATE", $"Ubah nama Departemen {namaLama} -> {nama}", actor!);
+
+        // Synchronize with users: update Departemen on all user accounts in this Departemen
+        var affectedUsers = await _db.Users.Where(u => u.Departemen == namaLama).ToListAsync();
+        if (nama != namaLama)
+        {
+            foreach (var u in affectedUsers)
+            {
+                u.Departemen = nama;
+                if (row.Divisi != null)
+                {
+                    u.Divisi = row.Divisi.Nama;
+                    if (row.Divisi.Direktorat != null)
+                    {
+                        u.Direktorat = row.Divisi.Direktorat.Nama;
+                    }
+                }
+                if (u.Nama == namaLama)
+                {
+                    u.Nama = nama;
+                }
+                if (u.Username == $"{namaLama} Admin")
+                {
+                    var newUsername = $"{nama} Admin";
+                    if (!await _db.Users.AnyAsync(x => x.Username == newUsername))
+                    {
+                        u.Username = newUsername;
+                    }
+                }
+                else if (u.Username == $"{namaLama} Approval")
+                {
+                    var newUsername = $"{nama} Approval";
+                    if (!await _db.Users.AnyAsync(x => x.Username == newUsername))
+                    {
+                        u.Username = newUsername;
+                    }
+                }
+            }
+        }
+
+        LogAdminActivity(_db, "ORG_DEPARTEMEN_UPDATE", $"Ubah nama Departemen {namaLama} -> {nama} (sinkronisasi {affectedUsers.Count} akun pengguna)", actor!);
         try
         {
             await _db.SaveChangesAsync();
@@ -370,11 +463,27 @@ public class OrgAdminController : ApiControllerBase
         var row = await _db.OrgDepartemens.FirstOrDefaultAsync(d => d.Id == id);
         if (row == null) return NotFound(new { detail = "Departemen tidak ditemukan" });
 
-        if (await IsDepartemenInUse(_db, row.Nama))
-            return StatusCode(409, new { detail = "Departemen masih digunakan oleh akun pengguna atau data transaksi dan tidak dapat dihapus." });
+        if (await HasDepartemenTransactions(_db, row.Nama))
+            return StatusCode(409, new { detail = "Departemen masih digunakan dalam data transaksi (Pengiriman/Booking/ATK/Sarana/Arsip) dan tidak dapat dihapus." });
+
+        var usersInDept = await _db.Users.Where(u => u.Departemen == row.Nama).ToListAsync();
+        foreach (var u in usersInDept)
+        {
+            var hasLogs = await _db.AdminActivityLogs.AnyAsync(l => l.ActorId == u.Id) ||
+                          await _db.ImpersonationLogs.AnyAsync(l => l.TargetUserId == u.Id || l.SuperAdminId == u.Id);
+            if (hasLogs)
+            {
+                u.IsActive = false;
+                u.Departemen = null;
+            }
+            else
+            {
+                _db.Users.Remove(u);
+            }
+        }
 
         _db.OrgDepartemens.Remove(row);
-        LogAdminActivity(_db, "ORG_DEPARTEMEN_DELETE", $"Hapus Departemen {row.Nama}", actor!);
+        LogAdminActivity(_db, "ORG_DEPARTEMEN_DELETE", $"Hapus Departemen {row.Nama} (membersihkan {usersInDept.Count} akun pengguna)", actor!);
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         OrgTree.LoadFromDb(_db);
@@ -396,6 +505,24 @@ public class OrgAdminController : ApiControllerBase
         await db.PermintaanAtks.AnyAsync(p => p.Divisi == nama) ||
         await db.PerbaikanSaranas.AnyAsync(p => p.Divisi == nama) ||
         await db.PermintaanArsips.AnyAsync(p => p.Divisi == nama);
+
+    // Checks if Divisi is used in any business transactions (Pengiriman/Booking/ATK/Sarana/Arsip)
+    public static async Task<bool> HasDivisiTransactions(AppDbContext db, string nama) =>
+        await db.Pengiriman.AnyAsync(p => p.Divisi == nama) ||
+        await db.BookingRuangs.AnyAsync(b => b.Divisi == nama) ||
+        await db.BookingKendaraans.AnyAsync(b => b.Divisi == nama) ||
+        await db.PermintaanAtks.AnyAsync(p => p.Divisi == nama) ||
+        await db.PerbaikanSaranas.AnyAsync(p => p.Divisi == nama) ||
+        await db.PermintaanArsips.AnyAsync(p => p.Divisi == nama);
+
+    // Checks if Departemen is used in any business transactions
+    public static async Task<bool> HasDepartemenTransactions(AppDbContext db, string nama) =>
+        await db.Pengiriman.AnyAsync(p => p.Departemen == nama) ||
+        await db.BookingRuangs.AnyAsync(b => b.Departemen == nama) ||
+        await db.BookingKendaraans.AnyAsync(b => b.Departemen == nama) ||
+        await db.PermintaanAtks.AnyAsync(p => p.Departemen == nama) ||
+        await db.PerbaikanSaranas.AnyAsync(p => p.Departemen == nama) ||
+        await db.PermintaanArsips.AnyAsync(p => p.Departemen == nama);
 
     // Same idea as IsDivisiInUse, for a Departemen delete.
     public static async Task<bool> IsDepartemenInUse(AppDbContext db, string nama) =>

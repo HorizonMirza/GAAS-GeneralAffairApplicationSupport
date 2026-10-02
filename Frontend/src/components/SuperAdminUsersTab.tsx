@@ -151,7 +151,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, orgStructure]);
 
   // Debounced search, same 400ms pattern used by every other search box on this page.
   useEffect(() => {

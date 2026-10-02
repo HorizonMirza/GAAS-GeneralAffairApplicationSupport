@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useAuth } from "@/lib/auth-context";
 import ModalOverlay from "@/components/ModalOverlay";
 import PasswordField from "@/components/PasswordField";
 import DeleteWithPasswordModal from "@/components/DeleteWithPasswordModal";
@@ -55,6 +56,7 @@ function routeApiError(message: string): FormErrors {
 // Fully adapted to the native GAAS enterprise design system with password verification.
 export default function SuperAdminOrgTab() {
   const { showToast } = useToast();
+  const { refresh: refreshAuth } = useAuth();
 
   const [tree, setTree] = useState<OrgDirektoratNode[] | null>(null);
   const [error, setError] = useState("");
@@ -346,6 +348,7 @@ export default function SuperAdminOrgTab() {
 
       setFormModal(null);
       await load();
+      await refreshAuth();
     } catch (err) {
       setFormErrors(routeApiError(errorMessage(err)));
     } finally {
@@ -382,6 +385,7 @@ export default function SuperAdminOrgTab() {
 
     setDeleteTarget(null);
     await load();
+    await refreshAuth();
   }
 
   const queryLower = searchQuery.toLowerCase().trim();
@@ -469,7 +473,11 @@ export default function SuperAdminOrgTab() {
           <button
             type="button"
             className="settings-table-refresh-btn"
-            onClick={handleResetAll}
+            onClick={() => {
+              handleResetAll();
+              load();
+              refreshAuth();
+            }}
             title="Reset Pilihan dan Muat Ulang"
             aria-label="Reset Pilihan dan Muat Ulang"
           >
