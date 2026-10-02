@@ -353,8 +353,8 @@ export default function RiwayatAktivitasCard() {
               value={String(filters.limit)}
               onChange={(v) => updateFilter({ limit: Number(v) })}
               options={["10", "20", "50", "100"]}
-              getLabel={(v) => `${v} aktivitas`}
-              placeholder={`${filters.limit} aktivitas`}
+              getLabel={(v) => `${v} Aktivitas`}
+              placeholder={`${filters.limit} Aktivitas`}
             />
           </div>
         </div>
