@@ -348,18 +348,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [endingImpersonation, setEndingImpersonation] = useState(false);
-  const [demoVariant, setDemoVariant] = useState<1 | 2 | 3>(1);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("gaas_login_as_variant");
-      if (saved && ["1", "2", "3"].includes(saved)) {
-        setDemoVariant(Number(saved) as 1 | 2 | 3);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [dateText, setDateText] = useState("");
@@ -605,110 +593,19 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
         {me.impersonatedBy && (
           <div className="impersonation-banner-wrapper">
-            {demoVariant === 1 && (
-              <div className="impersonation-banner-gaas-v1">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span>
-                    Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
-                  </span>
-                  <div className="impersonation-demo-switcher">
-                    <span className="demo-label">Demo:</span>
-                    {[1, 2, 3].map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
-                        onClick={() => {
-                          setDemoVariant(v as 1 | 2 | 3);
-                          localStorage.setItem("gaas_login_as_variant", String(v));
-                        }}
-                        title={`Pilih Demo ${v}`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn impersonation-btn-blue-gaas"
-                  disabled={endingImpersonation}
-                  onClick={handleEndImpersonation}
-                >
-                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
-                </button>
-              </div>
-            )}
-
-            {demoVariant === 2 && (
-              <div className="impersonation-banner-gaas-v2">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span>
-                    Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
-                  </span>
-                  <div className="impersonation-demo-switcher">
-                    <span className="demo-label">Demo:</span>
-                    {[1, 2, 3].map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
-                        onClick={() => {
-                          setDemoVariant(v as 1 | 2 | 3);
-                          localStorage.setItem("gaas_login_as_variant", String(v));
-                        }}
-                        title={`Pilih Demo ${v}`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn impersonation-btn-white-gaas"
-                  disabled={endingImpersonation}
-                  onClick={handleEndImpersonation}
-                >
-                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
-                </button>
-              </div>
-            )}
-
-            {demoVariant === 3 && (
-              <div className="impersonation-banner-gaas-v3">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span>
-                    Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
-                  </span>
-                  <div className="impersonation-demo-switcher">
-                    <span className="demo-label">Demo:</span>
-                    {[1, 2, 3].map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        className={`demo-btn ${demoVariant === v ? "active" : ""}`}
-                        onClick={() => {
-                          setDemoVariant(v as 1 | 2 | 3);
-                          localStorage.setItem("gaas_login_as_variant", String(v));
-                        }}
-                        title={`Pilih Demo ${v}`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn impersonation-btn-blue-gaas"
-                  disabled={endingImpersonation}
-                  onClick={handleEndImpersonation}
-                >
-                  {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
-                </button>
-              </div>
-            )}
+            <div className="impersonation-banner-gaas">
+              <span>
+                Login As <strong>{me.nama}</strong> ({ROLE_LABEL_FULL[me.role]}) - sesi {me.impersonatedBy.nama}
+              </span>
+              <button
+                type="button"
+                className="btn impersonation-btn-return"
+                disabled={endingImpersonation}
+                onClick={handleEndImpersonation}
+              >
+                {endingImpersonation ? "Memproses..." : "Kembali ke Super Admin"}
+              </button>
+            </div>
           </div>
         )}
 

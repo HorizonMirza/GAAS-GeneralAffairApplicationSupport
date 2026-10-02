@@ -1425,30 +1425,13 @@ body.auth-ready .app-shell {
   opacity: 0.75;
 }
 
-/* ---------- Impersonation Banner (GAAS Design System - Full Width) ---------- */
+/* ---------- Impersonation Banner (Permanent Opsi 2 - Hijau Solid GAAS) ---------- */
 .impersonation-banner-wrapper {
   position: relative;
   width: 100%;
 }
 
-/* Demo 1: Full-Width Soft Emerald + Tombol Biru PGN (btn-primary) */
-.impersonation-banner-gaas-v1 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 28px;
-  background: #ecfdf5;
-  border-bottom: 1px solid #a7f3d0;
-  color: #064e3b;
-  font-size: 0.88rem;
-}
-.impersonation-banner-gaas-v1 strong {
-  color: #065f46;
-}
-
-/* Demo 2: Full-Width Hijau Solid GAAS (#16a34a) + Tombol Putih Khas GAAS */
-.impersonation-banner-gaas-v2 {
+.impersonation-banner-gaas {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1459,34 +1442,18 @@ body.auth-ready .app-shell {
   color: #ffffff;
   font-size: 0.88rem;
 }
-.impersonation-banner-gaas-v2 strong {
+
+.impersonation-banner-gaas strong {
   color: #ffffff;
+  font-weight: 700;
 }
 
-/* Demo 3: Full-Width Putih Bersih Senada Topbar + Aksen Hijau + Tombol Biru PGN */
-.impersonation-banner-gaas-v3 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 28px;
-  background: #ffffff;
-  border-top: 3px solid #16a34a;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1e293b;
-  font-size: 0.88rem;
-}
-.impersonation-banner-gaas-v3 strong {
-  color: #0f172a;
-}
-
-/* Tombol Putih Khas GAAS untuk Demo 2 */
-.impersonation-btn-white-gaas {
+.impersonation-btn-return {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
   background: #ffffff !important;
-  color: #1b5598 !important;
+  color: #000000 !important;
   border-radius: 8px !important;
   padding: 7px 16px !important;
   font-size: 0.82rem !important;
@@ -1498,96 +1465,25 @@ body.auth-ready .app-shell {
   cursor: pointer !important;
   width: auto !important;
 }
-.impersonation-btn-white-gaas:hover:not(:disabled) {
+
+.impersonation-btn-return:hover:not(:disabled) {
   background: #f8fafc !important;
+  color: #000000 !important;
   transform: translateY(-1px);
 }
 
-/* Tombol Biru PGN khas GAAS untuk Demo 1 & 3 */
-.impersonation-btn-blue-gaas {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  background: var(--gradient-primary, linear-gradient(135deg, #1b5598 0%, #2366b5 100%)) !important;
-  color: #ffffff !important;
-  border-radius: 8px !important;
-  padding: 7px 16px !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
-  white-space: nowrap !important;
-  border: none !important;
-  box-shadow: 0 2px 4px rgba(27, 85, 152, 0.2) !important;
-  transition: all 150ms ease !important;
-  cursor: pointer !important;
-  width: auto !important;
-}
-.impersonation-btn-blue-gaas:hover:not(:disabled) {
-  background: var(--gradient-primary-hover, #15457c) !important;
-  transform: translateY(-1px);
-}
-
-/* Demo Switcher Controls */
-.impersonation-demo-switcher {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.06);
-  padding: 2px 6px;
-  border-radius: 6px;
-  margin-left: 12px;
-}
-.impersonation-banner-gaas-v2 .impersonation-demo-switcher {
-  background: rgba(255, 255, 255, 0.2);
-}
-.impersonation-demo-switcher .demo-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  opacity: 0.75;
-  text-transform: uppercase;
-  margin-right: 2px;
-}
-.impersonation-banner-gaas-v2 .impersonation-demo-switcher .demo-label {
-  color: #ffffff;
-}
-.impersonation-demo-switcher .demo-btn {
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  transition: all 120ms ease;
-}
-.impersonation-demo-switcher .demo-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-.impersonation-demo-switcher .demo-btn.active {
-  background: #1b5598;
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-.impersonation-banner-gaas-v2 .impersonation-demo-switcher .demo-btn.active {
-  background: #ffffff;
-  color: #16a34a;
+.impersonation-btn-return:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {
-  .impersonation-banner-gaas-v1,
-  .impersonation-banner-gaas-v2,
-  .impersonation-banner-gaas-v3 {
+  .impersonation-banner-gaas {
     flex-direction: column;
     align-items: flex-start;
     padding: 12px 16px;
     gap: 10px;
   }
-  .impersonation-btn-white-gaas,
-  .impersonation-btn-blue-gaas {
+  .impersonation-btn-return {
     width: 100% !important;
     justify-content: center;
   }
