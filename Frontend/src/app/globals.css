@@ -4506,6 +4506,41 @@ table.data-table {
   -webkit-text-fill-color: #000;
 }
 
+.settings-table-toolbar {
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+.settings-table-toolbar h3,
+.settings-table-search input,
+.settings-table-count-box,
+.settings-table-toolbar .btn,
+.settings-table-toolbar button.btn {
+  color: #000 !important;
+  font-family: inherit;
+  font-size: 0.85rem !important;
+  letter-spacing: 0;
+  -webkit-text-fill-color: #000;
+}
+
+.settings-table-toolbar h3,
+.settings-table-count-box,
+.settings-table-toolbar .btn,
+.settings-table-toolbar button.btn {
+  font-weight: 600;
+}
+
+.settings-table-search input {
+  font-weight: 400;
+}
+
+.settings-table-search input::placeholder {
+  color: #000 !important;
+  opacity: 1;
+  -webkit-text-fill-color: #000;
+}
+
 .transactions-page-toolbar .toolbar-search-field {
   flex: 0 0 auto;
   width: 160px;
