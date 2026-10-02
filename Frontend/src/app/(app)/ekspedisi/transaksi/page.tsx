@@ -56,7 +56,6 @@ function TransaksiPageInner() {
   const [tableBusy, setTableBusy] = useState(true);
   const [tableError, setTableError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [useBlackToolbarText, setUseBlackToolbarText] = useState(true);
   useExclusivePanel(filterOpen, () => setFilterOpen(false));
 
   const [formOpen, setFormOpen] = useState(false);
@@ -227,8 +226,6 @@ function TransaksiPageInner() {
     "KPU",
     "SUPER_ADMIN",
   ].includes(me.role);
-  const isToolbarColorDemo = searchParams.get("demoWarna") === "1";
-
   const selectedDirektoratNode = orgStructure?.direktoratTree.find((d) => d.nama === filters.direktorat) || null;
   const divisiOptions = selectedDirektoratNode
     ? selectedDirektoratNode.divisi.map((v) => v.nama)
@@ -246,34 +243,8 @@ function TransaksiPageInner() {
 
   return (
     <>
-      {isToolbarColorDemo && (
-        <section className="toolbar-color-demo" aria-label="Demo perbandingan warna teks toolbar">
-          <div>
-            <strong>Demo Warna Teks</strong>
-            <span>Bandingkan tampilan area filter. Perubahan ini hanya pratinjau dan tidak disimpan.</span>
-          </div>
-          <div className="toolbar-color-demo-toggle" role="group" aria-label="Pilihan warna teks">
-            <button
-              type="button"
-              className={!useBlackToolbarText ? "active" : ""}
-              aria-pressed={!useBlackToolbarText}
-              onClick={() => setUseBlackToolbarText(false)}
-            >
-              Warna Saat Ini
-            </button>
-            <button
-              type="button"
-              className={useBlackToolbarText ? "active" : ""}
-              aria-pressed={useBlackToolbarText}
-              onClick={() => setUseBlackToolbarText(true)}
-            >
-              Teks Hitam
-            </button>
-          </div>
-        </section>
-      )}
       <div className="card">
-        <div className={`toolbar transactions-page-toolbar ${isToolbarColorDemo && useBlackToolbarText ? "toolbar-text-black-preview" : ""}`}>
+        <div className="toolbar transactions-page-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
             <input type="text" id="filter-search" placeholder="No Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />
