@@ -74,9 +74,57 @@ const PASSWORD_REQUIREMENTS = [
   { regex: /[^A-Za-z0-9]/, text: "Minimal 1 karakter spesial" },
 ] as const;
 
+type StrengthScore = 0 | 1 | 2 | 3 | 4 | 5;
+
+const STRENGTH_COLOR: Record<StrengthScore, string> = {
+  0: "var(--border-subtle)",
+  1: "#ef4444",
+  2: "#f97316",
+  3: "#f59e0b",
+  4: "#b45309",
+  5: "#10b981",
+};
+
+const STRENGTH_TEXT: Record<StrengthScore, string> = {
+  0: "",
+  1: "Password lemah",
+  2: "Password sedang",
+  3: "Password kuat",
+  4: "Password sangat kuat",
+  5: "Password sangat kuat",
+};
+
+function PasswordStrengthMeter({ password }: { password: string }) {
+  const results = PASSWORD_REQUIREMENTS.map((r) => ({ met: r.regex.test(password), text: r.text }));
+  const score = results.filter((r) => r.met).length as StrengthScore;
+  return (
+    <div className="password-strength">
+      <div className="password-strength-track" role="progressbar" aria-valuenow={score} aria-valuemin={0} aria-valuemax={5}>
+        <div className="password-strength-fill" style={{ width: `${(score / 5) * 100}%`, background: STRENGTH_COLOR[score] }} />
+      </div>
+      <p className="password-strength-label">
+        <span>Syarat password:</span>
+        <span style={{ color: STRENGTH_COLOR[score] }}>{STRENGTH_TEXT[score]}</span>
+      </p>
+      <ul className="password-requirement-list" aria-label="Syarat password">
+        {results.map((r) => (
+          <li key={r.text} className={`password-requirement-item${r.met ? " met" : ""}`}>
+            {r.met ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            )}
+            <span>{r.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 interface AdminPasswordFormState {
   newPassword: string;
-  confirmPassword: string;
+  confirmPassword?: string;
   currentPassword: string;
   mustChangePassword: boolean;
 }
@@ -294,10 +342,6 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       setPasswordError("Password baru belum memenuhi seluruh persyaratan");
       return;
     }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("Konfirmasi password baru tidak cocok");
-      return;
-    }
     if (!passwordForm.currentPassword) {
       setPasswordError("Password Super Admin wajib diisi untuk konfirmasi");
       return;
@@ -310,7 +354,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       await api.changeAdminUserPassword(target.id, {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
-        mustChangePassword: changingOwnPassword ? false : passwordForm.mustChangePassword,
+        mustChangePassword: changingOwnPassword ? false : true,
       });
       setPasswordTarget(null);
       setPasswordForm(EMPTY_PASSWORD_FORM);
@@ -730,12 +774,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
       >
         <div className="modal" style={{ maxWidth: 520 }}>
           <div className="modal-header">
-            <div>
-              <h3>Ganti Password</h3>
-              <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                Atur password baru untuk akun yang dipilih
-              </p>
-            </div>
+            <h3>Change Password</h3>
             <button type="button" className="modal-close" onClick={closeChangePassword} disabled={passwordSaving}>&times;</button>
           </div>
 
@@ -773,9 +812,10 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
 
               <PasswordField
                 id="admin-user-new-password"
-                label="Password Baru"
-                placeholder="Masukkan password baru"
+                label="New Password"
+                placeholder="Min. 8 Karakter"
                 minLength={8}
+                icon={<Lock width={15} height={15} />}
                 value={passwordForm.newPassword}
                 onChange={(value) => {
                   setPasswordForm((current) => ({ ...current, newPassword: value }));
@@ -783,60 +823,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 }}
               />
 
-              <ul className="password-requirement-list" aria-label="Syarat password" style={{ marginTop: 8 }}>
-                {PASSWORD_REQUIREMENTS.map((requirement) => {
-                  const met = requirement.regex.test(passwordForm.newPassword);
-                  return (
-                    <li key={requirement.text} className={`password-requirement-item${met ? " met" : ""}`}>
-                      {met ? (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                      )}
-                      <span>{requirement.text}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <div style={{ marginTop: 16 }}>
-                <PasswordField
-                  id="admin-user-confirm-password"
-                  label="Konfirmasi Password Baru"
-                  placeholder="Ulangi password baru"
-                  minLength={8}
-                  value={passwordForm.confirmPassword}
-                  onChange={(value) => {
-                    setPasswordForm((current) => ({ ...current, confirmPassword: value }));
-                    setPasswordError("");
-                  }}
-                />
-              </div>
-
-              {passwordTarget.id !== me?.id ? (
-                <div className="field" style={{ marginTop: 16 }}>
-                  <label htmlFor="admin-user-must-change-password">Pengaturan Login</label>
-                  <button
-                    id="admin-user-must-change-password"
-                    type="button"
-                    className={`field-toggle${passwordForm.mustChangePassword ? " field-toggle-active" : ""}`}
-                    aria-pressed={passwordForm.mustChangePassword}
-                    onClick={() => setPasswordForm((current) => ({ ...current, mustChangePassword: !current.mustChangePassword }))}
-                  >
-                    <span className="field-toggle-box">
-                      {passwordForm.mustChangePassword && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                      )}
-                    </span>
-                    Wajib ganti password saat login berikutnya
-                  </button>
-                  <div className="field-hint-text">Semua sesi akun tersebut akan langsung dihentikan.</div>
-                </div>
-              ) : (
-                <div className="field-hint-text" style={{ marginTop: 16 }}>
-                  Anda sedang mengganti password akun sendiri. Sesi ini akan diperbarui secara otomatis.
-                </div>
-              )}
+              <PasswordStrengthMeter password={passwordForm.newPassword} />
 
               <div style={{ marginTop: 16 }}>
                 <PasswordField
@@ -852,12 +839,9 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
                 />
               </div>
 
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" style={{ width: "auto" }} onClick={closeChangePassword} disabled={passwordSaving}>
-                  Batal
-                </button>
-                <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={passwordSaving}>
-                  {passwordSaving ? "Menyimpan..." : "Ganti Password"}
+              <div className="modal-actions" style={{ marginTop: 20 }}>
+                <button type="submit" className="btn btn-confirm-approve" style={{ width: "auto" }} disabled={passwordSaving}>
+                  {passwordSaving ? "Menyimpan..." : "Save"}
                 </button>
               </div>
             </form>
