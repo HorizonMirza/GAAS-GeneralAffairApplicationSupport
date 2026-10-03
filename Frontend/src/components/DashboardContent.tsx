@@ -980,9 +980,6 @@ export default function DashboardContent({ me }: { me: Me }) {
   }));
   const trendLinePoints = trendPoints.map((point) => `${point.x},${point.y}`).join(" ");
   const trendAreaPoints = `34,225 ${trendLinePoints} 446,225`;
-  const previousTrendValue = trendData.at(-2)?.value ?? 0;
-  const latestTrendValue = trendData.at(-1)?.value ?? 0;
-  const trendGrowth = previousTrendValue > 0 ? Math.round(((latestTrendValue - previousTrendValue) / previousTrendValue) * 1000) / 10 : null;
   const yAxisTicks = [maxBarValue, Math.round((maxBarValue * 2) / 3), Math.round(maxBarValue / 3), 0];
   const schedulesForDisplay = demoMode ? DEMO_SCHEDULES : state.schedules;
   const queueForDisplay = demoMode ? DEMO_QUEUE_ITEMS : state.queue;

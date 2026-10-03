@@ -179,10 +179,6 @@ export default function SuperAdminOrgTab() {
     );
   }, [tree]);
 
-  const currentDepartemen = useMemo(() => {
-    if (!selectedDepartemenId) return null;
-    return allDepartemenList.find((dp) => dp.id === selectedDepartemenId) || null;
-  }, [allDepartemenList, selectedDepartemenId]);
 
   function handleResetAll() {
     setSelectedDirektoratId(null);

@@ -911,7 +911,7 @@ export const api = {
   // Super Admin only - the seven per-module log tables unioned into one stream.
   listRiwayatAktivitas: (params: ListRiwayatParams) =>
     apiRequest<RiwayatAktivitasListResponse>("/riwayat-aktivitas", { params: riwayatListParams(params) }),
-  // Only the accounts that actually appear in the logs, so the Pelaku dropdown
+  // Only the accounts that actually appear in the logs, so the User dropdown
   // stays short instead of listing every account that has never done anything.
   listRiwayatAktor: () => apiRequest<RiwayatAktor[]>("/riwayat-aktivitas/aktor"),
 

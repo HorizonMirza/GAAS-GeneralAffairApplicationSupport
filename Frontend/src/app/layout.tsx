@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./tailwind.css";
+import ClientErrorBoundary from "@/components/ClientErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Pendataan Pengiriman Barang Kantor",
@@ -22,7 +23,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <ClientErrorBoundary>{children}</ClientErrorBoundary>
+      </body>
     </html>
   );
 }
+

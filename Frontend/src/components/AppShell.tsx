@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Car, Folder, LayoutGrid, Layers, Settings, Shield, ShieldCheck, Undo2, Wrench } from "lucide-react";
+import { Calendar, Car, Folder, LayoutGrid, Layers, Settings, Shield, Wrench } from "lucide-react";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ROLE_COLOR, ROLE_LABEL_FULL } from "@/lib/constants";

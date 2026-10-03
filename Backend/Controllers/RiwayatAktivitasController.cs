@@ -276,7 +276,7 @@ public class RiwayatAktivitasController : ApiControllerBase
         return Ok(new RiwayatAktivitasListOut { Items = rows, Total = total, Page = page, Limit = limit });
     }
 
-    // Only the people who actually appear in the logs, so the Pelaku dropdown stays short instead
+    // Only the people who actually appear in the logs, so the User dropdown stays short instead
     // of listing every account that has never done anything.
     [HttpGet("aktor")]
     public async Task<IActionResult> Aktor()
