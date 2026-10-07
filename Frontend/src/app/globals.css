@@ -6711,3 +6711,539 @@ table.data-table {
   border-left-color: var(--badge-rejected-bg);
   background: color-mix(in srgb, var(--badge-rejected-bg) 8%, var(--bg-surface-alt));
 }
+
+/* ---------- Responsive hardening: tablet and mobile ---------- */
+.main-content,
+.page-body,
+.card,
+.toolbar,
+.calendar-main,
+.settings-accordion-body {
+  min-width: 0;
+}
+
+.table-wrap {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 1100px) {
+  .page-body {
+    padding: 22px 20px 34px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .transactions-page-toolbar .toolbar-search-field,
+  .invoices-page-toolbar .toolbar-search-field,
+  .invoices-page-toolbar .invoice-search-field,
+  .toolbar.transactions-page-toolbar #filter-bulan,
+  .toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
+  .toolbar.transactions-page-toolbar #filter-arsip-bulan,
+  .toolbar.transactions-page-toolbar #filter-katalog-bulan,
+  .toolbar.transactions-page-toolbar #filter-atk-bulan,
+  .toolbar.transactions-page-toolbar #filter-sarana-bulan,
+  .toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan,
+  .toolbar.transactions-page-toolbar #filter-riwayat-bulan,
+  .toolbar.transactions-page-toolbar #invoice-filter-bulan,
+  .toolbar.transactions-page-toolbar #atk-invoice-filter-bulan,
+  .invoices-page-toolbar #invoice-filter-bulan,
+  .invoices-page-toolbar #atk-invoice-filter-bulan,
+  .invoices-page-toolbar .invoice-filter-field {
+    flex: 1 1 150px;
+    width: auto;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 960px) {
+  .calendar-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .calendar-sidebar-create-btn,
+  .calendar-sidebar > .mini-calendar {
+    grid-column: 1 / -1;
+  }
+
+  .calendar-sidebar > .mini-calendar {
+    width: 100%;
+  }
+
+  .calendar-main-month {
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 860px) {
+  .main-content {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: min(300px, 86vw);
+    max-width: none;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    box-shadow: 18px 0 42px rgba(5, 11, 26, 0.32);
+  }
+
+  .sidebar-backdrop {
+    width: 100%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 13px 18px;
+  }
+
+  .topbar-left {
+    min-width: 0;
+  }
+
+  .topbar-right {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .topbar h2 {
+    font-size: 1.02rem;
+  }
+
+  .page-body {
+    padding: 18px 16px 30px;
+  }
+
+  .toolbar .field,
+  .transactions-page-toolbar .toolbar-search-field,
+  .invoices-page-toolbar .toolbar-search-field,
+  .invoices-page-toolbar .invoice-search-field,
+  .toolbar.transactions-page-toolbar #filter-bulan,
+  .toolbar.transactions-page-toolbar #filter-kendaraan-bulan,
+  .toolbar.transactions-page-toolbar #filter-arsip-bulan,
+  .toolbar.transactions-page-toolbar #filter-katalog-bulan,
+  .toolbar.transactions-page-toolbar #filter-atk-bulan,
+  .toolbar.transactions-page-toolbar #filter-sarana-bulan,
+  .toolbar.transactions-page-toolbar #filter-sarana-katalog-bulan,
+  .toolbar.transactions-page-toolbar #filter-riwayat-bulan,
+  .toolbar.transactions-page-toolbar #invoice-filter-bulan,
+  .toolbar.transactions-page-toolbar #atk-invoice-filter-bulan,
+  .invoices-page-toolbar #invoice-filter-bulan,
+  .invoices-page-toolbar #atk-invoice-filter-bulan,
+  .invoices-page-toolbar .invoice-filter-field {
+    width: 100% !important;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .toolbar .field input,
+  .toolbar .field select,
+  .toolbar .field .filter-picker-trigger,
+  .toolbar .field .searchable-select-trigger {
+    width: 100%;
+  }
+
+  .settings-table-toolbar-left {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .superadmin-subtabs {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .superadmin-subtab-btn {
+    flex: 0 0 auto;
+    min-width: 138px;
+  }
+
+  .month-grid {
+    overflow-x: auto;
+  }
+
+  .month-grid-weekdays,
+  .month-grid-body {
+    min-width: 630px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-page {
+    padding: 16px;
+  }
+
+  .login-glass-card {
+    padding: 24px 20px 28px;
+    border-radius: 16px;
+  }
+
+  .topbar {
+    min-height: 62px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .topbar-left {
+    gap: 9px;
+  }
+
+  .topbar .icon-btn,
+  .topbar-right .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .topbar h2 {
+    font-size: 0.96rem;
+  }
+
+  .topbar-right {
+    gap: 6px;
+  }
+
+  .page-body {
+    padding: 14px 12px 26px;
+  }
+
+  .card {
+    padding: 15px;
+    border-radius: 12px;
+  }
+
+  .card + .card {
+    margin-top: 14px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat-tile {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .stat-tile .label,
+  .stat-tile-money .value {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .dashboard-welcome-header,
+  .card-header {
+    align-items: stretch;
+  }
+
+  .overview-status-filter-field {
+    width: 100% !important;
+  }
+
+  .overview-status-filter-field select,
+  .overview-status-filter-field .searchable-select-trigger,
+  .overview-status-filter-field .filter-picker-trigger {
+    width: 100%;
+  }
+
+  .item-row-card .card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .item-row-card .card-header-title {
+    flex-basis: calc(100% - 100px);
+  }
+
+  .toolbar > .btn,
+  .toolbar > button,
+  .toolbar > .filter-dropdown-wrap,
+  .toolbar-actions > .btn {
+    min-width: 0;
+  }
+
+  .toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .toolbar-actions > .btn {
+    width: 100% !important;
+    min-height: 42px;
+  }
+
+  .toolbar-actions > .btn:only-child,
+  .toolbar-actions > .btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .total-akumulasi-footer {
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .total-akumulasi-footer .total-akumulasi-label,
+  .total-akumulasi-footer .total-akumulasi-value {
+    font-size: 0.82rem;
+  }
+
+  .pagination,
+  .pagination-left,
+  .pagination-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pagination-right {
+    gap: 8px;
+  }
+
+  .pagination .pages {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .calendar-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  .calendar-sidebar-create-btn,
+  .calendar-sidebar > .mini-calendar {
+    grid-column: 1;
+  }
+
+  .calendar-main {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .calendar-topbar {
+    align-items: stretch;
+  }
+
+  .calendar-topbar-left,
+  .calendar-view-toggle {
+    width: 100%;
+  }
+
+  .calendar-topbar-left {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .calendar-topbar-room {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calendar-view-toggle {
+    overflow-x: auto;
+  }
+
+  .calendar-view-btn {
+    flex: 1 0 auto;
+    min-height: 40px;
+  }
+
+  .schedule-table {
+    min-width: 680px;
+  }
+
+  .settings-table-toolbar {
+    align-items: stretch;
+  }
+
+  .settings-table-toolbar-left {
+    flex-wrap: wrap;
+  }
+
+  .settings-table-search {
+    flex: 1 1 100%;
+  }
+
+  .settings-table-count-box {
+    flex: 1 1 auto;
+  }
+
+  .settings-table-toolbar > .btn,
+  .settings-table-toolbar > button.btn {
+    flex: 1 1 160px;
+  }
+
+  .settings-accordion-head {
+    padding: 14px;
+  }
+
+  .settings-accordion-icon-box {
+    width: 36px;
+    height: 36px;
+  }
+
+  .filter-dropdown-panel,
+  .filter-picker-panel,
+  .searchable-select-panel {
+    max-width: calc(100vw - 40px);
+  }
+
+  .modal-overlay {
+    padding: 12px 8px;
+  }
+
+  .modal-overlay-centered {
+    align-items: flex-start;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .modal-header h3 {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .detail-grid {
+    max-height: none;
+  }
+
+  .account-dropdown,
+  .notification-dropdown {
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 84px);
+  }
+
+  .toast {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    max-width: none;
+    border-radius: 14px;
+  }
+
+  .chat-modal-header-bar {
+    margin: -16px -16px 14px;
+    padding: 14px 16px 12px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .chat-message-list,
+  .chat-message-list.chat-message-list-fixed {
+    height: min(46dvh, 360px);
+    min-height: 240px;
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar h2 {
+    max-width: 48vw;
+  }
+
+  .stat-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .card.item-row-card {
+    padding: 15px;
+  }
+
+  .item-row-card .card-header-title {
+    flex-basis: 100%;
+  }
+
+  .item-row-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar-actions > .btn,
+  .toolbar-actions > .btn:last-child:nth-child(odd) {
+    grid-column: 1;
+  }
+
+  .toolbar > .btn,
+  .toolbar > button,
+  .toolbar > .filter-dropdown-wrap {
+    flex-basis: 100% !important;
+    width: 100%;
+  }
+
+  .filter-dropdown-wrap .filter-dropdown-toggle {
+    min-height: 42px;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modal-actions .btn,
+  .modal-actions button {
+    width: 100% !important;
+    min-height: 42px;
+  }
+
+  .item-row-col-lg,
+  .item-row-col-md,
+  .item-row-col-sm {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .item-row-col-spacer {
+    flex: 1 1 auto;
+  }
+
+  .bantuan-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-org-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 18px 20px;
+  }
+}

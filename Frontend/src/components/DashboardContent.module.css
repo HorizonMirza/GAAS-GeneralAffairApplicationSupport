@@ -1879,7 +1879,8 @@
 @media (max-width: 760px) {
   .headerActions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px;
+    grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
   }
 
   .monthFilter,
@@ -1917,6 +1918,22 @@
   .queueAge {
     grid-column: 2;
     grid-row: 2;
+  }
+
+  .panelHeader,
+  .legacyPanelHeader,
+  .performancePanel header,
+  .resourceScheduleHeader {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .chartViewport {
+    padding-right: 16px;
+  }
+
+  .activityPanelTall {
+    min-height: 320px;
   }
 
 }
@@ -1981,7 +1998,50 @@
   }
 
   .resourceSchedulePanel {
-    height: 300px;
+    height: 320px;
+  }
+
+  .resourceScheduleStack {
+    grid-template-rows: repeat(2, 320px);
+  }
+
+  .resourceScheduleViewport {
+    padding: 8px 10px 10px;
+  }
+
+  .resourceTimelineScale,
+  .resourceTimelineRow {
+    grid-template-columns: minmax(92px, 30%) minmax(0, 1fr);
+  }
+
+  .resourceTimelineScale > strong,
+  .resourceTimelineRow > strong {
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+
+  .activityList {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .activityRow {
+    grid-template-columns: 9px minmax(0, 1fr);
+  }
+
+  .activityRow time {
+    grid-column: 2;
+    margin-top: -4px;
+  }
+
+  .insightGrid {
+    grid-auto-rows: minmax(360px, auto);
+  }
+
+  .insightHeader,
+  .spendingHeader {
+    padding-right: 14px;
+    padding-left: 14px;
   }
 
   .progressLegend {
@@ -1990,4 +2050,47 @@
     gap: 7px;
   }
 
+}
+
+@media (max-width: 420px) {
+  .headerActions {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .moreFilter {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .filterPanel {
+    right: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .moduleTabs button {
+    min-width: 108px;
+    flex-basis: 108px;
+    padding: 0 12px;
+    font-size: 0.8rem;
+  }
+
+  .statusContent {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .donut {
+    width: 148px;
+    height: 148px;
+  }
+
+  .organizationDropdown {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .distributionHeader {
+    align-items: stretch;
+  }
 }

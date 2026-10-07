@@ -377,6 +377,26 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
+    if (!isDesktop) setSidebarOpen(false);
+  }, [isDesktop, pathname]);
+
+  useEffect(() => {
+    if (isDesktop || !sidebarOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isDesktop, sidebarOpen]);
+
+  useEffect(() => {
     document.body.classList.toggle("auth-ready", !!me);
     return () => document.body.classList.remove("auth-ready");
   }, [me]);
@@ -418,7 +438,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <ChatNotificationListener />
       <GlobalChatModal />
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
+      <aside id="app-sidebar" className={`sidebar ${sidebarOpen ? "sidebar-toggled" : ""}`}>
         <Link className="brand-logo-sidebar" href="/dashboard" aria-label="Ke Dashboard">
           <img src={logoUrl} alt={companyName} className="brand-logo-sidebar-img" />
         </Link>
@@ -574,12 +594,25 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </ScrollArea>
       </aside>
 
-      {sidebarOpen && <div className="sidebar-backdrop visible" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && !isDesktop && (
+        <button
+          type="button"
+          className="sidebar-backdrop visible"
+          aria-label="Tutup navigasi"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       <div className="main-content">
         <header className="topbar" onClick={() => setOpenCategory((c) => c)}>
           <div className="topbar-left">
-            <button className="icon-btn" aria-label="Toggle navigasi" onClick={() => setSidebarOpen((v) => !v)}>
+            <button
+              className="icon-btn"
+              aria-label={sidebarOpen && !isDesktop ? "Tutup navigasi" : "Buka navigasi"}
+              aria-controls="app-sidebar"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
             <h2>{topbarTitle}</h2>
