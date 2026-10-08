@@ -6575,10 +6575,7 @@ table.data-table {
   }
 
   .pagination-right > .text-secondary {
-    max-width: 160px;
-    line-height: 1.35;
-    text-align: right;
-    white-space: normal;
+    display: none;
   }
 
   .pagination-right > .pages {
