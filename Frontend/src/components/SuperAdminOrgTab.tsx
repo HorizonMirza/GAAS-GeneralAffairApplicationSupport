@@ -445,7 +445,7 @@ export default function SuperAdminOrgTab() {
     <div className="card">
       {/* Toolbar: Search di Kiri, Tombol Refresh + Count Box di Kanan */}
       <div
-        className="settings-table-toolbar"
+        className="settings-table-toolbar superadmin-org-toolbar"
         style={{
           display: "flex",
           alignItems: "center",
@@ -456,7 +456,7 @@ export default function SuperAdminOrgTab() {
           flexWrap: "wrap",
         }}
       >
-        <div className="settings-table-search" style={{ maxWidth: 340, width: "100%" }}>
+        <div className="settings-table-search superadmin-org-search" style={{ maxWidth: 340, width: "100%" }}>
           <Search width={16} height={16} />
           <input
             type="text"
@@ -465,7 +465,7 @@ export default function SuperAdminOrgTab() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="superadmin-org-summary" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"
             className="settings-table-refresh-btn"

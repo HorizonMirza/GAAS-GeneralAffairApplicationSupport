@@ -6444,6 +6444,23 @@ table.data-table {
 }
 
 @media (max-width: 640px) {
+  .superadmin-org-toolbar > .superadmin-org-summary {
+    order: 1;
+    width: 100%;
+  }
+
+  .superadmin-org-toolbar > .superadmin-org-search {
+    order: 2;
+    width: 100% !important;
+    max-width: none !important;
+    flex: 0 0 auto;
+  }
+
+  .superadmin-org-summary > .settings-table-count-box {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
   .superadmin-subtabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
