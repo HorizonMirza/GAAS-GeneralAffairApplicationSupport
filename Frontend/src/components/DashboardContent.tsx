@@ -1074,7 +1074,12 @@ export default function DashboardContent({ me }: { me: Me }) {
       <section className={`${styles.moduleGrid} ${selectedWorkflowCards.length > 0 ? styles.workflowModuleGrid : ""} ${me.role === "KPU" && activeView === "all" ? styles.kpuModuleGrid : ""}`} aria-label="Total transaksi per modul">
         {selectedWorkflowCards.length > 0
           ? selectedWorkflowCards.map((stage) => (
-            <Link key={stage.key} href={selectedModules[0].overviewHref} className={styles.moduleCard} aria-label={`Buka Overview ${activeModuleLabel}: ${stage.label}`}>
+            <Link
+              key={stage.key}
+              href={selectedModules[0].overviewHref}
+              className={`${styles.moduleCard} ${stage.key === "COMPLETED" && (activeView === "expedition" || activeView === "atk") ? styles.workflowApprovedCard : ""}`}
+              aria-label={`Buka Overview ${activeModuleLabel}: ${stage.label}`}
+            >
               <span className={styles.moduleCardValue}>{state.summaries[activeView as ModuleKey].failed ? "-" : stage.value.toLocaleString("id-ID")}</span>
               <span className={styles.moduleCardLabel}>{stage.label}</span>
             </Link>
