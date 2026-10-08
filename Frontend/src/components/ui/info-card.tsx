@@ -128,7 +128,7 @@ interface ContactInfoCardGridProps {
 
 export default function ContactInfoCardGrid({ people }: ContactInfoCardGridProps) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-10">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-10">
       {people.map((person, index) => (
         <ContactInfoCard key={person.name} person={person} colorIndex={index} />
       ))}

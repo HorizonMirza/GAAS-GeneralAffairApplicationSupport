@@ -652,7 +652,7 @@
   min-width: 540px;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(6, minmax(62px, 1fr));
+  grid-template-columns: repeat(var(--dashboard-module-count, 6), minmax(62px, 1fr));
   gap: 14px;
 }
 
@@ -1947,7 +1947,26 @@
   .moduleGrid,
   .moduleGrid.workflowModuleGrid,
   .moduleGrid.kpuModuleGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .moduleCard {
+    min-height: 78px;
+    padding: 12px;
+  }
+
+  .moduleCardValue {
+    font-size: 1.3rem;
+  }
+
+  .moduleCardLabel {
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .statusContent {
@@ -1970,6 +1989,80 @@
 
   .chartLegend {
     flex-wrap: wrap;
+    gap: 5px 9px;
+    font-size: 0.58rem;
+  }
+
+  .comparisonPanel .panelHeader {
+    min-height: 82px;
+    gap: 8px;
+    padding-top: 12px;
+    padding-bottom: 10px;
+  }
+
+  .chartViewport {
+    min-height: 250px;
+    height: 250px;
+    padding: 30px 8px 12px 28px;
+    overflow-x: hidden;
+  }
+
+  .chartGrid,
+  .barGroups {
+    top: 30px;
+    bottom: 48px;
+    left: 28px;
+    right: 8px;
+    min-width: 0;
+  }
+
+  .barGroups {
+    grid-template-columns: repeat(var(--dashboard-module-count, 6), minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .yAxis {
+    top: 30px;
+    bottom: 48px;
+    left: 4px;
+    width: 18px;
+    font-size: 0.5rem;
+  }
+
+  .bars {
+    gap: 1px;
+  }
+
+  .bar {
+    width: clamp(4px, 28%, 8px);
+    border-radius: 3px 3px 1px 1px;
+    pointer-events: none;
+  }
+
+  .bar:hover,
+  .bar:focus {
+    filter: none;
+    transform: none;
+  }
+
+  .bar small {
+    top: -14px;
+    font-size: 0.5rem;
+  }
+
+  .barTooltip {
+    display: none;
+  }
+
+  .barGroup > strong {
+    height: 38px;
+    margin-top: 5px;
+    align-items: flex-start;
+    overflow-wrap: anywhere;
+    font-size: 0.5rem;
+    line-height: 1.15;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .divisionRow {
@@ -1992,9 +2085,56 @@
   }
 
   .distributionHeader {
-    min-height: 104px;
-    flex-wrap: wrap;
-    gap: 7px;
+    min-height: 70px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .distributionHeader h2 {
+    font-size: 0.82rem;
+    line-height: 1.2;
+  }
+
+  .distributionHeader p {
+    font-size: 0.62rem;
+  }
+
+  .organizationDropdown {
+    width: 112px;
+    margin-left: auto;
+  }
+
+  .organizationDropdownToggle {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 9px;
+    border-radius: 8px;
+    font-size: 0.76rem !important;
+  }
+
+  .organizationDropdownToggle > span {
+    font-size: 0.76rem !important;
+  }
+
+  .organizationOption,
+  .organizationOptionActive {
+    min-height: 32px;
+    padding: 7px 8px;
+    font-size: 0.76rem !important;
+  }
+
+  .divisionChart {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .divisionRowHeader strong,
+  .divisionRowHeader em {
+    font-size: 0.64rem;
+  }
+
+  .divisionTrack {
+    height: 7px;
   }
 
   .resourceSchedulePanel {
@@ -2035,7 +2175,16 @@
   }
 
   .insightGrid {
-    grid-auto-rows: minmax(360px, auto);
+    grid-auto-rows: auto;
+  }
+
+  .insightPanel {
+    min-height: 360px;
+  }
+
+  .distributionPanel {
+    height: auto;
+    min-height: 0;
   }
 
   .insightHeader,
@@ -2086,11 +2235,6 @@
   }
 
   .organizationDropdown {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .distributionHeader {
-    align-items: stretch;
+    width: 104px;
   }
 }

@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Wrench,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import PeriodFilterPicker from "@/components/PeriodFilterPicker";
 import SearchableSelect from "@/components/SearchableSelect";
 import { WelcomeGreeting } from "@/components/WelcomeGreeting";
@@ -1144,7 +1144,10 @@ export default function DashboardContent({ me }: { me: Me }) {
             <div className={styles.yAxis} aria-hidden="true">
               {yAxisTicks.map((tick, index) => <span key={`${tick}-${index}`}>{tick.toLocaleString("id-ID")}</span>)}
             </div>
-            <div className={styles.barGroups} style={{ gridTemplateColumns: `repeat(${selectedModules.length}, minmax(62px, 1fr))` }}>
+            <div
+              className={styles.barGroups}
+              style={{ "--dashboard-module-count": selectedModules.length } as CSSProperties}
+            >
               {selectedModules.map((module) => {
                 const summary = state.summaries[module.key];
                 const values = [
@@ -1172,7 +1175,7 @@ export default function DashboardContent({ me }: { me: Me }) {
       </section>
 
       <section className={styles.insightGrid} aria-label="Analitik organisasi dan tren">
-        <article className={styles.insightPanel}>
+        <article className={`${styles.insightPanel} ${styles.distributionPanel}`}>
           <header className={`${styles.insightHeader} ${styles.distributionHeader}`}>
             <div><h2>Distribusi Volume {organizationDimensionLabel}</h2><p>{distributionContext}</p></div>
             <div className={`filter-dropdown-wrap ${styles.organizationDropdown}`} ref={organizationWrapRef}>

@@ -2965,6 +2965,7 @@ body.auth-ready .app-shell {
 
 .cover-preset-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -7179,6 +7180,7 @@ table.data-table {
     width: calc(100vw - clamp(40px, 16vw, 64px)) !important;
     max-width: 420px;
     max-height: calc(100dvh - 40px);
+    overflow-x: hidden;
     padding: 18px !important;
   }
 
