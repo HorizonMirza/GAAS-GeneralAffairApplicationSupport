@@ -2188,11 +2188,21 @@
 
   .resourceScheduleViewport {
     padding: 8px 10px 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .resourceTimeline {
+    width: 720px;
+    min-width: 720px;
   }
 
   .resourceTimelineScale,
   .resourceTimelineRow {
-    grid-template-columns: minmax(92px, 30%) minmax(0, 1fr);
+    grid-template-columns: 150px minmax(550px, 1fr);
   }
 
   .resourceTimelineScale > strong,
