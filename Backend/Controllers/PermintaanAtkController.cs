@@ -171,7 +171,6 @@ public class PermintaanAtkController : ApiControllerBase
     }
 
     public static IQueryable<PermintaanAtk> ApplyListFilters(
-        AppDbContext db,
         IQueryable<PermintaanAtk> query,
         User currentUser,
         StatusEnum? statusFilter,
@@ -548,63 +547,6 @@ public class PermintaanAtkController : ApiControllerBase
         return NoContent();
     }
 
-    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
-    // why this mirrors List's filters and deletes in one statement.
-    [HttpDelete("super-admin/bulk")]
-    public async Task<IActionResult> SuperAdminBulkDelete(
-        [FromQuery(Name = "status")] string? status = null,
-        [FromQuery] string? divisi = null,
-        [FromQuery] string? departemen = null,
-        [FromQuery] string? direktorat = null,
-        [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null,
-        [FromQuery] DateOnly? tanggal = null,
-        [FromQuery] string? sumberPembelian = null)
-    {
-        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (roleError != null) return roleError;
-
-        StatusEnum? statusFilter = null;
-        var onlyRejected = false;
-        var onlyOnApproval = false;
-        if (!string.IsNullOrEmpty(status))
-        {
-            if (status == "REJECTED") onlyRejected = true;
-            else if (status == "ON_APPROVAL") onlyOnApproval = true;
-            else if (Enum.TryParse<StatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
-            else return BadRequest(new { detail = "Status tidak valid" });
-        }
-
-        SumberPembelianEnum? sumberPembelianFilter = null;
-        if (!string.IsNullOrEmpty(sumberPembelian))
-        {
-            if (!Enum.TryParse<SumberPembelianEnum>(sumberPembelian, out var parsedSumber))
-                return BadRequest(new { detail = "Sumber pembelian tidak valid" });
-            sumberPembelianFilter = parsedSumber;
-        }
-
-        IQueryable<PermintaanAtk> query;
-        try
-        {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter, onlyOnApproval);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { detail = ex.Message });
-        }
-
-        var filterSummary = BuildFilterSummary(
-            ("status", status), ("divisi", divisi), ("departemen", departemen), ("direktorat", direktorat),
-            ("bulan", bulan), ("search", search), ("tanggal", tanggal?.ToString()), ("sumberPembelian", sumberPembelian));
-        var toDelete = await query.Select(p => new { p.Id, p.NomorPermintaan }).ToListAsync();
-        foreach (var row in toDelete)
-            LogDeletion(_db, "permintaan-atk", row.Id, row.NomorPermintaan, user!, filterSummary);
-        await _db.SaveChangesAsync();
-
-        var deleted = await query.ExecuteDeleteAsync();
-        return Ok(new { deleted });
-    }
-
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId, [FromBody] SubmitAtkRequest? payload)
     {
@@ -693,7 +635,7 @@ public class PermintaanAtkController : ApiControllerBase
         IQueryable<PermintaanAtk> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter, onlyOnApproval);
+            query = ApplyListFilters(_db.PermintaanAtks.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, sumberPembelianFilter, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

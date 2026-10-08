@@ -6,7 +6,6 @@ using PengirimanApi.Models;
 using PengirimanApi.Services;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
@@ -122,7 +121,7 @@ public class ExportController : ApiControllerBase
 
     private List<Pengiriman> ExportRows(User currentUser, string? bulan, StatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? nomorTransmittal, DateOnly? tanggal = null)
     {
-        var query = PengirimanController.ApplyListFilters(_db, _db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal, onlyOnApproval: onlyOnApproval);
+        var query = PengirimanController.ApplyListFilters(_db.Pengiriman.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, nomorTransmittal, bulan, onlyRejected: onlyRejected, tanggal: tanggal, onlyOnApproval: onlyOnApproval);
         BatasEkspor.Pastikan(query.Count());
         return query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToList();
     }

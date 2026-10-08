@@ -35,10 +35,6 @@ export type RejectTarget = "GA" | "ORIGIN";
 
 export type SumberPembelian = "KPU" | "PADI";
 
-// Maintenance: tahap eksekusi fisik setelah laporan disetujui final - berjalan terpisah dari
-// status approval-nya sendiri (lihat backend PerbaikanSarana.cs).
-export type ExecutionStage = "MENUNGGU" | "LOKASI_DICEK" | "GAMBAR_DIBUAT" | "SELESAI";
-
 // Was a fixed "INTERNAL" | "EXTERNAL" union - widened to a plain string once Super Admin's Master
 // Data tab could add/rename options beyond those two (see MasterDataCategories.TipeBooking on the
 // backend). Existing code that only ever compared against those two literals still works exactly
@@ -569,15 +565,6 @@ export interface PerbaikanSarana {
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
-  executionStage: ExecutionStage;
-  lokasiDicekBy: number | null;
-  lokasiDicekAt: string | null;
-  gambarDibuatBy: number | null;
-  gambarDibuatAt: string | null;
-  gambarOriginalFilename: string | null;
-  selesaiBy: number | null;
-  selesaiAt: string | null;
-  fotoSelesaiOriginalFilename: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }
@@ -591,8 +578,6 @@ export interface PerbaikanSaranaListResponse {
 
 export interface PerbaikanSaranaStatsResponse {
   countsByStatus: Partial<Record<BookingStatus, number>>;
-  // Breakdown ExecutionStage, hanya di antara laporan yang sudah Approved final.
-  executionStageCounts: Partial<Record<ExecutionStage, number>>;
 }
 
 export interface PerbaikanSaranaCatalogItem {
@@ -900,12 +885,6 @@ export interface RiwayatAktivitasListResponse {
   limit: number;
 }
 
-export interface RiwayatAktor {
-  id: number;
-  nama: string;
-  role: string;
-}
-
 // ---------------------------------------------------------------------------
 // Organisasi (Super Admin org-admin endpoints) - see backend's OrgAdminController and
 // Services/OrgTree.cs. Distinct from OrgStructure above (which every role reads, name-only, to
@@ -1078,10 +1057,6 @@ export interface CreatedUserResult {
   password: string;
 }
 
-export interface ResetPasswordResult {
-  password: string;
-}
-
 export interface AdminChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
@@ -1094,20 +1069,4 @@ export interface ImpersonateResult {
   message: string;
   role: Role;
   mustChangePassword: boolean;
-}
-
-export interface ImpersonationLogEntry {
-  id: number;
-  superAdminNama: string;
-  targetNama: string;
-  targetRole: Role;
-  startedAt: string;
-  endedAt: string | null;
-}
-
-export interface ImpersonationLogListResponse {
-  items: ImpersonationLogEntry[];
-  total: number;
-  page: number;
-  limit: number;
 }

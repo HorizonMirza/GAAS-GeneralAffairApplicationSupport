@@ -39,11 +39,6 @@ interface Stats {
   waitingGa: number;
   waitingGaApproval: number;
   approved: number;
-  // Breakdown eksekusi fisik yang masih berjalan (di antara yang sudah Approved) - SELESAI tidak
-  // disertakan karena sudah terwakili oleh tile "Approved" di atas.
-  execMenunggu: number;
-  execLokasiDicek: number;
-  execGambarDibuat: number;
 }
 
 export default function MaintenanceOverviewPage() {
@@ -81,34 +76,18 @@ export default function MaintenanceOverviewPage() {
       // the list on its own once the month rolls over.
       // The stat tiles use the wider current-year window instead (no count cap, just a yearly
       // reset) so they don't zero out every time the month rolls over like the list above.
-      // A report's approval can land in one bulan but its physical execution (Cek Lokasi -> Buat
-      // Gambar -> Selesai) can still be running weeks later once the month rolls over - without
-      // this second fetch, such a report would silently vanish from this screen the moment the
-      // calendar month changes even though GA still has work to do on it. Merged by id (a report
-      // can legitimately appear in both queries) and re-sorted newest-first.
-      const [queue, activeExecuting, statsResp] = await Promise.all([
+      const [queue, statsResp] = await Promise.all([
         api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
-        api.listSarana({ limit: 1000, page: 1, status: "APPROVED_GA_APPROVAL" }).then((r) => r.items.filter((i) => i.executionStage !== "SELESAI")),
         api.getSaranaStats(currentYear()),
       ]);
-      const merged = new Map<number, PerbaikanSarana>();
-      for (const item of queue) merged.set(item.id, item);
-      for (const item of activeExecuting) merged.set(item.id, item);
-      const combined = Array.from(merged.values()).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
       const counts = statsResp.countsByStatus;
       const count = (status: BookingStatus) => counts[status] ?? 0;
-      const execCounts = statsResp.executionStageCounts;
-      setItems(combined);
+      setItems(queue);
       setStats({
         waitingL1: count("SUBMITTED"),
         waitingGa: count("APPROVED_L1"),
         waitingGaApproval: count("APPROVED_GA"),
         approved: count("APPROVED_GA_APPROVAL"),
-        execMenunggu: execCounts.MENUNGGU ?? 0,
-        execLokasiDicek: execCounts.LOKASI_DICEK ?? 0,
-        execGambarDibuat: execCounts.GAMBAR_DIBUAT ?? 0,
       });
     } finally {
       setBusy(false);

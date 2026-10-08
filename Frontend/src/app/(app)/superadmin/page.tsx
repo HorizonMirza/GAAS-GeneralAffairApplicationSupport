@@ -842,7 +842,6 @@ function SuperAdminPageInner() {
   const [saranaOvItems, setSaranaOvItems] = useState<PerbaikanSarana[]>([]);
   const [saranaOvStats, setSaranaOvStats] = useState<{
     waitingL1: number; waitingGa: number; waitingGaApproval: number; approved: number;
-    execMenunggu: number; execLokasiDicek: number; execGambarDibuat: number;
   } | null>(null);
   const [saranaOvBusy, setSaranaOvBusy] = useState(true);
   const [saranaOvStatusFilter, setSaranaOvStatusFilter] = useState<"ALL" | "DRAFT" | "ON_APPROVAL" | "APPROVED" | "REJECTED">("ALL");
@@ -1704,35 +1703,23 @@ function SuperAdminPageInner() {
     }
   }, [saranaFilters]);
 
-  // Overview sub-tab - mirrors maintenance/overview/page.tsx's load() (merges the current
-  // month's queue with any still-executing approved report from an earlier month).
+  // Overview sub-tab - mirrors maintenance/overview/page.tsx's load().
   const loadSaranaOverview = useCallback(async (opts?: { silent?: boolean }) => {
     if (activeTab !== "sarana" || saranaSubtab !== "overview") return;
     if (!opts?.silent) setSaranaOvBusy(true);
     try {
       const bulan = currentYearMonth();
-      const [queue, activeExecuting, statsResp] = await Promise.all([
+      const [queue, statsResp] = await Promise.all([
         api.listSarana({ limit: 1000, page: 1, bulan }).then((r) => r.items),
-        api.listSarana({ limit: 1000, page: 1, status: "APPROVED_GA_APPROVAL" }).then((r) => r.items.filter((i) => i.executionStage !== "SELESAI")),
         api.getSaranaStats(currentYear()),
       ]);
-      const merged = new Map<number, PerbaikanSarana>();
-      for (const item of queue) merged.set(item.id, item);
-      for (const item of activeExecuting) merged.set(item.id, item);
-      const combined = Array.from(merged.values()).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
       const counts = statsResp.countsByStatus;
-      const execCounts = statsResp.executionStageCounts;
-      setSaranaOvItems(combined);
+      setSaranaOvItems(queue);
       setSaranaOvStats({
         waitingL1: counts.SUBMITTED ?? 0,
         waitingGa: counts.APPROVED_L1 ?? 0,
         waitingGaApproval: counts.APPROVED_GA ?? 0,
         approved: counts.APPROVED_GA_APPROVAL ?? 0,
-        execMenunggu: execCounts.MENUNGGU ?? 0,
-        execLokasiDicek: execCounts.LOKASI_DICEK ?? 0,
-        execGambarDibuat: execCounts.GAMBAR_DIBUAT ?? 0,
       });
     } finally {
       if (!opts?.silent) setSaranaOvBusy(false);

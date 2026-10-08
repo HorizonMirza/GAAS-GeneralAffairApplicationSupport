@@ -107,10 +107,10 @@ public abstract class ApiControllerBase : ControllerBase
         ex.InnerException is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation };
 
     // Queues one deletion_log row (see Models/DeletionLog.cs) - called right before the row(s) it
-    // describes are actually removed, in every SuperAdminDelete/SuperAdminBulkDelete across the
-    // seven modules that have one. Not saved here - it rides along in the same SaveChangesAsync
-    // (or, for the six bulk deletes that use ExecuteDeleteAsync, the same request) as the deletion
-    // itself, so a failed delete never leaves an orphaned log row behind.
+    // describes are actually removed, in every SuperAdminDelete across the seven modules that
+    // have one. Not saved here - it rides along in the same SaveChangesAsync as the deletion
+    // itself, so a failed delete never leaves an orphaned log row behind. filterSummary is only
+    // set by tests now; older bulk-delete rows in deletion_log still carry one.
     protected static void LogDeletion(AppDbContext db, string modul, int itemId, string? itemNomor, User actor, string? filterSummary = null)
     {
         db.DeletionLogs.Add(new DeletionLog
@@ -138,16 +138,6 @@ public abstract class ApiControllerBase : ControllerBase
             Action = action,
             Deskripsi = deskripsi,
         });
-    }
-
-    // Short human-readable summary of whatever filters a bulk-delete request actually carried
-    // ("status: REJECTED, divisi: Finance") - stored on each row's DeletionLog.FilterSummary so
-    // the cross-module activity feed (RiwayatAktivitasController) can show why a batch of items
-    // went, not just how many.
-    protected static string? BuildFilterSummary(params (string Key, string? Value)[] filters)
-    {
-        var parts = filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $"{f.Key}: {f.Value}").ToList();
-        return parts.Count > 0 ? string.Join(", ", parts) : null;
     }
 
     // Evaluates whether cookies should be issued with the Secure flag:

@@ -1,5 +1,5 @@
 import { formatDate } from "./format";
-import type { ArchiveKategori, AtkKategori, BookingKendaraan, BookingRuang, BookingStatus, ExecutionStage, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian, TipeBooking } from "./types";
+import type { ArchiveKategori, BookingKendaraan, BookingRuang, BookingStatus, KategoriKerusakan, Me, Pengiriman, PerbaikanSarana, PermintaanArsip, PermintaanAtk, RecurrenceFrequency, RiwayatModul, Role, Status, SumberPembelian } from "./types";
 
 // Single badge, always "Status: Role" so whoever is currently holding it (on-approval) or who
 // stopped it (rejected) is visible at a glance without a second sub-badge or the Stepper. SUBMITTED
@@ -173,7 +173,7 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   // Harga Barang) - see PengirimanController.KoreksiHarga/PermintaanAtkController.KoreksiHarga.
   KOREKSI_HARGA: { label: "Price Corrected by Mitra", type: "neutral" },
   CANCELLED: { label: "Cancelled", type: "reject" },
-  // Maintenance: tahap eksekusi fisik setelah disetujui final - lihat ExecutionStage di types.ts.
+  // Maintenance: aksi fitur Eksekusi yang sudah dihapus - tetap ada untuk menampilkan riwayat lama.
   LOKASI_DICEK: { label: "Site Checked", type: "neutral" },
   GAMBAR_DIBUAT: { label: "Repair Plan Created", type: "neutral" },
   SELESAI: { label: "Completed", type: "approve" },
@@ -407,11 +407,6 @@ export const MAX_JUMLAH_PESERTA = 64;
 export const BOOKING_L1_ACTIONABLE_STATUSES: BookingStatus[] = ["SUBMITTED"];
 export const BOOKING_GA_APPROVAL_ACTIONABLE_STATUSES: BookingStatus[] = ["APPROVED_GA"];
 
-export const TIPE_BOOKING_LABELS: Record<TipeBooking, string> = {
-  INTERNAL: "Internal",
-  EXTERNAL: "External",
-};
-
 export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
   DAILY: "Harian",
   WEEKLY: "Mingguan",
@@ -449,12 +444,6 @@ export function isKendaraanDeletableByOrigin(item: BookingKendaraan, me: Me): bo
   if (isKendaraanEditableByOrigin(item, me)) return true;
   if (!BOOKING_REJECTED_STATUSES.includes(item.status) && item.status !== "CANCELLED") return false;
   return item.createdBy === me.id || me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
-}
-
-// Same rule as isBookingGaReschedulable - mirrors
-// BookingKendaraanController.IsGaReschedulable.
-export function isKendaraanGaReschedulable(item: BookingKendaraan): boolean {
-  return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
 export function canGaRescheduleKendaraan(item: BookingKendaraan, me: Me): boolean {
@@ -528,19 +517,6 @@ export const SUMBER_PEMBELIAN_LABEL: Record<SumberPembelian, string> = {
   PADI: "PADI",
 };
 
-// Order is longest label to shortest (same display convention as KATEGORI_KERUSAKAN_LABEL below),
-// which naturally lands LAINNYA - the catch-all - at the end.
-export const KATEGORI_ATK_LABEL: Record<AtkKategori, string> = {
-  ELEKTRONIK_KOMPUTER: "Elektronik & Komputer",
-  KEBERSIHAN_PANTRY: "Kebersihan & Pantry",
-  PERLENGKAPAN_KANTOR: "Perlengkapan Kantor",
-  PERLENGKAPAN_RAPAT: "Perlengkapan Rapat",
-  KERTAS_CETAK: "Kertas & Cetak",
-  MAP_FILING: "Map & Filing",
-  ALAT_TULIS: "Alat Tulis",
-  LAINNYA: "Lainnya",
-};
-
 // Ringkasan daftar barang untuk sel tabel/kartu: "Pulpen (5 pcs), Kertas A4 (2 rim)".
 export function atkItemsSummary(item: PermintaanAtk): string {
   return item.items.map((i) => `${i.namaBarang} (${i.jumlah} ${i.satuan})`).join(", ");
@@ -589,21 +565,6 @@ export function canGaKoreksiSarana(item: PerbaikanSarana, me: Me): boolean {
   if (me.role === "SUPER_ADMIN") return true;
   return (me.role === "ADMIN_GA" || me.role === "APPROVAL_GA") && isSaranaGaKoreksiable(item);
 }
-
-// Eksekusi fisik (Cek Lokasi -> Buat Gambar -> Eksekusi) hanya berjalan setelah disetujui final -
-// Admin GA dan Approval GA sama-sama bisa menjalankan tahap manapun (lihat
-// PerbaikanSaranaController's ExecutionRoles), tidak dibatasi harus orang yang sama.
-export function isSaranaExecutionActor(me: Me): boolean {
-  if (me.role === "SUPER_ADMIN") return true;
-  return me.role === "ADMIN_GA" || me.role === "APPROVAL_GA";
-}
-
-export const EXECUTION_STAGE_LABEL: Record<ExecutionStage, string> = {
-  MENUNGGU: "Menunggu Eksekusi",
-  LOKASI_DICEK: "Lokasi Dicek",
-  GAMBAR_DIBUAT: "Gambar Dibuat",
-  SELESAI: "Selesai Dieksekusi",
-};
 
 // Same rule as isKendaraanPdfAvailable, for Maintenance's own proof-of-report PDF.
 export function isSaranaPdfAvailable(item: PerbaikanSarana): boolean {
@@ -667,11 +628,6 @@ export function isArsipGaActionable(item: PermintaanArsip): boolean {
 // isBookingPdfAvailable/isSaranaPdfAvailable, since Arsip shares their 3-tier (no Mitra) chain.
 export function isArsipPdfAvailable(item: PermintaanArsip): boolean {
   return item.status === "APPROVED_GA_APPROVAL";
-}
-
-// Ringkasan arsip untuk sel tabel/kartu: "Kontrak Vendor 2018-2019 - Kontrak, 2018 (5 arsip)".
-export function arsipItemsSummary(item: PermintaanArsip): string {
-  return `${item.namaArsip} - ${ARCHIVE_KATEGORI_LABEL[item.kategori]}, ${item.tahunArsip} (${item.jumlahArsip} arsip)`;
 }
 
 // --- Contact Person (halaman /contact-person, lihat app/(app)/contact-person/page.tsx) ---

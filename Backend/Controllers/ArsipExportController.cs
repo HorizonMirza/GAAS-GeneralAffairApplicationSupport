@@ -7,7 +7,6 @@ using PengirimanApi.Models;
 using PengirimanApi.Services;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
@@ -124,7 +123,7 @@ public class ArsipExportController : ApiControllerBase
 
     private async Task<List<PermintaanArsip>> ExportRowsAsync(User currentUser, string? bulan, BookingStatusEnum? statusFilter, bool onlyRejected, bool onlyOnApproval, string? divisi, string? departemen, string? direktorat, string? search, DateOnly? tanggal = null, string? kategori = null)
     {
-        var query = PermintaanArsipController.ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
+        var query = PermintaanArsipController.ApplyListFilters(_db.PermintaanArsips.AsQueryable(), currentUser, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
         BatasEkspor.Pastikan(await query.CountAsync());
         return await query.OrderBy(p => p.Tanggal).ThenBy(p => p.Id).ToListAsync();
     }

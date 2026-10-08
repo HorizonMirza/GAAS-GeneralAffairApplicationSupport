@@ -73,9 +73,8 @@ public enum RecurrenceFrequencyEnum
     MONTHLY,
 }
 
-// Maintenance: tahap eksekusi fisik setelah laporan disetujui final (APPROVED_GA_APPROVAL) -
-// Admin GA/Approval GA menandai progresnya berurutan (lihat PerbaikanSaranaController.CekLokasi/
-// UploadGambar/Eksekusi), dicatat di PerbaikanSaranaLogs supaya riwayatnya terlihat jelas.
+// Maintenance: tahap fitur Eksekusi yang sudah dihapus - hanya dipertahankan untuk memetakan kolom
+// execution_stage yang masih ada di database (lihat PerbaikanSarana.ExecutionStage).
 public enum ExecutionStageEnum
 {
     MENUNGGU,

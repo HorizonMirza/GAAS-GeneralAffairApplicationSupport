@@ -194,10 +194,6 @@ export function setNotificationSoundIds(next: { chatSoundId: string; activitySou
   if (SOUND_PRESETS[next.activitySoundId]) activitySoundId = next.activitySoundId;
 }
 
-export function getNotificationSoundIds(): { chatSoundId: string; activitySoundId: string } {
-  return { chatSoundId, activitySoundId };
-}
-
 function playPreset(id: string): void {
   try {
     const preset = SOUND_PRESETS[id];

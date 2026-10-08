@@ -311,25 +311,6 @@
   height: 17px;
 }
 
-.demoBanner {
-  min-height: 42px;
-  margin-bottom: 14px;
-  padding: 9px 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(28, 109, 255, 0.24);
-  border-radius: 10px;
-  color: var(--text-secondary);
-  background: rgba(28, 109, 255, 0.07);
-  font-size: 0.78rem;
-}
-
-.demoBanner strong {
-  color: var(--blue-600);
-  font-weight: 750;
-}
-
 .moduleGrid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -858,16 +839,6 @@
   font-size: 0.66rem;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.insightHeader > .positiveTrend {
-  color: #15803d;
-  background: rgba(22, 163, 74, 0.1);
-}
-
-.insightHeader > .negativeTrend {
-  color: #b91c1c;
-  background: rgba(220, 38, 38, 0.09);
 }
 
 .distributionHeader {

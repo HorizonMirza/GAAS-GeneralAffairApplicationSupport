@@ -33,8 +33,6 @@ public class ProfileController : ApiControllerBase
     // future larger avatar), and re-encoding at a fixed quality keeps every stored photo
     // consistent regardless of the source file's original compression.
     private const int PhotoMaxDimension = 512;
-    private const int CoverMaxWidth = 1920;
-    private const int CoverMaxHeight = 480;
 
     // Keys must match COVER_PRESETS in the frontend's constants.ts - kept as an explicit allowlist
     // here rather than accepting any string, since CoverPreset is rendered straight into a CSS
@@ -138,7 +136,7 @@ public class ProfileController : ApiControllerBase
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword);
         user.PlainPassword = payload.NewPassword;
         user.PasswordChangedAt = DateTime.UtcNow;
-        // Clears the forced-change flag Super Admin set on create/reset-password (see
+        // Clears the forced-change flag Super Admin set on create/change-password (see
         // UsersAdminController) - this is the one place it's ever cleared, so a Super
         // Admin-issued password stops forcing the screen the moment a real one replaces it.
         user.MustChangePassword = false;
@@ -288,52 +286,6 @@ public class ProfileController : ApiControllerBase
         user.CoverPhotoPath = null;
         user.CoverPhotoContentType = null;
         user.CoverPhotoOriginalFilename = null;
-        await _db.SaveChangesAsync();
-
-        if (oldPath != null && System.IO.File.Exists(oldPath))
-            System.IO.File.Delete(oldPath);
-
-        return Ok(MeResponse.From(user));
-    }
-
-    [HttpPost("cover-photo")]
-    public async Task<IActionResult> UploadCoverPhoto([FromForm] IFormFile? file)
-    {
-        var (user, error) = await RequireRoleAsync();
-        if (error != null) return error;
-
-        if (file == null || file.Length == 0)
-            return StatusCode(400, new { detail = "Gambar wajib diunggah" });
-        if (file.Length > MaxPhotoFileSizeBytes)
-            return StatusCode(400, new { detail = $"Ukuran file maksimal {MaxPhotoFileSizeBytes / 1024 / 1024} MB" });
-        var ext = Path.GetExtension(file.FileName);
-        if (string.IsNullOrEmpty(ext) || !AllowedPhotoExtensions.TryGetValue(ext, out var contentType))
-            return StatusCode(400, new { detail = "Format gambar tidak didukung. Gunakan JPG atau PNG." });
-
-        byte[] normalized;
-        try
-        {
-            await using var input = file.OpenReadStream();
-            normalized = await NormalizeImageAsync(input, contentType, CoverMaxWidth, CoverMaxHeight);
-        }
-        catch (UnknownImageFormatException)
-        {
-            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
-        }
-        catch (InvalidImageContentException)
-        {
-            return StatusCode(400, new { detail = "File bukan gambar yang valid" });
-        }
-
-        var storedFilename = $"{Guid.NewGuid():N}{ext}";
-        var destPath = Path.Combine(_uploadDir, storedFilename);
-        await System.IO.File.WriteAllBytesAsync(destPath, normalized);
-
-        var oldPath = user!.CoverPhotoPath != null ? Path.Combine(_uploadDir, user.CoverPhotoPath) : null;
-
-        user.CoverPhotoPath = storedFilename;
-        user.CoverPhotoContentType = contentType;
-        user.CoverPhotoOriginalFilename = string.IsNullOrEmpty(file.FileName) ? storedFilename : file.FileName;
         await _db.SaveChangesAsync();
 
         if (oldPath != null && System.IO.File.Exists(oldPath))

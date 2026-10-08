@@ -410,60 +410,6 @@ public class AtkInvoiceController : ApiControllerBase
         return NoContent();
     }
 
-    // "Hapus Semua" on the Super Admin page's Office Supplies tab's Invoice sub-tab - mirrors
-    // InvoiceController.SuperAdminBulkDelete exactly.
-    [HttpDelete("super-admin/bulk")]
-    public async Task<IActionResult> SuperAdminBulkDelete(
-        [FromQuery] string? bulan = null,
-        [FromQuery] string? tanggal = null,
-        [FromQuery] string? search = null,
-        [FromQuery] int? uploadedBy = null)
-    {
-        var (user, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (error != null) return error;
-
-        var query = _db.AtkInvoices.Where(i => i.Status != InvoiceStatusEnum.DRAFT);
-        if (!string.IsNullOrEmpty(bulan))
-        {
-            var parts = bulan.Split('-');
-            if (parts.Length == 1)
-                query = query.Where(i => i.Bulan.StartsWith(bulan));
-            else
-                query = query.Where(i => i.Bulan == bulan);
-        }
-        if (!string.IsNullOrEmpty(tanggal) && DateOnly.TryParse(tanggal, out var tDate))
-        {
-            var dtStart = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-            var dtEnd = DateTime.SpecifyKind(tDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
-            query = query.Where(i => i.UploadedAt >= dtStart && i.UploadedAt <= dtEnd);
-        }
-        if (uploadedBy.HasValue) query = query.Where(i => i.UploadedBy == uploadedBy.Value);
-
-        var candidates = await query.Include(i => i.Logs).ToListAsync();
-        var items = string.IsNullOrEmpty(search) ? candidates : candidates.Where(i => MatchesInvoiceSearch(i, search)).ToList();
-        if (items.Count == 0) return Ok(new { deleted = 0 });
-
-        var filesToDelete = items
-            .SelectMany(i => i.Logs.Select(l => l.FilePath).Append(i.FilePath))
-            .Where(f => f != null)
-            .Distinct()
-            .ToList();
-
-        var filterSummary = BuildFilterSummary(("bulan", bulan), ("search", search), ("uploadedBy", uploadedBy?.ToString()));
-        foreach (var i in items)
-            LogDeletion(_db, "atk-invoice", i.Id, i.Bulan, user!, filterSummary);
-
-        _db.AtkInvoices.RemoveRange(items);
-        await _db.SaveChangesAsync();
-        foreach (var f in filesToDelete)
-        {
-            var path = Path.Combine(_uploadDir, f!);
-            if (System.IO.File.Exists(path))
-                System.IO.File.Delete(path);
-        }
-        return Ok(new { deleted = items.Count });
-    }
-
     [HttpPatch("{invoiceId}/approve")]
     public async Task<IActionResult> ApproveInvoice(int invoiceId, [FromBody] AtkInvoiceReviewRequest payload)
     {

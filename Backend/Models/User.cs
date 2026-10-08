@@ -38,7 +38,7 @@ public class User
     // outright (see AuthController.Login) rather than letting it sign in and hiding it some other
     // way, so a deactivated account can never do anything again, without losing its history.
     public bool IsActive { get; set; } = true;
-    // Set on account creation (UsersAdminController.Create) and password reset (ResetPassword) -
+    // Set on account creation (UsersAdminController.Create) and admin password change (ChangePassword) -
     // the account can still log in normally with the generated password, but the frontend blocks
     // every other page behind a forced change-password screen until this clears (see
     // ProfileController.ChangePassword, which is the one place it's cleared again). Directly

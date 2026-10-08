@@ -7,7 +7,6 @@ using PengirimanApi.Models;
 using PengirimanApi.Services;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
@@ -132,7 +131,7 @@ public class BookingRuangExportController : ApiControllerBase
     {
         // (was missing onlyRejected/onlyOnApproval entirely before this fix - the Status filter's
         // "Rejected" and "On-Approval" options silently did nothing on this export)
-        var query = BookingRuangController.ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, onlyRejected: onlyRejected, onlyOnApproval: onlyOnApproval);
+        var query = BookingRuangController.ApplyListFilters(_db.BookingRuangs.AsQueryable(), currentUser, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, onlyRejected: onlyRejected, onlyOnApproval: onlyOnApproval);
         BatasEkspor.Pastikan(query.Count());
         return query.Include(b => b.AdditionalRooms).OrderBy(b => b.Tanggal).ThenBy(b => b.Id).ToList();
     }

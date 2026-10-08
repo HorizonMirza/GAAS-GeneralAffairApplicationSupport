@@ -46,8 +46,8 @@ public class PerbaikanSaranaController : ApiControllerBase
         BookingStatusEnum.SUBMITTED, BookingStatusEnum.APPROVED_L1, BookingStatusEnum.APPROVED_GA,
     };
 
-    // Only real image formats - this is specifically a photo of the repair plan/site, not a
-    // general-purpose document upload like Archive's.
+    // Only real image formats - these are photos of the damage, not a general-purpose document
+    // upload like Archive's.
     private static readonly Dictionary<string, string> AllowedGambarExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         [".jpg"] = "image/jpeg",
@@ -57,8 +57,6 @@ public class PerbaikanSaranaController : ApiControllerBase
     private const long MaxGambarFileSizeBytes = 10 * 1024 * 1024; // 10 MB
     private const int MinFotoKerusakan = 1;
     private const int MaxFotoKerusakan = 5;
-
-    private static readonly RoleEnum[] ExecutionRoles = { RoleEnum.ADMIN_GA, RoleEnum.APPROVAL_GA };
 
     private readonly AppDbContext _db;
     private readonly IHubContext<ChatHub> _hub;
@@ -143,10 +141,6 @@ public class PerbaikanSaranaController : ApiControllerBase
     private static bool IsGaActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_L1;
     private static bool IsGaApprovalActionable(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_GA;
 
-    // Eksekusi fisik hanya berjalan setelah laporan disetujui final - Status sendiri tetap
-    // APPROVED_GA_APPROVAL sepanjang ExecutionStage berjalan (lihat PerbaikanSarana.cs).
-    private static bool IsApprovedFinal(PerbaikanSarana item) => item.Status == BookingStatusEnum.APPROVED_GA_APPROVAL;
-
     private void AddLog(PerbaikanSarana item, string action, User actor, string? reason = null)
     {
         _db.PerbaikanSaranaLogs.Add(new PerbaikanSaranaLog
@@ -178,7 +172,6 @@ public class PerbaikanSaranaController : ApiControllerBase
     }
 
     public static IQueryable<PerbaikanSarana> ApplyListFilters(
-        AppDbContext db,
         IQueryable<PerbaikanSarana> query,
         User currentUser,
         BookingStatusEnum? statusFilter,
@@ -520,80 +513,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         return NoContent();
     }
 
-    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
-    // why this mirrors List's filters and deletes in one statement.
-    [HttpDelete("super-admin/bulk")]
-    public async Task<IActionResult> SuperAdminBulkDelete(
-        [FromQuery(Name = "status")] string? status = null,
-        [FromQuery] string? kategori = null,
-        [FromQuery] string? divisi = null,
-        [FromQuery] string? departemen = null,
-        [FromQuery] string? direktorat = null,
-        [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null,
-        [FromQuery] DateOnly? tanggal = null)
-    {
-        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (roleError != null) return roleError;
-
-        BookingStatusEnum? statusFilter = null;
-        var onlyRejected = false;
-        var onlyOnApproval = false;
-        if (!string.IsNullOrEmpty(status))
-        {
-            if (status == "REJECTED") onlyRejected = true;
-            else if (status == "ON_APPROVAL") onlyOnApproval = true;
-            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
-            else return BadRequest(new { detail = "Status tidak valid" });
-        }
-
-        if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
-            return BadRequest(new { detail = "Kategori tidak valid" });
-
-        IQueryable<PerbaikanSarana> query;
-        try
-        {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategori, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { detail = ex.Message });
-        }
-
-        // Read the file paths before the DELETE, for the same reason FileMilik exists: the
-        // foto_kerusakan rows go with their laporan and take their paths with them. Projected to
-        // strings rather than materialised as entities - ExecuteDeleteAsync below still does the
-        // deleting, this query only collects what has to be cleaned off disk afterwards.
-        //
-        // A laporan created between this query and the DELETE would be deleted with its files
-        // left behind. That is the harmless direction to err in (a stray file, never a missing
-        // one), and this is a Super Admin housekeeping action, not a hot path.
-        var files = await query
-            .Select(p => new
-            {
-                p.Id,
-                p.NomorPerbaikan,
-                p.GambarFilePath,
-                p.FotoSelesaiFilePath,
-                Foto = p.FotoKerusakan.Select(f => f.FilePath).ToList(),
-            })
-            .ToListAsync();
-
-        var filterSummary = BuildFilterSummary(
-            ("status", status), ("kategori", kategori), ("divisi", divisi), ("departemen", departemen),
-            ("direktorat", direktorat), ("bulan", bulan), ("search", search), ("tanggal", tanggal?.ToString()));
-        foreach (var row in files)
-            LogDeletion(_db, "perbaikan-sarana", row.Id, row.NomorPerbaikan, user!, filterSummary);
-        await _db.SaveChangesAsync();
-
-        var deleted = await query.ExecuteDeleteAsync();
-        HapusFileDisk(files
-            .SelectMany(f => f.Foto.Append(f.GambarFilePath).Append(f.FotoSelesaiFilePath))
-            .Where(f => !string.IsNullOrEmpty(f))
-            .Select(f => f!));
-        return Ok(new { deleted });
-    }
-
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {
@@ -671,7 +590,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategori, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
+            query = ApplyListFilters(_db.PerbaikanSaranas.AsQueryable(), user!, statusFilter, divisi, departemen, kategori, direktorat, bulan, search, onlyRejected, tanggal, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -766,7 +685,7 @@ public class PerbaikanSaranaController : ApiControllerBase
         IQueryable<PerbaikanSarana> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PerbaikanSaranas.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
+            query = ApplyListFilters(_db.PerbaikanSaranas.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
         }
         catch (ArgumentException ex)
         {
@@ -865,20 +784,9 @@ public class PerbaikanSaranaController : ApiControllerBase
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        // Breakdown eksekusi fisik (Cek Lokasi -> Buat Gambar -> Selesai) hanya berarti untuk
-        // laporan yang sudah disetujui final - laporan lain semuanya masih di ExecutionStage
-        // default MENUNGGU meski belum pernah masuk tahap eksekusi sama sekali, jadi harus difilter
-        // by Status dulu supaya tidak salah dihitung sebagai "menunggu eksekusi".
-        var executionCounts = await query
-            .Where(p => p.Status == BookingStatusEnum.APPROVED_GA_APPROVAL)
-            .GroupBy(p => p.ExecutionStage)
-            .Select(g => new { Stage = g.Key, Count = g.Count() })
-            .ToListAsync();
-
         return Ok(new PerbaikanSaranaStatsResponse
         {
             CountsByStatus = counts.ToDictionary(c => c.Status.ToString(), c => c.Count),
-            ExecutionStageCounts = executionCounts.ToDictionary(c => c.Stage.ToString(), c => c.Count),
         });
     }
 
@@ -1027,41 +935,10 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
-    // --- Eksekusi fisik (Cek Lokasi -> Buat Gambar -> Eksekusi), hanya setelah disetujui final -
-    // Admin GA dan Approval GA sama-sama bisa menjalankan tahap manapun, tidak dibatasi harus
-    // orang yang sama sepanjang tahapan. Setiap tahap wajib berurutan (lihat masing-masing guard
-    // di bawah) dan dicatat lewat AddLog supaya riwayatnya terlihat jelas di Transaksi/Overview.
-
-    [HttpPatch("{itemId:int}/cek-lokasi")]
-    public async Task<IActionResult> CekLokasi(int itemId, [FromBody] ExecutionStageRequest payload)
-    {
-        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
-        if (roleError != null) return roleError;
-
-        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsApprovedFinal(item))
-            return StatusCode(403, new { detail = "Data belum disetujui final" });
-        if (item.ExecutionStage != ExecutionStageEnum.MENUNGGU)
-            return StatusCode(403, new { detail = "Lokasi sudah pernah dicek" });
-
-        item.ExecutionStage = ExecutionStageEnum.LOKASI_DICEK;
-        item.LokasiDicekBy = user!.Id;
-        item.LokasiDicekAt = DateTime.UtcNow;
-        AddLog(item, "LOKASI_DICEK", user, payload.Catatan);
-        var saveError = await TrySaveChangesAsync(_db);
-        if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Menandai Lokasi Sudah Dicek");
-        return Ok(PerbaikanSaranaOut.From(item));
-    }
-
-    // required=true (rencana perbaikan) rejects a missing file; required=false (foto kerusakan/
-    // foto selesai, keduanya opsional) treats a missing file as "nothing to store" rather than an
-    // error - contentType comes back null in that case as the signal to skip storing anything.
-    private static async Task<(bool ok, string? contentType, string? error)> ValidateImageFileAsync(IFormFile? file, bool required)
+    private static async Task<(bool ok, string? contentType, string? error)> ValidateImageFileAsync(IFormFile? file)
     {
         if (file == null || file.Length == 0)
-            return required ? (false, null, "Gambar wajib diunggah") : (true, null, null);
+            return (false, null, "Gambar wajib diunggah");
         if (file.Length > MaxGambarFileSizeBytes)
             return (false, null, $"Ukuran file maksimal {MaxGambarFileSizeBytes / 1024 / 1024} MB");
         var ext = Path.GetExtension(file.FileName);
@@ -1082,58 +959,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         using var stream = System.IO.File.Create(destPath);
         await file.CopyToAsync(stream);
         return storedFilename;
-    }
-
-    [HttpPost("{itemId:int}/gambar")]
-    public async Task<IActionResult> UploadGambar(int itemId, [FromForm] string? catatan, [FromForm] IFormFile? file)
-    {
-        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
-        if (roleError != null) return roleError;
-
-        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsApprovedFinal(item))
-            return StatusCode(403, new { detail = "Data belum disetujui final" });
-        if (item.ExecutionStage != ExecutionStageEnum.LOKASI_DICEK)
-            return StatusCode(403, new { detail = "Lokasi harus dicek terlebih dahulu" });
-
-        var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: true);
-        if (!fileOk) return BadRequest(new { detail = fileError });
-
-        var storedFilename = await StoreImageFileAsync(file!);
-
-        item.ExecutionStage = ExecutionStageEnum.GAMBAR_DIBUAT;
-        item.GambarDibuatBy = user!.Id;
-        item.GambarDibuatAt = DateTime.UtcNow;
-        item.GambarFilePath = storedFilename;
-        item.GambarOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? storedFilename : file.FileName;
-        item.GambarContentType = contentType!;
-        AddLog(item, "GAMBAR_DIBUAT", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
-        var saveError = await TrySaveChangesAsync(_db);
-        if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Mengunggah Gambar Rencana Perbaikan");
-        return Ok(PerbaikanSaranaOut.From(item));
-    }
-
-    [HttpGet("{itemId:int}/gambar")]
-    public async Task<IActionResult> DownloadGambar(int itemId)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.GambarFilePath == null) return NotFound(new { detail = "Belum ada gambar untuk pengajuan ini" });
-
-        var path = Path.Combine(_uploadDir, item.GambarFilePath);
-        if (!System.IO.File.Exists(path))
-            return NotFound(new { detail = "File gambar tidak ditemukan di server" });
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        var cd = new ContentDisposition { Inline = true, FileName = item.GambarOriginalFilename ?? item.GambarFilePath };
-        Response.Headers["Content-Disposition"] = cd.ToString();
-        return File(bytes, item.GambarContentType ?? "application/octet-stream");
     }
 
     // Foto kondisi kerusakan (before) - wajib minimal 1, maksimal 5, diunggah pelapor sendiri lewat
@@ -1161,7 +986,7 @@ public class PerbaikanSaranaController : ApiControllerBase
 
         foreach (var file in files)
         {
-            var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: true);
+            var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file);
             if (!fileOk) return BadRequest(new { detail = fileError });
 
             var storedFilename = await StoreImageFileAsync(file);
@@ -1242,61 +1067,6 @@ public class PerbaikanSaranaController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{itemId:int}/eksekusi")]
-    public async Task<IActionResult> Eksekusi(int itemId, [FromForm] string? catatan, [FromForm] IFormFile? file)
-    {
-        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
-        if (roleError != null) return roleError;
-
-        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsApprovedFinal(item))
-            return StatusCode(403, new { detail = "Data belum disetujui final" });
-        if (item.ExecutionStage != ExecutionStageEnum.GAMBAR_DIBUAT)
-            return StatusCode(403, new { detail = "Gambar rencana perbaikan harus dibuat terlebih dahulu" });
-
-        // Foto hasil (after) opsional - kalau dilampirkan, tetap dijalankan lewat validasi gambar
-        // yang sama supaya tidak ada celah format/ukuran file yang berbeda dari upload lain.
-        var (fileOk, contentType, fileError) = await ValidateImageFileAsync(file, required: false);
-        if (!fileOk) return BadRequest(new { detail = fileError });
-        if (contentType != null)
-        {
-            item.FotoSelesaiFilePath = await StoreImageFileAsync(file!);
-            item.FotoSelesaiOriginalFilename = string.IsNullOrEmpty(file!.FileName) ? item.FotoSelesaiFilePath : file.FileName;
-            item.FotoSelesaiContentType = contentType;
-        }
-
-        item.ExecutionStage = ExecutionStageEnum.SELESAI;
-        item.SelesaiBy = user!.Id;
-        item.SelesaiAt = DateTime.UtcNow;
-        AddLog(item, "SELESAI", user, string.IsNullOrWhiteSpace(catatan) ? null : catatan.Trim());
-        var saveError = await TrySaveChangesAsync(_db);
-        if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Menyelesaikan Eksekusi Perbaikan");
-        return Ok(PerbaikanSaranaOut.From(item));
-    }
-
-    [HttpGet("{itemId:int}/foto-selesai")]
-    public async Task<IActionResult> DownloadFotoSelesai(int itemId)
-    {
-        var (user, error) = await RequireRoleExceptAsync(RoleEnum.KPU);
-        if (error != null) return error;
-
-        var item = await _db.PerbaikanSaranas.FindAsync(itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!CanAccessPerbaikanSarana(user!, item)) return StatusCode(403, new { detail = "Bukan data milik Anda" });
-        if (item.FotoSelesaiFilePath == null) return NotFound(new { detail = "Belum ada foto hasil perbaikan untuk pengajuan ini" });
-
-        var path = Path.Combine(_uploadDir, item.FotoSelesaiFilePath);
-        if (!System.IO.File.Exists(path))
-            return NotFound(new { detail = "File foto tidak ditemukan di server" });
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(path);
-        var cd = new ContentDisposition { Inline = true, FileName = item.FotoSelesaiOriginalFilename ?? item.FotoSelesaiFilePath };
-        Response.Headers["Content-Disposition"] = cd.ToString();
-        return File(bytes, item.FotoSelesaiContentType ?? "application/octet-stream");
-    }
-
     // Proof-of-report certificate, only ever available once a report has actually won its final
     // Approval GA sign-off - mirrors BookingKendaraanController.DownloadBuktiPdf.
     [HttpGet("{itemId:int}/pdf")]
@@ -1318,63 +1088,11 @@ public class PerbaikanSaranaController : ApiControllerBase
 
     private async Task<Dictionary<int, string>> ResolveActorNamesAsync(PerbaikanSarana item)
     {
-        var actorIds = new[] { item.ApprovedByApprovalGa, item.LokasiDicekBy, item.GambarDibuatBy, item.SelesaiBy }
+        var actorIds = new[] { item.ApprovedByApprovalGa }
             .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
         return actorIds.Count > 0
             ? await _db.Users.Where(u => actorIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Nama)
             : new Dictionary<int, string>();
-    }
-
-    // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
-    // dan membersihkan field milik tahap yang dibatalkan itu (foto/gambar yang sudah di-upload
-    // dibiarkan sebagai file yatim di disk, sama seperti konvensi re-upload di UploadGambar/
-    // UploadFotoKerusakan yang juga tidak menghapus file lama). Status approval (APPROVED_GA_
-    // APPROVAL) tidak ikut berubah - ini murni koreksi eksekusi fisik, bukan alur approval.
-    [HttpPatch("{itemId:int}/eksekusi/reset")]
-    public async Task<IActionResult> ResetEksekusi(int itemId, [FromBody] ExecutionStageRequest? payload)
-    {
-        var (user, roleError) = await RequireRoleAsync(ExecutionRoles);
-        if (roleError != null) return roleError;
-
-        var item = await _db.PerbaikanSaranas.FirstOrDefaultAsync(p => p.Id == itemId);
-        if (item == null) return NotFound(new { detail = "Data tidak ditemukan" });
-        if (!IsApprovedFinal(item))
-            return StatusCode(403, new { detail = "Data belum disetujui final" });
-
-        var fromStage = item.ExecutionStage;
-        switch (fromStage)
-        {
-            case ExecutionStageEnum.LOKASI_DICEK:
-                item.ExecutionStage = ExecutionStageEnum.MENUNGGU;
-                item.LokasiDicekBy = null;
-                item.LokasiDicekAt = null;
-                break;
-            case ExecutionStageEnum.GAMBAR_DIBUAT:
-                item.ExecutionStage = ExecutionStageEnum.LOKASI_DICEK;
-                item.GambarDibuatBy = null;
-                item.GambarDibuatAt = null;
-                item.GambarFilePath = null;
-                item.GambarOriginalFilename = null;
-                item.GambarContentType = null;
-                break;
-            case ExecutionStageEnum.SELESAI:
-                item.ExecutionStage = ExecutionStageEnum.GAMBAR_DIBUAT;
-                item.SelesaiBy = null;
-                item.SelesaiAt = null;
-                item.FotoSelesaiFilePath = null;
-                item.FotoSelesaiOriginalFilename = null;
-                item.FotoSelesaiContentType = null;
-                break;
-            default:
-                return StatusCode(403, new { detail = "Belum ada tahap eksekusi untuk dibatalkan" });
-        }
-
-        var catatan = string.IsNullOrWhiteSpace(payload?.Catatan) ? null : payload!.Catatan!.Trim();
-        AddLog(item, "EKSEKUSI_DIBATALKAN", user!, $"Dibatalkan dari tahap {fromStage}" + (catatan != null ? $": {catatan}" : ""));
-        var saveError = await TrySaveChangesAsync(_db);
-        if (saveError != null) return saveError;
-        await BroadcastActivityNotificationAsync(_hub, await ActivityRecipientIdsAsync(item, user!.Id), "approval", "sarana", item.Id, ItemLabel(item), user.Id, user.Nama, user.Role.ToString(), "Membatalkan Tahap Eksekusi Terakhir");
-        return Ok(PerbaikanSaranaOut.From(item));
     }
 
     private static string? MentionLabelForRole(RoleEnum role) => role switch

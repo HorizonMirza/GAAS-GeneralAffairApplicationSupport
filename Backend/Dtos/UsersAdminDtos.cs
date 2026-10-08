@@ -43,7 +43,6 @@ public record AdminPasswordConfirmRequest(string Password);
 // One-time plaintext password - see ProvisionedAccountOut's own comment in OrgAdminDtos.cs, same
 // idea.
 public record CreatedUserOut(AdminUserOut User, string Password);
-public record ResetPasswordOut(string Password);
 
 // A sensitive Super Admin action: CurrentPassword re-authenticates the operator, NewPassword is
 // applied to the selected account, and MustChangePassword optionally turns it into a temporary
@@ -56,13 +55,3 @@ public record AdminChangePasswordRequest(
 // Mirrors LoginResponse's shape - the frontend routes "Login As" the same way a real login result
 // would (dashboard, or the forced change-password screen).
 public record ImpersonateResponse(string Message, string Role, bool MustChangePassword);
-
-public record ImpersonationLogOut(
-    int Id, string SuperAdminNama, string TargetNama, RoleEnum TargetRole,
-    DateTime StartedAt, DateTime? EndedAt)
-{
-    public static ImpersonationLogOut From(ImpersonationLog l) => new(
-        l.Id, l.SuperAdminNama, l.TargetNama, l.TargetRole, l.StartedAt, l.EndedAt);
-}
-
-public record ImpersonationLogListResponse(List<ImpersonationLogOut> Items, int Total, int Page, int Limit);

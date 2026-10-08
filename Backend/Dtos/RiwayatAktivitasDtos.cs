@@ -33,12 +33,3 @@ public class RiwayatAktivitasListOut
     public int Page { get; set; }
     public int Limit { get; set; }
 }
-
-// Distinct actors that appear anywhere in the seven log tables - drives the "User" filter
-// dropdown without making the client load all 134 accounts just to populate it.
-public class RiwayatAktorOut
-{
-    public int Id { get; set; }
-    public string Nama { get; set; } = null!;
-    public string Role { get; set; } = null!;
-}

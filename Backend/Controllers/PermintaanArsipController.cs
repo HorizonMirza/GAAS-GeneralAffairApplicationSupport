@@ -159,7 +159,6 @@ public class PermintaanArsipController : ApiControllerBase
     }
 
     public static IQueryable<PermintaanArsip> ApplyListFilters(
-        AppDbContext db,
         IQueryable<PermintaanArsip> query,
         User currentUser,
         BookingStatusEnum? statusFilter,
@@ -475,55 +474,6 @@ public class PermintaanArsipController : ApiControllerBase
         return NoContent();
     }
 
-    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
-    // why this mirrors List's filters and deletes in one statement.
-    [HttpDelete("super-admin/bulk")]
-    public async Task<IActionResult> SuperAdminBulkDelete(
-        [FromQuery(Name = "status")] string? status = null,
-        [FromQuery] string? divisi = null,
-        [FromQuery] string? departemen = null,
-        [FromQuery] string? direktorat = null,
-        [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null,
-        [FromQuery] DateOnly? tanggal = null,
-        [FromQuery] string? kategori = null)
-    {
-        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (roleError != null) return roleError;
-
-        BookingStatusEnum? statusFilter = null;
-        var onlyRejected = false;
-        var onlyOnApproval = false;
-        if (!string.IsNullOrEmpty(status))
-        {
-            if (status == "REJECTED") onlyRejected = true;
-            else if (status == "ON_APPROVAL") onlyOnApproval = true;
-            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
-            else return BadRequest(new { detail = "Status tidak valid" });
-        }
-
-        IQueryable<PermintaanArsip> query;
-        try
-        {
-            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { detail = ex.Message });
-        }
-
-        var filterSummary = BuildFilterSummary(
-            ("status", status), ("divisi", divisi), ("departemen", departemen), ("direktorat", direktorat),
-            ("bulan", bulan), ("search", search), ("tanggal", tanggal?.ToString()), ("kategori", kategori));
-        var toDelete = await query.Select(p => new { p.Id, p.NomorArsip }).ToListAsync();
-        foreach (var row in toDelete)
-            LogDeletion(_db, "permintaan-arsip", row.Id, row.NomorArsip, user!, filterSummary);
-        await _db.SaveChangesAsync();
-
-        var deleted = await query.ExecuteDeleteAsync();
-        return Ok(new { deleted });
-    }
-
     [HttpPatch("{itemId:int}/submit")]
     public async Task<IActionResult> Submit(int itemId)
     {
@@ -594,7 +544,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> query;
         try
         {
-            query = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
+            query = ApplyListFilters(_db.PermintaanArsips.AsQueryable(), user!, statusFilter, divisi, departemen, direktorat, bulan, search, onlyRejected, tanggal, kategori, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {
@@ -752,7 +702,7 @@ public class PermintaanArsipController : ApiControllerBase
         IQueryable<PermintaanArsip> requestQuery;
         try
         {
-            requestQuery = ApplyListFilters(_db, _db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, search, false, tanggal);
+            requestQuery = ApplyListFilters(_db.PermintaanArsips.AsQueryable(), user!, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, direktorat, bulan, search, false, tanggal);
         }
         catch (ArgumentException ex)
         {

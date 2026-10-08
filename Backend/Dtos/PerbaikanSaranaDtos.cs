@@ -59,15 +59,6 @@ public class PerbaikanSaranaOut
     public DateTime? ApprovedL1At { get; set; }
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
-    public ExecutionStageEnum ExecutionStage { get; set; }
-    public int? LokasiDicekBy { get; set; }
-    public DateTime? LokasiDicekAt { get; set; }
-    public int? GambarDibuatBy { get; set; }
-    public DateTime? GambarDibuatAt { get; set; }
-    public string? GambarOriginalFilename { get; set; }
-    public int? SelesaiBy { get; set; }
-    public DateTime? SelesaiAt { get; set; }
-    public string? FotoSelesaiOriginalFilename { get; set; }
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
@@ -96,21 +87,8 @@ public class PerbaikanSaranaOut
         ApprovedL1At = p.ApprovedL1At,
         ApprovedGaAt = p.ApprovedGaAt,
         ApprovedApprovalGaAt = p.ApprovedApprovalGaAt,
-        ExecutionStage = p.ExecutionStage,
-        LokasiDicekBy = p.LokasiDicekBy,
-        LokasiDicekAt = p.LokasiDicekAt,
-        GambarDibuatBy = p.GambarDibuatBy,
-        GambarDibuatAt = p.GambarDibuatAt,
-        GambarOriginalFilename = p.GambarOriginalFilename,
-        SelesaiBy = p.SelesaiBy,
-        SelesaiAt = p.SelesaiAt,
-        FotoSelesaiOriginalFilename = p.FotoSelesaiOriginalFilename,
     };
 }
-
-// Catatan opsional untuk tahap cek lokasi/eksekusi - upload gambar punya request-nya sendiri
-// ([FromForm], lihat PerbaikanSaranaController.UploadGambar) karena membawa file, bukan JSON.
-public record ExecutionStageRequest(string? Catatan);
 
 // Admin/Approval GA's narrow correction tool (see PerbaikanSaranaController.Koreksi): fixes
 // administrative typos in the reporter's contact details and physical location without touching
@@ -128,10 +106,6 @@ public class PerbaikanSaranaListResponse
 public class PerbaikanSaranaStatsResponse
 {
     public Dictionary<string, int> CountsByStatus { get; set; } = new();
-    // Breakdown of ExecutionStage across only the Approved-final reports, so GA can see its
-    // physical-execution workload (how many awaiting a site check, how many mid-plan, etc.)
-    // without having to open and manually count the Transaksi table.
-    public Dictionary<string, int> ExecutionStageCounts { get; set; } = new();
 }
 
 // Repository (Katalog) row - mirrors PermintaanArsipCatalogItemOut exactly: a narrow, read-only

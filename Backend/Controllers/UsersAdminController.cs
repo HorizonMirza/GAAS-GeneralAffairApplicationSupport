@@ -10,8 +10,8 @@ namespace PengirimanApi.Controllers;
 // Super Admin's user account management - the UI for what DbSeeder.cs used to only be able to do
 // once, at boot, from a hardcoded org tree. Username and PasswordHash are never editable from
 // UpdateUser directly - a username change would break login for whoever already knows it, and a
-// password only ever changes through ResetPassword (Super Admin-initiated) or ProfileController.
-// ChangePassword (self-service), both of which hash it and never return the old value.
+// password only ever changes through ChangePassword below (Super Admin-initiated) or
+// ProfileController.ChangePassword (self-service), both of which hash it before saving.
 [Route("api/users-admin")]
 public class UsersAdminController : ApiControllerBase
 {
@@ -71,25 +71,6 @@ public class UsersAdminController : ApiControllerBase
             .ToListAsync();
 
         return Ok(new AdminUserListResponse(items, total, page, limit));
-    }
-
-    [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
-    {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (error != null) return error;
-
-        var total = await _db.Users.CountAsync();
-        var active = await _db.Users.CountAsync(u => u.IsActive);
-        var mustChange = await _db.Users.CountAsync(u => u.MustChangePassword);
-        var approver = await _db.Users.CountAsync(u =>
-            u.Role == RoleEnum.SUPER_ADMIN ||
-            u.Role == RoleEnum.ADMIN_GA ||
-            u.Role == RoleEnum.APPROVAL_GA ||
-            u.Role == RoleEnum.APPROVAL_DIVISI ||
-            u.Role == RoleEnum.APPROVAL_DEPARTEMEN);
-
-        return Ok(new { total, active, mustChange, approver });
     }
 
     [HttpPost]
@@ -220,28 +201,6 @@ public class UsersAdminController : ApiControllerBase
         return Ok(AdminUserOut.From(user));
     }
 
-    [HttpPost("{id:int}/reset-password")]
-    public async Task<IActionResult> ResetPassword(int id)
-    {
-        var (actor, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (error != null) return error;
-
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) return NotFound(new { detail = "Akun tidak ditemukan" });
-
-        var password = PasswordGenerator.Generate();
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
-        user.PlainPassword = password;
-        user.MustChangePassword = true;
-        // Same reasoning as ProfileController.ChangePassword: stamping this revokes every session
-        // issued before the reset, so a stolen/expired session on this account doesn't outlive it.
-        user.PasswordChangedAt = DateTime.UtcNow;
-        LogAdminActivity(_db, "USER_RESET_PASSWORD", $"Reset password akun {user.Nama} ({user.Username})", actor!);
-        await _db.SaveChangesAsync();
-
-        return Ok(new ResetPasswordOut(password));
-    }
-
     [HttpPut("{id:int}/password")]
     public async Task<IActionResult> ChangePassword(int id, [FromBody] AdminChangePasswordRequest payload)
     {
@@ -294,7 +253,7 @@ public class UsersAdminController : ApiControllerBase
         return Ok(AdminUserOut.From(user));
     }
 
-    // "Paksa logout" - same PasswordChangedAt-bump mechanism ResetPassword uses to revoke every
+    // "Paksa logout" - same PasswordChangedAt-bump mechanism ChangePassword uses to revoke every
     // session already issued for this account, but without touching PasswordHash: the account's
     // real password is untouched, so it can log back in immediately with what it already knows.
     // Cheaper than a real session registry (no way to list which sessions are active or from
@@ -360,8 +319,8 @@ public class UsersAdminController : ApiControllerBase
     // instead of a read-only preview. Every business table (CreatedBy, ApprovedBy, chat sender,
     // etc.) keeps recording the impersonated account's own id exactly as if that account had
     // logged in itself - deliberately NOT stamped as Super Admin anywhere, and the impersonated
-    // account is never notified. ImpersonationLog is the one place this is still traceable, and
-    // only Super Admin can ever read it (see GetImpersonationLog below).
+    // account is never notified. ImpersonationLog (table impersonation_log) is the one place this
+    // is still traceable.
     //
     // Mechanics: the caller's own token stays untouched in a second cookie (see
     // CurrentUserService.ImpersonatorCookieName) so EndImpersonation can restore it later without
@@ -459,27 +418,6 @@ public class UsersAdminController : ApiControllerBase
         Response.Cookies.Delete(CurrentUserService.ImpersonatorCookieName, new CookieOptions { Path = "/" });
 
         return Ok(new { message = "Kembali ke Super Admin" });
-    }
-
-    [HttpGet("impersonation-log")]
-    public async Task<IActionResult> GetImpersonationLog([FromQuery] int page = 1, [FromQuery] int limit = 20)
-    {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (error != null) return error;
-
-        if (page < 1) return BadRequest(new { detail = "Halaman tidak valid" });
-        if (!AllowedLimits.Contains(limit))
-            return BadRequest(new { detail = $"Limit harus salah satu dari {string.Join(",", AllowedLimits)}" });
-
-        var query = _db.ImpersonationLogs.OrderByDescending(l => l.StartedAt);
-        var total = await query.CountAsync();
-        var items = await query
-            .Skip((page - 1) * limit)
-            .Take(limit)
-            .Select(l => ImpersonationLogOut.From(l))
-            .ToListAsync();
-
-        return Ok(new ImpersonationLogListResponse(items, total, page, limit));
     }
 
     // Light referential validation against the current org tree (OrgTree.Tree, DB-backed - see

@@ -29,7 +29,6 @@ import type {
   Holiday,
   HolidayListResponse,
   ImpersonateResult,
-  ImpersonationLogListResponse,
   KategoriKerusakan,
   KoreksiArsipPayload,
   KoreksiPengirimanPayload,
@@ -69,9 +68,7 @@ import type {
   PermintaanAtkLog,
   PermintaanAtkStatsResponse,
   RejectTarget,
-  ResetPasswordResult,
   RiwayatAktivitasListResponse,
-  RiwayatAktor,
   RiwayatModul,
   Role,
   RoomOption,
@@ -316,26 +313,6 @@ export const api = {
   deletePhoto: () => apiRequest<Me>("/profile/photo", { method: "DELETE" }),
   updateCoverPreset: (preset: string) =>
     apiRequest<Me>("/profile/cover-preset", { method: "PUT", body: { preset } }),
-  uploadCoverPhoto: async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const response = await fetch(`${API_BASE}/profile/cover-photo`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-    if (!response.ok) {
-      let detail = "Gagal mengunggah gambar background";
-      try {
-        const data = await response.json();
-        detail = data.detail || detail;
-      } catch {
-        // ignore - response body wasn't JSON
-      }
-      throw new ApiError(detail, response.status);
-    }
-    return (await response.json()) as Me;
-  },
   deleteCoverPhoto: () => apiRequest<Me>("/profile/cover-photo", { method: "DELETE" }),
   coverPhotoUrl: (v?: number) => (v ? `${API_BASE}/profile/cover-photo?v=${v}` : `${API_BASE}/profile/cover-photo`),
 
@@ -769,29 +746,6 @@ export const api = {
     ).toString();
     return `${API_BASE}/perbaikan-sarana/catalog/export-pdf${query ? `?${query}` : ""}`;
   },
-  cekLokasiSarana: (id: number, catatan: string | null) =>
-    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/cek-lokasi`, { method: "PATCH", body: { catatan } }),
-  uploadGambarSarana: async (id: number, file: File, catatan: string | null) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    if (catatan) formData.append("catatan", catatan);
-    const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/gambar`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-    if (!response.ok) {
-      let detail = "Gagal mengunggah gambar";
-      try {
-        const data = await response.json();
-        detail = data.detail || detail;
-      } catch {
-        /* ignore */
-      }
-      throw new ApiError(detail, response.status);
-    }
-    return response.json() as Promise<PerbaikanSarana>;
-  },
   // Wajib minimal 1, maksimal 5 foto per laporan - lihat PerbaikanSaranaController.
   // UploadFotoKerusakan. Menambah ke daftar yang sudah ada, bukan menggantikan.
   uploadFotoKerusakanSarana: async (id: number, files: File[]) => {
@@ -819,36 +773,7 @@ export const api = {
   deleteFotoKerusakanSarana: (id: number, fotoId: number) =>
     apiRequest(`/perbaikan-sarana/${id}/foto-kerusakan/${fotoId}`, { method: "DELETE" }),
   saranaFotoKerusakanUrl: (id: number, fotoId: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-kerusakan/${fotoId}`,
-  saranaFotoSelesaiUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/foto-selesai`,
-  // file opsional - foto hasil (after) dilampirkan bersamaan dengan menandai eksekusi selesai,
-  // makanya ini multipart (bukan JSON polos seperti cekLokasiSarana) meski file-nya boleh kosong.
-  eksekusiSarana: async (id: number, catatan: string | null, file: File | null) => {
-    const formData = new FormData();
-    if (catatan) formData.append("catatan", catatan);
-    if (file) formData.append("file", file);
-    const response = await fetch(`${API_BASE}/perbaikan-sarana/${id}/eksekusi`, {
-      method: "PATCH",
-      credentials: "include",
-      body: formData,
-    });
-    if (!response.ok) {
-      let detail = "Gagal menyelesaikan eksekusi";
-      try {
-        const data = await response.json();
-        detail = data.detail || detail;
-      } catch {
-        /* ignore */
-      }
-      throw new ApiError(detail, response.status);
-    }
-    return response.json() as Promise<PerbaikanSarana>;
-  },
-  saranaGambarUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/gambar`,
   saranaPdfUrl: (id: number) => `${API_BASE}/perbaikan-sarana/${id}/pdf`,
-  // Koreksi kalau salah unggah foto/salah tandai tahap - memundurkan ExecutionStage satu langkah
-  // (lihat PerbaikanSaranaController.ResetEksekusi). Status approval tidak ikut berubah.
-  resetEksekusiSarana: (id: number, catatan: string | null) =>
-    apiRequest<PerbaikanSarana>(`/perbaikan-sarana/${id}/eksekusi/reset`, { method: "PATCH", body: { catatan } }),
 
   nextArsipNomor: (tanggal: string, divisi?: string, asRole?: Role) =>
     apiRequest<{ nomorArsip: string }>("/permintaan-arsip/next-nomor", { params: { tanggal, divisi, asRole } }),
@@ -911,30 +836,7 @@ export const api = {
   // Super Admin only - the seven per-module log tables unioned into one stream.
   listRiwayatAktivitas: (params: ListRiwayatParams) =>
     apiRequest<RiwayatAktivitasListResponse>("/riwayat-aktivitas", { params: riwayatListParams(params) }),
-  // Only the accounts that actually appear in the logs, so the User dropdown
-  // stays short instead of listing every account that has never done anything.
-  listRiwayatAktor: () => apiRequest<RiwayatAktor[]>("/riwayat-aktivitas/aktor"),
 
-  // "Hapus Semua" per section on the Super Admin page. Each one takes the same filter object as
-  // its list call, and the backend runs it through the same filter builder - so what is deleted
-  // is exactly the set the table is showing, every page of it. With no filters set that is the
-  // whole module. Each returns how many rows actually went.
-  superAdminBulkDeletePengiriman: (params: ListPengirimanParams) =>
-    apiRequest<BulkDeleteResult>("/pengiriman/super-admin/bulk", { method: "DELETE", params: listParams(params) }),
-  superAdminBulkDeleteBooking: (params: ListBookingParams) =>
-    apiRequest<BulkDeleteResult>("/booking-ruang/super-admin/bulk", { method: "DELETE", params: bookingListParams(params) }),
-  superAdminBulkDeleteKendaraanBooking: (params: ListKendaraanBookingParams) =>
-    apiRequest<BulkDeleteResult>("/booking-kendaraan/super-admin/bulk", { method: "DELETE", params: kendaraanListParams(params) }),
-  superAdminBulkDeleteAtk: (params: ListAtkParams) =>
-    apiRequest<BulkDeleteResult>("/permintaan-atk/super-admin/bulk", { method: "DELETE", params: atkListParams(params) }),
-  superAdminBulkDeleteSarana: (params: ListSaranaParams) =>
-    apiRequest<BulkDeleteResult>("/perbaikan-sarana/super-admin/bulk", { method: "DELETE", params: saranaListParams(params) }),
-  superAdminBulkDeleteArsip: (params: ListArsipParams) =>
-    apiRequest<BulkDeleteResult>("/permintaan-arsip/super-admin/bulk", { method: "DELETE", params: arsipListParams(params) }),
-  superAdminBulkDeleteInvoice: (params: { bulan?: string; tanggal?: string; search?: string; uploadedBy?: number }) =>
-    apiRequest<BulkDeleteResult>("/invoice/super-admin/bulk", { method: "DELETE", params }),
-  superAdminBulkDeleteAtkInvoice: (params: { bulan?: string; tanggal?: string; search?: string; uploadedBy?: number }) =>
-    apiRequest<BulkDeleteResult>("/atk-invoice/super-admin/bulk", { method: "DELETE", params }),
 
   // --- Organisasi (Super Admin only) ---
   getOrgTree: () => apiRequest<OrgTreeResponse>("/org-admin/tree"),
@@ -986,16 +888,12 @@ export const api = {
     apiRequest(`/master-data/${id}`, { method: "DELETE", body: { password } }),
 
   // --- Users Admin (Super Admin only) ---
-  getAdminUserStats: () =>
-    apiRequest<{ total: number; active: number; mustChange: number; approver: number }>("/users-admin/stats"),
   listAdminUsers: (params: ListAdminUsersParams) =>
     apiRequest<AdminUserListResponse>("/users-admin", { params: adminUsersListParams(params) }),
   createAdminUser: (payload: CreateUserPayload) =>
     apiRequest<CreatedUserResult>("/users-admin", { method: "POST", body: payload }),
   updateAdminUser: (id: number, payload: UpdateUserPayload) =>
     apiRequest<AdminUserListItem>(`/users-admin/${id}`, { method: "PATCH", body: payload }),
-  resetAdminUserPassword: (id: number) =>
-    apiRequest<ResetPasswordResult>(`/users-admin/${id}/reset-password`, { method: "POST" }),
   changeAdminUserPassword: (id: number, payload: AdminChangePasswordPayload) =>
     apiRequest<AdminUserListItem>(`/users-admin/${id}/password`, { method: "PUT", body: payload }),
   deactivateAdminUser: (id: number, password: string) =>
@@ -1009,8 +907,6 @@ export const api = {
   impersonateUser: (id: number, password: string) =>
     apiRequest<ImpersonateResult>(`/users-admin/${id}/impersonate`, { method: "POST", body: { password } }),
   endImpersonation: () => apiRequest<{ message: string }>("/users-admin/impersonate/end", { method: "POST" }),
-  listImpersonationLog: (params: { page?: number; limit?: number }) =>
-    apiRequest<ImpersonationLogListResponse>("/users-admin/impersonation-log", { params }),
 };
 
 export interface ListAdminUsersParams {
@@ -1033,10 +929,6 @@ function adminUsersListParams(p: ListAdminUsersParams) {
     search: p.search,
     isActive: p.isActive === "" || p.isActive === undefined ? undefined : String(p.isActive),
   };
-}
-
-export interface BulkDeleteResult {
-  deleted: number;
 }
 
 export interface ListRiwayatParams {

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using PengirimanApi.Data;
 
 namespace PengirimanApi.Services;

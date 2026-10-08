@@ -59,13 +59,11 @@ public class BookingRuangController : ApiControllerBase
     };
 
     private readonly AppDbContext _db;
-    private readonly IConfiguration _config;
     private readonly IHubContext<ChatHub> _hub;
 
-    public BookingRuangController(AppDbContext db, CurrentUserService currentUser, IConfiguration config, IHubContext<ChatHub> hub) : base(currentUser)
+    public BookingRuangController(AppDbContext db, CurrentUserService currentUser, IHubContext<ChatHub> hub) : base(currentUser)
     {
         _db = db;
-        _config = config;
         _hub = hub;
     }
 
@@ -260,7 +258,6 @@ public class BookingRuangController : ApiControllerBase
     };
 
     public static IQueryable<BookingRuang> ApplyListFilters(
-        AppDbContext db,
         IQueryable<BookingRuang> query,
         User currentUser,
         BookingStatusEnum? statusFilter,
@@ -1154,56 +1151,6 @@ public class BookingRuangController : ApiControllerBase
         return NoContent();
     }
 
-    // "Hapus Semua" on the Super Admin page - see PengirimanController.SuperAdminBulkDelete for
-    // why this mirrors List's filters and deletes in one statement.
-    [HttpDelete("super-admin/bulk")]
-    public async Task<IActionResult> SuperAdminBulkDelete(
-        [FromQuery(Name = "status")] string? status = null,
-        [FromQuery] string? divisi = null,
-        [FromQuery] string? departemen = null,
-        [FromQuery(Name = "nama_ruang")] string? namaRuang = null,
-        [FromQuery] DateOnly? tanggal = null,
-        [FromQuery] string? direktorat = null,
-        [FromQuery] string? bulan = null,
-        [FromQuery] string? search = null,
-        [FromQuery] string? sejakBulan = null)
-    {
-        var (user, roleError) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (roleError != null) return roleError;
-
-        BookingStatusEnum? statusFilter = null;
-        var onlyRejected = false;
-        var onlyOnApproval = false;
-        if (!string.IsNullOrEmpty(status))
-        {
-            if (status == "REJECTED") onlyRejected = true;
-            else if (status == "ON_APPROVAL") onlyOnApproval = true;
-            else if (Enum.TryParse<BookingStatusEnum>(status, out var parsedStatus)) statusFilter = parsedStatus;
-            else return BadRequest(new { detail = "Status tidak valid" });
-        }
-
-        IQueryable<BookingRuang> query;
-        try
-        {
-            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected, onlyOnApproval);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { detail = ex.Message });
-        }
-
-        var filterSummary = BuildFilterSummary(
-            ("status", status), ("divisi", divisi), ("departemen", departemen), ("namaRuang", namaRuang),
-            ("direktorat", direktorat), ("bulan", bulan), ("search", search), ("sejakBulan", sejakBulan), ("tanggal", tanggal?.ToString()));
-        var toDelete = await query.Select(b => new { b.Id, b.NomorPemesanan }).ToListAsync();
-        foreach (var row in toDelete)
-            LogDeletion(_db, "booking-ruang", row.Id, row.NomorPemesanan, user!, filterSummary);
-        await _db.SaveChangesAsync();
-
-        var deleted = await query.ExecuteDeleteAsync();
-        return Ok(new { deleted });
-    }
-
     [HttpPatch("{itemId:int}/cancel")]
     public async Task<IActionResult> Cancel(int itemId, [FromBody] RejectRequest payload)
     {
@@ -1365,7 +1312,7 @@ public class BookingRuangController : ApiControllerBase
         IQueryable<BookingRuang> query;
         try
         {
-            query = ApplyListFilters(_db, _db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected, onlyOnApproval);
+            query = ApplyListFilters(_db.BookingRuangs.AsQueryable(), user!, statusFilter, divisi, departemen, namaRuang, tanggal, direktorat, bulan, search, sejakBulan, onlyRejected, onlyOnApproval);
         }
         catch (ArgumentException ex)
         {

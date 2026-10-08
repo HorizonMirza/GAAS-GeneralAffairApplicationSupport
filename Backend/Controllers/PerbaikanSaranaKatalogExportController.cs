@@ -8,7 +8,6 @@ using PengirimanApi.Models;
 using PengirimanApi.Services;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace PengirimanApi.Controllers;
 
@@ -95,8 +94,7 @@ public class PerbaikanSaranaKatalogExportController : ApiControllerBase
         if (!string.IsNullOrEmpty(kategori) && !MasterData.IsValidKey(MasterDataCategories.KategoriKerusakan, kategori))
             throw new ArgumentException("Kategori tidak valid");
 
-        var query = PerbaikanSaranaController.ApplyListFilters(
-            _db, _db.PerbaikanSaranas.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
+        var query = PerbaikanSaranaController.ApplyListFilters(_db.PerbaikanSaranas.AsQueryable(), currentUser, BookingStatusEnum.APPROVED_GA_APPROVAL, divisi, departemen, kategori, direktorat, bulan, search, false, tanggal);
 
         BatasEkspor.Pastikan(await query.CountAsync());
         return await query

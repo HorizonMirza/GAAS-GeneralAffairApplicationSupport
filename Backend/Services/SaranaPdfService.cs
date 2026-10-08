@@ -27,7 +27,7 @@ public static class SaranaPdfService
         ["LAINNYA"] = "Lainnya",
     };
 
-    // actorNames: id -> Nama untuk LokasiDicekBy/GambarDibuatBy/SelesaiBy/ApprovedByApprovalGa -
+    // actorNames: id -> Nama untuk ApprovedByApprovalGa -
     // di-resolve sekali oleh controller sebelum memanggil ini, karena PerbaikanSarana sendiri tidak
     // punya navigation property untuk FK-FK itu (lihat model).
     public static byte[] Generate(PerbaikanSarana item, Dictionary<int, string> actorNames)

@@ -276,41 +276,6 @@ public class RiwayatAktivitasController : ApiControllerBase
         return Ok(new RiwayatAktivitasListOut { Items = rows, Total = total, Page = page, Limit = limit });
     }
 
-    // Only the people who actually appear in the logs, so the User dropdown stays short instead
-    // of listing every account that has never done anything.
-    [HttpGet("aktor")]
-    public async Task<IActionResult> Aktor()
-    {
-        var (_, error) = await RequireRoleAsync(RoleEnum.SUPER_ADMIN);
-        if (error != null) return error;
-
-        var union = BuildUnion(AllModuls);
-        var sql = $"""
-            SELECT DISTINCT actor_id, actor_nama, actor_role
-            FROM (
-            {union}
-            ) AS gabungan
-            WHERE actor_id IS NOT NULL
-            ORDER BY actor_nama
-            """;
-
-        var result = new List<RiwayatAktorOut>();
-        var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand(sql, conn);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            result.Add(new RiwayatAktorOut
-            {
-                Id = reader.GetInt32(0),
-                Nama = reader.IsDBNull(1) ? "-" : reader.GetString(1),
-                Role = reader.IsDBNull(2) ? "-" : reader.GetString(2),
-            });
-        }
-        return Ok(result);
-    }
-
     private async Task<int> ScalarAsync(string sql, List<NpgsqlParameter> parameters)
     {
         var conn = (NpgsqlConnection)_db.Database.GetDbConnection();

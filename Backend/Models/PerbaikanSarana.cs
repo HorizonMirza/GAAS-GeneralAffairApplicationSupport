@@ -3,9 +3,7 @@ namespace PengirimanApi.Models;
 // Maintenance: laporan kerusakan sarana/prasarana yang butuh perbaikan oleh GA. Alur approval-nya
 // sama dengan Room/Vehicle Booking (BookingStatusEnum, berakhir di APPROVED_GA_APPROVAL) - tanpa
 // tahap KPU. Permintaan ATK bukan anggota kelompok ini: modul itu memakai StatusEnum dan punya
-// tahap KPU sendiri. Setelah disetujui final, eksekusi fisiknya sendiri dilacak lewat
-// ExecutionStage (lihat ExecutionStageEnum) - berjalan terpisah dari Status, yang tetap
-// APPROVED_GA_APPROVAL sepanjang eksekusi berlangsung.
+// tahap KPU sendiri.
 public class PerbaikanSarana
 {
     public int Id { get; set; }
@@ -36,6 +34,9 @@ public class PerbaikanSarana
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
 
+    // Kolom fitur Eksekusi (Cek Lokasi -> Buat Gambar -> Selesai) yang sudah dihapus dari aplikasi.
+    // Tetap dipetakan karena kolomnya masih ada di database dan menyimpan data/file lama -
+    // PembersihFileYatim dan Delete masih membaca path filenya supaya file lama tidak yatim.
     public ExecutionStageEnum ExecutionStage { get; set; } = ExecutionStageEnum.MENUNGGU;
     public int? LokasiDicekBy { get; set; }
     public DateTime? LokasiDicekAt { get; set; }
@@ -47,8 +48,6 @@ public class PerbaikanSarana
     public int? SelesaiBy { get; set; }
     public DateTime? SelesaiAt { get; set; }
 
-    // Foto bukti hasil perbaikan (opsional) - diunggah bersamaan dengan menandai Eksekusi selesai,
-    // supaya ada dokumentasi before/after (FotoKerusakan di atas = before, ini = after).
     public string? FotoSelesaiFilePath { get; set; }
     public string? FotoSelesaiOriginalFilename { get; set; }
     public string? FotoSelesaiContentType { get; set; }
