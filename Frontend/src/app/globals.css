@@ -6542,9 +6542,10 @@ table.data-table {
 
   .pagination-left {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     width: auto;
     min-width: 0;
+    align-self: end;
     justify-content: flex-start;
   }
 
@@ -6553,7 +6554,8 @@ table.data-table {
   }
 
   .pagination-left .field > label {
-    display: none;
+    display: block;
+    margin-bottom: 6px;
   }
 
   .pagination-left .searchable-select-trigger {
@@ -6563,18 +6565,23 @@ table.data-table {
   }
 
   .pagination-right {
-    display: contents;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 0;
+    gap: 8px;
   }
 
   .pagination-right > .text-secondary {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    text-align: center;
+    max-width: 160px;
+    line-height: 1.35;
+    text-align: right;
+    white-space: normal;
   }
 
   .pagination-right > .pages {
-    grid-column: 2;
-    grid-row: 2;
     max-width: none;
     overflow: visible;
     justify-content: flex-end;
@@ -6593,6 +6600,47 @@ table.data-table {
 
   .invoice-list {
     margin-bottom: 20px;
+  }
+
+  .photo-drop-uploader:has(.item-row-list) {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .item-row-list {
+    gap: 12px;
+    margin-top: 2px;
+  }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 72px 38px;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .item-row:not(:has(.item-row-delete-btn)) {
+    grid-template-columns: minmax(0, 1fr) 72px;
+  }
+
+  .item-row-col-lg,
+  .item-row-col-sm {
+    width: auto;
+    min-width: 0;
+  }
+
+  .item-row-field label {
+    font-size: 0.72rem;
+  }
+
+  .item-row-field input {
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .item-row-delete-btn {
+    width: 38px;
+    height: 42px;
   }
 
   .invoice-row-main {
