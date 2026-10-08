@@ -6533,7 +6533,7 @@ table.data-table {
     display: grid;
     grid-template-columns: minmax(112px, 128px) auto;
     align-items: end;
-    justify-content: center;
+    justify-content: space-between;
     width: 100%;
     gap: 10px;
     margin-bottom: 12px;
@@ -6655,47 +6655,75 @@ table.data-table {
   }
 
   .calendar-topbar-left {
-    display: grid;
-    grid-template-columns: auto auto;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
     width: 100%;
   }
 
   .calendar-topbar-room {
-    grid-column: 1 / -1;
-    width: 100%;
-    margin: 2px 0 0;
-    overflow: hidden;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: none;
+  }
+
+  .calendar-topbar-left > .btn {
+    width: auto !important;
+    min-height: 32px;
+    padding: 6px 12px;
+  }
+
+  .calendar-topbar-left .calendar-nav-arrows {
+    margin-left: auto;
   }
 
   .calendar-topbar-actions {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch !important;
-    gap: 8px !important;
+    gap: 0 !important;
     width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
   }
 
   .calendar-topbar-actions .calendar-view-toggle {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    overflow: hidden;
+    display: contents;
   }
 
   .calendar-topbar-actions .calendar-view-toggle:last-child {
-    grid-template-columns: minmax(0, 1fr);
+    display: contents;
   }
 
   .calendar-topbar-actions .calendar-view-btn {
     min-width: 0;
     min-height: 38px;
-    padding: 7px 6px;
+    padding: 7px 2px;
+    border-right: 1px solid var(--border-subtle);
+    border-radius: 0;
+    font-size: 0.72rem;
     white-space: nowrap;
+  }
+
+  .calendar-topbar-actions > .calendar-view-toggle:last-child .calendar-view-btn:last-child {
+    border-right: 0;
+  }
+
+  .room-info-row {
+    align-items: flex-start;
+    gap: 12px;
+    line-height: 1.35;
+  }
+
+  .room-info-row > span:first-child {
+    flex: 0 0 104px;
+  }
+
+  .room-info-row > span:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 
   .calendar-main .table-wrap {
@@ -6742,5 +6770,9 @@ table.data-table {
   .pagination button.page-btn {
     width: 30px;
     min-width: 30px;
+  }
+
+  .calendar-topbar-actions .calendar-view-btn {
+    font-size: 0.65rem;
   }
 }
