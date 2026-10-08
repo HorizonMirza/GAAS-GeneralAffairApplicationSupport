@@ -253,7 +253,7 @@ function VehicleCalendarPageInner() {
               + Booking Kendaraan
             </button>
           )}
-          <div className="field field-select-blue" style={{ marginBottom: 0 }}>
+          <div className="field field-select-blue calendar-sidebar-resource-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-select">Kendaraan</label>
             <SearchableSelect
               id="calendar-kendaraan-select"
@@ -271,7 +271,7 @@ function VehicleCalendarPageInner() {
               placeholder="Ketersediaan Kendaraan"
             />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field calendar-sidebar-date-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-date-input">Tanggal</label>
             <DateFilterPicker
               id="calendar-kendaraan-date-input"
@@ -282,7 +282,7 @@ function VehicleCalendarPageInner() {
               clearable={false}
             />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field calendar-sidebar-search-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-kendaraan-search-input">Cari Pesanan</label>
             <input
               type="text"

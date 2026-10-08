@@ -6435,3 +6435,164 @@ table.data-table {
     transform: none;
   }
 }
+
+@media (max-width: 640px) {
+  .transactions-page-toolbar,
+  .invoices-page-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 10px;
+  }
+
+  .transactions-page-toolbar > .toolbar-actions,
+  .invoices-page-toolbar > .toolbar-actions {
+    display: contents;
+  }
+
+  .transactions-page-toolbar > .toolbar-actions > .btn,
+  .invoices-page-toolbar > .toolbar-actions > .btn {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 42px;
+    margin: 0 !important;
+  }
+
+  .transactions-page-toolbar > .toolbar-actions > .btn-primary,
+  .invoices-page-toolbar > .toolbar-actions > .btn-primary {
+    grid-column: 1 / -1 !important;
+    order: 1;
+  }
+
+  .transactions-page-toolbar > .toolbar-search-field,
+  .invoices-page-toolbar > .toolbar-search-field {
+    grid-column: 1 / -1;
+    order: 2;
+  }
+
+  .transactions-page-toolbar > .field:not(.toolbar-search-field),
+  .transactions-page-toolbar > .filter-dropdown-wrap {
+    width: 100% !important;
+    min-width: 0;
+    order: 3;
+  }
+
+  .invoices-page-toolbar > .field:not(.toolbar-search-field) {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-width: 0;
+    order: 3;
+  }
+
+  .transactions-page-toolbar > .btn,
+  .invoices-page-toolbar > .btn {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    order: 4;
+  }
+
+  .transactions-page-toolbar > .toolbar-actions > .btn:not(.btn-primary),
+  .invoices-page-toolbar > .toolbar-actions > .btn:not(.btn-primary) {
+    grid-column: auto;
+    order: 5;
+  }
+
+  .pagination {
+    display: grid;
+    grid-template-columns: minmax(104px, 1fr) auto;
+    align-items: end;
+    width: 100%;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .pagination-left {
+    grid-column: 1;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .pagination-left .field {
+    width: 100%;
+  }
+
+  .pagination-left .field > label {
+    display: none;
+  }
+
+  .pagination-left .searchable-select-trigger {
+    width: 100%;
+    min-height: 34px;
+    height: 34px;
+  }
+
+  .pagination-right {
+    display: contents;
+  }
+
+  .pagination-right > .text-secondary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .pagination-right > .pages {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: none;
+    overflow: visible;
+    justify-content: flex-end;
+  }
+
+  .pagination button.page-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+
+  .invoice-row-main {
+    width: 100%;
+  }
+
+  .invoice-row-info {
+    flex: 1;
+  }
+
+  .invoice-row-actions {
+    width: 100%;
+  }
+
+  .invoice-row-actions > .card-icon-btn:first-of-type {
+    margin-left: auto;
+  }
+
+  .room-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .room-card {
+    min-width: 0;
+  }
+
+  .calendar-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .calendar-sidebar-create-btn,
+  .calendar-sidebar-search-field,
+  .calendar-sidebar > .mini-calendar {
+    grid-column: 1 / -1;
+  }
+
+  .calendar-sidebar-resource-field,
+  .calendar-sidebar-date-field,
+  .calendar-sidebar-search-field {
+    width: 100%;
+    min-width: 0;
+  }
+}

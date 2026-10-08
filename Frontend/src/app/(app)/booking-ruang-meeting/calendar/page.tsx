@@ -240,7 +240,7 @@ function BookingCalendarPageInner() {
               + Booking Ruang Meeting
             </button>
           )}
-          <div className="field field-select-blue" style={{ marginBottom: 0 }}>
+          <div className="field field-select-blue calendar-sidebar-resource-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-room-select">Ruangan</label>
             <SearchableSelect
               id="calendar-room-select"
@@ -258,7 +258,7 @@ function BookingCalendarPageInner() {
               placeholder="Ketersediaan Ruang"
             />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field calendar-sidebar-date-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-date-input">Tanggal</label>
             <DateFilterPicker
               id="calendar-date-input"
@@ -269,7 +269,7 @@ function BookingCalendarPageInner() {
               clearable={false}
             />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field calendar-sidebar-search-field" style={{ marginBottom: 0 }}>
             <label htmlFor="calendar-search-input">Cari Pesanan</label>
             <input
               type="text"
