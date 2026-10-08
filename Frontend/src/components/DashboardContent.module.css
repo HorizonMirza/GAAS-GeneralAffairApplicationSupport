@@ -2270,6 +2270,12 @@
 }
 
 @media (min-width: 481px) and (max-width: 860px) {
+  .headerActions {
+    width: min(100%, 458px);
+    align-self: flex-end;
+    grid-template-columns: 42px repeat(2, minmax(0, 200px));
+  }
+
   .moduleTabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2301,12 +2307,23 @@
   .moduleGrid,
   .moduleGrid.workflowModuleGrid,
   .moduleGrid.kpuModuleGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .workflowModuleGrid .workflowApprovedCard {
+  .moduleGrid > .moduleCard,
+  .workflowModuleGrid > .moduleCard,
+  .kpuModuleGrid > .moduleCard {
+    grid-column: span 2;
+  }
+
+  .workflowModuleGrid > .moduleCard:nth-child(4):last-child {
     grid-column: 1 / -1;
+  }
+
+  .workflowModuleGrid > .moduleCard:nth-child(4):nth-last-child(2),
+  .workflowModuleGrid > .moduleCard:nth-child(5):last-child {
+    grid-column: span 3;
   }
 
   .moduleCard,
@@ -2365,8 +2382,33 @@
   }
 
   .resourceScheduleViewport {
+    padding: 8px 10px 10px;
     overflow-x: auto;
     overflow-y: hidden;
+    flex: none;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .resourceSchedulePanel {
+    height: auto;
+  }
+
+  .resourceScheduleStack {
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+  }
+
+  .resourceTimeline {
+    width: 760px;
+    min-width: 760px;
+  }
+
+  .resourceTimelineScale,
+  .resourceTimelineRow {
+    grid-template-columns: 150px minmax(590px, 1fr);
   }
 }
 
