@@ -7125,6 +7125,7 @@ table.data-table {
   }
 
   .modal {
+    width: calc(100vw - clamp(40px, 16vw, 64px));
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
     padding: 16px;
@@ -7174,9 +7175,10 @@ table.data-table {
     flex: 0 0 auto;
   }
 
-  .edit-profile-dialog {
-    width: calc(100vw - 32px) !important;
+  .app-dialog-content {
+    width: calc(100vw - clamp(40px, 16vw, 64px)) !important;
     max-width: 420px;
+    max-height: calc(100dvh - 40px);
     padding: 18px !important;
   }
 
