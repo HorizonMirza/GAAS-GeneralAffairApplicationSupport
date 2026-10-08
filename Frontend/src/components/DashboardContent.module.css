@@ -1941,10 +1941,14 @@
 @media (max-width: 560px) {
   .moduleTabs {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: 48px;
     gap: 6px;
     overflow-x: visible;
+  }
+
+  .moduleTabs button:first-child {
+    grid-column: 1 / -1;
   }
 
   .moduleTabs button {
