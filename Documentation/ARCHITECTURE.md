@@ -38,7 +38,7 @@ Dtos/          Bentuk request/response API (terpisah dari entity) - satu file pe
 Hubs/          ChatHub (SignalR) - push real-time chat ke setiap modul transaksional, lihat bagian SignalR di bawah
 Services/      JwtService (buat/verifikasi token), CurrentUserService (ambil user dari cookie),
                 OrgTree (struktur Direktorat/Divisi/Departemen - DB-backed, lihat bagian Super Admin),
-                MeetingRooms/Vehicles (data master ruang/kendaraan), ChatImageStorage (simpan lampiran gambar chat),
+                MeetingRooms/Vehicles (data master ruang/kendaraan),
                 IcsService (export kalender .ics), PasswordGenerator (password acak untuk akun baru, crypto RNG),
                 BookingPdfService/VehiclePdfService/AtkPdfService/SaranaPdfService (PDF konfirmasi/slip per modul)
 Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, switch resetdb/seed
@@ -47,7 +47,7 @@ Program.cs     Bootstrap app: DI, CORS, Swagger, SignalR hub mapping, routing, s
 - ORM: Entity Framework Core dengan provider `Npgsql.EntityFrameworkCore.PostgreSQL`.
 - Export Excel via `ClosedXML`, export PDF via `QuestPDF` — tersedia di semua modul transaksional (Ekspedisi, Room Booking, Vehicle Booking, Office Supplies, Maintenance, Archive), lewat endpoint `export`/`export-pdf` di controller Export masing-masing. Semua modul transaksional juga punya endpoint `{id}/pdf` untuk cetak slip satu dokumen (beda dari `export-pdf` yang mencetak daftar hasil filter).
 - Password di-hash dengan `BCrypt.Net-Next`.
-- Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`, bukan dari file di `Database/` (lihat catatan di bagian Database).
+- Tidak memakai EF Migrations — perubahan skema dilakukan manual di `DbSeeder`/`AppDbContext` lalu database di-reset lewat `dotnet run -- resetdb` (drop semua tabel + re-seed), **atau** lewat blok `CREATE TABLE IF NOT EXISTS ...` non-destruktif di `Program.cs` yang jalan tiap startup (dipakai untuk menambah tabel modul baru tanpa reset data lama - lihat modul Room Booking dst. sebagai contoh). Struktur tabel di database yang sebenarnya berjalan **selalu** dibaca dari `AppDbContext.OnModelCreating` + blok `CREATE TABLE` di `Program.cs`.
 - Konfigurasi rahasia (connection string, JWT secret) ada di `appsettings.Development.json`, **tidak** masuk git — dikelola manual per environment.
 
 ## Pola Modul Transaksional (Room Booking, Vehicle Booking, Maintenance, Archive)
@@ -122,11 +122,11 @@ src/lib/                               api.ts (client HTTP ke backend, termasuk 
 
 ## Database
 
-PostgreSQL. Sumber kebenaran skema adalah `AppDbContext.OnModelCreating` + blok `CREATE TABLE IF NOT EXISTS`/`ALTER TABLE` di `Program.cs` (jalan otomatis tiap startup, non-destruktif) — **bukan** file mana pun di `Database/`.
+PostgreSQL. Sumber kebenaran skema adalah `AppDbContext.OnModelCreating` + blok `CREATE TABLE IF NOT EXISTS`/`ALTER TABLE` di `Program.cs` (jalan otomatis tiap startup, non-destruktif).
 
 Tabel lintas-modul yang menopang fitur Super Admin (lihat bagian tersendiri di atas): `org_direktorat`/`org_divisi`/`org_departemen` (struktur organisasi, backfill sekali dari `OrgTree.SeedData` saat pertama kali tabel ini dibuat) dan `deletion_log` (jejak audit penghapusan, tanpa FK ke tabel item manapun).
 
-`Database/pengiriman_barang_postgres.sql` adalah dump `pg_dump` dari database user di titik waktu yang jauh lebih lama (hanya berisi 4 tabel: `users`, `pengiriman`, `pengiriman_logs`, `invoices` — dari sebelum fitur chat, semua modul booking, ATK, Maintenance, dan Archive ada). File ini **sudah sangat usang** dan tidak dipakai/dieksekusi oleh aplikasi; kalau butuh melihat skema aktual, baca `AppDbContext.cs` langsung, atau jalankan `pg_dump` baru dari database yang sudah di-`resetdb`.
+Repo ini tidak menyimpan file dump SQL. Kalau butuh melihat skema aktual, baca `AppDbContext.cs` langsung, atau jalankan `pg_dump --schema-only` dari database yang sudah berjalan.
 
 Reset skema penuh dilakukan lewat `dotnet run -- resetdb` (drop semua tabel lalu re-seed) — dipakai kalau ada perubahan pada tabel yang sudah lama ada. Menambah tabel modul baru ke database yang sudah berjalan cukup lewat blok `CREATE TABLE IF NOT EXISTS` di `Program.cs` (lihat pola di modul Room Booking/Vehicle Booking/ATK/Maintenance/Archive), tanpa perlu reset data lama.
 

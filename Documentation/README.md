@@ -18,7 +18,6 @@ Detail lebih dalam ada di [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 ```
 Backend/         ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
 Frontend/        Next.js app (src/app, src/components, src/lib)
-Database/        dump referensi struktur tabel PostgreSQL (lihat catatan di ARCHITECTURE.md - sudah usang, bukan sumber kebenaran)
 Documentation/   dokumentasi proyek (file ini dan lainnya)
 ```
 

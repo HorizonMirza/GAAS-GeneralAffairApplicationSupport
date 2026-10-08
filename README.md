@@ -18,7 +18,6 @@ Aplikasi internal multi-modul untuk operasional kantor **PGN Solution**: Expedit
 ```
 Backend/         ASP.NET Core Web API (Controllers, Models, Data, Dtos, Services, Hubs)
 Frontend/        Next.js app (src/app, src/components, src/lib)
-Database/        dump referensi struktur tabel PostgreSQL (usang, bukan sumber kebenaran)
 Documentation/   dokumentasi proyek
 ```
 
