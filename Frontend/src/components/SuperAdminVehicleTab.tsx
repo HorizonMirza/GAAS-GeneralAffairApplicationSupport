@@ -249,7 +249,7 @@ export default function SuperAdminVehicleTab({
                   <td>{item.platNomor}</td>
                   <td>{item.supir}</td>
                   <td>{item.nomorTeleponSupir}</td>
-                  <td style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <td className="superadmin-vehicle-actions">
                     <button type="button" className="card-icon-btn" aria-label="Edit" title="Edit" onClick={() => openEdit(item)}>
                       <Pencil width={16} height={16} />
                     </button>

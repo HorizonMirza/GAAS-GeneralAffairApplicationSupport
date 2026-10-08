@@ -5664,6 +5664,13 @@ table.data-table {
    look undersized next to Nama Barang/Jumlah/Satuan. */
 .item-row-delete-btn { flex: 0 0 44px; width: 44px; height: 44px; }
 
+.superadmin-vehicle-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
 .chat-count-badge {
   position: absolute;
   top: -6px;
@@ -6503,6 +6510,13 @@ table.data-table {
     grid-column: 1 / -1;
   }
 
+  .transactions-page-toolbar > .filter-dropdown-wrap.superadmin-users-filter > .filter-dropdown-panel {
+    right: auto;
+    left: 0;
+    width: 100%;
+    max-width: none;
+  }
+
   .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-panel {
     right: 0;
     left: auto;
@@ -6656,6 +6670,10 @@ table.data-table {
   .item-row-delete-btn {
     width: 38px;
     height: 42px;
+  }
+
+  .superadmin-vehicle-actions {
+    min-width: 74px;
   }
 
   .invoice-row-main {
