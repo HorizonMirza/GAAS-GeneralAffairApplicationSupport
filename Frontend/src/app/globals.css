@@ -5204,7 +5204,7 @@ table.data-table {
   .notification-dropdown { width: min(320px, calc(100vw - 32px)); right: -8px; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .card { padding: 16px; border-radius: 14px; }
   .stat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat-tile { padding: 10px 8px; }
@@ -5550,7 +5550,7 @@ table.data-table {
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .chat-modal { max-width: 100%; }
   .chat-modal-header-bar { margin: -18px -18px 14px; padding: 16px 18px 12px; border-radius: 14px 14px 0 0; }
   .chat-message-list { height: 300px; min-height: 300px; max-height: 300px; }
@@ -5964,7 +5964,7 @@ table.data-table {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .login-page {
     padding: 16px;
   }
@@ -6443,7 +6443,7 @@ table.data-table {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .superadmin-org-toolbar > .superadmin-org-summary {
     order: 1;
     width: 100%;
@@ -6872,5 +6872,77 @@ table.data-table {
 
   .calendar-topbar-actions .calendar-view-btn {
     font-size: 0.65rem;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 860px) {
+  .topbar {
+    min-height: 64px;
+    padding: 12px 16px;
+  }
+
+  .page-body {
+    padding: 18px 16px 36px;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stat-grid > .stat-tile:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .superadmin-subtabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .superadmin-subtab-btn {
+    min-height: 42px;
+    padding: 9px 8px;
+    font-size: 0.78rem;
+  }
+
+  .pagination {
+    grid-template-columns: minmax(140px, 160px) auto;
+  }
+
+  .photo-drop-uploader:has(.item-row-list) {
+    padding: 14px;
+  }
+
+  .item-row {
+    grid-template-columns: minmax(0, 1fr) 90px 42px;
+    gap: 10px;
+  }
+
+  .item-row:not(:has(.item-row-delete-btn)) {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+
+  .item-row-delete-btn {
+    width: 42px;
+  }
+
+  .modal,
+  .app-dialog-content {
+    width: min(560px, calc(100vw - 64px)) !important;
+    padding: 20px !important;
+  }
+
+  .account-dropdown,
+  .notification-dropdown {
+    width: min(360px, calc(100vw - 64px));
+  }
+
+  .toast {
+    right: 16px;
+    left: auto;
+    width: min(420px, calc(100vw - 32px));
   }
 }
