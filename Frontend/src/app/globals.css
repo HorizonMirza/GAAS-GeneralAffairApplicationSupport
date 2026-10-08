@@ -6477,6 +6477,10 @@ table.data-table {
     min-width: 0;
   }
 
+  .superadmin-org-columns {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
   .superadmin-subtabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

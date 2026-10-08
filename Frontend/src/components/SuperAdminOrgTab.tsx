@@ -492,6 +492,7 @@ export default function SuperAdminOrgTab() {
       ) : (
         /* The 3-Column Miller Columns Container */
         <div
+          className="superadmin-org-columns"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
