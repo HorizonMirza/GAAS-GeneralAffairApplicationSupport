@@ -584,7 +584,7 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          <div>
+          <div className="profile-hero-identity">
             <div className="profile-hero-name">{me.nama}</div>
             <div className="profile-role-badge">{ROLE_LABEL[me.role] || me.role}</div>
           </div>
@@ -643,7 +643,7 @@ export default function ProfilePage() {
       </div>
 
       <Dialog open={editOpen} onOpenChange={closeEditProfile}>
-        <DialogContent>
+        <DialogContent className="edit-profile-dialog">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
