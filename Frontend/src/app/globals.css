@@ -6485,6 +6485,12 @@ table.data-table {
     -webkit-text-fill-color: var(--text-strong) !important;
   }
 
+  .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-panel {
+    right: 0;
+    left: auto;
+    width: min(240px, calc(100vw - 56px));
+  }
+
   .transactions-page-toolbar > .field .filter-picker-trigger,
   .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle {
     width: 100% !important;
@@ -6501,14 +6507,23 @@ table.data-table {
     order: 3;
   }
 
-  .transactions-page-toolbar > .btn,
   .invoices-page-toolbar > .btn {
     grid-column: 1 / -1;
     width: 100% !important;
     order: 4;
   }
 
-  .transactions-page-toolbar > .toolbar-actions > .btn:not(.btn-primary),
+  .transactions-page-toolbar > .toolbar-actions > .btn:not(.btn-primary) {
+    grid-column: auto;
+    order: 4;
+  }
+
+  .transactions-page-toolbar > .btn {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    order: 5;
+  }
+
   .invoices-page-toolbar > .toolbar-actions > .btn:not(.btn-primary) {
     grid-column: auto;
     order: 5;
@@ -6516,8 +6531,9 @@ table.data-table {
 
   .pagination {
     display: grid;
-    grid-template-columns: minmax(104px, 1fr) auto;
+    grid-template-columns: minmax(112px, 128px) auto;
     align-items: end;
+    justify-content: center;
     width: 100%;
     gap: 10px;
     margin-bottom: 12px;
@@ -6542,8 +6558,8 @@ table.data-table {
 
   .pagination-left .searchable-select-trigger {
     width: 100%;
-    min-height: 34px;
-    height: 34px;
+    min-height: 32px;
+    height: 32px;
   }
 
   .pagination-right {
@@ -6565,10 +6581,18 @@ table.data-table {
   }
 
   .pagination button.page-btn {
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
     padding: 0;
+  }
+
+  .total-akumulasi-footer + .pagination {
+    margin-top: 22px;
+  }
+
+  .invoice-list {
+    margin-bottom: 20px;
   }
 
   .invoice-row-main {
@@ -6702,5 +6726,21 @@ table.data-table {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .pagination {
+    grid-template-columns: 112px auto;
+    gap: 8px;
+  }
+
+  .pagination .pages {
+    gap: 4px;
+  }
+
+  .pagination button.page-btn {
+    width: 30px;
+    min-width: 30px;
   }
 }

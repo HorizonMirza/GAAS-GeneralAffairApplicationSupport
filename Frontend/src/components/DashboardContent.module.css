@@ -2150,11 +2150,11 @@
     height: 32px;
     padding: 0 9px;
     border-radius: 8px;
-    font-size: 0.76rem !important;
+    font-size: 0.95rem !important;
   }
 
   .organizationDropdownToggle > span {
-    font-size: 0.76rem !important;
+    font-size: 0.95rem !important;
   }
 
   .organizationOption,
