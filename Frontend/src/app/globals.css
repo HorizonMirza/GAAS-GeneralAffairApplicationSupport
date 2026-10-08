@@ -6947,6 +6947,10 @@ table.data-table {
     gap: 10px;
   }
 
+  .stat-grid > .stat-tile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
   .stat-tile {
     min-width: 0;
     padding: 14px;
@@ -6963,6 +6967,10 @@ table.data-table {
     align-items: stretch;
   }
 
+  .dashboard-welcome-header {
+    gap: 18px;
+  }
+
   .overview-status-filter-field {
     width: 100% !important;
   }
@@ -6976,10 +6984,27 @@ table.data-table {
   .item-row-card .card-header {
     align-items: flex-start;
     flex-wrap: wrap;
+    margin-bottom: 0;
   }
 
   .item-row-card .card-header-title {
-    flex-basis: calc(100% - 100px);
+    flex-basis: 100%;
+  }
+
+  .item-row-card .card-header > div:last-child {
+    width: 100%;
+  }
+
+  .item-row-card .card-header > div:last-child > .card-icon-btn:first-of-type {
+    margin-left: auto;
+  }
+
+  .item-row-card > .stepper {
+    display: none;
+  }
+
+  .item-row-card + .item-row-card {
+    margin-top: 0;
   }
 
   .toolbar > .btn,
