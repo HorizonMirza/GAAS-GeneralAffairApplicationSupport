@@ -244,7 +244,7 @@ function TransaksiPageInner() {
   return (
     <>
       <div className="card">
-        <div className="toolbar transactions-page-toolbar">
+        <div className="toolbar transactions-page-toolbar expedition-transactions-toolbar">
           <div className="field toolbar-search-field">
             <label htmlFor="filter-search">Cari Transaksi</label>
             <input type="text" id="filter-search" placeholder="No Transmittal" value={searchInput} onChange={(e) => handleSearchChange(e.target.value)} />

@@ -3934,6 +3934,22 @@ table.data-table {
   font-size: 0.85rem;
 }
 
+@media (min-width: 1101px) {
+  .expedition-transactions-toolbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .expedition-transactions-toolbar .toolbar-search-field,
+  .toolbar.expedition-transactions-toolbar #filter-bulan {
+    width: 150px;
+  }
+
+  .expedition-transactions-toolbar .toolbar-actions {
+    gap: 4px;
+  }
+}
+
 .pagination {
   display: flex;
   align-items: center;

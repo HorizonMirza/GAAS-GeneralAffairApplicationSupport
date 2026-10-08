@@ -132,7 +132,7 @@
   .headerGrid7 .headerActions {
     grid-column: 5 / 8;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 42px repeat(2, minmax(0, 1fr));
     gap: 8px;
     align-items: center;
     justify-content: normal;
@@ -141,7 +141,7 @@
 
   .headerGrid7 .refreshButton {
     grid-column: 1;
-    justify-self: end;
+    justify-self: stretch;
     width: 42px;
     height: 42px;
     min-height: 42px;
