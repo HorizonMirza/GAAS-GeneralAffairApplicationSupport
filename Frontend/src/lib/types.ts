@@ -71,7 +71,7 @@ export interface Me {
   impersonatedBy: { id: number; nama: string } | null;
 }
 
-export interface DivisiNode {
+interface DivisiNode {
   nama: string;
   departemen: string[];
 }
@@ -119,13 +119,11 @@ export interface Pengiriman {
   approvedByL1: number | null;
   approvedByGa: number | null;
   approvedByApprovalGa: number | null;
-  approvedByKpu: number | null;
   createdAt: string;
   updatedAt: string;
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
-  approvedKpuAt: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }
@@ -276,7 +274,6 @@ export interface Invoice {
   catatan: string | null;
   uploadedBy: number;
   uploaderNama: string | null;
-  reviewedBy: number | null;
   uploadedAt: string;
   reviewedAt: string | null;
   unreadChatCount: number;
@@ -310,8 +307,6 @@ export interface RoomOption {
 
 export interface BulkRescheduleItemResult {
   id: number;
-  tanggalLama: string;
-  tanggalBaru: string | null;
   success: boolean;
   detail: string | null;
 }
@@ -671,13 +666,11 @@ export interface PermintaanAtk {
   approvedByL1: number | null;
   approvedByGa: number | null;
   approvedByApprovalGa: number | null;
-  approvedByKpu: number | null;
   createdAt: string;
   updatedAt: string;
   approvedL1At: string | null;
   approvedGaAt: string | null;
   approvedApprovalGaAt: string | null;
-  approvedKpuAt: string | null;
   unreadChatCount: number;
   hasUnreadMention: boolean;
 }

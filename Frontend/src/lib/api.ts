@@ -174,7 +174,7 @@ export async function downloadFile(url: string, filename: string): Promise<void>
   URL.revokeObjectURL(objectUrl);
 }
 
-export interface ListInvoiceParams {
+interface ListInvoiceParams {
   page?: number;
   limit?: number;
   bulan?: string;
@@ -183,7 +183,7 @@ export interface ListInvoiceParams {
   uploadedBy?: number;
 }
 
-export interface ListPengirimanParams {
+interface ListPengirimanParams {
   page?: number;
   limit?: number;
   bulan?: string;
@@ -909,7 +909,7 @@ export const api = {
   endImpersonation: () => apiRequest<{ message: string }>("/users-admin/impersonate/end", { method: "POST" }),
 };
 
-export interface ListAdminUsersParams {
+interface ListAdminUsersParams {
   page?: number;
   limit?: number;
   role?: Role | "";
@@ -931,7 +931,7 @@ function adminUsersListParams(p: ListAdminUsersParams) {
   };
 }
 
-export interface ListRiwayatParams {
+interface ListRiwayatParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -965,7 +965,7 @@ function riwayatListParams(p: ListRiwayatParams) {
   };
 }
 
-export interface ListArsipParams {
+interface ListArsipParams {
   page?: number;
   limit?: number;
   status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
@@ -993,7 +993,7 @@ function arsipListParams(p: ListArsipParams) {
   };
 }
 
-export interface ListArsipCatalogParams {
+interface ListArsipCatalogParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -1019,7 +1019,7 @@ function arsipCatalogParams(p: ListArsipCatalogParams) {
   };
 }
 
-export interface ListSaranaParams {
+interface ListSaranaParams {
   page?: number;
   limit?: number;
   status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";
@@ -1047,7 +1047,7 @@ function saranaListParams(p: ListSaranaParams) {
   };
 }
 
-export interface ListSaranaCatalogParams {
+interface ListSaranaCatalogParams {
   page?: number;
   limit?: number;
   search?: string;
@@ -1073,7 +1073,7 @@ function saranaCatalogParams(p: ListSaranaCatalogParams) {
   };
 }
 
-export interface ListAtkParams {
+interface ListAtkParams {
   page?: number;
   limit?: number;
   status?: Status | "REJECTED" | "ON_APPROVAL" | "";
@@ -1101,7 +1101,7 @@ function atkListParams(p: ListAtkParams) {
   };
 }
 
-export interface ListBookingParams {
+interface ListBookingParams {
   page?: number;
   limit?: number;
   // "REJECTED" is a synthetic value (not a real BookingStatus) meaning "any of the 3
@@ -1148,7 +1148,7 @@ function bookingListParams(p: ListBookingParams) {
   };
 }
 
-export interface ListKendaraanBookingParams {
+interface ListKendaraanBookingParams {
   page?: number;
   limit?: number;
   status?: BookingStatus | "REJECTED" | "ON_APPROVAL" | "";

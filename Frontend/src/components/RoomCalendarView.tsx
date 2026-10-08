@@ -217,7 +217,7 @@ function buildDayPlan(dateEntries: BookingRuang[], maxCols?: number): Map<number
   return hourMap;
 }
 
-export function formatPeriodLabel(view: CalendarViewMode, refDate: string): string {
+function formatPeriodLabel(view: CalendarViewMode, refDate: string): string {
   const d = new Date(refDate + "T00:00:00");
   if (view === "day") {
     return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;

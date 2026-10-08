@@ -27,7 +27,7 @@ function tone(context: AudioContext, freq: number, startAt: number, duration: nu
   osc.stop(startAt + duration + 0.02);
 }
 
-export interface SoundPreset {
+interface SoundPreset {
   label: string;
   play: (context: AudioContext, now: number) => void;
 }
@@ -180,8 +180,8 @@ export const SOUND_PRESETS: Record<string, SoundPreset> = {
   },
 };
 
-export const DEFAULT_CHAT_SOUND_ID = "ding";
-export const DEFAULT_ACTIVITY_SOUND_ID = "pop";
+const DEFAULT_CHAT_SOUND_ID = "ding";
+const DEFAULT_ACTIVITY_SOUND_ID = "pop";
 
 // Cached in-memory so playing a sound never needs to await a fetch - populated once at app start
 // (AppShell/ChatNotificationListener calls fetchNotificationSoundSettings on mount) and kept in

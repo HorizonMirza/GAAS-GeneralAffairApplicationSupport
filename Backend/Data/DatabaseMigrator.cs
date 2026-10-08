@@ -46,6 +46,25 @@ public static class DatabaseMigrator
                 migration02, DateTime.UtcNow);
         }
 
+        // The Maintenance "Eksekusi" feature was removed and its columns are no longer mapped, but
+        // databases that had them keep the data. execution_stage was NOT NULL there, which would
+        // block every new laporan now that EF no longer writes it - relax it instead of dropping
+        // the column, so nothing stored is lost.
+        const string migration03 = "20261008_01_unmap_legacy_sarana_execution";
+        if (!appliedMigrations.Contains(migration03))
+        {
+            db.Database.ExecuteSqlRaw(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.columns
+                               WHERE table_name = 'perbaikan_sarana' AND column_name = 'execution_stage') THEN
+                        ALTER TABLE perbaikan_sarana ALTER COLUMN execution_stage DROP NOT NULL;
+                    END IF;
+                END $$;");
+            db.Database.ExecuteSqlRaw(
+                "INSERT INTO schema_migrations (id, applied_at) VALUES ({0}, {1}) ON CONFLICT DO NOTHING",
+                migration03, DateTime.UtcNow);
+        }
+
         // 3. Organization structure seeding & cache load
         SeedAndLoadOrgTree(db);
 
@@ -637,25 +656,17 @@ public static class DatabaseMigrator
                 last_read_at TIMESTAMP NOT NULL,
                 UNIQUE (perbaikan_sarana_id, user_id)
             )");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS execution_stage VARCHAR(20) NOT NULL DEFAULT 'MENUNGGU'");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS lokasi_dicek_by INT REFERENCES users(id)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS lokasi_dicek_at TIMESTAMP");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_dibuat_by INT REFERENCES users(id)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_dibuat_at TIMESTAMP");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_file_path VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_original_filename VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS gambar_content_type VARCHAR(100)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_by INT REFERENCES users(id)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS selesai_at TIMESTAMP");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS nama_pelapor VARCHAR(255) NOT NULL DEFAULT ''");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS no_telepon_pelapor VARCHAR(50) NOT NULL DEFAULT ''");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_file_path VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_original_filename VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_kerusakan_content_type VARCHAR(100)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_file_path VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_original_filename VARCHAR(255)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ADD COLUMN IF NOT EXISTS foto_selesai_content_type VARCHAR(100)");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS perbaikan_sarana ALTER COLUMN urgensi DROP NOT NULL");
+        // urgensi only exists on databases created before the column was dropped from the model -
+        // a fresh install never has it, so the ALTER must not run unconditionally.
+        db.Database.ExecuteSqlRaw(@"
+            DO $$ BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'perbaikan_sarana' AND column_name = 'urgensi') THEN
+                    ALTER TABLE perbaikan_sarana ALTER COLUMN urgensi DROP NOT NULL;
+                END IF;
+            END $$;");
         db.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS perbaikan_sarana_foto_kerusakan (
                 id SERIAL PRIMARY KEY,
@@ -745,7 +756,14 @@ public static class DatabaseMigrator
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS tahun_arsip VARCHAR(20) NOT NULL DEFAULT ''");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS jumlah INT NOT NULL DEFAULT 0");
         db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ADD COLUMN IF NOT EXISTS satuan VARCHAR(50) NOT NULL DEFAULT ''");
-        db.Database.ExecuteSqlRaw("ALTER TABLE IF EXISTS permintaan_arsip ALTER COLUMN keperluan DROP NOT NULL");
+        // Same as perbaikan_sarana.urgensi above: keperluan only exists on older databases.
+        db.Database.ExecuteSqlRaw(@"
+            DO $$ BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'permintaan_arsip' AND column_name = 'keperluan') THEN
+                    ALTER TABLE permintaan_arsip ALTER COLUMN keperluan DROP NOT NULL;
+                END IF;
+            END $$;");
         db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_status ON permintaan_arsip (status)");
         db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_divisi ON permintaan_arsip (divisi)");
         db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS ix_permintaan_arsip_departemen ON permintaan_arsip (departemen)");

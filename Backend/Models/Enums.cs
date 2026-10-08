@@ -73,13 +73,3 @@ public enum RecurrenceFrequencyEnum
     MONTHLY,
 }
 
-// Maintenance: tahap fitur Eksekusi yang sudah dihapus - hanya dipertahankan untuk memetakan kolom
-// execution_stage yang masih ada di database (lihat PerbaikanSarana.ExecutionStage).
-public enum ExecutionStageEnum
-{
-    MENUNGGU,
-    LOKASI_DICEK,
-    GAMBAR_DIBUAT,
-    SELESAI,
-}
-

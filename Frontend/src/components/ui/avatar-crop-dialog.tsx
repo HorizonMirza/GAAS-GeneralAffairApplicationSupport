@@ -34,7 +34,7 @@ async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
   });
 }
 
-export interface AvatarCropDialogProps {
+interface AvatarCropDialogProps {
   imageSrc: string | null;
   onCancel: () => void;
   onConfirm: (blob: Blob) => void;

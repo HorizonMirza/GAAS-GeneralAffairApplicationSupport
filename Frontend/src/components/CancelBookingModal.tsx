@@ -6,7 +6,7 @@ import { useAutofocusFirstField } from "@/lib/formNav";
 import ModalOverlay from "./ModalOverlay";
 import { useToast } from "./ui/ToastProvider";
 
-export type CancelBookingType = "room" | "kendaraan";
+type CancelBookingType = "room" | "kendaraan";
 
 interface Props {
   open: boolean;

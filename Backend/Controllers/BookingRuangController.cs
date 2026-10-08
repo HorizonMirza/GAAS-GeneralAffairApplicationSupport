@@ -1058,7 +1058,7 @@ public class BookingRuangController : ApiControllerBase
             var oldDate = item.Tanggal;
             if (!IsGaReschedulable(item))
             {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = "Status tidak dapat dipindahkan" });
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = false, Detail = "Status tidak dapat dipindahkan" });
                 continue;
             }
 
@@ -1068,24 +1068,24 @@ public class BookingRuangController : ApiControllerBase
             var currentTimeWib = TimeOnly.FromDateTime(nowWib);
             if (newDate < todayWib || (newDate == todayWib && ((item.IsWholeDay && currentTimeWib >= AppSettingsCache.OperatingStart) || (!item.IsWholeDay && item.JamMulai != null && item.JamMulai.Value <= currentTimeWib))))
             {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = "Jadwal baru tidak boleh di masa lalu" });
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = false, Detail = "Jadwal baru tidak boleh di masa lalu" });
                 continue;
             }
             if (newDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = false, Detail = $"{newDate:dd/MM/yyyy} jatuh di akhir pekan" });
                 continue;
             }
             if (AppSettingsCache.IsHoliday(newDate))
             {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = $"{newDate:dd/MM/yyyy} adalah hari libur" });
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = false, Detail = $"{newDate:dd/MM/yyyy} adalah hari libur" });
                 continue;
             }
             var roomList = RoomList(item);
             var conflict = await FindConflictAsync(roomList, newDate, item.IsWholeDay, item.JamMulai, item.JamSelesai, item.Id);
             if (conflict != null)
             {
-                results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, Success = false, Detail = ConflictMessage(conflict) });
+                results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = false, Detail = ConflictMessage(conflict) });
                 continue;
             }
 
@@ -1097,7 +1097,7 @@ public class BookingRuangController : ApiControllerBase
             item.Tanggal = newDate;
             item.HasConflict = false;
             AddLog(item, "RESCHEDULED", user!, $"Bulk reschedule dari {oldDate:dd/MM/yyyy} ke {newDate:dd/MM/yyyy} (geser {payload.DayShift} hari)");
-            results.Add(new BulkRescheduleItemResult { Id = item.Id, TanggalLama = oldDate, TanggalBaru = newDate, Success = true });
+            results.Add(new BulkRescheduleItemResult { Id = item.Id, Success = true });
         }
 
         await _db.SaveChangesAsync();

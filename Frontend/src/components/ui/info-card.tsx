@@ -34,7 +34,7 @@ interface ContactInfoCardProps {
 // round action buttons, hover lift) is kept, but every field is re-mapped to what a
 // support-contact directory actually has: modules replace generic tags. There's no follower count
 // equivalent for an internal contact, so it's dropped rather than inventing a number.
-export function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
+function ContactInfoCard({ person, colorIndex }: ContactInfoCardProps) {
   const avatarColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.9)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.3),-12px_-12px_24px_rgba(255,255,255,0.1)] transition-[box-shadow] duration-300 ease-out hover:shadow-[0_0_0_1px_rgba(59,130,246,0.5),0_0_32px_8px_rgba(59,130,246,0.35),20px_20px_40px_rgba(0,0,0,0.2),-20px_-20px_40px_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_1px_rgba(96,165,250,0.6),0_0_32px_8px_rgba(96,165,250,0.35),20px_20px_40px_rgba(0,0,0,0.4),-20px_-20px_40px_rgba(255,255,255,0.15)]">

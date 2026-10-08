@@ -34,24 +34,6 @@ public class PerbaikanSarana
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
 
-    // Kolom fitur Eksekusi (Cek Lokasi -> Buat Gambar -> Selesai) yang sudah dihapus dari aplikasi.
-    // Tetap dipetakan karena kolomnya masih ada di database dan menyimpan data/file lama -
-    // PembersihFileYatim dan Delete masih membaca path filenya supaya file lama tidak yatim.
-    public ExecutionStageEnum ExecutionStage { get; set; } = ExecutionStageEnum.MENUNGGU;
-    public int? LokasiDicekBy { get; set; }
-    public DateTime? LokasiDicekAt { get; set; }
-    public int? GambarDibuatBy { get; set; }
-    public DateTime? GambarDibuatAt { get; set; }
-    public string? GambarFilePath { get; set; }
-    public string? GambarOriginalFilename { get; set; }
-    public string? GambarContentType { get; set; }
-    public int? SelesaiBy { get; set; }
-    public DateTime? SelesaiAt { get; set; }
-
-    public string? FotoSelesaiFilePath { get; set; }
-    public string? FotoSelesaiOriginalFilename { get; set; }
-    public string? FotoSelesaiContentType { get; set; }
-
     public User Pembuat { get; set; } = null!;
     public ICollection<PerbaikanSaranaLog> Logs { get; set; } = new List<PerbaikanSaranaLog>();
     // Wajib minimal 1, maksimal 5 - lihat PerbaikanSaranaFotoKerusakan.

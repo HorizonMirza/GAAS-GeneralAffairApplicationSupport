@@ -25,15 +25,11 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="ClosedXML" Version="0.104.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     <PackageReference Include="QuestPDF" Version="2024.10.4" />
-    <!-- Apache-2.0-licensed 2.x line (pinned below the 3.x Six Labors Split License) - only used to
-         normalize profile/cover photo uploads to a consistent resolution on save, see
-         ProfileController. -->
+    <!-- Apache-2.0-licensed 2.x line (pinned below the 3.x Six Labors Split License) - used to
+         normalize profile photo and company logo uploads to a consistent resolution on save, see
+         ProfileController and AppSettingsController. -->
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.11" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
@@ -45,7 +41,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <!-- Starter Nama Barang ATK catalog, read once at startup to seed MasterDataItem - see
-         Program.cs's Master Data (Part 6) block. -->
+         Data/DatabaseMigrator.cs. -->
     <None Include="SeedData\atk_nama_barang.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

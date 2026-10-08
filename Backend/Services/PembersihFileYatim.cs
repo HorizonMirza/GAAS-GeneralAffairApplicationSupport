@@ -6,11 +6,9 @@ namespace PengirimanApi.Services;
 
 // Housekeeping for files on disk that nothing in the database points at any more.
 //
-// Two things left them behind. Until recently no delete path in Maintenance removed the images a
-// laporan owned, so every deletion orphaned up to seven files; that is fixed, but the pile it
-// already made is still there. And re-uploading a photo or drawing, or stepping an eksekusi back
-// with eksekusi/reset, deliberately keeps the superseded file - a convention documented at those
-// call sites, which this sweeps up afterwards rather than changing.
+// Older versions left them behind: Maintenance deletes did not remove the images a laporan owned,
+// re-uploads kept the superseded file, and the removed Eksekusi feature (gambar rencana / foto
+// selesai) stored files that nothing points at any more. This sweeps those up.
 //
 // Run via `dotnet run -- bersihkan-file-yatim`. Reports only; add `--apply` to actually delete.
 public static class PembersihFileYatim
@@ -54,12 +52,10 @@ public static class PembersihFileYatim
         {
             new Cakupan
             {
-                Nama = "Maintenance (foto kerusakan, gambar rencana, foto selesai)",
+                Nama = "Maintenance (foto kerusakan)",
                 Folder = DirektoriUnggahan.Resolve(config, DirektoriUnggahan.KunciSarana, DirektoriUnggahan.DefaultSarana),
                 Terpakai = Gabung(
-                    await db.PerbaikanSaranaFotoKerusakans.Select(f => (string?)f.FilePath).ToListAsync(),
-                    await db.PerbaikanSaranas.Select(p => p.GambarFilePath).ToListAsync(),
-                    await db.PerbaikanSaranas.Select(p => p.FotoSelesaiFilePath).ToListAsync()),
+                    await db.PerbaikanSaranaFotoKerusakans.Select(f => (string?)f.FilePath).ToListAsync()),
             },
             new Cakupan
             {

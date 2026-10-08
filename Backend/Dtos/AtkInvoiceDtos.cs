@@ -26,7 +26,6 @@ public class AtkInvoiceOut
     // Null unless the query that produced this AtkInvoice included Pengunggah (see
     // AtkInvoiceController.ListAtkInvoice) - mirrors InvoiceOut's own UploaderNama exactly.
     public string? UploaderNama { get; set; }
-    public int? ReviewedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
     // Populated only by ListInvoice (mirrors InvoiceOut.UnreadChatCount) - the count of this
@@ -43,7 +42,6 @@ public class AtkInvoiceOut
         Catatan = i.Catatan,
         UploadedBy = i.UploadedBy,
         UploaderNama = i.Pengunggah?.Nama,
-        ReviewedBy = i.ReviewedBy,
         UploadedAt = i.UploadedAt,
         ReviewedAt = i.ReviewedAt,
     };

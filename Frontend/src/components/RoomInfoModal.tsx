@@ -2,7 +2,7 @@
 
 import ModalOverlay from "./ModalOverlay";
 
-export type RoomInfoAvailability = "available" | "full" | "closed";
+type RoomInfoAvailability = "available" | "full" | "closed";
 
 interface Props {
   open: boolean;

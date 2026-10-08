@@ -27,7 +27,6 @@ public class InvoiceOut
     // InvoiceController.ListInvoice) - callers that don't need it (e.g. actions that only touch
     // one invoice by id) skip that Include rather than pay for a join they won't use.
     public string? UploaderNama { get; set; }
-    public int? ReviewedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
     // Populated only by ListInvoice (mirrors PermintaanAtkOut.UnreadChatCount) - the count of this
@@ -44,7 +43,6 @@ public class InvoiceOut
         Catatan = i.Catatan,
         UploadedBy = i.UploadedBy,
         UploaderNama = i.Pengunggah?.Nama,
-        ReviewedBy = i.ReviewedBy,
         UploadedAt = i.UploadedAt,
         ReviewedAt = i.ReviewedAt,
     };

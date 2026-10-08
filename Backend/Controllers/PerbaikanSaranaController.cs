@@ -451,23 +451,17 @@ public class PerbaikanSaranaController : ApiControllerBase
         return Ok(PerbaikanSaranaOut.From(item));
     }
 
-    // Every image a laporan owns: the damage photos (1-5 rows in perbaikan_sarana_foto_kerusakan),
-    // the plan drawing, and the completion photo. Has to be read before the row goes, because the
-    // foto_kerusakan rows are taken with it by ON DELETE CASCADE and their paths would be
+    // Every image a laporan owns: the damage photos (1-5 rows in perbaikan_sarana_foto_kerusakan).
+    // Has to be read before the row goes, because the foto_kerusakan rows are taken with it by ON DELETE CASCADE and their paths would be
     // unrecoverable afterwards - which is exactly how these files used to be left behind on disk
     // forever. Invoice has done it this way per-invoice all along (see InvoiceController.
     // DeleteInvoice); this brings Maintenance in line.
     private static IEnumerable<string> FileMilik(PerbaikanSarana item) =>
-        item.FotoKerusakan.Select(f => f.FilePath)
-            .Append(item.GambarFilePath)
-            .Append(item.FotoSelesaiFilePath)
-            .Where(f => !string.IsNullOrEmpty(f))
-            .Select(f => f!);
+        item.FotoKerusakan.Select(f => f.FilePath).Where(f => !string.IsNullOrEmpty(f));
 
     // Only ever called after the DB side has committed: if SaveChanges/ExecuteDelete throws, the
     // laporan and every file it still points to are left intact, rather than the files vanishing
-    // while the rows remain. A path that is already gone from disk is not an error - re-uploads
-    // and eksekusi/reset have been leaving stale paths around since before this existed.
+    // while the rows remain. A path that is already gone from disk is not an error.
     private void HapusFileDisk(IEnumerable<string> relativePaths)
     {
         foreach (var f in relativePaths.Distinct())

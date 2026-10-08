@@ -1,4 +1,4 @@
-import { LOG_ACTION_META, LOG_ROLE_LABEL } from "@/lib/constants";
+import { LOG_ACTION_META, ROLE_LABEL } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 import type { BookingKendaraanLog, BookingRuangLog, PengirimanLog, PerbaikanSaranaLog, PermintaanArsipLog, PermintaanAtkLog } from "@/lib/types";
 
@@ -18,7 +18,7 @@ export default function ApprovalLog({ logs, kind }: Props) {
     <div className="approval-log">
       {logs.map((log) => {
         const meta = LOG_ACTION_META[log.action] || { label: log.action, type: "neutral" as const };
-        const actorLabel = log.actorRole ? LOG_ROLE_LABEL[log.actorRole] || log.actorRole : "-";
+        const actorLabel = log.actorRole ? ROLE_LABEL[log.actorRole] || log.actorRole : "-";
         let title = meta.label;
         if (log.action === "APPROVED_L1" || log.action === "REJECTED_L1") {
           const track = log.actorRole === "APPROVAL_DIVISI" ? "Divisi" : "Departemen";

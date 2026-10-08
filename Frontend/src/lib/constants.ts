@@ -179,8 +179,6 @@ export const LOG_ACTION_META: Record<string, { label: string; type: "neutral" | 
   SELESAI: { label: "Completed", type: "approve" },
 };
 
-export const LOG_ROLE_LABEL: Partial<Record<Role, string>> = ROLE_LABEL;
-
 // "Origin" untuk revisi/reject-balik selalu pembuat aslinya - Admin atau Approval
 // Departemen/Divisi, siapapun yang menginput data ini pertama kali.
 export function isEditableByOrigin(item: Pengiriman, me: Me): boolean {
@@ -201,7 +199,7 @@ export function isGaActionable(item: Pengiriman): boolean {
 
 // Admin/Approval GA's typo-correction tool - mirrors the backend's
 // PengirimanController.IsGaKoreksiable.
-export function isPengirimanGaKoreksiable(item: Pengiriman): boolean {
+function isPengirimanGaKoreksiable(item: Pengiriman): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
@@ -268,7 +266,7 @@ export const INVOICE_LOG_ACTION_META: Record<string, { label: string; type: "neu
 // Roles that can create/own a Room Booking (as opposed to just approving one) - mirrors the
 // backend's OriginRoles in BookingRuangController.cs. Kept as one shared list instead of being
 // inlined at every call site so the two never drift apart when a role is added or changed.
-export const BOOKING_ORIGIN_ROLES: Role[] = [
+const BOOKING_ORIGIN_ROLES: Role[] = [
   "ADMIN_DEPARTEMEN",
   "APPROVAL_DEPARTEMEN",
   "ADMIN_DIVISI",
@@ -303,7 +301,7 @@ export const BOOKING_REJECTED_STATUSES: BookingStatus[] = ["REJECTED_L1", "REJEC
 // Statuses a booking can be cancelled from - anywhere still on-approval through already-Approved,
 // but not DRAFT (that's Delete's job) and not already a dead end. Mirrors the backend's
 // BookingRuangController/BookingKendaraanController.IsCancellableStatus exactly.
-export const BOOKING_CANCELLABLE_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
+const BOOKING_CANCELLABLE_STATUSES: BookingStatus[] = ["SUBMITTED", "APPROVED_L1", "APPROVED_GA", "APPROVED_GA_APPROVAL"];
 
 // Room/Vehicle Booking's Tanggal/JamMulai come back as plain WIB wall-clock values (never UTC,
 // see BookingPdfService's own note on this) - so "now" here is just the browser's local clock,
@@ -357,10 +355,6 @@ export function isBookingDeletableByOrigin(item: BookingRuang, me: Me): boolean 
 // Admin/Approval GA's separate editing right: once a booking reaches the GA approval workflow,
 // they can move its room/date/time to resolve a scheduling conflict or update details.
 // It is NOT available while the booking is still at DRAFT or SUBMITTED (Approval Divisi).
-export function isBookingGaReschedulable(item: BookingRuang): boolean {
-  return item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
-}
-
 // Role + status together: whether the "Updates" row-menu item should open the reschedule form for
 // this account on this item. Admin GA can update once it reaches them (APPROVED_L1 or APPROVED_GA),
 // while Approval GA can update once it reaches their approval stage (APPROVED_GA).
@@ -502,7 +496,7 @@ export function isAtkKpuActionable(item: PermintaanAtk): boolean {
 // stay the origin creator's own. Also reachable once rejected by Approval GA or Mitra (both only
 // happen after SumberPembelian was already picked, so it can still be fixed here). Mirrors
 // PermintaanAtkController.IsGaUpdatable.
-export function isAtkGaUpdatable(item: PermintaanAtk): boolean {
+function isAtkGaUpdatable(item: PermintaanAtk): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA"
     || item.status === "REJECTED_GA_APPROVAL" || item.status === "REJECTED_KPU";
 }
@@ -557,7 +551,7 @@ export function isSaranaGaActionable(item: PerbaikanSarana): boolean {
 // not rejected), they can fix a typo in the reporter's Nama/No. Telepon Pelapor, Lokasi, or
 // Catatan - Kategori/DeskripsiKerusakan/FotoKerusakan stay the origin creator's own. Mirrors
 // PerbaikanSaranaController.IsGaKoreksiable.
-export function isSaranaGaKoreksiable(item: PerbaikanSarana): boolean {
+function isSaranaGaKoreksiable(item: PerbaikanSarana): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
@@ -611,7 +605,7 @@ export function isArsipEditableByOrigin(item: PermintaanArsip, me: Me): boolean 
 
 // Admin/Approval GA's typo-correction tool - mirrors the backend's
 // PermintaanArsipController.IsGaKoreksiable.
-export function isArsipGaKoreksiable(item: PermintaanArsip): boolean {
+function isArsipGaKoreksiable(item: PermintaanArsip): boolean {
   return item.status === "DRAFT" || item.status === "SUBMITTED" || item.status === "APPROVED_L1" || item.status === "APPROVED_GA";
 }
 
@@ -655,7 +649,7 @@ export const CONTACT_PERSONS: ContactPerson[] = [
 
 // --- Profile hero banner backgrounds (halaman /profile) ---
 // Keys must match AllowedCoverPresets in the backend's ProfileController.
-export interface CoverPreset {
+interface CoverPreset {
   key: string;
   label: string;
   gradient: string;

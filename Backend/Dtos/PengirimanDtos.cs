@@ -98,13 +98,11 @@ public class PengirimanOut
     public int? ApprovedByL1 { get; set; }
     public int? ApprovedByGa { get; set; }
     public int? ApprovedByApprovalGa { get; set; }
-    public int? ApprovedByKpu { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? ApprovedL1At { get; set; }
     public DateTime? ApprovedGaAt { get; set; }
     public DateTime? ApprovedApprovalGaAt { get; set; }
-    public DateTime? ApprovedKpuAt { get; set; }
     public int UnreadChatCount { get; set; }
     public bool HasUnreadMention { get; set; }
 
@@ -140,13 +138,11 @@ public class PengirimanOut
         ApprovedByL1 = p.ApprovedByL1,
         ApprovedByGa = p.ApprovedByGa,
         ApprovedByApprovalGa = p.ApprovedByApprovalGa,
-        ApprovedByKpu = p.ApprovedByKpu,
         CreatedAt = p.CreatedAt,
         UpdatedAt = p.UpdatedAt,
         ApprovedL1At = p.ApprovedL1At,
         ApprovedGaAt = p.ApprovedGaAt,
         ApprovedApprovalGaAt = p.ApprovedApprovalGaAt,
-        ApprovedKpuAt = p.ApprovedKpuAt,
     };
 }
 

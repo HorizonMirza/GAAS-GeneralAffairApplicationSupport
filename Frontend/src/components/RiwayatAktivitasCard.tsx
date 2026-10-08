@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import {
-  LOG_ROLE_LABEL,
   RIWAYAT_ACTION_FILTER_LABEL,
   RIWAYAT_ACTION_OPTIONS,
   RIWAYAT_MODUL_HREF,
@@ -329,7 +328,7 @@ export default function RiwayatAktivitasCard() {
                       <span className={`badge ${BADGE_CLASS[meta.type]}`}>{actionTitle(row)}</span>
                     </td>
                     <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{row.actorNama || "-"}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{row.actorRole ? LOG_ROLE_LABEL[row.actorRole as Role] || row.actorRole : "-"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{row.actorRole ? ROLE_LABEL[row.actorRole as Role] || row.actorRole : "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDirektorat || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDivisi || "-"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>{row.actorDepartemen || "-"}</td>

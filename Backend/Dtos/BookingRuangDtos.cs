@@ -169,8 +169,6 @@ public class BulkRescheduleRequest
 public class BulkRescheduleItemResult
 {
     public int Id { get; set; }
-    public DateOnly TanggalLama { get; set; }
-    public DateOnly? TanggalBaru { get; set; }
     public bool Success { get; set; }
     public string? Detail { get; set; }
 }

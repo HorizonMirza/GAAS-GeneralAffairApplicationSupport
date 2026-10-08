@@ -18,7 +18,7 @@ export interface NavItem {
   isSeparator?: boolean;
 }
 
-export interface UserProfile {
+interface UserProfile {
   name: string;
   subtitle: string;
   avatarUrl?: string;
