@@ -6869,6 +6869,11 @@ table.data-table {
     width: 0 !important;
     height: 0 !important;
   }
+
+  [data-radix-scroll-area-scrollbar],
+  [data-radix-scroll-area-viewport] ~ [data-orientation] {
+    display: none !important;
+  }
 }
 
 @media (max-width: 360px) {
@@ -6892,6 +6897,21 @@ table.data-table {
 }
 
 @media (min-width: 481px) and (max-width: 860px) {
+  html,
+  body,
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
   .topbar {
     min-height: 64px;
     padding: 12px 16px;
@@ -6954,6 +6974,16 @@ table.data-table {
 
   .photo-drop-uploader:has(.item-row-list) {
     padding: 14px;
+  }
+
+  .edit-profile-dialog .photo-action-menu {
+    left: 0;
+    transform: none;
+  }
+
+  .transactions-page-toolbar .filter-picker-panel.filter-picker-panel-up {
+    top: calc(100% + 6px);
+    bottom: auto;
   }
 
   .item-row {
