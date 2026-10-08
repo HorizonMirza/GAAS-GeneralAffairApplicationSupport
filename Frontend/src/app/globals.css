@@ -6437,6 +6437,20 @@ table.data-table {
 }
 
 @media (max-width: 640px) {
+  .superadmin-subtabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .superadmin-subtab-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 6px;
+  }
+
   .transactions-page-toolbar,
   .invoices-page-toolbar {
     display: grid;
@@ -6483,6 +6497,10 @@ table.data-table {
     min-height: 20px;
     color: var(--text-strong) !important;
     -webkit-text-fill-color: var(--text-strong) !important;
+  }
+
+  .transactions-page-toolbar > .superadmin-users-filter {
+    grid-column: 1 / -1;
   }
 
   .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-panel {

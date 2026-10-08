@@ -2248,9 +2248,23 @@
   }
 
   .progressLegend {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 7px;
+    padding: 10px 10px 0;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: 4px;
+    font-size: 0.58rem;
+  }
+
+  .progressLegend span {
+    min-width: 0;
+    gap: 3px;
+    white-space: nowrap;
+  }
+
+  .progressLegend i {
+    width: 6px;
+    height: 6px;
   }
 
 }

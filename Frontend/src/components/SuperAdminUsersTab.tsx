@@ -456,7 +456,7 @@ export default function SuperAdminUsersTab({ orgStructure }: { orgStructure: Org
             />
           </div>
 
-          <div className="filter-dropdown-wrap" ref={filterWrapRef}>
+          <div className="filter-dropdown-wrap superadmin-users-filter" ref={filterWrapRef}>
             <label className="filter-dropdown-label">Filter Lainnya</label>
             <button
               type="button"
