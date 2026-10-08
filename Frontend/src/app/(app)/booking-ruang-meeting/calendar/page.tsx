@@ -326,7 +326,7 @@ function BookingCalendarPageInner() {
               </div>
               <div className="calendar-topbar-room">{view === "avail" ? "Ketersediaan Ruang" : selectedRoom}</div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="calendar-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="calendar-view-toggle">
                 {(["day", "week", "month"] as CalendarViewMode[]).map((v) => (
                   <button

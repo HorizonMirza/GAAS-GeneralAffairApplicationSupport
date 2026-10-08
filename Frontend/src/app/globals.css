@@ -6477,6 +6477,23 @@ table.data-table {
     order: 3;
   }
 
+  .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-label {
+    display: block !important;
+    visibility: visible;
+    min-height: 20px;
+    color: var(--text-strong) !important;
+    -webkit-text-fill-color: var(--text-strong) !important;
+  }
+
+  .transactions-page-toolbar > .field .filter-picker-trigger,
+  .transactions-page-toolbar > .filter-dropdown-wrap > .filter-dropdown-toggle {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 38px !important;
+    height: 38px;
+    box-sizing: border-box;
+  }
+
   .invoices-page-toolbar > .field:not(.toolbar-search-field) {
     grid-column: 1 / -1;
     width: 100% !important;
@@ -6503,6 +6520,7 @@ table.data-table {
     align-items: end;
     width: 100%;
     gap: 10px;
+    margin-bottom: 12px;
     text-align: left;
   }
 
@@ -6579,14 +6597,16 @@ table.data-table {
   }
 
   .calendar-sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
   .calendar-sidebar-create-btn,
+  .calendar-sidebar-resource-field,
+  .calendar-sidebar-date-field,
   .calendar-sidebar-search-field,
   .calendar-sidebar > .mini-calendar {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 
   .calendar-sidebar-resource-field,
@@ -6594,5 +6614,93 @@ table.data-table {
   .calendar-sidebar-search-field {
     width: 100%;
     min-width: 0;
+  }
+
+  .calendar-sidebar-date-field .filter-picker-panel {
+    left: 50%;
+    right: auto;
+    width: min(300px, calc(100vw - 56px));
+    transform: translateX(-50%);
+  }
+
+  .calendar-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .calendar-topbar-left {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .calendar-topbar-room {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 2px 0 0;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calendar-topbar-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100%;
+  }
+
+  .calendar-topbar-actions .calendar-view-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .calendar-topbar-actions .calendar-view-toggle:last-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-topbar-actions .calendar-view-btn {
+    min-width: 0;
+    min-height: 38px;
+    padding: 7px 6px;
+    white-space: nowrap;
+  }
+
+  .calendar-main .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+  }
+
+  .calendar-main .schedule-table {
+    border: 0;
+  }
+
+  .page-body {
+    padding-bottom: max(48px, calc(env(safe-area-inset-bottom) + 32px));
+  }
+
+  html,
+  body,
+  .main-content,
+  .page-body,
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 }
