@@ -1940,8 +1940,11 @@
 
 @media (max-width: 560px) {
   .moduleTabs button {
-    min-width: 116px;
-    flex-basis: 116px;
+    width: max-content;
+    min-width: max-content;
+    flex: 0 0 auto;
+    padding-right: 12px;
+    padding-left: 12px;
   }
 
   .moduleGrid,
@@ -1984,10 +1987,14 @@
   .panelHeader {
     height: auto;
     min-height: 68px;
+    align-items: flex-start;
     flex-direction: column;
+    text-align: left;
   }
 
   .chartLegend {
+    align-self: stretch;
+    justify-content: flex-start;
     flex-wrap: wrap;
     gap: 5px 9px;
     font-size: 0.58rem;
@@ -2036,7 +2043,9 @@
   .bar {
     width: clamp(4px, 28%, 8px);
     border-radius: 3px 3px 1px 1px;
-    pointer-events: none;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
   }
 
   .bar:hover,
@@ -2051,7 +2060,39 @@
   }
 
   .barTooltip {
-    display: none;
+    width: 110px;
+    min-width: 0;
+    padding: 6px 7px;
+    display: block;
+    font-size: 0.58rem;
+    line-height: 1.2;
+    transform: translate(-50%, 4px);
+    white-space: normal;
+  }
+
+  .barTooltip strong {
+    font-size: 0.6rem;
+  }
+
+  .bar:hover .barTooltip,
+  .bar:focus .barTooltip {
+    transform: translate(-50%, 0);
+  }
+
+  .barGroup:first-child .barTooltip {
+    left: calc(50% + 20px);
+  }
+
+  .barGroup:first-child .barTooltip::after {
+    left: calc(50% - 20px);
+  }
+
+  .barGroup:last-child .barTooltip {
+    left: calc(50% - 20px);
+  }
+
+  .barGroup:last-child .barTooltip::after {
+    left: calc(50% + 20px);
   }
 
   .barGroup > strong {
@@ -2218,8 +2259,9 @@
   }
 
   .moduleTabs button {
-    min-width: 108px;
-    flex-basis: 108px;
+    width: max-content;
+    min-width: max-content;
+    flex-basis: auto;
     padding: 0 12px;
     font-size: 0.8rem;
   }

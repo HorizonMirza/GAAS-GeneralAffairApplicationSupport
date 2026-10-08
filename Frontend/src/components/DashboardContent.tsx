@@ -1159,7 +1159,15 @@ export default function DashboardContent({ me }: { me: Me }) {
                   <div className={styles.barGroup} key={module.key}>
                     <div className={styles.bars}>
                       {values.map((item) => (
-                        <span key={item.key} className={`${styles.bar} ${item.className}`} style={{ height: item.value > 0 ? `${Math.max(7, (item.value / maxBarValue) * 100)}%` : 0 }} tabIndex={item.value > 0 ? 0 : -1} aria-label={`${module.label}, ${item.label}: ${item.value.toLocaleString("id-ID")}`}>
+                        <span
+                          key={item.key}
+                          className={`${styles.bar} ${item.className}`}
+                          style={{ height: item.value > 0 ? `${Math.max(7, (item.value / maxBarValue) * 100)}%` : 0 }}
+                          role={item.value > 0 ? "button" : undefined}
+                          tabIndex={item.value > 0 ? 0 : -1}
+                          aria-label={`${module.label}, ${item.label}: ${item.value.toLocaleString("id-ID")}`}
+                          onClick={(event) => event.currentTarget.focus()}
+                        >
                           {item.value > 0 && <small>{item.value.toLocaleString("id-ID")}</small>}
                           {item.value > 0 && <span className={styles.barTooltip}>{module.label} · <strong>{item.label}: {item.value.toLocaleString("id-ID")}</strong></span>}
                         </span>

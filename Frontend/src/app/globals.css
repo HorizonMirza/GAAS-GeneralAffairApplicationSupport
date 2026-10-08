@@ -7323,4 +7323,9 @@ table.data-table {
   .edit-profile-dialog .edit-profile-cover {
     height: 96px;
   }
+
+  .edit-profile-dialog .photo-action-menu {
+    left: 0;
+    transform: none;
+  }
 }
