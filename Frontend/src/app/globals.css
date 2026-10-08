@@ -6906,6 +6906,10 @@ table.data-table {
     border-radius: 14px;
   }
 
+  .card.profile-hero-card {
+    padding: 0;
+  }
+
   .stat-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -6920,7 +6924,18 @@ table.data-table {
 
   .stat-grid > .stat-tile:nth-child(4):nth-last-child(2),
   .stat-grid > .stat-tile:nth-child(5):last-child {
+    grid-column: auto;
+  }
+
+  .stat-grid > .stat-tile:nth-child(1):nth-last-child(5),
+  .stat-grid > .stat-tile:nth-child(2):nth-last-child(4),
+  .stat-grid > .stat-tile:nth-child(3):nth-last-child(3),
+  .stat-grid > .stat-tile:nth-child(4):nth-last-child(2) {
     grid-column: span 3;
+  }
+
+  .stat-grid > .stat-tile:nth-child(5):last-child {
+    grid-column: 1 / -1;
   }
 
   .superadmin-subtabs {
@@ -6958,6 +6973,12 @@ table.data-table {
   .app-dialog-content {
     width: min(560px, calc(100vw - 64px)) !important;
     padding: 20px !important;
+  }
+
+  .chat-modal-header-bar {
+    margin: -20px -20px 14px;
+    padding: 16px 20px 12px;
+    border-radius: 14px 14px 0 0;
   }
 
   .account-dropdown,

@@ -2271,9 +2271,20 @@
 
 @media (min-width: 481px) and (max-width: 860px) {
   .headerActions {
-    width: min(100%, 458px);
+    width: min(458px, calc(100vw - 32px));
+    max-width: 100%;
     align-self: flex-end;
+    margin-left: auto;
+    box-sizing: border-box;
     grid-template-columns: 42px repeat(2, minmax(0, 200px));
+    justify-content: end;
+  }
+
+  .filterPanel {
+    right: 0;
+    left: auto;
+    width: min(270px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
   }
 
   .moduleTabs {
@@ -2323,7 +2334,18 @@
 
   .workflowModuleGrid > .moduleCard:nth-child(4):nth-last-child(2),
   .workflowModuleGrid > .moduleCard:nth-child(5):last-child {
+    grid-column: auto;
+  }
+
+  .workflowModuleGrid > .moduleCard:nth-child(1):nth-last-child(5),
+  .workflowModuleGrid > .moduleCard:nth-child(2):nth-last-child(4),
+  .workflowModuleGrid > .moduleCard:nth-child(3):nth-last-child(3),
+  .workflowModuleGrid > .moduleCard:nth-child(4):nth-last-child(2) {
     grid-column: span 3;
+  }
+
+  .workflowModuleGrid > .moduleCard:nth-child(5):last-child {
+    grid-column: 1 / -1;
   }
 
   .moduleCard,
