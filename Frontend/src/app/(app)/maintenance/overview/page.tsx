@@ -302,7 +302,6 @@ export default function MaintenanceOverviewPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.lokasi} - ${chatItem.nomorPerbaikan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={load}

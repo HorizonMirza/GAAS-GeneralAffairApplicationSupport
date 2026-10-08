@@ -59,21 +59,6 @@ function roomPhotoUrl(roomName: string): string {
   return `/assets/rooms/${slug}.png`;
 }
 
-// Every room only has the one placeholder photo above so far - pads the info modal's slideshow
-// out to a handful of slides by borrowing a few other rooms' placeholders, until real per-room
-// photos exist (see roomPhotoUrl's comment on how those get swapped in later).
-const DEMO_ROOM_PHOTOS = [
-  "/assets/rooms/ruang-eksternal-receptionist.png",
-  "/assets/rooms/ruang-eksternal-besar.png",
-  "/assets/rooms/ruang-eksternal-kecil.png",
-  "/assets/rooms/ruang-golf.png",
-  "/assets/rooms/ruang-open-space.png",
-];
-function roomPhotoUrls(roomName: string): string[] {
-  const own = roomPhotoUrl(roomName);
-  return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
-}
-
 function getRealRoomCurrentSlot(
   roomName: string,
   todayEntries: BookingRuang[],
@@ -466,7 +451,7 @@ export default function BookingOverviewPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span className="badge-stack">
-                    <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
+                    <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                     {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                   </span>
                   <button
@@ -488,7 +473,6 @@ export default function BookingOverviewPage() {
               <RoomBookingStepper
                 status={item.status}
                 departemen={item.departemen}
-                rejectTarget={item.rejectTarget}
                 createdByRole={item.createdByRole}
                 cancelledByRole={item.cancelledByRole}
                 approvedByL1={item.approvedByL1}
@@ -580,17 +564,7 @@ export default function BookingOverviewPage() {
         kapasitas={infoRoom?.kapasitas ?? null}
         extraDetails={infoRoom ? [{ label: "Lantai", value: infoRoom.lantai ?? "-" }] : []}
         facilities={infoRoom ? infoRoom.fasilitas ?? [] : []}
-        photoUrls={infoRoom ? roomPhotoUrls(infoRoom.nama) : []}
-        availability={infoRoom ? (closedToday ? "closed" : isRoomFullyBookedToday(infoRoom.nama, todayEntries) ? "full" : "available") : "available"}
-        availLabel={
-          infoRoom
-            ? closedToday
-              ? "Close"
-              : isRoomFullyBookedToday(infoRoom.nama, todayEntries)
-              ? "Full"
-              : "Available"
-            : ""
-        }
+        photoUrl={infoRoom ? roomPhotoUrl(infoRoom.nama) : null}
         freeSlotsToday={infoRoom && !closedToday ? roomFreeSlotsToday(infoRoom.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         closedLabel={closedToday ? (isWeekendToday ? "Tutup (akhir pekan)" : "Tutup (di luar jam operasional)") : undefined}
         fullyOpenLabel={

@@ -86,22 +86,6 @@ function vehiclePhotoUrl(vehicleName: string): string {
   return `/assets/vehicles/${slug}.png`;
 }
 
-// Every vehicle only has the one placeholder photo above so far - pads the info modal's
-// slideshow out to a handful of slides by borrowing a few other vehicles' placeholders, until
-// real per-vehicle photos exist. Same convention as roomPhotoUrls in the Room Booking overview.
-const DEMO_VEHICLE_PHOTOS = [
-  "/assets/vehicles/toyota-avanza-1.png",
-  "/assets/vehicles/toyota-innova.png",
-  "/assets/vehicles/honda-hr-v.png",
-  "/assets/vehicles/mitsubishi-xpander.png",
-  "/assets/vehicles/toyota-fortuner.png",
-];
-function vehiclePhotoUrls(vehicleName: string): string[] {
-  const own = vehiclePhotoUrl(vehicleName);
-  return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
-}
-
-
 // Free (bookable) hours left today, one entry per whole hour within operating hours - same rule
 // as Room Booking's roomFreeSlotsToday.
 function vehicleFreeSlotsToday(vehicleName: string, todayEntries: BookingKendaraan[]): [number, number][] {
@@ -442,7 +426,7 @@ export default function VehicleBookingOverviewPage() {
                   })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
+                  <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                   <button
                     type="button"
                     className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -565,25 +549,7 @@ export default function VehicleBookingOverviewPage() {
               ]
             : []
         }
-        photoUrls={infoVehicle ? vehiclePhotoUrls(infoVehicle.nama) : []}
-        availability={
-          infoVehicle
-            ? isPastClosingToday
-              ? "closed"
-              : isVehicleFullyBookedToday(infoVehicle.nama, todayEntries)
-              ? "full"
-              : "available"
-            : "available"
-        }
-        availLabel={
-          infoVehicle
-            ? isPastClosingToday
-              ? "Close"
-              : isVehicleFullyBookedToday(infoVehicle.nama, todayEntries)
-              ? "Full"
-              : "Available"
-            : ""
-        }
+        photoUrl={infoVehicle ? vehiclePhotoUrl(infoVehicle.nama) : null}
         freeSlotsToday={infoVehicle && !isPastClosingToday ? vehicleFreeSlotsToday(infoVehicle.nama, todayEntries).map(([s, e]) => `${minutesToHHMM(s)}–${minutesToHHMM(e)}`) : []}
         closedLabel={isPastClosingToday ? "Tutup (di luar jam operasional)" : undefined}
         fullyOpenLabel={

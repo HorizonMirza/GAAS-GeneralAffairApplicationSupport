@@ -293,7 +293,6 @@ export default function OfficeSuppliesOverviewPage() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.keperluan} - ${chatItem.nomorPermintaan || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={load}

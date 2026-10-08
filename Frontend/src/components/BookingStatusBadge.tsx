@@ -3,7 +3,6 @@ import type { BookingRuang, BookingStatus } from "@/lib/types";
 
 interface Props {
   status: BookingStatus;
-  rejectTarget?: BookingRuang["rejectTarget"];
   departemen?: BookingRuang["departemen"];
   createdByRole?: BookingRuang["createdByRole"];
   cancelledByName?: BookingRuang["cancelledByName"];
@@ -19,8 +18,6 @@ interface Props {
   // revise and resubmit, so it gets the same "Waiting: X" second badge as Pengiriman's own
   // StatusBadge, just without a RejectTarget branch (there's only ever one destination).
   revisable?: boolean;
-  isRoom?: boolean;
-  isKendaraan?: boolean;
 }
 
 export default function BookingStatusBadge({ status, departemen = null, createdByRole = "ADMIN_DEPARTEMEN", cancelledByName = null, cancelledByRole = null, revisable = false }: Props) {

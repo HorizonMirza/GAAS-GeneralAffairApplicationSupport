@@ -517,7 +517,6 @@ function ArsipTransaksiPageInner() {
           itemId={chatItem?.id ?? null}
           itemLabel={chatItem ? `${chatItem.namaArsip} - ${chatItem.nomorArsip || "-"}` : ""}
           departemen={chatItem?.departemen ?? null}
-          createdByRole={chatItem?.createdByRole ?? null}
           me={me}
           onClose={() => setChatItem(null)}
           onRead={loadTable}

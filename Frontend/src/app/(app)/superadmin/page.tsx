@@ -195,32 +195,10 @@ function roomPhotoUrl(roomName: string): string {
   const slug = roomName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return `/assets/rooms/${slug}.png`;
 }
-const DEMO_ROOM_PHOTOS = [
-  "/assets/rooms/ruang-eksternal-receptionist.png",
-  "/assets/rooms/ruang-eksternal-besar.png",
-  "/assets/rooms/ruang-eksternal-kecil.png",
-  "/assets/rooms/ruang-golf.png",
-  "/assets/rooms/ruang-open-space.png",
-];
-function roomPhotoUrls(roomName: string): string[] {
-  const own = roomPhotoUrl(roomName);
-  return [own, ...DEMO_ROOM_PHOTOS.filter((u) => u !== own)].slice(0, 5);
-}
 
 function vehiclePhotoUrl(vehicleName: string): string {
   const slug = vehicleName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return `/assets/vehicles/${slug}.png`;
-}
-const DEMO_VEHICLE_PHOTOS = [
-  "/assets/vehicles/toyota-avanza-1.png",
-  "/assets/vehicles/toyota-innova.png",
-  "/assets/vehicles/honda-hr-v.png",
-  "/assets/vehicles/mitsubishi-xpander.png",
-  "/assets/vehicles/toyota-fortuner.png",
-];
-function vehiclePhotoUrls(vehicleName: string): string[] {
-  const own = vehiclePhotoUrl(vehicleName);
-  return [own, ...DEMO_VEHICLE_PHOTOS.filter((u) => u !== own)].slice(0, 5);
 }
 
 function roomFreeSlotsToday(roomName: string, todayEntries: BookingRuang[]): [number, number][] {
@@ -2668,7 +2646,6 @@ function SuperAdminPageInner() {
                   itemId={ekspedisiOvChatItem?.id ?? null}
                   itemLabel={ekspedisiOvChatItem ? `${ekspedisiOvChatItem.tujuanPenerimaan} - ${ekspedisiOvChatItem.nomorTransmittal}` : ""}
                   departemen={ekspedisiOvChatItem?.departemen ?? null}
-                  createdByRole={ekspedisiOvChatItem?.createdByRole ?? null}
                   me={me}
                   onClose={() => setEkspedisiOvChatItem(null)}
                   onRead={() => loadEkspedisiOverview({ silent: true })}
@@ -2908,7 +2885,6 @@ function SuperAdminPageInner() {
             itemId={ekspedisiChatItem?.id ?? null}
             itemLabel={ekspedisiChatItem ? `${ekspedisiChatItem.tujuanPenerimaan} - ${ekspedisiChatItem.nomorTransmittal}` : ""}
             departemen={ekspedisiChatItem?.departemen ?? null}
-            createdByRole={ekspedisiChatItem?.createdByRole ?? null}
             me={me}
             onClose={() => setEkspedisiChatItem(null)}
             onRead={() => loadTable({ silent: true })}
@@ -3224,7 +3200,7 @@ function SuperAdminPageInner() {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                             {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                           </span>
                           <button
@@ -3246,7 +3222,6 @@ function SuperAdminPageInner() {
                       <RoomBookingStepper
                         status={item.status}
                         departemen={item.departemen}
-                        rejectTarget={item.rejectTarget}
                         createdByRole={item.createdByRole}
                         cancelledByRole={item.cancelledByRole}
                         approvedByL1={item.approvedByL1}
@@ -3338,15 +3313,7 @@ function SuperAdminPageInner() {
                 kapasitas={bookingOvInfoRoom?.kapasitas ?? null}
                 extraDetails={bookingOvInfoRoom ? [{ label: "Lantai", value: bookingOvInfoRoom.lantai ?? "-" }] : []}
                 facilities={bookingOvInfoRoom ? bookingOvInfoRoom.fasilitas ?? [] : []}
-                photoUrls={bookingOvInfoRoom ? roomPhotoUrls(bookingOvInfoRoom.nama) : []}
-                availability={bookingOvInfoRoom ? (ovNowMinutesLocal() >= OV_CLOSE_MIN || isWeekend(todayLocalDate()) ? "closed" : isRoomFullyBookedToday(bookingOvInfoRoom.nama, bookingOvTodayEntries) ? "full" : "available") : "available"}
-                availLabel={
-                  bookingOvInfoRoom
-                    ? (isWeekend(todayLocalDate()) || ovNowMinutesLocal() >= OV_CLOSE_MIN)
-                      ? "Close"
-                      : isRoomFullyBookedToday(bookingOvInfoRoom.nama, bookingOvTodayEntries) ? "Full" : "Available"
-                    : ""
-                }
+                photoUrl={bookingOvInfoRoom ? roomPhotoUrl(bookingOvInfoRoom.nama) : null}
                 freeSlotsToday={
                   bookingOvInfoRoom && ovNowMinutesLocal() < OV_CLOSE_MIN && !isWeekend(todayLocalDate())
                     ? roomFreeSlotsToday(bookingOvInfoRoom.nama, bookingOvTodayEntries).map(([s, e]) => `${ovMinutesToHHMM(s)}–${ovMinutesToHHMM(e)}`)
@@ -3574,7 +3541,7 @@ function SuperAdminPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} rejectTarget={item.rejectTarget} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isRoom />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                             {item.hasConflict && <span className="badge badge-rejected">Bentrok</span>}
                           </span>
                           <button
@@ -4153,7 +4120,7 @@ function SuperAdminPageInner() {
                           })()}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
+                          <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                           <button
                             type="button"
                             className={`card-icon-btn${item.unreadChatCount > 0 ? " card-chat-btn-unread" : ""}${item.hasUnreadMention ? " card-chat-btn-mentioned" : ""}`}
@@ -4276,21 +4243,7 @@ function SuperAdminPageInner() {
                       ]
                     : []
                 }
-                photoUrls={kendaraanOvInfoVehicle ? vehiclePhotoUrls(kendaraanOvInfoVehicle.nama) : []}
-                availability={
-                  kendaraanOvInfoVehicle
-                    ? ovNowMinutesLocal() >= OV_CLOSE_MIN
-                      ? "closed"
-                      : isVehicleFullyBookedToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries) ? "full" : "available"
-                    : "available"
-                }
-                availLabel={
-                  kendaraanOvInfoVehicle
-                    ? ovNowMinutesLocal() >= OV_CLOSE_MIN
-                      ? "Close"
-                      : isVehicleFullyBookedToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries) ? "Full" : "Available"
-                    : ""
-                }
+                photoUrl={kendaraanOvInfoVehicle ? vehiclePhotoUrl(kendaraanOvInfoVehicle.nama) : null}
                 freeSlotsToday={
                   kendaraanOvInfoVehicle && ovNowMinutesLocal() < OV_CLOSE_MIN
                     ? vehicleFreeSlotsToday(kendaraanOvInfoVehicle.nama, kendaraanOvTodayEntries).map(([s, e]) => `${ovMinutesToHHMM(s)}–${ovMinutesToHHMM(e)}`)
@@ -4509,7 +4462,7 @@ function SuperAdminPageInner() {
                       <td>
                         <div className="status-cell">
                           <span className="badge-stack">
-                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} isKendaraan />
+                            <BookingStatusBadge status={item.status} departemen={item.departemen} createdByRole={item.createdByRole} cancelledByName={item.cancelledByName} cancelledByRole={item.cancelledByRole} />
                           </span>
                           <button
                             type="button"
@@ -5170,7 +5123,6 @@ function SuperAdminPageInner() {
                   itemId={arsipOvChatItem?.id ?? null}
                   itemLabel={arsipOvChatItem ? `${arsipOvChatItem.namaArsip} - ${arsipOvChatItem.nomorArsip || "-"}` : ""}
                   departemen={arsipOvChatItem?.departemen ?? null}
-                  createdByRole={arsipOvChatItem?.createdByRole ?? null}
                   me={me}
                   onClose={() => setArsipOvChatItem(null)}
                   onRead={loadArsipOverview}
@@ -5419,7 +5371,6 @@ function SuperAdminPageInner() {
             itemId={arsipChatItem?.id ?? null}
             itemLabel={arsipChatItem ? `${arsipChatItem.namaArsip} - ${arsipChatItem.nomorArsip || "-"}` : ""}
             departemen={arsipChatItem?.departemen ?? null}
-            createdByRole={arsipChatItem?.createdByRole ?? null}
             me={me}
             onClose={() => setArsipChatItem(null)}
             onRead={() => loadArsip({ silent: true })}
@@ -5900,7 +5851,6 @@ function SuperAdminPageInner() {
                   itemId={atkOvChatItem?.id ?? null}
                   itemLabel={atkOvChatItem ? `${atkOvChatItem.keperluan} - ${atkOvChatItem.nomorPermintaan || "-"}` : ""}
                   departemen={atkOvChatItem?.departemen ?? null}
-                  createdByRole={atkOvChatItem?.createdByRole ?? null}
                   me={me}
                   onClose={() => setAtkOvChatItem(null)}
                   onRead={loadAtkOverview}
@@ -6154,7 +6104,6 @@ function SuperAdminPageInner() {
             itemId={atkChatItem?.id ?? null}
             itemLabel={atkChatItem ? `${atkChatItem.keperluan} - ${atkChatItem.nomorPermintaan || "-"}` : ""}
             departemen={atkChatItem?.departemen ?? null}
-            createdByRole={atkChatItem?.createdByRole ?? null}
             me={me}
             onClose={() => setAtkChatItem(null)}
             onRead={() => loadAtk({ silent: true })}
@@ -6530,7 +6479,6 @@ function SuperAdminPageInner() {
                   itemId={saranaOvChatItem?.id ?? null}
                   itemLabel={saranaOvChatItem ? `${saranaOvChatItem.lokasi} - ${saranaOvChatItem.nomorPerbaikan || "-"}` : ""}
                   departemen={saranaOvChatItem?.departemen ?? null}
-                  createdByRole={saranaOvChatItem?.createdByRole ?? null}
                   me={me}
                   onClose={() => setSaranaOvChatItem(null)}
                   onRead={loadSaranaOverview}
@@ -6776,7 +6724,6 @@ function SuperAdminPageInner() {
             itemId={saranaChatItem?.id ?? null}
             itemLabel={saranaChatItem ? `${saranaChatItem.lokasi} - ${saranaChatItem.nomorPerbaikan || "-"}` : ""}
             departemen={saranaChatItem?.departemen ?? null}
-            createdByRole={saranaChatItem?.createdByRole ?? null}
             me={me}
             onClose={() => setSaranaChatItem(null)}
             onRead={() => loadSarana({ silent: true })}

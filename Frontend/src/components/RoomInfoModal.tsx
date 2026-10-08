@@ -2,32 +2,20 @@
 
 import ModalOverlay from "./ModalOverlay";
 
-type RoomInfoAvailability = "available" | "full" | "closed";
-
 interface Props {
   open: boolean;
   nama: string | null;
   kapasitas: number | null;
-  // Demo facility chips shown below Kapasitas (e.g. "TV") - no real per-room facility data exists
-  // yet, so callers pass a fixed placeholder list until that's tracked for real.
   facilities?: string[];
-  // Real label/value rows shown below Kapasitas (e.g. Plat Nomor, Nama Supir for a vehicle) -
-  // unlike facilities, this is actual data, not a placeholder.
   extraDetails?: { label: string; value: string }[];
-  // Only the first URL is actually displayed (a single static photo, no slideshow) - callers may
-  // still pass extra padding URLs, they're just ignored.
-  photoUrls: string[];
-  availability: RoomInfoAvailability;
-  availLabel: string;
+  photoUrl: string | null;
   // Pre-formatted "HH:mm–HH:mm" ranges still open today, in order - e.g. ["07:00–09:00",
   // "11:00–18:00"]. Empty means nothing is free (fully booked, not "closed" - see closedLabel).
   freeSlotsToday: string[];
   // Shown instead of the free-slots list when the room isn't open at all today (e.g. weekend) -
   // undefined when it is.
   closedLabel?: string;
-  // Shown instead of the per-hour chip list when every operating hour today is still free -
-  // undefined otherwise. A wall of 11 identical-looking chips says nothing a one-line summary
-  // doesn't; the chips only earn their place once some hours are actually taken.
+  // Summary shown instead of individual free time ranges when supplied.
   fullyOpenLabel?: string;
   onClose: () => void;
   // Always routes to Calendar pre-filtered to this room/vehicle, never straight into the booking
@@ -36,8 +24,7 @@ interface Props {
   bookLabel?: string;
 }
 
-function RoomPhoto({ photoUrls }: { photoUrls: string[] }) {
-  const url = photoUrls[0];
+function RoomPhoto({ url }: { url: string | null }) {
   if (!url) return null;
 
   return (
@@ -50,16 +37,14 @@ function RoomPhoto({ photoUrls }: { photoUrls: string[] }) {
   );
 }
 
-// A lightweight stop between the Overview grid and the booking form - shows what the room/
-// vehicle actually is (photo slideshow, capacity, today's open hours) before committing to
-// "Booking", instead of the card linking straight into Calendar with no preview.
+// Shows room/vehicle details before opening its booking calendar.
 export default function RoomInfoModal({
   open,
   nama,
   kapasitas,
   facilities,
   extraDetails,
-  photoUrls,
+  photoUrl,
   freeSlotsToday,
   closedLabel,
   fullyOpenLabel,
@@ -75,7 +60,7 @@ export default function RoomInfoModal({
           <h3>{nama}</h3>
           <button type="button" className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        <RoomPhoto photoUrls={photoUrls} />
+        <RoomPhoto url={photoUrl} />
         {kapasitas != null && (
           <div className="room-info-row">
             <span className="text-secondary">Kapasitas</span>

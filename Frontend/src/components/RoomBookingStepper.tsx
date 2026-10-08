@@ -65,8 +65,6 @@ function reachedIdxFromApprovals(approvedByL1: number | null, approvedByGa: numb
   return 0;
 }
 
-// rejectTarget is accepted (callers still pass it) but no longer read - it no longer routes a
-// reject anywhere different, see BookingRuangController.RejectGaApproval.
 export default function RoomBookingStepper({
   status,
   departemen = null,
@@ -78,7 +76,6 @@ export default function RoomBookingStepper({
 }: {
   status: BookingStatus;
   departemen?: BookingRuang["departemen"];
-  rejectTarget?: BookingRuang["rejectTarget"];
   createdByRole?: Role;
   // Room Booking only - when set to Admin/Approval GA, a CANCELLED booking renders with the same
   // animated red step/connector a real reject gets (see BookingStatusBadge's matching "Rejected:

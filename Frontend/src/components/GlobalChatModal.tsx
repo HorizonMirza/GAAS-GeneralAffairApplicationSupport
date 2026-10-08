@@ -7,7 +7,6 @@ import { invoiceBulanLabel } from "@/lib/format";
 import { onOpenGlobalChat } from "@/lib/globalChat";
 import type { ChatKind } from "@/lib/chatHub";
 import { useAuth } from "@/lib/auth-context";
-import type { Role } from "@/lib/types";
 import ChatModal from "./ChatModal";
 import RoomBookingChatModal from "./RoomBookingChatModal";
 import VehicleBookingChatModal from "./VehicleBookingChatModal";
@@ -22,7 +21,6 @@ interface ResolvedChat {
   itemId: number;
   itemLabel: string;
   departemen: string | null;
-  createdByRole: Role | null;
 }
 
 // Mounted once from AppShell (alongside ChatNotificationListener) so a chat notification's click
@@ -45,7 +43,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.tujuanPenerimaan} - ${item.nomorTransmittal}`,
             departemen: item.departemen ?? null,
-            createdByRole: item.createdByRole,
           });
         } else if (kind === "booking") {
           const item = await api.getBooking(itemId);
@@ -54,7 +51,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.namaKegiatan} - ${bookingRoomsLabel(item)} - ${item.nomorPemesanan || "-"}`,
             departemen: item.departemen ?? null,
-            createdByRole: null,
           });
         } else if (kind === "kendaraan") {
           const item = await api.getKendaraanBooking(itemId);
@@ -63,7 +59,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.keperluan} - ${item.namaKendaraan} - ${item.nomorPemesanan || "-"}`,
             departemen: item.departemen ?? null,
-            createdByRole: null,
           });
         } else if (kind === "atk") {
           const item = await api.getAtk(itemId);
@@ -72,7 +67,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.keperluan} - ${item.nomorPermintaan || "-"}`,
             departemen: item.departemen ?? null,
-            createdByRole: item.createdByRole,
           });
         } else if (kind === "sarana") {
           const item = await api.getSarana(itemId);
@@ -81,7 +75,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.lokasi} - ${item.nomorPerbaikan || "-"}`,
             departemen: item.departemen ?? null,
-            createdByRole: item.createdByRole,
           });
         } else if (kind === "arsip") {
           const item = await api.getArsip(itemId);
@@ -90,7 +83,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `${item.namaArsip} - ${item.nomorArsip || "-"}`,
             departemen: item.departemen ?? null,
-            createdByRole: item.createdByRole,
           });
         } else if (kind === "invoice") {
           const item = await api.getInvoice(itemId);
@@ -99,7 +91,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `Invoice ${invoiceBulanLabel(item.bulan)} - ${item.nama}`,
             departemen: null,
-            createdByRole: null,
           });
         } else {
           const item = await api.getAtkInvoice(itemId);
@@ -108,7 +99,6 @@ export default function GlobalChatModal() {
             itemId,
             itemLabel: `Invoice ${invoiceBulanLabel(item.bulan)} - ${item.nama}`,
             departemen: null,
-            createdByRole: null,
           });
         }
       } catch {
@@ -132,17 +122,17 @@ export default function GlobalChatModal() {
 
   switch (resolved?.kind) {
     case "pengiriman":
-      return <ChatModal {...common} open createdByRole={resolved.createdByRole} />;
+      return <ChatModal {...common} open />;
     case "booking":
       return <RoomBookingChatModal {...common} open />;
     case "kendaraan":
       return <VehicleBookingChatModal {...common} open />;
     case "atk":
-      return <AtkChatModal {...common} open createdByRole={resolved.createdByRole} />;
+      return <AtkChatModal {...common} open />;
     case "sarana":
-      return <SaranaChatModal {...common} open createdByRole={resolved.createdByRole} />;
+      return <SaranaChatModal {...common} open />;
     case "arsip":
-      return <ArsipChatModal {...common} open createdByRole={resolved.createdByRole} />;
+      return <ArsipChatModal {...common} open />;
     case "invoice":
       return <InvoiceChatModal {...common} open />;
     case "atk-invoice":

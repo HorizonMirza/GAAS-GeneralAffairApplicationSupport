@@ -1905,17 +1905,6 @@ body.auth-ready .app-shell {
   color: #ffffff;
 }
 
-/* Backwards compatibility for vehicle cards */
-.room-card-icon {
-  height: 84px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-primary) center / cover no-repeat;
-  color: #fff;
-  flex-shrink: 0;
-}
-
 /* Card Body */
 .room-card-body-exact {
   padding: 5px 8px;
@@ -1977,21 +1966,6 @@ body.auth-ready .app-shell {
 /* ---------- Room/Vehicle info modal (Overview grid card -> here -> Booking form) ---------- */
 .room-info-modal { max-width: 420px; }
 
-.room-info-photo {
-  border-radius: 12px;
-  margin-bottom: 16px;
-  cursor: default;
-  padding: 0;
-  border-left-width: 1px;
-  border-left-color: var(--border-subtle);
-}
-
-.room-info-photo:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--border-subtle);
-}
-
 .room-info-photo-icon { height: 240px; flex-shrink: 0; background-size: cover; background-position: center; }
 
 .room-info-row {
@@ -2001,28 +1975,6 @@ body.auth-ready .app-shell {
   padding: 10px 0;
   border-top: 1px solid var(--border-subtle);
   font-size: 0.88rem;
-}
-
-.room-info-row-stack {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.room-info-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.room-info-slot-chip {
-  padding: 3px 9px;
-  border-radius: 6px;
-  background: var(--bg-surface-alt);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.76rem;
-  font-weight: 600;
 }
 
 /* That same min-0 floor lets each column shrink below the width its icon + arrow actually need,
