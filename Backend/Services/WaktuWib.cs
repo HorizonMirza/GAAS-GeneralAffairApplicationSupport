@@ -23,6 +23,4 @@ public static class WaktuWib
     // "2026-09-15 17:40" - the sortable form used in Excel/CSV export cells, where the column
     // header already says WIB.
     public static string Pendek(DateTime utc) => From(utc).ToString("yyyy-MM-dd HH:mm");
-
-    public static string Pendek(DateTime? utc) => utc.HasValue ? Pendek(utc.Value) : "-";
 }

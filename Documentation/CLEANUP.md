@@ -2,6 +2,9 @@
 
 Tanggal verifikasi: 9 Oktober 2026.
 
+Catatan: bagian awal mencatat cleanup pada commit `38aa497`. Hasil pemeriksaan
+terbaru ada pada bagian [Audit Ulang](#audit-ulang-setelah-38aa497) di bawah.
+
 ## Ringkasan
 
 Pembersihan dilakukan pada 22 file frontend. Tidak ada file/folder utuh atau
@@ -98,3 +101,84 @@ Item yang masih ambigu tidak dihapus hanya karena namanya terlihat lama/demo.
   modal muat secara horizontal, dan tidak ada exception JavaScript.
 - Frontend `http://localhost:3000` dan backend `http://localhost:8000/api/health`:
   HTTP 200.
+
+## Audit Ulang Setelah 38aa497
+
+Audit ini dimulai dari working tree bersih pada `main`, commit `38aa497`.
+Tidak ada perubahan pengguna yang ditimpa. Hasil audit ulang tidak dihitung
+sebagai penghapusan ulang terhadap item pada bagian sebelumnya.
+
+### Penghapusan Baru
+
+| File | Item yang dihapus | Bukti dan alasan |
+|---|---|---|
+| `Backend/Services/WaktuWib.cs` | Overload `Pendek(DateTime? utc)` | Analisis simbol Roslyn terhadap kode backend dan tes menemukan nol pemanggil. Empat controller ekspor memakai overload `Pendek(DateTime utc)`, yang tetap dipertahankan. |
+| `Frontend/src/app/globals.css` | Aturan `.overview-status-filter-field select`, komentar terkait, dan gambar panah SVG inline milik aturan itu | Seluruh 12 pemakai wrapper filter status memakai `SearchableSelect`, yang merender tombol, bukan elemen `select`. |
+| `Frontend/src/app/globals.css` | Cabang selector responsif `.overview-status-filter-field select` dan `.overview-status-filter-field .filter-picker-trigger` | Tidak ada elemen yang cocok pada seluruh 12 pemakai, baik dropdown tertutup maupun terbuka. Aturan lebar untuk `.searchable-select-trigger` tetap dipertahankan. |
+
+Total kode sumber berkurang bersih 20 baris. Tidak ada file/folder utuh, aset
+file, paket npm, atau paket NuGet yang dihapus. Tidak ada perubahan lockfile.
+
+File yang diubah pada audit ulang ini:
+
+- `Backend/Services/WaktuWib.cs`
+- `Frontend/src/app/globals.css`
+- `Documentation/CLEANUP.md` (laporan ini)
+
+### Cakupan Audit
+
+- Graf import, export, API wrapper, dan parameter komponen pada 137 file
+  TypeScript/TSX. Tidak ditemukan file sumber yang terputus dari entrypoint.
+- Analisis simbol C# pada 142 berkas, termasuk tes dan satu berkas global using
+  hasil build, dengan nol error resolusi/kompilasi. Kandidat hasil pencarian
+  dipilah berdasarkan atribut route, override framework, dan pemanggilan dinamis.
+- Selector kelas CSS diperiksa terhadap literal/identifier kode, bukan hanya
+  teks komentar. Selector filter lama diperiksa lebih lanjut terhadap struktur
+  komponen dan DOM browser.
+- Manifest dependensi, import paket, konfigurasi Next/PostCSS/Tailwind, proyek
+  .NET, CI, Docker, Nginx, seed, dan cara pembentukan URL aset diperiksa.
+- Skrip audit, log, screenshot, dan hasil ekspor pengujian disimpan di luar
+  repository, bukan ditambahkan sebagai kode aplikasi atau file demo baru.
+
+### Item Yang Dipertahankan
+
+| Item | Alasan |
+|---|---|
+| `ApproveKpuRequest.Total` | Tidak dibaca controller secara langsung, tetapi masih dikirim frontend dalam payload approval/koreksi harga dan termasuk kontrak API. Tidak dihapus tanpa perubahan kontrak yang disengaja. |
+| Tipe frontend yang hanya dipakai lokal | Definisi tipe masih dipakai; ketiadaan import eksternal bukan alasan menghapus definisinya. |
+| Action controller, metode SignalR, override EF/authentication | Dipanggil lewat routing, nama metode string, atau lifecycle framework, bukan selalu melalui panggilan C# langsung. |
+| CSS badge/log dinamis dan token Tailwind | Kelas dibentuk dari status; token dipakai oleh utilitas Tailwind yang dihasilkan saat build. |
+| 20 foto ruangan/kendaraan | URL dibentuk dari slug nama master data. Semuanya termuat saat pemeriksaan browser. |
+| `Frontend/components.json` dan konfigurasi operasional lainnya | Konfigurasi tooling bukan modul runtime; tidak ada bukti bahwa workflow pemakainya telah ditinggalkan. |
+| Global using pada `obj/` yang ditandai tidak diperlukan | Berkas hasil build milik SDK, bukan kode sumber yang perlu diedit manual. |
+| Database, upload, seed, migration, tests, dan direktori hasil build | Dilindungi sesuai cakupan tugas; tidak dihapus atau direset. |
+
+### Verifikasi Audit Ulang
+
+- TypeScript dengan `--noUnusedLocals --noUnusedParameters`: lulus.
+- Lint frontend: lulus.
+- Build produksi frontend setelah perubahan CSS: lulus, 29 halaman statis.
+- Build backend Release setelah penghapusan overload: lulus, 0 warning/error.
+- Tes backend Release: 52 lulus, 0 gagal, 0 dilewati.
+- Backend dimuat ulang menggunakan build Release terbaru pada port 8000.
+- Delapan endpoint ekspor (Excel dan PDF pada empat modul pemakai formatter):
+  HTTP 200 dengan signature file valid. Isi shared strings keempat workbook
+  Excel memiliki timestamp dalam format `yyyy-MM-dd HH:mm`.
+- 24 pemeriksaan foto/modal dan chat pada viewport 390x844, 575x767, 1559x975:
+  lulus, tanpa exception JavaScript.
+- 36 kombinasi filter Overview (enam modul, halaman biasa dan Super Admin,
+  tiga viewport) diperiksa sebelum dan sesudah penghapusan CSS. Dropdown tetap
+  terbuka; ukuran, padding, font, warna, radius, dan opsi identik. Selector lama
+  tidak cocok dengan elemen mana pun, termasuk saat dropdown terbuka.
+- `git diff --check`: lulus.
+
+### Batas Verifikasi
+
+Pemeriksaan browser memakai akun Super Admin lokal dan Chrome headless.
+Ini bukan pengujian menyeluruh semua role, semua kondisi data, semua browser,
+atau deployment Docker/produksi. Tidak ada transaksi yang dibuat/dihapus atau
+approval yang dijalankan dalam smoke test. Membuka chat dapat memperbarui
+penanda sudah dibaca melalui perilaku aplikasi normal.
+
+Tidak ada klaim bahwa analisis statis dapat membuktikan seluruh kemungkinan
+pemanggilan eksternal/dinamis. Item yang masih ambigu dipertahankan.
