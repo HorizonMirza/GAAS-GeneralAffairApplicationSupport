@@ -39,14 +39,14 @@ export type SumberPembelian = "KPU" | "PADI";
 // Data tab could add/rename options beyond those two (see MasterDataCategories.TipeBooking on the
 // backend). Existing code that only ever compared against those two literals still works exactly
 // the same, since both string literals remain assignable.
-export type TipeBooking = string;
+type TipeBooking = string;
 
 export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
 
 // Same widening as TipeBooking above, for MasterDataCategories.Asuransi.
 export type Asuransi = string;
 
-export type InvoiceStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
+type InvoiceStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
 
 export interface Me {
   id: number;
@@ -76,7 +76,7 @@ interface DivisiNode {
   departemen: string[];
 }
 
-export interface DirektoratNode {
+interface DirektoratNode {
   nama: string;
   divisi: DivisiNode[];
 }
@@ -638,7 +638,7 @@ export interface KoreksiSaranaPayload {
 // Same widening as TipeBooking above, for MasterDataCategories.AtkKategori.
 export type AtkKategori = string;
 
-export interface PermintaanAtkItem {
+interface PermintaanAtkItem {
   id: number;
   namaBarang: string;
   jumlah: number;
@@ -885,7 +885,7 @@ export interface RiwayatAktivitasListResponse {
 // specific node.
 // ---------------------------------------------------------------------------
 
-export interface OrgDepartemenNode {
+interface OrgDepartemenNode {
   id: number;
   nama: string;
 }
@@ -909,7 +909,7 @@ export interface OrgTreeResponse {
 
 // A one-time plaintext password - only ever present in the direct response of the create/reset
 // call that generated it, never stored or retrievable again afterward.
-export interface ProvisionedAccountCredential {
+interface ProvisionedAccountCredential {
   username: string;
   nama: string;
   role: Role;

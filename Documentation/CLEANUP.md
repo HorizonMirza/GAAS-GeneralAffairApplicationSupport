@@ -182,3 +182,64 @@ penanda sudah dibaca melalui perilaku aplikasi normal.
 
 Tidak ada klaim bahwa analisis statis dapat membuktikan seluruh kemungkinan
 pemanggilan eksternal/dinamis. Item yang masih ambigu dipertahankan.
+
+## Audit Ulang Setelah a713b27 (Claude)
+
+Audit independen dari working tree bersih pada `main`, commit `a713b27`.
+
+### Perubahan
+
+| File | Item | Bukti dan alasan |
+|---|---|---|
+| `Frontend/src/lib/types.ts` | Kata kunci `export` pada `TipeBooking`, `InvoiceStatus`, `DirektoratNode`, `PermintaanAtkItem`, `OrgDepartemenNode`, `ProvisionedAccountCredential` | knip melaporkan keenamnya sebagai ekspor tanpa pemakai; grep memastikan hanya dirujuk di dalam `types.ts`. Definisi tipenya tetap ada karena masih dipakai oleh interface lain. |
+
+Tidak ada file/folder, aset, CSS, paket npm, atau paket NuGet yang dihapus.
+Lockfile tidak berubah.
+
+### Cakupan Pemeriksaan
+
+- knip (file, ekspor, dependensi): setelah perubahan, 0 temuan.
+- 248 method objek `api` di `lib/api.ts`: semuanya dipanggil.
+- 244 route backend: semuanya punya pemanggil di frontend, termasuk URL
+  unduhan PDF/Excel/ICS/foto yang dibentuk lewat `${API_BASE}`.
+- Method SignalR `ChatHub`: dipanggil lewat nama string di `lib/chatHub.ts`.
+- Analyzer C# IDE0005/IDE0051/IDE0052/IDE0059/IDE0060 dan CS0168/CS0169/CS0219 pada proyek
+  backend dan tes (salinan terpisah, diuji dulu dengan file probe): 0 temuan.
+- Kelas, record, dan method publik backend tanpa rujukan: tidak ada, selain override
+  framework. Model counter dipakai lewat raw SQL.
+- 492 kelas `globals.css` (dicek terhadap kode tanpa komentar) dan 134 kelas
+  CSS module: tidak ada yang mati. Kelas badge/log dinamis cocok dengan nilai enum.
+  Token `@theme` Tailwind semuanya dipakai utilitas.
+- Variabel CSS, keyframes, dan selector id: tidak ada yang mati.
+- `eslint --report-unused-disable-directives`: tidak ada direktif yang tidak perlu.
+- Lockfile: 491 entri, semuanya terjangkau dari `package.json`.
+- Aset `public/`: logo dipakai; 20 foto ruangan/kendaraan cocok dengan slug nama
+  di `MeetingRooms.cs`/`Vehicles.cs`.
+- Tidak ada blok kode yang dikomentari dan tidak ada TODO/FIXME.
+
+### Item Yang Dipertahankan
+
+| Item | Alasan |
+|---|---|
+| `booking-kendaraan/page.tsx`, `booking-ruang-meeting/page.tsx` | Hanya mengalihkan ke `/overview`. Tidak ada link internal ke URL ini, tetapi bookmark pengguna tidak bisa diperiksa. |
+| 14 helper di `superadmin/page.tsx` yang juga ada di halaman overview/kalender | Kode duplikat yang masih dipakai, bukan kode mati. Penggabungannya termasuk refactor. |
+| Label aksi lama di `LOG_ACTION_META` (mis. `EKSEKUSI_DIBATALKAN`) | Masih dibutuhkan untuk menampilkan riwayat lama yang tersimpan di database. |
+| Kolom database lama fitur Eksekusi di `perbaikan_sarana` | Menyimpan data lama; menghapus kolom berarti menghapus data. |
+| `Frontend/components.json` | Konfigurasi tooling shadcn untuk komponen `components/ui`. |
+| `ApproveKpuRequest.Total` | Bagian kontrak API yang masih dikirim frontend (sesuai catatan sebelumnya). |
+
+### Verifikasi
+
+- `tsc --noEmit` (normal dan `--noUnusedLocals --noUnusedParameters`): lulus.
+- `npm run lint`: lulus.
+- `npm run build`: lulus, 29 halaman statis.
+- Hash 68 file JS/CSS di `.next/static/chunks` identik antara build sebelum dan sesudah
+  perubahan, jadi kode yang dijalankan browser tidak berubah.
+- `dotnet build`: lulus, 0 error. `dotnet test`: 52 lulus, 0 gagal.
+- Smoke test Playwright (akun Super Admin, database sandbox): 35 halaman/tab × 3 viewport
+  (390×844, 768×1024, 1440×900). Tidak ada halaman kosong, error boundary, exception
+  JavaScript, HTTP 5xx, atau scroll horizontal. Satu-satunya error konsol adalah 401
+  dari pengecekan sesi di halaman login sebelum masuk (perilaku normal).
+
+Batas: smoke test hanya membuka halaman, tidak membuat, mengubah, atau menyetujui
+transaksi. Tidak menguji role selain Super Admin maupun deployment Docker/produksi.
